@@ -11,16 +11,17 @@ import (
 func TestLane8PythonRuntimeMatrixContractStaysAligned(t *testing.T) {
 	goRepoRoot := repoRoot(t)
 	repoRoot := filepath.Clean(filepath.Join(goRepoRoot, ".."))
-	scriptPath := filepath.Join(t.TempDir(), "runtime_matrix_contract.py")
-	script := `import json
+scriptPath := filepath.Join(t.TempDir(), "runtime_matrix_contract.py")
+script := `import json
 import sys
+import tempfile
 from pathlib import Path
 
 repo_root = Path(sys.argv[1])
 sys.path.insert(0, str(repo_root / "src"))
 
 from bigclaw.models import RiskLevel, Task
-from bigclaw.observability import TaskRun
+from bigclaw.observability import ObservabilityLedger, TaskRun
 from bigclaw.runtime import ClawWorkerRuntime, ToolPolicy, ToolRuntime
 from bigclaw.scheduler import Scheduler
 
@@ -52,6 +53,19 @@ high = scheduler.decide(Task(task_id="high", source="local", title="high", descr
 browser = scheduler.decide(
     Task(task_id="browser", source="local", title="browser", description="", required_tools=["browser"], risk_level=RiskLevel.MEDIUM)
 )
+with tempfile.TemporaryDirectory() as td:
+    budget = scheduler.execute(
+        Task(
+            task_id="budget",
+            source="local",
+            title="budget pause",
+            description="budget should stop execution",
+            budget=5.0,
+            required_tools=["github"],
+        ),
+        run_id="run-budget-pause",
+        ledger=ObservabilityLedger(str(Path(td) / "ledger.json")),
+    )
 
 task = Task(task_id="BIG-303-matrix", source="local", title="tool policy", description="", required_tools=["github", "browser"])
 run2 = TaskRun.from_task(task, run_id="run-big303-matrix", medium="docker")
@@ -73,6 +87,12 @@ print(json.dumps({
         "low_medium": low.medium,
         "high_medium": high.medium,
         "browser_medium": browser.medium,
+        "budget_medium": budget.decision.medium,
+        "budget_approved": budget.decision.approved,
+        "budget_status": budget.run.status,
+        "budget_tool_results": len(budget.tool_results),
+        "budget_last_action": budget.run.audits[-1].action,
+        "budget_last_outcome": budget.run.audits[-1].outcome,
     },
     "matrix303": {
         "allow_success": allow.success,
@@ -100,9 +120,15 @@ print(json.dumps({
 			LastOutcome string `json:"last_outcome"`
 		} `json:"matrix301"`
 		Matrix302 struct {
-			LowMedium     string `json:"low_medium"`
-			HighMedium    string `json:"high_medium"`
-			BrowserMedium string `json:"browser_medium"`
+			LowMedium        string `json:"low_medium"`
+			HighMedium       string `json:"high_medium"`
+			BrowserMedium    string `json:"browser_medium"`
+			BudgetMedium     string `json:"budget_medium"`
+			BudgetApproved   bool   `json:"budget_approved"`
+			BudgetStatus     string `json:"budget_status"`
+			BudgetToolResults int   `json:"budget_tool_results"`
+			BudgetLastAction string `json:"budget_last_action"`
+			BudgetLastOutcome string `json:"budget_last_outcome"`
 		} `json:"matrix302"`
 		Matrix303 struct {
 			AllowSuccess bool     `json:"allow_success"`
@@ -122,6 +148,9 @@ print(json.dumps({
 	}
 	if decoded.Matrix302.BrowserMedium != "browser" && decoded.Matrix302.BrowserMedium != "docker" {
 		t.Fatalf("unexpected browser scheduler medium: %+v", decoded.Matrix302)
+	}
+	if decoded.Matrix302.BudgetMedium != "none" || decoded.Matrix302.BudgetApproved || decoded.Matrix302.BudgetStatus != "paused" || decoded.Matrix302.BudgetToolResults != 0 || decoded.Matrix302.BudgetLastAction != "worker.lifecycle" || decoded.Matrix302.BudgetLastOutcome != "paused" {
+		t.Fatalf("unexpected budget pause payload: %+v", decoded.Matrix302)
 	}
 	if !decoded.Matrix303.AllowSuccess || decoded.Matrix303.BlockSuccess {
 		t.Fatalf("unexpected tool policy result payload: %+v", decoded.Matrix303)

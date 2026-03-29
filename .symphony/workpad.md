@@ -32,6 +32,7 @@
 - `tests/test_scheduler.py`
 - `tests/test_runtime_matrix.py`
 - `tests/test_event_bus.py`
+- `tests/test_runtime.py`
 
 ## Acceptance
 
@@ -99,9 +100,11 @@
   - `tests/test_scheduler.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_scheduler_contract_test.go`, which invokes the Python scheduler from Go and preserves the high-risk, browser-route, budget-degrade, and pause contracts.
   - `tests/test_runtime_matrix.py`
-    - Reason: replaced by `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, which invokes the Python runtime matrix contract from Go and preserves worker lifecycle, medium routing, and tool-policy audit behavior.
+    - Reason: replaced by `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, which invokes the Python runtime matrix contract from Go and preserves worker lifecycle, medium routing, tool-policy audit behavior, and budget-pause execution outcomes.
   - `tests/test_event_bus.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_event_bus_contract_test.go`, which invokes the Python event-bus contract from Go and preserves PR-comment approval, CI completion, and task-failed transitions plus ledger persistence.
+  - `tests/test_runtime.py`
+    - Reason: replaced by the expanded `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, which now also preserves Python runtime budget-pause behavior alongside the existing runtime matrix assertions.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -169,13 +172,13 @@
   - `bigclaw-go/internal/regression/python_scheduler_contract_test.go`
     - Added Go regression coverage that exercises the Python scheduler contract for high-risk approval, browser routing, budget degradation, and pause behavior.
   - `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`
-    - Added Go regression coverage that exercises the Python runtime matrix contract for worker lifecycle, scheduler medium mapping, and tool-policy audit outcomes.
+    - Added Go regression coverage that exercises the Python runtime matrix contract for worker lifecycle, scheduler medium mapping, tool-policy audit outcomes, and budget-pause execution behavior.
   - `bigclaw-go/internal/regression/python_event_bus_contract_test.go`
     - Added Go regression coverage that exercises the Python event-bus contract for PR-comment approval, CI completion, and task-failed ledger transitions.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 21` (`-22`)
-  - Repository-wide Python files: `123 -> 101` (`-22`)
+  - `tests/**` Python files: `43 -> 20` (`-23`)
+  - Repository-wide Python files: `123 -> 100` (`-23`)
 
 ## Validation Results
 
@@ -308,3 +311,14 @@
   - `101`
 - `git status --short`
   - scoped changes only in the new `bigclaw-go/internal/regression/python_event_bus_contract_test.go` and the deleted `tests/test_event_bus.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `FAIL	bigclaw-go/internal/regression`
+  - `TestLane8PythonRuntimeMatrixContractStaysAligned` initially failed because the temporary Python regression script called `Scheduler.execute()` without the required `ledger` argument.
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	1.508s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `20`
+- `rg --files | rg '\.py$' | wc -l`
+  - `100`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md`, `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, and the deleted `tests/test_runtime.py`
