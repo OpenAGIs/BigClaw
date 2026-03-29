@@ -33,14 +33,17 @@
   - `bigclaw-go/scripts/migration/shadow_compare.py`
 - Repointed the live smoke wrappers and docs from the deleted Python shim to `go run ./cmd/bigclawctl automation e2e run-task-smoke`.
 - Repointed the migration compare docs and `shadow_matrix.py` from the deleted Python shim to `go run ./cmd/bigclawctl automation migration shadow-compare`.
+- Fixed `bigclaw-go/scripts/e2e/export_validation_bundle.py` to defer type-annotation evaluation under the repository's current `python3`, so repo-level Python validation still passes after the script cleanup.
 - Recorded the full retained/deleted/replaced inventory plus Python-count impact in `reports/BIG-GO-970-validation.md`.
 - Python file count changed from `123` to `116` across the repository and from `19` to `12` inside `bigclaw-go/scripts/e2e/**` plus `bigclaw-go/scripts/migration/**`.
 
 ## Validation Results
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
-  - `ok  	bigclaw-go/cmd/bigclawctl	2.147s`
-  - `ok  	bigclaw-go/internal/regression	1.081s`
+  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+  - `ok  	bigclaw-go/internal/regression	0.675s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && PYTHONPATH=src python3 -m pytest tests/test_parallel_validation_bundle.py tests/test_validation_bundle_continuation_policy_gate.py tests/test_live_shadow_bundle.py -q` -> passed
+  - `8 passed in 0.20s`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/kubernetes_smoke.sh` -> passed
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/ray_smoke.sh` -> passed
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed

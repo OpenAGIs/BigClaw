@@ -29,6 +29,10 @@
 | `bigclaw-go/scripts/migration/shadow_compare.py` | replaced then deleted | `shadow_matrix.py` now shells out to `go run ./cmd/bigclawctl automation migration shadow-compare`, so the thin Python shim is no longer needed. |
 | `bigclaw-go/scripts/migration/shadow_matrix.py` | retained | Still a Python matrix/report generator, but now depends on the Go CLI directly instead of importing a Python shim module. |
 
+## Additional In-Scope Fix
+
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now opts into deferred annotation evaluation via `from __future__ import annotations`, so the checked-in exporter remains executable under the repository's current `python3` interpreter while this material-pass cleanup removes adjacent script-local tests.
+
 ## Count Impact
 
 - Total repository Python files before: `123`
@@ -42,6 +46,7 @@
 
 ```bash
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && PYTHONPATH=src python3 -m pytest tests/test_parallel_validation_bundle.py tests/test_validation_bundle_continuation_policy_gate.py tests/test_live_shadow_bundle.py -q
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/kubernetes_smoke.sh
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/ray_smoke.sh
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/run_all.sh
@@ -53,7 +58,9 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && find bigclaw-go/scripts/
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
   - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
-  - `ok  	bigclaw-go/internal/regression	0.193s`
+  - `ok  	bigclaw-go/internal/regression	0.675s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && PYTHONPATH=src python3 -m pytest tests/test_parallel_validation_bundle.py tests/test_validation_bundle_continuation_policy_gate.py tests/test_live_shadow_bundle.py -q`
+  - `8 passed in 0.20s`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
   - `bash -n kubernetes_smoke.sh: PASS`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/ray_smoke.sh`
