@@ -1,5 +1,15 @@
 # BIG-GO-948 Workpad
 
+## Status
+
+- Completed on branch `big-go-948-lane8-remaining-python-tests`.
+- Final commits:
+  - `272316b` `BIG-GO-948 remove remaining operations python test`
+  - `77862ca` `BIG-GO-948 migrate report parity slice to go`
+  - `d1eec65` `BIG-GO-948 remove remaining reports python test`
+  - `506dc5b` `BIG-GO-948 remove final ui review python tests`
+- Final push: `git push origin big-go-948-lane8-remaining-python-tests` -> success.
+
 ## Plan
 
 1. Confirm the remaining Python test lane scope under `tests/` and map each file to a Go-native owner or deletion path.
@@ -25,6 +35,12 @@
 - `cd bigclaw-go && go test ./internal/reporting ./internal/reportingparity`
 - `rg --files tests | sort`
 - `git status --short`
+
+## Result
+
+- All Python files under `tests/` for this lane were removed.
+- Active planning metadata now points at Go-owned validation targets.
+- Branch is committed, pushed, and clean after validation.
 
 ## Risks
 
