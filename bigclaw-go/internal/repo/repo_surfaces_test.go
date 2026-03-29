@@ -152,6 +152,10 @@ func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	if len(filtered) != 2 {
 		t.Fatalf("expected filtered posts, got %+v", filtered)
 	}
+	comment := filtered[0].ToCollaborationComment()
+	if comment.Anchor != "task:BIG-401" || comment.Status != "open" || !strings.HasPrefix(comment.Body, "Need reviewer") {
+		t.Fatalf("unexpected collaboration comment projection: %+v", comment)
+	}
 }
 
 func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) {
@@ -187,6 +191,21 @@ func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) 
 	}
 	if got := board.ListPosts("", "task", "BIG-402"); len(got) != 1 || got[0].PostID != second.PostID {
 		t.Fatalf("expected combined surface/id filter to isolate second post, got %+v", got)
+	}
+	if comment := second.ToCollaborationComment(); comment.CommentID != "repo-"+second.PostID || comment.Status != "open" || comment.Anchor != "task:BIG-402" {
+		t.Fatalf("unexpected second post collaboration comment: %+v", comment)
+	}
+	resolved := RepoPost{
+		PostID:        "post-99",
+		Author:        "reviewer",
+		Body:          "resolved",
+		TargetSurface: "run",
+		TargetID:      "run-7",
+		CreatedAt:     time.Date(2026, 3, 20, 11, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		Metadata:      map[string]any{"resolved": true},
+	}
+	if comment := resolved.ToCollaborationComment(); comment.Status != "resolved" || comment.Anchor != "run:run-7" {
+		t.Fatalf("unexpected resolved collaboration comment: %+v", comment)
 	}
 }
 

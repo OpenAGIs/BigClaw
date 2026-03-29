@@ -61,23 +61,28 @@
     - Reason: covered by `bigclaw-go/internal/product/saved_views_test.go`, including existing JSON round-trip coverage.
   - `tests/test_dashboard_run_contract.py`
     - Reason: covered by `bigclaw-go/internal/product/dashboard_run_contract_test.go`, plus added JSON round-trip and deterministic sample-gap assertions.
+  - `tests/test_repo_board.py`
+    - Reason: now covered by `bigclaw-go/internal/repo/repo_surfaces_test.go` after adding Go `RepoPost -> CollaborationComment` projection parity.
 
 - Kept for later lanes:
-  - `tests/test_repo_board.py`
-    - Reason: current Go repo board tests cover create/reply/filter behavior, but do not yet replace the Python collaboration-comment projection contract.
+  - `tests/test_repo_links.py`
+    - Reason: it still crosses into broader run closeout / observability payload round-trip behavior, beyond the minimal repo-surface scope handled here.
   - Other remaining `tests/**` Python files
     - Reason: they still exercise Python-owned runtime, reporting, UI review, operations, or larger end-to-end surfaces outside this scoped batch.
 
 - Added Go parity tests:
+  - `bigclaw-go/internal/repo/board.go`
+    - Added `CollaborationComment` and `RepoPost.ToCollaborationComment()` for repo discussion projection parity.
   - `bigclaw-go/internal/repo/repo_surfaces_test.go`
     - Added `TestRepoRegistryJSONRoundTrip`.
+    - Added collaboration-comment projection assertions for repo discussion posts.
   - `bigclaw-go/internal/product/dashboard_run_contract_test.go`
     - Added deterministic dashboard/run-detail sample-gap assertions.
     - Added `TestDashboardRunContractJSONRoundTrip`.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 35` (`-8`)
-  - Repository-wide Python files: `123 -> 115` (`-8`)
+  - `tests/**` Python files: `43 -> 34` (`-9`)
+  - Repository-wide Python files: `123 -> 114` (`-9`)
 
 ## Validation Results
 
@@ -99,3 +104,9 @@
   - `115`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md`, the two Go test files, and the eight deleted Python tests
+- `cd bigclaw-go && go test ./internal/repo -run 'TestRepoDiscussionBoardCreateReplyAndFilter|TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata|TestRepoRegistryJSONRoundTrip'`
+  - `ok  	bigclaw-go/internal/repo	0.201s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `34`
+- `rg --files | rg '\.py$' | wc -l`
+  - `114`
