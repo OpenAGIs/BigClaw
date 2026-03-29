@@ -36,6 +36,7 @@
 - `tests/test_parallel_validation_bundle.py`
 - `tests/test_dsl.py`
 - `tests/test_risk.py`
+- `tests/test_execution_flow.py`
 
 ## Acceptance
 
@@ -114,6 +115,8 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_dsl_contract_test.go`, which invokes the Python DSL/workflow surface from Go and preserves template rendering, `run_definition()` artifact writes, invalid-step rejection, and manual-approval closure behavior.
   - `tests/test_risk.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_risk_contract_test.go`, which invokes the Python risk and scheduler surfaces from Go and preserves low/medium risk scoring plus high-risk approval-routing trace and audit behavior.
+  - `tests/test_execution_flow.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_execution_flow_contract_test.go`, which invokes the Python queue/scheduler execution chain from Go and preserves browser-route report generation plus high-risk pending-approval behavior.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -190,10 +193,12 @@
     - Added Go regression coverage that exercises the Python DSL/workflow contract for template rendering, `run_definition()` artifact creation, invalid-step validation, and high-risk manual approval handling.
   - `bigclaw-go/internal/regression/python_risk_contract_test.go`
     - Added Go regression coverage that exercises the Python risk scorer and scheduler contract for low/medium score thresholds and high-risk approval-routing audit side effects.
+  - `bigclaw-go/internal/regression/python_execution_flow_contract_test.go`
+    - Added Go regression coverage that exercises the Python queue-to-scheduler execution chain for report/page artifact generation, scheduler traces, and high-risk pending-approval outcomes.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 17` (`-26`)
-  - Repository-wide Python files: `123 -> 97` (`-26`)
+  - `tests/**` Python files: `43 -> 16` (`-27`)
+  - Repository-wide Python files: `123 -> 96` (`-27`)
 
 ## Validation Results
 
@@ -367,3 +372,11 @@
   - `97`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_risk_contract_test.go`, and the deleted `tests/test_risk.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonExecutionFlowContractStaysAligned|TestLane8PythonRiskContractStaysAligned|TestLane8PythonDSLContractStaysAligned|TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	1.792s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `16`
+- `rg --files | rg '\.py$' | wc -l`
+  - `96`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_execution_flow_contract_test.go`, and the deleted `tests/test_execution_flow.py`
