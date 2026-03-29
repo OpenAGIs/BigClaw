@@ -19,3 +19,12 @@
 - `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression`
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
 - `cd bigclaw-go && go test ./internal/scheduler ./internal/workflow ./internal/queue ./internal/worker`
+
+## Status
+
+- Completed on branch `big-go-943-runtime-service-orchestration`.
+- Commit pushed: `5b493c1fd6d72d4a692611184630d5af667eeb29`.
+- Validation results:
+  - `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/internal/legacyshim 0.762s` and `ok   bigclaw-go/internal/regression 0.776s`
+  - `cd bigclaw-go && go test ./cmd/bigclawctl` -> `ok   bigclaw-go/cmd/bigclawctl 2.560s`
+  - `cd bigclaw-go && go test ./internal/scheduler ./internal/workflow ./internal/queue ./internal/worker` -> `ok   bigclaw-go/internal/scheduler 1.829s`, `ok   bigclaw-go/internal/workflow 0.761s`, `ok   bigclaw-go/internal/queue 27.166s`, `ok   bigclaw-go/internal/worker 2.962s`
