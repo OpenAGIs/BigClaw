@@ -143,8 +143,10 @@ Result: passed with `workspace_count: 2`; report file emitted successfully
 ## Branch State
 
 - Branch: `symphony/BIG-GO-942`
-- Pushed head: `07f790194ddf79e1a033ec750c06e96d363ee5b1`
+- Last validated implementation commit: `07f790194ddf79e1a033ec750c06e96d363ee5b1`
 - `git status --short --branch` is clean against `origin/symphony/BIG-GO-942`
+- Later branch commits may refresh only report metadata and can advance the branch head without
+  changing the validated wrapper behavior captured above.
 
 ## Risks
 

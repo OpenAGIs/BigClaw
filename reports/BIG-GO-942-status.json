@@ -6,8 +6,9 @@
   },
   "branch": {
     "name": "symphony/BIG-GO-942",
-    "latest_pushed_commit": "07f790194ddf79e1a033ec750c06e96d363ee5b1",
-    "remote_ref": "refs/heads/symphony/BIG-GO-942"
+    "last_validated_commit": "07f790194ddf79e1a033ec750c06e96d363ee5b1",
+    "remote_ref": "refs/heads/symphony/BIG-GO-942",
+    "observation_note": "Later BIG-GO-942 report-sync commits may advance the branch head without changing the validated wrapper behavior captured in this status file."
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-942-validation.md",

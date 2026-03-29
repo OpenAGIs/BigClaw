@@ -10,7 +10,7 @@ Date: `2026-03-29`
 
 `symphony/BIG-GO-942`
 
-## Latest Pushed Commit
+## Last Validated Implementation Commit
 
 `07f790194ddf79e1a033ec750c06e96d363ee5b1`
 
@@ -41,8 +41,8 @@ Date: `2026-03-29`
   workspace validate callers.
 - Validation evidence for tests, wrapper smoke checks, and temp-repo workspace flows now lives
   in-repo for reviewers.
-- The latest branch tip after adding issue-scoped closeout artifacts is
-  `07f790194ddf79e1a033ec750c06e96d363ee5b1`.
+- Later branch commits may refresh only BIG-GO-942 metadata and can advance the head without
+  changing the validated wrapper behavior summarized here.
 
 ## Validation Commands
 
