@@ -27,7 +27,7 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
 - `bigclaw-go/scripts/migration/shadow_matrix.py`
 
-BIG-GO-978 closed the benchmark batch backlog by fully replacing `bigclaw-go/scripts/benchmark/run_matrix.py` and `bigclaw-go/scripts/benchmark/capacity_certification.py` with `bigclawctl automation benchmark run-matrix` and `bigclawctl automation benchmark capacity-certification`, so those Python helpers can now be deleted after downstream references re-target the Go CLI.
+BIG-GO-978 closed the benchmark batch backlog by replacing `bigclaw-go/scripts/benchmark/run_matrix.py`, `bigclaw-go/scripts/benchmark/soak_local.py`, and `bigclaw-go/scripts/benchmark/capacity_certification.py` with `bigclawctl automation benchmark run-matrix`, `bigclawctl automation benchmark soak-local`, and `bigclawctl automation benchmark capacity-certification`, and deleting the Python entrypoints from `scripts/benchmark/`.
 
 ## Validation Commands
 
@@ -53,13 +53,12 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 
 ## Compatibility Layer Plan
 
-- Keep the migrated Python entrypoints as thin shims that only forward to `bigclawctl`.
-- Do not add new behavior to the Python copies; all new logic belongs in Go.
+- The benchmark batch no longer keeps Python entrypoints; all benchmark automation in this slice is Go-native.
+- Keep only the still-existing migrated Python entrypoints as thin shims that forward to `bigclawctl`.
 - Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
   - validation bundle generators
-  - benchmark matrices
   - migration scorecards/bundle exporters
-- Remove each Python shim only after the corresponding Go command is referenced by docs, CI, and operators for one full rollout cycle.
+- Remove each remaining Python shim only after the corresponding Go command is referenced by docs, CI, and operators for one full rollout cycle.
 
 ## Branch And PR Suggestion
 
