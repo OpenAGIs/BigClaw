@@ -44,6 +44,7 @@
 - `tests/test_repo_rollout.py`
 - `tests/test_github_sync.py`
 - `tests/test_planning.py`
+- `tests/test_control_center.py`
 
 ## Acceptance
 
@@ -138,6 +139,8 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_github_sync_contract_test.go`, which invokes the Python git-sync helpers from Go and preserves hook installation, push/inspect behavior, clean-branch fast-forwarding, and origin-default-head skip semantics.
   - `tests/test_planning.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_planning_contract_test.go`, which invokes the Python planning surface from Go and preserves backlog round-trips, gate evaluation, four-week execution plan rollups, report rendering, and V3 traceability helpers.
+  - `tests/test_control_center.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_control_center_contract_test.go`, which invokes the Python queue-control-center surface from Go and preserves queue ordering, control-center summaries/actions, and shared-view empty-state rendering.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -230,10 +233,12 @@
     - Added Go regression coverage that exercises the Python git-sync contract for hook installation, dirty-worktree inspection, clean-branch fast-forwarding, and origin-default-head no-push behavior.
   - `bigclaw-go/internal/regression/python_planning_contract_test.go`
     - Added Go regression coverage that exercises the Python planning contract for backlog and decision round-trips, gate evaluation, four-week execution plans, planning reports, and V3 candidate traceability helpers.
+  - `bigclaw-go/internal/regression/python_control_center_contract_test.go`
+    - Added Go regression coverage that exercises the Python control-center contract for queue ordering, queue/risk/media summaries, action states, and shared-view empty-state rendering.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 9` (`-34`)
-  - Repository-wide Python files: `123 -> 89` (`-34`)
+  - `tests/**` Python files: `43 -> 8` (`-35`)
+  - Repository-wide Python files: `123 -> 88` (`-35`)
 
 ## Validation Results
 
@@ -483,3 +488,11 @@
   - `89`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_planning_contract_test.go`, and the deleted `tests/test_planning.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonControlCenterContractStaysAligned|TestLane8PythonPlanningContractStaysAligned|TestLane8PythonGitHubSyncContractStaysAligned|TestLane8PythonRepoRolloutContractStaysAligned|TestLane8PythonOrchestrationContractStaysAligned|TestLane8PythonAuditEventsContractStaysAligned|TestLane8PythonObservabilityContractStaysAligned|TestLane8PythonWorkflowContractStaysAligned|TestLane8PythonExecutionFlowContractStaysAligned|TestLane8PythonRiskContractStaysAligned|TestLane8PythonDSLContractStaysAligned|TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	3.129s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `8`
+- `rg --files | rg '\.py$' | wc -l`
+  - `88`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_control_center_contract_test.go`, and the deleted `tests/test_control_center.py`
