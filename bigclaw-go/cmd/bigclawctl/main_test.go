@@ -317,7 +317,12 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "repo->")
 	for _, relativePath := range []string{
+		"src/bigclaw/runtime.py",
 		"src/bigclaw/service.py",
+		"src/bigclaw/scheduler.py",
+		"src/bigclaw/workflow.py",
+		"src/bigclaw/orchestration.py",
+		"src/bigclaw/queue.py",
 		"src/bigclaw/__main__.py",
 		"src/bigclaw/legacy_shim.py",
 	} {
@@ -356,6 +361,9 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	}
 	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/service.py"))) {
 		t.Fatalf("expected raw arrow token in legacy-python file list, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/queue.py"))) {
+		t.Fatalf("expected expanded frozen shim file list in legacy-python output, got %s", string(output))
 	}
 	if bytes.Contains(output, []byte(`\u003e`)) {
 		t.Fatalf("expected no HTML escaping in legacy-python JSON output, got %s", string(output))

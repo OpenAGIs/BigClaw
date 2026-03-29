@@ -11,7 +11,12 @@ func TestFrozenCompileCheckFilesUsesFrozenShimList(t *testing.T) {
 	repoRoot := "/repo"
 	got := FrozenCompileCheckFiles(repoRoot)
 	want := []string{
+		filepath.Join(repoRoot, "src/bigclaw/runtime.py"),
 		filepath.Join(repoRoot, "src/bigclaw/service.py"),
+		filepath.Join(repoRoot, "src/bigclaw/scheduler.py"),
+		filepath.Join(repoRoot, "src/bigclaw/workflow.py"),
+		filepath.Join(repoRoot, "src/bigclaw/orchestration.py"),
+		filepath.Join(repoRoot, "src/bigclaw/queue.py"),
 		filepath.Join(repoRoot, "src/bigclaw/__main__.py"),
 		filepath.Join(repoRoot, "src/bigclaw/legacy_shim.py"),
 	}
@@ -38,7 +43,12 @@ func TestCompileCheckRunsPyCompileAgainstFrozenShimList(t *testing.T) {
 	wantArgs := []string{
 		"-m",
 		"py_compile",
+		filepath.Join(repoRoot, "src/bigclaw/runtime.py"),
 		filepath.Join(repoRoot, "src/bigclaw/service.py"),
+		filepath.Join(repoRoot, "src/bigclaw/scheduler.py"),
+		filepath.Join(repoRoot, "src/bigclaw/workflow.py"),
+		filepath.Join(repoRoot, "src/bigclaw/orchestration.py"),
+		filepath.Join(repoRoot, "src/bigclaw/queue.py"),
 		filepath.Join(repoRoot, "src/bigclaw/__main__.py"),
 		filepath.Join(repoRoot, "src/bigclaw/legacy_shim.py"),
 	}

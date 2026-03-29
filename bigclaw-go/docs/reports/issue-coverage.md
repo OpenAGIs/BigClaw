@@ -4,6 +4,11 @@
 
 This document maps the current local MVP implementation to the Linear rewrite issues `OPE-176` through `OPE-186`.
 
+The follow-on parallel migration lane `BIG-GO-943` tracks the frozen Python
+runtime/service/scheduler/workflow/orchestration/queue compatibility surfaces in
+`src/bigclaw`; its file-by-file Go replacement and delete plan lives in
+`docs/reports/big-go-943-runtime-service-orchestration-lane.md`.
+
 ## Coverage
 
 - `OPE-176` / `BIG-GO-001`

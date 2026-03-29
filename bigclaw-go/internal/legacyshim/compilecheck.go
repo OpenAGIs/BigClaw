@@ -15,7 +15,12 @@ type runner func(name string, args ...string) ([]byte, error)
 
 func FrozenCompileCheckFiles(repoRoot string) []string {
 	relative := []string{
+		"src/bigclaw/runtime.py",
 		"src/bigclaw/service.py",
+		"src/bigclaw/scheduler.py",
+		"src/bigclaw/workflow.py",
+		"src/bigclaw/orchestration.py",
+		"src/bigclaw/queue.py",
 		"src/bigclaw/__main__.py",
 		"src/bigclaw/legacy_shim.py",
 	}
