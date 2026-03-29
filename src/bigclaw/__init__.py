@@ -75,15 +75,6 @@ from .design_system import (
     render_information_architecture_report,
     render_ui_acceptance_report,
 )
-from .saved_views import (
-    AlertDigestSubscription,
-    SavedView,
-    SavedViewCatalog,
-    SavedViewCatalogAudit,
-    SavedViewFilter,
-    SavedViewLibrary,
-    render_saved_view_report,
-)
 from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
 from .scheduler import (
@@ -154,6 +145,7 @@ from .execution_contract import (
 )
 from .reports import (
     ArchivedIssue,
+    AlertDigestSubscription,
     AutoTriageCenter,
     ConsoleAction,
     BillingEntitlementsPage,
@@ -182,6 +174,11 @@ from .reports import (
     PremiumOrchestrationPolicy,
     ReportStudio,
     ReportStudioArtifacts,
+    SavedView,
+    SavedViewCatalog,
+    SavedViewCatalogAudit,
+    SavedViewFilter,
+    SavedViewLibrary,
     RunDetailEvent,
     RunDetailResource,
     RunDetailStat,
@@ -232,6 +229,7 @@ from .reports import (
     render_repo_sync_audit_report,
     render_resource_grid,
     render_run_detail_console,
+    render_saved_view_report,
     render_task_run_detail_page,
     render_task_run_report,
     render_timeline_panel,
@@ -803,6 +801,7 @@ for _alias, _target in (
     ("repo_board", "collaboration"),
     ("run_detail", "reports"),
     ("roadmap", "planning"),
+    ("saved_views", "reports"),
     ("repo_commits", "repo_plane"),
     ("repo_gateway", "repo_plane"),
     ("repo_governance", "repo_plane"),

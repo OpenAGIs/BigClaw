@@ -14,6 +14,7 @@
 10. Follow-up slice: fold `run_detail.py` into `reports.py`, keep the legacy `bigclaw.run_detail` import path via aliasing, and validate the run-detail, evaluation, and reporting surfaces.
 11. Current continuation slice: fold `evaluation.py` into `operations.py`, keep the legacy `bigclaw.evaluation` import path via aliasing, and validate evaluation plus operations regression surfaces.
 12. Current next slice: fold `console_ia.py` into `design_system.py`, keep the legacy `bigclaw.console_ia` import path via aliasing, and validate console IA plus design-system regression surfaces.
+13. Current next slice: fold `saved_views.py` into `reports.py`, keep the legacy `bigclaw.saved_views` import path via aliasing, and validate saved-view plus reporting regression surfaces.
 
 ## Acceptance
 
@@ -34,6 +35,7 @@
 - For the follow-up slice, validate `tests/test_evaluation.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 - For the current continuation slice, validate `tests/test_evaluation.py` plus `tests/test_operations.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_console_ia.py` plus `tests/test_design_system.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_saved_views.py` plus `tests/test_reports.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -46,6 +48,7 @@
   - `connectors.py`
   - `collaboration.py`
   - `console_ia.py`
+  - `saved_views.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -91,6 +94,7 @@
   - `reports.py` now owns the issue-priority archive helpers.
   - `reports.py` now owns the orchestration planning and policy helpers.
   - `reports.py` now owns the run-detail rendering helpers.
+  - `reports.py` now owns the saved-view catalog and alert-digest helpers.
   - `scheduler.py` now owns the risk scoring helpers.
   - `scheduler.py` now owns the worker runtime helpers.
   - `workflow.py` now owns the workflow DSL helpers.
@@ -104,6 +108,7 @@
   - `execution_contract.py`: retained as the generic permission-contract host after absorbing dashboard/run schema contracts; repo policy compatibility now aliases into `repo_plane.py` without widening into unrelated control-plane semantics.
   - `planning.py`: retained as the roadmap and gating host after absorbing scope-freeze governance; broader collapsing there would widen this issue beyond adjacent planning policy.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
+  - `reports.py`: retained as the primary reporting host after also absorbing saved-view catalog helpers; this keeps shared-view/reporting semantics co-located without widening into unrelated execution modules.
   - `scheduler.py`: retained as the execution host after absorbing risk and runtime helpers; orchestration moved into `reports.py` instead of broadening scheduler/report cyclic ownership.
   - `operations.py`: retained as the operations-policy host after absorbing budget control, queue, and memory helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
@@ -112,8 +117,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `15`
-  - Delta: `-34`
+  - After: `14`
+  - Delta: `-35`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -244,3 +249,14 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `15`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy saved-views import resolved successfully:
+      `bigclaw.saved_views -> bigclaw.reports`
+      `bigclaw.reports -> bigclaw.reports`
+      `bigclaw -> bigclaw`
+  - `PYTHONPATH=src python3 -m pytest tests/test_saved_views.py tests/test_reports.py`
+    - Result: `38 passed in 0.09s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `14`
