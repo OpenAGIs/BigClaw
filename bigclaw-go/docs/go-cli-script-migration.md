@@ -44,7 +44,7 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 - HTTP polling against `/healthz`, `/tasks/:id`, and `/events`
 - Temporary `bigclawd` autostart state wiring for smoke and soak commands
 - Report serialization compatibility for JSON consumers that previously read the Python script output
-- Python shim forwarding for operators still calling the legacy script paths
+- Direct Go/native command usage in operator docs after removing the `run_task_smoke.py` and `shadow_compare.py` wrappers
 
 ## Compatibility Layer Plan
 
