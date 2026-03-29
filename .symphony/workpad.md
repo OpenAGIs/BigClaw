@@ -94,6 +94,14 @@
 - Kept for later lanes:
   - `tests/test_github_sync.py`
     - Reason: Go `githubsync` uses a different `Pushed` status semantic in clean fast-forward/default-head cases, so direct parity would require a wider behavior decision rather than a scoped migration.
+  - `tests/test_risk.py`
+    - Reason: the pure risk scorer contract is covered in `bigclaw-go/internal/risk/risk_test.go`, but the file also depends on Python scheduler execution records plus ledger trace/audit side effects that do not have a small Go-owned replacement surface.
+  - `tests/test_scheduler.py`
+    - Reason: Go scheduler coverage exists in `bigclaw-go/internal/scheduler/scheduler_test.go`, but the Python file asserts different medium names and budget degradation semantics than the Go executor contract.
+  - `tests/test_workflow.py`
+    - Reason: Go workflow packages cover acceptance, closeout, journal writing, and orchestration pieces, but the Python file still depends on the Python `WorkflowEngine` end-to-end ledger/report side effects rather than a narrow Go-owned API.
+  - `tests/test_validation_bundle_continuation_policy_gate.py`
+    - Reason: Go regression tests cover the checked-in continuation scorecard and policy-gate documents, but this Python file is still testing a checked-in Python script entrypoint under `bigclaw-go/scripts/e2e/`, so deleting it would widen scope into script migration rather than `tests/**` parity only.
   - Other remaining `tests/**` Python files
     - Reason: they still exercise Python-owned runtime, reporting, UI review, operations, or larger end-to-end surfaces outside this scoped batch.
 
