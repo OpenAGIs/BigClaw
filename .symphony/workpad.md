@@ -45,6 +45,7 @@
   - `repo_triage.py`
   - `roadmap.py`
   - `risk.py`
+  - `runtime.py`
   - `service.py`
   - `validation_policy.py`
   - `workspace_bootstrap_cli.py`
@@ -62,6 +63,7 @@
   - `repo_plane.py` now owns the repo commit, gateway, governance, link, registry, and triage surfaces.
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
   - `scheduler.py` now owns the risk scoring helpers.
+  - `scheduler.py` now owns the worker runtime helpers.
   - `workflow.py` now owns the workflow DSL helpers.
   - `workspace_bootstrap.py` now owns the git sync automation helpers.
   - `workspace_bootstrap.py` now owns the legacy shim helpers.
@@ -78,8 +80,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `25`
-  - Delta: `-24`
+  - After: `24`
+  - Delta: `-25`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -111,3 +113,5 @@
     - Result: `42 passed in 4.07s`
   - `PYTHONPATH=src python3 -m pytest tests/test_connectors.py tests/test_mapping.py tests/test_models.py`
     - Result: `7 passed in 0.08s`
+  - `PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_runtime_matrix.py tests/test_scheduler.py tests/test_workflow.py tests/test_observability.py`
+    - Result: `27 passed in 0.10s`

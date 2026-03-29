@@ -113,7 +113,21 @@ from .issue_archive import (
 )
 from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
-from .scheduler import ExecutionRecord, RiskFactor, RiskScore, RiskScorer, Scheduler, SchedulerDecision
+from .scheduler import (
+    ClawWorkerRuntime,
+    ExecutionRecord,
+    RiskFactor,
+    RiskScore,
+    RiskScorer,
+    SandboxProfile,
+    SandboxRouter,
+    Scheduler,
+    SchedulerDecision,
+    ToolCallResult,
+    ToolPolicy,
+    ToolRuntime,
+    WorkerExecutionResult,
+)
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -144,15 +158,6 @@ from .orchestration import (
     OrchestrationPolicyDecision,
     PremiumOrchestrationPolicy,
     render_orchestration_plan,
-)
-from .runtime import (
-    ClawWorkerRuntime,
-    SandboxProfile,
-    SandboxRouter,
-    ToolCallResult,
-    ToolPolicy,
-    ToolRuntime,
-    WorkerExecutionResult,
 )
 from .execution_contract import (
     AuditPolicy,
@@ -786,6 +791,7 @@ for _alias, _target in (
     ("repo_registry", "repo_plane"),
     ("repo_triage", "repo_plane"),
     ("risk", "scheduler"),
+    ("runtime", "scheduler"),
     ("service", "__main__"),
     ("validation_policy", "reports"),
     ("workspace_bootstrap_cli", "workspace_bootstrap"),
