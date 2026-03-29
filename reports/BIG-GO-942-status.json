@@ -12,6 +12,7 @@
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-942-validation.md",
+    "pr_draft": "reports/BIG-GO-942-pr.md",
     "closeout_index": "reports/BIG-GO-942-closeout.md",
     "workpad": ".symphony/workpad.md",
     "migration_note": "docs/go-cli-script-migration-plan.md"

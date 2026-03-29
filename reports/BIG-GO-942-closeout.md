@@ -34,6 +34,8 @@ Date: `2026-03-29`
 
 - Validation report:
   - `reports/BIG-GO-942-validation.md`
+- PR draft:
+  - `reports/BIG-GO-942-pr.md`
 - Machine-readable status:
   - `reports/BIG-GO-942-status.json`
 - Workpad:

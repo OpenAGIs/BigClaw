@@ -53,5 +53,6 @@
 
 ## Follow-up Artifacts
 - `reports/BIG-GO-942-validation.md`
+- `reports/BIG-GO-942-pr.md`
 - `reports/BIG-GO-942-closeout.md`
 - `reports/BIG-GO-942-status.json`
