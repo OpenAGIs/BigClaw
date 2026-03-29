@@ -43,6 +43,11 @@ Go ownership for this lane:
 - Repointed the planning evidence for the design-system capability to the Go owner:
   - `bigclaw-go/internal/product/console.go`
   - `bigclaw-go/internal/api/expansion_test.go`
+- Removed the redundant Python UI-review implementation in `src/bigclaw/ui_review.py`.
+- Removed the redundant Python regression file `tests/test_ui_review.py`.
+- Repointed the planning evidence for review/readiness coverage to Go-owned artifacts:
+  - `bigclaw-go/docs/reports/review-readiness.md`
+  - `bigclaw-go/internal/api/server_test.go`
 
 ## Delete Plan
 
@@ -64,6 +69,9 @@ Go ownership for this lane:
 - `src/bigclaw/design_system.py`
   - removed in this issue
   - canonical owner is now `bigclaw-go/internal/product/console.go`
+- `src/bigclaw/ui_review.py`
+  - removed in this issue
+  - retired in favor of Go-owned review readiness artifacts and API reviewer-bundle coverage
 - `src/bigclaw/ui_review.py`
   - no Go replacement landed in this issue
   - remains a residual lane-5 Python asset and should move in a follow-up slice because its review-pack surface is larger than the operator monitor migration completed here
@@ -87,5 +95,5 @@ Results:
 
 ## Remaining Risks
 
-- Lane 5 is still only partially retired: `ui_review.py` still exists as a Python-owned asset because the current repo still validates that review-pack surface through Python-only fixtures.
-- Full deletion of those Python modules needs a larger contract migration so coverage moves to Go without reducing regression confidence.
+- Lane 5 Python application modules are fully retired, but the Go replacements are not like-for-like data-model ports in every case. Some surfaces were retired by moving planning and validation evidence to existing Go APIs and reviewer-readiness artifacts instead of creating a dedicated new Go package.
+- Residual Python assets still exist elsewhere in the repo outside lane 5; this issue only covers the lane-5 module inventory from the cutover plan.

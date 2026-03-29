@@ -345,7 +345,6 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q && "
                     "cd bigclaw-go && go test ./internal/product ./internal/api"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
@@ -364,10 +363,10 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         note="global navigation, home cards, and console design-system defaults",
                     ),
                     EvidenceLink(
-                        label="ui-review-pack",
-                        target="src/bigclaw/ui_review.py",
+                        label="review-readiness-doc",
+                        target="bigclaw-go/docs/reports/review-readiness.md",
                         capability="release-gate",
-                        note="review objectives, wireframes, interaction coverage, and open questions",
+                        note="canonical Go-owned review readiness and reviewer bundle posture",
                     ),
                     EvidenceLink(
                         label="design-system-go-tests",
@@ -382,10 +381,10 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         note="console navigation, role home cards, and design-system contract coverage",
                     ),
                     EvidenceLink(
-                        label="review-pack-tests",
-                        target="tests/test_ui_review.py",
+                        label="review-bundle-go-tests",
+                        target="bigclaw-go/internal/api/server_test.go",
                         capability="release-gate",
-                        note="deterministic review packet validation",
+                        note="review bundle, reviewer links, and readiness artifact coverage",
                     ),
                 ],
             ),

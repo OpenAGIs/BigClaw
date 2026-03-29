@@ -457,10 +457,10 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
     assert {link.target for link in release_candidate.evidence_links} >= {
         "bigclaw-go/internal/product/console.go",
         "bigclaw-go/internal/product/console.go",
-        "src/bigclaw/ui_review.py",
+        "bigclaw-go/docs/reports/review-readiness.md",
         "bigclaw-go/internal/api/expansion_test.go",
         "bigclaw-go/internal/product/console_test.go",
-        "tests/test_ui_review.py",
+        "bigclaw-go/internal/api/server_test.go",
     }
 
 
