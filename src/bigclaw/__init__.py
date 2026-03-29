@@ -181,6 +181,8 @@ from .reports import (
     IssueClosureDecision,
     OrchestrationCanvas,
     OrchestrationPortfolio,
+    PilotImplementationResult,
+    PilotKPI,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
@@ -195,6 +197,8 @@ from .reports import (
     TriageInboxItem,
     TriageSimilarityEvidence,
     TriageSuggestion,
+    ValidationReportDecision,
+    REQUIRED_REPORT_ARTIFACTS,
     build_auto_triage_center,
     build_console_actions,
     build_billing_entitlements_page,
@@ -207,6 +211,7 @@ from .reports import (
     build_orchestration_portfolio_from_ledger,
     build_takeover_queue_from_ledger,
     evaluate_issue_closure,
+    enforce_validation_report_policy,
     render_auto_triage_center_report,
     render_console_actions,
     render_billing_entitlements_page,
@@ -222,6 +227,7 @@ from .reports import (
     render_report_studio_report,
     render_takeover_queue_report,
     render_pilot_portfolio_report,
+    render_pilot_implementation_report,
     render_pilot_scorecard,
     render_repo_sync_audit_report,
     render_task_run_detail_page,
@@ -232,6 +238,8 @@ from .reports import (
 )
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
 from .operations import (
+    BudgetDecision,
+    CostController,
     DashboardBuilder,
     DashboardBuilderAudit,
     DashboardLayout,
@@ -424,6 +432,8 @@ __all__ = [
     "missing_repo_audit_fields",
     "recommend_triage_action",
     "approval_evidence_packet",
+    "BudgetDecision",
+    "CostController",
     "CommandAction",
     "AuditRequirement",
     "ComponentLibrary",
@@ -561,6 +571,8 @@ __all__ = [
     "IssueClosureDecision",
     "OrchestrationCanvas",
     "OrchestrationPortfolio",
+    "PilotKPI",
+    "PilotImplementationResult",
     "PilotMetric",
     "PilotPortfolio",
     "PilotScorecard",
@@ -575,6 +587,8 @@ __all__ = [
     "TriageInboxItem",
     "TriageSimilarityEvidence",
     "TriageSuggestion",
+    "ValidationReportDecision",
+    "REQUIRED_REPORT_ARTIFACTS",
     "build_auto_triage_center",
     "build_console_actions",
     "build_billing_entitlements_page",
@@ -587,6 +601,7 @@ __all__ = [
     "build_orchestration_portfolio_from_ledger",
     "build_takeover_queue_from_ledger",
     "evaluate_issue_closure",
+    "enforce_validation_report_policy",
     "render_auto_triage_center_report",
     "render_console_actions",
     "render_billing_entitlements_page",
@@ -602,6 +617,7 @@ __all__ = [
     "render_report_studio_report",
     "render_takeover_queue_report",
     "render_pilot_portfolio_report",
+    "render_pilot_implementation_report",
     "render_pilot_scorecard",
     "render_repo_sync_audit_report",
     "render_task_run_detail_page",
@@ -736,9 +752,11 @@ def _alias_legacy_module(alias: str, target_name: str) -> None:
 
 
 for _alias, _target in (
+    ("cost_control", "operations"),
     ("deprecation", "legacy_shim"),
     ("mapping", "connectors"),
     ("parallel_refill", "queue"),
+    ("pilot", "reports"),
     ("roadmap", "planning"),
     ("repo_commits", "repo_plane"),
     ("repo_gateway", "repo_plane"),
@@ -746,6 +764,7 @@ for _alias, _target in (
     ("repo_links", "repo_plane"),
     ("repo_registry", "repo_plane"),
     ("repo_triage", "repo_plane"),
+    ("validation_policy", "reports"),
 ):
     _alias_legacy_module(_alias, _target)
 

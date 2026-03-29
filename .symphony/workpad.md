@@ -24,9 +24,12 @@
 ## Results
 
 - Directly handled deleted Python files in `src/bigclaw/`:
+- Directly handled deleted Python files in `src/bigclaw/`:
   - `deprecation.py`
   - `mapping.py`
   - `parallel_refill.py`
+  - `cost_control.py`
+  - `pilot.py`
   - `repo_commits.py`
   - `repo_gateway.py`
   - `repo_governance.py`
@@ -34,21 +37,24 @@
   - `repo_registry.py`
   - `repo_triage.py`
   - `roadmap.py`
+  - `validation_policy.py`
 - Replacement / consolidation targets:
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `connectors.py` now owns source-issue mapping helpers.
+  - `operations.py` now owns the budget control helpers.
   - `queue.py` now owns the parallel refill queue helpers.
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `repo_plane.py` now owns the repo commit, gateway, governance, link, registry, and triage surfaces.
+  - `reports.py` now owns the pilot implementation and validation report policy helpers.
   - `__init__.py` now registers compatibility aliases so `import bigclaw.<old_module>` still resolves.
 - Retained nearby Python files and reasons:
-  - `cost_control.py`: still a standalone budget policy surface; folding it would widen this issue into operations semantics.
-  - `pilot.py`: still a standalone report helper; folding it would add more coupling into the already large report surface.
-  - `validation_policy.py`: still a standalone closure-policy surface; folding it is mechanically easy but not required for this scoped batch.
+  - `execution_contract.py`: retained as the generic permission-contract host; repo policy compatibility now aliases into `repo_plane.py` without widening into broader contract semantics.
+  - `reports.py`: retained as the primary reporting host after absorbing pilot and validation helpers; further consolidation there would stop being low-risk.
+  - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `40`
-  - Delta: `-9`
+  - After: `37`
+  - Delta: `-12`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -64,3 +70,5 @@
       `bigclaw.repo_triage -> bigclaw.repo_plane`
   - `PYTHONPATH=src python3 -m pytest tests/test_mapping.py tests/test_connectors.py tests/test_queue.py tests/test_repo_gateway.py tests/test_repo_governance.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_repo_triage.py tests/test_planning.py`
     - Result: `30 passed in 0.12s`
+  - `PYTHONPATH=src python3 -m pytest tests/test_validation_policy.py tests/test_operations.py tests/test_reports.py`
+    - Result: `56 passed in 0.17s`
