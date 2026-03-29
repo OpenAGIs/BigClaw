@@ -2,7 +2,7 @@
 
 ## Completed Work
 
-This lane now includes a tenth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a small Go-native parity package.
+This lane now includes an eleventh-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a small Go-native parity package.
 
 Deleted in this wave:
 - `tests/test_connectors.py`
@@ -35,6 +35,7 @@ Deleted in this wave:
 - `tests/test_event_bus.py`
 - `tests/test_runtime_matrix.py`
 - `tests/test_execution_flow.py`
+- `tests/test_control_center.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -85,6 +86,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_event_bus.py`
 - `tests/test_runtime_matrix.py`
 - `tests/test_execution_flow.py`
+- `tests/test_control_center.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -102,7 +104,6 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 
 Remaining Python tests after this wave:
 - `tests/test_console_ia.py`
-- `tests/test_control_center.py`
 - `tests/test_design_system.py`
 - `tests/test_evaluation.py`
 - `tests/test_live_shadow_bundle.py`
@@ -229,6 +230,10 @@ This wave relies on the following Go-native coverage:
 - `bigclaw-go/internal/executionparity/executionparity_test.go`
   - `TestQueueToSchedulerExecutionRecordsFullChain`
   - `TestHighRiskExecutionRecordsPendingApproval`
+- `bigclaw-go/internal/controlcenterparity/controlcenterparity_test.go`
+  - `TestQueuePeekTasksReturnsPriorityOrder`
+  - `TestQueueControlCenterSummarizesQueueAndExecutionMedia`
+  - `TestQueueControlCenterRendersSharedViewEmptyState`
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -266,6 +271,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/runbus`
 - `cd bigclaw-go && go test ./internal/runtimeparity`
 - `cd bigclaw-go && go test ./internal/executionparity`
+- `cd bigclaw-go && go test ./internal/controlcenterparity`
 - `git status --short`
 
 ## Latest Validation Result
@@ -314,6 +320,8 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/runtimeparity	1.737s`
 - `cd bigclaw-go && go test ./internal/executionparity`
   - Result: `ok  	bigclaw-go/internal/executionparity	1.220s`
+- `cd bigclaw-go && go test ./internal/controlcenterparity`
+  - Result: `ok  	bigclaw-go/internal/controlcenterparity	1.462s`
 
 ## Residual Risks
 
@@ -325,8 +333,6 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 
 - `tests/test_console_ia.py`
   - Plan: migrate after the console IA/export surface is owned by a Go-native product/report contract.
-- `tests/test_control_center.py`
-  - Plan: migrate once the control-center payload contract is fully represented in `bigclaw-go/internal/api`.
 - `tests/test_design_system.py`
   - Plan: migrate only after a Go-owned static design-system contract exists.
 - `tests/test_evaluation.py`
