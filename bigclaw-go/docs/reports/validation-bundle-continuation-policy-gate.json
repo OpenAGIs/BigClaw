@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-03-22T00:56:46.489567Z",
+  "generated_at": "2026-03-29T10:20:44.57434Z",
   "ticket": "OPE-262",
   "title": "Validation workflow continuation gate",
   "status": "policy-go",
   "recommendation": "go",
   "evidence_inputs": {
-    "scorecard_path": "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
-    "generator_script": "scripts/e2e/validation_bundle_continuation_policy_gate.py"
+    "generator_script": "scripts/e2e/validation_bundle_continuation_policy_gate.go",
+    "scorecard_path": "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json"
   },
   "policy_inputs": {
-    "max_latest_age_hours": 72.0,
+    "max_latest_age_hours": 72,
     "min_recent_bundles": 2,
     "require_repeated_lane_coverage": true
   },
@@ -41,7 +41,7 @@
     {
       "name": "recent_bundle_count_meets_floor",
       "passed": true,
-      "detail": "recent_bundle_count=3 floor=2"
+      "detail": "recent_bundle_count=3.0 floor=2"
     },
     {
       "name": "latest_bundle_all_executor_tracks_succeeded",
@@ -56,7 +56,7 @@
     {
       "name": "shared_queue_companion_available",
       "passed": true,
-      "detail": "cross_node_completions=99"
+      "detail": "cross_node_completions=99.0"
     },
     {
       "name": "repeated_lane_coverage_meets_policy",
@@ -67,22 +67,18 @@
   "failing_checks": [],
   "reviewer_path": {
     "index_path": "docs/reports/live-validation-index.md",
-    "digest_path": "docs/reports/validation-bundle-continuation-digest.md",
-    "digest_issue": {
-      "id": "OPE-271",
-      "slug": "BIG-PAR-082"
-    }
+    "digest_path": "docs/reports/validation-bundle-continuation-digest.md"
   },
   "shared_queue_companion": {
     "available": true,
-    "report_path": "docs/reports/multi-node-shared-queue-report.json",
-    "summary_path": "docs/reports/shared-queue-companion-summary.json",
     "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json",
     "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
     "cross_node_completions": 99,
     "duplicate_completed_tasks": 0,
     "duplicate_started_tasks": 0,
-    "mode": "bundle-companion-summary"
+    "mode": "bundle-companion-summary",
+    "report_path": "docs/reports/multi-node-shared-queue-report.json",
+    "summary_path": "docs/reports/shared-queue-companion-summary.json"
   },
   "next_actions": [
     "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions"

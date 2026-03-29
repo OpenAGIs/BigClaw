@@ -31,6 +31,11 @@ class RunAllTest(unittest.TestCase):
         if executable:
             path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
+    def find_gate_path(self) -> Path:
+        matches = list(self.root.rglob('validation-bundle-continuation-policy-gate.json'))
+        self.assertTrue(matches, 'expected continuation gate artifact to be generated')
+        return matches[0]
+
     def install_stubs(self) -> None:
         self.write_file(
             'scripts/e2e/run_task_smoke.py',
@@ -79,9 +84,9 @@ class RunAllTest(unittest.TestCase):
             bundle_dir = root / args[args.index('--bundle-dir') + 1]
             bundle_dir.mkdir(parents=True, exist_ok=True)
             calls_path = root / 'calls.jsonl'
-            gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
+            gate_path = next(root.rglob('validation-bundle-continuation-policy-gate.json'), None)
             payload = {
-                'gate_exists': gate_path.exists(),
+                'gate_exists': gate_path is not None,
                 'run_broker': args[args.index('--run-broker') + 1],
                 'broker_backend': args[args.index('--broker-backend') + 1],
                 'broker_report_path': args[args.index('--broker-report-path') + 1],
@@ -108,20 +113,42 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
+            import (
+                "encoding/json"
+                "flag"
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                _ = flag.String("scorecard", "", "scorecard")
+                mode := flag.String("enforcement-mode", "", "mode")
+                output := flag.String("output", "", "output")
+                flag.Parse()
+                if err := os.MkdirAll(filepath.Dir(*output), 0o755); err != nil {
+                    panic(err)
+                }
+                body, err := json.Marshal(map[string]any{
+                    "status": "policy-go",
+                    "recommendation": "go",
+                    "enforcement": map[string]any{
+                        "mode": *mode,
+                        "outcome": "pass",
+                        "exit_code": 0,
+                    },
+                })
+                if err != nil {
+                    panic(err)
+                }
+                if err := os.WriteFile(*output, body, 0o644); err != nil {
+                    panic(err)
+                }
+            }
             """,
-            executable=True,
         )
 
     def test_run_all_rerenders_bundle_after_gate_refresh(self) -> None:
@@ -164,20 +191,36 @@ class RunAllTest(unittest.TestCase):
     def test_run_all_defaults_to_hold_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            import (
+                "encoding/json"
+                "flag"
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                _ = flag.String("scorecard", "", "scorecard")
+                mode := flag.String("enforcement-mode", "", "mode")
+                output := flag.String("output", "", "output")
+                flag.Parse()
+                if err := os.MkdirAll(filepath.Dir(*output), 0o755); err != nil {
+                    panic(err)
+                }
+                body, err := json.Marshal(map[string]any{
+                    "enforcement": map[string]any{"mode": *mode},
+                })
+                if err != nil {
+                    panic(err)
+                }
+                if err := os.WriteFile(*output, body, 0o644); err != nil {
+                    panic(err)
+                }
+            }
             """,
-            executable=True,
         )
 
         env = os.environ.copy()
@@ -200,29 +243,43 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
-                encoding='utf-8'
-            )
+            self.find_gate_path().read_text(encoding='utf-8')
         )
         self.assertEqual(gate['enforcement']['mode'], 'hold')
 
     def test_legacy_enforce_alias_still_maps_to_fail_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            import (
+                "encoding/json"
+                "flag"
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                _ = flag.String("scorecard", "", "scorecard")
+                mode := flag.String("enforcement-mode", "", "mode")
+                output := flag.String("output", "", "output")
+                flag.Parse()
+                if err := os.MkdirAll(filepath.Dir(*output), 0o755); err != nil {
+                    panic(err)
+                }
+                body, err := json.Marshal(map[string]any{
+                    "enforcement": map[string]any{"mode": *mode},
+                })
+                if err != nil {
+                    panic(err)
+                }
+                if err := os.WriteFile(*output, body, 0o644); err != nil {
+                    panic(err)
+                }
+            }
             """,
-            executable=True,
         )
 
         env = os.environ.copy()
@@ -246,9 +303,7 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
-                encoding='utf-8'
-            )
+            self.find_gate_path().read_text(encoding='utf-8')
         )
         self.assertEqual(gate['enforcement']['mode'], 'fail')
 

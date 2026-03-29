@@ -112,24 +112,30 @@ export_bundle() {
 }
 
 export_status=0
-if ! export_bundle; then
+if export_bundle; then
+  :
+else
   export_status=$?
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
   python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
-    --output "$CONTINUATION_SCORECARD_PATH"
+    --output "$ROOT/$CONTINUATION_SCORECARD_PATH"
 
   gate_status=0
-  if ! python3 "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.py" \
-    --scorecard "$CONTINUATION_SCORECARD_PATH" \
+  if go run "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.go" \
+    --scorecard "$ROOT/$CONTINUATION_SCORECARD_PATH" \
     --enforcement-mode "$CONTINUATION_GATE_MODE" \
-    --output "$CONTINUATION_POLICY_GATE_PATH"; then
+    --output "$ROOT/$CONTINUATION_POLICY_GATE_PATH"; then
+    :
+  else
     gate_status=$?
   fi
 
   rerender_status=0
-  if ! export_bundle; then
+  if export_bundle; then
+    :
+  else
     rerender_status=$?
   fi
   if [[ "$export_status" -eq 0 && "$rerender_status" -ne 0 ]]; then

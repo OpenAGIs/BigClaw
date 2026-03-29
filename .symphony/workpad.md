@@ -1,62 +1,72 @@
-# BIG-GO-975 Workpad
+# BIG-GO-979 Workpad
 
 ## Scope
 
-Targeted remaining Python test batch under `tests/` for this lane:
+Targeted first migration batch under `bigclaw-go/scripts/e2e/`:
 
-- `tests/test_connectors.py`
-- `tests/test_mapping.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 
-Existing Go-native replacement paths:
+Replacement paths for this batch:
 
-- `bigclaw-go/internal/intake/connector_test.go`
-- `bigclaw-go/internal/intake/mapping_test.go`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.go`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_internal_test.go`
 
-Current repository Python file count before this lane: `119`
-Current `tests/**` Python file count before this lane: `43`
+Current repository Python file count before this lane: `116`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this lane: `15`
 
 ## Plan
 
-1. Confirm the selected batch maps cleanly to existing Go-native intake coverage.
-2. Remove the redundant Python test files for connectors and mapping.
-3. Run the targeted Go intake tests that now serve as the replacement coverage.
-4. Record the exact file list, replacement paths, validation commands, and Python file-count impact.
-5. Commit and push the scoped lane changes.
+1. Port the continuation policy gate generator from Python to Go with matching CLI behavior and JSON output structure.
+2. Recreate the Python unit coverage as Go tests against the Go implementation.
+3. Remove the migrated Python script and Python test file.
+4. Run targeted Go tests and a targeted generator invocation to validate behavior.
+5. Record the exact batch file list, replacement paths, and Python file-count impact.
+6. Commit and push the scoped changes for `BIG-GO-979`.
 
 ## Acceptance
 
-- Produce the exact `BIG-GO-975` batch file list.
-- Reduce Python files in `tests/**` by removing the selected batch or clearly document the Go replacement path.
-- Keep changes scoped to the intake test migration batch only.
-- Report before/after repository-wide and `tests/**` Python file counts.
+- Produce the exact `BIG-GO-979` batch file list under `bigclaw-go/scripts/e2e/**`.
+- Reduce Python files in the targeted directory by removing the selected batch and replacing it with Go-native paths.
+- Keep changes scoped to the continuation policy gate migration batch only.
+- Report before/after repository-wide and `bigclaw-go/scripts/e2e/**` Python file counts.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/intake`
+- `cd bigclaw-go && go test ./scripts/e2e/validation_bundle_continuation_policy_gate.go ./scripts/e2e/validation_bundle_continuation_policy_gate_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_policy_gate.go --scorecard bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --output bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json`
+- `cd bigclaw-go && python3 scripts/e2e/run_all_test.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8FollowupDigestsStayAligned'`
 - `git status --short`
 
 ## Results
 
 ### File Disposition
 
-- `tests/test_connectors.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
   - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/connector_test.go`.
-- `tests/test_mapping.py`
+  - Replaced by `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.go`.
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
   - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/mapping_test.go`.
+  - Replaced by `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_internal_test.go`.
 
 ### Python File Count Impact
 
-- Repository Python files before: `119`
-- Repository Python files after: `117`
-- `tests/**` Python files before: `43`
-- `tests/**` Python files after: `41`
+- Repository Python files before: `116`
+- Repository Python files after: `114`
+- `bigclaw-go/scripts/e2e/**` Python files before: `15`
+- `bigclaw-go/scripts/e2e/**` Python files after: `13`
 - Net reduction: `2`
 
 ### Validation Record
 
-- `cd bigclaw-go && go test ./internal/intake`
-  - Result: `ok  	bigclaw-go/internal/intake	0.461s`
+- `cd bigclaw-go && go test ./scripts/e2e/validation_bundle_continuation_policy_gate.go ./scripts/e2e/validation_bundle_continuation_policy_gate_internal_test.go`
+  - Result: `ok  	command-line-arguments	1.416s`
+- `cd bigclaw-go && python3 scripts/e2e/run_all_test.py`
+  - Result: `Ran 3 tests in 7.094s` and `OK`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8FollowupDigestsStayAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	(cached)`
+- `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_policy_gate.go --scorecard bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --output bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json`
+  - Result: exit code `0`
 - `git status --short`
-  - Result: only `.symphony/workpad.md`, `tests/test_connectors.py`, and `tests/test_mapping.py` changed before commit.
+  - Result: only the scoped `BIG-GO-979` files above were modified before commit.

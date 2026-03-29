@@ -9,12 +9,12 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./scripts/e2e/validation_bundle_continuation_policy_gate.go ...` | migrated to Go-native generator |
 
 ## Remaining Python Script Backlog
 
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
