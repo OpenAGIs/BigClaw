@@ -33,6 +33,16 @@ Go ownership for this lane:
 - Repointed the planning evidence for the saved-views capability to the Go owner:
   - `bigclaw-go/internal/product/saved_views.go`
   - `bigclaw-go/internal/product/saved_views_test.go`
+- Removed the redundant Python console IA implementation in `src/bigclaw/console_ia.py`.
+- Removed the redundant Python regression file `tests/test_console_ia.py`.
+- Repointed the planning evidence for the console-shell capability to the Go owner:
+  - `bigclaw-go/internal/product/console.go`
+  - `bigclaw-go/internal/product/console_test.go`
+- Removed the redundant Python design-system implementation in `src/bigclaw/design_system.py`.
+- Removed the redundant Python regression file `tests/test_design_system.py`.
+- Repointed the planning evidence for the design-system capability to the Go owner:
+  - `bigclaw-go/internal/product/console.go`
+  - `bigclaw-go/internal/api/expansion_test.go`
 
 ## Delete Plan
 
@@ -48,6 +58,12 @@ Go ownership for this lane:
 - `src/bigclaw/saved_views.py`
   - removed in this issue
   - canonical owner is now `bigclaw-go/internal/product/saved_views.go`
+- `src/bigclaw/console_ia.py`
+  - removed in this issue
+  - canonical owner is now `bigclaw-go/internal/product/console.go`
+- `src/bigclaw/design_system.py`
+  - removed in this issue
+  - canonical owner is now `bigclaw-go/internal/product/console.go`
 - `src/bigclaw/ui_review.py`
   - no Go replacement landed in this issue
   - remains a residual lane-5 Python asset and should move in a follow-up slice because its review-pack surface is larger than the operator monitor migration completed here
@@ -71,5 +87,5 @@ Results:
 
 ## Remaining Risks
 
-- Lane 5 is still only partially retired: `console_ia.py`, `design_system.py`, and especially `ui_review.py` still exist as Python-owned assets because the current repo still validates them through Python test fixtures.
+- Lane 5 is still only partially retired: `ui_review.py` still exists as a Python-owned asset because the current repo still validates that review-pack surface through Python-only fixtures.
 - Full deletion of those Python modules needs a larger contract migration so coverage moves to Go without reducing regression confidence.

@@ -345,23 +345,23 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py "
-                    "tests/test_console_ia.py tests/test_ui_review.py -q"
+                    "PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q && "
+                    "cd bigclaw-go && go test ./internal/product ./internal/api"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
                 evidence_links=[
                     EvidenceLink(
-                        label="design-system-audit",
-                        target="src/bigclaw/design_system.py",
+                        label="design-system-go-src",
+                        target="bigclaw-go/internal/product/console.go",
                         capability="release-gate",
-                        note="component inventory, accessibility, and UI acceptance coverage",
+                        note="console design-system defaults, component inventory, and navigation defaults",
                     ),
                     EvidenceLink(
-                        label="console-ia-contract",
-                        target="src/bigclaw/console_ia.py",
+                        label="console-go-src",
+                        target="bigclaw-go/internal/product/console.go",
                         capability="release-gate",
-                        note="global navigation, top bar, filters, and state contracts",
+                        note="global navigation, home cards, and console design-system defaults",
                     ),
                     EvidenceLink(
                         label="ui-review-pack",
@@ -370,16 +370,16 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         note="review objectives, wireframes, interaction coverage, and open questions",
                     ),
                     EvidenceLink(
-                        label="ui-acceptance-tests",
-                        target="tests/test_design_system.py",
+                        label="design-system-go-tests",
+                        target="bigclaw-go/internal/api/expansion_test.go",
                         capability="release-gate",
-                        note="role-permission, data accuracy, and performance audits",
+                        note="design-system API and productization endpoint coverage",
                     ),
                     EvidenceLink(
-                        label="console-shell-tests",
-                        target="tests/test_console_ia.py",
+                        label="console-go-tests",
+                        target="bigclaw-go/internal/product/console_test.go",
                         capability="release-gate",
-                        note="console shell and interaction draft release readiness",
+                        note="console navigation, role home cards, and design-system contract coverage",
                     ),
                     EvidenceLink(
                         label="review-pack-tests",
