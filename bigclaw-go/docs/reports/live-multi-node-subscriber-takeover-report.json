@@ -15,7 +15,7 @@
       "docs/reports/multi-node-shared-queue-report.json"
     ]
   },
-  "generated_at": "2026-03-29T16:24:34Z",
+  "generated_at": "2026-03-29T16:28:06Z",
   "harness_mode": "live_multi_node_bigclawd_cluster",
   "implementation_path": [
     "run a real two-node bigclawd cluster against one shared SQLite queue",
@@ -106,11 +106,11 @@
             "audit_node": "node-a",
             "lease_epoch": 1,
             "renewal": false,
-            "runtime_event_id": "subscriber-subscriber-lease_acquired-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801469091094000",
+            "runtime_event_id": "subscriber-subscriber-lease_acquired-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801681538522000",
             "runtime_event_type": "subscriber.lease_acquired"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:29.091094Z"
+          "timestamp": "2026-03-29T16:28:01.538522Z"
         },
         {
           "action": "checkpoint_committed",
@@ -118,23 +118,23 @@
             "audit_node": "node-a",
             "event_id": "evt-80",
             "offset": 80,
-            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801469092357000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801681539729000",
             "runtime_event_type": "subscriber.checkpoint_committed"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:29.092357Z"
+          "timestamp": "2026-03-29T16:28:01.539729Z"
         },
         {
           "action": "lease_expired",
           "details": {
             "audit_node": "node-b",
             "last_offset": 80,
-            "runtime_event_id": "subscriber-subscriber-lease_expired-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801470395102000",
+            "runtime_event_id": "subscriber-subscriber-lease_expired-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801682842858000",
             "runtime_event_type": "subscriber.lease_expired",
             "takeover_consumer_id": "node-b"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:30.395102Z"
+          "timestamp": "2026-03-29T16:28:02.842858Z"
         },
         {
           "action": "takeover_succeeded",
@@ -142,11 +142,11 @@
             "audit_node": "node-b",
             "lease_epoch": 2,
             "previous_owner": "node-a",
-            "runtime_event_id": "subscriber-subscriber-takeover_succeeded-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801470395102000",
+            "runtime_event_id": "subscriber-subscriber-takeover_succeeded-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801682842858000",
             "runtime_event_type": "subscriber.takeover_succeeded"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:30.395102Z"
+          "timestamp": "2026-03-29T16:28:02.842858Z"
         },
         {
           "action": "lease_fenced",
@@ -156,11 +156,11 @@
             "attempted_offset": 81,
             "audit_node": "node-a",
             "reason": "subscriber checkpoint lease fenced",
-            "runtime_event_id": "subscriber-subscriber-checkpoint_rejected-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801470397050000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_rejected-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801682845757000",
             "runtime_event_type": "subscriber.checkpoint_rejected"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:30.39705Z"
+          "timestamp": "2026-03-29T16:28:02.845757Z"
         },
         {
           "action": "checkpoint_committed",
@@ -168,11 +168,11 @@
             "audit_node": "node-b",
             "event_id": "evt-81",
             "offset": 81,
-            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801470397875000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-lease-expiry-stale-writer-rejected-live-event-stream-1774801682846894000",
             "runtime_event_type": "subscriber.checkpoint_committed"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:30.397875Z"
+          "timestamp": "2026-03-29T16:28:02.846894Z"
         }
       ],
       "checkpoint_after": {
@@ -181,7 +181,7 @@
         "lease_token": "lease-2",
         "offset": 81,
         "owner": "node-b",
-        "updated_at": "2026-03-29T16:24:30.397875Z"
+        "updated_at": "2026-03-29T16:28:02.846894Z"
       },
       "checkpoint_assertions": [
         "Checkpoint after takeover is greater than or equal to the last durable checkpoint from the primary subscriber.",
@@ -194,7 +194,7 @@
         "lease_token": "lease-1",
         "offset": 80,
         "owner": "node-a",
-        "updated_at": "2026-03-29T16:24:29.092357Z"
+        "updated_at": "2026-03-29T16:28:01.539729Z"
       },
       "duplicate_delivery_count": 1,
       "duplicate_events": [
@@ -206,35 +206,35 @@
             "node-a"
           ],
           "delivery_kind": "task.queued",
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801468-queued"
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801681-queued"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "task.leased",
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801468-leased"
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801681-leased"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "scheduler.routed",
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801468-routed"
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801681-routed"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "task.started",
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801468-started"
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801681-started"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "task.completed",
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801468-completed"
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801681-completed"
         }
       ],
       "id": "lease-expiry-stale-writer-rejected-live",
@@ -245,7 +245,7 @@
           "event": "lease_acquired",
           "lease_epoch": 1,
           "owner": "node-a",
-          "timestamp": "2026-03-29T16:24:29Z"
+          "timestamp": "2026-03-29T16:28:01Z"
         },
         {
           "checkpoint_event_id": "evt-80",
@@ -253,7 +253,7 @@
           "event": "takeover_acquired",
           "lease_epoch": 2,
           "owner": "node-b",
-          "timestamp": "2026-03-29T16:24:30Z"
+          "timestamp": "2026-03-29T16:28:02Z"
         }
       ],
       "local_limitations": [
@@ -278,7 +278,7 @@
       "stale_write_rejections": 1,
       "subscriber_group": "live-lease-expiry-stale-writer-rejected-live",
       "takeover_subscriber": "node-b",
-      "task_or_trace_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801468",
+      "task_or_trace_id": "lease-expiry-stale-writer-rejected-live-task-1-1774801681",
       "title": "Lease expires on node-a and node-b takes ownership with stale-writer fencing"
     },
     {
@@ -347,11 +347,11 @@
             "audit_node": "node-b",
             "lease_epoch": 1,
             "renewal": false,
-            "runtime_event_id": "subscriber-subscriber-lease_acquired-live-contention-then-takeover-live-event-stream-1774801470959311000",
+            "runtime_event_id": "subscriber-subscriber-lease_acquired-live-contention-then-takeover-live-event-stream-1774801683406360000",
             "runtime_event_type": "subscriber.lease_acquired"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:30.959311Z"
+          "timestamp": "2026-03-29T16:28:03.40636Z"
         },
         {
           "action": "lease_rejected",
@@ -361,11 +361,11 @@
             "audit_node": "node-a",
             "lease_epoch": 1,
             "reason": "subscriber checkpoint lease held by another consumer",
-            "runtime_event_id": "subscriber-subscriber-lease_rejected-live-contention-then-takeover-live-event-stream-1774801470961091000",
+            "runtime_event_id": "subscriber-subscriber-lease_rejected-live-contention-then-takeover-live-event-stream-1774801683408005000",
             "runtime_event_type": "subscriber.lease_rejected"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:30.961091Z"
+          "timestamp": "2026-03-29T16:28:03.408005Z"
         },
         {
           "action": "checkpoint_committed",
@@ -373,23 +373,23 @@
             "audit_node": "node-b",
             "event_id": "evt-120",
             "offset": 120,
-            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-contention-then-takeover-live-event-stream-1774801470961965000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-contention-then-takeover-live-event-stream-1774801683408681000",
             "runtime_event_type": "subscriber.checkpoint_committed"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:30.961965Z"
+          "timestamp": "2026-03-29T16:28:03.408681Z"
         },
         {
           "action": "lease_expired",
           "details": {
             "audit_node": "node-a",
             "last_offset": 120,
-            "runtime_event_id": "subscriber-subscriber-lease_expired-live-contention-then-takeover-live-event-stream-1774801472264518000",
+            "runtime_event_id": "subscriber-subscriber-lease_expired-live-contention-then-takeover-live-event-stream-1774801684711638000",
             "runtime_event_type": "subscriber.lease_expired",
             "takeover_consumer_id": "node-a"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:32.264518Z"
+          "timestamp": "2026-03-29T16:28:04.711638Z"
         },
         {
           "action": "takeover_succeeded",
@@ -397,11 +397,11 @@
             "audit_node": "node-a",
             "lease_epoch": 2,
             "previous_owner": "node-b",
-            "runtime_event_id": "subscriber-subscriber-takeover_succeeded-live-contention-then-takeover-live-event-stream-1774801472264518000",
+            "runtime_event_id": "subscriber-subscriber-takeover_succeeded-live-contention-then-takeover-live-event-stream-1774801684711638000",
             "runtime_event_type": "subscriber.takeover_succeeded"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:32.264518Z"
+          "timestamp": "2026-03-29T16:28:04.711638Z"
         },
         {
           "action": "lease_fenced",
@@ -411,11 +411,11 @@
             "attempted_offset": 121,
             "audit_node": "node-b",
             "reason": "subscriber checkpoint lease fenced",
-            "runtime_event_id": "subscriber-subscriber-checkpoint_rejected-live-contention-then-takeover-live-event-stream-1774801472265662000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_rejected-live-contention-then-takeover-live-event-stream-1774801684714012000",
             "runtime_event_type": "subscriber.checkpoint_rejected"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:32.265662Z"
+          "timestamp": "2026-03-29T16:28:04.714012Z"
         },
         {
           "action": "checkpoint_committed",
@@ -423,11 +423,11 @@
             "audit_node": "node-a",
             "event_id": "evt-122",
             "offset": 122,
-            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-contention-then-takeover-live-event-stream-1774801472267132000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-contention-then-takeover-live-event-stream-1774801684715104000",
             "runtime_event_type": "subscriber.checkpoint_committed"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:32.267132Z"
+          "timestamp": "2026-03-29T16:28:04.715104Z"
         }
       ],
       "checkpoint_after": {
@@ -436,7 +436,7 @@
         "lease_token": "lease-4",
         "offset": 122,
         "owner": "node-a",
-        "updated_at": "2026-03-29T16:24:32.267132Z"
+        "updated_at": "2026-03-29T16:28:04.715104Z"
       },
       "checkpoint_assertions": [
         "Checkpoint after takeover is greater than or equal to the last durable checkpoint from the primary subscriber.",
@@ -449,7 +449,7 @@
         "lease_token": "lease-3",
         "offset": 120,
         "owner": "node-b",
-        "updated_at": "2026-03-29T16:24:30.961965Z"
+        "updated_at": "2026-03-29T16:28:03.408681Z"
       },
       "duplicate_delivery_count": 2,
       "duplicate_events": [
@@ -459,45 +459,38 @@
       "event_log_excerpt": [
         {
           "delivered_by": [
-            "node-a"
+            "node-b"
           ],
-          "delivery_kind": "task.leased",
-          "event_id": "contention-then-takeover-live-task-2-1774801470-leased"
-        },
-        {
-          "delivered_by": [
-            "node-a"
-          ],
-          "delivery_kind": "scheduler.routed",
-          "event_id": "contention-then-takeover-live-task-2-1774801470-routed"
-        },
-        {
-          "delivered_by": [
-            "node-a"
-          ],
-          "delivery_kind": "task.started",
-          "event_id": "contention-then-takeover-live-task-2-1774801470-started"
-        },
-        {
-          "delivered_by": [
-            "node-a"
-          ],
-          "delivery_kind": "task.completed",
-          "event_id": "contention-then-takeover-live-task-2-1774801470-completed"
+          "delivery_kind": "task.queued",
+          "event_id": "contention-then-takeover-live-task-2-1774801682-queued"
         },
         {
           "delivered_by": [
             "node-b"
           ],
-          "delivery_kind": "task.queued",
-          "event_id": "contention-then-takeover-live-task-2-1774801470-queued"
+          "delivery_kind": "task.leased",
+          "event_id": "contention-then-takeover-live-task-2-1774801682-leased"
         },
         {
           "delivered_by": [
-            "node-a"
+            "node-b"
           ],
-          "delivery_kind": "shared_queue_cross_node_completion",
-          "event_id": "contention-then-takeover-live-task-2-1774801470-cross-node"
+          "delivery_kind": "scheduler.routed",
+          "event_id": "contention-then-takeover-live-task-2-1774801682-routed"
+        },
+        {
+          "delivered_by": [
+            "node-b"
+          ],
+          "delivery_kind": "task.started",
+          "event_id": "contention-then-takeover-live-task-2-1774801682-started"
+        },
+        {
+          "delivered_by": [
+            "node-b"
+          ],
+          "delivery_kind": "task.completed",
+          "event_id": "contention-then-takeover-live-task-2-1774801682-completed"
         }
       ],
       "id": "contention-then-takeover-live",
@@ -508,7 +501,7 @@
           "event": "lease_acquired",
           "lease_epoch": 1,
           "owner": "node-b",
-          "timestamp": "2026-03-29T16:24:30Z"
+          "timestamp": "2026-03-29T16:28:03Z"
         },
         {
           "checkpoint_event_id": "evt-120",
@@ -516,7 +509,7 @@
           "event": "takeover_acquired",
           "lease_epoch": 2,
           "owner": "node-a",
-          "timestamp": "2026-03-29T16:24:32Z"
+          "timestamp": "2026-03-29T16:28:04Z"
         }
       ],
       "local_limitations": [
@@ -541,7 +534,7 @@
       "stale_write_rejections": 1,
       "subscriber_group": "live-contention-then-takeover-live",
       "takeover_subscriber": "node-a",
-      "task_or_trace_id": "contention-then-takeover-live-task-2-1774801470",
+      "task_or_trace_id": "contention-then-takeover-live-task-2-1774801682",
       "title": "Node-a is rejected during active ownership and takes over after node-b lease expiry"
     },
     {
@@ -610,11 +603,11 @@
             "audit_node": "node-b",
             "lease_epoch": 1,
             "renewal": false,
-            "runtime_event_id": "subscriber-subscriber-lease_acquired-live-idle-primary-takeover-live-event-stream-1774801472811091000",
+            "runtime_event_id": "subscriber-subscriber-lease_acquired-live-idle-primary-takeover-live-event-stream-1774801685271084000",
             "runtime_event_type": "subscriber.lease_acquired"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:32.811091Z"
+          "timestamp": "2026-03-29T16:28:05.271084Z"
         },
         {
           "action": "checkpoint_committed",
@@ -622,23 +615,23 @@
             "audit_node": "node-b",
             "event_id": "evt-40",
             "offset": 40,
-            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-idle-primary-takeover-live-event-stream-1774801472812949000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-idle-primary-takeover-live-event-stream-1774801685271709000",
             "runtime_event_type": "subscriber.checkpoint_committed"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:32.812949Z"
+          "timestamp": "2026-03-29T16:28:05.271709Z"
         },
         {
           "action": "lease_expired",
           "details": {
             "audit_node": "node-a",
             "last_offset": 40,
-            "runtime_event_id": "subscriber-subscriber-lease_expired-live-idle-primary-takeover-live-event-stream-1774801474170864000",
+            "runtime_event_id": "subscriber-subscriber-lease_expired-live-idle-primary-takeover-live-event-stream-1774801686626418000",
             "runtime_event_type": "subscriber.lease_expired",
             "takeover_consumer_id": "node-a"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:34.170864Z"
+          "timestamp": "2026-03-29T16:28:06.626418Z"
         },
         {
           "action": "takeover_succeeded",
@@ -646,11 +639,11 @@
             "audit_node": "node-a",
             "lease_epoch": 2,
             "previous_owner": "node-b",
-            "runtime_event_id": "subscriber-subscriber-takeover_succeeded-live-idle-primary-takeover-live-event-stream-1774801474170864000",
+            "runtime_event_id": "subscriber-subscriber-takeover_succeeded-live-idle-primary-takeover-live-event-stream-1774801686626418000",
             "runtime_event_type": "subscriber.takeover_succeeded"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:34.170864Z"
+          "timestamp": "2026-03-29T16:28:06.626418Z"
         },
         {
           "action": "lease_fenced",
@@ -660,11 +653,11 @@
             "attempted_offset": 41,
             "audit_node": "node-b",
             "reason": "subscriber checkpoint lease fenced",
-            "runtime_event_id": "subscriber-subscriber-checkpoint_rejected-live-idle-primary-takeover-live-event-stream-1774801474173023000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_rejected-live-idle-primary-takeover-live-event-stream-1774801686627340000",
             "runtime_event_type": "subscriber.checkpoint_rejected"
           },
           "subscriber": "node-b",
-          "timestamp": "2026-03-29T16:24:34.173023Z"
+          "timestamp": "2026-03-29T16:28:06.62734Z"
         },
         {
           "action": "checkpoint_committed",
@@ -672,11 +665,11 @@
             "audit_node": "node-a",
             "event_id": "evt-41",
             "offset": 41,
-            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-idle-primary-takeover-live-event-stream-1774801474174156000",
+            "runtime_event_id": "subscriber-subscriber-checkpoint_committed-live-idle-primary-takeover-live-event-stream-1774801686627714000",
             "runtime_event_type": "subscriber.checkpoint_committed"
           },
           "subscriber": "node-a",
-          "timestamp": "2026-03-29T16:24:34.174156Z"
+          "timestamp": "2026-03-29T16:28:06.627714Z"
         }
       ],
       "checkpoint_after": {
@@ -685,7 +678,7 @@
         "lease_token": "lease-6",
         "offset": 41,
         "owner": "node-a",
-        "updated_at": "2026-03-29T16:24:34.174156Z"
+        "updated_at": "2026-03-29T16:28:06.627714Z"
       },
       "checkpoint_assertions": [
         "Checkpoint after takeover is greater than or equal to the last durable checkpoint from the primary subscriber.",
@@ -698,7 +691,7 @@
         "lease_token": "lease-5",
         "offset": 40,
         "owner": "node-b",
-        "updated_at": "2026-03-29T16:24:32.812949Z"
+        "updated_at": "2026-03-29T16:28:05.271709Z"
       },
       "duplicate_delivery_count": 1,
       "duplicate_events": [
@@ -710,42 +703,42 @@
             "node-a"
           ],
           "delivery_kind": "task.leased",
-          "event_id": "idle-primary-takeover-live-task-3-1774801472-leased"
+          "event_id": "idle-primary-takeover-live-task-3-1774801684-leased"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "scheduler.routed",
-          "event_id": "idle-primary-takeover-live-task-3-1774801472-routed"
+          "event_id": "idle-primary-takeover-live-task-3-1774801684-routed"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "task.started",
-          "event_id": "idle-primary-takeover-live-task-3-1774801472-started"
+          "event_id": "idle-primary-takeover-live-task-3-1774801684-started"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "task.completed",
-          "event_id": "idle-primary-takeover-live-task-3-1774801472-completed"
+          "event_id": "idle-primary-takeover-live-task-3-1774801684-completed"
         },
         {
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.queued",
-          "event_id": "idle-primary-takeover-live-task-3-1774801472-queued"
+          "event_id": "idle-primary-takeover-live-task-3-1774801684-queued"
         },
         {
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "shared_queue_cross_node_completion",
-          "event_id": "idle-primary-takeover-live-task-3-1774801472-cross-node"
+          "event_id": "idle-primary-takeover-live-task-3-1774801684-cross-node"
         }
       ],
       "id": "idle-primary-takeover-live",
@@ -756,7 +749,7 @@
           "event": "lease_acquired",
           "lease_epoch": 1,
           "owner": "node-b",
-          "timestamp": "2026-03-29T16:24:32Z"
+          "timestamp": "2026-03-29T16:28:05Z"
         },
         {
           "checkpoint_event_id": "evt-40",
@@ -764,7 +757,7 @@
           "event": "takeover_acquired",
           "lease_epoch": 2,
           "owner": "node-a",
-          "timestamp": "2026-03-29T16:24:34Z"
+          "timestamp": "2026-03-29T16:28:06Z"
         }
       ],
       "local_limitations": [
@@ -789,7 +782,7 @@
       "stale_write_rejections": 1,
       "subscriber_group": "live-idle-primary-takeover-live",
       "takeover_subscriber": "node-a",
-      "task_or_trace_id": "idle-primary-takeover-live-task-3-1774801472",
+      "task_or_trace_id": "idle-primary-takeover-live-task-3-1774801684",
       "title": "Node-b stops checkpointing and node-a advances the durable cursor after expiry"
     }
   ],
