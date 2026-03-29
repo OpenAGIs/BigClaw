@@ -73,6 +73,8 @@
     - Reason: covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go` after adding Go parity for cache-root helpers, warm-cache reuse, workspace reuse, stale-seed recovery, and validation-report summary contracts.
   - `tests/test_validation_policy.py`
     - Reason: migrated to the Go-owned `bigclaw-go/internal/policy` package via a direct contract port of the validation report gate.
+  - `tests/test_repo_collaboration.py`
+    - Reason: migrated to a new Go-owned `bigclaw-go/internal/collaboration` package that covers the native/repo thread merge contract and repo-board comment projection usage.
 
 - Kept for later lanes:
   - `tests/test_repo_links.py`
@@ -109,10 +111,14 @@
     - Added Go-native validation report closeout policy contract.
   - `bigclaw-go/internal/policy/validation_report_test.go`
     - Added blocked/ready policy parity tests for required report artifacts.
+  - `bigclaw-go/internal/collaboration/collaboration.go`
+    - Added Go-native collaboration comment, decision note, thread, and merge contracts.
+  - `bigclaw-go/internal/collaboration/collaboration_test.go`
+    - Added native/repo collaboration thread merge parity coverage.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 29` (`-14`)
-  - Repository-wide Python files: `123 -> 109` (`-14`)
+  - `tests/**` Python files: `43 -> 28` (`-15`)
+  - Repository-wide Python files: `123 -> 108` (`-15`)
 
 ## Validation Results
 
@@ -182,3 +188,9 @@
   - `29`
 - `rg --files | rg '\.py$' | wc -l`
   - `109`
+- `cd bigclaw-go && go test ./internal/collaboration`
+  - `ok  	bigclaw-go/internal/collaboration	1.100s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `28`
+- `rg --files | rg '\.py$' | wc -l`
+  - `108`
