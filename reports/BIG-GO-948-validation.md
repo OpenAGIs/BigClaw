@@ -2,7 +2,7 @@
 
 ## Completed Work
 
-This lane now includes an eighth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a small Go-native parity package.
+This lane now includes a ninth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a small Go-native parity package.
 
 Deleted in this wave:
 - `tests/test_connectors.py`
@@ -33,6 +33,7 @@ Deleted in this wave:
 - `tests/test_memory.py`
 - `tests/test_models.py`
 - `tests/test_event_bus.py`
+- `tests/test_runtime_matrix.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -81,6 +82,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_memory.py`
 - `tests/test_models.py`
 - `tests/test_event_bus.py`
+- `tests/test_runtime_matrix.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -108,7 +110,6 @@ Remaining Python tests after this wave:
 - `tests/test_planning.py`
 - `tests/test_reports.py`
 - `tests/test_runtime.py`
-- `tests/test_runtime_matrix.py`
 - `tests/test_ui_review.py`
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 
@@ -220,6 +221,10 @@ This wave relies on the following Go-native coverage:
   - `TestEventBusPRCommentApprovesWaitingRunAndPersistsLedger`
   - `TestEventBusCICompletedMarksRunCompleted`
   - `TestEventBusTaskFailedMarksRunFailed`
+- `bigclaw-go/internal/runtimeparity/runtimeparity_test.go`
+  - `TestWorkerLifecycleIsStableWithMultipleTools`
+  - `TestRiskRoutesToExpectedSandboxMediums`
+  - `TestToolRuntimePolicyAndAuditChain`
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -255,6 +260,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/triage`
 - `cd bigclaw-go && go test ./internal/billing`
 - `cd bigclaw-go && go test ./internal/runbus`
+- `cd bigclaw-go && go test ./internal/runtimeparity`
 - `git status --short`
 
 ## Latest Validation Result
@@ -299,6 +305,8 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/billing	0.195s`
 - `cd bigclaw-go && go test ./internal/runbus`
   - Result: `ok  	bigclaw-go/internal/runbus	(cached)`
+- `cd bigclaw-go && go test ./internal/runtimeparity`
+  - Result: `ok  	bigclaw-go/internal/runtimeparity	1.737s`
 
 ## Residual Risks
 
@@ -330,8 +338,6 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Plan: requires staged migration because it still spans many Python-only report builders.
 - `tests/test_runtime.py`
   - Plan: migrate remaining worker/runtime report assertions after Python wrappers are retired.
-- `tests/test_runtime_matrix.py`
-  - Plan: migrate once the runtime matrix exporter is owned by a Go-native contract.
 - `tests/test_ui_review.py`
   - Plan: requires dedicated Go-native review/report surfaces rather than broad delete-by-analogy.
 - `tests/test_validation_bundle_continuation_policy_gate.py`
