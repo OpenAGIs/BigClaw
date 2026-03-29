@@ -2,32 +2,31 @@
 
 ## Plan
 
-1. Confirm the remaining Python test lane scope under `tests/` and map each file to existing Go-native coverage or a residual delete plan.
-2. Delete Python tests whose contract is already covered in `bigclaw-go`, keeping the change scoped to the lane.
-3. Split and then fully absorb `tests/test_reports.py` into a Go-native owner, then delete the Python file once the Go replacement is validated.
-4. Update planning/reporting references that still point at removed Python test files so checked-in traceability stays accurate.
-5. Refresh `reports/BIG-GO-948-validation.md` with the lane file list, replacement coverage, exact validation commands, results, and residual risks.
-6. Run targeted Go tests plus repository status verification, then commit and push the branch.
+1. Confirm the remaining Python test lane scope under `tests/` and map each file to a Go-native owner or deletion path.
+2. Delete the remaining Python tests under `tests/` once their contracts are covered by Go-owned validation.
+3. Update planning and traceability references so no active lane metadata points at removed Python suites.
+4. Refresh `reports/BIG-GO-948-validation.md` with the final lane file list, exact validation commands, results, and residual risks.
+5. Run targeted Go tests plus repository status verification, then commit and push the branch.
 
 ## Acceptance
 
 - Lane file list is explicit for the remaining Python tests.
 - `tests/test_operations.py` is removed only if Go-native replacements already cover its contract.
 - `tests/test_reports.py` is removed only if Go-native replacements already cover its contract.
-- `tests/test_ui_review.py` is either replaced or left with an explicit delete/migration plan and stated risk.
+- `tests/test_ui_review.py` is removed only if a Go-owned replacement covers its contract.
+- `tests/conftest.py` is removed once no Python tests under `tests/` require it.
 - Validation commands and exact results are recorded in `reports/BIG-GO-948-validation.md`.
 - Changes remain scoped to `BIG-GO-948`.
 - Branch is committed and pushed.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/reporting`
-- `cd bigclaw-go && go test ./internal/planningparity`
-- `cd bigclaw-go && go test ./internal/reportingparity`
+- `cd bigclaw-go && go test ./internal/reviewparity ./internal/planningparity ./internal/designsystemparity ./internal/consoleiaparity`
+- `cd bigclaw-go && go test ./internal/reporting ./internal/reportingparity`
+- `rg --files tests | sort`
 - `git status --short`
 
 ## Risks
 
-- `tests/test_ui_review.py` currently appears to have no Go-native owner in this branch; if that remains true, this issue can only leave a bounded delete plan rather than removing it outright.
-- Deleting Python tests requires updating checked-in planning metadata that still references pytest commands and file targets.
-- `tests/conftest.py` can only be removed after `tests/test_ui_review.py` is migrated or deleted.
+- `bigclaw-go/internal/reviewparity/reviewparity_test.go` is a Go-owned regression shell around the existing Python implementation in `src/bigclaw/ui_review.py`, so the test asset migrated to Go but the production Python module still remains.
+- Deleting Python tests requires checked-in planning metadata to stay aligned with the new Go ownership so future validation commands do not drift.
