@@ -2,34 +2,30 @@
 
 ## Scope
 
-Seventh-wave cleanup for the remaining Python model round-trip test using existing Go-native coverage.
+Eighth-wave cleanup for the remaining Python event bus test by adding a narrow Go-native parity package.
 
 Planned delete set for this continuation:
-- `tests/test_models.py`
+- `tests/test_event_bus.py`
 
 Go coverage used for replacement:
-- `bigclaw-go/internal/risk/assessment_test.go`
-- `bigclaw-go/internal/triage/record_test.go`
-- `bigclaw-go/internal/workflow/model_test.go`
-- `bigclaw-go/internal/billing/statement_test.go`
+- new `bigclaw-go/internal/runbus` package
+- new `bigclaw-go/internal/runbus/runbus_test.go`
 
 ## Acceptance
 
-- Remove `tests/test_models.py` only after confirming all asserted round-trip model contracts already exist in Go.
-- Keep changes scoped to the delete and lane documentation; no new runtime behavior unless a direct parity gap appears.
+- Replace the Python event bus test with Go-native parity coverage.
+- Keep the new package narrow: run registration/loading, event recording, status transitions, comment emission, subscribers, and ledger persistence only.
+- Delete `tests/test_event_bus.py` only after Go parity exists.
 - Update `reports/BIG-GO-948-validation.md` with the new completed file, replacement coverage, command, result, and remaining plan.
-- Run targeted Go validation for the existing replacement packages.
+- Run targeted Go validation for `bigclaw-go/internal/runbus`.
 - Commit and push the continuation changes.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/risk`
-- `cd bigclaw-go && go test ./internal/triage`
-- `cd bigclaw-go && go test ./internal/workflow`
-- `cd bigclaw-go && go test ./internal/billing`
+- `cd bigclaw-go && go test ./internal/runbus`
 - `git status --short`
 
 ## Risks
 
-- This slice depends on several existing Go packages rather than one replacement file, so the lane report needs to make the mapping explicit.
+- This slice adds another small Go package; it must stay scoped to the Python event bus contract instead of turning into a generic workflow system.
 - The larger remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.
