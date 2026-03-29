@@ -10,7 +10,7 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Deque, Dict, List
 
-from .deprecation import warn_legacy_runtime_surface
+from .legacy_shim import warn_legacy_runtime_surface
 
 
 GO_MAINLINE_REPLACEMENT = "bigclaw-go/cmd/bigclawd/main.go"

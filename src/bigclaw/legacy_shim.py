@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import subprocess
+import warnings
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
 LEGACY_PYTHON_WRAPPER_NOTICE = (
     "Legacy Python operator wrapper: use scripts/ops/bigclawctl for the Go mainline. "
     "This Python path remains only as a compatibility shim during migration."
+)
+LEGACY_RUNTIME_GUIDANCE = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "the legacy Python runtime surface remains migration-only."
 )
 
 
@@ -15,6 +20,16 @@ def append_missing_flag(args: Sequence[str], flag: str, value: str) -> List[str]
     if any(arg == flag or arg.startswith(flag_prefix) for arg in args):
         return list(args)
     return [*args, flag, value]
+
+
+def legacy_runtime_message(surface: str, replacement: str) -> str:
+    return f"{surface} is frozen for migration-only use. {LEGACY_RUNTIME_GUIDANCE} Use {replacement} instead."
+
+
+def warn_legacy_runtime_surface(surface: str, replacement: str) -> str:
+    message = legacy_runtime_message(surface, replacement)
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return message
 
 
 def build_bigclawctl_exec_args(repo_root: Path, command: Iterable[str], forwarded: Sequence[str]) -> List[str]:

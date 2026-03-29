@@ -1,3 +1,5 @@
+import sys
+
 from .models import (
     BillingInterval,
     BillingRate,
@@ -20,9 +22,9 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-from .queue import PersistentTaskQueue
+from .queue import ParallelIssueQueue, PersistentTaskQueue, issue_state_map
 from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+from .connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue, map_source_issue_to_task
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -102,10 +104,9 @@ from .issue_archive import (
     IssuePriorityArchivist,
     render_issue_priority_archive_report,
 )
+from .legacy_shim import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
-from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -287,16 +288,39 @@ from .planning import (
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
+    EpicMilestone,
     EvidenceLink,
+    ExecutionPackRoadmap,
     EntryGate,
     EntryGateDecision,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
+    build_execution_pack_roadmap,
     build_v3_candidate_backlog,
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+)
+from .repo_plane import (
+    CommitDiff,
+    CommitLineage,
+    LineageEvidence,
+    RepoCommit,
+    RepoGatewayError,
+    RepoPermissionContract,
+    RepoRegistry,
+    RunCommitBinding,
+    TriageRecommendation,
+    approval_evidence_packet,
+    bind_run_commits,
+    missing_repo_audit_fields,
+    normalize_commit,
+    normalize_diff,
+    normalize_gateway_error,
+    normalize_lineage,
+    recommend_triage_action,
+    repo_audit_payload,
 )
 from .ui_review import (
     InteractionFlow,
@@ -380,6 +404,26 @@ __all__ = [
     "GitHubConnector",
     "LinearConnector",
     "JiraConnector",
+    "ParallelIssueQueue",
+    "issue_state_map",
+    "RepoCommit",
+    "CommitLineage",
+    "CommitDiff",
+    "RepoGatewayError",
+    "RepoRegistry",
+    "RunCommitBinding",
+    "LineageEvidence",
+    "TriageRecommendation",
+    "normalize_commit",
+    "normalize_diff",
+    "normalize_gateway_error",
+    "normalize_lineage",
+    "repo_audit_payload",
+    "bind_run_commits",
+    "RepoPermissionContract",
+    "missing_repo_audit_fields",
+    "recommend_triage_action",
+    "approval_evidence_packet",
     "CommandAction",
     "AuditRequirement",
     "ComponentLibrary",
@@ -683,3 +727,27 @@ __all__ = [
     "render_ui_review_pack_report",
     "write_ui_review_pack_bundle",
 ]
+
+
+def _alias_legacy_module(alias: str, target_name: str) -> None:
+    module = sys.modules[f"{__name__}.{target_name}"]
+    sys.modules[f"{__name__}.{alias}"] = module
+    setattr(sys.modules[__name__], alias, module)
+
+
+for _alias, _target in (
+    ("deprecation", "legacy_shim"),
+    ("mapping", "connectors"),
+    ("parallel_refill", "queue"),
+    ("roadmap", "planning"),
+    ("repo_commits", "repo_plane"),
+    ("repo_gateway", "repo_plane"),
+    ("repo_governance", "repo_plane"),
+    ("repo_links", "repo_plane"),
+    ("repo_registry", "repo_plane"),
+    ("repo_triage", "repo_plane"),
+):
+    _alias_legacy_module(_alias, _target)
+
+del _alias
+del _target

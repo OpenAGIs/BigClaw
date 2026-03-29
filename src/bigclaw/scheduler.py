@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
+from .legacy_shim import LEGACY_RUNTIME_GUIDANCE
 from .audit_events import (
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
