@@ -26,8 +26,9 @@ Date: `2026-03-29`
 - 2026-03-29 public compare view is reachable for
   `main...symphony/BIG-GO-942` and shows only the first 5 commits in the issue history:
   `87fd42c`, `07f7901`, `6e5e47a`, `8505a05`, and `e901ae4`.
-- The latest pushed branch commits `de884b4` and `1fde531` are not yet reflected in that public
-  compare view, so the rendered web history is stale relative to the remote branch tip.
+- The later pushed branch commits `de884b4`, `1fde531`, `b3a5bf4`, and `e3936e3` are not yet
+  reflected in that public compare view, so the rendered web history is stale relative to the
+  remote branch tip.
 - GitHub still cannot fully render the diff body in-browser and reports
   `This comparison is taking too long to generate`, along with repeated `Uh oh!` load failures.
 - The PR seed URL still redirects to GitHub sign-in, so unauthenticated PR creation remains blocked.
