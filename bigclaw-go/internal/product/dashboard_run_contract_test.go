@@ -1,6 +1,7 @@
 package product
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -41,6 +42,36 @@ func TestRenderDashboardRunContractReport(t *testing.T) {
 		if !strings.Contains(report, want) {
 			t.Fatalf("expected %q in report, got %s", want, report)
 		}
+	}
+}
+
+func TestDashboardRunContractJSONRoundTripPreservesSamplesAndAudit(t *testing.T) {
+	contract := BuildDefaultDashboardRunContract()
+	audit := AuditDashboardRunContract(contract)
+
+	contractPayload, err := json.Marshal(contract)
+	if err != nil {
+		t.Fatalf("marshal contract: %v", err)
+	}
+	auditPayload, err := json.Marshal(audit)
+	if err != nil {
+		t.Fatalf("marshal audit: %v", err)
+	}
+
+	var restoredContract DashboardRunContract
+	if err := json.Unmarshal(contractPayload, &restoredContract); err != nil {
+		t.Fatalf("unmarshal contract: %v", err)
+	}
+	var restoredAudit DashboardRunContractAudit
+	if err := json.Unmarshal(auditPayload, &restoredAudit); err != nil {
+		t.Fatalf("unmarshal audit: %v", err)
+	}
+
+	if restoredContract.ContractID != contract.ContractID || restoredContract.DashboardSchema.Sample["dashboard_id"] != "engineering-dashboard-platform-alpha" {
+		t.Fatalf("unexpected contract round trip: %+v", restoredContract)
+	}
+	if !restoredAudit.ReleaseReady || restoredAudit.ContractID != contract.ContractID {
+		t.Fatalf("unexpected audit round trip: %+v", restoredAudit)
 	}
 }
 

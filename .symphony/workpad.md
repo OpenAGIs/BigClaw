@@ -42,6 +42,7 @@ Repository Python file count before this lane: `118`
 
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog'`
 - `cd bigclaw-go && go test ./internal/workflow -run 'TestDefinition|TestBuildCloseout'`
+- `cd bigclaw-go && go test ./internal/product -run 'TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip|TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestDashboardRunContractJSONRoundTripPreservesSamplesAndAudit'`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
 - `git status --short`
 
@@ -68,10 +69,13 @@ Repository Python file count before this lane: `118`
   - Reason: workflow-definition parsing/rendering and closeout approval/evidence path rendering now live in the Go-native workflow package.
 - `src/bigclaw/planning.py`
   - Updated.
-  - Reason: removed the deleted saved-views Python test from the candidate validation command and pointed the saved-views evidence link at the Go-native test file.
+  - Reason: replaced the deleted saved-views Python check in the candidate validation command with Go-native saved-view coverage and pointed the saved-views evidence link at the Go-native test file.
 - `tests/test_planning.py`
   - Updated.
-  - Reason: aligned the planning test expectations with the new saved-views Go-native replacement path.
+  - Reason: aligned the planning test expectations with the new mixed Go/Python validation command and saved-views Go-native replacement path.
+- `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+  - Updated.
+  - Reason: added a JSON round-trip assertion so the Go-native dashboard contract suite explicitly preserves the same sample-and-audit shape the deleted Python test covered.
 
 ### Python File Count Impact
 
@@ -86,6 +90,10 @@ Repository Python file count before this lane: `118`
 - `cd bigclaw-go && go test ./internal/workflow -run 'TestDefinition|TestBuildCloseout'`
   - Result: `ok  	bigclaw-go/internal/workflow	0.449s`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - Result: `14 passed in 0.16s`
+  - Result: `14 passed in 0.09s`
+- `cd bigclaw-go && go test ./internal/product -run 'TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip|TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestDashboardRunContractJSONRoundTripPreservesSamplesAndAudit'`
+  - Result: `ok  	bigclaw-go/internal/product	0.438s`
+- `cd bigclaw-go && go test ./internal/workflow -run 'TestDefinition|TestBuildCloseout'`
+  - Result: `ok  	bigclaw-go/internal/workflow	(cached)`
 - `git status --short`
-  - Result: scoped changes in `.symphony/workpad.md`, `src/bigclaw/planning.py`, `tests/test_planning.py`, and the three deleted Python test files.
+  - Result: scoped follow-up changes in `.symphony/workpad.md`, `bigclaw-go/internal/product/dashboard_run_contract_test.go`, `src/bigclaw/planning.py`, and `tests/test_planning.py`.
