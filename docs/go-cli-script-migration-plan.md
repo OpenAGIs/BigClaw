@@ -17,11 +17,11 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
-- `scripts/ops/bigclaw_github_sync.py` -> `bigclawctl github-sync`
-- `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
-- `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
+- removed `scripts/ops/bigclaw_github_sync.py` -> use `bigclawctl github-sync`
+- removed `scripts/ops/bigclaw_refill_queue.py` -> use `bigclawctl refill`
+- removed `scripts/ops/bigclaw_workspace_bootstrap.py` -> use `bigclawctl workspace bootstrap`
+- removed `scripts/ops/symphony_workspace_bootstrap.py` -> use `bigclawctl workspace bootstrap`
+- removed `scripts/ops/symphony_workspace_validate.py` -> use `bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
 
@@ -32,7 +32,6 @@ The implemented migration batches in this issue move these entrypoints behind th
 The compatibility layer is intentionally thin:
 
 - Python root shims only proxy into `scripts/ops/bigclawctl`.
-- Python `scripts/ops/*_*.py` shims only translate legacy flags/defaults before dispatching into `scripts/ops/bigclawctl`.
 - Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
 
@@ -59,17 +58,12 @@ The compatibility layer is intentionally thin:
 
 - `scripts/create_issues.py`
 - `scripts/dev_smoke.py`
-- `scripts/ops/bigclaw_github_sync.py`
-- `scripts/ops/bigclaw_refill_queue.py`
-- `scripts/ops/bigclaw_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_validate.py`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
-These shims should remain until operator docs and external automation references are updated to
-invoke `bash scripts/ops/bigclawctl ...` directly.
+The removed `scripts/ops/*.py` wrappers have now been retired. Operators and automation should
+invoke `bash scripts/ops/bigclawctl ...` directly for `github-sync`, `refill`, and `workspace`.
 
 ## Remaining Backlog
 
@@ -85,13 +79,12 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `python3 scripts/dev_smoke.py`
 - `python3 scripts/create_issues.py --help`
-- `python3 scripts/ops/bigclaw_github_sync.py status --json`
-- `python3 scripts/ops/bigclaw_refill_queue.py --help`
-- `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `bash scripts/ops/bigclawctl github-sync status --json`
+- `bash scripts/ops/bigclawctl refill --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
 - `bash scripts/ops/bigclawctl issue --help`
 - `bash scripts/ops/bigclawctl panel --help`
 - `bash scripts/ops/bigclawctl symphony --help`
@@ -107,12 +100,9 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
   `create-issues` must preserve title/body/label parity and skip already-created issues.
 - Local tracker shortcuts:
   `issue state/comment` positional shortcuts must still map onto the same local-issues behaviors.
-- Legacy workspace wrappers:
-  `--issues`, `--report-file`, and `--no-cleanup` still need to translate to the Go workspace
-  validation flags without changing existing automation call sites.
 - Direct shim execution:
-  Python compatibility entrypoints should stay runnable without requiring explicit `PYTHONPATH`
-  bootstrapping from operators or CI jobs.
+  Remaining Python compatibility entrypoints should stay runnable without requiring explicit
+  `PYTHONPATH` bootstrapping from operators or CI jobs.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
   for the migrated `bigclaw-go/scripts/*` automation callers.

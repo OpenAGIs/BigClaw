@@ -66,9 +66,11 @@ Notes:
   issue creation and state changes stay pinned to this repository's tracker file.
 - `python3 scripts/create_issues.py` and `python3 scripts/dev_smoke.py` are now
   compatibility shims that dispatch into `bigclawctl` Go subcommands.
-- `python3 scripts/ops/bigclaw_github_sync.py ...`,
-  `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
-  `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
+- The former `scripts/ops/*workspace*.py`, `scripts/ops/bigclaw_github_sync.py`, and
+  `scripts/ops/bigclaw_refill_queue.py` entrypoints have been removed; use
+  `bash scripts/ops/bigclawctl github-sync ...`,
+  `bash scripts/ops/bigclawctl refill ...`, and
+  `bash scripts/ops/bigclawctl workspace <bootstrap|validate|cleanup> ...` directly.
 - `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
@@ -153,7 +155,7 @@ Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-ma
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
-bootstrap wrappers remain only as compatibility shims during migration.
+repo-root wrappers remain only where still required during migration.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
