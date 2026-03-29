@@ -65,10 +65,14 @@
     - Reason: now covered by `bigclaw-go/internal/repo/repo_surfaces_test.go` after adding Go `RepoPost -> CollaborationComment` projection parity.
   - `tests/test_governance.py`
     - Reason: covered by `bigclaw-go/internal/governance/freeze_test.go`, which already carries board round-trip, audit, ready-state, and report rendering parity.
+  - `tests/test_queue.py`
+    - Reason: covered by `bigclaw-go/internal/queue/file_queue_test.go` and `bigclaw-go/internal/queue/memory_queue_test.go` after adding Go parity for rich task payload persistence and legacy list storage loading.
 
 - Kept for later lanes:
   - `tests/test_repo_links.py`
     - Reason: it still crosses into broader run closeout / observability payload round-trip behavior, beyond the minimal repo-surface scope handled here.
+  - `tests/test_github_sync.py`
+    - Reason: Go `githubsync` uses a different `Pushed` status semantic in clean fast-forward/default-head cases, so direct parity would require a wider behavior decision rather than a scoped migration.
   - Other remaining `tests/**` Python files
     - Reason: they still exercise Python-owned runtime, reporting, UI review, operations, or larger end-to-end surfaces outside this scoped batch.
 
@@ -81,10 +85,15 @@
   - `bigclaw-go/internal/product/dashboard_run_contract_test.go`
     - Added deterministic dashboard/run-detail sample-gap assertions.
     - Added `TestDashboardRunContractJSONRoundTrip`.
+  - `bigclaw-go/internal/queue/file_queue.go`
+    - Added compatibility loading for legacy list-backed queue storage.
+  - `bigclaw-go/internal/queue/file_queue_test.go`
+    - Added rich task payload persistence coverage across reload.
+    - Added legacy list storage reload coverage.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 33` (`-10`)
-  - Repository-wide Python files: `123 -> 113` (`-10`)
+  - `tests/**` Python files: `43 -> 32` (`-11`)
+  - Repository-wide Python files: `123 -> 112` (`-11`)
 
 ## Validation Results
 
@@ -118,3 +127,15 @@
   - `33`
 - `rg --files | rg '\.py$' | wc -l`
   - `113`
+- `cd bigclaw-go && go test ./internal/queue -run 'TestFileQueuePersistsAcrossReload|TestFileQueueCreatesParentDirectoryAndPreservesTaskPayload|TestFileQueueDeadLetterReplayPersistsAcrossReload|TestFileQueueLoadsLegacyListStorage'`
+  - `ok  	bigclaw-go/internal/queue	1.195s`
+- `cd bigclaw-go && go test ./internal/queue -run 'TestMemoryQueueLeasesByPriority|TestMemoryQueueDeadLetterAndReplay'`
+  - `ok  	bigclaw-go/internal/queue	0.992s`
+- `cd bigclaw-go && go test ./internal/queue`
+  - `ok  	bigclaw-go/internal/queue	24.999s`
+- `cd bigclaw-go && go test ./internal/queue -run 'TestFileQueuePersistsAcrossReload|TestFileQueueCreatesParentDirectoryAndPreservesTaskPayload|TestFileQueueDeadLetterReplayPersistsAcrossReload|TestFileQueueLoadsLegacyListStorage|TestMemoryQueueLeasesByPriority|TestMemoryQueueDeadLetterAndReplay'`
+  - `ok  	bigclaw-go/internal/queue	1.223s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `32`
+- `rg --files | rg '\.py$' | wc -l`
+  - `112`
