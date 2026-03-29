@@ -67,6 +67,23 @@ _install_legacy_surface_module(
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
 )
+_install_legacy_surface_module(
+    "service",
+    [
+        "RepoGovernanceEnforcer",
+        "RepoGovernancePolicy",
+        "RepoGovernanceResult",
+        "ServerMonitoring",
+        "create_server",
+        "run_server",
+        "warn_legacy_service_surface",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "service.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -82,10 +99,14 @@ from .runtime import (
     OrchestrationPolicyDecision,
     PersistentTaskQueue,
     PremiumOrchestrationPolicy,
+    RepoGovernanceEnforcer,
+    RepoGovernancePolicy,
+    RepoGovernanceResult,
     SandboxProfile,
     SandboxRouter,
     Scheduler,
     SchedulerDecision,
+    ServerMonitoring,
     ToolCallResult,
     ToolPolicy,
     ToolRuntime,
@@ -93,7 +114,10 @@ from .runtime import (
     WorkflowEngine,
     WorkflowRunResult,
     WorkpadJournal,
+    create_server,
     render_orchestration_plan,
+    run_server,
+    warn_legacy_service_surface,
 )
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (

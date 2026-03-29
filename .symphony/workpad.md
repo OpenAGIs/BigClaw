@@ -47,10 +47,10 @@ Current repository Python file count before this lane: `50`
 
 - `src/bigclaw/runtime.py`
   - Retained and expanded.
-  - Reason: became the single implementation home for runtime, queue, orchestration, scheduler, and workflow compatibility surfaces.
+  - Reason: became the single implementation home for runtime, service, queue, orchestration, scheduler, and workflow compatibility surfaces.
 - `src/bigclaw/service.py`
-  - Retained unchanged.
-  - Reason: service-specific HTTP scaffolding is independent from the consolidated runtime stack and keeping it separate avoids widening the change.
+  - Deleted.
+  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.service` import compatibility is now provided from `src/bigclaw/__init__.py`, including the `python -m bigclaw serve` CLI path.
 - `src/bigclaw/queue.py`
   - Deleted.
   - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.queue` import compatibility is now provided from `src/bigclaw/__init__.py`.
@@ -67,14 +67,16 @@ Current repository Python file count before this lane: `50`
 ### Python File Count Impact
 
 - Repository `src/bigclaw` Python files before: `50`
-- Repository `src/bigclaw` Python files after: `46`
-- Net reduction: `4`
+- Repository `src/bigclaw` Python files after: `45`
+- Net reduction: `5`
 
 ### Validation Record
 
 - `python3 -m compileall src/bigclaw`
   - Result: success
 - `PYTHONPATH=src python3 - <<'PY' ...`
-  - Result: success; verified `bigclaw.runtime`, `bigclaw.queue`, `bigclaw.orchestration`, `bigclaw.scheduler`, and `bigclaw.workflow` all import cleanly.
+  - Result: success; verified `bigclaw.runtime`, `bigclaw.service`, `bigclaw.queue`, `bigclaw.orchestration`, `bigclaw.scheduler`, and `bigclaw.workflow` all import cleanly.
+- `PYTHONPATH=src python3 -m bigclaw --help`
+  - Result: success; verified the CLI still resolves `from .service import run_server` through the compatibility shim.
 - `PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_runtime_matrix.py tests/test_scheduler.py tests/test_orchestration.py tests/test_queue.py tests/test_workflow.py tests/test_control_center.py tests/test_execution_flow.py tests/test_dsl.py tests/test_evaluation.py tests/test_risk.py tests/test_audit_events.py tests/test_operations.py tests/test_reports.py`
-  - Result: `107 passed in 0.29s`
+  - Result: `107 passed in 0.18s`
