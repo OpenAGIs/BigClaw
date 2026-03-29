@@ -23,21 +23,81 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-from . import runtime as _legacy_runtime_surface
+from . import repo_plane as _legacy_repo_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_legacy_surface_module(
+    name: str,
+    export_names: list[str],
+    *,
+    source_module: object,
+    **extra_attrs: object,
+) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
 
 
 _install_legacy_surface_module(
+    "repo_board",
+    ["RepoDiscussionBoard", "RepoPost"],
+    source_module=_legacy_repo_surface,
+)
+_install_legacy_surface_module(
+    "repo_commits",
+    ["CommitDiff", "CommitLineage", "RepoCommit"],
+    source_module=_legacy_repo_surface,
+)
+_install_legacy_surface_module(
+    "repo_gateway",
+    [
+        "RepoGatewayClient",
+        "RepoGatewayError",
+        "normalize_commit",
+        "normalize_diff",
+        "normalize_gateway_error",
+        "normalize_lineage",
+        "repo_audit_payload",
+    ],
+    source_module=_legacy_repo_surface,
+)
+_install_legacy_surface_module(
+    "repo_governance",
+    [
+        "REPO_ACTION_PERMISSIONS",
+        "REPO_ROLE_POLICIES",
+        "RepoPermissionContract",
+        "missing_repo_audit_fields",
+        "repo_required_audit_fields",
+    ],
+    source_module=_legacy_repo_surface,
+)
+_install_legacy_surface_module(
+    "repo_links",
+    ["RunCommitBinding", "VALID_ROLES", "bind_run_commits", "validate_roles"],
+    source_module=_legacy_repo_surface,
+)
+_install_legacy_surface_module(
+    "repo_registry",
+    ["RepoRegistry"],
+    source_module=_legacy_repo_surface,
+)
+_install_legacy_surface_module(
+    "repo_triage",
+    ["LineageEvidence", "TriageRecommendation", "approval_evidence_packet", "recommend_triage_action"],
+    source_module=_legacy_repo_surface,
+)
+
+from . import runtime as _legacy_runtime_surface
+
+
+_install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
+    source_module=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/queue/queue.go",
 )
@@ -52,18 +112,21 @@ _install_legacy_surface_module(
         "PremiumOrchestrationPolicy",
         "render_orchestration_plan",
     ],
+    source_module=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
 )
 _install_legacy_surface_module(
     "scheduler",
     ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
+    source_module=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/scheduler/scheduler.go",
 )
 _install_legacy_surface_module(
     "workflow",
     ["AcceptanceDecision", "AcceptanceGate", "JournalEntry", "WorkflowEngine", "WorkflowRunResult", "WorkpadJournal"],
+    source_module=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
 )
@@ -78,6 +141,7 @@ _install_legacy_surface_module(
         "run_server",
         "warn_legacy_service_surface",
     ],
+    source_module=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
         "service.py remains migration-only compatibility scaffolding."
