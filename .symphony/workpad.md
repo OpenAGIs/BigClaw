@@ -2,30 +2,34 @@
 
 ## Scope
 
-Sixth-wave cleanup for the remaining Python memory store test by adding a narrow Go-native parity package.
+Seventh-wave cleanup for the remaining Python model round-trip test using existing Go-native coverage.
 
 Planned delete set for this continuation:
-- `tests/test_memory.py`
+- `tests/test_models.py`
 
 Go coverage used for replacement:
-- new `bigclaw-go/internal/memory` package
-- new `bigclaw-go/internal/memory/store_test.go`
+- `bigclaw-go/internal/risk/assessment_test.go`
+- `bigclaw-go/internal/triage/record_test.go`
+- `bigclaw-go/internal/workflow/model_test.go`
+- `bigclaw-go/internal/billing/statement_test.go`
 
 ## Acceptance
 
-- Replace the Python memory store test with Go-native coverage.
-- Keep the new package narrow: persisted patterns, success recording, overlap scoring, and merged suggestions only.
-- Delete `tests/test_memory.py` only after Go parity exists.
-- Update `reports/BIG-GO-948-validation.md` with the new completed file, replacements, command, result, and remaining plan.
-- Run targeted Go validation for `bigclaw-go/internal/memory`.
+- Remove `tests/test_models.py` only after confirming all asserted round-trip model contracts already exist in Go.
+- Keep changes scoped to the delete and lane documentation; no new runtime behavior unless a direct parity gap appears.
+- Update `reports/BIG-GO-948-validation.md` with the new completed file, replacement coverage, command, result, and remaining plan.
+- Run targeted Go validation for the existing replacement packages.
 - Commit and push the continuation changes.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/memory`
+- `cd bigclaw-go && go test ./internal/risk`
+- `cd bigclaw-go && go test ./internal/triage`
+- `cd bigclaw-go && go test ./internal/workflow`
+- `cd bigclaw-go && go test ./internal/billing`
 - `git status --short`
 
 ## Risks
 
-- This slice adds another small Go package, so it needs to stay minimal and avoid turning into a broader recommendation engine.
+- This slice depends on several existing Go packages rather than one replacement file, so the lane report needs to make the mapping explicit.
 - The larger remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.
