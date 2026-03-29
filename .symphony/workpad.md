@@ -92,8 +92,12 @@
     - Reason: already covered by existing Go-native round-trip/default-contract tests in `bigclaw-go/internal/risk/assessment_test.go`, `bigclaw-go/internal/triage/record_test.go`, `bigclaw-go/internal/workflow/model_test.go`, and `bigclaw-go/internal/billing/statement_test.go`.
 
 - Kept for later lanes:
+  - `tests/conftest.py`
+    - Reason: still required as path bootstrapping for the remaining Python-owned tests that import `src/bigclaw`; deleting it would only break the residual suite.
   - `tests/test_audit_events.py`
     - Reason: Go covers audit specs and required-field validation, but this file still depends on Python scheduler/workflow execution plus reporting queue/canvas projections without a small Go-owned end-to-end replacement.
+  - `tests/test_control_center.py`
+    - Reason: Go covers queue-control-center summaries and rendering, but this file still depends on Python `OperationsAnalytics` run-input shape and shared-view empty-state rendering without a narrow Go-owned parity surface.
   - `tests/test_event_bus.py`
     - Reason: Go `events` covers publish/subscribe transport and replay, but this file still asserts Python event-bus mutation of run status and ledger audit side effects.
   - `tests/test_github_sync.py`
