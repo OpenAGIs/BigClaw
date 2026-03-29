@@ -1,3 +1,4 @@
+import importlib
 import sys
 
 from .models import (
@@ -77,6 +78,8 @@ from .collaboration import (
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
+    RepoDiscussionBoard,
+    RepoPost,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
@@ -497,6 +500,8 @@ __all__ = [
     "CollaborationComment",
     "CollaborationThread",
     "DecisionNote",
+    "RepoPost",
+    "RepoDiscussionBoard",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
     "WorkflowDefinition",
@@ -746,7 +751,9 @@ __all__ = [
 
 
 def _alias_legacy_module(alias: str, target_name: str) -> None:
-    module = sys.modules[f"{__name__}.{target_name}"]
+    module = sys.modules.get(f"{__name__}.{target_name}")
+    if module is None:
+        module = importlib.import_module(f".{target_name}", __name__)
     sys.modules[f"{__name__}.{alias}"] = module
     setattr(sys.modules[__name__], alias, module)
 
@@ -757,6 +764,7 @@ for _alias, _target in (
     ("mapping", "connectors"),
     ("parallel_refill", "queue"),
     ("pilot", "reports"),
+    ("repo_board", "collaboration"),
     ("roadmap", "planning"),
     ("repo_commits", "repo_plane"),
     ("repo_gateway", "repo_plane"),
@@ -765,6 +773,7 @@ for _alias, _target in (
     ("repo_registry", "repo_plane"),
     ("repo_triage", "repo_plane"),
     ("validation_policy", "reports"),
+    ("workspace_bootstrap_validation", "workspace_bootstrap"),
 ):
     _alias_legacy_module(_alias, _target)
 

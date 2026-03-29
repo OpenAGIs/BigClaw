@@ -30,6 +30,7 @@
   - `parallel_refill.py`
   - `cost_control.py`
   - `pilot.py`
+  - `repo_board.py`
   - `repo_commits.py`
   - `repo_gateway.py`
   - `repo_governance.py`
@@ -38,23 +39,27 @@
   - `repo_triage.py`
   - `roadmap.py`
   - `validation_policy.py`
+  - `workspace_bootstrap_validation.py`
 - Replacement / consolidation targets:
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `connectors.py` now owns source-issue mapping helpers.
+  - `collaboration.py` now owns the repo discussion board helpers.
   - `operations.py` now owns the budget control helpers.
   - `queue.py` now owns the parallel refill queue helpers.
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `repo_plane.py` now owns the repo commit, gateway, governance, link, registry, and triage surfaces.
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
+  - `workspace_bootstrap.py` now owns the bootstrap validation helpers.
   - `__init__.py` now registers compatibility aliases so `import bigclaw.<old_module>` still resolves.
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host; repo policy compatibility now aliases into `repo_plane.py` without widening into broader contract semantics.
   - `reports.py`: retained as the primary reporting host after absorbing pilot and validation helpers; further consolidation there would stop being low-risk.
   - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
+  - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `37`
-  - Delta: `-12`
+  - After: `35`
+  - Delta: `-14`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -72,3 +77,5 @@
     - Result: `30 passed in 0.12s`
   - `PYTHONPATH=src python3 -m pytest tests/test_validation_policy.py tests/test_operations.py tests/test_reports.py`
     - Result: `56 passed in 0.17s`
+  - `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_workspace_bootstrap.py`
+    - Result: `11 passed in 3.07s`
