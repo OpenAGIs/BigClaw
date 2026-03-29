@@ -51,6 +51,8 @@
   - `bigclaw-go/internal/service/server_test.go`
   - `bigclaw-go/internal/pilot/report.go`
   - `bigclaw-go/internal/pilot/report_test.go`
+  - `bigclaw-go/internal/issuearchive/archive.go`
+  - `bigclaw-go/internal/issuearchive/archive_test.go`
 - Pushed commits:
   - `b59e941` `test: migrate lane8 remaining python report tests`
   - `cfcd50e` `test: migrate parallel refill queue fixture to go`
@@ -64,3 +66,7 @@
 - Migrated `tests/test_pilot.py` to `bigclaw-go/internal/pilot/report.go` and `bigclaw-go/internal/pilot/report_test.go`; deleted the Python test after landing equivalent Go coverage for KPI readiness and report rendering.
 - Validation result:
   - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'` -> `ok  	bigclaw-go/internal/pilot	0.789s`
+- Next scoped slice: migrate `tests/test_issue_archive.py` into a Go-native archive package covering archive round-trip, audit rollups, and markdown report rendering.
+- Migrated `tests/test_issue_archive.py` to `bigclaw-go/internal/issuearchive/archive.go` and `bigclaw-go/internal/issuearchive/archive_test.go`; deleted the Python test after landing equivalent Go coverage for archive round-trip, audit rollups, and report rendering.
+- Validation result:
+  - `cd bigclaw-go && go test ./internal/issuearchive -run 'TestIssuePriorityArchiveRoundTripPreservesManifestShape|TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps|TestIssuePriorityArchiveAuditRoundTripAndReadyState|TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups'` -> `ok  	bigclaw-go/internal/issuearchive	0.445s`

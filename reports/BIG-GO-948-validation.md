@@ -15,6 +15,7 @@
 - `tests/test_legacy_shim.py`
 - `tests/test_service.py`
 - `tests/test_pilot.py`
+- `tests/test_issue_archive.py`
 
 ## Go Replacements
 
@@ -59,6 +60,12 @@
 - `bigclaw-go/internal/pilot/report_test.go`
   - `TestImplementationResultReadyWhenKPIsPassAndNoIncidents`
   - `TestRenderPilotImplementationReportContainsReadinessFields`
+- `bigclaw-go/internal/issuearchive/archive.go`
+- `bigclaw-go/internal/issuearchive/archive_test.go`
+  - `TestIssuePriorityArchiveRoundTripPreservesManifestShape`
+  - `TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps`
+  - `TestIssuePriorityArchiveAuditRoundTripAndReadyState`
+  - `TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups`
 
 The deleted Python tests were either:
 - report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts, now covered in Go under `bigclaw-go/internal/regression`
@@ -77,12 +84,15 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 - `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunGitHubSyncHelpPrintsUsageAndExitsZero|TestRunWorkspaceHelpPrintsUsageAndExitsZero|TestRunCreateIssuesHelpPrintsUsageAndExitsZero|TestRunDevSmokeHelpPrintsUsageAndExitsZero'`
 - `cd bigclaw-go && go test ./internal/service -run 'TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures|TestServerEntryHealthMetrics'`
 - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
+- `cd bigclaw-go && go test ./internal/issuearchive -run 'TestIssuePriorityArchiveRoundTripPreservesManifestShape|TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps|TestIssuePriorityArchiveAuditRoundTripAndReadyState|TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups'`
 - `git status --short`
 
 ## Latest Validation Result
 
 - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
   - Result: `ok  	bigclaw-go/internal/pilot	0.789s`
+- `cd bigclaw-go && go test ./internal/issuearchive -run 'TestIssuePriorityArchiveRoundTripPreservesManifestShape|TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps|TestIssuePriorityArchiveAuditRoundTripAndReadyState|TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups'`
+  - Result: `ok  	bigclaw-go/internal/issuearchive	0.445s`
 
 ## Residual Risks
 
@@ -107,7 +117,7 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 - `tests/test_evaluation.py`
   - Plan: requires a Go-native evaluation/report builder or a narrow checked-in report contract that can be asserted in Go.
 - `tests/test_issue_archive.py`
-  - Plan: requires a Go archive/report surface or a deliberate delete of the Python archive path.
+  - Completed: replaced by `bigclaw-go/internal/issuearchive/archive.go` and `bigclaw-go/internal/issuearchive/archive_test.go`; Python test deleted.
 - `tests/test_pilot.py`
   - Completed: replaced by `bigclaw-go/internal/pilot/report.go` and `bigclaw-go/internal/pilot/report_test.go`; Python test deleted.
 
