@@ -3,7 +3,7 @@
 ## Scope
 
 - Run date: 2026-03-13
-- Command: `python3 scripts/e2e/mixed_workload_matrix.py --report-path docs/reports/mixed-workload-matrix-report.json`
+- Command: `go run ./scripts/e2e/mixed_workload_matrix.go --report-path docs/reports/mixed-workload-matrix-report.json`
 - Goal: validate more production-like routing and executor behavior inside one BigClaw Go control-plane instance.
 
 ## Matrix

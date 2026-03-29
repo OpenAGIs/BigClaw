@@ -338,6 +338,77 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `3`
 - `cd bigclaw-go && find . -name '*.py' | wc -l`
 - `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
 
+## Continuation Slice: external_store_validation
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/external_store_validation.py`
+
+Replacement path for this slice:
+
+- `bigclaw-go/scripts/e2e/external_store_validation.go`
+
+Current repository Python file count before this slice: `10`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `2`
+
+### Plan
+
+1. Replace the external-store remote event-log validation lane with a Go-native entrypoint that preserves the replay, checkpoint, retention, and lease-takeover checks plus the report schema.
+2. Update the direct regression coverage that still expects the Python path and add any focused Go-native validation needed for helper behavior.
+3. Update the remaining docs and migration backlog references from the Python path to the Go path.
+4. Run targeted Go tests plus the external-store validation command, then record exact results and Python-count deltas for this slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/external_store_validation.py` from the remaining `scripts/e2e` Python backlog by replacing it with `bigclaw-go/scripts/e2e/external_store_validation.go`.
+- Keep `docs/reports/external-store-validation-report.json` and the linked validation docs aligned with the Go-native harness.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/external_store_validation.go ./scripts/e2e/external_store_validation_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/external_store_validation.go --report-path docs/reports/external-store-validation-report.json`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestExternalStoreValidationReportSchema|TestProviderLiveHandoffIsolationEvidencePack|TestFollowupIndexDocs'`
+- `cd bigclaw-go && rg -n "external_store_validation\\.py|external_store_validation\\.go" docs/e2e-validation.md docs/go-cli-script-migration.md internal/regression/external_store_validation_report_test.go`
+- `cd bigclaw-go && find . -name '*.py' | wc -l`
+- `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
+
+### Outcome
+
+- Replaced `bigclaw-go/scripts/e2e/mixed_workload_matrix.py` with `bigclaw-go/scripts/e2e/mixed_workload_matrix.go`.
+- Added `bigclaw-go/scripts/e2e/mixed_workload_matrix_internal_test.go` to cover the fixed task matrix and routed-event extraction helpers.
+- Updated `bigclaw-go/docs/e2e-validation.md`, `bigclaw-go/docs/reports/mixed-workload-validation-report.md`, and `bigclaw-go/docs/go-cli-script-migration.md` to point at the Go mixed-workload harness.
+- Replaced `bigclaw-go/scripts/e2e/external_store_validation.py` with `bigclaw-go/scripts/e2e/external_store_validation.go`.
+- Added `bigclaw-go/scripts/e2e/external_store_validation_internal_test.go` for backend-matrix helper coverage and updated `bigclaw-go/internal/regression/external_store_validation_report_test.go` to expect the Go path.
+- Updated `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/go-cli-script-migration.md` to point at the Go external-store harness.
+- Regenerated `bigclaw-go/docs/reports/external-store-validation-report.json` from the Go harness.
+
+### Python File Count Impact
+
+- Repository Python files before these slices: `10`
+- Repository Python files after these slices: `8`
+- `bigclaw-go/scripts/e2e/**` Python files before these slices: `2`
+- `bigclaw-go/scripts/e2e/**` Python files after these slices: `0`
+- Net reduction across this issue so far: `15`
+- Net reduction in these slices: `2`
+
+### Validation Record
+
+- `cd bigclaw-go && go test ./scripts/e2e/mixed_workload_matrix.go ./scripts/e2e/mixed_workload_matrix_internal_test.go`
+  - Result: `ok  	command-line-arguments	3.182s`
+- `cd bigclaw-go && go run ./scripts/e2e/mixed_workload_matrix.go --report-path docs/reports/mixed-workload-matrix-report.json`
+  - Result: blocked in the current machine environment. The autostarted `bigclawd` process started with executors `[local ray]`, but Kubernetes was disabled (`invalid configuration: no configuration has been provided, try setting KUBERNETES_MASTER environment variable`), and this workspace also lacks `kubectl`, `ray`, and a local kube config, so the browser/high-risk mixed-workload lanes could not be refreshed end-to-end here.
+- `cd bigclaw-go && go test ./scripts/e2e/external_store_validation.go ./scripts/e2e/external_store_validation_internal_test.go`
+  - Result: `ok  	command-line-arguments	0.156s`
+- `cd bigclaw-go && go run ./scripts/e2e/external_store_validation.go --report-path docs/reports/external-store-validation-report.json`
+  - Result: exit code `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestExternalStoreValidationReportStaysAligned|TestProviderLiveHandoffIsolationEvidencePack|TestFollowupIndexDocs'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.197s`
+- `cd bigclaw-go && rg -n "mixed_workload_matrix\\.py|mixed_workload_matrix\\.go|external_store_validation\\.py|external_store_validation\\.go" bigclaw-go -g '!**/*.json'`
+  - Result: all functional references now point at `.go`; the only remaining `.py` hits are the migration-table legacy-path rows documenting the replacements.
+- `python3 - <<'PY' ...`
+  - Result: repository Python file count `8`; `bigclaw-go/scripts/e2e/**` Python file count `0`.
+
 ## Continuation Slice: multi_node_shared_queue_cleanup
 
 ### Scope
@@ -440,3 +511,37 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `3`
   - Result: all functional references now point at `multi_node_shared_queue.go`; the only remaining `.py` hit is the migration-table legacy-path row documenting the replacement.
 - `python3 - <<'PY' ...`
   - Result: repository Python file count `10`; `bigclaw-go/scripts/e2e/**` Python file count `2`.
+
+## Continuation Slice: mixed_workload_matrix
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
+
+Replacement path for this slice:
+
+- `bigclaw-go/scripts/e2e/mixed_workload_matrix.go`
+
+Current repository Python file count before this slice: `10`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `2`
+
+### Plan
+
+1. Replace the mixed workload matrix harness with a Go-native entrypoint that preserves the current task profiles, report shape, and autostart behavior.
+2. Add focused Go tests around task defaults and routed-event extraction so the replacement is covered without relying on Python.
+3. Update the remaining docs and migration backlog references from the Python path to the Go path.
+4. Run targeted Go tests plus the report-generation command, then record exact results and Python-count deltas for this slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/mixed_workload_matrix.py` from the remaining `scripts/e2e` Python backlog by replacing it with `bigclaw-go/scripts/e2e/mixed_workload_matrix.go`.
+- Keep `docs/reports/mixed-workload-matrix-report.json` and the mixed-workload validation docs aligned with the Go-native harness.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/mixed_workload_matrix.go ./scripts/e2e/mixed_workload_matrix_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/mixed_workload_matrix.go --report-path docs/reports/mixed-workload-matrix-report.json`
+- `cd bigclaw-go && rg -n "mixed_workload_matrix\\.py|mixed_workload_matrix\\.go" docs/e2e-validation.md docs/go-cli-script-migration.md docs/reports/mixed-workload-validation-report.md`
+- `cd bigclaw-go && find . -name '*.py' | wc -l`
+- `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
