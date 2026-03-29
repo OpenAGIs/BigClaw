@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List, Optional
 
-from bigclaw.collaboration import CollaborationComment, DecisionNote, build_collaboration_thread
 from bigclaw.reports import (
     ConsoleAction,
     BillingEntitlementsPage,
@@ -38,7 +37,6 @@ from bigclaw.reports import (
     render_launch_checklist_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
-    render_shared_view_context,
     render_takeover_queue_report,
     validation_report_exists,
     write_report,
@@ -67,44 +65,6 @@ def make_shared_view(
         partial_data=partial_data or [],
         last_updated="2026-03-11T09:00:00Z",
     )
-
-
-def test_render_shared_view_context_includes_collaboration_annotations():
-    view = SharedViewContext(
-        filters=[SharedViewFilter(label="Team", value="ops")],
-        result_count=4,
-        collaboration=build_collaboration_thread(
-            "dashboard",
-            "ops-overview",
-            comments=[
-                CollaborationComment(
-                    comment_id="dashboard-comment-1",
-                    author="pm",
-                    body="Please review blocker copy with @ops and @eng.",
-                    mentions=["ops", "eng"],
-                    anchor="blockers",
-                )
-            ],
-            decisions=[
-                DecisionNote(
-                    decision_id="dashboard-decision-1",
-                    author="ops",
-                    outcome="approved",
-                    summary="Keep the blocker module visible for managers.",
-                    mentions=["pm"],
-                    follow_up="Recheck after next data refresh.",
-                )
-            ],
-        ),
-    )
-
-    lines = render_shared_view_context(view)
-    content = "\n".join(lines)
-
-    assert "## Collaboration" in content
-    assert "Surface: dashboard" in content
-    assert "Please review blocker copy with @ops and @eng." in content
-    assert "Keep the blocker module visible for managers." in content
 
 
 def test_auto_triage_center_prioritizes_failed_and_pending_runs():

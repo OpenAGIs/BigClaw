@@ -315,6 +315,52 @@ func TestReportStudioRequiresSummaryAndCompleteSections(t *testing.T) {
 	}
 }
 
+func TestRenderSharedViewContextIncludesCollaborationAnnotations(t *testing.T) {
+	resultCount := 4
+	view := SharedViewContext{
+		Filters:     []SharedViewFilter{{Label: "Team", Value: "ops"}},
+		ResultCount: &resultCount,
+		Collaboration: ptrCollaboration(BuildCollaborationThread(
+			"dashboard",
+			"ops-overview",
+			[]CollaborationComment{
+				{
+					CommentID: "dashboard-comment-1",
+					Author:    "pm",
+					Body:      "Please review blocker copy with @ops and @eng.",
+					Mentions:  []string{"ops", "eng"},
+					Anchor:    "blockers",
+				},
+			},
+			[]DecisionNote{
+				{
+					DecisionID: "dashboard-decision-1",
+					Author:     "ops",
+					Outcome:    "approved",
+					Summary:    "Keep the blocker module visible for managers.",
+					Mentions:   []string{"pm"},
+					FollowUp:   "Recheck after next data refresh.",
+				},
+			},
+		)),
+	}
+	content := strings.Join(RenderSharedViewContext(&view), "\n")
+	for _, want := range []string{
+		"## Collaboration",
+		"Surface: dashboard",
+		"Please review blocker copy with @ops and @eng.",
+		"Keep the blocker module visible for managers.",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("expected %q in shared view context, got %s", want, content)
+		}
+	}
+}
+
+func ptrCollaboration(thread CollaborationThread) *CollaborationThread {
+	return &thread
+}
+
 func TestTriageFeedbackRecordAndIssueValidationReportUseTimezoneAwareUTCTimestamps(t *testing.T) {
 	record := NewTriageFeedbackRecord("run-1", "classify", "accepted", "ops", "")
 	if !strings.HasSuffix(record.Timestamp, "Z") {

@@ -45,6 +45,7 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_reports.py::test_render_pilot_portfolio_report_summarizes_commercial_readiness`
   - `tests/test_reports.py::test_report_studio_renders_narrative_sections_and_export_bundle`
   - `tests/test_reports.py::test_report_studio_requires_summary_and_complete_sections`
+  - `tests/test_reports.py::test_render_shared_view_context_includes_collaboration_annotations`
   - `tests/test_observability.py::test_render_task_run_report`
   - `tests/test_observability.py::test_render_repo_sync_audit_report`
   - `tests/test_observability.py::test_task_run_captures_logs_trace_artifacts_and_audits`
@@ -60,11 +61,12 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 - Added `bigclaw-go/internal/observability/repo_sync.go` and `bigclaw-go/internal/observability/repo_sync_test.go` to replace Python repo-sync audit report rendering coverage.
 - Added `bigclaw-go/internal/observability/task_run.go` and `bigclaw-go/internal/observability/task_run_test.go` to replace Python task-run ledger, closeout, artifact hashing, and observability round-trip coverage.
 - Added `bigclaw-go/internal/reporting/report_studio.go` and matching `reporting_test.go` coverage to replace Python report-studio render/export behavior.
+- Added `bigclaw-go/internal/reporting/shared_view.go` and matching `reporting_test.go` coverage to replace Python shared-view collaboration/context rendering behavior.
 
 ## Deferred Deletion Plan
 
 - `tests/test_reports.py`
-  - Reason: generic report writing, console action state, pilot scorecards, pilot portfolio, validation report, launch checklist, final delivery checklist, issue-closure helpers, and report-studio exports have been migrated, but shared-view context, auto triage, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
+  - Reason: generic report writing, console action state, pilot scorecards, pilot portfolio, validation report, launch checklist, final delivery checklist, issue-closure helpers, report-studio exports, and shared-view context rendering have been migrated, but auto triage, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
   - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
 - `tests/test_observability.py`
   - Reason: Go now covers repo-sync audit rendering and task-run ledger/closeout persistence, but the remaining Python file still owns the HTML task-run detail renderer behavior.
@@ -166,6 +168,19 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/reporting	1.194s
+```
+
+Additional command run after migrating shared-view context parity:
+
+```sh
+python3 -m py_compile tests/test_reports.py
+cd bigclaw-go && go test ./internal/reporting
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/reporting	0.990s
 ```
 
 Additional command run after migrating pilot/checklist/issue-closure reporting parity:
