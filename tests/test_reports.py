@@ -75,24 +75,6 @@ def make_shared_view(
     )
 
 
-def test_render_and_write_report(tmp_path: Path):
-    content = render_issue_validation_report("BIG-101", "v0.1", "sandbox", "pass")
-    out = tmp_path / "report.md"
-    write_report(str(out), content)
-    assert out.exists()
-    text = out.read_text()
-    assert "BIG-101" in text
-    assert "pass" in text
-
-
-def test_console_action_state_reflects_enabled_flag():
-    enabled = ConsoleAction("retry", "Retry", "run-1")
-    disabled = ConsoleAction("pause", "Pause", "run-1", enabled=False, reason="already completed")
-
-    assert enabled.state == "enabled"
-    assert disabled.state == "disabled"
-
-
 def test_report_studio_renders_narrative_sections_and_export_bundle(tmp_path: Path):
     studio = ReportStudio(
         name="Executive Weekly Narrative",

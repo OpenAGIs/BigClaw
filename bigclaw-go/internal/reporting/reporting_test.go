@@ -62,6 +62,31 @@ func TestBuildWeeklyReportRendersExpandedMarkdown(t *testing.T) {
 	}
 }
 
+func TestWriteReportCreatesFileWithContent(t *testing.T) {
+	outputPath := filepath.Join(t.TempDir(), "report.md")
+	if err := WriteReport(outputPath, "# Validation\n\npass"); err != nil {
+		t.Fatalf("write report: %v", err)
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read written report: %v", err)
+	}
+	if !strings.Contains(string(body), "Validation") || !strings.Contains(string(body), "pass") {
+		t.Fatalf("unexpected report body: %s", string(body))
+	}
+}
+
+func TestConsoleActionStateReflectsEnabledFlag(t *testing.T) {
+	enabled := ConsoleAction{ActionID: "retry", Label: "Retry", Target: "run-1", Enabled: true}
+	disabled := ConsoleAction{ActionID: "pause", Label: "Pause", Target: "run-1", Enabled: false, Reason: "already completed"}
+	if enabled.State() != "enabled" {
+		t.Fatalf("expected enabled action state, got %q", enabled.State())
+	}
+	if disabled.State() != "disabled" {
+		t.Fatalf("expected disabled action state, got %q", disabled.State())
+	}
+}
+
 func TestBuildOperationsMetricSpec(t *testing.T) {
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
 	end := start.Add(7 * 24 * time.Hour)

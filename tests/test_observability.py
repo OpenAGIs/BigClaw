@@ -89,54 +89,6 @@ def test_task_run_closeout_serializes_repo_sync_audit(tmp_path: Path):
     assert loaded_run.closeout.repo_sync_audit.pull_request.body_state == "drifted"
 
 
-def test_render_task_run_report(tmp_path: Path):
-    artifact = tmp_path / "artifact.txt"
-    artifact.write_text("audit trail")
-
-    task = Task(task_id="BIG-502", source="linear", title="Observe execution", description="")
-    run = TaskRun.from_task(task, run_id="run-2", medium="vm")
-    run.log("warn", "approval required")
-    run.trace("risk.review", "pending")
-    run.register_artifact("approval-note", "note", str(artifact))
-    run.audit("risk.review", "reviewer", "approved")
-    comment = run.add_comment(
-        author="ops-lead",
-        body="Need @security sign-off before we clear this run.",
-        mentions=["security"],
-        anchor="closeout",
-    )
-    run.add_decision_note(
-        author="security-reviewer",
-        summary="Approved release after manual review.",
-        outcome="approved",
-        mentions=["ops-lead"],
-        related_comment_ids=[comment.comment_id],
-        follow_up="Share decision in the weekly review.",
-    )
-    run.record_closeout(
-        validation_evidence=["pytest"],
-        git_push_succeeded=True,
-        git_push_output="main -> origin/main",
-        git_log_stat_output="commit def456\n 1 file changed, 3 insertions(+)",
-    )
-    run.finalize("completed", "manual approval granted")
-
-    report = render_task_run_report(run)
-
-    assert "Run ID: run-2" in report
-    assert "## Logs" in report
-    assert "## Trace" in report
-    assert "## Artifacts" in report
-    assert "## Audit" in report
-    assert "## Closeout" in report
-    assert "Git Push Succeeded: True" in report
-    assert "## Actions" in report
-    assert "Retry [retry] state=disabled target=run-2 reason=retry is available for failed or approval-blocked runs" in report
-    assert "## Collaboration" in report
-    assert "Need @security sign-off before we clear this run." in report
-    assert "Approved release after manual review." in report
-
-
 def test_render_repo_sync_audit_report():
     audit = RepoSyncAudit(
         sync=GitSyncTelemetry(

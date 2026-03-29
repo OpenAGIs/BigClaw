@@ -27,10 +27,15 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_risk.py`
   - `tests/test_memory.py`
   - `tests/test_operations.py`
+- Removed Python test functions now covered by Go while keeping partially unmigrated files in place:
+  - `tests/test_reports.py::test_render_and_write_report`
+  - `tests/test_reports.py::test_console_action_state_reflects_enabled_flag`
+  - `tests/test_observability.py::test_render_task_run_report`
 - Expanded Go reporting coverage for operations-only gaps:
   - Added `NormalizeDashboardLayout()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added `BuildRepoCollaborationMetrics()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added dashboard round-trip, layout normalization, and repo collaboration metric tests to `bigclaw-go/internal/reporting/reporting_test.go`
+  - Added explicit `WriteReport()` and `ConsoleAction.State()` coverage to `bigclaw-go/internal/reporting/reporting_test.go`
 
 ## Deferred Deletion Plan
 
@@ -38,10 +43,10 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - Reason: the Python planning domain (`CandidateBacklog`, `EntryGate`, `FourWeekExecutionPlan`) does not have a direct Go package in `bigclaw-go` yet.
   - Deletion plan: port the planning model into a dedicated Go package before deleting this test file.
 - `tests/test_reports.py`
-  - Reason: the file mixes multiple report families. Some are already covered in Go, but `ReportStudio`, pilot portfolio/checklist flows, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
+  - Reason: the file mixes multiple report families. Generic report writing and console action state have been migrated, but `ReportStudio`, pilot portfolio/checklist flows, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
   - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
 - `tests/test_observability.py`
-  - Reason: Go covers run detail, closeout, audit spec, recorder, and run report surfaces, but there is not yet a single Go-native package mirroring the entire Python observability ledger/task-run API.
+  - Reason: Go covers run detail, closeout, audit spec, recorder, and the run report surface, but there is not yet a single Go-native package mirroring the entire Python observability ledger/task-run API.
   - Deletion plan: continue converging on the Go run-detail/closeout surface and remove the Python file after full behavior parity is represented in Go tests.
 
 ## Validation
@@ -77,6 +82,18 @@ Result:
 ```text
 ok  	bigclaw-go/internal/reporting	0.488s
 ok  	bigclaw-go/internal/api	2.114s
+```
+
+Additional command run after migrating generic report helpers:
+
+```sh
+cd bigclaw-go && go test ./internal/reporting
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/reporting	0.820s
 ```
 
 ## Residual Risks
