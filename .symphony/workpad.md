@@ -10,6 +10,7 @@
 6. Current slice: fold `issue_archive.py` into `reports.py`, keep the legacy `bigclaw.issue_archive` import path via aliasing, and add focused regression coverage for the archive surface.
 7. Next slice: fold `governance.py` into `planning.py`, keep the legacy `bigclaw.governance` import path via aliasing, and validate both governance and planning behavior.
 8. Follow-on slice: fold `dashboard_run_contract.py` into `execution_contract.py`, keep the legacy `bigclaw.dashboard_run_contract` import path via aliasing, and validate the dashboard/run contract surface.
+9. Current next slice: fold `queue.py` into `operations.py`, keep the legacy `bigclaw.queue` import path via aliasing, and validate queue plus operations control-center behavior.
 
 ## Acceptance
 
@@ -26,6 +27,7 @@
 - For the current slice, validate `tests/test_issue_archive.py` plus `tests/test_reports.py` and re-check the top-level Python file count.
 - For the next slice, validate `tests/test_governance.py` plus `tests/test_planning.py` and re-check the top-level Python file count.
 - For the follow-on slice, validate `tests/test_dashboard_run_contract.py` plus `tests/test_execution_contract.py` and re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_queue.py`, `tests/test_control_center.py`, `tests/test_execution_flow.py`, and `tests/test_operations.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -60,15 +62,16 @@
   - `governance.py`
   - `issue_archive.py`
   - `orchestration.py`
+  - `queue.py`
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `collaboration.py` now owns the repo discussion board helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
   - `operations.py` now owns the budget control helpers.
+  - `operations.py` now owns the queue persistence and parallel issue queue helpers.
   - `observability.py` now owns the canonical audit event and event bus helpers.
-  - `queue.py` now owns the parallel refill queue helpers.
-  - `queue.py` now owns the task memory helpers.
+  - `operations.py` now owns the task memory compatibility surface.
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `planning.py` now owns the scope-freeze governance helpers.
   - `repo_plane.py` now owns the repo commit, gateway, governance, link, registry, and triage surfaces.
@@ -89,14 +92,14 @@
   - `planning.py`: retained as the roadmap and gating host after absorbing scope-freeze governance; broader collapsing there would widen this issue beyond adjacent planning policy.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `scheduler.py`: retained as the execution host after absorbing risk and runtime helpers; orchestration moved into `reports.py` instead of broadening scheduler/report cyclic ownership.
-  - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
+  - `operations.py`: retained as the operations-policy host after absorbing budget control, queue, and memory helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `20`
-  - Delta: `-29`
+  - After: `19`
+  - Delta: `-30`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -172,3 +175,14 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `20`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy queue and memory imports resolved successfully:
+      `bigclaw.queue -> bigclaw.operations`
+      `bigclaw.memory -> bigclaw.operations`
+      `bigclaw.operations -> bigclaw.operations`
+  - `PYTHONPATH=src python3 -m pytest tests/test_queue.py tests/test_memory.py tests/test_control_center.py tests/test_execution_flow.py tests/test_operations.py`
+    - Result: `30 passed in 0.10s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `19`
