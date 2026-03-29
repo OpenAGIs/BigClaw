@@ -12,6 +12,7 @@
 - `tests/test_roadmap.py`
 - `tests/test_cost_control.py`
 - `tests/test_deprecation.py`
+- `tests/test_legacy_shim.py`
 
 ## Go Replacements
 
@@ -35,6 +36,19 @@
   - `TestControllerPausesWhenEvenDockerExceedsBudget`
   - `TestControllerRespectsBudgetOverrideAmount`
 - `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+- `bigclaw-go/internal/legacyshim/wrappers.go`
+- `bigclaw-go/internal/legacyshim/wrappers_test.go`
+  - `TestAppendMissingFlagPreservesExistingValues`
+  - `TestWorkspaceBootstrapWrapperInjectsGoDefaults`
+  - `TestWorkspaceValidateWrapperTranslatesLegacyFlags`
+  - `TestGitHubSyncAndRefillWrappersTargetGoShim`
+  - `TestWorkspaceRuntimeWrapperTargetsGoShim`
+  - `TestRepoRootFromScriptClimbsToRepositoryRoot`
+- `bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go`
+  - `TestRunGitHubSyncHelpPrintsUsageAndExitsZero`
+  - `TestRunWorkspaceHelpPrintsUsageAndExitsZero`
+  - `TestRunCreateIssuesHelpPrintsUsageAndExitsZero`
+  - `TestRunDevSmokeHelpPrintsUsageAndExitsZero`
 
 The deleted Python tests were either:
 - report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts, now covered in Go under `bigclaw-go/internal/regression`
@@ -49,6 +63,8 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 - `cd bigclaw-go && go test ./internal/regression -run 'TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract'`
 - `cd bigclaw-go && go test ./internal/costcontrol -run TestController`
 - `cd bigclaw-go && go test ./internal/regression -run TestLegacyMainlineCompatibilityManifestStaysAligned`
+- `cd bigclaw-go && go test ./internal/legacyshim -run 'TestAppendMissingFlagPreservesExistingValues|TestWorkspaceBootstrapWrapperInjectsGoDefaults|TestWorkspaceValidateWrapperTranslatesLegacyFlags|TestGitHubSyncAndRefillWrappersTargetGoShim|TestWorkspaceRuntimeWrapperTargetsGoShim|TestRepoRootFromScriptClimbsToRepositoryRoot'`
+- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunGitHubSyncHelpPrintsUsageAndExitsZero|TestRunWorkspaceHelpPrintsUsageAndExitsZero|TestRunCreateIssuesHelpPrintsUsageAndExitsZero|TestRunDevSmokeHelpPrintsUsageAndExitsZero'`
 - `git status --short`
 
 ## Residual Risks
@@ -61,8 +77,6 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 
 - `tests/test_service.py`
   - Plan: add a Go governance/monitoring HTTP surface with `/health`, `/metrics`, `/metrics.json`, `/alerts`, and `/monitor` contracts before deleting the Python server tests.
-- `tests/test_legacy_shim.py`
-  - Plan: keep until the remaining Python wrapper entrypoints are retired or until a Go-native compatibility test surface covers the wrapper help and argument translation contracts.
 - `tests/test_parallel_validation_bundle.py`
   - Plan: replace with a Go test once the validation bundle export path moves from Python script orchestration to a Go-native exporter or a stable CLI/API wrapper.
 - `tests/test_control_center.py`
