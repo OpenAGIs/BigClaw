@@ -33,6 +33,7 @@
 - `tests/test_runtime_matrix.py`
 - `tests/test_event_bus.py`
 - `tests/test_runtime.py`
+- `tests/test_parallel_validation_bundle.py`
 
 ## Acceptance
 
@@ -105,6 +106,8 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_event_bus_contract_test.go`, which invokes the Python event-bus contract from Go and preserves PR-comment approval, CI completion, and task-failed transitions plus ledger persistence.
   - `tests/test_runtime.py`
     - Reason: replaced by the expanded `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, which now also preserves Python runtime budget-pause behavior alongside the existing runtime matrix assertions.
+  - `tests/test_parallel_validation_bundle.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_parallel_validation_bundle_contract_test.go`, which invokes the checked-in `export_validation_bundle.py` script from Go against a synthetic temp bundle and preserves summary, shared-queue companion, continuation-gate, index, and manifest output behavior.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -175,10 +178,12 @@
     - Added Go regression coverage that exercises the Python runtime matrix contract for worker lifecycle, scheduler medium mapping, tool-policy audit outcomes, and budget-pause execution behavior.
   - `bigclaw-go/internal/regression/python_event_bus_contract_test.go`
     - Added Go regression coverage that exercises the Python event-bus contract for PR-comment approval, CI completion, and task-failed ledger transitions.
+  - `bigclaw-go/internal/regression/python_parallel_validation_bundle_contract_test.go`
+    - Added Go regression coverage that exercises the checked-in `export_validation_bundle.py` script against a synthetic validation bundle and pins its generated summary, companion summary, markdown index, and manifest outputs.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 20` (`-23`)
-  - Repository-wide Python files: `123 -> 100` (`-23`)
+  - `tests/**` Python files: `43 -> 19` (`-24`)
+  - Repository-wide Python files: `123 -> 99` (`-24`)
 
 ## Validation Results
 
@@ -322,3 +327,17 @@
   - `100`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md`, `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, and the deleted `tests/test_runtime.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `FAIL	bigclaw-go/internal/regression [build failed]`
+  - `TestLane8PythonExportValidationBundleScriptStaysAligned` initially failed to build because the new regression test had an unused local `repoRoot` binding.
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `FAIL	bigclaw-go/internal/regression`
+  - `TestLane8PythonExportValidationBundleScriptStaysAligned` then failed at runtime because the host `python3` is `3.9.6`, while the checked-in script uses `Path | None` annotations that require postponed evaluation.
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	1.272s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `19`
+- `rg --files | rg '\.py$' | wc -l`
+  - `99`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_parallel_validation_bundle_contract_test.go`, and the deleted `tests/test_parallel_validation_bundle.py`
