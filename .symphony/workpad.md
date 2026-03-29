@@ -63,6 +63,8 @@
     - Reason: covered by `bigclaw-go/internal/product/dashboard_run_contract_test.go`, plus added JSON round-trip and deterministic sample-gap assertions.
   - `tests/test_repo_board.py`
     - Reason: now covered by `bigclaw-go/internal/repo/repo_surfaces_test.go` after adding Go `RepoPost -> CollaborationComment` projection parity.
+  - `tests/test_governance.py`
+    - Reason: covered by `bigclaw-go/internal/governance/freeze_test.go`, which already carries board round-trip, audit, ready-state, and report rendering parity.
 
 - Kept for later lanes:
   - `tests/test_repo_links.py`
@@ -81,8 +83,8 @@
     - Added `TestDashboardRunContractJSONRoundTrip`.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 34` (`-9`)
-  - Repository-wide Python files: `123 -> 114` (`-9`)
+  - `tests/**` Python files: `43 -> 33` (`-10`)
+  - Repository-wide Python files: `123 -> 113` (`-10`)
 
 ## Validation Results
 
@@ -110,3 +112,9 @@
   - `34`
 - `rg --files | rg '\.py$' | wc -l`
   - `114`
+- `cd bigclaw-go && go test ./internal/governance -run 'TestScopeFreezeBoardRoundTripPreservesManifestShape|TestScopeFreezeAuditFlagsBacklogGovernanceAndCloseoutGaps|TestScopeFreezeAuditRoundTripAndReadyState|TestRenderScopeFreezeReportSummarizesBoardAndRunCloseoutRequirements'`
+  - `ok  	bigclaw-go/internal/governance	0.146s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `33`
+- `rg --files | rg '\.py$' | wc -l`
+  - `113`
