@@ -16,7 +16,7 @@ from .observability import (
     RepoSyncAudit,
     TaskRun,
 )
-from .models import RiskLevel, Task
+from .execution_contract import RiskLevel, Task
 
 
 def _utc_now_iso() -> str:

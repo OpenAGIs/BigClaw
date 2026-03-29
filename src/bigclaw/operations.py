@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from .observability import ObservabilityLedger
 from .__main__ import LEGACY_RUNTIME_GUIDANCE
-from .models import Task
+from .execution_contract import Task
 from .scheduler import ExecutionRecord, Scheduler
 from .reports import (
     RunDetailEvent,

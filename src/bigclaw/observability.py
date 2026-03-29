@@ -7,8 +7,7 @@ from html import escape
 from pathlib import Path
 from typing import Any, Callable, DefaultDict, Dict, List, Optional, Sequence
 
-from .execution_contract import RunCommitLink, bind_run_commits
-from .models import Task
+from .execution_contract import RunCommitLink, Task, bind_run_commits
 
 
 def utc_now() -> str:

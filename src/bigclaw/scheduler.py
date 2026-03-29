@@ -17,7 +17,7 @@ from .observability import (
     TaskRun,
     utc_now,
 )
-from .models import Priority, RiskLevel, Task
+from .execution_contract import Priority, RiskLevel, Task
 from .reports import (
     CrossDepartmentOrchestrator,
     HandoffRequest,

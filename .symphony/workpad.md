@@ -18,6 +18,7 @@
 14. Current next slice: fold `repo_plane.py` into `execution_contract.py`, keep the legacy `bigclaw.repo_plane` import path via aliasing, retarget direct internal imports, and validate repo-plane plus observability regression surfaces.
 15. Current next slice: fold `workspace_bootstrap.py` into `__main__.py`, keep the legacy `bigclaw.workspace_bootstrap` import path via aliasing, retarget direct internal imports, preserve the package entrypoint separately from the bootstrap CLI surface, and validate bootstrap plus entrypoint regression surfaces.
 16. Current next slice: fold `workflow.py` into `scheduler.py`, keep the legacy `bigclaw.workflow` import path via aliasing, and validate workflow, DSL, scheduler, and audit-event regression surfaces.
+17. Current next slice: fold `models.py` into `execution_contract.py`, keep the legacy `bigclaw.models` import path via aliasing, retarget direct internal imports, and validate model, contract, scheduler, report, and observability regression surfaces.
 
 ## Acceptance
 
@@ -42,6 +43,7 @@
 - For the current next slice, validate `tests/test_repo_gateway.py`, `tests/test_repo_governance.py`, `tests/test_repo_links.py`, `tests/test_repo_registry.py`, `tests/test_repo_triage.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_workspace_bootstrap.py`, `tests/test_github_sync.py`, `tests/test_scheduler.py`, `tests/test_workflow.py`, and `tests/test_operations.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_dsl.py`, `tests/test_workflow.py`, `tests/test_scheduler.py`, and `tests/test_audit_events.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_models.py`, `tests/test_execution_contract.py`, `tests/test_scheduler.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -58,6 +60,7 @@
   - `repo_plane.py`
   - `workspace_bootstrap.py`
   - `workflow.py`
+  - `models.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -88,6 +91,7 @@
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `execution_contract.py` now owns the repo permission, registry, commit-lineage, and triage helpers.
+  - `execution_contract.py` now owns the shared task, flow, billing, connector, and source-issue mapping models.
   - `__main__.py` now owns the workspace bootstrap, validation, github-sync, and legacy runtime shim helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
@@ -119,6 +123,7 @@
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host after absorbing dashboard/run schema contracts; repo policy compatibility now aliases into `repo_plane.py` without widening into unrelated control-plane semantics.
   - `execution_contract.py`: retained as the generic permission-contract host after also absorbing repo-plane permission and commit metadata helpers; this removes an existing repo-plane dependency on execution contracts instead of widening into unrelated operations/reporting ownership.
+  - `execution_contract.py`: retained as the generic contract and shared-entity host after also absorbing models; this removes another existing dependency edge into execution contracts and centralizes the compatibility datamodels without widening into UI surfaces.
   - `planning.py`: retained as the roadmap and gating host after absorbing scope-freeze governance; broader collapsing there would widen this issue beyond adjacent planning policy.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `reports.py`: retained as the primary reporting host after also absorbing saved-view catalog helpers; this keeps shared-view/reporting semantics co-located without widening into unrelated execution modules.
@@ -132,8 +137,8 @@
   - `__main__.py`: retained as the package execution entrypoint after also absorbing workspace bootstrap and github-sync helpers; this keeps the migration-only runtime shim and related bootstrap CLI surfaces co-located while preserving `python -m bigclaw`.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `11`
-  - Delta: `-38`
+  - After: `10`
+  - Delta: `-39`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -314,3 +319,16 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `11`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy model imports resolved successfully:
+      `bigclaw.models -> bigclaw.execution_contract`
+      `bigclaw.execution_contract -> bigclaw.execution_contract`
+      `bigclaw.connectors -> bigclaw.execution_contract`
+      `bigclaw.mapping -> bigclaw.execution_contract`
+      `bigclaw -> bigclaw`
+  - `PYTHONPATH=src python3 -m pytest tests/test_models.py tests/test_execution_contract.py tests/test_scheduler.py tests/test_reports.py tests/test_observability.py`
+    - Result: `56 passed in 0.11s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `10`
