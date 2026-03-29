@@ -12,6 +12,7 @@
 8. Follow-on slice: fold `dashboard_run_contract.py` into `execution_contract.py`, keep the legacy `bigclaw.dashboard_run_contract` import path via aliasing, and validate the dashboard/run contract surface.
 9. Current next slice: fold `queue.py` into `operations.py`, keep the legacy `bigclaw.queue` import path via aliasing, and validate queue plus operations control-center behavior.
 10. Follow-up slice: fold `run_detail.py` into `reports.py`, keep the legacy `bigclaw.run_detail` import path via aliasing, and validate the run-detail, evaluation, and reporting surfaces.
+11. Current continuation slice: fold `evaluation.py` into `operations.py`, keep the legacy `bigclaw.evaluation` import path via aliasing, and validate evaluation plus operations regression surfaces.
 
 ## Acceptance
 
@@ -30,6 +31,7 @@
 - For the follow-on slice, validate `tests/test_dashboard_run_contract.py` plus `tests/test_execution_contract.py` and re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_queue.py`, `tests/test_control_center.py`, `tests/test_execution_flow.py`, and `tests/test_operations.py`, then re-check the top-level Python file count.
 - For the follow-up slice, validate `tests/test_evaluation.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
+- For the current continuation slice, validate `tests/test_evaluation.py` plus `tests/test_operations.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -61,6 +63,7 @@
   - `workspace_bootstrap_validation.py`
   - `audit_events.py`
   - `dashboard_run_contract.py`
+  - `evaluation.py`
   - `governance.py`
   - `issue_archive.py`
   - `orchestration.py`
@@ -72,6 +75,7 @@
   - `collaboration.py` now owns the repo discussion board helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
   - `operations.py` now owns the budget control helpers.
+  - `operations.py` now owns the benchmark evaluation and replay helpers.
   - `operations.py` now owns the queue persistence and parallel issue queue helpers.
   - `observability.py` now owns the canonical audit event and event bus helpers.
   - `operations.py` now owns the task memory compatibility surface.
@@ -102,8 +106,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `18`
-  - Delta: `-31`
+  - After: `17`
+  - Delta: `-32`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -201,3 +205,13 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `18`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy evaluation import resolved successfully:
+      `bigclaw.evaluation -> bigclaw.operations`
+      `bigclaw.operations -> bigclaw.operations`
+  - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_operations.py`
+    - Result: `27 passed in 0.09s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `17`
