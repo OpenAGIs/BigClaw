@@ -7698,6 +7698,11 @@
           "author": "codex",
           "body": "Completed BIG-GO-942 root-script migration lane.\n\nDelivered lane file list:\n- scripts/create_issues.py\n- scripts/dev_smoke.py\n- scripts/ops/bigclaw_github_sync.py\n- scripts/ops/bigclaw_refill_queue.py\n- scripts/ops/bigclaw_workspace_bootstrap.py\n- scripts/ops/symphony_workspace_bootstrap.py\n- scripts/ops/symphony_workspace_validate.py\n\nWhat changed:\n- replaced the lane-scoped Python implementations with shell wrappers over scripts/ops/bigclawctl\n- preserved workspace bootstrap default injection and workspace validate legacy flag translation\n- added reports/BIG-GO-942-validation.md, reports/BIG-GO-942-closeout.md, and reports/BIG-GO-942-status.json\n- pushed branch symphony/BIG-GO-942 at validated head 8505a05b7b7637425462a5e7d269b13a0d2d718c\n\nValidation:\n- cd bigclaw-go && go test ./cmd/bigclawctl -> passed\n- python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py -> 17 passed\n- bash scripts/dev_smoke.py -> smoke_ok local\n- bash scripts/create_issues.py --help -> passed\n- bash scripts/ops/bigclaw_refill_queue.py --help -> passed\n- bash scripts/ops/bigclaw_github_sync.py status --json -> status ok / synced true\n- temp-repo workspace bootstrap, cleanup, and validate wrapper flows -> passed\n\nResidual risk:\n- callers still invoking python3 <wrapper>.py must switch to bash <wrapper>.py or bash scripts/ops/bigclawctl ...\n- scripts/ops/bigclawctl still relies on go run\n\nExternal blocker only:\n- gh is not installed in this workspace\n- GITHUB_TOKEN and GH_TOKEN are unset, so PR creation/inspection is not automated here",
           "created_at": "2026-03-29T04:07:16Z"
+        },
+        {
+          "author": "codex",
+          "body": "External verification refresh on 2026-03-29:\n\n- pushed branch head is b3a5bf46b4fa946e03ee77f8bce01bd7549532d5\n- public compare URL for main...symphony/BIG-GO-942 is reachable\n- public compare rendering is stale and currently shows only the first 5 issue commits: 87fd42c, 07f7901, 6e5e47a, 8505a05, e901ae4\n- latest pushed metadata commits de884b4, 1fde531, and b3a5bf4 are not yet reflected in that public compare view\n- PR seed URL still redirects to GitHub sign-in\n\nNo additional in-repo implementation work remains; only external PR/auth visibility is unresolved.",
+          "created_at": "2026-03-29T04:29:33Z"
         }
       ],
       "created_at": "2026-03-29T04:07:16Z",
@@ -7710,7 +7715,7 @@
       "priority": 1,
       "state": "Done",
       "title": "Lane2 Root scripts to Go CLI",
-      "updated_at": "2026-03-29T04:07:16Z"
+      "updated_at": "2026-03-29T04:29:33Z"
     }
   ]
 }
