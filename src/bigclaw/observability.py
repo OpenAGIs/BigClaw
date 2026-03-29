@@ -1,11 +1,11 @@
+from collections import defaultdict
 import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, DefaultDict, Dict, List, Optional
 
-from .audit_events import missing_required_fields
 from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
 from .repo_plane import RunCommitLink, bind_run_commits
@@ -25,6 +25,100 @@ def sha256_file(path: str) -> str:
         for chunk in iter(lambda: handle.read(8192), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+SCHEDULER_DECISION_EVENT = "execution.scheduler_decision"
+MANUAL_TAKEOVER_EVENT = "execution.manual_takeover"
+APPROVAL_RECORDED_EVENT = "execution.approval_recorded"
+BUDGET_OVERRIDE_EVENT = "execution.budget_override"
+FLOW_HANDOFF_EVENT = "execution.flow_handoff"
+
+
+@dataclass(frozen=True)
+class AuditEventSpec:
+    event_type: str
+    description: str
+    severity: str
+    retention_days: int
+    required_fields: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "event_type": self.event_type,
+            "description": self.description,
+            "severity": self.severity,
+            "retention_days": self.retention_days,
+            "required_fields": list(self.required_fields),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "AuditEventSpec":
+        return cls(
+            event_type=str(data["event_type"]),
+            description=str(data["description"]),
+            severity=str(data["severity"]),
+            retention_days=int(data["retention_days"]),
+            required_fields=[str(value) for value in data.get("required_fields", [])],
+        )
+
+
+P0_AUDIT_EVENT_SPECS: List[AuditEventSpec] = [
+    AuditEventSpec(
+        event_type=SCHEDULER_DECISION_EVENT,
+        description="Records the scheduler routing decision and risk context for a run.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "medium", "approved", "reason", "risk_level", "risk_score"],
+    ),
+    AuditEventSpec(
+        event_type=MANUAL_TAKEOVER_EVENT,
+        description="Captures escalation into a human takeover queue.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "target_team", "reason", "requested_by", "required_approvals"],
+    ),
+    AuditEventSpec(
+        event_type=APPROVAL_RECORDED_EVENT,
+        description="Records explicit human approvals attached to a run or acceptance decision.",
+        severity="info",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "approvals", "approval_count", "acceptance_status"],
+    ),
+    AuditEventSpec(
+        event_type=BUDGET_OVERRIDE_EVENT,
+        description="Captures a manual override to the run budget envelope.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "requested_budget", "approved_budget", "override_actor", "reason"],
+    ),
+    AuditEventSpec(
+        event_type=FLOW_HANDOFF_EVENT,
+        description="Captures ownership transfer between automated flow stages and teams.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "source_stage", "target_team", "reason", "collaboration_mode"],
+    ),
+]
+
+_SPEC_BY_EVENT = {spec.event_type: spec for spec in P0_AUDIT_EVENT_SPECS}
+
+
+def get_audit_event_spec(event_type: str) -> Optional[AuditEventSpec]:
+    return _SPEC_BY_EVENT.get(event_type)
+
+
+def missing_required_fields(event_type: str, details: Dict[str, object]) -> List[str]:
+    spec = get_audit_event_spec(event_type)
+    if spec is None:
+        return []
+    return [field for field in spec.required_fields if field not in details]
+
+
+PULL_REQUEST_COMMENT_EVENT = "pull_request.comment"
+CI_COMPLETED_EVENT = "ci.completed"
+TASK_FAILED_EVENT = "task.failed"
+
+EventSubscriber = Callable[["BusEvent", "TaskRun"], None]
 
 
 @dataclass
@@ -539,3 +633,129 @@ class ObservabilityLedger:
 
     def load_runs(self) -> List[TaskRun]:
         return [TaskRun.from_dict(entry) for entry in self.load()]
+
+
+@dataclass(frozen=True)
+class BusEvent:
+    event_type: str
+    run_id: str
+    actor: str
+    details: Dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=utc_now)
+
+
+class EventBus:
+    def __init__(self, ledger: Optional[ObservabilityLedger] = None):
+        self.ledger = ledger
+        self._runs: Dict[str, TaskRun] = {}
+        self._subscribers: DefaultDict[str, List[EventSubscriber]] = defaultdict(list)
+
+    def register_run(self, run: TaskRun) -> None:
+        self._runs[run.run_id] = run
+
+    def subscribe(self, event_type: str, handler: EventSubscriber) -> None:
+        self._subscribers[event_type].append(handler)
+
+    def publish(self, event: BusEvent) -> TaskRun:
+        run = self._resolve_run(event.run_id)
+        previous_status = run.status
+        self._record_event(run, event)
+
+        next_status, summary = self._resolve_transition(run, event)
+        if next_status:
+            run.finalize(next_status, summary)
+            run.audit(
+                "event_bus.transition",
+                "event-bus",
+                next_status,
+                event_type=event.event_type,
+                previous_status=previous_status,
+                status=next_status,
+                summary=summary,
+                event_timestamp=event.timestamp,
+            )
+
+        for handler in self._subscribers.get(event.event_type, []):
+            handler(event, run)
+
+        if self.ledger is not None:
+            self.ledger.upsert(run)
+        return run
+
+    def _resolve_run(self, run_id: str) -> TaskRun:
+        registered = self._runs.get(run_id)
+        if registered is not None:
+            return registered
+        if self.ledger is not None:
+            for run in self.ledger.load_runs():
+                if run.run_id == run_id:
+                    self._runs[run_id] = run
+                    return run
+        raise KeyError(f"run {run_id!r} is not registered with the event bus")
+
+    def _record_event(self, run: TaskRun, event: BusEvent) -> None:
+        run.audit(
+            "event_bus.event",
+            event.actor,
+            "received",
+            event_type=event.event_type,
+            event_timestamp=event.timestamp,
+            **event.details,
+        )
+        if event.event_type != PULL_REQUEST_COMMENT_EVENT:
+            return
+        body = str(event.details.get("body", "")).strip()
+        if not body:
+            return
+        mentions = [str(item) for item in event.details.get("mentions", [])]
+        run.add_comment(
+            author=event.actor,
+            body=body,
+            mentions=mentions,
+            anchor="pull-request",
+            surface="pull-request",
+        )
+
+    def _resolve_transition(self, run: TaskRun, event: BusEvent) -> tuple[str, str]:
+        explicit_status = str(event.details.get("target_status", "")).strip()
+        if explicit_status:
+            return explicit_status, self._build_summary(event, explicit_status)
+
+        if event.event_type == PULL_REQUEST_COMMENT_EVENT:
+            decision = str(event.details.get("decision", "")).strip().lower()
+            if decision in {"approved", "accept", "accepted", "lgtm"}:
+                return "approved", self._build_summary(event, "approved")
+            if decision in {"blocked", "changes-requested", "rejected"}:
+                return "needs-approval", self._build_summary(event, "needs-approval")
+        elif event.event_type == CI_COMPLETED_EVENT:
+            conclusion = str(event.details.get("conclusion", "")).strip().lower()
+            if conclusion in {"success", "passed", "green"}:
+                return "completed", self._build_summary(event, "completed")
+            if conclusion in {"cancelled", "canceled", "error", "failed", "failure", "timed_out"}:
+                return "failed", self._build_summary(event, "failed")
+        elif event.event_type == TASK_FAILED_EVENT:
+            return "failed", self._build_summary(event, "failed")
+
+        return "", run.summary
+
+    def _build_summary(self, event: BusEvent, status: str) -> str:
+        summary = str(event.details.get("summary", "")).strip()
+        if summary:
+            return summary
+        if event.event_type == PULL_REQUEST_COMMENT_EVENT:
+            body = str(event.details.get("body", "")).strip()
+            if body:
+                return body
+            return f"pull request comment set run to {status}"
+        if event.event_type == CI_COMPLETED_EVENT:
+            workflow = str(event.details.get("workflow", "")).strip()
+            conclusion = str(event.details.get("conclusion", "")).strip() or status
+            if workflow:
+                return f"CI workflow {workflow} completed with {conclusion}"
+            return f"CI completed with {conclusion}"
+        if event.event_type == TASK_FAILED_EVENT:
+            reason = str(event.details.get("error", "")).strip() or str(event.details.get("reason", "")).strip()
+            if reason:
+                return reason
+            return "task failed"
+        return status

@@ -108,27 +108,30 @@ from .issue_archive import (
     render_issue_priority_archive_report,
 )
 from .legacy_shim import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
-from .risk import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
-from .audit_events import (
+from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
+from .scheduler import ExecutionRecord, RiskFactor, RiskScore, RiskScorer, Scheduler, SchedulerDecision
+from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
+    BusEvent,
+    CI_COMPLETED_EVENT,
+    EventBus,
     FLOW_HANDOFF_EVENT,
+    GitSyncTelemetry,
     MANUAL_TAKEOVER_EVENT,
+    ObservabilityLedger,
     P0_AUDIT_EVENT_SPECS,
+    PULL_REQUEST_COMMENT_EVENT,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
     SCHEDULER_DECISION_EVENT,
+    TASK_FAILED_EVENT,
+    TaskRun,
     AuditEventSpec,
     get_audit_event_spec,
     missing_required_fields,
 )
-from .event_bus import (
-    CI_COMPLETED_EVENT,
-    PULL_REQUEST_COMMENT_EVENT,
-    TASK_FAILED_EVENT,
-    BusEvent,
-    EventBus,
-)
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .orchestration import (
     CrossDepartmentOrchestrator,
     DepartmentHandoff,
@@ -239,7 +242,6 @@ from .reports import (
     write_report,
     write_report_studio_bundle,
 )
-from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
 from .operations import (
     BudgetDecision,
     CostController,
@@ -759,9 +761,13 @@ def _alias_legacy_module(alias: str, target_name: str) -> None:
 
 
 for _alias, _target in (
+    ("audit_events", "observability"),
     ("cost_control", "operations"),
     ("deprecation", "legacy_shim"),
+    ("dsl", "workflow"),
+    ("event_bus", "observability"),
     ("mapping", "connectors"),
+    ("memory", "queue"),
     ("parallel_refill", "queue"),
     ("pilot", "reports"),
     ("repo_board", "collaboration"),
@@ -772,6 +778,7 @@ for _alias, _target in (
     ("repo_links", "repo_plane"),
     ("repo_registry", "repo_plane"),
     ("repo_triage", "repo_plane"),
+    ("risk", "scheduler"),
     ("validation_policy", "reports"),
     ("workspace_bootstrap_validation", "workspace_bootstrap"),
 ):
