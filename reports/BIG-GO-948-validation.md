@@ -26,6 +26,7 @@ Deleted in this wave:
 - `tests/test_queue.py`
 - `tests/test_governance.py`
 - `tests/test_workspace_bootstrap.py`
+- `tests/test_execution_contract.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -67,6 +68,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_queue.py`
 - `tests/test_governance.py`
 - `tests/test_workspace_bootstrap.py`
+- `tests/test_execution_contract.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -89,7 +91,6 @@ Remaining Python tests after this wave:
 - `tests/test_dsl.py`
 - `tests/test_evaluation.py`
 - `tests/test_event_bus.py`
-- `tests/test_execution_contract.py`
 - `tests/test_execution_flow.py`
 - `tests/test_github_sync.py`
 - `tests/test_live_shadow_bundle.py`
@@ -178,6 +179,14 @@ This wave relies on the following Go-native coverage:
   - `TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed`
   - `TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch`
   - `TestBuildValidationReportCoversThreeWorkspacesWithOneCache`
+- `bigclaw-go/internal/contract/execution_test.go`
+  - `TestExecutionContractAuditAcceptsWellFormedContract`
+  - `TestExecutionContractAuditSurfacesContractGaps`
+  - `TestExecutionContractRoundTripAndPermissionMatrix`
+  - `TestRenderExecutionContractReportIncludesRoleMatrix`
+  - `TestOperationsAPIContractDraftIsReleaseReady`
+  - `TestOperationsAPIContractPermissionsCoverReadAndActionPaths`
+  - `TestExecutionContractAuditRequiresPersonaScopeAndEscalationMetadata`
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -204,6 +213,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/queue`
 - `cd bigclaw-go && go test ./internal/governance`
 - `cd bigclaw-go && go test ./internal/bootstrap`
+- `cd bigclaw-go && go test ./internal/contract`
 - `git status --short`
 
 ## Latest Validation Result
@@ -230,6 +240,8 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/governance	1.158s`
 - `cd bigclaw-go && go test ./internal/bootstrap`
   - Result: `ok  	bigclaw-go/internal/bootstrap	3.139s`
+- `cd bigclaw-go && go test ./internal/contract`
+  - Result: `ok  	bigclaw-go/internal/contract	3.160s`
 
 ## Residual Risks
 
@@ -251,8 +263,6 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Plan: requires a Go-native evaluation/report builder.
 - `tests/test_event_bus.py`
   - Plan: split between Go bus runtime coverage and any remaining Python-only script/export behavior, then delete incrementally.
-- `tests/test_execution_contract.py`
-  - Plan: migrate after the remaining Python execution contract helpers are fully subsumed by `bigclaw-go/internal/contract`.
 - `tests/test_execution_flow.py`
   - Plan: migrate after the remaining execution-flow report surface is anchored in Go.
 - `tests/test_github_sync.py`

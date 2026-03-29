@@ -7,10 +7,12 @@ Third-wave cleanup for remaining Python tests that already have direct Go-native
 Planned delete set for this continuation:
 - `tests/test_governance.py`
 - `tests/test_workspace_bootstrap.py`
+- `tests/test_execution_contract.py`
 
 Go coverage used for replacement:
 - `bigclaw-go/internal/governance/freeze_test.go`
 - `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+- `bigclaw-go/internal/contract/execution_test.go`
 - new Go coverage for `bigclaw-go/internal/bootstrap.BuildValidationReport`
 
 ## Acceptance
@@ -25,6 +27,7 @@ Go coverage used for replacement:
 
 - `cd bigclaw-go && go test ./internal/governance`
 - `cd bigclaw-go && go test ./internal/bootstrap`
+- `cd bigclaw-go && go test ./internal/contract`
 - `git status --short`
 
 ## Risks
