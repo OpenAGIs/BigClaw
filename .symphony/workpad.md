@@ -15,6 +15,7 @@
 11. Current continuation slice: fold `evaluation.py` into `operations.py`, keep the legacy `bigclaw.evaluation` import path via aliasing, and validate evaluation plus operations regression surfaces.
 12. Current next slice: fold `console_ia.py` into `design_system.py`, keep the legacy `bigclaw.console_ia` import path via aliasing, and validate console IA plus design-system regression surfaces.
 13. Current next slice: fold `saved_views.py` into `reports.py`, keep the legacy `bigclaw.saved_views` import path via aliasing, and validate saved-view plus reporting regression surfaces.
+14. Current next slice: fold `repo_plane.py` into `execution_contract.py`, keep the legacy `bigclaw.repo_plane` import path via aliasing, retarget direct internal imports, and validate repo-plane plus observability regression surfaces.
 
 ## Acceptance
 
@@ -36,6 +37,7 @@
 - For the current continuation slice, validate `tests/test_evaluation.py` plus `tests/test_operations.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_console_ia.py` plus `tests/test_design_system.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_saved_views.py` plus `tests/test_reports.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_repo_gateway.py`, `tests/test_repo_governance.py`, `tests/test_repo_links.py`, `tests/test_repo_registry.py`, `tests/test_repo_triage.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -49,6 +51,7 @@
   - `collaboration.py`
   - `console_ia.py`
   - `saved_views.py`
+  - `repo_plane.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -78,6 +81,7 @@
   - `run_detail.py`
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
+  - `execution_contract.py` now owns the repo permission, registry, commit-lineage, and triage helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
   - `operations.py` now owns the budget control helpers.
@@ -106,6 +110,7 @@
   - `__init__.py` now registers compatibility aliases so `import bigclaw.<old_module>` still resolves.
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host after absorbing dashboard/run schema contracts; repo policy compatibility now aliases into `repo_plane.py` without widening into unrelated control-plane semantics.
+  - `execution_contract.py`: retained as the generic permission-contract host after also absorbing repo-plane permission and commit metadata helpers; this removes an existing repo-plane dependency on execution contracts instead of widening into unrelated operations/reporting ownership.
   - `planning.py`: retained as the roadmap and gating host after absorbing scope-freeze governance; broader collapsing there would widen this issue beyond adjacent planning policy.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `reports.py`: retained as the primary reporting host after also absorbing saved-view catalog helpers; this keeps shared-view/reporting semantics co-located without widening into unrelated execution modules.
@@ -117,8 +122,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `14`
-  - Delta: `-35`
+  - After: `13`
+  - Delta: `-36`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -260,3 +265,17 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `14`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy repo-plane imports resolved successfully:
+      `bigclaw.repo_plane -> bigclaw.execution_contract`
+      `bigclaw.execution_contract -> bigclaw.execution_contract`
+      `bigclaw.repo_governance -> bigclaw.execution_contract`
+      `bigclaw.repo_links -> bigclaw.execution_contract`
+      `bigclaw.repo_registry -> bigclaw.execution_contract`
+      `bigclaw.repo_triage -> bigclaw.execution_contract`
+  - `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_governance.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_repo_triage.py tests/test_observability.py`
+    - Result: `16 passed in 0.09s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `13`
