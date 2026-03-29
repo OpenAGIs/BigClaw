@@ -74,7 +74,7 @@ func TestExecutionContractAuditAcceptsWellFormedContract(t *testing.T) {
 	if !audit.ReleaseReady() || audit.ReadinessScore() != 100 {
 		t.Fatalf("expected release ready audit, got %+v", audit)
 	}
-	for _, want := range []string{"- Release Ready: true", "POST /execution/runs"} {
+	for _, want := range []string{"- Release Ready: True", "POST /execution/runs"} {
 		if !strings.Contains(report, want) {
 			t.Fatalf("expected report to contain %q, got %s", want, report)
 		}

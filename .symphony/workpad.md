@@ -67,6 +67,8 @@
     - Reason: covered by `bigclaw-go/internal/governance/freeze_test.go`, which already carries board round-trip, audit, ready-state, and report rendering parity.
   - `tests/test_queue.py`
     - Reason: covered by `bigclaw-go/internal/queue/file_queue_test.go` and `bigclaw-go/internal/queue/memory_queue_test.go` after adding Go parity for rich task payload persistence and legacy list storage loading.
+  - `tests/test_execution_contract.py`
+    - Reason: covered by `bigclaw-go/internal/contract/execution_test.go` after aligning Go report formatting with the Python `True/False` contract.
 
 - Kept for later lanes:
   - `tests/test_repo_links.py`
@@ -90,10 +92,14 @@
   - `bigclaw-go/internal/queue/file_queue_test.go`
     - Added rich task payload persistence coverage across reload.
     - Added legacy list storage reload coverage.
+  - `bigclaw-go/internal/contract/execution.go`
+    - Aligned execution contract report boolean formatting to Python-style `True/False`.
+  - `bigclaw-go/internal/contract/execution_test.go`
+    - Updated report assertions to the Python-style boolean rendering contract.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 32` (`-11`)
-  - Repository-wide Python files: `123 -> 112` (`-11`)
+  - `tests/**` Python files: `43 -> 31` (`-12`)
+  - Repository-wide Python files: `123 -> 111` (`-12`)
 
 ## Validation Results
 
@@ -139,3 +145,11 @@
   - `32`
 - `rg --files | rg '\.py$' | wc -l`
   - `112`
+- `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady'`
+  - `ok  	bigclaw-go/internal/contract	0.184s`
+- `cd bigclaw-go && go test ./internal/contract`
+  - `ok  	bigclaw-go/internal/contract	0.703s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `31`
+- `rg --files | rg '\.py$' | wc -l`
+  - `111`

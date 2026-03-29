@@ -476,7 +476,7 @@ func RenderExecutionContractReport(contract ExecutionContract, audit ExecutionCo
 		fmt.Sprintf("- Metrics: %d", len(contract.Metrics)),
 		fmt.Sprintf("- Audit Policies: %d", len(contract.AuditPolicies)),
 		fmt.Sprintf("- Readiness Score: %.1f", audit.ReadinessScore()),
-		fmt.Sprintf("- Release Ready: %t", audit.ReleaseReady()),
+		fmt.Sprintf("- Release Ready: %s", pythonBool(audit.ReleaseReady())),
 		"",
 		"## APIs",
 		"",
@@ -538,6 +538,13 @@ func RenderExecutionContractReport(contract ExecutionContract, audit ExecutionCo
 		fmt.Sprintf("- Audit retention gaps: %s", joinOrNone(audit.AuditPoliciesBelowRetention)),
 	)
 	return strings.Join(lines, "\n")
+}
+
+func pythonBool(value bool) string {
+	if value {
+		return "True"
+	}
+	return "False"
 }
 
 func BuildOperationsAPIContract() ExecutionContract {
