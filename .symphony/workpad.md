@@ -1,21 +1,22 @@
-# BIG-GO-902 Workpad
+# BIG-GO-945 Workpad
 
 ## Plan
 
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+1. Confirm the lane-5 file list from `docs/go-mainline-cutover-issue-pack.md` and map each Python module under `src/bigclaw` to an existing or missing Go owner.
+2. Inspect the current Python and Go implementations for `console_ia`, `design_system`, `saved_views`, `ui_review`, and operator-facing `service` surfaces to find the smallest real migration slice still missing in Go.
+3. Implement the missing Go replacement or, if the Go owner already exists, remove or deprecate the redundant Python surface with a scoped deletion plan and regression coverage.
+4. Run targeted validation for the touched Go packages and any directly affected Python compatibility surface, recording exact commands and results.
+5. Commit the scoped changes and push the branch to the remote tracking branch.
 
 ## Acceptance
 
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Explicitly identify the lane-5 Python module inventory for this issue.
+- Land a Go replacement and/or deletion plan for the remaining lane-5 Python application modules.
+- Keep the change scoped to lane-5 ownership surfaces.
+- Record exact validation commands, results, and remaining migration risks.
 
 ## Validation
 
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- `go test ./internal/product ./internal/api ./cmd/bigclawctl`
+- Additional targeted `go test` commands for any extra Go package touched by the implementation.
+- Targeted Python regression only if a retained compatibility shim or legacy import surface is edited.

@@ -2429,6 +2429,84 @@ func TestMetricsSupportsPrometheusFormat(t *testing.T) {
 	}
 }
 
+func TestOperatorMonitorCompatibilityEndpoints(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	handler := server.Handler()
+
+	healthResponse := httptest.NewRecorder()
+	handler.ServeHTTP(healthResponse, httptest.NewRequest(http.MethodGet, "/health", nil))
+	if healthResponse.Code != http.StatusOK {
+		t.Fatalf("expected health 200, got %d", healthResponse.Code)
+	}
+	var healthBody struct {
+		Status       string `json:"status"`
+		RequestTotal int    `json:"request_total"`
+		ErrorTotal   int    `json:"error_total"`
+		Rolling5M    []struct {
+			Minute   int64 `json:"minute"`
+			Requests int   `json:"requests"`
+			Errors   int   `json:"errors"`
+		} `json:"rolling_5m"`
+		RecentRequests []struct {
+			Path string `json:"path"`
+		} `json:"recent_requests"`
+	}
+	if err := json.Unmarshal(healthResponse.Body.Bytes(), &healthBody); err != nil {
+		t.Fatalf("decode health payload: %v", err)
+	}
+	if healthBody.Status != "ok" || healthBody.RequestTotal != 0 || len(healthBody.Rolling5M) != 0 || len(healthBody.RecentRequests) != 0 {
+		t.Fatalf("unexpected health payload: %+v", healthBody)
+	}
+
+	metricsJSONResponse := httptest.NewRecorder()
+	handler.ServeHTTP(metricsJSONResponse, httptest.NewRequest(http.MethodGet, "/metrics.json", nil))
+	if metricsJSONResponse.Code != http.StatusOK {
+		t.Fatalf("expected metrics json 200, got %d", metricsJSONResponse.Code)
+	}
+	var metricsBody struct {
+		RequestsTotal int    `json:"bigclaw_http_requests_total"`
+		ErrorsTotal   int    `json:"bigclaw_http_errors_total"`
+		HealthSummary string `json:"health_summary"`
+		Recent        []struct {
+			Path string `json:"path"`
+		} `json:"recent_requests"`
+	}
+	if err := json.Unmarshal(metricsJSONResponse.Body.Bytes(), &metricsBody); err != nil {
+		t.Fatalf("decode metrics json payload: %v", err)
+	}
+	if metricsBody.RequestsTotal != 1 || metricsBody.ErrorsTotal != 0 || metricsBody.HealthSummary != "healthy" {
+		t.Fatalf("unexpected metrics json payload: %+v", metricsBody)
+	}
+	if got := metricsBody.Recent[len(metricsBody.Recent)-1].Path; got != "/health" {
+		t.Fatalf("expected metrics json request to be tracked, got %+v", metricsBody.Recent)
+	}
+
+	alertsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(alertsResponse, httptest.NewRequest(http.MethodGet, "/alerts", nil))
+	if alertsResponse.Code != http.StatusOK {
+		t.Fatalf("expected alerts 200, got %d", alertsResponse.Code)
+	}
+	if !strings.Contains(alertsResponse.Body.String(), `"level":"ok"`) || !strings.Contains(alertsResponse.Body.String(), `"message":"System healthy"`) {
+		t.Fatalf("unexpected alerts payload: %s", alertsResponse.Body.String())
+	}
+
+	monitorResponse := httptest.NewRecorder()
+	handler.ServeHTTP(monitorResponse, httptest.NewRequest(http.MethodGet, "/monitor", nil))
+	if monitorResponse.Code != http.StatusOK {
+		t.Fatalf("expected monitor 200, got %d", monitorResponse.Code)
+	}
+	body := monitorResponse.Body.String()
+	if !strings.Contains(body, "BigClaw Monitor") || !strings.Contains(body, "Auto refresh every 5s") || !strings.Contains(body, "/metrics.json") {
+		t.Fatalf("unexpected monitor html: %s", body)
+	}
+}
+
 type dashboardResponse struct {
 	Summary struct {
 		TotalTasks        int            `json:"total_tasks"`

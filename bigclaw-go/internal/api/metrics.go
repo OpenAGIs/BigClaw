@@ -31,7 +31,20 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(renderPrometheusMetrics(snapshot)))
 		return
 	}
-	writeJSON(w, http.StatusOK, metricsJSONPayload(snapshot))
+	writeJSON(w, http.StatusOK, s.metricsJSONPayload(snapshot))
+}
+
+func (s *Server) handleMetricsJSON(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, s.metricsJSONPayload(s.buildMetricsSnapshot()))
+}
+
+func (s *Server) handleAlerts(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, s.monitorSnapshot().alertsPayload())
+}
+
+func (s *Server) handleMonitor(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write([]byte(renderMonitorHTML(s.monitorSnapshot())))
 }
 
 func (s *Server) buildMetricsSnapshot() metricsSnapshot {
@@ -55,8 +68,8 @@ func (s *Server) buildMetricsSnapshot() metricsSnapshot {
 	return snapshot
 }
 
-func metricsJSONPayload(snapshot metricsSnapshot) map[string]any {
-	return map[string]any{
+func (s *Server) metricsJSONPayload(snapshot metricsSnapshot) map[string]any {
+	payload := map[string]any{
 		"queue_size":               snapshot.QueueSize,
 		"events":                   snapshot.Events,
 		"trace_count":              snapshot.TraceCount,
@@ -66,6 +79,15 @@ func metricsJSONPayload(snapshot metricsSnapshot) map[string]any {
 		"event_log":                snapshot.EventLog,
 		"retention_watermark":      snapshot.RetentionWatermark,
 	}
+	monitor := s.monitorSnapshot()
+	payload["bigclaw_uptime_seconds"] = monitor.BigClawUptime
+	payload["bigclaw_http_requests_total"] = monitor.BigClawRequests
+	payload["bigclaw_http_errors_total"] = monitor.BigClawErrors
+	payload["bigclaw_http_error_rate"] = monitor.BigClawHTTPErrorRate
+	payload["health_summary"] = monitor.HealthSummary
+	payload["recent_requests"] = monitor.RecentRequests
+	payload["rolling_5m"] = monitor.Rolling5M
+	return payload
 }
 
 func wantsPrometheusMetrics(r *http.Request) bool {

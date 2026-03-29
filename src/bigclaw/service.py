@@ -16,7 +16,8 @@ from .deprecation import warn_legacy_runtime_surface
 GO_MAINLINE_REPLACEMENT = "bigclaw-go/cmd/bigclawd/main.go"
 LEGACY_MAINLINE_STATUS = (
     "bigclaw-go is the sole implementation mainline for active development; "
-    "service.py remains migration-only compatibility scaffolding."
+    "service.py remains migration-only compatibility scaffolding after the Go daemon "
+    "absorbed the operator monitor, alerts, and metrics JSON surfaces."
 )
 
 

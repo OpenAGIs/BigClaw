@@ -44,6 +44,7 @@ type Server struct {
 	FlowStore        *flow.Store
 	SchedulerPolicy  *scheduler.PolicyStore
 	SchedulerRuntime *scheduler.Scheduler
+	Monitor          *serverMonitor
 }
 
 type checkpointDiagnostics struct {
@@ -79,6 +80,9 @@ func (s *Server) Handler() http.Handler {
 	if s.Now == nil {
 		s.Now = time.Now
 	}
+	if s.Monitor == nil {
+		s.Monitor = newServerMonitor(s.Now())
+	}
 	if s.Control == nil {
 		s.Control = control.New()
 	}
@@ -92,10 +96,16 @@ func (s *Server) Handler() http.Handler {
 		s.SchedulerRuntime = scheduler.NewWithStores(s.SchedulerPolicy, nil)
 	}
 	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, s.monitorHealthPayload())
+	})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
 	mux.HandleFunc("/metrics", s.handleMetrics)
+	mux.HandleFunc("/metrics.json", s.handleMetricsJSON)
+	mux.HandleFunc("/alerts", s.handleAlerts)
+	mux.HandleFunc("/monitor", s.handleMonitor)
 	if store := s.logServiceStore(); store != nil {
 		mux.Handle("/internal/events/log/", http.StripPrefix("/internal/events/log", events.NewEventLogServiceHandler(store)))
 	}
@@ -315,7 +325,7 @@ func (s *Server) Handler() http.Handler {
 		}
 	})
 	mux.HandleFunc("/tasks/", s.handleTaskStatus)
-	return mux
+	return s.monitorMiddleware(mux)
 }
 
 func replayConsumerContract() map[string]any {
