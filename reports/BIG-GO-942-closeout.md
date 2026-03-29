@@ -12,7 +12,7 @@ Date: `2026-03-29`
 
 ## Last Validated Implementation Commit
 
-`07f790194ddf79e1a033ec750c06e96d363ee5b1`
+`2bb918819564bb3580c1ed92b1b53dfc5feac5e3`
 
 ## Reviewer Links
 
@@ -67,9 +67,9 @@ bash scripts/dev_smoke.py
 bash scripts/create_issues.py --help
 bash scripts/ops/bigclaw_refill_queue.py --help
 bash scripts/ops/bigclaw_github_sync.py status --json
-BIGCLAW_BOOTSTRAP_REPO_URL=<tmp bare repo> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py bootstrap --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
-BIGCLAW_BOOTSTRAP_REPO_URL=<tmp bare repo> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py cleanup --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
-bash scripts/ops/symphony_workspace_validate.py --repo-url <tmp bare repo> --workspace-root <tmp>/validate --issues COMPAT-VAL-1 COMPAT-VAL-2 --report-file <tmp>/report.json --no-cleanup --json
+BIGCLAW_BOOTSTRAP_REPO_URL=<tmp seeded bare repo with main> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py bootstrap --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
+BIGCLAW_BOOTSTRAP_REPO_URL=<tmp seeded bare repo with main> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py cleanup --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
+bash scripts/ops/symphony_workspace_validate.py --repo-url <tmp seeded bare repo with main> --workspace-root <tmp>/validate --issues COMPAT-VAL-1 COMPAT-VAL-2 --report-file <tmp>/report.json --no-cleanup --json
 ```
 
 ## Remaining Blocker

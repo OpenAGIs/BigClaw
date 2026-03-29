@@ -42,7 +42,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-942/bigclaw-go && go test ./cmd
 Result:
 
 ```text
-ok  	bigclaw-go/cmd/bigclawctl	5.211s
+ok  	bigclaw-go/cmd/bigclawctl	2.946s
 ```
 
 Command:
@@ -55,7 +55,7 @@ Result:
 
 ```text
 .................                                                        [100%]
-17 passed in 7.12s
+17 passed in 1.36s
 ```
 
 Command:
@@ -99,51 +99,52 @@ Result:
 {
   "ahead": 0,
   "behind": 0,
-  "branch": "main",
+  "branch": "symphony/BIG-GO-942",
   "detached": false,
   "dirty": true,
   "diverged": false,
-  "local_sha": "56c8efbda59344f850890bfe2e8d835016ff1b3d",
+  "local_sha": "2bb918819564bb3580c1ed92b1b53dfc5feac5e3",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "56c8efbda59344f850890bfe2e8d835016ff1b3d",
+  "remote_sha": "2bb918819564bb3580c1ed92b1b53dfc5feac5e3",
   "status": "ok",
   "synced": true
 }
 ```
 
-Note: this `github-sync status` sample was captured while the lane changes were still unstaged on
-top of `main`, so `dirty: true` is expected for that run.
+Note: this `github-sync status` sample was captured while the validation artifact refresh was
+unstaged on `symphony/BIG-GO-942`, so `dirty: true` is expected for that run.
 
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-942 && BIGCLAW_BOOTSTRAP_REPO_URL=<tmp bare repo> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py bootstrap --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-942 && BIGCLAW_BOOTSTRAP_REPO_URL=<tmp seeded bare repo with main> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py bootstrap --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
 ```
 
-Result: passed with `workspace_mode: worktree_created`
+Result: passed with `workspace_mode: worktree_created`, `mirror_created: true`, and `seed_created: true`
 
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-942 && BIGCLAW_BOOTSTRAP_REPO_URL=<tmp bare repo> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py cleanup --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-942 && BIGCLAW_BOOTSTRAP_REPO_URL=<tmp seeded bare repo with main> BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py cleanup --workspace <tmp>/workspaces/COMPAT-BOOT-1 --issue COMPAT-BOOT-1 --cache-base <tmp>/cache --json
 ```
 
-Result: passed with `workspace_mode: cleanup` and `removed: true`
+Result: passed with `workspace_mode: cleanup`, `removed: true`, and `cache_reused: true`
 
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-942 && bash scripts/ops/symphony_workspace_validate.py --repo-url <tmp bare repo> --workspace-root <tmp>/validate --issues COMPAT-VAL-1 COMPAT-VAL-2 --report-file <tmp>/report.json --no-cleanup --json
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-942 && bash scripts/ops/symphony_workspace_validate.py --repo-url <tmp seeded bare repo with main> --workspace-root <tmp>/validate --issues COMPAT-VAL-1 COMPAT-VAL-2 --report-file <tmp>/report.json --no-cleanup --json
 ```
 
-Result: passed with `workspace_count: 2`; report file emitted successfully
+Result: passed with `workspace_count: 2`; report file emitted successfully; summary confirmed one
+shared cache root, one shared mirror, one shared seed, and worktree creation for both workspaces
 
 ## Branch State
 
 - Branch: `symphony/BIG-GO-942`
-- Last validated implementation commit: `07f790194ddf79e1a033ec750c06e96d363ee5b1`
+- Last validated implementation commit: `2bb918819564bb3580c1ed92b1b53dfc5feac5e3`
 - `git status --short --branch` is clean against `origin/symphony/BIG-GO-942`
 - Later branch commits may refresh only report metadata and can advance the branch head without
   changing the validated wrapper behavior captured above.
