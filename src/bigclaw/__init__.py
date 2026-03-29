@@ -138,6 +138,9 @@ from .observability import (
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
+    DashboardRunContract,
+    DashboardRunContractAudit,
+    DashboardRunContractLibrary,
     ExecutionApiSpec,
     ExecutionContract,
     ExecutionContractAudit,
@@ -149,15 +152,10 @@ from .execution_contract import (
     ExecutionRole,
     MetricDefinition,
     PermissionCheckResult,
-    render_execution_contract_report,
-)
-from .dashboard_run_contract import (
-    DashboardRunContract,
-    DashboardRunContractAudit,
-    DashboardRunContractLibrary,
     SchemaField,
     SurfaceSchema,
     render_dashboard_run_contract_report,
+    render_execution_contract_report,
 )
 from .reports import (
     ArchivedIssue,
@@ -772,6 +770,7 @@ for _alias, _target in (
     ("audit_events", "observability"),
     ("cost_control", "operations"),
     ("connectors", "models"),
+    ("dashboard_run_contract", "execution_contract"),
     ("deprecation", "workspace_bootstrap"),
     ("dsl", "workflow"),
     ("event_bus", "observability"),
