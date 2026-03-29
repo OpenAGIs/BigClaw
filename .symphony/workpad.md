@@ -28,6 +28,7 @@
   - `deprecation.py`
   - `dsl.py`
   - `event_bus.py`
+  - `github_sync.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -42,6 +43,7 @@
   - `repo_triage.py`
   - `roadmap.py`
   - `risk.py`
+  - `service.py`
   - `validation_policy.py`
   - `workspace_bootstrap_cli.py`
   - `workspace_bootstrap_validation.py`
@@ -59,8 +61,10 @@
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
   - `scheduler.py` now owns the risk scoring helpers.
   - `workflow.py` now owns the workflow DSL helpers.
+  - `workspace_bootstrap.py` now owns the git sync automation helpers.
   - `workspace_bootstrap.py` now owns the bootstrap validation helpers.
   - `workspace_bootstrap.py` now owns the bootstrap CLI wrapper helpers.
+  - `__main__.py` now owns the legacy HTTP service helpers.
   - `__init__.py` now registers compatibility aliases so `import bigclaw.<old_module>` still resolves.
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host; repo policy compatibility now aliases into `repo_plane.py` without widening into broader contract semantics.
@@ -71,12 +75,10 @@
   - `connectors.py`: retained as the connector-facing surface; folding it further would start mixing transport stubs with unrelated package internals.
   - `legacy_shim.py`: retained as the operator wrapper compatibility surface used by external scripts.
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
-  - `github_sync.py`: retained as a standalone git-sync automation surface; folding it would mix repository mutation logic into unrelated runtime or server modules.
-  - `service.py`: retained as the legacy HTTP serving surface; folding it would widen the issue into UI/server packaging rather than asset compression.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `29`
-  - Delta: `-20`
+  - After: `27`
+  - Delta: `-22`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -102,3 +104,5 @@
     - Result: `28 passed in 0.11s`
   - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py`
     - Result: `9 passed in 3.02s`
+  - `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py tests/test_workspace_bootstrap.py tests/test_runtime.py tests/test_workflow.py tests/test_scheduler.py tests/test_observability.py`
+    - Result: `38 passed in 3.97s`
