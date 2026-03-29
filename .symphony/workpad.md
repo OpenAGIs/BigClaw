@@ -75,6 +75,8 @@
     - Reason: migrated to the Go-owned `bigclaw-go/internal/policy` package via a direct contract port of the validation report gate.
   - `tests/test_repo_collaboration.py`
     - Reason: migrated to a new Go-owned `bigclaw-go/internal/collaboration` package that covers the native/repo thread merge contract and repo-board comment projection usage.
+  - `tests/test_memory.py`
+    - Reason: migrated to a new Go-owned `bigclaw-go/internal/memory` package for persisted task-pattern suggestions and history-based rule injection.
 
 - Kept for later lanes:
   - `tests/test_repo_links.py`
@@ -115,10 +117,14 @@
     - Added Go-native collaboration comment, decision note, thread, and merge contracts.
   - `bigclaw-go/internal/collaboration/collaboration_test.go`
     - Added native/repo collaboration thread merge parity coverage.
+  - `bigclaw-go/internal/memory/store.go`
+    - Added Go-native task memory pattern storage and rule suggestion contract.
+  - `bigclaw-go/internal/memory/store_test.go`
+    - Added persisted history reuse and rule injection parity coverage.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 28` (`-15`)
-  - Repository-wide Python files: `123 -> 108` (`-15`)
+  - `tests/**` Python files: `43 -> 27` (`-16`)
+  - Repository-wide Python files: `123 -> 107` (`-16`)
 
 ## Validation Results
 
@@ -194,3 +200,9 @@
   - `28`
 - `rg --files | rg '\.py$' | wc -l`
   - `108`
+- `cd bigclaw-go && go test ./internal/memory`
+  - `ok  	bigclaw-go/internal/memory	1.118s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `27`
+- `rg --files | rg '\.py$' | wc -l`
+  - `107`
