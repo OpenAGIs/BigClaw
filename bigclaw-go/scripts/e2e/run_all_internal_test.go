@@ -124,10 +124,7 @@ func newRunAllHarness(t *testing.T) runAllHarness {
 func (h runAllHarness) installStubs() {
 	h.writeFile("cmd/bigclawctl/main.go", runAllBigclawctlStub)
 	h.writeFile("scripts/e2e/broker_bootstrap_summary.go", runAllBrokerBootstrapStub)
-	h.writeFile("scripts/e2e/export_validation_bundle.py", runAllExportBundleStub)
-	if err := os.Chmod(filepath.Join(h.root, "scripts", "e2e", "export_validation_bundle.py"), 0o755); err != nil {
-		panic(err)
-	}
+	h.writeFile("scripts/e2e/export_validation_bundle.go", runAllExportBundleStub)
 	h.writeFile("scripts/e2e/validation_bundle_continuation_scorecard.go", runAllScorecardStub)
 	h.writeFile("scripts/e2e/validation_bundle_continuation_policy_gate.go", runAllGateSuccessStub)
 }
@@ -275,26 +272,68 @@ func main() {
 `
 
 const runAllExportBundleStub = `
-#!/usr/bin/env python3
-import json
-import pathlib
-import sys
+package main
 
-args = sys.argv[1:]
-root = pathlib.Path(args[args.index('--go-root') + 1])
-bundle_dir = root / args[args.index('--bundle-dir') + 1]
-bundle_dir.mkdir(parents=True, exist_ok=True)
-calls_path = root / 'calls.jsonl'
-gate_path = next(root.rglob('validation-bundle-continuation-policy-gate.json'), None)
-payload = {
-    'gate_exists': gate_path is not None,
-    'run_broker': args[args.index('--run-broker') + 1],
-    'broker_backend': args[args.index('--broker-backend') + 1],
-    'broker_report_path': args[args.index('--broker-report-path') + 1],
-    'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
+import (
+    "encoding/json"
+    "os"
+    "path/filepath"
+)
+
+func main() {
+    args := os.Args[1:]
+    values := map[string]string{}
+    for i := 0; i < len(args)-1; i += 2 {
+        if len(args[i]) > 2 && args[i][:2] == "--" {
+            values[args[i][2:]] = args[i+1]
+        }
+    }
+    root := values["go-root"]
+    bundleDir := filepath.Join(root, filepath.FromSlash(values["bundle-dir"]))
+    if err := os.MkdirAll(bundleDir, 0o755); err != nil {
+        panic(err)
+    }
+    payload := map[string]any{
+        "gate_exists":                   findFile(root, "validation-bundle-continuation-policy-gate.json") != "",
+        "run_broker":                    values["run-broker"],
+        "broker_backend":                values["broker-backend"],
+        "broker_report_path":            values["broker-report-path"],
+        "broker_bootstrap_summary_path": values["broker-bootstrap-summary-path"],
+    }
+    body, err := json.Marshal(payload)
+    if err != nil {
+        panic(err)
+    }
+    callsPath := filepath.Join(root, "calls.jsonl")
+    fh, err := os.OpenFile(callsPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+    if err != nil {
+        panic(err)
+    }
+    defer fh.Close()
+    if _, err := fh.Write(append(body, '\n')); err != nil {
+        panic(err)
+    }
 }
-with calls_path.open('a', encoding='utf-8') as handle:
-    handle.write(json.dumps(payload) + '\n')
+
+func fileExists(path string) bool {
+    _, err := os.Stat(path)
+    return err == nil
+}
+
+func findFile(root, name string) string {
+    match := ""
+    _ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+        if err != nil || info == nil || info.IsDir() {
+            return nil
+        }
+        if filepath.Base(path) == name {
+            match = path
+            return filepath.SkipAll
+        }
+        return nil
+    })
+    return match
+}
 `
 
 const runAllScorecardStub = `

@@ -239,3 +239,67 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `6`
   - Result: `ok  	bigclaw-go/internal/regression	1.286s`
 - `python3 - <<'PY' ...`
   - Result: repository Python file count `106`; `bigclaw-go/scripts/e2e/**` Python file count `5`.
+
+## Continuation Slice: export_validation_bundle
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
+- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+
+Replacement paths for this slice:
+
+- `bigclaw-go/scripts/e2e/export_validation_bundle.go`
+- `bigclaw-go/scripts/e2e/export_validation_bundle_internal_test.go`
+
+Current repository Python file count before this slice: `106`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `5`
+
+### Plan
+
+1. Replace the validation-bundle exporter with a Go-native entrypoint that preserves the bundle summary, manifest, README/index, broker summary, and shared-queue companion behavior.
+2. Port the existing Python unit coverage to Go around broker summary handling, component failure extraction, validation-matrix rows, and rendered index text.
+3. Switch `scripts/e2e/run_all.sh` and its harness test to invoke the Go exporter path.
+4. Record targeted validation commands and Python-count deltas, then commit and push the scoped slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/export_validation_bundle.py` and `bigclaw-go/scripts/e2e/export_validation_bundle_test.py` from the remaining `scripts/e2e` Python backlog by replacing them with Go-native files.
+- Keep `scripts/e2e/run_all.sh` bundle export behavior aligned with the Go exporter.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/export_validation_bundle.go ./scripts/e2e/export_validation_bundle_internal_test.go`
+- `cd bigclaw-go && go test ./scripts/e2e/run_all_internal_test.go`
+- `cd bigclaw-go && rg -n "export_validation_bundle\\.py|export_validation_bundle\\.go" README.md docs/go-cli-script-migration.md scripts/e2e/run_all.sh scripts/e2e/run_all_internal_test.go`
+- `python3 - <<'PY' ...`
+
+### Outcome
+
+- Replaced `bigclaw-go/scripts/e2e/export_validation_bundle.py` with `bigclaw-go/scripts/e2e/export_validation_bundle.go`.
+- Replaced `bigclaw-go/scripts/e2e/export_validation_bundle_test.py` with `bigclaw-go/scripts/e2e/export_validation_bundle_internal_test.go`.
+- Switched `bigclaw-go/scripts/e2e/run_all.sh` and its harness test to invoke the Go exporter directly.
+- Updated `bigclaw-go/README.md` and `bigclaw-go/docs/go-cli-script-migration.md` to point at the Go-native exporter and removed the legacy Python exporter from the remaining backlog list.
+
+### Python File Count Impact
+
+- Repository Python files before this slice: `13`
+- Repository Python files after this slice: `11`
+- `bigclaw-go/scripts/e2e/**` Python files before this slice: `5`
+- `bigclaw-go/scripts/e2e/**` Python files after this slice: `3`
+- Net reduction across this issue so far: `12`
+- Net reduction in this slice: `2`
+
+### Validation Record
+
+- `cd bigclaw-go && go test ./scripts/e2e/export_validation_bundle.go ./scripts/e2e/export_validation_bundle_internal_test.go`
+  - Result: `ok  	command-line-arguments	1.466s`
+- `cd bigclaw-go && go test ./scripts/e2e/run_all_internal_test.go`
+  - Result: `ok  	command-line-arguments	11.421s`
+- `cd bigclaw-go && rg -n "export_validation_bundle\\.py|export_validation_bundle\\.go" README.md docs/go-cli-script-migration.md scripts/e2e/run_all.sh scripts/e2e/run_all_internal_test.go`
+  - Result: `scripts/e2e/run_all.sh`, `scripts/e2e/run_all_internal_test.go`, `README.md`, and `docs/go-cli-script-migration.md` now reference `export_validation_bundle.go`; the only remaining `.py` hit is the migration table row documenting the legacy-to-Go replacement.
+- `cd bigclaw-go && find . -name '*.py' | wc -l`
+  - Result: `11`
+- `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
+  - Result: `3`
