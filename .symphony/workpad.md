@@ -19,6 +19,14 @@
 - `tests/test_repo_triage.py`
 - `tests/test_saved_views.py`
 - `tests/test_dashboard_run_contract.py`
+- `tests/test_governance.py`
+- `tests/test_queue.py`
+- `tests/test_execution_contract.py`
+- `tests/test_workspace_bootstrap.py`
+- `tests/test_validation_policy.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_memory.py`
+- `tests/test_repo_links.py`
 
 ## Acceptance
 
@@ -77,10 +85,10 @@
     - Reason: migrated to a new Go-owned `bigclaw-go/internal/collaboration` package that covers the native/repo thread merge contract and repo-board comment projection usage.
   - `tests/test_memory.py`
     - Reason: migrated to a new Go-owned `bigclaw-go/internal/memory` package for persisted task-pattern suggestions and history-based rule injection.
+  - `tests/test_repo_links.py`
+    - Reason: covered by `bigclaw-go/internal/api/server_test.go` and existing `bigclaw-go/internal/repo/repo_surfaces_test.go` after exposing closeout `accepted_commit_hash` and `run_commit_links` round-trip semantics in the Go-owned run-detail API.
 
 - Kept for later lanes:
-  - `tests/test_repo_links.py`
-    - Reason: it still crosses into broader run closeout / observability payload round-trip behavior, beyond the minimal repo-surface scope handled here.
   - `tests/test_github_sync.py`
     - Reason: Go `githubsync` uses a different `Pushed` status semantic in clean fast-forward/default-head cases, so direct parity would require a wider behavior decision rather than a scoped migration.
   - Other remaining `tests/**` Python files
@@ -121,10 +129,14 @@
     - Added Go-native task memory pattern storage and rule suggestion contract.
   - `bigclaw-go/internal/memory/store_test.go`
     - Added persisted history reuse and rule injection parity coverage.
+  - `bigclaw-go/internal/api/v2.go`
+    - Extended run closeout summaries to expose accepted commit hash and run-commit links from Go-owned task metadata.
+  - `bigclaw-go/internal/api/server_test.go`
+    - Added closeout round-trip coverage for accepted commit hash and preserved candidate role ordering.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 27` (`-16`)
-  - Repository-wide Python files: `123 -> 107` (`-16`)
+  - `tests/**` Python files: `43 -> 26` (`-17`)
+  - Repository-wide Python files: `123 -> 106` (`-17`)
 
 ## Validation Results
 
@@ -206,3 +218,11 @@
   - `27`
 - `rg --files | rg '\.py$' | wc -l`
   - `107`
+- `cd bigclaw-go && go test ./internal/api -run 'TestV2RunDetailCloseoutSummaryFromMetadata|TestV2RunDetailCloseoutIncludesAcceptedCommitAndLinks|TestV2RunDetailIncludesRepoTriagePacket'`
+  - `ok  	bigclaw-go/internal/api	1.081s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `26`
+- `rg --files | rg '\.py$' | wc -l`
+  - `106`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/api/v2.go`, and the deleted `tests/test_repo_links.py`

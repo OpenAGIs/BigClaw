@@ -3358,6 +3358,58 @@ func TestV2RunDetailCloseoutSummaryFromMetadata(t *testing.T) {
 	}
 }
 
+func TestV2RunDetailCloseoutIncludesAcceptedCommitAndLinks(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006200, 0) }}
+	handler := server.Handler()
+	task := domain.Task{
+		ID:      "task-run-links",
+		TraceID: "trace-run-links",
+		Title:   "Close out repo links",
+		State:   domain.TaskSucceeded,
+		Metadata: map[string]string{
+			"team":                 "platform",
+			"project":              "alpha",
+			"validation_evidence":  `["go test ./internal/api -run TestV2RunDetailCloseoutIncludesAcceptedCommitAndLinks"]`,
+			"git_push_succeeded":   "true",
+			"git_log_stat_output":  "commit ccc333",
+			"remote_synced":        "true",
+			"accepted_commit_hash": "ccc333",
+			"run_commit_links":     `[{"run_id":"run-143","commit_hash":"aaa111","role":"source","repo_space_id":"space-1"},{"run_id":"run-143","commit_hash":"bbb222","role":"candidate","repo_space_id":"space-1"},{"run_id":"run-143","commit_hash":"ccc333","role":"accepted","repo_space_id":"space-1"}]`,
+		},
+	}
+	recorder.StoreTask(task)
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-links?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		Closeout struct {
+			AcceptedCommitHash string `json:"accepted_commit_hash"`
+			RunCommitLinks     []struct {
+				RunID       string `json:"run_id"`
+				CommitHash  string `json:"commit_hash"`
+				Role        string `json:"role"`
+				RepoSpaceID string `json:"repo_space_id"`
+			} `json:"run_commit_links"`
+		} `json:"closeout"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run detail closeout links: %v", err)
+	}
+	if decoded.Closeout.AcceptedCommitHash != "ccc333" {
+		t.Fatalf("expected accepted commit hash, got %+v", decoded.Closeout)
+	}
+	if len(decoded.Closeout.RunCommitLinks) != 3 {
+		t.Fatalf("expected run commit links, got %+v", decoded.Closeout.RunCommitLinks)
+	}
+	if decoded.Closeout.RunCommitLinks[1].Role != "candidate" || decoded.Closeout.RunCommitLinks[1].CommitHash != "bbb222" {
+		t.Fatalf("expected candidate link to survive round trip, got %+v", decoded.Closeout.RunCommitLinks[1])
+	}
+}
+
 func TestV2RunReportSanitizesAttachmentFilename(t *testing.T) {
 	recorder := observability.NewRecorder()
 	task := domain.Task{

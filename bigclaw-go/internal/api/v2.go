@@ -346,14 +346,16 @@ type runReportLink struct {
 }
 
 type runCloseoutSummary struct {
-	ValidationEvidence []string `json:"validation_evidence"`
-	GitPushSucceeded   bool     `json:"git_push_succeeded"`
-	GitPushOutput      string   `json:"git_push_output,omitempty"`
-	GitLogStatOutput   string   `json:"git_log_stat_output"`
-	RemoteSynced       bool     `json:"remote_synced"`
-	LocalSHA           string   `json:"local_sha,omitempty"`
-	RemoteSHA          string   `json:"remote_sha,omitempty"`
-	Complete           bool     `json:"complete"`
+	ValidationEvidence []string             `json:"validation_evidence"`
+	GitPushSucceeded   bool                 `json:"git_push_succeeded"`
+	GitPushOutput      string               `json:"git_push_output,omitempty"`
+	GitLogStatOutput   string               `json:"git_log_stat_output"`
+	RemoteSynced       bool                 `json:"remote_synced"`
+	LocalSHA           string               `json:"local_sha,omitempty"`
+	RemoteSHA          string               `json:"remote_sha,omitempty"`
+	AcceptedCommitHash string               `json:"accepted_commit_hash,omitempty"`
+	RunCommitLinks     []repo.RunCommitLink `json:"run_commit_links,omitempty"`
+	Complete           bool                 `json:"complete"`
 }
 
 type runRepoTriageSummary struct {
@@ -1861,6 +1863,7 @@ func buildRunValidation(task domain.Task) runValidationSummary {
 }
 
 func buildRunCloseout(task domain.Task) runCloseoutSummary {
+	links := runCommitLinksFromMetadata(task)
 	closeout := runCloseoutSummary{
 		ValidationEvidence: metadataStringSlice(task, "validation_evidence"),
 		GitPushSucceeded:   metadataBoolValue(task, "git_push_succeeded"),
@@ -1869,6 +1872,8 @@ func buildRunCloseout(task domain.Task) runCloseoutSummary {
 		RemoteSynced:       metadataBoolValue(task, "remote_synced"),
 		LocalSHA:           strings.TrimSpace(task.Metadata["local_sha"]),
 		RemoteSHA:          strings.TrimSpace(task.Metadata["remote_sha"]),
+		AcceptedCommitHash: firstNonEmpty(task.Metadata["accepted_commit_hash"], commitHashForRole(links, "accepted")),
+		RunCommitLinks:     links,
 	}
 	closeout.Complete = len(closeout.ValidationEvidence) > 0 && closeout.GitPushSucceeded && closeout.GitLogStatOutput != "" && closeout.RemoteSynced
 	return closeout
