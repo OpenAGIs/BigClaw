@@ -1,28 +1,28 @@
 [
   {
-    "label": "after_retention_trim",
-    "timestamp": "2026-03-17T12:00:05Z",
-    "nodes": {
-      "broker-a": {
-        "role": "leader",
-        "healthy": true
-      },
-      "broker-b": {
-        "role": "follower",
-        "healthy": true
-      },
-      "broker-c": {
-        "role": "follower",
-        "healthy": true
-      }
-    },
-    "retention_floor": 3,
     "committed_sequences": [
       1,
       2,
       3,
       4,
       5
-    ]
+    ],
+    "label": "after_retention_trim",
+    "nodes": {
+      "broker-a": {
+        "healthy": true,
+        "role": "leader"
+      },
+      "broker-b": {
+        "healthy": true,
+        "role": "follower"
+      },
+      "broker-c": {
+        "healthy": true,
+        "role": "follower"
+      }
+    },
+    "retention_floor": 3,
+    "timestamp": "2026-03-17T12:00:05Z"
   }
 ]

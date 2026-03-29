@@ -1,18 +1,18 @@
 [
   {
+    "delivery_phase": "replay",
+    "duplicate": false,
     "durable_sequence": 3,
     "event_id": "bf02-event-03",
-    "trace_id": "trace-bf02",
-    "delivery_phase": "replay",
     "source_node": "broker-a",
-    "duplicate": false
+    "trace_id": "trace-bf02"
   },
   {
+    "delivery_phase": "replay",
+    "duplicate": false,
     "durable_sequence": 4,
     "event_id": "bf02-event-04",
-    "trace_id": "trace-bf02",
-    "delivery_phase": "replay",
     "source_node": "broker-a",
-    "duplicate": false
+    "trace_id": "trace-bf02"
   }
 ]

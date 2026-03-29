@@ -1,38 +1,38 @@
 [
   {
-    "timestamp": "2026-03-17T12:00:00Z",
+    "fence_reason": "",
     "group_id": "group-a",
-    "subscriber_id": "subscriber-a",
-    "owner_id": "consumer-a",
-    "lease_id": "lease-1",
     "lease_epoch": 1,
-    "prior_sequence": 0,
+    "lease_id": "lease-1",
     "next_sequence": 0,
-    "transition": "leased",
-    "fence_reason": ""
-  },
-  {
-    "timestamp": "2026-03-17T12:00:04Z",
-    "group_id": "group-a",
-    "subscriber_id": "subscriber-a",
     "owner_id": "consumer-a",
-    "lease_id": "lease-1",
-    "lease_epoch": 1,
     "prior_sequence": 0,
-    "next_sequence": 2,
-    "transition": "committed",
-    "fence_reason": ""
+    "subscriber_id": "subscriber-a",
+    "timestamp": "2026-03-17T12:00:00Z",
+    "transition": "leased"
   },
   {
-    "timestamp": "2026-03-17T12:00:05Z",
+    "fence_reason": "",
     "group_id": "group-a",
-    "subscriber_id": "subscriber-a",
-    "owner_id": "consumer-a",
-    "lease_id": "lease-1",
     "lease_epoch": 1,
-    "prior_sequence": 2,
+    "lease_id": "lease-1",
+    "next_sequence": 2,
+    "owner_id": "consumer-a",
+    "prior_sequence": 0,
+    "subscriber_id": "subscriber-a",
+    "timestamp": "2026-03-17T12:00:04Z",
+    "transition": "committed"
+  },
+  {
+    "fence_reason": "",
+    "group_id": "group-a",
+    "lease_epoch": 1,
+    "lease_id": "lease-1",
     "next_sequence": 4,
-    "transition": "replayed",
-    "fence_reason": ""
+    "owner_id": "consumer-a",
+    "prior_sequence": 2,
+    "subscriber_id": "subscriber-a",
+    "timestamp": "2026-03-17T12:00:05Z",
+    "transition": "replayed"
   }
 ]

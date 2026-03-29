@@ -1,38 +1,38 @@
 [
   {
-    "timestamp": "2026-03-17T12:00:00Z",
+    "attempt": 1,
+    "client_outcome": "committed",
+    "durable_sequence": 1,
     "event_id": "bf08-event-01",
-    "trace_id": "trace-bf08",
-    "attempt": 1,
     "source_node": "producer-a",
-    "client_outcome": "committed",
-    "durable_sequence": 1
+    "timestamp": "2026-03-17T12:00:00Z",
+    "trace_id": "trace-bf08"
   },
   {
-    "timestamp": "2026-03-17T12:00:01Z",
+    "attempt": 1,
+    "client_outcome": "committed",
+    "durable_sequence": 2,
     "event_id": "bf08-event-02",
-    "trace_id": "trace-bf08",
-    "attempt": 1,
     "source_node": "producer-a",
-    "client_outcome": "committed",
-    "durable_sequence": 2
+    "timestamp": "2026-03-17T12:00:01Z",
+    "trace_id": "trace-bf08"
   },
   {
-    "timestamp": "2026-03-17T12:00:02Z",
+    "attempt": 1,
+    "client_outcome": "committed",
+    "durable_sequence": 3,
     "event_id": "bf08-event-03",
-    "trace_id": "trace-bf08",
-    "attempt": 1,
     "source_node": "producer-a",
-    "client_outcome": "committed",
-    "durable_sequence": 3
+    "timestamp": "2026-03-17T12:00:02Z",
+    "trace_id": "trace-bf08"
   },
   {
-    "timestamp": "2026-03-17T12:00:03Z",
-    "event_id": "bf08-event-04",
-    "trace_id": "trace-bf08",
     "attempt": 1,
-    "source_node": "producer-a",
     "client_outcome": "committed",
-    "durable_sequence": 4
+    "durable_sequence": 4,
+    "event_id": "bf08-event-04",
+    "source_node": "producer-a",
+    "timestamp": "2026-03-17T12:00:03Z",
+    "trace_id": "trace-bf08"
   }
 ]

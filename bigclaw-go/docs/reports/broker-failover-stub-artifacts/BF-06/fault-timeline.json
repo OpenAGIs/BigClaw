@@ -1,11 +1,11 @@
 [
   {
-    "timestamp": "2026-03-17T12:00:05Z",
     "action": "replay_disconnect",
-    "target": "consumer-a",
     "details": {
       "after_sequence": 3,
       "reconnect_node": "broker-b"
-    }
+    },
+    "target": "consumer-a",
+    "timestamp": "2026-03-17T12:00:05Z"
   }
 ]

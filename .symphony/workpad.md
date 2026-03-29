@@ -180,3 +180,62 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `7`
   - Result: `ok  	bigclaw-go/internal/regression	0.525s`
 - `python3 - <<'PY' ...`
   - Result: repository Python file count `107`; `bigclaw-go/scripts/e2e/**` Python file count `6`.
+
+## Continuation Slice: broker_failover_stub_matrix
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
+
+Replacement path for this slice:
+
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.go`
+
+Current repository Python file count before this slice: `107`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `6`
+
+### Plan
+
+1. Replace the deterministic broker-failover stub generator with a Go-native entrypoint that preserves the checked-in report, proof-summary, and artifact contract.
+2. Rewrite the existing Go tests to validate the Go-native helpers directly instead of importing the Python module.
+3. Update docs and backlog references from the Python path to the Go path.
+4. Regenerate the checked-in broker failover report surfaces, record the Python-count deltas, then commit and push the scoped slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py` from the remaining `scripts/e2e` Python backlog by replacing it with `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.go`.
+- Keep `docs/reports/broker-failover-stub-report.json`, `docs/reports/broker-checkpoint-fencing-proof-summary.json`, and `docs/reports/broker-retention-boundary-proof-summary.json` aligned with the new Go generator.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/broker_failover_stub_matrix.go ./scripts/e2e/broker_failover_stub_matrix_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/broker_failover_stub_matrix.go --output bigclaw-go/docs/reports/broker-failover-stub-report.json --artifact-root bigclaw-go/docs/reports/broker-failover-stub-artifacts --checkpoint-fencing-summary-output bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json --retention-boundary-summary-output bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json`
+- `python3 - <<'PY' ...`
+
+### Outcome
+
+- Replaced `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py` with `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.go`.
+- Reworked `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_internal_test.go` to validate the Go-native helpers directly instead of importing the Python module.
+- Updated broker failover docs and backlog references to point at the Go entrypoint.
+- Regenerated `bigclaw-go/docs/reports/broker-failover-stub-report.json`, `bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json`, `bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json`, and the checked-in per-scenario raw artifact files from the Go entrypoint.
+
+### Python File Count Impact
+
+- Repository Python files before this slice: `107`
+- Repository Python files after this slice: `106`
+- `bigclaw-go/scripts/e2e/**` Python files before this slice: `6`
+- `bigclaw-go/scripts/e2e/**` Python files after this slice: `5`
+- Net reduction across this issue so far: `10`
+- Net reduction in this slice: `1`
+
+### Validation Record
+
+- `cd bigclaw-go && go test ./scripts/e2e/broker_failover_stub_matrix.go ./scripts/e2e/broker_failover_stub_matrix_internal_test.go`
+  - Result: `ok  	command-line-arguments	1.524s`
+- `cd bigclaw-go && go run ./scripts/e2e/broker_failover_stub_matrix.go --output bigclaw-go/docs/reports/broker-failover-stub-report.json --artifact-root bigclaw-go/docs/reports/broker-failover-stub-artifacts --checkpoint-fencing-summary-output bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json --retention-boundary-summary-output bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json`
+  - Result: exit code `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestDurabilityRolloutProofSummariesStayAligned|TestDurabilityReviewBundleStaysAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	1.286s`
+- `python3 - <<'PY' ...`
+  - Result: repository Python file count `106`; `bigclaw-go/scripts/e2e/**` Python file count `5`.

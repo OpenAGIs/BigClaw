@@ -1,48 +1,48 @@
 [
   {
+    "committed_sequences": [],
     "label": "before",
-    "timestamp": "2026-03-17T12:00:00Z",
     "nodes": {
       "broker-a": {
-        "role": "leader",
-        "healthy": true
+        "healthy": true,
+        "role": "leader"
       },
       "broker-b": {
-        "role": "follower",
-        "healthy": true
+        "healthy": true,
+        "role": "follower"
       },
       "broker-c": {
-        "role": "follower",
-        "healthy": true
+        "healthy": true,
+        "role": "follower"
       }
     },
     "retention_floor": 1,
-    "committed_sequences": []
+    "timestamp": "2026-03-17T12:00:00Z"
   },
   {
-    "label": "after_recovery",
-    "timestamp": "2026-03-17T12:00:07Z",
-    "nodes": {
-      "broker-a": {
-        "role": "follower",
-        "healthy": true
-      },
-      "broker-b": {
-        "role": "leader",
-        "healthy": true
-      },
-      "broker-c": {
-        "role": "follower",
-        "healthy": true
-      }
-    },
-    "retention_floor": 1,
     "committed_sequences": [
       1,
       2,
       3,
       4,
       5
-    ]
+    ],
+    "label": "after_recovery",
+    "nodes": {
+      "broker-a": {
+        "healthy": true,
+        "role": "follower"
+      },
+      "broker-b": {
+        "healthy": true,
+        "role": "leader"
+      },
+      "broker-c": {
+        "healthy": true,
+        "role": "follower"
+      }
+    },
+    "retention_floor": 1,
+    "timestamp": "2026-03-17T12:00:07Z"
   }
 ]

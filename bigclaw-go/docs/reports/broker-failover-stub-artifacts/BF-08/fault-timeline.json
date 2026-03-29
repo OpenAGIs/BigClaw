@@ -1,12 +1,12 @@
 [
   {
-    "timestamp": "2026-03-17T12:00:04Z",
     "action": "split_brain_duplicate_window",
-    "target": "broker-b",
     "details": {
       "duplicate_event_ids": [
         "bf08-event-03"
       ]
-    }
+    },
+    "target": "broker-b",
+    "timestamp": "2026-03-17T12:00:04Z"
   }
 ]
