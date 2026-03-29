@@ -397,9 +397,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
-                    "tests/test_saved_views.py tests/test_workflow.py tests/test_execution_flow.py "
-                    "tests/test_evaluation.py -q"
+                    "cd bigclaw-go && go test ./internal/controlcenterparity ./internal/reporting "
+                    "./internal/product ./internal/workflow ./internal/executionparity "
+                    "./internal/evaluationparity"
                 ),
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
                 evidence=["weekly-review", "validation-report"],
@@ -412,13 +412,13 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="command-center-tests",
-                        target="tests/test_control_center.py",
+                        target="bigclaw-go/internal/controlcenterparity/controlcenterparity_test.go",
                         capability="ops-control",
                         note="queue control center validation",
                     ),
                     EvidenceLink(
                         label="operations-tests",
-                        target="tests/test_operations.py",
+                        target="bigclaw-go/internal/reporting/reporting_test.go",
                         capability="ops-control",
                         note="dashboard, weekly report, regression, and version-center coverage",
                     ),
@@ -436,13 +436,13 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="workflow-tests",
-                        target="tests/test_workflow.py",
+                        target="bigclaw-go/internal/workflow/engine_test.go",
                         capability="ops-control",
                         note="approval flow validation",
                     ),
                     EvidenceLink(
                         label="execution-flow-tests",
-                        target="tests/test_execution_flow.py",
+                        target="bigclaw-go/internal/executionparity/executionparity_test.go",
                         capability="ops-control",
                         note="approval and execution handoff evidence",
                     ),
@@ -454,7 +454,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="saved-views-tests",
-                        target="tests/test_saved_views.py",
+                        target="bigclaw-go/internal/product/saved_views_test.go",
                         capability="saved-views",
                         note="saved-view audit coverage",
                     ),
@@ -466,7 +466,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-tests",
-                        target="tests/test_evaluation.py",
+                        target="bigclaw-go/internal/evaluationparity/evaluationparity_test.go",
                         capability="rollback-simulation",
                         note="replay and benchmark validation",
                     ),

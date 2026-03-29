@@ -99,7 +99,7 @@ func TestEntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence(t *te
 		Version: "v4.0-v3",
 		Candidates: []CandidateEntry{
 			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "python3 -m pytest tests/test_design_system.py -q", Capabilities: []string{"release-gate", "reporting"}, Evidence: []string{"acceptance-suite", "validation-report"}},
-			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "python3 -m pytest tests/test_operations.py -q", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
+			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/reporting", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
 			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "python3 -m pytest tests/test_orchestration.py -q", Capabilities: []string{"commercialization", "handoff"}, Evidence: []string{"pilot-evidence"}},
 		},
 	}
@@ -137,7 +137,7 @@ func TestEntryGateHoldsWhenV2BaselineIsMissingOrNotReady(t *testing.T) {
 		Version: "v4.0-v3",
 		Candidates: []CandidateEntry{
 			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "python3 -m pytest tests/test_design_system.py -q", Capabilities: []string{"release-gate"}, Evidence: []string{"acceptance-suite", "validation-report"}},
-			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "python3 -m pytest tests/test_operations.py -q", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
+			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/reporting", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
 			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "python3 -m pytest tests/test_orchestration.py -q", Capabilities: []string{"commercialization"}, Evidence: []string{"pilot-evidence"}},
 		},
 	}
@@ -261,7 +261,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Priority:          "P0",
 		Owner:             "ops-platform",
 		Outcome:           "Package command-center and approval surfaces with linked evidence.",
-		ValidationCommand: "python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
+		ValidationCommand: "cd bigclaw-go && go test ./internal/reporting ./internal/product",
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
@@ -415,16 +415,16 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	}
 	for _, want := range []string{
 		"src/bigclaw/operations.py",
-		"tests/test_control_center.py",
-		"tests/test_operations.py",
+		"bigclaw-go/internal/controlcenterparity/controlcenterparity_test.go",
+		"bigclaw-go/internal/reporting/reporting_test.go",
 		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/workflow.py",
-		"tests/test_workflow.py",
-		"tests/test_execution_flow.py",
+		"bigclaw-go/internal/workflow/engine_test.go",
+		"bigclaw-go/internal/executionparity/executionparity_test.go",
 		"src/bigclaw/saved_views.py",
-		"tests/test_saved_views.py",
+		"bigclaw-go/internal/product/saved_views_test.go",
 		"src/bigclaw/evaluation.py",
-		"tests/test_evaluation.py",
+		"bigclaw-go/internal/evaluationparity/evaluationparity_test.go",
 	} {
 		if _, ok := targets[want]; !ok {
 			t.Fatalf("missing evidence link target %q in ops candidate", want)

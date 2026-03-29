@@ -1,30 +1,29 @@
 # BIG-GO-948 Workpad
 
-## Scope
+## Plan
 
-Nineteenth-wave cleanup for the remaining Python design-system test by moving its component inventory, console top-bar, information architecture, and UI-acceptance assertions into Go-native parity coverage.
-
-Planned delete set for this continuation:
-- `tests/test_design_system.py`
-
-Go coverage used for replacement:
-- new `bigclaw-go/internal/designsystemparity/designsystemparity_test.go`
+1. Confirm the remaining Python test lane scope under `tests/` and map each file to existing Go-native coverage or a residual delete plan.
+2. Delete Python tests whose contract is already covered in `bigclaw-go`, keeping the change scoped to the lane.
+3. Update planning/reporting references that still point at removed Python test files so checked-in traceability stays accurate.
+4. Refresh `reports/BIG-GO-948-validation.md` with the lane file list, replacement coverage, exact validation commands, results, and residual risks.
+5. Run targeted Go tests plus repository status verification, then commit and push the branch.
 
 ## Acceptance
 
-- Replace the Python design-system test with Go-native parity coverage.
-- Keep the changes narrow: port only the contract already exercised by `tests/test_design_system.py` into a dedicated Go package.
-- Delete `tests/test_design_system.py` only after the Go replacement exists.
-- Update `reports/BIG-GO-948-validation.md` with the new completed file, replacement coverage, command, result, and remaining plan.
-- Run targeted Go validation for `bigclaw-go/internal/designsystemparity`.
-- Commit and push the continuation changes.
+- Lane file list is explicit for the remaining Python tests.
+- `tests/test_operations.py` and `tests/test_reports.py` are removed only if Go-native replacements already cover their contracts.
+- `tests/test_ui_review.py` is either replaced or left with an explicit delete/migration plan and stated risk.
+- Validation commands and exact results are recorded in `reports/BIG-GO-948-validation.md`.
+- Changes remain scoped to `BIG-GO-948`.
+- Branch is committed and pushed.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/designsystemparity`
+- `cd bigclaw-go && go test ./internal/reporting`
+- `cd bigclaw-go && go test ./internal/planningparity`
 - `git status --short`
 
 ## Risks
 
-- This slice should stay inside design-system parity only and avoid pulling operations or review-pack ownership into the package.
-- The remaining Python operations, reports, and review-pack suites are still intentionally out of scope for this continuation because they need separate bounded replacements.
+- `tests/test_ui_review.py` currently appears to have no Go-native owner in this branch; if that remains true, this issue can only leave a bounded delete plan rather than removing it outright.
+- Deleting Python tests requires updating checked-in planning metadata that still references pytest commands and file targets.

@@ -2,433 +2,79 @@
 
 ## Completed Work
 
-This lane now includes a sixteenth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a Go regression test that locks the remaining contract around an existing script surface.
+This continuation closes the `test_operations.py` portion of the remaining Lane 8 Python test debt by deleting the Python suite and repointing checked-in planning metadata at the Go-native replacement coverage.
 
-Deleted in this wave:
-- `tests/test_connectors.py`
-- `tests/test_mapping.py`
-- `tests/test_repo_governance.py`
-- `tests/test_repo_board.py`
-- `tests/test_repo_links.py`
-- `tests/test_repo_triage.py`
-- `tests/test_repo_collaboration.py`
-- `tests/test_repo_registry.py`
-- `tests/test_repo_rollout.py`
-- `tests/test_repo_gateway.py`
-- `tests/test_scheduler.py`
-- `tests/test_dashboard_run_contract.py`
-- `tests/test_risk.py`
-- `tests/test_saved_views.py`
-- `tests/test_workflow.py`
-- `tests/test_orchestration.py`
-- `tests/test_audit_events.py`
-- `tests/test_observability.py`
-- `tests/test_queue.py`
-- `tests/test_governance.py`
-- `tests/test_workspace_bootstrap.py`
-- `tests/test_execution_contract.py`
-- `tests/test_github_sync.py`
-- `tests/test_validation_policy.py`
-- `tests/test_dsl.py`
-- `tests/test_memory.py`
-- `tests/test_models.py`
-- `tests/test_event_bus.py`
-- `tests/test_runtime_matrix.py`
-- `tests/test_execution_flow.py`
-- `tests/test_control_center.py`
-- `tests/test_validation_bundle_continuation_policy_gate.py`
-- `tests/test_runtime.py`
-- `tests/test_evaluation.py`
-- `tests/test_parallel_validation_bundle.py`
-- `tests/test_live_shadow_bundle.py`
-- `tests/test_planning.py`
-- `tests/test_console_ia.py`
-- `tests/test_design_system.py`
-
-Deleted in earlier `BIG-GO-948` wave already present on `main`:
-- `tests/test_cross_process_coordination_surface.py`
-- `tests/test_followup_digests.py`
-- `tests/test_live_shadow_scorecard.py`
-- `tests/test_shadow_matrix_corpus.py`
-- `tests/test_subscriber_takeover_harness.py`
-- `tests/test_validation_bundle_continuation_scorecard.py`
-- `tests/test_parallel_refill.py`
-- `tests/test_roadmap.py`
-- `tests/test_cost_control.py`
-- `tests/test_deprecation.py`
-- `tests/test_legacy_shim.py`
-- `tests/test_service.py`
-- `tests/test_pilot.py`
-- `tests/test_issue_archive.py`
+Completed in this change:
+- Deleted `tests/test_operations.py`.
+- Updated `src/bigclaw/planning.py` so the `candidate-ops-hardening` validation command now points at Go packages instead of removed pytest suites.
+- Updated `bigclaw-go/internal/planningparity/planningparity.go` to mirror the new Go-native validation command and evidence links.
+- Updated `bigclaw-go/internal/planningparity/planningparity_test.go` so parity assertions match the Go-native command and evidence targets.
 
 ## Lane File List
 
-Python files materially addressed by `BIG-GO-948` across both waves:
-- `tests/test_connectors.py`
-- `tests/test_mapping.py`
-- `tests/test_repo_governance.py`
-- `tests/test_repo_board.py`
-- `tests/test_repo_links.py`
-- `tests/test_repo_triage.py`
-- `tests/test_repo_collaboration.py`
-- `tests/test_repo_registry.py`
-- `tests/test_repo_rollout.py`
-- `tests/test_repo_gateway.py`
-- `tests/test_scheduler.py`
-- `tests/test_dashboard_run_contract.py`
-- `tests/test_risk.py`
-- `tests/test_saved_views.py`
-- `tests/test_workflow.py`
-- `tests/test_orchestration.py`
-- `tests/test_audit_events.py`
-- `tests/test_observability.py`
-- `tests/test_queue.py`
-- `tests/test_governance.py`
-- `tests/test_workspace_bootstrap.py`
-- `tests/test_execution_contract.py`
-- `tests/test_github_sync.py`
-- `tests/test_validation_policy.py`
-- `tests/test_dsl.py`
-- `tests/test_memory.py`
-- `tests/test_models.py`
-- `tests/test_event_bus.py`
-- `tests/test_runtime_matrix.py`
-- `tests/test_execution_flow.py`
-- `tests/test_control_center.py`
-- `tests/test_validation_bundle_continuation_policy_gate.py`
-- `tests/test_runtime.py`
-- `tests/test_evaluation.py`
-- `tests/test_parallel_validation_bundle.py`
-- `tests/test_live_shadow_bundle.py`
-- `tests/test_planning.py`
-- `tests/test_console_ia.py`
-- `tests/test_design_system.py`
-- `tests/test_cross_process_coordination_surface.py`
-- `tests/test_followup_digests.py`
-- `tests/test_live_shadow_scorecard.py`
-- `tests/test_shadow_matrix_corpus.py`
-- `tests/test_subscriber_takeover_harness.py`
-- `tests/test_validation_bundle_continuation_scorecard.py`
-- `tests/test_parallel_refill.py`
-- `tests/test_roadmap.py`
-- `tests/test_cost_control.py`
-- `tests/test_deprecation.py`
-- `tests/test_legacy_shim.py`
-- `tests/test_service.py`
-- `tests/test_pilot.py`
-- `tests/test_issue_archive.py`
-
-Remaining Python tests after this wave:
+Lane 8 Python files remaining at the start of this continuation:
 - `tests/test_operations.py`
 - `tests/test_reports.py`
 - `tests/test_ui_review.py`
+- `tests/conftest.py`
 
-## Go Replacements
+Status after this continuation:
+- `tests/test_operations.py`
+  - Status: deleted.
+  - Replacement: Go-native reporting coverage in `bigclaw-go/internal/reporting/reporting_test.go`.
+- `tests/test_reports.py`
+  - Status: retained.
+  - Reason: still spans mixed report-studio, pilot, launch/final-delivery, auto-triage, takeover, orchestration, and shared-view surfaces without one bounded Go-native owner.
+- `tests/test_ui_review.py`
+  - Status: retained.
+  - Reason: no Go-native `ui_review` implementation or parity/regression owner exists in this branch.
+- `tests/conftest.py`
+  - Status: retained.
+  - Reason: still required bootstrap for the remaining Python test files.
 
-This wave relies on the following Go-native coverage:
-- `bigclaw-go/internal/intake/connector_test.go`
-  - `TestConnectorsFetchMinimumIssue`
-  - `TestConnectorByNameReturnsKnownConnectors`
-- `bigclaw-go/internal/intake/mapping_test.go`
-  - `TestMapPriority`
-  - `TestMapSourceIssueToTask`
-- `bigclaw-go/internal/repo/governance_test.go`
-  - `TestRepoPermissionMatrixResolvesRoles`
-  - `TestMissingRepoAuditFields`
-- `bigclaw-go/internal/repo/repo_surfaces_test.go`
-  - `TestRepoRegistryResolvesSpaceChannelAndAgent`
-  - `TestRepoDiscussionBoardCreateReplyAndFilter`
-  - `TestNormalizeGatewayPayloadsAndErrors`
-  - `TestRepoAuditPayloadIsDeterministic`
-- `bigclaw-go/internal/triage/repo_test.go`
-  - `TestRecommendRepoActionFollowsLineageAndDiscussionEvidence`
-  - `TestApprovalEvidencePacketCapturesAcceptedAndCandidateLinks`
-- `bigclaw-go/internal/product/dashboard_run_contract_test.go`
-  - `TestBuildDefaultDashboardRunContractIsReleaseReady`
-  - `TestDashboardRunContractAuditDetectsMissingPaths`
-  - `TestRenderDashboardRunContractReport`
-- `bigclaw-go/internal/product/saved_views_test.go`
-  - `TestAuditSavedViewCatalogAndRenderReport`
-  - `TestSavedViewCatalogJSONRoundTrip`
-- `bigclaw-go/internal/risk/risk_test.go`
-  - `TestRiskScorerKeepsSimpleLowRiskWorkLow`
-  - `TestRiskScorerElevatesProdBrowserWork`
-- `bigclaw-go/internal/risk/assessment_test.go`
-  - `TestSchedulerExecutionCapturesRiskScore`
-- `bigclaw-go/internal/scheduler/scheduler_test.go`
-  - `TestSchedulerHighRiskRequiresApproval`
-  - `TestSchedulerBrowserTaskRoutesToBrowser`
-  - `TestSchedulerOverBudgetDegradesTask`
-  - `TestSchedulerOverBudgetPausesTask`
-- `bigclaw-go/internal/workflow/orchestration_test.go`
-  - `TestCrossDepartmentOrchestratorRoutesPremiumHighRiskTask`
-  - `TestRenderOrchestrationPlan`
-- `bigclaw-go/internal/workflow/clawhost_workflows_test.go`
-  - `TestWorkflowEngineWritesOrchestrationArtifactsWithoutDuplicateLedgerEntries`
-- `bigclaw-go/internal/workflow/engine_test.go`
-  - `TestWorkflowEngineRecordsJournalAndAcceptsCompleteEvidence`
-  - `TestWorkflowEngineKeepsHighRiskTaskPendingManualApproval`
-- `bigclaw-go/internal/workflow/closeout_test.go`
-  - `TestWorkflowEngineWritesRepoSyncAuditReport`
-- `bigclaw-go/internal/observability/audit_spec_test.go`
-  - `TestP0AuditEventSpecsDefineRequiredOperationalEvents`
-  - `TestAuditSpecEventRequiresRequiredFields`
-- `bigclaw-go/internal/observability/audit_test.go`
-  - `TestTaskRunRecordsAuditSpecEventAndReportBuildersUseCanonicalEvents`
-- `bigclaw-go/internal/observability/recorder_test.go`
-  - `TestTaskRunCapturesLogsTraceArtifactsAndAudits`
-  - `TestTaskRunCloseoutSerializesRepoSyncAudit`
-  - `TestRenderTaskRunDetailPage`
-- `bigclaw-go/internal/queue/memory_queue_test.go`
-  - `TestMemoryQueueOrdersByPriorityAndSequence`
-- `bigclaw-go/internal/queue/file_queue_test.go`
-  - `TestFileQueuePersistsTasksAndDeadLetters`
-- `bigclaw-go/internal/queue/sqlite_queue_test.go`
-  - `TestSQLiteQueueOrdersByPriority`
-  - `TestSQLiteQueueDeadLetterAndRetryRoundTrip`
-- `bigclaw-go/internal/governance/freeze_test.go`
-  - `TestScopeFreezeBoardRoundTripPreservesManifestShape`
-  - `TestScopeFreezeAuditFlagsBacklogGovernanceAndCloseoutGaps`
-  - `TestScopeFreezeAuditRoundTripAndReadyState`
-  - `TestRenderScopeFreezeReportSummarizesBoardAndRunCloseoutRequirements`
-- `bigclaw-go/internal/bootstrap/bootstrap_test.go`
-  - `TestRepoCacheKeyDerivesFromRepoLocator`
-  - `TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed`
-  - `TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch`
-  - `TestBuildValidationReportCoversThreeWorkspacesWithOneCache`
-- `bigclaw-go/internal/contract/execution_test.go`
-  - `TestExecutionContractAuditAcceptsWellFormedContract`
-  - `TestExecutionContractAuditSurfacesContractGaps`
-  - `TestExecutionContractRoundTripAndPermissionMatrix`
-  - `TestRenderExecutionContractReportIncludesRoleMatrix`
-  - `TestOperationsAPIContractDraftIsReleaseReady`
-  - `TestOperationsAPIContractPermissionsCoverReadAndActionPaths`
-  - `TestExecutionContractAuditRequiresPersonaScopeAndEscalationMetadata`
-- `bigclaw-go/internal/githubsync/sync_test.go`
-  - `TestInstallGitHooksConfiguresCoreHooksPath`
-  - `TestEnsureRepoSyncPushesHeadToOrigin`
-  - `TestInspectRepoSyncMarksDirtyWorktree`
-  - `TestEnsureRepoSyncFastForwardsCleanBranchBeforePush`
-  - `TestEnsureRepoSyncSkipsPushingCleanBranchAtOriginDefaultHead`
-- `bigclaw-go/internal/validationpolicy/validation_policy_test.go`
-  - `TestValidationPolicyBlocksIssueCloseWithoutRequiredReports`
-  - `TestValidationPolicyAllowsIssueCloseWhenReportsComplete`
-- `bigclaw-go/internal/workflow/definition_runner_test.go`
-  - `TestRunDefinitionEndToEndWritesReportAndJournal`
-  - `TestRunDefinitionRejectsUnknownStepKind`
-  - `TestRunDefinitionManualApprovalClosesHighRiskTask`
-- `bigclaw-go/internal/memory/store_test.go`
-  - `TestStoreReusesHistoryAndInjectsRules`
-- `bigclaw-go/internal/risk/assessment_test.go`
-  - `TestAssessmentRoundTripPreservesSignalsAndMitigations`
-- `bigclaw-go/internal/triage/record_test.go`
-  - `TestTriageRecordRoundTripPreservesQueueLabelsAndActions`
-- `bigclaw-go/internal/workflow/model_test.go`
-  - `TestWorkflowTemplateAndRunRoundTripPreserveStepsAndOutputs`
-- `bigclaw-go/internal/billing/statement_test.go`
-  - `TestBillingStatementRoundTrip`
-- `bigclaw-go/internal/runbus/runbus_test.go`
-  - `TestEventBusPRCommentApprovesWaitingRunAndPersistsLedger`
-  - `TestEventBusCICompletedMarksRunCompleted`
-  - `TestEventBusTaskFailedMarksRunFailed`
-- `bigclaw-go/internal/runtimeparity/runtimeparity_test.go`
-  - `TestWorkerLifecycleIsStableWithMultipleTools`
-  - `TestRiskRoutesToExpectedSandboxMediums`
-  - `TestToolRuntimePolicyAndAuditChain`
-  - `TestSandboxRouterMapsExecutionMedia`
-  - `TestSchedulerPausesExecutionWhenBudgetCannotCoverDocker`
-- `bigclaw-go/internal/executionparity/executionparity_test.go`
-  - `TestQueueToSchedulerExecutionRecordsFullChain`
-  - `TestHighRiskExecutionRecordsPendingApproval`
-- `bigclaw-go/internal/controlcenterparity/controlcenterparity_test.go`
-  - `TestQueuePeekTasksReturnsPriorityOrder`
-  - `TestQueueControlCenterSummarizesQueueAndExecutionMedia`
-  - `TestQueueControlCenterRendersSharedViewEmptyState`
-- `bigclaw-go/internal/policygateparity/policygateparity_test.go`
-  - `TestPolicyGateHoldsForPartialLaneHistory`
-  - `TestPolicyGateCanAllowPartialLaneHistory`
-  - `TestCheckedInPolicyGateMatchesExpectedShape`
-  - `TestPolicyGateCLIReturnsZeroForCheckedInGo`
-- `bigclaw-go/internal/evaluationparity/evaluationparity_test.go`
-  - `TestBenchmarkRunnerScoresAndReplaysCase`
-  - `TestBenchmarkRunnerDetectsFailedExpectation`
-  - `TestReplayOutcomeReportsMismatch`
-  - `TestSuiteComparisonAndReport`
-  - `TestRenderReplayDetailPageListsMismatches`
-  - `TestRenderRunReplayIndexPageLinksOutputs`
-  - `TestRenderRunReplayIndexPageWithoutReportPath`
-- `bigclaw-go/internal/regression/parallel_validation_bundle_test.go`
-  - `TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
-  - Uses Go regression coverage to exercise the existing `scripts/e2e/export_validation_bundle.py` contract with a synthetic bundle fixture.
-- `bigclaw-go/internal/regression/live_shadow_bundle_export_test.go`
-  - `TestLane8ExportLiveShadowBundleGeneratesIndexAndRollup`
-  - `TestLane8ExportLiveShadowBundleSupportsDocumentedBigclawGoCWD`
-  - `TestLane8CheckedInLiveShadowBundleMatchesExpectedShape`
-  - Uses Go regression coverage to exercise the existing `scripts/migration/export_live_shadow_bundle.py` contract with synthetic shadow fixtures and checked-in bundle surfaces.
+## Go Replacement
+
+`tests/test_operations.py` is replaced by existing Go coverage in:
+- `bigclaw-go/internal/reporting/reporting_test.go`
+  - `TestBuildWeeklyReportRendersExpandedMarkdown`
+  - `TestBuildOperationsMetricSpec`
+  - `TestWriteWeeklyOperationsBundle`
+  - `TestAuditDashboardBuilderFlagsGovernanceGaps`
+  - `TestRenderAndWriteDashboardBuilderBundle`
+  - `TestBuildEngineeringOverviewFromTasksAndEvents`
+  - `TestRenderAndWriteEngineeringOverviewBundle`
+  - `TestBuildPolicyPromptVersionCenterSummarizesRevisionDiffs`
+  - `TestRenderAndWritePolicyPromptVersionCenterBundle`
+  - `TestWriteWeeklyOperationsBundleWithVersionCenter`
+  - `TestWriteWeeklyOperationsBundleWithCenters`
+  - `TestRenderAndWriteRegressionCenterBundle`
+
+Supporting Go-native planning traceability updated in:
+- `bigclaw-go/internal/planningparity/planningparity.go`
 - `bigclaw-go/internal/planningparity/planningparity_test.go`
-  - `TestCandidateBacklogRoundTripPreservesManifestShape`
-  - `TestCandidateBacklogRanksReadyItemsAheadOfBlockedWork`
-  - `TestEntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence`
-  - `TestEntryGateHoldsWhenV2BaselineIsMissingOrNotReady`
-  - `TestEntryGateDecisionRoundTripPreservesFindings`
-  - `TestRenderCandidateBacklogReportSummarizesBacklogAndGateFindings`
-  - `TestCandidateEntryRoundTripPreservesEvidenceLinks`
-  - `TestFourWeekExecutionPlanRoundTripPreservesWeeksAndGoals`
-  - `TestFourWeekExecutionPlanRollsUpProgressAndAtRiskWeeks`
-  - `TestFourWeekExecutionPlanValidateRejectsMissingOrUnorderedWeeks`
-  - `TestRenderFourWeekExecutionReportSummarizesPlanStatus`
-  - `TestWeeklyExecutionPlanFlagsAtRiskGoalIDs`
-  - `TestBuildV3CandidateBacklogMatchesIssuePlanTraceability`
-  - `TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline`
-- `bigclaw-go/internal/consoleiaparity/consoleiaparity_test.go`
-  - `TestConsoleIARoundTripPreservesManifestShape`
-  - `TestConsoleIAAuditSurfacesGlobalInteractionGaps`
-  - `TestConsoleIAAuditRoundTripPreservesFindings`
-  - `TestRenderConsoleIAReportSummarizesSurfaceCoverage`
-  - `TestConsoleInteractionDraftRoundTripPreservesFourPageManifest`
-  - `TestConsoleInteractionAuditSurfacesMissingActionsPermissionsAndBatchOps`
-  - `TestRenderConsoleInteractionReportSummarizesCriticalPageContracts`
-  - `TestBuildBig4203ConsoleInteractionDraftIsReleaseReady`
-- `bigclaw-go/internal/designsystemparity/designsystemparity_test.go`
-  - `TestComponentReleaseReadyRequiresDocsAccessibilityAndStates`
-  - `TestDesignSystemRoundTripPreservesManifestShape`
-  - `TestDesignSystemAuditSurfacesReleaseGapsAndOrphanTokens`
-  - `TestDesignSystemAuditFlagsUndefinedTokenReferences`
-  - `TestDesignSystemAuditRoundTripPreservesGovernanceFindings`
-  - `TestRenderDesignSystemReportSummarizesInventoryAndGaps`
-  - `TestConsoleTopBarRoundTripPreservesCommandEntryManifest`
-  - `TestConsoleTopBarAuditChecksTicketCapabilitiesAndShortcuts`
-  - `TestConsoleTopBarAuditFlagsMissingGlobalEntryCapabilities`
-  - `TestRenderConsoleTopBarReportSummarizesGlobalHeaderAndShell`
-  - `TestInformationArchitectureRoundTripAndRouteResolution`
-  - `TestInformationArchitectureAuditFlagsDuplicatesSecondaryGapsAndOrphans`
-  - `TestInformationArchitectureAuditRoundTripAndReport`
-  - `TestUIAcceptanceSuiteRoundTripPreservesAcceptanceManifest`
-  - `TestUIAcceptanceAuditDetectsPermissionAccuracyPerfUsabilityAndAuditGaps`
-  - `TestRenderUIAcceptanceReportSummarizesReleaseReadiness`
 
-Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
-- `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
-- `bigclaw-go/internal/refill/queue_repo_fixture_test.go`
-- `bigclaw-go/internal/regression/roadmap_contract_test.go`
-- `bigclaw-go/internal/regression/deprecation_contract_test.go`
-- `bigclaw-go/internal/costcontrol/controller_test.go`
-- `bigclaw-go/internal/legacyshim/wrappers_test.go`
-- `bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go`
-- `bigclaw-go/internal/service/server_test.go`
-- `bigclaw-go/internal/pilot/report_test.go`
-- `bigclaw-go/internal/issuearchive/archive_test.go`
+## Delete Or Migration Plan
+
+- `tests/test_reports.py`
+  - Plan: split into bounded Go-native owners before deletion, likely across reporting, triage, flow, pilot, and API/report surface packages.
+- `tests/test_ui_review.py`
+  - Plan: introduce a dedicated Go-native review-pack package or a Go regression owner for the review-pack contract before deleting the Python suite.
 
 ## Validation Commands
 
-- `cd bigclaw-go && go test ./internal/intake -run 'TestConnectorsFetchMinimumIssue|TestConnectorByNameReturnsKnownConnectors|TestMapPriority|TestMapSourceIssueToTask'`
-- `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic|TestRepoPermissionMatrixResolvesRoles|TestMissingRepoAuditFields'`
-- `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence|TestApprovalEvidencePacketCapturesAcceptedAndCandidateLinks'`
-- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip'`
-- `cd bigclaw-go && go test ./internal/risk`
-- `cd bigclaw-go && go test ./internal/scheduler`
-- `cd bigclaw-go && go test ./internal/workflow`
-- `cd bigclaw-go && go test ./internal/observability -run 'TestP0AuditEventSpecsDefineRequiredOperationalEvents|TestAuditSpecEventRequiresRequiredFields|TestTaskRunRecordsAuditSpecEventAndReportBuildersUseCanonicalEvents|TestTaskRunCapturesLogsTraceArtifactsAndAudits|TestTaskRunCloseoutSerializesRepoSyncAudit|TestRenderTaskRunDetailPage'`
-- `cd bigclaw-go && go test ./internal/queue`
-- `cd bigclaw-go && go test ./internal/governance`
-- `cd bigclaw-go && go test ./internal/bootstrap`
-- `cd bigclaw-go && go test ./internal/contract`
-- `cd bigclaw-go && go test ./internal/githubsync`
-- `cd bigclaw-go && go test ./internal/validationpolicy`
-- `cd bigclaw-go && go test ./internal/workflow`
-- `cd bigclaw-go && go test ./internal/memory`
-- `cd bigclaw-go && go test ./internal/risk`
-- `cd bigclaw-go && go test ./internal/triage`
-- `cd bigclaw-go && go test ./internal/billing`
-- `cd bigclaw-go && go test ./internal/runbus`
-- `cd bigclaw-go && go test ./internal/runtimeparity`
-- `cd bigclaw-go && go test ./internal/executionparity`
-- `cd bigclaw-go && go test ./internal/controlcenterparity`
-- `cd bigclaw-go && go test ./internal/policygateparity`
-- `cd bigclaw-go && go test ./internal/runtimeparity`
-- `cd bigclaw-go && go test ./internal/evaluationparity`
-- `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ExportLiveShadowBundle|TestLane8CheckedInLiveShadowBundleMatchesExpectedShape'`
+- `cd bigclaw-go && go test ./internal/reporting`
 - `cd bigclaw-go && go test ./internal/planningparity`
-- `cd bigclaw-go && go test ./internal/consoleiaparity`
-- `cd bigclaw-go && go test ./internal/designsystemparity`
 - `git status --short`
 
 ## Latest Validation Result
 
-- `cd bigclaw-go && go test ./internal/intake -run 'TestConnectorsFetchMinimumIssue|TestConnectorByNameReturnsKnownConnectors|TestMapPriority|TestMapSourceIssueToTask'`
-  - Result: `ok  	bigclaw-go/internal/intake	0.489s`
-- `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic|TestRepoPermissionMatrixResolvesRoles|TestMissingRepoAuditFields'`
-  - Result: `ok  	bigclaw-go/internal/repo	1.310s`
-- `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence|TestApprovalEvidencePacketCapturesAcceptedAndCandidateLinks'`
-  - Result: `ok  	bigclaw-go/internal/triage	0.880s`
-- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip'`
-  - Result: `ok  	bigclaw-go/internal/product	1.637s`
-- `cd bigclaw-go && go test ./internal/risk`
-  - Result: `ok  	bigclaw-go/internal/risk	0.832s`
-- `cd bigclaw-go && go test ./internal/scheduler`
-  - Result: `ok  	bigclaw-go/internal/scheduler	0.999s`
-- `cd bigclaw-go && go test ./internal/workflow`
-  - Result: `ok  	bigclaw-go/internal/workflow	0.626s`
-- `cd bigclaw-go && go test ./internal/observability -run 'TestP0AuditEventSpecsDefineRequiredOperationalEvents|TestAuditSpecEventRequiresRequiredFields|TestTaskRunRecordsAuditSpecEventAndReportBuildersUseCanonicalEvents|TestTaskRunCapturesLogsTraceArtifactsAndAudits|TestTaskRunCloseoutSerializesRepoSyncAudit|TestRenderTaskRunDetailPage'`
-  - Result: `ok  	bigclaw-go/internal/observability	1.280s`
-- `cd bigclaw-go && go test ./internal/queue`
-  - Result: `ok  	bigclaw-go/internal/queue	25.972s`
-- `cd bigclaw-go && go test ./internal/governance`
-  - Result: `ok  	bigclaw-go/internal/governance	1.158s`
-- `cd bigclaw-go && go test ./internal/bootstrap`
-  - Result: `ok  	bigclaw-go/internal/bootstrap	3.139s`
-- `cd bigclaw-go && go test ./internal/contract`
-  - Result: `ok  	bigclaw-go/internal/contract	3.160s`
-- `cd bigclaw-go && go test ./internal/githubsync`
-  - Result: `ok  	bigclaw-go/internal/githubsync	2.702s`
-- `cd bigclaw-go && go test ./internal/validationpolicy`
-  - Result: `ok  	bigclaw-go/internal/validationpolicy	3.166s`
-- `cd bigclaw-go && go test ./internal/workflow`
-  - Result: `ok  	bigclaw-go/internal/workflow	0.146s`
-- `cd bigclaw-go && go test ./internal/memory`
-  - Result: `ok  	bigclaw-go/internal/memory	3.172s`
-- `cd bigclaw-go && go test ./internal/risk`
-  - Result: `ok  	bigclaw-go/internal/risk	(cached)`
-- `cd bigclaw-go && go test ./internal/triage`
-  - Result: `ok  	bigclaw-go/internal/triage	0.131s`
-- `cd bigclaw-go && go test ./internal/billing`
-  - Result: `ok  	bigclaw-go/internal/billing	0.195s`
-- `cd bigclaw-go && go test ./internal/runbus`
-  - Result: `ok  	bigclaw-go/internal/runbus	(cached)`
-- `cd bigclaw-go && go test ./internal/runtimeparity`
-  - Result: `ok  	bigclaw-go/internal/runtimeparity	1.737s`
-- `cd bigclaw-go && go test ./internal/executionparity`
-  - Result: `ok  	bigclaw-go/internal/executionparity	1.220s`
-- `cd bigclaw-go && go test ./internal/controlcenterparity`
-  - Result: `ok  	bigclaw-go/internal/controlcenterparity	1.462s`
-- `cd bigclaw-go && go test ./internal/policygateparity`
-  - Result: `ok  	bigclaw-go/internal/policygateparity	1.137s`
-- `cd bigclaw-go && go test ./internal/runtimeparity`
-  - Result: `ok  	bigclaw-go/internal/runtimeparity	0.901s`
-- `cd bigclaw-go && go test ./internal/evaluationparity`
-  - Result: `ok  	bigclaw-go/internal/evaluationparity	1.115s`
-- `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
-  - Result: `ok  	bigclaw-go/internal/regression	1.349s`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ExportLiveShadowBundle|TestLane8CheckedInLiveShadowBundleMatchesExpectedShape'`
-  - Result: `ok  	bigclaw-go/internal/regression	0.871s`
+- `cd bigclaw-go && go test ./internal/reporting`
+  - Result: `ok  	bigclaw-go/internal/reporting	1.407s`
 - `cd bigclaw-go && go test ./internal/planningparity`
-  - Result: `ok  	bigclaw-go/internal/planningparity	0.445s`
-- `cd bigclaw-go && go test ./internal/consoleiaparity`
-  - Result: `ok  	bigclaw-go/internal/consoleiaparity	0.858s`
-- `cd bigclaw-go && go test ./internal/designsystemparity`
-  - Result: `ok  	bigclaw-go/internal/designsystemparity	1.164s`
+  - Result: `ok  	bigclaw-go/internal/planningparity	0.839s`
 
 ## Residual Risks
 
-- The remaining Python files are intentionally left because they still exercise Python-owned operations, report, or review-pack surfaces without a tight Go replacement boundary.
-- `tests/test_reports.py`, `tests/test_ui_review.py`, and `tests/test_operations.py` remain high-surface-area Python report/UI suites and need separate migration slices rather than opportunistic deletion here.
-
-## Remaining Delete Or Migration Plan
-
-- `tests/test_operations.py`
-  - Plan: split by report surface and migrate only when each output has a Go-native contract owner.
-- `tests/test_reports.py`
-  - Plan: requires staged migration because it still spans many Python-only report builders.
-- `tests/test_ui_review.py`
-  - Plan: requires dedicated Go-native review/report surfaces rather than broad delete-by-analogy.
+- `tests/test_reports.py` still concentrates several unrelated report surfaces, so deleting it without first splitting ownership would overstate Go parity.
+- `tests/test_ui_review.py` remains Python-owned because this branch does not yet contain a Go-native review-pack surface to replace it.
+- `tests/conftest.py` cannot be removed until the remaining Python tests are migrated or deleted.
