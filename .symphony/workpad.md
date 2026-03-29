@@ -1,21 +1,31 @@
-# BIG-GO-902 Workpad
+# BIG-GO-941 Workpad
 
 ## Plan
 
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+1. Inspect the repository root build/config surfaces and identify the files that keep Python packaging active at the repo root.
+2. Convert the root entrypoints and documentation to a Go-first build path with no root Python build backend.
+3. Remove obsolete root Python packaging files that are no longer needed for Go-only materialization.
+4. Run targeted validation commands for the changed surfaces and record exact commands and results.
+5. Commit the scoped change set and push the branch to the remote.
 
 ## Acceptance
 
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Define the lane file list for root build/config removal.
+- Remove `pyproject.toml` / `setup.py` as root Python build dependencies and replace them with a Go-only root build entrypoint.
+- Document the Go replacement path or deletion plan for any removed surface.
+- Provide validation commands, exact results, and residual risks.
+- Keep the change set scoped to this issue.
 
 ## Validation
 
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- `go test ./...` from `bigclaw-go`
+- `make test`
+- `make build`
+- `git status --short`
+
+## Results
+
+- `cd bigclaw-go && go test ./...` -> passed
+- `make test` -> passed
+- `make build` -> passed
+- `bash scripts/dev_bootstrap.sh` -> passed

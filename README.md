@@ -3,8 +3,8 @@
 BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 `bigclaw-go` is the current implementation mainline for new development. The
-root Python package is retained only for staged migration and legacy surfaces
-that have not been cut over yet.
+repository root now exposes Go-only build entrypoints; legacy Python surfaces
+remain migration-only source assets and are not packaged from the root.
 
 ## What is included
 
@@ -32,15 +32,16 @@ that have not been cut over yet.
   - v2 design-system token/component inventory with release-readiness audit reporting
 - `tests/`: unit tests
 
-## Go mainline quick start (recommended)
+## Root Go quick start (recommended)
 
 ```bash
-cd BigClaw/bigclaw-go
-go test ./...
-go run ./cmd/bigclawd
+cd BigClaw
+make test
+make build
+make run
 curl localhost:8080/healthz
-bash ../scripts/ops/bigclawctl github-sync status --json
-bash ../scripts/ops/bigclawctl dev-smoke
+bash scripts/ops/bigclawctl github-sync status --json
+bash scripts/ops/bigclawctl dev-smoke
 ```
 
 ## Local orchestration quick start
@@ -78,44 +79,30 @@ Notes:
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
-## Legacy Python quick start (migration-only)
+## Legacy Python migration note
 
-> Do not use this path for new mainline development. Use it only when migrating
-> a required legacy surface to Go or validating an existing Python-only path.
-
-> Do not use system Python directly for editable install. Use a virtualenv.
-
-```bash
-cd BigClaw
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip
-pip install -e .[dev]
-python -m pytest
-```
-
-Or use the legacy bootstrap helper:
-
-```bash
-BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
-```
-
-## Legacy Python local test (without editable install)
-
-If your environment has restrictive system-packages permissions, run tests with `PYTHONPATH`:
+Do not use Python packaging from the repository root. When a migration-only
+Python surface must be exercised, validate it directly from source:
 
 ```bash
 PYTHONPATH=src python3 -m pytest
 ```
 
+Or use the bootstrap helper to validate Go first and then run the legacy
+Python migration surface without editable install:
+
+```bash
+BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
+```
+
 ## Go smoke verify
 
 ```bash
-cd BigClaw/bigclaw-go
-go test ./...
-go run ./cmd/bigclawd &
+cd BigClaw
+make test
+make run &
 curl localhost:8080/healthz
-bash ../scripts/ops/bigclawctl github-sync status --json
+bash scripts/ops/bigclawctl github-sync status --json
 ```
 
 ## Legacy Python smoke verify
@@ -132,8 +119,8 @@ python3 scripts/dev_smoke.py
 Go mainline:
 
 ```bash
-cd BigClaw/bigclaw-go
-go test ./...
+make test
+make build
 ```
 
 Go-first bootstrap helper:
@@ -146,8 +133,7 @@ Legacy Python migration surface:
 
 ```bash
 ruff check src tests scripts
-python -m pytest
-python -m build
+PYTHONPATH=src python3 -m pytest
 pre-commit run --all-files
 ```
 
@@ -165,7 +151,8 @@ Repository: https://github.com/OpenAGIs/BigClaw
 
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
-The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
+The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
+the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
 bootstrap wrappers remain only as compatibility shims during migration.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
