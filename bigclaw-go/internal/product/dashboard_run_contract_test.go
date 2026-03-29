@@ -1,6 +1,7 @@
 package product
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -22,14 +23,18 @@ func TestBuildDefaultDashboardRunContractIsReleaseReady(t *testing.T) {
 func TestDashboardRunContractAuditDetectsMissingPaths(t *testing.T) {
 	contract := BuildDefaultDashboardRunContract()
 	contract.DashboardSchema.Fields = contract.DashboardSchema.Fields[:len(contract.DashboardSchema.Fields)-1]
+	delete(contract.DashboardSchema.Sample, "trend")
 	delete(contract.RunDetailSchema.Sample["closeout"].(map[string]any), "git_log_stat_output")
 
 	audit := AuditDashboardRunContract(contract)
 	if audit.ReleaseReady {
 		t.Fatalf("expected audit to detect gaps, got %+v", audit)
 	}
-	if len(audit.DashboardMissingFields) == 0 || len(audit.RunDetailSampleGaps) == 0 {
+	if len(audit.DashboardMissingFields) == 0 || len(audit.DashboardSampleGaps) == 0 || len(audit.RunDetailSampleGaps) == 0 {
 		t.Fatalf("expected missing field and sample gap findings, got %+v", audit)
+	}
+	if audit.DashboardSampleGaps[0] != "trend" || audit.RunDetailSampleGaps[0] != "closeout.git_log_stat_output" {
+		t.Fatalf("expected deterministic sample gap findings, got %+v", audit)
 	}
 }
 
@@ -97,5 +102,28 @@ func TestDashboardContractFormattingHelpers(t *testing.T) {
 	}
 	if got := boolText(false); got != "false" {
 		t.Fatalf("boolText(false) = %q, want %q", got, "false")
+	}
+}
+
+func TestDashboardRunContractJSONRoundTrip(t *testing.T) {
+	contract := BuildDefaultDashboardRunContract()
+	payload, err := json.Marshal(contract)
+	if err != nil {
+		t.Fatalf("marshal contract: %v", err)
+	}
+
+	var restored DashboardRunContract
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal contract: %v", err)
+	}
+
+	if restored.ContractID != contract.ContractID || restored.Version != contract.Version {
+		t.Fatalf("unexpected contract metadata after round trip: restored=%+v want=%+v", restored, contract)
+	}
+	if len(restored.DashboardSchema.Fields) != len(contract.DashboardSchema.Fields) || len(restored.RunDetailSchema.Fields) != len(contract.RunDetailSchema.Fields) {
+		t.Fatalf("expected schema fields to survive round trip: restored=%+v want=%+v", restored, contract)
+	}
+	if restored.DashboardSchema.Fields[0].Name != "dashboard_id" || restored.RunDetailSchema.Sample["closeout"] == nil {
+		t.Fatalf("expected representative fields and samples to survive round trip: restored=%+v", restored)
 	}
 }
