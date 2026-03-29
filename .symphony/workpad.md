@@ -28,6 +28,7 @@
 - `tests/test_memory.py`
 - `tests/test_repo_links.py`
 - `tests/test_models.py`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
 
 ## Acceptance
 
@@ -90,6 +91,8 @@
     - Reason: covered by `bigclaw-go/internal/api/server_test.go` and existing `bigclaw-go/internal/repo/repo_surfaces_test.go` after exposing closeout `accepted_commit_hash` and `run_commit_links` round-trip semantics in the Go-owned run-detail API.
   - `tests/test_models.py`
     - Reason: already covered by existing Go-native round-trip/default-contract tests in `bigclaw-go/internal/risk/assessment_test.go`, `bigclaw-go/internal/triage/record_test.go`, `bigclaw-go/internal/workflow/model_test.go`, and `bigclaw-go/internal/billing/statement_test.go`.
+  - `tests/test_validation_bundle_continuation_policy_gate.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/validation_bundle_continuation_policy_gate_test.go`, which invokes the checked-in Python script from Go and covers both the partial-lane-history hold/go behavior and the checked-in CLI green path.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -116,8 +119,6 @@
     - Reason: Go covers orchestration planning and policy decisions, but the file still depends on Python scheduler execution records, ledger traces/audits, and rendered orchestration artifacts.
   - `tests/test_workflow.py`
     - Reason: Go workflow packages cover acceptance, closeout, journal writing, and orchestration pieces, but the Python file still depends on the Python `WorkflowEngine` end-to-end ledger/report side effects rather than a narrow Go-owned API.
-  - `tests/test_validation_bundle_continuation_policy_gate.py`
-    - Reason: Go regression tests cover the checked-in continuation scorecard and policy-gate documents, but this Python file is still testing a checked-in Python script entrypoint under `bigclaw-go/scripts/e2e/`, so deleting it would widen scope into script migration rather than `tests/**` parity only.
   - Other remaining `tests/**` Python files
     - Reason: they still exercise Python-owned runtime, reporting, UI review, operations, or larger end-to-end surfaces outside this scoped batch.
 
@@ -160,10 +161,12 @@
     - Extended run closeout summaries to expose accepted commit hash and run-commit links from Go-owned task metadata.
   - `bigclaw-go/internal/api/server_test.go`
     - Added closeout round-trip coverage for accepted commit hash and preserved candidate role ordering.
+  - `bigclaw-go/internal/regression/validation_bundle_continuation_policy_gate_test.go`
+    - Added Go regression coverage that exercises the checked-in continuation policy-gate Python script for both synthetic partial-lane-history inputs and the checked-in CLI/report path.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 25` (`-18`)
-  - Repository-wide Python files: `123 -> 105` (`-18`)
+  - `tests/**` Python files: `43 -> 24` (`-19`)
+  - Repository-wide Python files: `123 -> 104` (`-19`)
 
 ## Validation Results
 
@@ -264,3 +267,11 @@
   - `105`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md` and the deleted `tests/test_models.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen|TestLiveValidationIndexStaysAligned|TestContinuationPolicyGateReviewerMetadata'`
+  - `ok  	bigclaw-go/internal/regression	0.592s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `24`
+- `rg --files | rg '\.py$' | wc -l`
+  - `104`
+- `git status --short`
+  - scoped changes only in the new `bigclaw-go/internal/regression/validation_bundle_continuation_policy_gate_test.go` and the deleted `tests/test_validation_bundle_continuation_policy_gate.py`
