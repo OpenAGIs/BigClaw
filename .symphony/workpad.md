@@ -50,3 +50,8 @@
 ## Residual Risks
 - The legacy wrapper paths still end in `.py`, but they now require shell execution semantics rather than `python3`; external callers still hardcoding `python3 <wrapper>.py` will need to switch to `bash ...` or `scripts/ops/bigclawctl ...`.
 - `scripts/ops/bigclawctl` still uses `go run`, so wrapper latency and local Go toolchain availability remain operator dependencies.
+
+## Follow-up Artifacts
+- `reports/BIG-GO-942-validation.md`
+- `reports/BIG-GO-942-closeout.md`
+- `reports/BIG-GO-942-status.json`
