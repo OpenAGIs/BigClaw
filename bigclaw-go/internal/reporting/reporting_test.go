@@ -244,6 +244,77 @@ func TestRenderPilotPortfolioReportSummarizesCommercialReadiness(t *testing.T) {
 	}
 }
 
+func TestReportStudioRendersNarrativeSectionsAndExportBundle(t *testing.T) {
+	tmp := t.TempDir()
+	studio := ReportStudio{
+		Name:     "Executive Weekly Narrative",
+		IssueID:  "OPE-112",
+		Audience: "executive",
+		Period:   "2026-W11",
+		Summary:  "Delivery recovered after approval bottlenecks were cleared in the second half of the week.",
+		Sections: []NarrativeSection{
+			{
+				Heading:  "What changed",
+				Body:     "Approval queue depth fell from 5 to 1 after moving browser-heavy runs onto the shared operations lane.",
+				Evidence: []string{"queue-control-center", "weekly-operations"},
+				Callouts: []string{"SLA risk contained", "No new regressions opened"},
+			},
+			{
+				Heading:  "What needs attention",
+				Body:     "Security takeover requests still cluster around data-export tasks and need a dedicated reviewer window.",
+				Evidence: []string{"takeover-queue"},
+				Callouts: []string{"Review staffing before Friday close"},
+			},
+		},
+		ActionItems:   []string{"Publish the markdown export to leadership", "Review security handoff staffing"},
+		SourceReports: []string{"reports/weekly-operations.md", "reports/takeover-queue.md"},
+	}
+
+	markdown := RenderReportStudioReport(studio)
+	plainText := RenderReportStudioPlainText(studio)
+	html := RenderReportStudioHTML(studio)
+	artifacts, err := WriteReportStudioBundle(filepath.Join(tmp, "studio"), studio)
+	if err != nil {
+		t.Fatalf("write report studio bundle: %v", err)
+	}
+
+	if !studio.Ready() || studio.Recommendation() != "publish" {
+		t.Fatalf("unexpected report studio readiness: %+v", studio)
+	}
+	for _, want := range []string{"# Report Studio", "### What changed"} {
+		if !strings.Contains(markdown, want) {
+			t.Fatalf("expected %q in markdown, got %s", want, markdown)
+		}
+	}
+	if !strings.Contains(plainText, "Recommendation: publish") {
+		t.Fatalf("expected publish recommendation in plain text, got %s", plainText)
+	}
+	if !strings.Contains(html, "<h1>Executive Weekly Narrative</h1>") {
+		t.Fatalf("expected title in html, got %s", html)
+	}
+	for _, path := range []string{artifacts.MarkdownPath, artifacts.HTMLPath, artifacts.TextPath} {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("expected artifact %s: %v", path, err)
+		}
+	}
+	if !strings.Contains(artifacts.MarkdownPath, "executive-weekly-narrative.md") {
+		t.Fatalf("unexpected markdown artifact path: %+v", artifacts)
+	}
+}
+
+func TestReportStudioRequiresSummaryAndCompleteSections(t *testing.T) {
+	studio := ReportStudio{
+		Name:     "Draft Narrative",
+		IssueID:  "OPE-112",
+		Audience: "operations",
+		Period:   "2026-W11",
+		Sections: []NarrativeSection{{Heading: "Open risks"}},
+	}
+	if studio.Ready() || studio.Recommendation() != "draft" {
+		t.Fatalf("unexpected draft studio readiness: %+v", studio)
+	}
+}
+
 func TestTriageFeedbackRecordAndIssueValidationReportUseTimezoneAwareUTCTimestamps(t *testing.T) {
 	record := NewTriageFeedbackRecord("run-1", "classify", "accepted", "ops", "")
 	if !strings.HasSuffix(record.Timestamp, "Z") {

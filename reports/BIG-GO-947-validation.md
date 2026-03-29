@@ -14,7 +14,7 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 | mapping | `tests/test_mapping.py` | `bigclaw-go/internal/intake/mapping_test.go` | Deleted Python test |
 | memory | `tests/test_memory.py` | `bigclaw-go/internal/memory/store_test.go` | Added Go replacement and deleted Python test |
 | operations | `tests/test_operations.py` | `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/expansion_test.go` | Added missing Go replacements and deleted Python test |
-| observability | `tests/test_observability.py` | Partial coverage in `bigclaw-go/internal/observability/*.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/workflow/closeout_test.go` | Deferred deletion plan |
+| observability | `tests/test_observability.py` | `bigclaw-go/internal/observability/repo_sync_test.go`, `bigclaw-go/internal/observability/task_run_test.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/workflow/closeout_test.go` | Partial migration; HTML-only tests remain |
 
 ## Implemented In This Change
 
@@ -43,8 +43,13 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_reports.py::test_issue_closure_allows_when_required_final_delivery_outputs_exist`
   - `tests/test_reports.py::test_issue_closure_allows_when_linked_launch_checklist_is_ready`
   - `tests/test_reports.py::test_render_pilot_portfolio_report_summarizes_commercial_readiness`
+  - `tests/test_reports.py::test_report_studio_renders_narrative_sections_and_export_bundle`
+  - `tests/test_reports.py::test_report_studio_requires_summary_and_complete_sections`
   - `tests/test_observability.py::test_render_task_run_report`
   - `tests/test_observability.py::test_render_repo_sync_audit_report`
+  - `tests/test_observability.py::test_task_run_captures_logs_trace_artifacts_and_audits`
+  - `tests/test_observability.py::test_task_run_closeout_serializes_repo_sync_audit`
+  - `tests/test_observability.py::test_observability_ledger_load_runs_round_trips_entries`
 - Expanded Go reporting coverage for operations-only gaps:
   - Added `NormalizeDashboardLayout()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added `BuildRepoCollaborationMetrics()` parity to `bigclaw-go/internal/reporting/reporting.go`
@@ -53,15 +58,17 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 - Added `bigclaw-go/internal/reporting/closeout_pilot.go` to replace Python pilot scorecard, pilot portfolio, validation report, checklist, and issue-closure helper coverage.
 - Added `bigclaw-go/internal/planning/planning.go` and `bigclaw-go/internal/planning/planning_test.go` to replace the Python candidate backlog, entry gate, and four-week execution-plan test coverage.
 - Added `bigclaw-go/internal/observability/repo_sync.go` and `bigclaw-go/internal/observability/repo_sync_test.go` to replace Python repo-sync audit report rendering coverage.
+- Added `bigclaw-go/internal/observability/task_run.go` and `bigclaw-go/internal/observability/task_run_test.go` to replace Python task-run ledger, closeout, artifact hashing, and observability round-trip coverage.
+- Added `bigclaw-go/internal/reporting/report_studio.go` and matching `reporting_test.go` coverage to replace Python report-studio render/export behavior.
 
 ## Deferred Deletion Plan
 
 - `tests/test_reports.py`
-  - Reason: generic report writing, console action state, pilot scorecards, pilot portfolio, validation report, launch checklist, final delivery checklist, and issue-closure helpers have been migrated, but `ReportStudio`, shared-view context, auto triage, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
+  - Reason: generic report writing, console action state, pilot scorecards, pilot portfolio, validation report, launch checklist, final delivery checklist, issue-closure helpers, and report-studio exports have been migrated, but shared-view context, auto triage, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
   - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
 - `tests/test_observability.py`
-  - Reason: Go covers repo-sync audit report rendering, run detail, closeout, audit spec, recorder, and the run report surface, but there is not yet a single Go-native package mirroring the entire Python observability ledger/task-run API and HTML detail renderer.
-  - Deletion plan: continue converging on the Go run-detail/closeout surface and remove the Python file after full behavior parity is represented in Go tests.
+  - Reason: Go now covers repo-sync audit rendering and task-run ledger/closeout persistence, but the remaining Python file still owns the HTML task-run detail renderer behavior.
+  - Deletion plan: migrate `render_task_run_detail_page` parity into Go and then remove the final Python observability file.
 
 ## Validation
 
@@ -135,6 +142,32 @@ Result:
 ok  	bigclaw-go/internal/observability	0.853s
 ```
 
+Additional commands run after migrating task-run ledger parity:
+
+```sh
+python3 -m py_compile tests/test_observability.py
+cd bigclaw-go && go test ./internal/observability
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/observability	0.817s
+```
+
+Additional commands run after migrating report-studio parity:
+
+```sh
+python3 -m py_compile tests/test_reports.py
+cd bigclaw-go && go test ./internal/reporting
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/reporting	1.194s
+```
+
 Additional command run after migrating pilot/checklist/issue-closure reporting parity:
 
 ```sh
@@ -149,5 +182,6 @@ ok  	bigclaw-go/internal/reporting	1.127s
 
 ## Residual Risks
 
-- `reports` and `observability` still retain Python test assets because the Go package boundaries are not yet one-to-one replacements.
+- `tests/test_observability.py` still retains the HTML task-run detail renderer tests because that page surface is not yet Go-native.
+- `tests/test_reports.py` still retains reporting/UI surface tests because the remaining `ReportStudio`, triage, takeover, orchestration, and portfolio views are not yet fully represented in Go.
 - The missing local `reports/go-migration-lanes-2026-03-29.md` source artifact means the lane inventory had to be reconstructed from the issue scope and current repo contents.
