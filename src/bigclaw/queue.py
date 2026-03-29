@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from .legacy_shim import LEGACY_RUNTIME_GUIDANCE
+from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
 
 

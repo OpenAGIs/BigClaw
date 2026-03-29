@@ -107,7 +107,7 @@ from .issue_archive import (
     IssuePriorityArchivist,
     render_issue_priority_archive_report,
 )
-from .legacy_shim import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
+from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
 from .scheduler import ExecutionRecord, RiskFactor, RiskScore, RiskScorer, Scheduler, SchedulerDecision
 from .observability import (
@@ -763,10 +763,11 @@ def _alias_legacy_module(alias: str, target_name: str) -> None:
 for _alias, _target in (
     ("audit_events", "observability"),
     ("cost_control", "operations"),
-    ("deprecation", "legacy_shim"),
+    ("deprecation", "workspace_bootstrap"),
     ("dsl", "workflow"),
     ("event_bus", "observability"),
     ("github_sync", "workspace_bootstrap"),
+    ("legacy_shim", "workspace_bootstrap"),
     ("mapping", "connectors"),
     ("memory", "queue"),
     ("parallel_refill", "queue"),

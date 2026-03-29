@@ -10,7 +10,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Deque, Dict, List
 
-from .legacy_shim import warn_legacy_runtime_surface
+from .workspace_bootstrap import warn_legacy_runtime_surface
 from .observability import RepoSyncAudit
 from .reports import render_repo_sync_audit_report, write_report
 

@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .legacy_shim import LEGACY_RUNTIME_GUIDANCE
+from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE
 from .models import RiskLevel, Task
 
 

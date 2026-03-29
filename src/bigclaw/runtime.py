@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
-from .legacy_shim import LEGACY_RUNTIME_GUIDANCE
+from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
 from .observability import TaskRun
 
