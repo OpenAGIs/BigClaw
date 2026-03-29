@@ -1,7 +1,31 @@
 # BIG-GO-948 Validation
 
-## Lane File List
+## Completed Work
 
+This lane finishes a second-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go`.
+
+Deleted in this wave:
+- `tests/test_connectors.py`
+- `tests/test_mapping.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_links.py`
+- `tests/test_repo_triage.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_rollout.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_scheduler.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_risk.py`
+- `tests/test_saved_views.py`
+- `tests/test_workflow.py`
+- `tests/test_orchestration.py`
+- `tests/test_audit_events.py`
+- `tests/test_observability.py`
+- `tests/test_queue.py`
+
+Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -17,108 +41,229 @@
 - `tests/test_pilot.py`
 - `tests/test_issue_archive.py`
 
+## Lane File List
+
+Python files materially addressed by `BIG-GO-948` across both waves:
+- `tests/test_connectors.py`
+- `tests/test_mapping.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_links.py`
+- `tests/test_repo_triage.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_rollout.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_scheduler.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_risk.py`
+- `tests/test_saved_views.py`
+- `tests/test_workflow.py`
+- `tests/test_orchestration.py`
+- `tests/test_audit_events.py`
+- `tests/test_observability.py`
+- `tests/test_queue.py`
+- `tests/test_cross_process_coordination_surface.py`
+- `tests/test_followup_digests.py`
+- `tests/test_live_shadow_scorecard.py`
+- `tests/test_shadow_matrix_corpus.py`
+- `tests/test_subscriber_takeover_harness.py`
+- `tests/test_validation_bundle_continuation_scorecard.py`
+- `tests/test_parallel_refill.py`
+- `tests/test_roadmap.py`
+- `tests/test_cost_control.py`
+- `tests/test_deprecation.py`
+- `tests/test_legacy_shim.py`
+- `tests/test_service.py`
+- `tests/test_pilot.py`
+- `tests/test_issue_archive.py`
+
+Remaining Python tests after this wave:
+- `tests/test_console_ia.py`
+- `tests/test_control_center.py`
+- `tests/test_design_system.py`
+- `tests/test_dsl.py`
+- `tests/test_evaluation.py`
+- `tests/test_event_bus.py`
+- `tests/test_execution_contract.py`
+- `tests/test_execution_flow.py`
+- `tests/test_github_sync.py`
+- `tests/test_governance.py`
+- `tests/test_live_shadow_bundle.py`
+- `tests/test_memory.py`
+- `tests/test_models.py`
+- `tests/test_operations.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_planning.py`
+- `tests/test_reports.py`
+- `tests/test_runtime.py`
+- `tests/test_runtime_matrix.py`
+- `tests/test_ui_review.py`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
+- `tests/test_validation_policy.py`
+- `tests/test_workspace_bootstrap.py`
+
 ## Go Replacements
 
+This wave relies on the following Go-native coverage:
+- `bigclaw-go/internal/intake/connector_test.go`
+  - `TestConnectorsFetchMinimumIssue`
+  - `TestConnectorByNameReturnsKnownConnectors`
+- `bigclaw-go/internal/intake/mapping_test.go`
+  - `TestMapPriority`
+  - `TestMapSourceIssueToTask`
+- `bigclaw-go/internal/repo/governance_test.go`
+  - `TestRepoPermissionMatrixResolvesRoles`
+  - `TestMissingRepoAuditFields`
+- `bigclaw-go/internal/repo/repo_surfaces_test.go`
+  - `TestRepoRegistryResolvesSpaceChannelAndAgent`
+  - `TestRepoDiscussionBoardCreateReplyAndFilter`
+  - `TestNormalizeGatewayPayloadsAndErrors`
+  - `TestRepoAuditPayloadIsDeterministic`
+- `bigclaw-go/internal/triage/repo_test.go`
+  - `TestRecommendRepoActionFollowsLineageAndDiscussionEvidence`
+  - `TestApprovalEvidencePacketCapturesAcceptedAndCandidateLinks`
+- `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+  - `TestBuildDefaultDashboardRunContractIsReleaseReady`
+  - `TestDashboardRunContractAuditDetectsMissingPaths`
+  - `TestRenderDashboardRunContractReport`
+- `bigclaw-go/internal/product/saved_views_test.go`
+  - `TestAuditSavedViewCatalogAndRenderReport`
+  - `TestSavedViewCatalogJSONRoundTrip`
+- `bigclaw-go/internal/risk/risk_test.go`
+  - `TestRiskScorerKeepsSimpleLowRiskWorkLow`
+  - `TestRiskScorerElevatesProdBrowserWork`
+- `bigclaw-go/internal/risk/assessment_test.go`
+  - `TestSchedulerExecutionCapturesRiskScore`
+- `bigclaw-go/internal/scheduler/scheduler_test.go`
+  - `TestSchedulerHighRiskRequiresApproval`
+  - `TestSchedulerBrowserTaskRoutesToBrowser`
+  - `TestSchedulerOverBudgetDegradesTask`
+  - `TestSchedulerOverBudgetPausesTask`
+- `bigclaw-go/internal/workflow/orchestration_test.go`
+  - `TestCrossDepartmentOrchestratorRoutesPremiumHighRiskTask`
+  - `TestRenderOrchestrationPlan`
+- `bigclaw-go/internal/workflow/clawhost_workflows_test.go`
+  - `TestWorkflowEngineWritesOrchestrationArtifactsWithoutDuplicateLedgerEntries`
+- `bigclaw-go/internal/workflow/engine_test.go`
+  - `TestWorkflowEngineRecordsJournalAndAcceptsCompleteEvidence`
+  - `TestWorkflowEngineKeepsHighRiskTaskPendingManualApproval`
+- `bigclaw-go/internal/workflow/closeout_test.go`
+  - `TestWorkflowEngineWritesRepoSyncAuditReport`
+- `bigclaw-go/internal/observability/audit_spec_test.go`
+  - `TestP0AuditEventSpecsDefineRequiredOperationalEvents`
+  - `TestAuditSpecEventRequiresRequiredFields`
+- `bigclaw-go/internal/observability/audit_test.go`
+  - `TestTaskRunRecordsAuditSpecEventAndReportBuildersUseCanonicalEvents`
+- `bigclaw-go/internal/observability/recorder_test.go`
+  - `TestTaskRunCapturesLogsTraceArtifactsAndAudits`
+  - `TestTaskRunCloseoutSerializesRepoSyncAudit`
+  - `TestRenderTaskRunDetailPage`
+- `bigclaw-go/internal/queue/memory_queue_test.go`
+  - `TestMemoryQueueOrdersByPriorityAndSequence`
+- `bigclaw-go/internal/queue/file_queue_test.go`
+  - `TestFileQueuePersistsTasksAndDeadLetters`
+- `bigclaw-go/internal/queue/sqlite_queue_test.go`
+  - `TestSQLiteQueueOrdersByPriority`
+  - `TestSQLiteQueueDeadLetterAndRetryRoundTrip`
+
+Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
-  - `TestLane8CrossProcessCoordinationSurfaceStaysAligned`
-  - `TestLane8ValidationBundleContinuationScorecardStaysAligned`
-  - `TestLane8LiveShadowScorecardStaysAligned`
-  - `TestLane8ShadowMatrixCorpusCoverageStaysAligned`
-  - `TestLane8SubscriberTakeoverHarnessStaysAligned`
-  - `TestLane8FollowupDigestsStayAligned`
 - `bigclaw-go/internal/refill/queue_repo_fixture_test.go`
-  - `TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
 - `bigclaw-go/internal/regression/roadmap_contract_test.go`
-  - `TestExecutionPackRoadmapDocsStayAligned`
-  - `TestExecutionPackRoadmapUniqueOwnersContract`
 - `bigclaw-go/internal/regression/deprecation_contract_test.go`
-  - `TestLegacyMainlineCompatibilityManifestStaysAligned`
-- `bigclaw-go/internal/costcontrol/controller.go`
 - `bigclaw-go/internal/costcontrol/controller_test.go`
-  - `TestControllerDegradesWhenHighMediumGoesOverBudget`
-  - `TestControllerPausesWhenEvenDockerExceedsBudget`
-  - `TestControllerRespectsBudgetOverrideAmount`
-- `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
-- `bigclaw-go/internal/legacyshim/wrappers.go`
 - `bigclaw-go/internal/legacyshim/wrappers_test.go`
-  - `TestAppendMissingFlagPreservesExistingValues`
-  - `TestWorkspaceBootstrapWrapperInjectsGoDefaults`
-  - `TestWorkspaceValidateWrapperTranslatesLegacyFlags`
-  - `TestGitHubSyncAndRefillWrappersTargetGoShim`
-  - `TestWorkspaceRuntimeWrapperTargetsGoShim`
-  - `TestRepoRootFromScriptClimbsToRepositoryRoot`
 - `bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go`
-  - `TestRunGitHubSyncHelpPrintsUsageAndExitsZero`
-  - `TestRunWorkspaceHelpPrintsUsageAndExitsZero`
-  - `TestRunCreateIssuesHelpPrintsUsageAndExitsZero`
-  - `TestRunDevSmokeHelpPrintsUsageAndExitsZero`
-- `bigclaw-go/internal/service/server.go`
 - `bigclaw-go/internal/service/server_test.go`
-  - `TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures`
-  - `TestServerEntryHealthMetrics`
-- `bigclaw-go/internal/pilot/report.go`
 - `bigclaw-go/internal/pilot/report_test.go`
-  - `TestImplementationResultReadyWhenKPIsPassAndNoIncidents`
-  - `TestRenderPilotImplementationReportContainsReadinessFields`
-- `bigclaw-go/internal/issuearchive/archive.go`
 - `bigclaw-go/internal/issuearchive/archive_test.go`
-  - `TestIssuePriorityArchiveRoundTripPreservesManifestShape`
-  - `TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps`
-  - `TestIssuePriorityArchiveAuditRoundTripAndReadyState`
-  - `TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups`
-
-The deleted Python tests were either:
-- report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts, now covered in Go under `bigclaw-go/internal/regression`
-- refill queue fixture assertions over `docs/parallel-refill-queue.json`, now covered in Go under `bigclaw-go/internal/refill`
-
-This lane removes redundant Python-only coverage without expanding into unrelated runtime migration domains.
 
 ## Validation Commands
 
-- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8|TestCrossProcessCoordinationReadinessDocsStayAligned|TestLiveShadowScorecardBundleStaysAligned|TestProductionCorpus|TestLocalTakeoverReportStaysAligned|TestLiveValidationIndexStaysAligned|TestLiveValidationSummaryStaysAligned|TestFollowUpLaneDocsStayAligned'`
-- `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract'`
-- `cd bigclaw-go && go test ./internal/costcontrol -run TestController`
-- `cd bigclaw-go && go test ./internal/regression -run TestLegacyMainlineCompatibilityManifestStaysAligned`
-- `cd bigclaw-go && go test ./internal/legacyshim -run 'TestAppendMissingFlagPreservesExistingValues|TestWorkspaceBootstrapWrapperInjectsGoDefaults|TestWorkspaceValidateWrapperTranslatesLegacyFlags|TestGitHubSyncAndRefillWrappersTargetGoShim|TestWorkspaceRuntimeWrapperTargetsGoShim|TestRepoRootFromScriptClimbsToRepositoryRoot'`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunGitHubSyncHelpPrintsUsageAndExitsZero|TestRunWorkspaceHelpPrintsUsageAndExitsZero|TestRunCreateIssuesHelpPrintsUsageAndExitsZero|TestRunDevSmokeHelpPrintsUsageAndExitsZero'`
-- `cd bigclaw-go && go test ./internal/service -run 'TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures|TestServerEntryHealthMetrics'`
-- `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
-- `cd bigclaw-go && go test ./internal/issuearchive -run 'TestIssuePriorityArchiveRoundTripPreservesManifestShape|TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps|TestIssuePriorityArchiveAuditRoundTripAndReadyState|TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups'`
+- `cd bigclaw-go && go test ./internal/intake -run 'TestConnectorsFetchMinimumIssue|TestConnectorByNameReturnsKnownConnectors|TestMapPriority|TestMapSourceIssueToTask'`
+- `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic|TestRepoPermissionMatrixResolvesRoles|TestMissingRepoAuditFields'`
+- `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence|TestApprovalEvidencePacketCapturesAcceptedAndCandidateLinks'`
+- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip'`
+- `cd bigclaw-go && go test ./internal/risk`
+- `cd bigclaw-go && go test ./internal/scheduler`
+- `cd bigclaw-go && go test ./internal/workflow`
+- `cd bigclaw-go && go test ./internal/observability -run 'TestP0AuditEventSpecsDefineRequiredOperationalEvents|TestAuditSpecEventRequiresRequiredFields|TestTaskRunRecordsAuditSpecEventAndReportBuildersUseCanonicalEvents|TestTaskRunCapturesLogsTraceArtifactsAndAudits|TestTaskRunCloseoutSerializesRepoSyncAudit|TestRenderTaskRunDetailPage'`
+- `cd bigclaw-go && go test ./internal/queue`
 - `git status --short`
 
 ## Latest Validation Result
 
-- `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
-  - Result: `ok  	bigclaw-go/internal/pilot	0.789s`
-- `cd bigclaw-go && go test ./internal/issuearchive -run 'TestIssuePriorityArchiveRoundTripPreservesManifestShape|TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps|TestIssuePriorityArchiveAuditRoundTripAndReadyState|TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups'`
-  - Result: `ok  	bigclaw-go/internal/issuearchive	0.445s`
+- `cd bigclaw-go && go test ./internal/intake -run 'TestConnectorsFetchMinimumIssue|TestConnectorByNameReturnsKnownConnectors|TestMapPriority|TestMapSourceIssueToTask'`
+  - Result: `ok  	bigclaw-go/internal/intake	0.489s`
+- `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic|TestRepoPermissionMatrixResolvesRoles|TestMissingRepoAuditFields'`
+  - Result: `ok  	bigclaw-go/internal/repo	1.310s`
+- `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence|TestApprovalEvidencePacketCapturesAcceptedAndCandidateLinks'`
+  - Result: `ok  	bigclaw-go/internal/triage	0.880s`
+- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip'`
+  - Result: `ok  	bigclaw-go/internal/product	1.637s`
+- `cd bigclaw-go && go test ./internal/risk`
+  - Result: `ok  	bigclaw-go/internal/risk	0.832s`
+- `cd bigclaw-go && go test ./internal/scheduler`
+  - Result: `ok  	bigclaw-go/internal/scheduler	0.999s`
+- `cd bigclaw-go && go test ./internal/workflow`
+  - Result: `ok  	bigclaw-go/internal/workflow	0.626s`
+- `cd bigclaw-go && go test ./internal/observability -run 'TestP0AuditEventSpecsDefineRequiredOperationalEvents|TestAuditSpecEventRequiresRequiredFields|TestTaskRunRecordsAuditSpecEventAndReportBuildersUseCanonicalEvents|TestTaskRunCapturesLogsTraceArtifactsAndAudits|TestTaskRunCloseoutSerializesRepoSyncAudit|TestRenderTaskRunDetailPage'`
+  - Result: `ok  	bigclaw-go/internal/observability	1.280s`
+- `cd bigclaw-go && go test ./internal/queue`
+  - Result: `ok  	bigclaw-go/internal/queue	25.972s`
 
 ## Residual Risks
 
-- This lane intentionally leaves other remaining `tests/*.py` files untouched when they do not yet have a tight Go regression home or require broader production code migration.
-- `tests/test_parallel_validation_bundle.py` and other script-execution Python tests remain outside this scoped delete set because they exercise dynamic script behavior rather than only checked-in report fixtures.
-- `tests/test_control_center.py`, `tests/test_operations.py`, and `tests/test_ui_review.py` still need broader Go-native implementation or contract surfaces before their Python tests can be removed safely.
+- The remaining Python files are intentionally left because they still exercise Python-owned script orchestration, report rendering, model contracts, or UI/design assets without a tight Go replacement boundary.
+- `tests/test_parallel_validation_bundle.py`, `tests/test_validation_bundle_continuation_policy_gate.py`, and `tests/test_live_shadow_bundle.py` still execute Python scripts; deleting them before a Go-native exporter or wrapper exists would reduce behavioral coverage.
+- `tests/test_reports.py`, `tests/test_ui_review.py`, `tests/test_operations.py`, and `tests/test_design_system.py` remain high-surface-area Python report/UI suites and need separate migration slices rather than opportunistic deletion here.
 
-## Remaining Python Test Plan
+## Remaining Delete Or Migration Plan
 
-- `tests/test_parallel_validation_bundle.py`
-  - Plan: replace with a Go test once the validation bundle export path moves from Python script orchestration to a Go-native exporter or a stable CLI/API wrapper.
+- `tests/test_console_ia.py`
+  - Plan: migrate after the console IA/export surface is owned by a Go-native product/report contract.
 - `tests/test_control_center.py`
-  - Plan: attach to an existing Go API/export surface only after the control-center payload contract is fully represented in `bigclaw-go/internal/api`.
-- `tests/test_operations.py`
-  - Plan: split by feature and migrate only after the operations report and control-center contracts are each represented in Go.
-- `tests/test_ui_review.py`
-  - Plan: split into smaller report/contract slices and migrate only the parts that already have checked-in Go report surfaces.
+  - Plan: migrate once the control-center payload contract is fully represented in `bigclaw-go/internal/api`.
 - `tests/test_design_system.py`
-  - Plan: migrate only after a Go-owned static report/contract exists; otherwise leave until the Python design-system generator is retired.
+  - Plan: migrate only after a Go-owned static design-system contract exists.
 - `tests/test_dsl.py`
-  - Plan: requires a Go-native DSL parser/validator or an explicit decision to retire the Python DSL surface.
+  - Plan: requires a Go-native DSL parser/validator or an explicit retirement decision.
 - `tests/test_evaluation.py`
-  - Plan: requires a Go-native evaluation/report builder or a narrow checked-in report contract that can be asserted in Go.
-- `tests/test_issue_archive.py`
-  - Completed: replaced by `bigclaw-go/internal/issuearchive/archive.go` and `bigclaw-go/internal/issuearchive/archive_test.go`; Python test deleted.
-- `tests/test_pilot.py`
-  - Completed: replaced by `bigclaw-go/internal/pilot/report.go` and `bigclaw-go/internal/pilot/report_test.go`; Python test deleted.
-
-The remaining low-size files are not automatically low-risk deletes: they still encode behavior that does not yet exist as a Go-native contract in the repository. Their safe removal depends on implementation migration, not only on test translation.
+  - Plan: requires a Go-native evaluation/report builder.
+- `tests/test_event_bus.py`
+  - Plan: split between Go bus runtime coverage and any remaining Python-only script/export behavior, then delete incrementally.
+- `tests/test_execution_contract.py`
+  - Plan: migrate after the remaining Python execution contract helpers are fully subsumed by `bigclaw-go/internal/contract`.
+- `tests/test_execution_flow.py`
+  - Plan: migrate after the remaining execution-flow report surface is anchored in Go.
+- `tests/test_github_sync.py`
+  - Plan: migrate once the remaining Python sync/report wrapper behavior is covered by `bigclaw-go/internal/githubsync`.
+- `tests/test_governance.py`
+  - Plan: split freeze-policy and repo-governance concerns into smaller Go-native slices.
+- `tests/test_live_shadow_bundle.py`
+  - Plan: migrate after the live-shadow bundle exporter is Go-native or exposed through a stable Go wrapper.
+- `tests/test_memory.py`
+  - Plan: migrate the remaining memory-log assertions after the Python memory helpers are fully retired.
+- `tests/test_models.py`
+  - Plan: requires Go-native model contract coverage or a retirement decision for the Python model layer.
+- `tests/test_operations.py`
+  - Plan: split by report surface and migrate only when each output has a Go-native contract owner.
+- `tests/test_parallel_validation_bundle.py`
+  - Plan: migrate after the validation-bundle export path moves off Python script orchestration.
+- `tests/test_planning.py`
+  - Plan: split planning follow-up doc assertions from any remaining Python-only planning logic.
+- `tests/test_reports.py`
+  - Plan: requires staged migration because it still spans many Python-only report builders.
+- `tests/test_runtime.py`
+  - Plan: migrate remaining worker/runtime report assertions after Python wrappers are retired.
+- `tests/test_runtime_matrix.py`
+  - Plan: migrate once the runtime matrix exporter is owned by a Go-native contract.
+- `tests/test_ui_review.py`
+  - Plan: requires dedicated Go-native review/report surfaces rather than broad delete-by-analogy.
+- `tests/test_validation_bundle_continuation_policy_gate.py`
+  - Plan: migrate after the policy gate is implemented in Go or fronted by a stable Go CLI.
+- `tests/test_validation_policy.py`
+  - Plan: migrate once validation policy logic is centralized in Go-native contracts.
+- `tests/test_workspace_bootstrap.py`
+  - Plan: migrate after the remaining workspace bootstrap flow is fully exercised through `bigclaw-go/internal/bootstrap` and the legacy shim.
