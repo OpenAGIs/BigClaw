@@ -11,6 +11,7 @@
 7. Next slice: fold `governance.py` into `planning.py`, keep the legacy `bigclaw.governance` import path via aliasing, and validate both governance and planning behavior.
 8. Follow-on slice: fold `dashboard_run_contract.py` into `execution_contract.py`, keep the legacy `bigclaw.dashboard_run_contract` import path via aliasing, and validate the dashboard/run contract surface.
 9. Current next slice: fold `queue.py` into `operations.py`, keep the legacy `bigclaw.queue` import path via aliasing, and validate queue plus operations control-center behavior.
+10. Follow-up slice: fold `run_detail.py` into `reports.py`, keep the legacy `bigclaw.run_detail` import path via aliasing, and validate the run-detail, evaluation, and reporting surfaces.
 
 ## Acceptance
 
@@ -28,6 +29,7 @@
 - For the next slice, validate `tests/test_governance.py` plus `tests/test_planning.py` and re-check the top-level Python file count.
 - For the follow-on slice, validate `tests/test_dashboard_run_contract.py` plus `tests/test_execution_contract.py` and re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_queue.py`, `tests/test_control_center.py`, `tests/test_execution_flow.py`, and `tests/test_operations.py`, then re-check the top-level Python file count.
+- For the follow-up slice, validate `tests/test_evaluation.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -63,6 +65,7 @@
   - `issue_archive.py`
   - `orchestration.py`
   - `queue.py`
+  - `run_detail.py`
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
@@ -78,6 +81,7 @@
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
   - `reports.py` now owns the issue-priority archive helpers.
   - `reports.py` now owns the orchestration planning and policy helpers.
+  - `reports.py` now owns the run-detail rendering helpers.
   - `scheduler.py` now owns the risk scoring helpers.
   - `scheduler.py` now owns the worker runtime helpers.
   - `workflow.py` now owns the workflow DSL helpers.
@@ -98,8 +102,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `19`
-  - Delta: `-30`
+  - After: `18`
+  - Delta: `-31`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -186,3 +190,14 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `19`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy run detail import resolved successfully:
+      `bigclaw.run_detail -> bigclaw.reports`
+      `bigclaw.reports -> bigclaw.reports`
+      `bigclaw.evaluation -> bigclaw.evaluation`
+  - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py`
+    - Result: `48 passed in 0.11s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `18`
