@@ -64,11 +64,9 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/create_issues.py` and `python3 scripts/dev_smoke.py` are now
-  compatibility shims that dispatch into `bigclawctl` Go subcommands.
-- `python3 scripts/ops/bigclaw_github_sync.py ...`,
-  `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
-  `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
+- The root script layer no longer keeps Python compatibility shims for issue creation,
+  smoke checks, GitHub sync, refill, or workspace bootstrap/validation. Invoke the
+  canonical Go-first shell entrypoints via `bash scripts/ops/bigclawctl ...`.
 - `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
@@ -111,7 +109,6 @@ Use this only when validating a frozen migration-reference path:
 
 ```bash
 bash scripts/ops/bigclawctl dev-smoke
-python3 scripts/dev_smoke.py
 ```
 
 ## Quality gates
