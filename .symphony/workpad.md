@@ -54,12 +54,12 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_console_design_contract_test.go` covering design-system round-trip, audit scoring/gaps, top-bar audit/report contract, and information-architecture audit/report contract.
   - `tests/test_ui_review.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_ui_review_contract_test.go` covering UI review pack round-trip, incomplete-pack audit failures, release-ready BIG-4204 pack counts, rendered report/board/html contracts, and bundle export artifacts.
+  - `tests/test_evaluation.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_evaluation_contract_test.go` covering benchmark runner scoring, replay mismatch reporting, suite comparison/report rendering, replay detail rendering, run replay index artifact links, and missing-report fallback behavior.
 
 - Kept:
   - `tests/conftest.py`
     - Reason: still required for the remaining Python tests under `tests/`.
-  - `tests/test_evaluation.py`
-    - Reason: still exercises Python-owned benchmark runner, replay rendering, and artifact-writing behavior without a narrow existing Go-owned replacement in this issue.
   - `tests/test_operations.py`
     - Reason: still covers broader Python operations/reporting/dashboard composition beyond the narrowed Go-native surfaces touched here.
   - `tests/test_reports.py`
@@ -68,17 +68,19 @@
 - Validation commands and results:
   - `go test ./internal/regression -run 'TestLane8Python(ConsoleIA|DesignSystem|UIReview)ContractStaysAligned|TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned)'`
     - Result: `ok  	bigclaw-go/internal/regression	0.776s`
+  - `go test ./internal/regression -run 'TestLane8PythonEvaluationContractStaysAligned|TestLane8Python(ConsoleIA|DesignSystem|UIReview)ContractStaysAligned|TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned)'`
+    - Result: `ok  	bigclaw-go/internal/regression	1.246s`
   - `go test ./internal/product`
     - Result: `ok  	bigclaw-go/internal/product	(cached)`
   - `rg --files tests -g '*.py'`
-    - Result: `tests/conftest.py`, `tests/test_evaluation.py`, `tests/test_operations.py`, `tests/test_reports.py`
+    - Result: `tests/conftest.py`, `tests/test_operations.py`, `tests/test_reports.py`
   - `rg --files tests -g '*.py' | wc -l`
-    - Result: `4`
+    - Result: `3`
   - `rg --files | rg '\.py$' | wc -l`
-    - Result: `84`
+    - Result: `83`
   - Baseline counts before changes:
     - `tests/**` Python files: `8`
     - repository Python files: `88`
   - Impact after changes:
-    - `tests/**` Python files: `8 -> 4` (`-4`)
-    - repository Python files: `88 -> 84` (`-4`)
+    - `tests/**` Python files: `8 -> 3` (`-5`)
+    - repository Python files: `88 -> 83` (`-5`)
