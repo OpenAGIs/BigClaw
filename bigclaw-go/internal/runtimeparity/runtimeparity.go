@@ -204,9 +204,14 @@ func (w WorkerRuntime) Execute(task Task, decision Decision, run *Run, toolPaylo
 	profile := w.SandboxRouter.ProfileFor(decision.Medium)
 	if !decision.Approved {
 		if run != nil {
-			run.Audit("worker.lifecycle", actor, "waiting-approval", map[string]any{
+			outcome := "waiting-approval"
+			if profile.Medium == "none" {
+				outcome = "paused"
+			}
+			run.Audit("worker.lifecycle", actor, outcome, map[string]any{
 				"medium":         decision.Medium,
 				"required_tools": append([]string(nil), task.RequiredTools...),
+				"reason":         decision.Reason,
 			})
 		}
 		return WorkerExecutionResult{SandboxProfile: profile}

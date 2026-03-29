@@ -2,30 +2,29 @@
 
 ## Scope
 
-Twelfth-wave cleanup for the remaining Python continuation policy gate test by adding a narrow Go-native parity package.
+Thirteenth-wave cleanup for the remaining Python runtime test by extending the existing Go runtime parity package.
 
 Planned delete set for this continuation:
-- `tests/test_validation_bundle_continuation_policy_gate.py`
+- `tests/test_runtime.py`
 
 Go coverage used for replacement:
-- new `bigclaw-go/internal/policygateparity` package
-- new `bigclaw-go/internal/policygateparity/policygateparity_test.go`
+- updated `bigclaw-go/internal/runtimeparity/runtimeparity_test.go`
 
 ## Acceptance
 
-- Replace the Python continuation policy gate test with Go-native parity coverage.
-- Keep the new package narrow: scorecard policy evaluation, checked-in report assertions, and CLI exit-code verification only.
-- Delete `tests/test_validation_bundle_continuation_policy_gate.py` only after Go parity exists.
+- Replace the Python runtime test with Go-native parity coverage.
+- Keep the changes narrow: sandbox router profile mapping and paused budget behavior only, layered on the existing runtime parity package.
+- Delete `tests/test_runtime.py` only after Go parity exists.
 - Update `reports/BIG-GO-948-validation.md` with the new completed file, replacement coverage, command, result, and remaining plan.
-- Run targeted Go validation for `bigclaw-go/internal/policygateparity`.
+- Run targeted Go validation for `bigclaw-go/internal/runtimeparity`.
 - Commit and push the continuation changes.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/policygateparity`
+- `cd bigclaw-go && go test ./internal/runtimeparity`
 - `git status --short`
 
 ## Risks
 
-- This slice adds another small Go package; it must stay scoped to the Python continuation policy gate contract instead of taking ownership of the broader e2e Python script pipeline.
+- This slice should stay inside the existing runtime parity package and avoid turning into a second scheduler or worker implementation.
 - The larger remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.

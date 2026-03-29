@@ -106,3 +106,48 @@ func TestToolRuntimePolicyAndAuditChain(t *testing.T) {
 		t.Fatalf("tool.invoke outcomes = %v", outcomes)
 	}
 }
+
+func TestSandboxRouterMapsExecutionMedia(t *testing.T) {
+	t.Parallel()
+
+	router := SandboxRouter{}
+	if profile := router.ProfileFor("docker"); profile.Isolation != "container" {
+		t.Fatalf("docker profile = %+v", profile)
+	}
+	if profile := router.ProfileFor("browser"); profile.NetworkAccess != "enabled" {
+		t.Fatalf("browser profile = %+v", profile)
+	}
+	if profile := router.ProfileFor("vm"); profile.FilesystemAccess != "workspace-write" {
+		t.Fatalf("vm profile = %+v", profile)
+	}
+	if profile := router.ProfileFor("unknown"); profile.Medium != "none" {
+		t.Fatalf("unknown profile = %+v", profile)
+	}
+}
+
+func TestSchedulerPausesExecutionWhenBudgetCannotCoverDocker(t *testing.T) {
+	t.Parallel()
+
+	task := Task{
+		ID:            "BIG-202-budget",
+		Source:        "linear",
+		Title:         "budget pause",
+		Description:   "budget should stop execution",
+		RequiredTools: []string{"github"},
+	}
+	run := &Run{}
+	runtime := WorkerRuntime{}
+
+	result := runtime.Execute(task, Decision{Medium: "none", Approved: false, Reason: "budget exceeded"}, run, nil, "worker-runtime")
+
+	if result.SandboxProfile.Medium != "none" {
+		t.Fatalf("sandbox profile = %+v", result.SandboxProfile)
+	}
+	if len(result.ToolResults) != 0 {
+		t.Fatalf("expected no tool results, got %+v", result.ToolResults)
+	}
+	last := run.Audits[len(run.Audits)-1]
+	if last.Action != "worker.lifecycle" || last.Outcome != "paused" {
+		t.Fatalf("last audit = %+v", last)
+	}
+}
