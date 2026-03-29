@@ -77,15 +77,6 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    RepoDiscussionBoard,
-    RepoPost,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
 from .saved_views import (
     AlertDigestSubscription,
     SavedView,
@@ -117,6 +108,9 @@ from .observability import (
     BUDGET_OVERRIDE_EVENT,
     BusEvent,
     CI_COMPLETED_EVENT,
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
     EventBus,
     FLOW_HANDOFF_EVENT,
     GitSyncTelemetry,
@@ -125,12 +119,16 @@ from .observability import (
     P0_AUDIT_EVENT_SPECS,
     PULL_REQUEST_COMMENT_EVENT,
     PullRequestFreshness,
+    RepoDiscussionBoard,
+    RepoPost,
     RepoSyncAudit,
     RunCloseout,
     SCHEDULER_DECISION_EVENT,
     TASK_FAILED_EVENT,
     TaskRun,
     AuditEventSpec,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
     get_audit_event_spec,
     missing_required_fields,
 )
@@ -785,6 +783,7 @@ def _alias_legacy_module(alias: str, target_name: str) -> None:
 
 for _alias, _target in (
     ("audit_events", "observability"),
+    ("collaboration", "observability"),
     ("cost_control", "operations"),
     ("connectors", "models"),
     ("dashboard_run_contract", "execution_contract"),

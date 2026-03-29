@@ -6,14 +6,17 @@ from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .collaboration import (
+from .observability import (
     CollaborationThread,
     build_collaboration_thread_from_audits,
     render_collaboration_lines,
     render_collaboration_panel_html,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
+    RepoSyncAudit,
+    TaskRun,
 )
 from .models import RiskLevel, Task
-from .observability import FLOW_HANDOFF_EVENT, MANUAL_TAKEOVER_EVENT, RepoSyncAudit, TaskRun
 
 
 def _utc_now_iso() -> str:

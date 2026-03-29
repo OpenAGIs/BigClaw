@@ -42,6 +42,7 @@
   - `github_sync.py`
   - `legacy_shim.py`
   - `connectors.py`
+  - `collaboration.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -72,12 +73,12 @@
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
-  - `collaboration.py` now owns the repo discussion board helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
   - `operations.py` now owns the budget control helpers.
   - `operations.py` now owns the benchmark evaluation and replay helpers.
   - `operations.py` now owns the queue persistence and parallel issue queue helpers.
   - `observability.py` now owns the canonical audit event and event bus helpers.
+  - `observability.py` now owns the collaboration and repo discussion board helpers.
   - `operations.py` now owns the task memory compatibility surface.
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `planning.py` now owns the scope-freeze governance helpers.
@@ -106,8 +107,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `17`
-  - Delta: `-32`
+  - After: `16`
+  - Delta: `-33`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -215,3 +216,15 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `17`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy collaboration imports resolved successfully:
+      `bigclaw.collaboration -> bigclaw.observability`
+      `bigclaw.repo_board -> bigclaw.observability`
+      `bigclaw.observability -> bigclaw.observability`
+      `bigclaw.reports -> bigclaw.reports`
+  - `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_repo_board.py tests/test_observability.py tests/test_reports.py`
+    - Result: `43 passed in 0.10s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `16`
