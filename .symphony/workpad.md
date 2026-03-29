@@ -10,6 +10,7 @@ Targeted continuation migration batch under `bigclaw-go/scripts/e2e/`:
 - `bigclaw-go/scripts/e2e/run_all_test.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
+- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
 
 Replacement paths for this batch:
 
@@ -20,22 +21,23 @@ Replacement paths for this batch:
 - `bigclaw-go/scripts/e2e/run_all_internal_test.go`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_internal_test.go`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_internal_test.go`
+- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.go`
 
-Current repository Python file count before this sub-batch: `111`
-Current `bigclaw-go/scripts/e2e/**` Python file count before this sub-batch: `10`
+Current repository Python file count before this sub-batch: `110`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this sub-batch: `9`
 
 ## Plan
 
-1. Port the `broker_failover_stub_matrix.py` lightweight regression coverage from Python to Go while continuing to validate the current Python script behavior.
-2. Remove `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py` after the Go replacement is in place.
-3. Re-run the adjacent `run_all` and continuation targeted tests to keep the batch cohesive.
+1. Port `cross_process_coordination_surface.py` to Go with matching JSON shape and CLI behavior.
+2. Remove the Python script after callers/docs/regression references point at the Go entrypoint.
+3. Re-run the existing coordination and continuation regression tests against the regenerated report.
 4. Record the updated batch file list, replacement paths, and Python file-count impact.
 5. Commit and push the scoped changes for `BIG-GO-979`.
 
 ## Acceptance
 
 - Produce the exact `BIG-GO-979` batch file list under `bigclaw-go/scripts/e2e/**`.
-- Reduce Python files in the targeted directory by removing the selected broker-failover test batch and replacing it with Go-native paths.
+- Reduce Python files in the targeted directory by removing the selected coordination-surface script batch and replacing it with Go-native paths.
 - Keep changes scoped to the validation-bundle continuation migration batch only.
 - Report before/after repository-wide and `bigclaw-go/scripts/e2e/**` Python file counts.
 
@@ -48,6 +50,8 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this sub-batch: `10
 - `cd bigclaw-go && go test ./scripts/e2e/run_all_internal_test.go`
 - `cd bigclaw-go && go test ./scripts/e2e/multi_node_shared_queue_internal_test.go`
 - `cd bigclaw-go && go test ./scripts/e2e/broker_failover_stub_matrix_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/cross_process_coordination_surface.go --output bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8CrossProcessCoordinationSurfaceStaysAligned|TestLane8FollowupDigestsStayAligned'`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ValidationBundleContinuationScorecardStaysAligned|TestLane8FollowupDigestsStayAligned'`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLane8FollowupDigestsStayAligned'`
 - `git status --short`
@@ -72,16 +76,17 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this sub-batch: `10
   - Deleted.
   - Replaced by `bigclaw-go/scripts/e2e/multi_node_shared_queue_internal_test.go`.
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
+- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
   - Deleted.
-  - Replaced by `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_internal_test.go`.
+  - Replaced by `bigclaw-go/scripts/e2e/cross_process_coordination_surface.go`.
 
 ### Python File Count Impact
 
 - Repository Python files before first sub-batch: `116`
-- Repository Python files after current sub-batch: `110`
+- Repository Python files after current sub-batch: `109`
 - `bigclaw-go/scripts/e2e/**` Python files before first sub-batch: `15`
-- `bigclaw-go/scripts/e2e/**` Python files after current sub-batch: `9`
-- Net reduction across this issue so far: `6`
+- `bigclaw-go/scripts/e2e/**` Python files after current sub-batch: `8`
+- Net reduction across this issue so far: `7`
 - Net reduction in this continuation sub-batch: `1`
 
 ### Validation Record
@@ -102,5 +107,9 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this sub-batch: `10
   - Result: `ok  	command-line-arguments	1.164s`
 - `cd bigclaw-go && go test ./scripts/e2e/broker_failover_stub_matrix_internal_test.go`
   - Result: `ok  	command-line-arguments	1.652s`
+- `cd bigclaw-go && go run ./scripts/e2e/cross_process_coordination_surface.go --output bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json`
+  - Result: exit code `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8CrossProcessCoordinationSurfaceStaysAligned|TestLane8FollowupDigestsStayAligned|TestCrossProcessCoordinationReadinessDocsStayAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.952s`
 - `git status --short`
   - Result: only the scoped `BIG-GO-979` files above were modified before commit.

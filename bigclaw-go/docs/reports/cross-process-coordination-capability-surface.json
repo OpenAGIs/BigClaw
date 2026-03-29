@@ -1,165 +1,88 @@
 {
-  "generated_at": "2026-03-17T03:02:48.142437Z",
-  "ticket": "BIG-PAR-085-local-prework",
-  "title": "Cross-process coordination capability surface",
-  "status": "local-capability-surface",
-  "target_contract_surface_version": "2026-03-17",
-  "runtime_readiness_levels": {
-    "live_proven": "Shipped runtime behavior with checked-in live cross-process proof.",
-    "harness_proven": "Deterministic executable harness coverage exists, but no live multi-node proof is checked in.",
-    "contract_only": "Only target contracts or rollout docs define the expected semantics today.",
-    "supporting_surface": "The repo exposes reporting or metadata surfaces that describe runtime readiness without proving the coordination behavior itself."
-  },
-  "evidence_inputs": {
-    "shared_queue_report": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
-    "takeover_harness_report": "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json",
-    "live_takeover_report": "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json",
-    "supporting_docs": [
-      "bigclaw-go/docs/reports/event-bus-reliability-report.md",
-      "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
-      "bigclaw-go/docs/reports/broker-event-log-adapter-contract.md"
-    ]
-  },
-  "target_contracts": [
-    {
-      "capability": "partitioned_topic_routing",
-      "contract_anchor": "events.SubscriptionRequest.PartitionRoute",
-      "runtime_status": "contract_only",
-      "partitioning": {
-        "topic": "provider-defined shared event stream",
-        "supported_partition_keys": [
-          "trace_id",
-          "task_id",
-          "event_type"
-        ],
-        "ordering_scope": "sequence remains portable within the selected partition route",
-        "filter_alignment": "ReplayRequest task_id/trace_id filters must remain valid when a backend introduces partition routing."
-      },
-      "ownership": {},
-      "guarantees": [
-        "Partition keys are provider-neutral and map to existing trace/task/event_type selectors.",
-        "Partition metadata may vary by backend, but portable replay ordering still uses Position.Sequence.",
-        "No runtime implementation is shipped yet; this row defines the future adapter contract only."
-      ]
-    },
-    {
-      "capability": "broker_backed_subscriber_ownership",
-      "contract_anchor": "events.SubscriptionRequest.OwnershipContract",
-      "runtime_status": "contract_only",
-      "partitioning": {},
-      "ownership": {
-        "subscriber_group": "shared durable consumer identity",
-        "mode": "exclusive",
-        "lease_fields": [
-          "epoch",
-          "lease_token"
-        ],
-        "partition_hints": "optional partition affinity for future broker-backed consumers"
-      },
-      "guarantees": [
-        "Checkpoint commits remain fenced by epoch plus lease token after ownership transfer.",
-        "Ownership metadata travels through the neutral subscription contract instead of provider-specific APIs.",
-        "No broker-backed runtime implementation is shipped yet; this row defines the future ownership contract only."
-      ]
-    }
-  ],
-  "summary": {
-    "shared_queue_total_tasks": 200,
-    "shared_queue_cross_node_completions": 99,
-    "shared_queue_duplicate_completed_tasks": 0,
-    "shared_queue_duplicate_started_tasks": 0,
-    "takeover_scenario_count": 3,
-    "takeover_passing_scenarios": 3,
-    "takeover_duplicate_delivery_count": 4,
-    "takeover_stale_write_rejections": 2,
-    "live_takeover_scenario_count": 3,
-    "live_takeover_passing_scenarios": 3,
-    "live_takeover_stale_write_rejections": 3
-  },
   "capabilities": [
     {
       "capability": "shared_queue_task_coordination",
-      "current_state": "implemented",
-      "runtime_readiness": "live_proven",
-      "live_local_proof": true,
-      "deterministic_local_harness": false,
       "contract_defined_target": true,
+      "current_state": "implemented",
+      "deterministic_local_harness": false,
+      "live_local_proof": true,
       "notes": [
         "Two independent bigclawd processes share one SQLite-backed queue without duplicate terminal execution.",
         "Current proof is local and SQLite-backed rather than broker-backed or replicated."
-      ]
+      ],
+      "runtime_readiness": "live_proven"
     },
     {
       "capability": "subscriber_takeover_semantics",
-      "current_state": "implemented_with_shared_durable_scaffold",
-      "runtime_readiness": "live_proven",
-      "live_local_proof": true,
-      "deterministic_local_harness": true,
       "contract_defined_target": true,
+      "current_state": "implemented_with_shared_durable_scaffold",
+      "deterministic_local_harness": true,
+      "live_local_proof": true,
       "notes": [
         "Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by both the deterministic harness and the live two-node companion proof.",
         "The live proof now drives both nodes against one shared SQLite lease backend, but the provider-neutral broker-backed ownership contract is still not runtime-proven."
-      ]
+      ],
+      "runtime_readiness": "live_proven"
     },
     {
       "capability": "cross_process_replay_coordination",
-      "current_state": "contract_defined",
-      "runtime_readiness": "harness_proven",
-      "live_local_proof": false,
-      "deterministic_local_harness": true,
       "contract_defined_target": true,
+      "current_state": "contract_defined",
+      "deterministic_local_harness": true,
+      "live_local_proof": false,
       "notes": [
         "Replay cursor and checkpoint expectations are codified across the local takeover harness and durability rollout contract.",
         "No broker-backed or partitioned live replay proof exists yet."
-      ]
+      ],
+      "runtime_readiness": "harness_proven"
     },
     {
       "capability": "stale_writer_fencing",
-      "current_state": "implemented_with_shared_durable_scaffold",
-      "runtime_readiness": "live_proven",
-      "live_local_proof": true,
-      "deterministic_local_harness": true,
       "contract_defined_target": true,
+      "current_state": "implemented_with_shared_durable_scaffold",
+      "deterministic_local_harness": true,
+      "live_local_proof": true,
       "notes": [
         "The local takeover harness and the live two-node companion proof both show stale checkpoint writers being fenced after ownership transfer.",
         "The shared durable scaffold is SQLite-backed today, so the broker-backed ownership contract remains future work beyond the current local proof."
-      ]
+      ],
+      "runtime_readiness": "live_proven"
     },
     {
       "capability": "partitioned_topic_routing",
-      "current_state": "not_available",
-      "runtime_readiness": "contract_only",
-      "live_local_proof": false,
-      "deterministic_local_harness": false,
       "contract_defined_target": true,
+      "current_state": "not_available",
+      "deterministic_local_harness": false,
+      "live_local_proof": false,
       "notes": [
         "No partitioned topic model exists yet in the runtime.",
         "Broker-backed target docs reserve partition or quorum log ordering as the future coordination scope."
-      ]
+      ],
+      "runtime_readiness": "contract_only"
     },
     {
       "capability": "broker_backed_subscriber_ownership",
-      "current_state": "not_available",
-      "runtime_readiness": "contract_only",
-      "live_local_proof": false,
-      "deterministic_local_harness": false,
       "contract_defined_target": true,
+      "current_state": "not_available",
+      "deterministic_local_harness": false,
+      "live_local_proof": false,
       "notes": [
         "No broker-backed cross-process subscriber ownership model exists yet.",
         "The durability rollout contract defines the expected checkpoint fencing and failover guarantees before rollout-safe claims."
-      ]
+      ],
+      "runtime_readiness": "contract_only"
     },
     {
       "capability": "operator_capability_surface",
-      "current_state": "implemented",
-      "runtime_readiness": "supporting_surface",
-      "live_local_proof": false,
-      "deterministic_local_harness": false,
       "contract_defined_target": true,
+      "current_state": "implemented",
+      "deterministic_local_harness": false,
+      "live_local_proof": false,
       "notes": [
         "The repo exposes provider-neutral durability and rollout metadata through docs and runtime-facing event_durability surfaces.",
         "This report adds a coordination-specific surface tying together live local proof, deterministic local harnesses, and future targets."
-      ]
+      ],
+      "runtime_readiness": "supporting_surface"
     }
   ],
   "current_ceiling": [
@@ -167,9 +90,86 @@
     "no broker-backed cross-process subscriber coordination",
     "no broker-backed or replicated subscriber ownership backend"
   ],
+  "evidence_inputs": {
+    "live_takeover_report": "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json",
+    "shared_queue_report": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
+    "supporting_docs": [
+      "bigclaw-go/docs/reports/event-bus-reliability-report.md",
+      "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
+      "bigclaw-go/docs/reports/broker-event-log-adapter-contract.md"
+    ],
+    "takeover_harness_report": "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json"
+  },
+  "generated_at": "2026-03-29T10:59:59.763747Z",
   "next_runtime_hooks": [
     "emit native takeover transition audit events from the runtime instead of harness-authored artifacts",
     "validate broker-backed replay and ownership semantics against the same report schema",
     "replace the SQLite shared durable scaffold with a broker-backed or replicated ownership backend"
-  ]
+  ],
+  "runtime_readiness_levels": {
+    "contract_only": "Only target contracts or rollout docs define the expected semantics today.",
+    "harness_proven": "Deterministic executable harness coverage exists, but no live multi-node proof is checked in.",
+    "live_proven": "Shipped runtime behavior with checked-in live cross-process proof.",
+    "supporting_surface": "The repo exposes reporting or metadata surfaces that describe runtime readiness without proving the coordination behavior itself."
+  },
+  "status": "local-capability-surface",
+  "summary": {
+    "live_takeover_passing_scenarios": 3,
+    "live_takeover_scenario_count": 3,
+    "live_takeover_stale_write_rejections": 3,
+    "shared_queue_cross_node_completions": 99,
+    "shared_queue_duplicate_completed_tasks": 0,
+    "shared_queue_duplicate_started_tasks": 0,
+    "shared_queue_total_tasks": 200,
+    "takeover_duplicate_delivery_count": 4,
+    "takeover_passing_scenarios": 3,
+    "takeover_scenario_count": 3,
+    "takeover_stale_write_rejections": 2
+  },
+  "target_contract_surface_version": "2026-03-17",
+  "target_contracts": [
+    {
+      "capability": "partitioned_topic_routing",
+      "contract_anchor": "events.SubscriptionRequest.PartitionRoute",
+      "guarantees": [
+        "Partition keys are provider-neutral and map to existing trace/task/event_type selectors.",
+        "Partition metadata may vary by backend, but portable replay ordering still uses Position.Sequence.",
+        "No runtime implementation is shipped yet; this row defines the future adapter contract only."
+      ],
+      "ownership": {},
+      "partitioning": {
+        "filter_alignment": "ReplayRequest task_id/trace_id filters must remain valid when a backend introduces partition routing.",
+        "ordering_scope": "sequence remains portable within the selected partition route",
+        "supported_partition_keys": [
+          "trace_id",
+          "task_id",
+          "event_type"
+        ],
+        "topic": "provider-defined shared event stream"
+      },
+      "runtime_status": "contract_only"
+    },
+    {
+      "capability": "broker_backed_subscriber_ownership",
+      "contract_anchor": "events.SubscriptionRequest.OwnershipContract",
+      "guarantees": [
+        "Checkpoint commits remain fenced by epoch plus lease token after ownership transfer.",
+        "Ownership metadata travels through the neutral subscription contract instead of provider-specific APIs.",
+        "No broker-backed runtime implementation is shipped yet; this row defines the future ownership contract only."
+      ],
+      "ownership": {
+        "lease_fields": [
+          "epoch",
+          "lease_token"
+        ],
+        "mode": "exclusive",
+        "partition_hints": "optional partition affinity for future broker-backed consumers",
+        "subscriber_group": "shared durable consumer identity"
+      },
+      "partitioning": {},
+      "runtime_status": "contract_only"
+    }
+  ],
+  "ticket": "BIG-PAR-085-local-prework",
+  "title": "Cross-process coordination capability surface"
 }
