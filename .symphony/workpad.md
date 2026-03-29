@@ -40,6 +40,7 @@
 - `tests/test_workflow.py`
 - `tests/test_observability.py`
 - `tests/test_audit_events.py`
+- `tests/test_orchestration.py`
 
 ## Acceptance
 
@@ -126,6 +127,8 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_observability_contract_test.go`, which invokes the Python observability and report-rendering surface from Go and preserves ledger persistence, closeout repo-sync serialization, task-run report/detail rendering, script escaping, and collaboration thread round-tripping.
   - `tests/test_audit_events.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_audit_events_contract_test.go`, which invokes the Python audit-events, scheduler, workflow, and report surfaces from Go and preserves canonical event types, required-field validation, scheduler audit emissions, approval recording, and takeover-report projections.
+  - `tests/test_orchestration.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_orchestration_contract_test.go`, which invokes the Python orchestration and scheduler surfaces from Go and preserves cross-department routing, standard-tier policy limiting, rendered plan content, and scheduler handoff/policy traces.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -210,10 +213,12 @@
     - Added Go regression coverage that exercises the Python observability/report contract for ledger persistence, closeout repo-sync serialization, task-run report and detail-page rendering, escaped timeline JSON, and collaboration-thread round-tripping.
   - `bigclaw-go/internal/regression/python_audit_events_contract_test.go`
     - Added Go regression coverage that exercises the Python audit-events contract for canonical event types, required-field validation, scheduler emitted audits, approval recording, and takeover queue/canvas projections.
+  - `bigclaw-go/internal/regression/python_orchestration_contract_test.go`
+    - Added Go regression coverage that exercises the Python orchestration contract for cross-department planning, standard-tier policy limiting, rendered plan content, and scheduler handoff/policy audit behavior.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 13` (`-30`)
-  - Repository-wide Python files: `123 -> 93` (`-30`)
+  - `tests/**` Python files: `43 -> 12` (`-31`)
+  - Repository-wide Python files: `123 -> 92` (`-31`)
 
 ## Validation Results
 
@@ -428,3 +433,11 @@
   - `93`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_audit_events_contract_test.go`, and the deleted `tests/test_audit_events.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonOrchestrationContractStaysAligned|TestLane8PythonAuditEventsContractStaysAligned|TestLane8PythonObservabilityContractStaysAligned|TestLane8PythonWorkflowContractStaysAligned|TestLane8PythonExecutionFlowContractStaysAligned|TestLane8PythonRiskContractStaysAligned|TestLane8PythonDSLContractStaysAligned|TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	2.139s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `12`
+- `rg --files | rg '\.py$' | wc -l`
+  - `92`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_orchestration_contract_test.go`, and the deleted `tests/test_orchestration.py`
