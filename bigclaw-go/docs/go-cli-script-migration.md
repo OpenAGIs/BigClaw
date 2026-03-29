@@ -6,7 +6,7 @@ Issue: `BIG-GO-902`
 
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
-| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated to direct Go invocation |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./scripts/e2e/validation_bundle_continuation_policy_gate.go ...` | migrated to Go-native generator |

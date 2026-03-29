@@ -122,10 +122,7 @@ func newRunAllHarness(t *testing.T) runAllHarness {
 }
 
 func (h runAllHarness) installStubs() {
-	h.writeFile("scripts/e2e/run_task_smoke.py", runAllTaskSmokeStub)
-	if err := os.Chmod(filepath.Join(h.root, "scripts", "e2e", "run_task_smoke.py"), 0o755); err != nil {
-		panic(err)
-	}
+	h.writeFile("cmd/bigclawctl/main.go", runAllBigclawctlStub)
 	h.writeFile("scripts/e2e/broker_bootstrap_summary.go", runAllBrokerBootstrapStub)
 	h.writeFile("scripts/e2e/export_validation_bundle.py", runAllExportBundleStub)
 	if err := os.Chmod(filepath.Join(h.root, "scripts", "e2e", "export_validation_bundle.py"), 0o755); err != nil {
@@ -226,16 +223,38 @@ func asBoolForRunAll(value any) bool {
 	return ok && cast
 }
 
-const runAllTaskSmokeStub = `
-#!/usr/bin/env python3
-import json
-import pathlib
-import sys
+const runAllBigclawctlStub = `
+package main
 
-args = sys.argv[1:]
-report_path = pathlib.Path(args[args.index('--report-path') + 1])
-report_path.parent.mkdir(parents=True, exist_ok=True)
-report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+import (
+    "encoding/json"
+    "os"
+    "path/filepath"
+)
+
+func main() {
+    args := os.Args[1:]
+    reportPath := ""
+    for i := 0; i < len(args)-1; i++ {
+        if args[i] == "--report-path" {
+            reportPath = args[i+1]
+            break
+        }
+    }
+    if reportPath == "" {
+        panic("missing --report-path")
+    }
+    if err := os.MkdirAll(filepath.Dir(reportPath), 0o755); err != nil {
+        panic(err)
+    }
+    body, err := json.Marshal(map[string]any{"status": "succeeded", "all_ok": true})
+    if err != nil {
+        panic(err)
+    }
+    if err := os.WriteFile(reportPath, body, 0o644); err != nil {
+        panic(err)
+    }
+}
 `
 
 const runAllBrokerBootstrapStub = `
