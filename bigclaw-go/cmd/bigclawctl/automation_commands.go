@@ -184,12 +184,16 @@ func runAutomationE2E(args []string) error {
 
 func runAutomationBenchmark(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <soak-local> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <run-matrix|soak-local|capacity-certification> [flags]\n")
 		return nil
 	}
 	switch args[0] {
+	case "run-matrix":
+		return runAutomationBenchmarkMatrixCommand(args[1:])
 	case "soak-local":
 		return runAutomationSoakLocalCommand(args[1:])
+	case "capacity-certification":
+		return runAutomationBenchmarkCapacityCertificationCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation benchmark subcommand: %s", args[0])
 	}

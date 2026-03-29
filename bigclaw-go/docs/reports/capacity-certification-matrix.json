@@ -12,56 +12,56 @@
       "bigclaw-go/docs/reports/soak-local-1000x24.json",
       "bigclaw-go/docs/reports/soak-local-2000x24.json"
     ],
-    "generator_script": "bigclaw-go/scripts/benchmark/capacity_certification.py"
+    "generator_script": "bigclaw-go/cmd/bigclawctl automation benchmark capacity-certification"
   },
   "summary": {
     "overall_status": "pass",
     "total_lanes": 9,
     "passed_lanes": 9,
     "failed_lanes": [],
-    "recommended_sustained_envelope": "<=1000 tasks with 24 submit workers",
-    "ceiling_envelope": "<=2000 tasks with 24 submit workers"
+    "recommended_sustained_envelope": "\u003c=1000 tasks with 24 submit workers",
+    "ceiling_envelope": "\u003c=2000 tasks with 24 submit workers"
   },
   "microbenchmarks": [
     {
       "lane": "BenchmarkMemoryQueueEnqueueLease-8",
       "metric": "ns_per_op",
-      "observed": 66075.0,
+      "observed": 66075,
       "threshold": {
-        "operator": "<=",
+        "operator": "\u003c=",
         "value": 100000
       },
       "status": "pass",
-      "detail": "observed=66075.0ns/op limit=100000ns/op"
+      "detail": "observed=66075ns/op limit=100000ns/op"
     },
     {
       "lane": "BenchmarkFileQueueEnqueueLease-8",
       "metric": "ns_per_op",
-      "observed": 31627767.0,
+      "observed": 31627767,
       "threshold": {
-        "operator": "<=",
+        "operator": "\u003c=",
         "value": 40000000
       },
       "status": "pass",
-      "detail": "observed=31627767.0ns/op limit=40000000ns/op"
+      "detail": "observed=3.1627767e+07ns/op limit=4e+07ns/op"
     },
     {
       "lane": "BenchmarkSQLiteQueueEnqueueLease-8",
       "metric": "ns_per_op",
-      "observed": 18057898.0,
+      "observed": 18057898,
       "threshold": {
-        "operator": "<=",
+        "operator": "\u003c=",
         "value": 25000000
       },
       "status": "pass",
-      "detail": "observed=18057898.0ns/op limit=25000000ns/op"
+      "detail": "observed=1.8057898e+07ns/op limit=2.5e+07ns/op"
     },
     {
       "lane": "BenchmarkSchedulerDecide-8",
       "metric": "ns_per_op",
       "observed": 73.98,
       "threshold": {
-        "operator": "<=",
+        "operator": "\u003c=",
         "value": 1000
       },
       "status": "pass",
@@ -82,12 +82,12 @@
         "failed": 0
       },
       "thresholds": {
-        "min_throughput_tasks_per_sec": 5.0,
+        "min_throughput_tasks_per_sec": 5,
         "max_failures": 0
       },
       "operating_envelope": "bootstrap-burst",
       "status": "pass",
-      "detail": "throughput=6.074tps min=5.0 failures=0 max=0"
+      "detail": "throughput=6.074tps min=5 failures=0 max=0"
     },
     {
       "lane": "100x12",
@@ -122,12 +122,12 @@
         "failed": 0
       },
       "thresholds": {
-        "min_throughput_tasks_per_sec": 9.0,
+        "min_throughput_tasks_per_sec": 9,
         "max_failures": 0
       },
       "operating_envelope": "recommended-local-sustained",
       "status": "pass",
-      "detail": "throughput=9.607tps min=9.0 failures=0 max=0"
+      "detail": "throughput=9.607tps min=9 failures=0 max=0"
     },
     {
       "lane": "2000x24",
@@ -175,7 +175,7 @@
     "baseline_throughput_tasks_per_sec": 9.607,
     "ceiling_throughput_tasks_per_sec": 9.125,
     "throughput_drop_pct": 5.02,
-    "drop_warn_threshold_pct": 12.0,
+    "drop_warn_threshold_pct": 12,
     "status": "pass",
     "detail": "throughput remains in the same single-instance local band at the 2000-task ceiling"
   },
@@ -206,12 +206,12 @@
     {
       "name": "all_microbenchmark_thresholds_hold",
       "passed": true,
-      "detail": "['pass', 'pass', 'pass', 'pass']"
+      "detail": "[pass pass pass pass]"
     },
     {
       "name": "all_soak_lanes_hold",
       "passed": true,
-      "detail": "['pass', 'pass', 'pass', 'pass']"
+      "detail": "[pass pass pass pass]"
     },
     {
       "name": "mixed_workload_routes_match_expected_executors",
@@ -221,7 +221,7 @@
     {
       "name": "ceiling_lane_does_not_show_excessive_throughput_drop",
       "passed": true,
-      "detail": "drop_pct=5.02 threshold=12.0"
+      "detail": "drop_pct=5.02 threshold=12"
     }
   ],
   "saturation_notes": [

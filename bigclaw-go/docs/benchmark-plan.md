@@ -30,7 +30,7 @@
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/run_matrix.py \
+bigclawctl automation benchmark run-matrix \
   --scenario 50:8 \
   --scenario 100:12 \
   --report-path docs/reports/benchmark-matrix-report.json
@@ -41,7 +41,7 @@ python3 scripts/benchmark/run_matrix.py \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/soak_local.py \
+bigclawctl automation benchmark soak-local \
   --autostart \
   --count 2000 \
   --workers 24 \
@@ -53,7 +53,7 @@ python3 scripts/benchmark/soak_local.py \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/capacity_certification.py \
+bigclawctl automation benchmark capacity-certification \
   --output docs/reports/capacity-certification-matrix.json \
   --markdown-output docs/reports/capacity-certification-report.md
 ```
@@ -62,3 +62,4 @@ This helper converts the checked-in benchmark, soak, and mixed-workload artifact
 an explicit certification matrix with pass/fail thresholds, saturation notes, and
 recommended operating envelopes. It is still repo-native evidence rather than a live
 production attestation.
+BIG-GO-978 retired the legacy `bigclaw-go/scripts/benchmark/*` Python helpers and now routes all benchmark automation through `bigclawctl automation benchmark ...`.

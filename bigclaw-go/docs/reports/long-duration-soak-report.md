@@ -3,7 +3,7 @@
 ## Scope
 
 - Run date: 2026-03-13
-- Command: `python3 scripts/benchmark/soak_local.py --autostart --count 2000 --workers 24 --timeout-seconds 480 --report-path docs/reports/soak-local-2000x24.json`
+- Command: `bigclawctl automation benchmark soak-local --autostart --count 2000 --workers 24 --timeout-seconds 480 --report-path docs/reports/soak-local-2000x24.json`
 - Goal: extend the earlier `1k+` burst proof into a longer local soak window for epic closure readiness.
 
 ## Result
