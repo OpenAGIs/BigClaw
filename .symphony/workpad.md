@@ -27,6 +27,7 @@
 - `tests/test_repo_collaboration.py`
 - `tests/test_memory.py`
 - `tests/test_repo_links.py`
+- `tests/test_models.py`
 
 ## Acceptance
 
@@ -87,6 +88,8 @@
     - Reason: migrated to a new Go-owned `bigclaw-go/internal/memory` package for persisted task-pattern suggestions and history-based rule injection.
   - `tests/test_repo_links.py`
     - Reason: covered by `bigclaw-go/internal/api/server_test.go` and existing `bigclaw-go/internal/repo/repo_surfaces_test.go` after exposing closeout `accepted_commit_hash` and `run_commit_links` round-trip semantics in the Go-owned run-detail API.
+  - `tests/test_models.py`
+    - Reason: already covered by existing Go-native round-trip/default-contract tests in `bigclaw-go/internal/risk/assessment_test.go`, `bigclaw-go/internal/triage/record_test.go`, `bigclaw-go/internal/workflow/model_test.go`, and `bigclaw-go/internal/billing/statement_test.go`.
 
 - Kept for later lanes:
   - `tests/test_github_sync.py`
@@ -135,8 +138,8 @@
     - Added closeout round-trip coverage for accepted commit hash and preserved candidate role ordering.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 26` (`-17`)
-  - Repository-wide Python files: `123 -> 106` (`-17`)
+  - `tests/**` Python files: `43 -> 25` (`-18`)
+  - Repository-wide Python files: `123 -> 105` (`-18`)
 
 ## Validation Results
 
@@ -226,3 +229,14 @@
   - `106`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/api/v2.go`, and the deleted `tests/test_repo_links.py`
+- `cd bigclaw-go && go test ./internal/risk ./internal/triage ./internal/workflow ./internal/billing`
+  - `ok  	bigclaw-go/internal/risk	1.241s`
+  - `ok  	bigclaw-go/internal/triage	(cached)`
+  - `ok  	bigclaw-go/internal/workflow	1.638s`
+  - `ok  	bigclaw-go/internal/billing	2.089s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `25`
+- `rg --files | rg '\.py$' | wc -l`
+  - `105`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md` and the deleted `tests/test_models.py`
