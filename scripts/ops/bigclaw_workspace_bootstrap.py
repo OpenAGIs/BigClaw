@@ -1,26 +1,28 @@
-#!/usr/bin/env python3
-"""Legacy compatibility shim for the Go workspace bootstrap command."""
+#!/usr/bin/env bash
+set -euo pipefail
 
-from __future__ import annotations
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
-import os
-import subprocess
-import sys
-from pathlib import Path
+out_args=()
+has_repo_url=0
+has_cache_key=0
+for arg in "$@"; do
+  case "$arg" in
+    --repo-url|--repo-url=*)
+      has_repo_url=1
+      ;;
+    --cache-key|--cache-key=*)
+      has_cache_key=1
+      ;;
+  esac
+  out_args+=("$arg")
+done
 
-repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(repo_root / "src"))
+if [ "$has_repo_url" -eq 0 ]; then
+  out_args+=(--repo-url "${BIGCLAW_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}")
+fi
+if [ "$has_cache_key" -eq 0 ]; then
+  out_args+=(--cache-key "${BIGCLAW_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}")
+fi
 
-from bigclaw.legacy_shim import append_missing_flag, repo_root_from_script
-
-
-def main() -> int:
-    repo_root = repo_root_from_script(__file__)
-    args = append_missing_flag(sys.argv[1:], "--repo-url", os.getenv("BIGCLAW_BOOTSTRAP_REPO_URL", "git@github.com:OpenAGIs/BigClaw.git"))
-    args = append_missing_flag(args, "--cache-key", os.getenv("BIGCLAW_BOOTSTRAP_CACHE_KEY", "openagis-bigclaw"))
-    command = ["bash", str(repo_root / "scripts/ops/bigclawctl"), "workspace", *args]
-    return subprocess.call(command, cwd=repo_root)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+exec bash "$script_dir/bigclawctl" workspace "${out_args[@]}"

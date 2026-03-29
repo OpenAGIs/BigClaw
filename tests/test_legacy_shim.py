@@ -1,6 +1,5 @@
 import os
 import subprocess
-import sys
 from pathlib import Path
 
 from bigclaw.legacy_shim import (
@@ -76,7 +75,7 @@ def test_dev_smoke_shim_runs_without_pythonpath():
     env = dict(os.environ)
     env.pop('PYTHONPATH', None)
     result = subprocess.run(
-        [sys.executable, 'scripts/dev_smoke.py'],
+        ['bash', 'scripts/dev_smoke.py'],
         cwd=repo_root,
         env=env,
         text=True,
@@ -91,7 +90,7 @@ def test_refill_shim_help_runs_without_pythonpath():
     env = dict(os.environ)
     env.pop('PYTHONPATH', None)
     result = subprocess.run(
-        [sys.executable, 'scripts/ops/bigclaw_refill_queue.py', '--help'],
+        ['bash', 'scripts/ops/bigclaw_refill_queue.py', '--help'],
         cwd=repo_root,
         env=env,
         text=True,
@@ -106,7 +105,7 @@ def test_create_issues_shim_help_runs_without_pythonpath():
     env = dict(os.environ)
     env.pop('PYTHONPATH', None)
     result = subprocess.run(
-        [sys.executable, 'scripts/create_issues.py', '--help'],
+        ['bash', 'scripts/create_issues.py', '--help'],
         cwd=repo_root,
         env=env,
         text=True,
@@ -121,7 +120,7 @@ def test_github_sync_shim_help_runs_without_pythonpath():
     env = dict(os.environ)
     env.pop('PYTHONPATH', None)
     result = subprocess.run(
-        [sys.executable, 'scripts/ops/bigclaw_github_sync.py', '--help'],
+        ['bash', 'scripts/ops/bigclaw_github_sync.py', '--help'],
         cwd=repo_root,
         env=env,
         text=True,
@@ -136,7 +135,7 @@ def test_workspace_bootstrap_shim_help_runs_without_pythonpath():
     env = dict(os.environ)
     env.pop('PYTHONPATH', None)
     result = subprocess.run(
-        [sys.executable, 'scripts/ops/bigclaw_workspace_bootstrap.py', '--help'],
+        ['bash', 'scripts/ops/bigclaw_workspace_bootstrap.py', '--help'],
         cwd=repo_root,
         env=env,
         text=True,
@@ -151,7 +150,7 @@ def test_symphony_workspace_bootstrap_shim_help_runs_without_pythonpath():
     env = dict(os.environ)
     env.pop('PYTHONPATH', None)
     result = subprocess.run(
-        [sys.executable, 'scripts/ops/symphony_workspace_bootstrap.py', '--help'],
+        ['bash', 'scripts/ops/symphony_workspace_bootstrap.py', '--help'],
         cwd=repo_root,
         env=env,
         text=True,
@@ -166,7 +165,7 @@ def test_symphony_workspace_validate_shim_help_runs_without_pythonpath():
     env = dict(os.environ)
     env.pop('PYTHONPATH', None)
     result = subprocess.run(
-        [sys.executable, 'scripts/ops/symphony_workspace_validate.py', '--help'],
+        ['bash', 'scripts/ops/symphony_workspace_validate.py', '--help'],
         cwd=repo_root,
         env=env,
         text=True,
