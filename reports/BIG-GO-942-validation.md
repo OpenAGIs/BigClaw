@@ -143,7 +143,7 @@ Result: passed with `workspace_count: 2`; report file emitted successfully
 ## Branch State
 
 - Branch: `symphony/BIG-GO-942`
-- Pushed head: `87fd42c3043163e86f937a7fc8a4524802e5e9eb`
+- Pushed head: `07f790194ddf79e1a033ec750c06e96d363ee5b1`
 - `git status --short --branch` is clean against `origin/symphony/BIG-GO-942`
 
 ## Risks

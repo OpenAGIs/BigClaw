@@ -12,7 +12,7 @@ Date: `2026-03-29`
 
 ## Latest Pushed Commit
 
-`87fd42c3043163e86f937a7fc8a4524802e5e9eb`
+`07f790194ddf79e1a033ec750c06e96d363ee5b1`
 
 ## Reviewer Links
 
@@ -41,6 +41,8 @@ Date: `2026-03-29`
   workspace validate callers.
 - Validation evidence for tests, wrapper smoke checks, and temp-repo workspace flows now lives
   in-repo for reviewers.
+- The latest branch tip after adding issue-scoped closeout artifacts is
+  `07f790194ddf79e1a033ec750c06e96d363ee5b1`.
 
 ## Validation Commands
 
