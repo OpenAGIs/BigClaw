@@ -342,7 +342,7 @@ from .reports import (
     render_four_week_execution_report,
     render_scope_freeze_report,
 )
-from .ui_review import (
+from .design_system import (
     InteractionFlow,
     OpenQuestion,
     ReviewBlocker,
@@ -783,6 +783,7 @@ for _alias, _target in (
     ("audit_events", "observability"),
     ("collaboration", "observability"),
     ("console_ia", "design_system"),
+    ("ui_review", "design_system"),
     ("cost_control", "operations"),
     ("models", "execution_contract"),
     ("connectors", "models"),

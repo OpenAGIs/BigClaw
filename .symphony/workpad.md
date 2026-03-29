@@ -47,6 +47,7 @@
 - For the current next slice, validate `tests/test_dsl.py`, `tests/test_workflow.py`, `tests/test_scheduler.py`, and `tests/test_audit_events.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_models.py`, `tests/test_execution_contract.py`, `tests/test_scheduler.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_planning.py`, `tests/test_governance.py`, `tests/test_repo_rollout.py`, and `tests/test_reports.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_ui_review.py` plus `tests/test_design_system.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -92,6 +93,7 @@
   - `planning.py`
   - `queue.py`
   - `run_detail.py`
+  - `ui_review.py`
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `execution_contract.py` now owns the repo permission, registry, commit-lineage, and triage helpers.
@@ -105,6 +107,7 @@
   - `observability.py` now owns the canonical audit event and event bus helpers.
   - `observability.py` now owns the collaboration and repo discussion board helpers.
   - `design_system.py` now owns the console information architecture and interaction-contract helpers.
+  - `design_system.py` now owns the UI review pack, signoff, blocker, and escalation rendering helpers.
   - `operations.py` now owns the task memory compatibility surface.
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `planning.py` now owns the scope-freeze governance helpers.
@@ -137,13 +140,14 @@
   - `operations.py`: retained as the operations-policy host after absorbing budget control, queue, and memory helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
   - `design_system.py`: retained as the UI specification host after absorbing console IA and interaction-contract helpers; the merge removes an existing dependency edge from console IA into design system without widening into saved-view or UI review ownership.
+  - `design_system.py`: retained as the consolidated UI contract host after also absorbing UI review; this keeps adjacent product-specification and review artifacts together without leaking them into reports or scheduler surfaces.
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
   - `__main__.py`: retained as the package execution entrypoint after also absorbing workspace bootstrap and github-sync helpers; this keeps the migration-only runtime shim and related bootstrap CLI surfaces co-located while preserving `python -m bigclaw`.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `9`
-  - Delta: `-40`
+  - After: `8`
+  - Delta: `-41`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -349,3 +353,14 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `9`
+  - `PYTHONPATH=src python3 - <<'PY' ... getattr(bigclaw, name) ... PY`
+    - Result: legacy UI review imports resolved successfully:
+      `bigclaw.ui_review -> bigclaw.design_system`
+      `bigclaw.design_system -> bigclaw.design_system`
+      `bigclaw.console_ia -> bigclaw.design_system`
+  - `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py tests/test_design_system.py`
+    - Result: `43 passed in 0.21s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `8`
