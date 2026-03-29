@@ -58,12 +58,12 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_evaluation_contract_test.go` covering benchmark runner scoring, replay mismatch reporting, suite comparison/report rendering, replay detail rendering, run replay index artifact links, and missing-report fallback behavior.
   - `tests/test_operations.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_operations_contract_test.go` covering operations snapshot and metric spec calculations, repo collaboration metrics, dashboard builder round-trip/audit/rendering, triage clustering, regression center/report rendering, policy/prompt version center rendering, weekly bundle outputs, and engineering overview permissions/bundle contracts.
-
-- Kept:
-  - `tests/conftest.py`
-    - Reason: still required for the remaining Python tests under `tests/`.
   - `tests/test_reports.py`
-    - Reason: still covers large Python-owned reporting builders, report writers, and closure/checklist composition that do not have a scoped direct Go replacement in this issue.
+    - Reason: replaced by `bigclaw-go/internal/regression/python_reports_contract_test.go` covering report writing, report studio bundles, pilot scorecards and portfolios, launch/final-delivery closure gates, shared-view collaboration rendering, auto-triage center behavior, takeover queue rendering, orchestration canvas/portfolio ledger reconstruction, billing entitlements rendering, and timezone-aware timestamp contracts.
+
+- Deleted:
+  - `tests/conftest.py`
+    - Reason: no `tests/**` Python files remain, so the Python test path bootstrap shim is no longer needed.
 
 - Validation commands and results:
   - `go test ./internal/regression -run 'TestLane8Python(ConsoleIA|DesignSystem|UIReview)ContractStaysAligned|TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned)'`
@@ -72,17 +72,19 @@
     - Result: `ok  	bigclaw-go/internal/regression	1.246s`
   - `go test ./internal/regression -run 'TestLane8Python(Operations|Evaluation|ConsoleIA|DesignSystem|UIReview)ContractStaysAligned|TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned)'`
     - Result: `ok  	bigclaw-go/internal/regression	1.667s`
+  - `go test ./internal/regression -run 'TestLane8Python(Reports|Operations|Evaluation|ConsoleIA|DesignSystem|UIReview)ContractStaysAligned|TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned)'`
+    - Result: `ok  	bigclaw-go/internal/regression	1.331s`
   - `go test ./internal/product`
     - Result: `ok  	bigclaw-go/internal/product	(cached)`
   - `rg --files tests -g '*.py'`
-    - Result: `tests/conftest.py`, `tests/test_reports.py`
+    - Result: no matches
   - `rg --files tests -g '*.py' | wc -l`
-    - Result: `2`
+    - Result: `0`
   - `rg --files | rg '\.py$' | wc -l`
-    - Result: `82`
+    - Result: `80`
   - Baseline counts before changes:
     - `tests/**` Python files: `8`
     - repository Python files: `88`
   - Impact after changes:
-    - `tests/**` Python files: `8 -> 2` (`-6`)
-    - repository Python files: `88 -> 82` (`-6`)
+    - `tests/**` Python files: `8 -> 0` (`-8`)
+    - repository Python files: `88 -> 80` (`-8`)
