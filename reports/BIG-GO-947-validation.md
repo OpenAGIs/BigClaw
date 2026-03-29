@@ -10,7 +10,7 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 | repo governance | `tests/test_repo_governance.py` | `bigclaw-go/internal/repo/governance_test.go` | Deleted Python test |
 | reporting | `tests/test_reports.py` | Partial coverage exists in `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/api/expansion_test.go` | Deferred deletion plan |
 | risk | `tests/test_risk.py` | `bigclaw-go/internal/risk/risk_test.go` | Deleted Python test |
-| planning | `tests/test_planning.py` | No direct Go package equivalent in this lane yet | Deferred deletion plan |
+| planning | `tests/test_planning.py` | `bigclaw-go/internal/planning/planning_test.go` | Added Go replacement and deleted Python test |
 | mapping | `tests/test_mapping.py` | `bigclaw-go/internal/intake/mapping_test.go` | Deleted Python test |
 | memory | `tests/test_memory.py` | `bigclaw-go/internal/memory/store_test.go` | Added Go replacement and deleted Python test |
 | operations | `tests/test_operations.py` | `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/expansion_test.go` | Added missing Go replacements and deleted Python test |
@@ -27,6 +27,7 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_risk.py`
   - `tests/test_memory.py`
   - `tests/test_operations.py`
+  - `tests/test_planning.py`
 - Removed Python test functions now covered by Go while keeping partially unmigrated files in place:
   - `tests/test_reports.py::test_render_and_write_report`
   - `tests/test_reports.py::test_console_action_state_reflects_enabled_flag`
@@ -36,12 +37,10 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - Added `BuildRepoCollaborationMetrics()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added dashboard round-trip, layout normalization, and repo collaboration metric tests to `bigclaw-go/internal/reporting/reporting_test.go`
   - Added explicit `WriteReport()` and `ConsoleAction.State()` coverage to `bigclaw-go/internal/reporting/reporting_test.go`
+- Added `bigclaw-go/internal/planning/planning.go` and `bigclaw-go/internal/planning/planning_test.go` to replace the Python candidate backlog, entry gate, and four-week execution-plan test coverage.
 
 ## Deferred Deletion Plan
 
-- `tests/test_planning.py`
-  - Reason: the Python planning domain (`CandidateBacklog`, `EntryGate`, `FourWeekExecutionPlan`) does not have a direct Go package in `bigclaw-go` yet.
-  - Deletion plan: port the planning model into a dedicated Go package before deleting this test file.
 - `tests/test_reports.py`
   - Reason: the file mixes multiple report families. Generic report writing and console action state have been migrated, but `ReportStudio`, pilot portfolio/checklist flows, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
   - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
@@ -96,7 +95,20 @@ Result:
 ok  	bigclaw-go/internal/reporting	0.820s
 ```
 
+Additional command run after migrating planning parity:
+
+```sh
+cd bigclaw-go && go test ./internal/planning ./internal/governance
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/planning	0.144s
+ok  	bigclaw-go/internal/governance	(cached)
+```
+
 ## Residual Risks
 
-- `planning`, `reports`, and `observability` still retain Python test assets because the Go package boundaries are not yet one-to-one replacements.
+- `reports` and `observability` still retain Python test assets because the Go package boundaries are not yet one-to-one replacements.
 - The missing local `reports/go-migration-lanes-2026-03-29.md` source artifact means the lane inventory had to be reconstructed from the issue scope and current repo contents.
