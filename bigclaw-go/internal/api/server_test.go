@@ -2374,6 +2374,43 @@ func TestMetricsJSONIncludesDurabilityRolloutScorecard(t *testing.T) {
 	}
 }
 
+func TestServiceHealthAndMetricsEndpoints(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Date(2026, 3, 29, 3, 0, 0, 0, time.UTC)
+	recorder.Record(domain.Event{ID: "evt-1", Type: domain.EventTaskQueued, TaskID: "task-health", TraceID: "trace-health", Timestamp: base})
+	workQueue := queue.NewMemoryQueue()
+	if err := workQueue.Enqueue(context.Background(), domain.Task{ID: "queued-health", TraceID: "trace-health", Title: "queued-health"}); err != nil {
+		t.Fatalf("enqueue task: %v", err)
+	}
+	server := &Server{
+		Recorder: recorder,
+		Queue:    workQueue,
+		Bus:      events.NewBus(),
+		Now:      func() time.Time { return base.Add(10 * time.Second) },
+	}
+
+	healthResponse := httptest.NewRecorder()
+	server.Handler().ServeHTTP(healthResponse, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	if healthResponse.Code != http.StatusOK {
+		t.Fatalf("expected healthz 200, got %d", healthResponse.Code)
+	}
+	if strings.TrimSpace(healthResponse.Body.String()) != "{\"ok\":true}" {
+		t.Fatalf("unexpected healthz payload: %s", healthResponse.Body.String())
+	}
+
+	metricsResponse := httptest.NewRecorder()
+	server.Handler().ServeHTTP(metricsResponse, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	if metricsResponse.Code != http.StatusOK {
+		t.Fatalf("expected metrics 200, got %d", metricsResponse.Code)
+	}
+	body := metricsResponse.Body.String()
+	for _, want := range []string{"\"queue_size\":1", "\"trace_count\":1", "\"events\"", "\"task.queued\":1"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in metrics payload, got %s", want, body)
+		}
+	}
+}
+
 func TestMetricsSupportsPrometheusFormat(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Now()
