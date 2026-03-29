@@ -314,7 +314,7 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
         priority="P0",
         owner="ops-platform",
         outcome="Package command-center and approval surfaces with linked evidence.",
-        validation_command="python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
+        validation_command="python3 -m pytest tests/test_operations.py -q && cd bigclaw-go && go test ./internal/product ./internal/api",
         capabilities=["ops-control", "saved-views"],
         evidence=["weekly-review", "validation-report"],
         evidence_links=[
@@ -326,7 +326,7 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
             ),
             EvidenceLink(
                 label="saved-view-report",
-                target="src/bigclaw/saved_views.py",
+                target="bigclaw-go/internal/product/saved_views.go",
                 capability="saved-views",
                 note="team saved views and digest evidence",
             ),
@@ -446,8 +446,8 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "src/bigclaw/workflow.py",
         "tests/test_workflow.py",
         "tests/test_execution_flow.py",
-        "src/bigclaw/saved_views.py",
-        "tests/test_saved_views.py",
+        "bigclaw-go/internal/product/saved_views.go",
+        "bigclaw-go/internal/product/saved_views_test.go",
         "src/bigclaw/evaluation.py",
         "tests/test_evaluation.py",
     }

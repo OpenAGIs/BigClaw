@@ -398,8 +398,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
                     "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
-                    "tests/test_saved_views.py tests/test_workflow.py tests/test_execution_flow.py "
-                    "tests/test_evaluation.py -q"
+                    "tests/test_workflow.py tests/test_execution_flow.py tests/test_evaluation.py -q && "
+                    "cd bigclaw-go && go test ./internal/product ./internal/api"
                 ),
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
                 evidence=["weekly-review", "validation-report"],
@@ -447,16 +447,16 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         note="approval and execution handoff evidence",
                     ),
                     EvidenceLink(
-                        label="saved-views-src",
-                        target="src/bigclaw/saved_views.py",
+                        label="saved-views-go-src",
+                        target="bigclaw-go/internal/product/saved_views.go",
                         capability="saved-views",
-                        note="saved views, digest subscriptions, and governed filters",
+                        note="saved views, digest subscriptions, report rendering, and governed filters",
                     ),
                     EvidenceLink(
-                        label="saved-views-tests",
-                        target="tests/test_saved_views.py",
+                        label="saved-views-go-tests",
+                        target="bigclaw-go/internal/product/saved_views_test.go",
                         capability="saved-views",
-                        note="saved-view audit coverage",
+                        note="saved-view catalog and audit coverage",
                     ),
                     EvidenceLink(
                         label="simulation-src",
