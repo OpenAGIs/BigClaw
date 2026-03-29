@@ -446,6 +446,12 @@ Go ownership:
 Historical planned state:
 - `Todo`
 
+Current repo progress:
+- `bigclaw-go/internal/observability/runtime.go` now owns repo sync audit, run closeout, runtime run, and ledger persistence shapes previously left only in `src/bigclaw/observability.py`
+- `bigclaw-go/internal/planning/planning.go` now ports the candidate backlog and entry-gate planning surface from `src/bigclaw/planning.py`
+- `bigclaw-go/internal/memory/store.go` now ports the task memory persistence and suggestion rules from `src/bigclaw/memory.py`
+- `src/bigclaw/reports.py` and `src/bigclaw/operations.py` still remain as compatibility-heavy Python surfaces because active Python tests and entrypoints import them directly
+
 ### 4. Port repo collaboration and lineage surfaces to Go
 
 Python source:

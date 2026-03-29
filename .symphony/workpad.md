@@ -29,6 +29,9 @@ Expected new or expanded Go owners in this issue:
 - `bigclaw-go/internal/memory/*`
 - `bigclaw-go/internal/observability/*` for repo-sync/run-closeout/runtime ledger shapes
 
+Issue artifacts added:
+- `docs/reports/big-go-944-lane4-migration-status.md`
+
 File ownership mapping for this lane:
 - `src/bigclaw/repo_governance.py` -> `bigclaw-go/internal/repo/governance.go` already present
 - `src/bigclaw/governance.py` -> `bigclaw-go/internal/governance/freeze.go` already present
@@ -77,6 +80,8 @@ Result log:
   - `ok  	bigclaw-go/internal/repo	2.881s`
 - `cd bigclaw-go && go test ./...`
   - pass; full tree succeeded, including `internal/api`, `internal/queue`, `internal/regression`, `internal/worker`, and `cmd/*`
+- `cd bigclaw-go && go test ./internal/planning ./internal/memory ./internal/observability`
+  - cached pass after documentation follow-up
 
 ## Residual Risks
 
