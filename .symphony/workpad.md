@@ -7,6 +7,7 @@
 3. Delete the superseded Python files, update direct internal imports and package re-exports, and add focused regression coverage for the legacy import paths plus the migrated behavior.
 4. Run targeted validation commands for the touched modules, record exact commands and results, then verify the resulting `src/bigclaw/*.py` count delta.
 5. Commit the scoped change set for `BIG-GO-964` and push the branch to the remote.
+6. Current slice: fold `issue_archive.py` into `reports.py`, keep the legacy `bigclaw.issue_archive` import path via aliasing, and add focused regression coverage for the archive surface.
 
 ## Acceptance
 
@@ -20,6 +21,7 @@
 - `pytest` for the exact test modules covering the consolidated Python surfaces.
 - A direct Python import check for legacy `bigclaw.<module>` names that are now served by aliases.
 - `git status --short` to confirm the change set stays scoped to this issue before commit.
+- For the current slice, validate `tests/test_issue_archive.py` plus `tests/test_reports.py` and re-check the top-level Python file count.
 
 ## Results
 
@@ -50,6 +52,7 @@
   - `workspace_bootstrap_cli.py`
   - `workspace_bootstrap_validation.py`
   - `audit_events.py`
+  - `issue_archive.py`
   - `orchestration.py`
 - Replacement / consolidation targets:
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
@@ -62,6 +65,7 @@
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `repo_plane.py` now owns the repo commit, gateway, governance, link, registry, and triage surfaces.
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
+  - `reports.py` now owns the issue-priority archive helpers.
   - `reports.py` now owns the orchestration planning and policy helpers.
   - `scheduler.py` now owns the risk scoring helpers.
   - `scheduler.py` now owns the worker runtime helpers.
@@ -74,7 +78,7 @@
   - `__init__.py` now registers compatibility aliases so `import bigclaw.<old_module>` still resolves.
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host; repo policy compatibility now aliases into `repo_plane.py` without widening into broader contract semantics.
-  - `reports.py`: retained as the primary reporting host after absorbing pilot and validation helpers; further consolidation there would stop being low-risk.
+  - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `scheduler.py`: retained as the execution host after absorbing risk and runtime helpers; orchestration moved into `reports.py` instead of broadening scheduler/report cyclic ownership.
   - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
@@ -82,8 +86,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `23`
-  - Delta: `-26`
+  - After: `22`
+  - Delta: `-27`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -129,3 +133,13 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `23`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy issue archive import resolved successfully:
+      `bigclaw.issue_archive -> bigclaw.reports`
+      `bigclaw.reports -> bigclaw.reports`
+  - `PYTHONPATH=src python3 -m pytest tests/test_issue_archive.py tests/test_reports.py`
+    - Result: `38 passed in 0.10s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `22`

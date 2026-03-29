@@ -104,13 +104,6 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .issue_archive import (
-    ArchivedIssue,
-    IssuePriorityArchive,
-    IssuePriorityArchiveAudit,
-    IssuePriorityArchivist,
-    render_issue_priority_archive_report,
-)
 from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
 from .scheduler import (
@@ -175,6 +168,7 @@ from .dashboard_run_contract import (
     render_dashboard_run_contract_report,
 )
 from .reports import (
+    ArchivedIssue,
     AutoTriageCenter,
     ConsoleAction,
     BillingEntitlementsPage,
@@ -184,6 +178,9 @@ from .reports import (
     DocumentationArtifact,
     FinalDeliveryChecklist,
     HandoffRequest,
+    IssuePriorityArchive,
+    IssuePriorityArchiveAudit,
+    IssuePriorityArchivist,
     LaunchChecklist,
     LaunchChecklistItem,
     NarrativeSection,
@@ -229,6 +226,7 @@ from .reports import (
     render_billing_entitlements_page,
     render_billing_entitlements_report,
     render_final_delivery_checklist_report,
+    render_issue_priority_archive_report,
     render_launch_checklist_report,
     render_orchestration_canvas,
     render_orchestration_plan,
@@ -573,6 +571,7 @@ __all__ = [
     "DashboardRunContractAudit",
     "DashboardRunContractLibrary",
     "render_dashboard_run_contract_report",
+    "ArchivedIssue",
     "AutoTriageCenter",
     "ConsoleAction",
     "BillingEntitlementsPage",
@@ -583,6 +582,9 @@ __all__ = [
     "LaunchChecklistItem",
     "NarrativeSection",
     "IssueClosureDecision",
+    "IssuePriorityArchive",
+    "IssuePriorityArchiveAudit",
+    "IssuePriorityArchivist",
     "OrchestrationCanvas",
     "OrchestrationPortfolio",
     "PilotKPI",
@@ -621,6 +623,7 @@ __all__ = [
     "render_billing_entitlements_page",
     "render_billing_entitlements_report",
     "render_final_delivery_checklist_report",
+    "render_issue_priority_archive_report",
     "render_launch_checklist_report",
     "render_orchestration_canvas",
     "render_orchestration_overview_page",
@@ -775,6 +778,7 @@ for _alias, _target in (
     ("dsl", "workflow"),
     ("event_bus", "observability"),
     ("github_sync", "workspace_bootstrap"),
+    ("issue_archive", "reports"),
     ("legacy_shim", "workspace_bootstrap"),
     ("mapping", "connectors"),
     ("memory", "queue"),
