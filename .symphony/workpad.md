@@ -1,72 +1,51 @@
-# BIG-GO-948 Workpad
+# BIG-GO-965 Workpad
 
 ## Plan
 
-1. Inventory the remaining `tests/**` Python files and map them against existing `bigclaw-go` Go tests to identify the lane-owned files that still lack Go coverage.
-2. Inspect the selected Python tests and the corresponding Go packages to choose the smallest scoped migration slice that can be completed end-to-end in this issue.
-3. Implement the missing Go tests or, where direct migration is out of scope, document the concrete deletion or follow-up plan in-repo while keeping changes limited to this lane.
-4. Remove the migrated Python test assets that now have Go replacements and keep any untouched Python tests outside this lane unchanged.
-5. Run targeted validation commands for the touched Go packages, record exact commands and results, then commit and push the branch.
+1. Inventory the Python tests directly in scope for `tests/conftest.py` plus the runtime/service/scheduler/workflow/orchestration/queue lane, and record the exact file list for this issue.
+2. Consolidate the runtime/scheduler/workflow/orchestration/queue pytest assets into fewer Python files without changing the covered behaviors.
+3. Update any code or tests that still reference the removed file paths so the compressed test layout remains internally consistent.
+4. Run targeted pytest validation for the consolidated lane, compare Python file counts before and after, then commit and push the scoped branch changes.
 
 ## Acceptance
 
-- Produce an explicit file list for the `BIG-GO-948` lane.
-- Land Go test replacements for the selected remaining Python tests, or document a concrete delete/follow-up plan for any files that cannot be removed in this lane.
-- Record exact validation commands, results, and residual risks.
-- Reduce Python / non-Go test assets in the repository without widening scope beyond this issue.
+- Provide the explicit Python file list directly handled by `BIG-GO-965`.
+- Reduce the number of Python files in the targeted pytest lane.
+- Record delete/replace/keep reasons for each directly handled Python file.
+- Report the impact on the repository-wide Python file count.
 
 ## Validation
 
-- `go test` for the exact `bigclaw-go` packages touched by this lane.
-- Targeted execution of any new or expanded Go tests covering the migrated Python scenarios.
-- `git status --short` to verify the scoped file set before commit.
+- `PYTHONPATH=src python3 -m pytest` for the consolidated runtime lane test file.
+- `python3 -m pytest tests/test_planning.py -q` if planning/test path references are touched.
+- `git diff --stat` and `find . -name '*.py' | wc -l` to confirm scoped changes and file-count impact.
 
 ## Results
 
-- Migrated 13 Python tests to Go-owned coverage and deleted the Python files:
-  - `test_cross_process_coordination_surface.py`
-  - `test_followup_digests.py`
-  - `test_live_shadow_scorecard.py`
-  - `test_shadow_matrix_corpus.py`
-  - `test_subscriber_takeover_harness.py`
-  - `test_validation_bundle_continuation_scorecard.py`
-  - `test_parallel_refill.py`
-  - `test_roadmap.py`
-  - `test_cost_control.py`
-  - `test_deprecation.py`
-  - `test_legacy_shim.py`
-  - `test_service.py`
-- Added Go replacements in:
-  - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
-  - `bigclaw-go/internal/refill/queue_repo_fixture_test.go`
-  - `bigclaw-go/internal/regression/roadmap_contract_test.go`
-  - `bigclaw-go/internal/regression/deprecation_contract_test.go`
-  - `bigclaw-go/internal/costcontrol/controller.go`
-  - `bigclaw-go/internal/costcontrol/controller_test.go`
-  - `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
-  - `bigclaw-go/internal/legacyshim/wrappers.go`
-  - `bigclaw-go/internal/legacyshim/wrappers_test.go`
-  - `bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go`
-  - `bigclaw-go/internal/service/server.go`
-  - `bigclaw-go/internal/service/server_test.go`
-  - `bigclaw-go/internal/pilot/report.go`
-  - `bigclaw-go/internal/pilot/report_test.go`
-  - `bigclaw-go/internal/issuearchive/archive.go`
-  - `bigclaw-go/internal/issuearchive/archive_test.go`
-- Pushed commits:
-  - `b59e941` `test: migrate lane8 remaining python report tests`
-  - `cfcd50e` `test: migrate parallel refill queue fixture to go`
-  - `868b503` `test: migrate execution pack roadmap checks to go`
-  - `911a1d6` `docs: record remaining python test migration plan`
-  - `bdd3aa4` `test: migrate cost control checks to go`
-  - `0334358` `test: migrate deprecation compatibility checks to go`
-  - `29553fc` `test: migrate legacy shim contracts to go`
-- Remaining Python tests in `tests/` now require broader Go-native implementation or new contract surfaces rather than direct fixture parity moves.
-- Next scoped slice: migrate `tests/test_pilot.py` into a small Go-native pilot package that covers KPI pass-rate math and report rendering without pulling over the broader Python workflow runtime.
-- Migrated `tests/test_pilot.py` to `bigclaw-go/internal/pilot/report.go` and `bigclaw-go/internal/pilot/report_test.go`; deleted the Python test after landing equivalent Go coverage for KPI readiness and report rendering.
-- Validation result:
-  - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'` -> `ok  	bigclaw-go/internal/pilot	0.789s`
-- Next scoped slice: migrate `tests/test_issue_archive.py` into a Go-native archive package covering archive round-trip, audit rollups, and markdown report rendering.
-- Migrated `tests/test_issue_archive.py` to `bigclaw-go/internal/issuearchive/archive.go` and `bigclaw-go/internal/issuearchive/archive_test.go`; deleted the Python test after landing equivalent Go coverage for archive round-trip, audit rollups, and report rendering.
-- Validation result:
-  - `cd bigclaw-go && go test ./internal/issuearchive -run 'TestIssuePriorityArchiveRoundTripPreservesManifestShape|TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps|TestIssuePriorityArchiveAuditRoundTripAndReadyState|TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups'` -> `ok  	bigclaw-go/internal/issuearchive	0.445s`
+- Direct file list for this issue:
+  - `tests/conftest.py`
+  - `tests/test_runtime.py`
+  - `tests/test_scheduler.py`
+  - `tests/test_workflow.py`
+  - `tests/test_orchestration.py`
+  - `tests/test_queue.py`
+  - `tests/test_runtime_core.py`
+- Handling decision by file:
+  - `tests/conftest.py`: kept; it is still the narrowest shared pytest bootstrap for `src/` imports and removing it would widen scope across the whole test suite.
+  - `tests/test_runtime.py`: deleted and replaced by `tests/test_runtime_core.py`; runtime assertions remain unchanged but no longer need a dedicated file.
+  - `tests/test_scheduler.py`: deleted and replaced by `tests/test_runtime_core.py`; scheduler routing and budget coverage stay in the merged core lane.
+  - `tests/test_workflow.py`: deleted and replaced by `tests/test_runtime_core.py`; workflow acceptance and closeout coverage remains in the merged file.
+  - `tests/test_orchestration.py`: deleted and replaced by `tests/test_runtime_core.py`; orchestration policy and handoff coverage remains in the merged file.
+  - `tests/test_queue.py`: deleted and replaced by `tests/test_runtime_core.py`; queue persistence coverage remains in the merged file, including the embedded validation path string update.
+  - `tests/test_runtime_core.py`: added as the single replacement test asset for the runtime/service/scheduler/workflow/orchestration/queue pytest foundation/core lane.
+- Related path-reference updates:
+  - `src/bigclaw/planning.py`
+  - `tests/test_planning.py`
+- Python file count impact:
+  - Before: `123`
+  - After: `119`
+  - Net change: `-4` Python files repository-wide.
+- Validation results:
+  - `python3 -m py_compile tests/test_runtime_core.py src/bigclaw/planning.py tests/test_planning.py tests/conftest.py` -> passed
+  - `PYTHONPATH=src python3 -m pytest tests/test_runtime_core.py -q` -> `26 passed in 0.15s`
+  - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q` -> `14 passed in 0.13s`
