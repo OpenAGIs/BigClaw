@@ -6,7 +6,7 @@
       "docs/reports/event-bus-reliability-report.md"
     ],
     "shared_queue_evidence": [
-      "scripts/e2e/multi_node_shared_queue.py",
+      "scripts/e2e/multi_node_shared_queue.go",
       "docs/reports/multi-node-shared-queue-report.json"
     ],
     "takeover_harness": [
@@ -14,7 +14,7 @@
       "docs/reports/multi-subscriber-takeover-validation-report.json"
     ]
   },
-  "generated_at": "2026-03-29T11:13:40.322749Z",
+  "generated_at": "2026-03-29T16:26:42.542377Z",
   "harness_mode": "deterministic_local_simulation",
   "implementation_path": [
     "wire the same ownership and rejection schema into the shared multi-node harness",

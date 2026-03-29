@@ -1,33 +1,33 @@
 {
-  "generated_at": "2026-03-16T15:59:45Z",
-  "root_state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-wvg32k1n",
-  "queue_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-wvg32k1n/shared-queue.db",
+  "all_ok": true,
+  "completed_by_node": {
+    "node-a": 81,
+    "node-b": 119
+  },
   "count": 200,
+  "cross_node_completions": 91,
+  "duplicate_completed_tasks": [],
+  "duplicate_started_tasks": [],
+  "generated_at": "2026-03-29T16:24:28Z",
+  "missing_completed_tasks": [],
+  "nodes": [
+    {
+      "audit_path": "/var/folders/03/f_fz2cfn3y3ccychf8tqsjww0000gn/T/bigclawd-multinode-2579874323/node-a-audit.jsonl",
+      "base_url": "http://127.0.0.1:61204",
+      "name": "node-a",
+      "service_log": "/var/folders/03/f_fz2cfn3y3ccychf8tqsjww0000gn/T/node-a-1007266443.log"
+    },
+    {
+      "audit_path": "/var/folders/03/f_fz2cfn3y3ccychf8tqsjww0000gn/T/bigclawd-multinode-2579874323/node-b-audit.jsonl",
+      "base_url": "http://127.0.0.1:61205",
+      "name": "node-b",
+      "service_log": "/var/folders/03/f_fz2cfn3y3ccychf8tqsjww0000gn/T/node-b-2012812689.log"
+    }
+  ],
+  "queue_path": "/var/folders/03/f_fz2cfn3y3ccychf8tqsjww0000gn/T/bigclawd-multinode-2579874323/shared-queue.db",
+  "root_state_dir": "/var/folders/03/f_fz2cfn3y3ccychf8tqsjww0000gn/T/bigclawd-multinode-2579874323",
   "submitted_by_node": {
     "node-a": 100,
     "node-b": 100
-  },
-  "completed_by_node": {
-    "node-a": 73,
-    "node-b": 127
-  },
-  "cross_node_completions": 99,
-  "duplicate_started_tasks": [],
-  "duplicate_completed_tasks": [],
-  "missing_completed_tasks": [],
-  "all_ok": true,
-  "nodes": [
-    {
-      "name": "node-a",
-      "base_url": "http://127.0.0.1:63044",
-      "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-wvg32k1n/node-a-audit.jsonl",
-      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-a-ufqioa77.log"
-    },
-    {
-      "name": "node-b",
-      "base_url": "http://127.0.0.1:63045",
-      "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-wvg32k1n/node-b-audit.jsonl",
-      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-b-0aaa_lax.log"
-    }
-  ]
+  }
 }

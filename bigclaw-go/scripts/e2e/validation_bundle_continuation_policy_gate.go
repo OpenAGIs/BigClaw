@@ -298,7 +298,7 @@ func buildNextActions(failingChecks []string) []string {
 		case "recent_bundle_count_meets_floor":
 			nextActions = append(nextActions, "export additional validation bundles so the continuation window spans multiple indexed runs")
 		case "shared_queue_companion_available":
-			nextActions = append(nextActions, "rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json`")
+			nextActions = append(nextActions, "rerun `go run ./scripts/e2e/multi_node_shared_queue.go --report-path docs/reports/multi-node-shared-queue-report.json`")
 		case "repeated_lane_coverage_meets_policy":
 			nextActions = append(nextActions, "refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage")
 		}

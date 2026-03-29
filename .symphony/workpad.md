@@ -303,3 +303,140 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `5`
   - Result: `11`
 - `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
   - Result: `3`
+
+## Continuation Slice: multi_node_shared_queue
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
+
+Replacement path for this slice:
+
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.go`
+
+Current repository Python file count before this slice: `11`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `3`
+
+### Plan
+
+1. Replace the live two-node shared-queue and subscriber-takeover harness with a Go-native entrypoint that preserves the shared-queue report, takeover report, and per-scenario audit-artifact contract.
+2. Rewrite the existing Go test to validate Go-native helpers directly instead of importing the Python module.
+3. Update docs, continuation guidance, and checked-in report references from the Python path to the Go path.
+4. Run targeted harness/report validation, record Python-count deltas, then commit and push the scoped slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` from the remaining `scripts/e2e` Python backlog by replacing it with `bigclaw-go/scripts/e2e/multi_node_shared_queue.go`.
+- Keep `docs/reports/multi-node-shared-queue-report.json`, `docs/reports/live-multi-node-subscriber-takeover-report.json`, and `docs/reports/live-multi-node-subscriber-takeover-artifacts/**` aligned with the Go-native harness.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/multi_node_shared_queue.go ./scripts/e2e/multi_node_shared_queue_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/multi_node_shared_queue.go --count 200 --submit-workers 8 --timeout-seconds 180 --report-path docs/reports/multi-node-shared-queue-report.json --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir docs/reports/live-multi-node-subscriber-takeover-artifacts`
+- `cd bigclaw-go && rg -n "multi_node_shared_queue\\.py|multi_node_shared_queue\\.go" docs/e2e-validation.md docs/go-cli-script-migration.md docs/reports/multi-node-coordination-report.md docs/reports/multi-subscriber-takeover-validation-report.md docs/reports/subscriber-takeover-executability-follow-up-digest.md docs/reports/live-multi-node-subscriber-takeover-report.json docs/reports/multi-subscriber-takeover-validation-report.json scripts/e2e/validation_bundle_continuation_policy_gate.go`
+- `cd bigclaw-go && find . -name '*.py' | wc -l`
+- `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
+
+## Continuation Slice: multi_node_shared_queue_cleanup
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
+
+Replacement path for this slice:
+
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.go`
+
+Current repository Python file count before this slice: `11`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `3`
+
+### Plan
+
+1. Remove the stale `multi_node_shared_queue.py` compatibility copy now that the Go-native harness is present.
+2. Rewrite the remaining `multi_node_shared_queue_internal_test.go` coverage to validate the Go-native report builder directly instead of loading the Python module.
+3. Update docs and follow-up guidance that still points at the Python entrypoint so the replacement path is explicit.
+4. Run targeted tests and count checks, then commit and push the scoped cleanup slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` from the remaining `scripts/e2e` Python backlog by relying on `bigclaw-go/scripts/e2e/multi_node_shared_queue.go` as the only entrypoint.
+- Keep the live takeover report references aligned with the Go harness and its checked-in report paths.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/multi_node_shared_queue.go ./scripts/e2e/multi_node_shared_queue_internal_test.go`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8CrossProcessCoordinationSurfaceStaysAligned|TestLane8FollowupDigestsStayAligned|TestCrossProcessCoordinationReadinessDocsStayAligned'`
+- `cd bigclaw-go && rg -n "multi_node_shared_queue\\.py|multi_node_shared_queue\\.go" docs/e2e-validation.md docs/go-cli-script-migration.md docs/reports/multi-node-coordination-report.md docs/reports/multi-subscriber-takeover-validation-report.md docs/reports/subscriber-takeover-executability-follow-up-digest.md scripts/e2e/validation_bundle_continuation_policy_gate.go scripts/e2e/multi_node_shared_queue_internal_test.go`
+- `cd bigclaw-go && find . -name '*.py' | wc -l`
+- `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
+
+## Continuation Slice: multi_node_shared_queue cleanup
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
+
+Replacement path for this slice:
+
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.go`
+
+Current repository Python file count before this slice: `11`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `3`
+
+### Plan
+
+1. Remove the leftover Python harness now that the Go-native entrypoint already carries the shared-queue and live takeover behavior.
+2. Rewrite the remaining test to validate the Go helper directly instead of importing the Python module.
+3. Update the remaining docs, reports, and continuation guidance that still cite `multi_node_shared_queue.py`.
+4. Run targeted Go tests plus the live harness command, then record exact results and the Python-count delta for this slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` from the remaining `scripts/e2e` Python backlog by relying on `bigclaw-go/scripts/e2e/multi_node_shared_queue.go`.
+- Eliminate the last meaningful `.py` references for the multi-node shared-queue harness from tests, docs, and checked-in report surfaces.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/multi_node_shared_queue.go ./scripts/e2e/multi_node_shared_queue_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/multi_node_shared_queue.go --count 200 --submit-workers 8 --timeout-seconds 180 --report-path docs/reports/multi-node-shared-queue-report.json --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir docs/reports/live-multi-node-subscriber-takeover-artifacts`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8CrossProcessCoordinationSurfaceStaysAligned|TestLane8FollowupDigestsStayAligned|TestCrossProcessCoordinationReadinessDocsStayAligned'`
+- `cd bigclaw-go && rg -n "multi_node_shared_queue\\.py|multi_node_shared_queue\\.go" docs/e2e-validation.md docs/go-cli-script-migration.md docs/reports/multi-node-coordination-report.md docs/reports/multi-subscriber-takeover-validation-report.md docs/reports/subscriber-takeover-executability-follow-up-digest.md docs/reports/live-multi-node-subscriber-takeover-report.json docs/reports/multi-subscriber-takeover-validation-report.json scripts/e2e/validation_bundle_continuation_policy_gate.go scripts/e2e/multi_node_shared_queue_internal_test.go`
+- `cd bigclaw-go && find . -name '*.py' | wc -l`
+- `cd bigclaw-go && find scripts/e2e -name '*.py' | wc -l`
+
+### Outcome
+
+- Removed `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` and kept `bigclaw-go/scripts/e2e/multi_node_shared_queue.go` as the sole shared-queue/live-takeover harness entrypoint.
+- Rewrote `bigclaw-go/scripts/e2e/multi_node_shared_queue_internal_test.go` to validate the Go helper directly instead of importing Python.
+- Fixed the Go harness compile gap by promoting `queuedTask` to a shared type used by `submitTasks`.
+- Updated the remaining multi-node shared-queue references across docs, checked-in reports, and continuation guidance to use the Go path.
+- Extended `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.go` normalization so future takeover-report regenerations preserve the Go shared-queue companion reference.
+
+### Python File Count Impact
+
+- Repository Python files before this slice: `11`
+- Repository Python files after this slice: `10`
+- `bigclaw-go/scripts/e2e/**` Python files before this slice: `3`
+- `bigclaw-go/scripts/e2e/**` Python files after this slice: `2`
+- Net reduction across this issue so far: `13`
+- Net reduction in this slice: `1`
+
+### Validation Record
+
+- `cd bigclaw-go && go test ./scripts/e2e/multi_node_shared_queue.go ./scripts/e2e/multi_node_shared_queue_internal_test.go`
+  - Result: `ok  	command-line-arguments	0.150s`
+- `cd bigclaw-go && go run ./scripts/e2e/multi_node_shared_queue.go --count 200 --submit-workers 8 --timeout-seconds 180 --report-path docs/reports/multi-node-shared-queue-report.json --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir docs/reports/live-multi-node-subscriber-takeover-artifacts`
+  - Result: exit code `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8CrossProcessCoordinationSurfaceStaysAligned|TestLane8FollowupDigestsStayAligned|TestCrossProcessCoordinationReadinessDocsStayAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	3.217s`
+- `cd bigclaw-go && go test ./scripts/e2e/subscriber_takeover_fault_matrix.go ./scripts/e2e/subscriber_takeover_fault_matrix_internal_test.go`
+  - Result: `ok  	command-line-arguments	2.523s`
+- `cd bigclaw-go && go run ./bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.go --output bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json`
+  - Result: exit code `0`
+- `cd bigclaw-go && rg -n "multi_node_shared_queue\\.py|multi_node_shared_queue\\.go" docs/e2e-validation.md docs/go-cli-script-migration.md docs/reports/multi-node-coordination-report.md docs/reports/multi-subscriber-takeover-validation-report.md docs/reports/subscriber-takeover-executability-follow-up-digest.md docs/reports/live-multi-node-subscriber-takeover-report.json docs/reports/multi-subscriber-takeover-validation-report.json scripts/e2e/validation_bundle_continuation_policy_gate.go scripts/e2e/multi_node_shared_queue_internal_test.go`
+  - Result: all functional references now point at `multi_node_shared_queue.go`; the only remaining `.py` hit is the migration-table legacy-path row documenting the replacement.
+- `python3 - <<'PY' ...`
+  - Result: repository Python file count `10`; `bigclaw-go/scripts/e2e/**` Python file count `2`.

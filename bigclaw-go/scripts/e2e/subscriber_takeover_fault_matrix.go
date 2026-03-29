@@ -15,6 +15,8 @@ const (
 	defaultSubscriberTakeoverTemplatePath = "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json"
 	legacySubscriberTakeoverScriptPath    = "scripts/e2e/subscriber_takeover_fault_matrix.py"
 	goSubscriberTakeoverScriptPath        = "scripts/e2e/subscriber_takeover_fault_matrix.go"
+	legacyMultiNodeSharedQueuePath        = "scripts/e2e/multi_node_shared_queue.py"
+	goMultiNodeSharedQueuePath            = "scripts/e2e/multi_node_shared_queue.go"
 )
 
 func main() {
@@ -81,6 +83,9 @@ func normalizeSubscriberTakeoverValue(value any) any {
 	case string:
 		if cast == legacySubscriberTakeoverScriptPath {
 			return goSubscriberTakeoverScriptPath
+		}
+		if cast == legacyMultiNodeSharedQueuePath {
+			return goMultiNodeSharedQueuePath
 		}
 		return cast
 	default:
