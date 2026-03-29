@@ -24,7 +24,6 @@
 ## Results
 
 - Directly handled deleted Python files in `src/bigclaw/`:
-- Directly handled deleted Python files in `src/bigclaw/`:
   - `deprecation.py`
   - `dsl.py`
   - `event_bus.py`
@@ -51,6 +50,7 @@
   - `workspace_bootstrap_cli.py`
   - `workspace_bootstrap_validation.py`
   - `audit_events.py`
+  - `orchestration.py`
 - Replacement / consolidation targets:
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `collaboration.py` now owns the repo discussion board helpers.
@@ -62,6 +62,7 @@
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `repo_plane.py` now owns the repo commit, gateway, governance, link, registry, and triage surfaces.
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
+  - `reports.py` now owns the orchestration planning and policy helpers.
   - `scheduler.py` now owns the risk scoring helpers.
   - `scheduler.py` now owns the worker runtime helpers.
   - `workflow.py` now owns the workflow DSL helpers.
@@ -74,14 +75,15 @@
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host; repo policy compatibility now aliases into `repo_plane.py` without widening into broader contract semantics.
   - `reports.py`: retained as the primary reporting host after absorbing pilot and validation helpers; further consolidation there would stop being low-risk.
+  - `scheduler.py`: retained as the execution host after absorbing risk and runtime helpers; orchestration moved into `reports.py` instead of broadening scheduler/report cyclic ownership.
   - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `24`
-  - Delta: `-25`
+  - After: `23`
+  - Delta: `-26`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -115,3 +117,15 @@
     - Result: `7 passed in 0.08s`
   - `PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_runtime_matrix.py tests/test_scheduler.py tests/test_workflow.py tests/test_observability.py`
     - Result: `27 passed in 0.10s`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy orchestration import resolved successfully:
+      `bigclaw.orchestration -> bigclaw.reports`
+      `bigclaw.reports -> bigclaw.reports`
+      `bigclaw.scheduler -> bigclaw.scheduler`
+      `bigclaw.workflow -> bigclaw.workflow`
+  - `PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_reports.py tests/test_scheduler.py tests/test_workflow.py tests/test_observability.py`
+    - Result: `58 passed in 0.12s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `23`
