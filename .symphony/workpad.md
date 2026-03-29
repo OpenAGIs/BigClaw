@@ -69,6 +69,8 @@
     - Reason: covered by `bigclaw-go/internal/queue/file_queue_test.go` and `bigclaw-go/internal/queue/memory_queue_test.go` after adding Go parity for rich task payload persistence and legacy list storage loading.
   - `tests/test_execution_contract.py`
     - Reason: covered by `bigclaw-go/internal/contract/execution_test.go` after aligning Go report formatting with the Python `True/False` contract.
+  - `tests/test_workspace_bootstrap.py`
+    - Reason: covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go` after adding Go parity for cache-root helpers, warm-cache reuse, workspace reuse, stale-seed recovery, and validation-report summary contracts.
 
 - Kept for later lanes:
   - `tests/test_repo_links.py`
@@ -96,10 +98,15 @@
     - Aligned execution contract report boolean formatting to Python-style `True/False`.
   - `bigclaw-go/internal/contract/execution_test.go`
     - Updated report assertions to the Python-style boolean rendering contract.
+  - `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+    - Added cache-root helper coverage.
+    - Added warm-cache reuse and workspace reuse coverage.
+    - Added stale-seed recovery coverage.
+    - Added validation-report summary coverage.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 31` (`-12`)
-  - Repository-wide Python files: `123 -> 111` (`-12`)
+  - `tests/**` Python files: `43 -> 30` (`-13`)
+  - Repository-wide Python files: `123 -> 110` (`-13`)
 
 ## Validation Results
 
@@ -153,3 +160,11 @@
   - `31`
 - `rg --files | rg '\.py$' | wc -l`
   - `111`
+- `cd bigclaw-go && go test ./internal/bootstrap -run 'TestRepoCacheKeyDerivesFromRepoLocator|TestCacheRootForRepoUsesRepoSpecificDirectory|TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed|TestSecondWorkspaceReusesWarmCacheWithoutFullClone|TestBootstrapWorkspaceReusesExistingIssueWorktree|TestCleanupWorkspacePreservesSharedCacheForFutureReuse|TestBootstrapRecoversFromStaleSeedDirectoryWithoutRemoteReclone|TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch|TestValidationReportCoversThreeWorkspacesWithOneCache'`
+  - `ok  	bigclaw-go/internal/bootstrap	4.258s`
+- `cd bigclaw-go && go test ./internal/bootstrap`
+  - `ok  	bigclaw-go/internal/bootstrap	4.725s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `30`
+- `rg --files | rg '\.py$' | wc -l`
+  - `110`
