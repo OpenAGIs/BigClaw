@@ -30,6 +30,7 @@
 - `tests/test_models.py`
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 - `tests/test_scheduler.py`
+- `tests/test_runtime_matrix.py`
 
 ## Acceptance
 
@@ -96,6 +97,8 @@
     - Reason: replaced by `bigclaw-go/internal/regression/validation_bundle_continuation_policy_gate_test.go`, which invokes the checked-in Python script from Go and covers both the partial-lane-history hold/go behavior and the checked-in CLI green path.
   - `tests/test_scheduler.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_scheduler_contract_test.go`, which invokes the Python scheduler from Go and preserves the high-risk, browser-route, budget-degrade, and pause contracts.
+  - `tests/test_runtime_matrix.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, which invokes the Python runtime matrix contract from Go and preserves worker lifecycle, medium routing, and tool-policy audit behavior.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -114,8 +117,6 @@
     - Reason: it still targets Python planning/report rendering helpers that do not map directly to an existing Go-native rollout/report surface.
   - `tests/test_risk.py`
     - Reason: the pure risk scorer contract is covered in `bigclaw-go/internal/risk/risk_test.go`, but the file also depends on Python scheduler execution records plus ledger trace/audit side effects that do not have a small Go-owned replacement surface.
-  - `tests/test_runtime_matrix.py`
-    - Reason: it still depends on Python `ClawWorkerRuntime` and `ToolRuntime` audit-chain behavior plus Python scheduler medium semantics rather than a narrow Go-owned runtime contract.
   - `tests/test_orchestration.py`
     - Reason: Go covers orchestration planning and policy decisions, but the file still depends on Python scheduler execution records, ledger traces/audits, and rendered orchestration artifacts.
   - `tests/test_workflow.py`
@@ -166,10 +167,12 @@
     - Added Go regression coverage that exercises the checked-in continuation policy-gate Python script for both synthetic partial-lane-history inputs and the checked-in CLI/report path.
   - `bigclaw-go/internal/regression/python_scheduler_contract_test.go`
     - Added Go regression coverage that exercises the Python scheduler contract for high-risk approval, browser routing, budget degradation, and pause behavior.
+  - `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`
+    - Added Go regression coverage that exercises the Python runtime matrix contract for worker lifecycle, scheduler medium mapping, and tool-policy audit outcomes.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 23` (`-20`)
-  - Repository-wide Python files: `123 -> 103` (`-20`)
+  - `tests/**` Python files: `43 -> 22` (`-21`)
+  - Repository-wide Python files: `123 -> 102` (`-21`)
 
 ## Validation Results
 
@@ -286,3 +289,11 @@
   - `103`
 - `git status --short`
   - scoped changes only in the new `bigclaw-go/internal/regression/python_scheduler_contract_test.go` and the deleted `tests/test_scheduler.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	1.402s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `22`
+- `rg --files | rg '\.py$' | wc -l`
+  - `102`
+- `git status --short`
+  - scoped changes only in the new `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go` and the deleted `tests/test_runtime_matrix.py`
