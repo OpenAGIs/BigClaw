@@ -31,6 +31,7 @@
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 - `tests/test_scheduler.py`
 - `tests/test_runtime_matrix.py`
+- `tests/test_event_bus.py`
 
 ## Acceptance
 
@@ -99,6 +100,8 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_scheduler_contract_test.go`, which invokes the Python scheduler from Go and preserves the high-risk, browser-route, budget-degrade, and pause contracts.
   - `tests/test_runtime_matrix.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`, which invokes the Python runtime matrix contract from Go and preserves worker lifecycle, medium routing, and tool-policy audit behavior.
+  - `tests/test_event_bus.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_event_bus_contract_test.go`, which invokes the Python event-bus contract from Go and preserves PR-comment approval, CI completion, and task-failed transitions plus ledger persistence.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -107,8 +110,6 @@
     - Reason: Go covers audit specs and required-field validation, but this file still depends on Python scheduler/workflow execution plus reporting queue/canvas projections without a small Go-owned end-to-end replacement.
   - `tests/test_control_center.py`
     - Reason: Go covers queue-control-center summaries and rendering, but this file still depends on Python `OperationsAnalytics` run-input shape and shared-view empty-state rendering without a narrow Go-owned parity surface.
-  - `tests/test_event_bus.py`
-    - Reason: Go `events` covers publish/subscribe transport and replay, but this file still asserts Python event-bus mutation of run status and ledger audit side effects.
   - `tests/test_github_sync.py`
     - Reason: Go `githubsync` uses a different `Pushed` status semantic in clean fast-forward/default-head cases, so direct parity would require a wider behavior decision rather than a scoped migration.
   - `tests/test_execution_flow.py`
@@ -169,10 +170,12 @@
     - Added Go regression coverage that exercises the Python scheduler contract for high-risk approval, browser routing, budget degradation, and pause behavior.
   - `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go`
     - Added Go regression coverage that exercises the Python runtime matrix contract for worker lifecycle, scheduler medium mapping, and tool-policy audit outcomes.
+  - `bigclaw-go/internal/regression/python_event_bus_contract_test.go`
+    - Added Go regression coverage that exercises the Python event-bus contract for PR-comment approval, CI completion, and task-failed ledger transitions.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 22` (`-21`)
-  - Repository-wide Python files: `123 -> 102` (`-21`)
+  - `tests/**` Python files: `43 -> 21` (`-22`)
+  - Repository-wide Python files: `123 -> 101` (`-22`)
 
 ## Validation Results
 
@@ -297,3 +300,11 @@
   - `102`
 - `git status --short`
   - scoped changes only in the new `bigclaw-go/internal/regression/python_runtime_matrix_contract_test.go` and the deleted `tests/test_runtime_matrix.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	1.473s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `21`
+- `rg --files | rg '\.py$' | wc -l`
+  - `101`
+- `git status --short`
+  - scoped changes only in the new `bigclaw-go/internal/regression/python_event_bus_contract_test.go` and the deleted `tests/test_event_bus.py`
