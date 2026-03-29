@@ -19,6 +19,8 @@
 15. Current next slice: fold `workspace_bootstrap.py` into `__main__.py`, keep the legacy `bigclaw.workspace_bootstrap` import path via aliasing, retarget direct internal imports, preserve the package entrypoint separately from the bootstrap CLI surface, and validate bootstrap plus entrypoint regression surfaces.
 16. Current next slice: fold `workflow.py` into `scheduler.py`, keep the legacy `bigclaw.workflow` import path via aliasing, and validate workflow, DSL, scheduler, and audit-event regression surfaces.
 17. Current next slice: fold `models.py` into `execution_contract.py`, keep the legacy `bigclaw.models` import path via aliasing, retarget direct internal imports, and validate model, contract, scheduler, report, and observability regression surfaces.
+18. Current next slice: fold `planning.py` into `reports.py`, keep the legacy `bigclaw.planning` import path via aliasing, and validate planning, governance, rollout, and reporting regression surfaces.
+19. Current next slice: fold `ui_review.py` into `design_system.py`, keep the legacy `bigclaw.ui_review` import path via aliasing, and validate UI review plus design-system regression surfaces.
 
 ## Acceptance
 
@@ -44,6 +46,7 @@
 - For the current next slice, validate `tests/test_workspace_bootstrap.py`, `tests/test_github_sync.py`, `tests/test_scheduler.py`, `tests/test_workflow.py`, and `tests/test_operations.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_dsl.py`, `tests/test_workflow.py`, `tests/test_scheduler.py`, and `tests/test_audit_events.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_models.py`, `tests/test_execution_contract.py`, `tests/test_scheduler.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_planning.py`, `tests/test_governance.py`, `tests/test_repo_rollout.py`, and `tests/test_reports.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -86,6 +89,7 @@
   - `governance.py`
   - `issue_archive.py`
   - `orchestration.py`
+  - `planning.py`
   - `queue.py`
   - `run_detail.py`
 - Replacement / consolidation targets:
@@ -108,6 +112,7 @@
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
   - `reports.py` now owns the issue-priority archive helpers.
   - `reports.py` now owns the orchestration planning and policy helpers.
+  - `reports.py` now owns the planning, roadmap, scope-freeze governance, candidate gate, and rollout scorecard helpers.
   - `reports.py` now owns the run-detail rendering helpers.
   - `reports.py` now owns the saved-view catalog and alert-digest helpers.
   - `scheduler.py` now owns the risk scoring helpers.
@@ -124,9 +129,9 @@
   - `execution_contract.py`: retained as the generic permission-contract host after absorbing dashboard/run schema contracts; repo policy compatibility now aliases into `repo_plane.py` without widening into unrelated control-plane semantics.
   - `execution_contract.py`: retained as the generic permission-contract host after also absorbing repo-plane permission and commit metadata helpers; this removes an existing repo-plane dependency on execution contracts instead of widening into unrelated operations/reporting ownership.
   - `execution_contract.py`: retained as the generic contract and shared-entity host after also absorbing models; this removes another existing dependency edge into execution contracts and centralizes the compatibility datamodels without widening into UI surfaces.
-  - `planning.py`: retained as the roadmap and gating host after absorbing scope-freeze governance; broader collapsing there would widen this issue beyond adjacent planning policy.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `reports.py`: retained as the primary reporting host after also absorbing saved-view catalog helpers; this keeps shared-view/reporting semantics co-located without widening into unrelated execution modules.
+  - `reports.py`: retained as the closest remaining narrative and governance-adjacent host after also absorbing planning; this removes a standalone policy module without introducing a new internal dependency cycle.
   - `scheduler.py`: retained as the execution host after absorbing risk and runtime helpers; orchestration moved into `reports.py` instead of broadening scheduler/report cyclic ownership.
   - `scheduler.py`: retained as the execution host after also absorbing workflow engine helpers; this removes an existing dependency edge from workflow into scheduler and keeps execution orchestration on one host without widening into planning or operations.
   - `operations.py`: retained as the operations-policy host after absorbing budget control, queue, and memory helpers; broader merging beyond this would widen the issue.
@@ -137,8 +142,8 @@
   - `__main__.py`: retained as the package execution entrypoint after also absorbing workspace bootstrap and github-sync helpers; this keeps the migration-only runtime shim and related bootstrap CLI surfaces co-located while preserving `python -m bigclaw`.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `10`
-  - Delta: `-39`
+  - After: `9`
+  - Delta: `-40`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -332,3 +337,15 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `10`
+  - `PYTHONPATH=src python3 - <<'PY' ... getattr(bigclaw, name) ... PY`
+    - Result: legacy planning imports resolved successfully:
+      `bigclaw.planning -> bigclaw.reports`
+      `bigclaw.governance -> bigclaw.reports`
+      `bigclaw.roadmap -> bigclaw.reports`
+      `bigclaw.reports -> bigclaw.reports`
+  - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_governance.py tests/test_repo_rollout.py tests/test_reports.py`
+    - Result: `54 passed in 0.10s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `9`

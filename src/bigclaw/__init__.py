@@ -317,7 +317,7 @@ from .operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .planning import (
+from .reports import (
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
@@ -791,6 +791,7 @@ for _alias, _target in (
     ("deprecation", "workspace_bootstrap"),
     ("evaluation", "operations"),
     ("event_bus", "observability"),
+    ("planning", "reports"),
     ("governance", "planning"),
     ("github_sync", "workspace_bootstrap"),
     ("issue_archive", "reports"),
