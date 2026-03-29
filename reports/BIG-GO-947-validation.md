@@ -32,12 +32,14 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_reports.py::test_render_and_write_report`
   - `tests/test_reports.py::test_console_action_state_reflects_enabled_flag`
   - `tests/test_observability.py::test_render_task_run_report`
+  - `tests/test_observability.py::test_render_repo_sync_audit_report`
 - Expanded Go reporting coverage for operations-only gaps:
   - Added `NormalizeDashboardLayout()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added `BuildRepoCollaborationMetrics()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added dashboard round-trip, layout normalization, and repo collaboration metric tests to `bigclaw-go/internal/reporting/reporting_test.go`
   - Added explicit `WriteReport()` and `ConsoleAction.State()` coverage to `bigclaw-go/internal/reporting/reporting_test.go`
 - Added `bigclaw-go/internal/planning/planning.go` and `bigclaw-go/internal/planning/planning_test.go` to replace the Python candidate backlog, entry gate, and four-week execution-plan test coverage.
+- Added `bigclaw-go/internal/observability/repo_sync.go` and `bigclaw-go/internal/observability/repo_sync_test.go` to replace Python repo-sync audit report rendering coverage.
 
 ## Deferred Deletion Plan
 
@@ -45,7 +47,7 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - Reason: the file mixes multiple report families. Generic report writing and console action state have been migrated, but `ReportStudio`, pilot portfolio/checklist flows, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
   - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
 - `tests/test_observability.py`
-  - Reason: Go covers run detail, closeout, audit spec, recorder, and the run report surface, but there is not yet a single Go-native package mirroring the entire Python observability ledger/task-run API.
+  - Reason: Go covers repo-sync audit report rendering, run detail, closeout, audit spec, recorder, and the run report surface, but there is not yet a single Go-native package mirroring the entire Python observability ledger/task-run API and HTML detail renderer.
   - Deletion plan: continue converging on the Go run-detail/closeout surface and remove the Python file after full behavior parity is represented in Go tests.
 
 ## Validation
@@ -106,6 +108,18 @@ Result:
 ```text
 ok  	bigclaw-go/internal/planning	0.144s
 ok  	bigclaw-go/internal/governance	(cached)
+```
+
+Additional command run after migrating repo-sync audit rendering parity:
+
+```sh
+cd bigclaw-go && go test ./internal/observability
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/observability	0.853s
 ```
 
 ## Residual Risks
