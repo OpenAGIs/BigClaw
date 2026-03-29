@@ -37,6 +37,7 @@
 - `tests/test_dsl.py`
 - `tests/test_risk.py`
 - `tests/test_execution_flow.py`
+- `tests/test_workflow.py`
 
 ## Acceptance
 
@@ -117,6 +118,8 @@
     - Reason: replaced by `bigclaw-go/internal/regression/python_risk_contract_test.go`, which invokes the Python risk and scheduler surfaces from Go and preserves low/medium risk scoring plus high-risk approval-routing trace and audit behavior.
   - `tests/test_execution_flow.py`
     - Reason: replaced by `bigclaw-go/internal/regression/python_execution_flow_contract_test.go`, which invokes the Python queue/scheduler execution chain from Go and preserves browser-route report generation plus high-risk pending-approval behavior.
+  - `tests/test_workflow.py`
+    - Reason: replaced by `bigclaw-go/internal/regression/python_workflow_contract_test.go`, which invokes the Python workflow surface from Go and preserves journal replay, acceptance-gate decisions, orchestration and pilot artifact generation, and repo-sync audit/report behavior.
 
 - Kept for later lanes:
   - `tests/conftest.py`
@@ -195,10 +198,12 @@
     - Added Go regression coverage that exercises the Python risk scorer and scheduler contract for low/medium score thresholds and high-risk approval-routing audit side effects.
   - `bigclaw-go/internal/regression/python_execution_flow_contract_test.go`
     - Added Go regression coverage that exercises the Python queue-to-scheduler execution chain for report/page artifact generation, scheduler traces, and high-risk pending-approval outcomes.
+  - `bigclaw-go/internal/regression/python_workflow_contract_test.go`
+    - Added Go regression coverage that exercises the Python workflow contract for journal replay, acceptance gate outcomes, orchestration and pilot closeout artifacts, and repo-sync audit/report handling.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 16` (`-27`)
-  - Repository-wide Python files: `123 -> 96` (`-27`)
+  - `tests/**` Python files: `43 -> 15` (`-28`)
+  - Repository-wide Python files: `123 -> 95` (`-28`)
 
 ## Validation Results
 
@@ -380,3 +385,17 @@
   - `96`
 - `git status --short`
   - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_execution_flow_contract_test.go`, and the deleted `tests/test_execution_flow.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonWorkflowContractStaysAligned|TestLane8PythonExecutionFlowContractStaysAligned|TestLane8PythonRiskContractStaysAligned|TestLane8PythonDSLContractStaysAligned|TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `FAIL	bigclaw-go/internal/regression`
+  - `TestLane8PythonWorkflowContractStaysAligned` initially failed because the repo-sync audit assertion assumed `repo.sync` and `repo.pr-freshness` were the first audit actions rather than simply present in the audit list.
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonWorkflowContractStaysAligned|TestLane8PythonExecutionFlowContractStaysAligned|TestLane8PythonRiskContractStaysAligned|TestLane8PythonDSLContractStaysAligned|TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `FAIL	bigclaw-go/internal/regression [build failed]`
+  - The follow-up build failed because the helper name `containsString` collided with an existing helper in the regression package; it was renamed to a file-local helper.
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8PythonWorkflowContractStaysAligned|TestLane8PythonExecutionFlowContractStaysAligned|TestLane8PythonRiskContractStaysAligned|TestLane8PythonDSLContractStaysAligned|TestLane8PythonExportValidationBundleScriptStaysAligned|TestLane8PythonEventBusContractStaysAligned|TestLane8PythonRuntimeMatrixContractStaysAligned|TestLane8PythonSchedulerContractStaysAligned|TestLane8ValidationBundleContinuationPolicyGateScriptHandlesPartialLaneHistory|TestLane8ValidationBundleContinuationPolicyGateScriptCLIStaysGreen'`
+  - `ok  	bigclaw-go/internal/regression	1.554s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `15`
+- `rg --files | rg '\.py$' | wc -l`
+  - `95`
+- `git status --short`
+  - scoped changes only in `.symphony/workpad.md`, the new `bigclaw-go/internal/regression/python_workflow_contract_test.go`, and the deleted `tests/test_workflow.py`
