@@ -20,3 +20,24 @@
 - `go test` for the exact `bigclaw-go` packages touched by this lane.
 - Targeted execution of any new or expanded Go tests covering the migrated Python scenarios.
 - `git status --short` to verify the scoped file set before commit.
+
+## Results
+
+- Migrated 9 Python tests to Go-owned coverage and deleted the Python files:
+  - `test_cross_process_coordination_surface.py`
+  - `test_followup_digests.py`
+  - `test_live_shadow_scorecard.py`
+  - `test_shadow_matrix_corpus.py`
+  - `test_subscriber_takeover_harness.py`
+  - `test_validation_bundle_continuation_scorecard.py`
+  - `test_parallel_refill.py`
+  - `test_roadmap.py`
+- Added Go replacements in:
+  - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
+  - `bigclaw-go/internal/refill/queue_repo_fixture_test.go`
+  - `bigclaw-go/internal/regression/roadmap_contract_test.go`
+- Pushed commits:
+  - `b59e941` `test: migrate lane8 remaining python report tests`
+  - `cfcd50e` `test: migrate parallel refill queue fixture to go`
+  - `868b503` `test: migrate execution pack roadmap checks to go`
+- Remaining Python tests in `tests/` now require broader Go-native implementation or new contract surfaces rather than direct fixture parity moves.
