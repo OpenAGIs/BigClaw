@@ -2,38 +2,29 @@
 
 ## Scope
 
-Third-wave cleanup for remaining Python tests that already have direct Go-native replacements or only need a small Go test to close the gap.
+Fourth-wave cleanup for a remaining Python-only contract test that can be replaced by a small Go-native package.
 
 Planned delete set for this continuation:
-- `tests/test_governance.py`
-- `tests/test_workspace_bootstrap.py`
-- `tests/test_execution_contract.py`
-- `tests/test_github_sync.py`
+- `tests/test_validation_policy.py`
 
 Go coverage used for replacement:
-- `bigclaw-go/internal/governance/freeze_test.go`
-- `bigclaw-go/internal/bootstrap/bootstrap_test.go`
-- `bigclaw-go/internal/contract/execution_test.go`
-- `bigclaw-go/internal/githubsync/sync_test.go`
-- new Go coverage for `bigclaw-go/internal/bootstrap.BuildValidationReport`
+- new `bigclaw-go/internal/validationpolicy` package
+- new `bigclaw-go/internal/validationpolicy/validation_policy_test.go`
 
 ## Acceptance
 
-- Extend `BIG-GO-948` with another scoped Python test reduction wave.
-- Add any missing Go test coverage needed before deleting the matching Python file.
-- Update `reports/BIG-GO-948-validation.md` with the expanded completed file list, replacement coverage, validation commands, and residual plan.
-- Run targeted Go validation for governance and bootstrap coverage.
+- Replace the Python validation policy logic with a Go-native equivalent and matching tests.
+- Delete `tests/test_validation_policy.py` only after Go parity exists.
+- Update `reports/BIG-GO-948-validation.md` with the new completed file, Go replacement, command, result, and remaining plan.
+- Run targeted Go validation for the new package.
 - Commit and push the continuation changes.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/governance`
-- `cd bigclaw-go && go test ./internal/bootstrap`
-- `cd bigclaw-go && go test ./internal/contract`
-- `cd bigclaw-go && go test ./internal/githubsync`
+- `cd bigclaw-go && go test ./internal/validationpolicy`
 - `git status --short`
 
 ## Risks
 
-- `tests/test_workspace_bootstrap.py` includes a validation-report assertion that was not yet covered in Go; deletion is only safe after adding that coverage.
-- The remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.
+- This slice adds a new Go package rather than reusing an existing one, so package naming and scope need to stay narrow and contract-focused.
+- The larger remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.
