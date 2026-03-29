@@ -12,6 +12,7 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./scripts/e2e/validation_bundle_continuation_policy_gate.go ...` | migrated to Go-native generator |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | `go run ./scripts/e2e/validation_bundle_continuation_scorecard.go ...` | migrated to Go-native generator |
 | `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` | `go run ./scripts/e2e/cross_process_coordination_surface.go ...` | migrated to Go-native generator |
+| `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` | `go run ./scripts/e2e/subscriber_takeover_fault_matrix.go ...` | migrated to Go-native generator |
 
 ## Remaining Python Script Backlog
 
@@ -20,7 +21,6 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/benchmark/capacity_certification.py`
 - `bigclaw-go/scripts/benchmark/run_matrix.py`
 - `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`

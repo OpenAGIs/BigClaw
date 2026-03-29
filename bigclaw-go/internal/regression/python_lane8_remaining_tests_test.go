@@ -431,7 +431,7 @@ func TestLane8FollowupDigestsStayAligned(t *testing.T) {
 			links: []string{
 				"docs/reports/multi-subscriber-takeover-validation-report.md",
 				"docs/reports/multi-subscriber-takeover-validation-report.json",
-				"scripts/e2e/subscriber_takeover_fault_matrix.py",
+				"scripts/e2e/subscriber_takeover_fault_matrix.go",
 				"docs/reports/event-bus-reliability-report.md",
 				"docs/reports/issue-coverage.md",
 				"docs/reports/review-readiness.md",

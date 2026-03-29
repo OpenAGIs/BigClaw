@@ -121,3 +121,62 @@ Current `bigclaw-go/scripts/e2e/**` Python file count before this sub-batch: `8`
   - Result: `ok  	command-line-arguments	9.353s`
 - `git status --short`
   - Result: only the scoped `BIG-GO-979` files above were modified before commit.
+
+## Continuation Slice: subscriber_takeover_fault_matrix
+
+### Scope
+
+- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
+
+Replacement path for this slice:
+
+- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.go`
+
+Current repository Python file count before this slice: `108`
+Current `bigclaw-go/scripts/e2e/**` Python file count before this slice: `7`
+
+### Plan
+
+1. Replace the deterministic local takeover report generator with a Go-native entrypoint that preserves the checked-in report contract.
+2. Add a focused Go test for the report summary and scenario schema so the replacement is no longer validated through Python.
+3. Update docs and regression references from the Python path to the Go path.
+4. Regenerate the takeover report, record the Python-count deltas, then commit and push the scoped slice.
+
+### Acceptance
+
+- Remove `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` from the remaining `scripts/e2e` Python backlog by replacing it with `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.go`.
+- Keep `docs/reports/multi-subscriber-takeover-validation-report.json` and linked takeover docs aligned with the new Go generator.
+- Record exact targeted validation commands and before/after Python counts for both the repo and `bigclaw-go/scripts/e2e/**`.
+
+### Validation
+
+- `cd bigclaw-go && go test ./scripts/e2e/subscriber_takeover_fault_matrix.go ./scripts/e2e/subscriber_takeover_fault_matrix_internal_test.go`
+- `cd bigclaw-go && go run ./scripts/e2e/subscriber_takeover_fault_matrix.go --output bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8CrossProcessCoordinationSurfaceStaysAligned|TestLane8FollowupDigestsStayAligned|TestCrossProcessCoordinationReadinessDocsStayAligned'`
+
+### Outcome
+
+- Replaced `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` with `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.go`.
+- Added `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix_internal_test.go` to cover the stable report summary, scenario ids, and Go-path normalization.
+- Updated takeover docs and regression references to point at the Go entrypoint.
+- Regenerated `bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json` from the Go entrypoint.
+
+### Python File Count Impact
+
+- Repository Python files before this slice: `108`
+- Repository Python files after this slice: `107`
+- `bigclaw-go/scripts/e2e/**` Python files before this slice: `7`
+- `bigclaw-go/scripts/e2e/**` Python files after this slice: `6`
+- Net reduction across this issue so far: `9`
+- Net reduction in this slice: `1`
+
+### Validation Record
+
+- `cd bigclaw-go && go test ./scripts/e2e/subscriber_takeover_fault_matrix.go ./scripts/e2e/subscriber_takeover_fault_matrix_internal_test.go`
+  - Result: `ok  	command-line-arguments	0.451s`
+- `cd bigclaw-go && go run ./scripts/e2e/subscriber_takeover_fault_matrix.go --output bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json`
+  - Result: exit code `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8CrossProcessCoordinationSurfaceStaysAligned|TestLane8FollowupDigestsStayAligned|TestCrossProcessCoordinationReadinessDocsStayAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.525s`
+- `python3 - <<'PY' ...`
+  - Result: repository Python file count `107`; `bigclaw-go/scripts/e2e/**` Python file count `6`.
