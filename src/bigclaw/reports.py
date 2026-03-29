@@ -6,7 +6,7 @@ from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .observability import (
+from .execution_contract import (
     CollaborationThread,
     build_collaboration_thread_from_audits,
     render_collaboration_lines,

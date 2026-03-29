@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Deque, Dict, Iterable, List, Sequence
 from urllib.parse import urlparse
 
-from .observability import RepoSyncAudit
+from .execution_contract import RepoSyncAudit
 from .reports import render_repo_sync_audit_report, write_report
 
 

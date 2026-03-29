@@ -21,6 +21,8 @@
 17. Current next slice: fold `models.py` into `execution_contract.py`, keep the legacy `bigclaw.models` import path via aliasing, retarget direct internal imports, and validate model, contract, scheduler, report, and observability regression surfaces.
 18. Current next slice: fold `planning.py` into `reports.py`, keep the legacy `bigclaw.planning` import path via aliasing, and validate planning, governance, rollout, and reporting regression surfaces.
 19. Current next slice: fold `ui_review.py` into `design_system.py`, keep the legacy `bigclaw.ui_review` import path via aliasing, and validate UI review plus design-system regression surfaces.
+20. Current next slice: fold `observability.py` into `execution_contract.py`, keep the legacy `bigclaw.observability` import path via aliasing, retarget direct internal imports, and validate observability plus downstream runtime/reporting regression surfaces.
+21. Current assessment slice: inventory the remaining host modules after the observability fold and only take another consolidation if it removes an existing dependency edge without collapsing required package entry surfaces.
 
 ## Acceptance
 
@@ -48,6 +50,7 @@
 - For the current next slice, validate `tests/test_models.py`, `tests/test_execution_contract.py`, `tests/test_scheduler.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_planning.py`, `tests/test_governance.py`, `tests/test_repo_rollout.py`, and `tests/test_reports.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_ui_review.py` plus `tests/test_design_system.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_execution_contract.py`, `tests/test_observability.py`, `tests/test_reports.py`, `tests/test_operations.py`, `tests/test_scheduler.py`, and `tests/test_github_sync.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -94,10 +97,12 @@
   - `queue.py`
   - `run_detail.py`
   - `ui_review.py`
+  - `observability.py`
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `execution_contract.py` now owns the repo permission, registry, commit-lineage, and triage helpers.
   - `execution_contract.py` now owns the shared task, flow, billing, connector, and source-issue mapping models.
+  - `execution_contract.py` now owns the observability ledger, task-run, collaboration, repo-sync, and event-bus helpers.
   - `__main__.py` now owns the workspace bootstrap, validation, github-sync, and legacy runtime shim helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
@@ -132,6 +137,7 @@
   - `execution_contract.py`: retained as the generic permission-contract host after absorbing dashboard/run schema contracts; repo policy compatibility now aliases into `repo_plane.py` without widening into unrelated control-plane semantics.
   - `execution_contract.py`: retained as the generic permission-contract host after also absorbing repo-plane permission and commit metadata helpers; this removes an existing repo-plane dependency on execution contracts instead of widening into unrelated operations/reporting ownership.
   - `execution_contract.py`: retained as the generic contract and shared-entity host after also absorbing models; this removes another existing dependency edge into execution contracts and centralizes the compatibility datamodels without widening into UI surfaces.
+  - `execution_contract.py`: retained as the shared runtime contract host after also absorbing observability; observability already depended on execution-contract types, so this removes an existing dependency edge while keeping downstream runtime and reporting modules on the same import target.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `reports.py`: retained as the primary reporting host after also absorbing saved-view catalog helpers; this keeps shared-view/reporting semantics co-located without widening into unrelated execution modules.
   - `reports.py`: retained as the closest remaining narrative and governance-adjacent host after also absorbing planning; this removes a standalone policy module without introducing a new internal dependency cycle.
@@ -146,8 +152,8 @@
   - `__main__.py`: retained as the package execution entrypoint after also absorbing workspace bootstrap and github-sync helpers; this keeps the migration-only runtime shim and related bootstrap CLI surfaces co-located while preserving `python -m bigclaw`.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `8`
-  - Delta: `-41`
+  - After: `7`
+  - Delta: `-42`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -364,3 +370,17 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `8`
+  - `PYTHONPATH=src python3 - <<'PY' ... getattr(bigclaw, name) ... PY`
+    - Result: legacy observability imports resolved successfully:
+      `bigclaw.observability -> bigclaw.execution_contract`
+      `bigclaw.audit_events -> bigclaw.execution_contract`
+      `bigclaw.collaboration -> bigclaw.execution_contract`
+      `bigclaw.event_bus -> bigclaw.execution_contract`
+      `bigclaw.repo_board -> bigclaw.execution_contract`
+      `bigclaw.execution_contract -> bigclaw.execution_contract`
+  - `PYTHONPATH=src python3 -m pytest tests/test_execution_contract.py tests/test_observability.py tests/test_reports.py tests/test_operations.py tests/test_scheduler.py tests/test_github_sync.py`
+    - Result: `77 passed in 1.08s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `7`

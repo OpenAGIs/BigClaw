@@ -71,7 +71,7 @@ from .scheduler import (
     WorkpadJournal,
     WorkerExecutionResult,
 )
-from .observability import (
+from .execution_contract import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     BusEvent,
@@ -780,8 +780,9 @@ def _alias_legacy_module(alias: str, target_name: str) -> None:
 
 
 for _alias, _target in (
-    ("audit_events", "observability"),
-    ("collaboration", "observability"),
+    ("observability", "execution_contract"),
+    ("audit_events", "execution_contract"),
+    ("collaboration", "execution_contract"),
     ("console_ia", "design_system"),
     ("ui_review", "design_system"),
     ("cost_control", "operations"),
@@ -791,7 +792,7 @@ for _alias, _target in (
     ("workspace_bootstrap", "__main__"),
     ("deprecation", "workspace_bootstrap"),
     ("evaluation", "operations"),
-    ("event_bus", "observability"),
+    ("event_bus", "execution_contract"),
     ("planning", "reports"),
     ("governance", "planning"),
     ("github_sync", "workspace_bootstrap"),
@@ -803,7 +804,7 @@ for _alias, _target in (
     ("parallel_refill", "operations"),
     ("pilot", "reports"),
     ("queue", "operations"),
-    ("repo_board", "collaboration"),
+    ("repo_board", "execution_contract"),
     ("repo_plane", "execution_contract"),
     ("run_detail", "reports"),
     ("roadmap", "planning"),

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from .__main__ import LEGACY_RUNTIME_GUIDANCE
-from .observability import (
+from .execution_contract import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
