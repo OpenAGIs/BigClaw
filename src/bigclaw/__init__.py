@@ -1,3 +1,6 @@
+import sys
+import types
+
 from .models import (
     BillingInterval,
     BillingRate,
@@ -20,8 +23,78 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-from .queue import PersistentTaskQueue
-from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
+from . import runtime as _legacy_runtime_surface
+
+
+def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+    module = types.ModuleType(f"{__name__}.{name}")
+    for export_name in export_names:
+        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+    module.__dict__.update(extra_attrs)
+    sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
+_install_legacy_surface_module(
+    "queue",
+    ["DeadLetterEntry", "PersistentTaskQueue"],
+    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/queue/queue.go",
+)
+_install_legacy_surface_module(
+    "orchestration",
+    [
+        "CrossDepartmentOrchestrator",
+        "DepartmentHandoff",
+        "HandoffRequest",
+        "OrchestrationPlan",
+        "OrchestrationPolicyDecision",
+        "PremiumOrchestrationPolicy",
+        "render_orchestration_plan",
+    ],
+    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
+)
+_install_legacy_surface_module(
+    "scheduler",
+    ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
+    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/scheduler/scheduler.go",
+)
+_install_legacy_surface_module(
+    "workflow",
+    ["AcceptanceDecision", "AcceptanceGate", "JournalEntry", "WorkflowEngine", "WorkflowRunResult", "WorkpadJournal"],
+    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
+)
+
+from .runtime import (
+    AcceptanceDecision,
+    AcceptanceGate,
+    ClawWorkerRuntime,
+    CrossDepartmentOrchestrator,
+    DeadLetterEntry,
+    DepartmentHandoff,
+    ExecutionRecord,
+    HandoffRequest,
+    JournalEntry,
+    OrchestrationPlan,
+    OrchestrationPolicyDecision,
+    PersistentTaskQueue,
+    PremiumOrchestrationPolicy,
+    SandboxProfile,
+    SandboxRouter,
+    Scheduler,
+    SchedulerDecision,
+    ToolCallResult,
+    ToolPolicy,
+    ToolRuntime,
+    WorkerExecutionResult,
+    WorkflowEngine,
+    WorkflowRunResult,
+    WorkpadJournal,
+    render_orchestration_plan,
+)
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
@@ -125,24 +198,6 @@ from .event_bus import (
     EventBus,
 )
 from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
-from .orchestration import (
-    CrossDepartmentOrchestrator,
-    DepartmentHandoff,
-    HandoffRequest,
-    OrchestrationPlan,
-    OrchestrationPolicyDecision,
-    PremiumOrchestrationPolicy,
-    render_orchestration_plan,
-)
-from .runtime import (
-    ClawWorkerRuntime,
-    SandboxProfile,
-    SandboxRouter,
-    ToolCallResult,
-    ToolPolicy,
-    ToolRuntime,
-    WorkerExecutionResult,
-)
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
@@ -229,7 +284,6 @@ from .reports import (
     write_report,
     write_report_studio_bundle,
 )
-from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
 from .operations import (
     DashboardBuilder,
     DashboardBuilderAudit,
