@@ -31,6 +31,18 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 - Removed Python test functions now covered by Go while keeping partially unmigrated files in place:
   - `tests/test_reports.py::test_render_and_write_report`
   - `tests/test_reports.py::test_console_action_state_reflects_enabled_flag`
+  - `tests/test_reports.py::test_render_pilot_scorecard_includes_roi_and_recommendation`
+  - `tests/test_reports.py::test_pilot_scorecard_returns_hold_when_value_is_negative`
+  - `tests/test_reports.py::test_issue_closure_requires_non_empty_validation_report`
+  - `tests/test_reports.py::test_issue_closure_blocks_failed_validation_report`
+  - `tests/test_reports.py::test_issue_closure_allows_completed_validation_report`
+  - `tests/test_reports.py::test_launch_checklist_auto_links_documentation_status`
+  - `tests/test_reports.py::test_final_delivery_checklist_tracks_required_outputs_and_recommended_docs`
+  - `tests/test_reports.py::test_issue_closure_blocks_incomplete_linked_launch_checklist`
+  - `tests/test_reports.py::test_issue_closure_blocks_missing_required_final_delivery_outputs`
+  - `tests/test_reports.py::test_issue_closure_allows_when_required_final_delivery_outputs_exist`
+  - `tests/test_reports.py::test_issue_closure_allows_when_linked_launch_checklist_is_ready`
+  - `tests/test_reports.py::test_render_pilot_portfolio_report_summarizes_commercial_readiness`
   - `tests/test_observability.py::test_render_task_run_report`
   - `tests/test_observability.py::test_render_repo_sync_audit_report`
 - Expanded Go reporting coverage for operations-only gaps:
@@ -38,13 +50,14 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - Added `BuildRepoCollaborationMetrics()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added dashboard round-trip, layout normalization, and repo collaboration metric tests to `bigclaw-go/internal/reporting/reporting_test.go`
   - Added explicit `WriteReport()` and `ConsoleAction.State()` coverage to `bigclaw-go/internal/reporting/reporting_test.go`
+- Added `bigclaw-go/internal/reporting/closeout_pilot.go` to replace Python pilot scorecard, pilot portfolio, validation report, checklist, and issue-closure helper coverage.
 - Added `bigclaw-go/internal/planning/planning.go` and `bigclaw-go/internal/planning/planning_test.go` to replace the Python candidate backlog, entry gate, and four-week execution-plan test coverage.
 - Added `bigclaw-go/internal/observability/repo_sync.go` and `bigclaw-go/internal/observability/repo_sync_test.go` to replace Python repo-sync audit report rendering coverage.
 
 ## Deferred Deletion Plan
 
 - `tests/test_reports.py`
-  - Reason: the file mixes multiple report families. Generic report writing and console action state have been migrated, but `ReportStudio`, pilot portfolio/checklist flows, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
+  - Reason: generic report writing, console action state, pilot scorecards, pilot portfolio, validation report, launch checklist, final delivery checklist, and issue-closure helpers have been migrated, but `ReportStudio`, shared-view context, auto triage, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
   - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
 - `tests/test_observability.py`
   - Reason: Go covers repo-sync audit report rendering, run detail, closeout, audit spec, recorder, and the run report surface, but there is not yet a single Go-native package mirroring the entire Python observability ledger/task-run API and HTML detail renderer.
@@ -120,6 +133,18 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/observability	0.853s
+```
+
+Additional command run after migrating pilot/checklist/issue-closure reporting parity:
+
+```sh
+cd bigclaw-go && go test ./internal/reporting
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/reporting	1.127s
 ```
 
 ## Residual Risks

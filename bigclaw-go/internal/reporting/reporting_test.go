@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -59,6 +60,213 @@ func TestBuildWeeklyReportRendersExpandedMarkdown(t *testing.T) {
 		if !strings.Contains(weekly.Markdown, fragment) {
 			t.Fatalf("expected %q in weekly markdown, got %s", fragment, weekly.Markdown)
 		}
+	}
+}
+
+func TestRenderPilotScorecardIncludesROIAndRecommendation(t *testing.T) {
+	benchmarkScore := 96
+	benchmarkPassed := true
+	scorecard := PilotScorecard{
+		IssueID:  "OPE-60",
+		Customer: "Design Partner A",
+		Period:   "2026-Q2",
+		Metrics: []PilotMetric{
+			{Name: "Automation coverage", Baseline: 35, Current: 82, Target: 80, Unit: "%", HigherIsBetter: true},
+			{Name: "Manual review time", Baseline: 12, Current: 4, Target: 5, Unit: "h", HigherIsBetter: false},
+		},
+		MonthlyBenefit:     12000,
+		MonthlyCost:        2500,
+		ImplementationCost: 18000,
+		BenchmarkScore:     &benchmarkScore,
+		BenchmarkPassed:    &benchmarkPassed,
+	}
+	content := RenderPilotScorecard(scorecard)
+	if scorecard.MetricsMet() != 2 || scorecard.Recommendation() != "go" {
+		t.Fatalf("unexpected scorecard rollup: %+v", scorecard)
+	}
+	if payback := scorecard.PaybackMonths(); payback == nil || *payback != 1.9 {
+		t.Fatalf("unexpected payback months: %v", payback)
+	}
+	for _, want := range []string{"Annualized ROI: 200.0%", "Recommendation: go", "Benchmark Score: 96", "Automation coverage"} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("expected %q in scorecard content, got %s", want, content)
+		}
+	}
+}
+
+func TestPilotScorecardReturnsHoldWhenValueIsNegative(t *testing.T) {
+	benchmarkPassed := false
+	scorecard := PilotScorecard{
+		IssueID:  "OPE-60",
+		Customer: "Design Partner B",
+		Period:   "2026-Q2",
+		Metrics: []PilotMetric{
+			{Name: "Backlog aging", Baseline: 5, Current: 7, Target: 4, Unit: "d", HigherIsBetter: false},
+		},
+		MonthlyBenefit:     1000,
+		MonthlyCost:        3000,
+		ImplementationCost: 12000,
+		BenchmarkPassed:    &benchmarkPassed,
+	}
+	if scorecard.MonthlyNetValue() != -2000 || scorecard.PaybackMonths() != nil || scorecard.Recommendation() != "hold" {
+		t.Fatalf("unexpected hold scorecard result: %+v", scorecard)
+	}
+}
+
+func TestIssueClosureRequiresValidationReportAndChecklistEvidence(t *testing.T) {
+	reportPath := filepath.Join(t.TempDir(), "validation.md")
+	decision := EvaluateIssueClosure("BIG-602", reportPath, true, nil, nil)
+	if decision.Allowed || decision.Reason != "validation report required before closing issue" || ValidationReportExists(reportPath) {
+		t.Fatalf("unexpected missing validation decision: %+v", decision)
+	}
+}
+
+func TestIssueClosureBlocksFailedValidationReport(t *testing.T) {
+	reportPath := filepath.Join(t.TempDir(), "validation.md")
+	if err := WriteReport(reportPath, "# Validation\n\nfailed"); err != nil {
+		t.Fatalf("write report: %v", err)
+	}
+	decision := EvaluateIssueClosure("BIG-602", reportPath, false, nil, nil)
+	if decision.Allowed || decision.Reason != "validation failed; issue must remain open" || !ValidationReportExists(reportPath) {
+		t.Fatalf("unexpected failed validation decision: %+v", decision)
+	}
+}
+
+func TestIssueClosureAllowsCompletedValidationReport(t *testing.T) {
+	reportPath := filepath.Join(t.TempDir(), "validation.md")
+	if err := WriteReport(reportPath, RenderIssueValidationReport("BIG-602", "v0.1", "sandbox", "pass")); err != nil {
+		t.Fatalf("write validation report: %v", err)
+	}
+	decision := EvaluateIssueClosure("BIG-602", reportPath, true, nil, nil)
+	if !decision.Allowed || decision.Reason != "validation report and launch checklist requirements satisfied; issue can be closed" || decision.ReportPath != reportPath {
+		t.Fatalf("unexpected completed validation decision: %+v", decision)
+	}
+}
+
+func TestLaunchChecklistAutoLinksDocumentationStatus(t *testing.T) {
+	tmp := t.TempDir()
+	runbook := filepath.Join(tmp, "runbook.md")
+	faq := filepath.Join(tmp, "faq.md")
+	if err := WriteReport(runbook, "# Runbook\n\nready"); err != nil {
+		t.Fatalf("write runbook: %v", err)
+	}
+	checklist := BuildLaunchChecklist("BIG-1003", []DocumentationArtifact{{Name: "runbook", Path: runbook}, {Name: "faq", Path: faq}}, []LaunchChecklistItem{{Name: "Operations handoff", Evidence: []string{"runbook"}}, {Name: "Support handoff", Evidence: []string{"faq"}}})
+	report := RenderLaunchChecklistReport(checklist)
+	if !reflect.DeepEqual(checklist.DocumentationStatus(), map[string]bool{"runbook": true, "faq": false}) || checklist.CompletedItems() != 1 || !reflect.DeepEqual(checklist.MissingDocumentation(), []string{"faq"}) || checklist.Ready() {
+		t.Fatalf("unexpected launch checklist rollup: %+v", checklist)
+	}
+	for _, want := range []string{"runbook: available=true", "faq: available=false", "Support handoff: completed=false evidence=faq"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in launch checklist report, got %s", want, report)
+		}
+	}
+}
+
+func TestFinalDeliveryChecklistTracksRequiredOutputsAndRecommendedDocs(t *testing.T) {
+	tmp := t.TempDir()
+	validationBundle := filepath.Join(tmp, "validation-bundle.md")
+	releaseNotes := filepath.Join(tmp, "release-notes.md")
+	if err := WriteReport(validationBundle, "# Validation Bundle\n\nready"); err != nil {
+		t.Fatalf("write validation bundle: %v", err)
+	}
+	checklist := BuildFinalDeliveryChecklist("BIG-4702", []DocumentationArtifact{{Name: "validation-bundle", Path: validationBundle}, {Name: "release-notes", Path: releaseNotes}}, []DocumentationArtifact{{Name: "runbook", Path: filepath.Join(tmp, "runbook.md")}, {Name: "faq", Path: filepath.Join(tmp, "faq.md")}})
+	report := RenderFinalDeliveryChecklistReport(checklist)
+	if !reflect.DeepEqual(checklist.RequiredOutputStatus(), map[string]bool{"validation-bundle": true, "release-notes": false}) || !reflect.DeepEqual(checklist.RecommendedDocumentationStatus(), map[string]bool{"runbook": false, "faq": false}) || checklist.GeneratedRequiredOutputs() != 1 || checklist.GeneratedRecommendedDocumentation() != 0 || !reflect.DeepEqual(checklist.MissingRequiredOutputs(), []string{"release-notes"}) || !reflect.DeepEqual(checklist.MissingRecommendedDocumentation(), []string{"runbook", "faq"}) || checklist.Ready() {
+		t.Fatalf("unexpected final delivery checklist rollup: %+v", checklist)
+	}
+	for _, want := range []string{"Required Outputs Generated: 1/2", "Recommended Docs Generated: 0/2", "release-notes: available=false", "runbook: available=false"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in final delivery report, got %s", want, report)
+		}
+	}
+}
+
+func TestIssueClosureWithLaunchAndFinalDeliveryChecklists(t *testing.T) {
+	tmp := t.TempDir()
+	reportPath := filepath.Join(tmp, "validation.md")
+	if err := WriteReport(reportPath, RenderIssueValidationReport("BIG-1003", "v0.2", "staging", "pass")); err != nil {
+		t.Fatalf("write validation report: %v", err)
+	}
+	runbook := filepath.Join(tmp, "runbook.md")
+	faq := filepath.Join(tmp, "launch-faq.md")
+	if err := WriteReport(runbook, "# Runbook\n\nready"); err != nil {
+		t.Fatalf("write runbook: %v", err)
+	}
+	launchChecklist := BuildLaunchChecklist("BIG-1003", []DocumentationArtifact{{Name: "runbook", Path: runbook}, {Name: "launch-faq", Path: faq}}, []LaunchChecklistItem{{Name: "Launch comms", Evidence: []string{"runbook", "launch-faq"}}})
+	decision := EvaluateIssueClosure("BIG-1003", reportPath, true, &launchChecklist, nil)
+	if decision.Allowed || decision.Reason != "launch checklist incomplete; linked documentation missing or empty" {
+		t.Fatalf("unexpected blocked launch checklist decision: %+v", decision)
+	}
+	if err := WriteReport(faq, "# FAQ\n\nready"); err != nil {
+		t.Fatalf("write faq: %v", err)
+	}
+	launchChecklist = BuildLaunchChecklist("BIG-1003", []DocumentationArtifact{{Name: "runbook", Path: runbook}, {Name: "launch-faq", Path: faq}}, []LaunchChecklistItem{{Name: "Launch comms", Evidence: []string{"runbook", "launch-faq"}}})
+	decision = EvaluateIssueClosure("BIG-1003", reportPath, true, &launchChecklist, nil)
+	if !decision.Allowed || decision.Reason != "validation report and launch checklist requirements satisfied; issue can be closed" {
+		t.Fatalf("unexpected ready launch checklist decision: %+v", decision)
+	}
+	finalChecklist := BuildFinalDeliveryChecklist("BIG-4702", []DocumentationArtifact{{Name: "validation-bundle", Path: filepath.Join(tmp, "validation-bundle.md")}}, []DocumentationArtifact{{Name: "runbook", Path: filepath.Join(tmp, "runbook.md")}})
+	decision = EvaluateIssueClosure("BIG-4702", reportPath, true, nil, &finalChecklist)
+	if decision.Allowed || decision.Reason != "final delivery checklist incomplete; required outputs missing" {
+		t.Fatalf("unexpected blocked final delivery decision: %+v", decision)
+	}
+	if err := WriteReport(filepath.Join(tmp, "validation-bundle.md"), "# Validation Bundle\n\nready"); err != nil {
+		t.Fatalf("write validation bundle: %v", err)
+	}
+	finalChecklist = BuildFinalDeliveryChecklist("BIG-4702", []DocumentationArtifact{{Name: "validation-bundle", Path: filepath.Join(tmp, "validation-bundle.md")}}, []DocumentationArtifact{{Name: "runbook", Path: filepath.Join(tmp, "runbook.md")}})
+	decision = EvaluateIssueClosure("BIG-4702", reportPath, true, nil, &finalChecklist)
+	if !decision.Allowed || decision.Reason != "validation report and final delivery checklist requirements satisfied; issue can be closed" {
+		t.Fatalf("unexpected ready final delivery decision: %+v", decision)
+	}
+}
+
+func TestRenderPilotPortfolioReportSummarizesCommercialReadiness(t *testing.T) {
+	scoreA := 97
+	passA := true
+	scoreB := 88
+	passB := true
+	portfolio := PilotPortfolio{
+		Name:   "Design Partners",
+		Period: "2026-H1",
+		Scorecards: []PilotScorecard{
+			{IssueID: "OPE-60", Customer: "Partner A", Period: "2026-Q2", Metrics: []PilotMetric{{Name: "Coverage", Baseline: 40, Current: 85, Target: 80, Unit: "%", HigherIsBetter: true}}, MonthlyBenefit: 15000, MonthlyCost: 3000, ImplementationCost: 18000, BenchmarkScore: &scoreA, BenchmarkPassed: &passA},
+			{IssueID: "OPE-61", Customer: "Partner B", Period: "2026-Q2", Metrics: []PilotMetric{{Name: "Cycle time", Baseline: 12, Current: 7, Target: 5, Unit: "h", HigherIsBetter: false}}, MonthlyBenefit: 9000, MonthlyCost: 2500, ImplementationCost: 12000, BenchmarkScore: &scoreB, BenchmarkPassed: &passB},
+		},
+	}
+	content := RenderPilotPortfolioReport(portfolio)
+	if portfolio.TotalMonthlyNetValue() != 18500 || portfolio.AverageROI() != 195.2 || !reflect.DeepEqual(portfolio.RecommendationCounts(), map[string]int{"go": 1, "iterate": 1, "hold": 0}) || portfolio.Recommendation() != "continue" {
+		t.Fatalf("unexpected pilot portfolio rollup: %+v", portfolio)
+	}
+	for _, want := range []string{"Recommendation Mix: go=1 iterate=1 hold=0", "Partner A: recommendation=go", "Partner B: recommendation=iterate"} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("expected %q in pilot portfolio report, got %s", want, content)
+		}
+	}
+}
+
+func TestTriageFeedbackRecordAndIssueValidationReportUseTimezoneAwareUTCTimestamps(t *testing.T) {
+	record := NewTriageFeedbackRecord("run-1", "classify", "accepted", "ops", "")
+	if !strings.HasSuffix(record.Timestamp, "Z") {
+		t.Fatalf("expected UTC Z suffix on feedback timestamp, got %q", record.Timestamp)
+	}
+	parsedRecord, err := time.Parse(time.RFC3339, record.Timestamp)
+	if err != nil || parsedRecord.Location() != time.UTC {
+		t.Fatalf("expected UTC feedback timestamp, got %q err=%v", record.Timestamp, err)
+	}
+	content := RenderIssueValidationReport("BIG-900", "v1", "repo", "pass")
+	var timestampValue string
+	for _, line := range strings.Split(content, "\n") {
+		if strings.HasPrefix(line, "- 生成时间:") {
+			timestampValue = strings.TrimSpace(strings.TrimPrefix(line, "- 生成时间:"))
+			break
+		}
+	}
+	if !strings.HasSuffix(timestampValue, "Z") {
+		t.Fatalf("expected UTC Z suffix on report timestamp, got %q", timestampValue)
+	}
+	parsedReport, err := time.Parse(time.RFC3339, timestampValue)
+	if err != nil || parsedReport.Location() != time.UTC {
+		t.Fatalf("expected UTC report timestamp, got %q err=%v", timestampValue, err)
 	}
 }
 
