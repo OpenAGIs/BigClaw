@@ -1,72 +1,71 @@
-# BIG-GO-948 Workpad
+# BIG-GO-966 Workpad
 
 ## Plan
 
-1. Inventory the remaining `tests/**` Python files and map them against existing `bigclaw-go` Go tests to identify the lane-owned files that still lack Go coverage.
-2. Inspect the selected Python tests and the corresponding Go packages to choose the smallest scoped migration slice that can be completed end-to-end in this issue.
-3. Implement the missing Go tests or, where direct migration is out of scope, document the concrete deletion or follow-up plan in-repo while keeping changes limited to this lane.
-4. Remove the migrated Python test assets that now have Go replacements and keep any untouched Python tests outside this lane unchanged.
-5. Run targeted validation commands for the touched Go packages, record exact commands and results, then commit and push the branch.
+1. Inventory the Python tests in the issue lane: `repo`, `governance`, `reporting`, `risk`, `planning`, `mapping`, `memory`, `operations`, and `observability`; map each file to existing or missing Go coverage.
+2. Rewrite or add the smallest Go-native replacements needed for lane-owned Python tests that are already covered or are cheap to migrate directly in this issue.
+3. Delete only the Python tests that now have clear Go replacements, and keep broader files in place with explicit retention reasons.
+4. Run targeted validation for each touched Go package, then measure the exact repository-wide Python file count impact.
+5. Commit the scoped change set and push the branch to the remote branch.
 
 ## Acceptance
 
-- Produce an explicit file list for the `BIG-GO-948` lane.
-- Land Go test replacements for the selected remaining Python tests, or document a concrete delete/follow-up plan for any files that cannot be removed in this lane.
-- Record exact validation commands, results, and residual risks.
-- Reduce Python / non-Go test assets in the repository without widening scope beyond this issue.
+- Produce an explicit file list for the `BIG-GO-966` lane and state per-file delete/replace/keep reasoning.
+- Reduce the number of Python files in the targeted lane as much as possible without widening scope.
+- Record exact validation commands and outcomes for the touched Go packages.
+- Report the before/after Python file counts for both the lane and the repository.
 
 ## Validation
 
-- `go test` for the exact `bigclaw-go` packages touched by this lane.
-- Targeted execution of any new or expanded Go tests covering the migrated Python scenarios.
-- `git status --short` to verify the scoped file set before commit.
+- `go test` for each touched `bigclaw-go/internal/...` package in this lane.
+- `git status --short` before commit to confirm the issue-scoped file set.
+- `find . -type f -name '*.py' | wc -l` before and after the migration to report global impact.
+
+## Notes
+
+- Existing Go coverage already appears to replace the Python tests for `governance`, `risk`, `observability`, and most `repo/*` surfaces.
+- `planning`, `operations`, and `reporting` still need selective keep-vs-migrate decisions based on whether the current Go code actually covers the Python contracts.
 
 ## Results
 
-- Migrated 13 Python tests to Go-owned coverage and deleted the Python files:
-  - `test_cross_process_coordination_surface.py`
-  - `test_followup_digests.py`
-  - `test_live_shadow_scorecard.py`
-  - `test_shadow_matrix_corpus.py`
-  - `test_subscriber_takeover_harness.py`
-  - `test_validation_bundle_continuation_scorecard.py`
-  - `test_parallel_refill.py`
-  - `test_roadmap.py`
-  - `test_cost_control.py`
-  - `test_deprecation.py`
-  - `test_legacy_shim.py`
-  - `test_service.py`
-- Added Go replacements in:
-  - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
-  - `bigclaw-go/internal/refill/queue_repo_fixture_test.go`
-  - `bigclaw-go/internal/regression/roadmap_contract_test.go`
-  - `bigclaw-go/internal/regression/deprecation_contract_test.go`
-  - `bigclaw-go/internal/costcontrol/controller.go`
-  - `bigclaw-go/internal/costcontrol/controller_test.go`
-  - `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
-  - `bigclaw-go/internal/legacyshim/wrappers.go`
-  - `bigclaw-go/internal/legacyshim/wrappers_test.go`
-  - `bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go`
-  - `bigclaw-go/internal/service/server.go`
-  - `bigclaw-go/internal/service/server_test.go`
-  - `bigclaw-go/internal/pilot/report.go`
-  - `bigclaw-go/internal/pilot/report_test.go`
-  - `bigclaw-go/internal/issuearchive/archive.go`
-  - `bigclaw-go/internal/issuearchive/archive_test.go`
-- Pushed commits:
-  - `b59e941` `test: migrate lane8 remaining python report tests`
-  - `cfcd50e` `test: migrate parallel refill queue fixture to go`
-  - `868b503` `test: migrate execution pack roadmap checks to go`
-  - `911a1d6` `docs: record remaining python test migration plan`
-  - `bdd3aa4` `test: migrate cost control checks to go`
-  - `0334358` `test: migrate deprecation compatibility checks to go`
-  - `29553fc` `test: migrate legacy shim contracts to go`
-- Remaining Python tests in `tests/` now require broader Go-native implementation or new contract surfaces rather than direct fixture parity moves.
-- Next scoped slice: migrate `tests/test_pilot.py` into a small Go-native pilot package that covers KPI pass-rate math and report rendering without pulling over the broader Python workflow runtime.
-- Migrated `tests/test_pilot.py` to `bigclaw-go/internal/pilot/report.go` and `bigclaw-go/internal/pilot/report_test.go`; deleted the Python test after landing equivalent Go coverage for KPI readiness and report rendering.
-- Validation result:
-  - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'` -> `ok  	bigclaw-go/internal/pilot	0.789s`
-- Next scoped slice: migrate `tests/test_issue_archive.py` into a Go-native archive package covering archive round-trip, audit rollups, and markdown report rendering.
-- Migrated `tests/test_issue_archive.py` to `bigclaw-go/internal/issuearchive/archive.go` and `bigclaw-go/internal/issuearchive/archive_test.go`; deleted the Python test after landing equivalent Go coverage for archive round-trip, audit rollups, and report rendering.
-- Validation result:
-  - `cd bigclaw-go && go test ./internal/issuearchive -run 'TestIssuePriorityArchiveRoundTripPreservesManifestShape|TestIssuePriorityArchiveAuditFlagsOwnerPriorityCategoryAndOpenP0Gaps|TestIssuePriorityArchiveAuditRoundTripAndReadyState|TestRenderIssuePriorityArchiveReportSummarizesFindingsAndRollups'` -> `ok  	bigclaw-go/internal/issuearchive	0.445s`
+- Deleted Python tests in scope:
+  - `tests/test_governance.py`
+  - `tests/test_risk.py`
+  - `tests/test_observability.py`
+  - `tests/test_mapping.py`
+  - `tests/test_memory.py`
+  - `tests/test_repo_board.py`
+  - `tests/test_repo_collaboration.py`
+  - `tests/test_repo_gateway.py`
+  - `tests/test_repo_governance.py`
+  - `tests/test_repo_links.py`
+  - `tests/test_repo_registry.py`
+  - `tests/test_repo_triage.py`
+- Added Go replacement coverage in:
+  - `bigclaw-go/internal/memory/store.go`
+  - `bigclaw-go/internal/memory/store_test.go`
+  - Existing Go replacements already present in `internal/governance`, `internal/risk`, `internal/observability`, `internal/repo`, and `internal/intake`
+- Kept Python tests in scope:
+  - `tests/test_reports.py`
+  - `tests/test_planning.py`
+  - `tests/test_operations.py`
+  - `tests/test_repo_rollout.py`
+- Python file count impact:
+  - Repository-wide before: `123`
+  - Repository-wide after: `111`
+  - Delta: `-12`
+
+## Validation Results
+
+- `cd bigclaw-go && go test ./internal/governance ./internal/reporting ./internal/risk ./internal/observability ./internal/repo ./internal/intake ./internal/memory`
+  - `ok  	bigclaw-go/internal/governance	1.173s`
+  - `ok  	bigclaw-go/internal/reporting	1.481s`
+  - `ok  	bigclaw-go/internal/risk	1.967s`
+  - `ok  	bigclaw-go/internal/observability	2.850s`
+  - `ok  	bigclaw-go/internal/repo	3.289s`
+  - `ok  	bigclaw-go/internal/intake	3.748s`
+  - `ok  	bigclaw-go/internal/memory	2.412s`
+- `find . -type f -name '*.py' | wc -l`
+  - `111`
+- `git status --short`
+  - scoped changes only for `.symphony/workpad.md`, `bigclaw-go/internal/memory`, `bigclaw-go/docs/reports/big-go-966-material-pass.md`, and the deleted lane Python tests
