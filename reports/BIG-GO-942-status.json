@@ -2,7 +2,7 @@
   "issue": {
     "identifier": "BIG-GO-942",
     "title": "Lane2 Root scripts to Go CLI",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "symphony/BIG-GO-942",
