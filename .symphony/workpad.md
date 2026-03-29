@@ -34,6 +34,7 @@
   - `tests/test_observability.py`
   - `tests/test_mapping.py`
   - `tests/test_memory.py`
+  - `tests/test_operations.py`
   - `tests/test_planning.py`
   - `tests/test_repo_board.py`
   - `tests/test_repo_collaboration.py`
@@ -48,14 +49,15 @@
   - `bigclaw-go/internal/memory/store_test.go`
   - `bigclaw-go/internal/planning/planning.go`
   - `bigclaw-go/internal/planning/planning_test.go`
+  - `bigclaw-go/internal/reporting/operations_parity.go`
+  - `bigclaw-go/internal/reporting/operations_parity_test.go`
   - Existing Go replacements already present in `internal/governance`, `internal/risk`, `internal/observability`, `internal/repo`, and `internal/intake`
 - Kept Python tests in scope:
   - `tests/test_reports.py`
-  - `tests/test_operations.py`
 - Python file count impact:
   - Repository-wide before: `123`
-  - Repository-wide after: `109`
-  - Delta: `-14`
+  - Repository-wide after: `108`
+  - Delta: `-15`
 
 ## Validation Results
 
@@ -69,7 +71,9 @@
   - `ok  	bigclaw-go/internal/memory	2.412s`
 - `cd bigclaw-go && go test ./internal/planning`
   - `ok  	bigclaw-go/internal/planning	3.164s`
+- `cd bigclaw-go && go test ./internal/reporting`
+  - `ok  	bigclaw-go/internal/reporting	3.149s`
 - `find . -type f -name '*.py' | wc -l`
-  - `109`
+  - `108`
 - `git status --short`
   - scoped changes only for `.symphony/workpad.md`, `bigclaw-go/internal/memory`, `bigclaw-go/docs/reports/big-go-966-material-pass.md`, and the deleted lane Python tests
