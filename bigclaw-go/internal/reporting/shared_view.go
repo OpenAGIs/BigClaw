@@ -88,6 +88,50 @@ func BuildCollaborationThread(surface string, targetID string, comments []Collab
 	}
 }
 
+func BuildCollaborationThreadFromAudits(audits []map[string]any, surface string, targetID string) *CollaborationThread {
+	comments := make([]CollaborationComment, 0)
+	decisions := make([]DecisionNote, 0)
+	for _, audit := range audits {
+		details, _ := audit["details"].(map[string]any)
+		auditSurface, _ := details["surface"].(string)
+		if auditSurface == "" {
+			auditSurface = "run"
+		}
+		if auditSurface != surface {
+			continue
+		}
+		action, _ := audit["action"].(string)
+		switch action {
+		case "collaboration.comment":
+			comments = append(comments, CollaborationComment{
+				CommentID: stringValue(details["comment_id"]),
+				Author:    stringValue(audit["actor"]),
+				Body:      stringValue(details["body"]),
+				CreatedAt: stringValue(audit["timestamp"]),
+				Mentions:  anySliceToStrings(details["mentions"]),
+				Anchor:    stringValue(details["anchor"]),
+				Status:    firstNonEmptyString(stringValue(details["status"]), "open"),
+			})
+		case "collaboration.decision":
+			decisions = append(decisions, DecisionNote{
+				DecisionID:        stringValue(details["decision_id"]),
+				Author:            stringValue(audit["actor"]),
+				Outcome:           stringValue(audit["outcome"]),
+				Summary:           stringValue(details["summary"]),
+				RecordedAt:        stringValue(audit["timestamp"]),
+				Mentions:          anySliceToStrings(details["mentions"]),
+				RelatedCommentIDs: anySliceToStrings(details["related_comment_ids"]),
+				FollowUp:          stringValue(details["follow_up"]),
+			})
+		}
+	}
+	if len(comments) == 0 && len(decisions) == 0 {
+		return nil
+	}
+	thread := BuildCollaborationThread(surface, targetID, comments, decisions)
+	return &thread
+}
+
 func RenderCollaborationLines(thread *CollaborationThread) []string {
 	if thread == nil {
 		return nil
@@ -238,4 +282,33 @@ func RenderSharedViewContext(view *SharedViewContext) []string {
 	lines = append(lines, RenderCollaborationLines(view.Collaboration)...)
 	lines = append(lines, "")
 	return lines
+}
+
+func stringValue(value any) string {
+	text, _ := value.(string)
+	return text
+}
+
+func anySliceToStrings(value any) []string {
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		text, _ := item.(string)
+		if strings.TrimSpace(text) != "" {
+			out = append(out, text)
+		}
+	}
+	return out
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
 }

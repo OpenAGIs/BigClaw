@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/regression"
+	"bigclaw-go/internal/workflow"
 )
 
 func TestBuildWeeklyReportRendersExpandedMarkdown(t *testing.T) {
@@ -359,6 +361,290 @@ func TestRenderSharedViewContextIncludesCollaborationAnnotations(t *testing.T) {
 
 func ptrCollaboration(thread CollaborationThread) *CollaborationThread {
 	return &thread
+}
+
+func TestTakeoverQueueFromLedgerGroupsPendingHandoffs(t *testing.T) {
+	entries := []map[string]any{
+		{
+			"run_id":  "run-sec",
+			"task_id": "OPE-66-sec",
+			"source":  "linear",
+			"summary": "requires approval for high-risk task",
+			"audits": []map[string]any{
+				{
+					"action":  "orchestration.handoff",
+					"outcome": "pending",
+					"details": map[string]any{
+						"target_team":        "security",
+						"reason":             "requires approval for high-risk task",
+						"required_approvals": []any{"security-review"},
+					},
+				},
+			},
+		},
+		{
+			"run_id":  "run-ops",
+			"task_id": "OPE-66-ops",
+			"source":  "linear",
+			"summary": "premium tier required for advanced cross-department orchestration",
+			"audits": []map[string]any{
+				{
+					"action":  "orchestration.handoff",
+					"outcome": "pending",
+					"details": map[string]any{
+						"target_team":        "operations",
+						"reason":             "premium tier required for advanced cross-department orchestration",
+						"required_approvals": []any{"ops-manager"},
+					},
+				},
+			},
+		},
+		{
+			"run_id":  "run-ok",
+			"task_id": "OPE-66-ok",
+			"source":  "linear",
+			"summary": "default low risk path",
+			"audits": []map[string]any{
+				{"action": "scheduler.decision", "outcome": "approved", "details": map[string]any{"reason": "default low risk path"}},
+			},
+		},
+	}
+	queue := BuildTakeoverQueueFromLedger(entries, "Cross-Team Takeovers", "2026-03-10")
+	totalRuns := 3
+	report := RenderTakeoverQueueReport(queue, &totalRuns, nil)
+	if queue.PendingRequests() != 2 || !reflect.DeepEqual(queue.TeamCounts(), map[string]int{"operations": 1, "security": 1}) || queue.ApprovalCount() != 2 || queue.Recommendation() != "expedite-security-review" {
+		t.Fatalf("unexpected takeover queue rollup: %+v", queue)
+	}
+	if got := []string{queue.Requests[0].RunID, queue.Requests[1].RunID}; !reflect.DeepEqual(got, []string{"run-ops", "run-sec"}) {
+		t.Fatalf("unexpected queue order: %v", got)
+	}
+	if !queue.Requests[0].Actions[3].Enabled || queue.Requests[1].Actions[3].Enabled {
+		t.Fatalf("unexpected escalate actions: %+v", queue.Requests)
+	}
+	for _, want := range []string{
+		"Pending Requests: 2",
+		"Team Mix: operations=1 security=1",
+		"run-sec: team=security status=pending task=OPE-66-sec approvals=security-review",
+		"run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager",
+		"Escalate [escalate] state=disabled target=run-sec reason=security takeovers are already escalated",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestTakeoverQueueReportRendersSharedViewErrorState(t *testing.T) {
+	queue := BuildTakeoverQueueFromLedger(nil, "Cross-Team Takeovers", "2026-03-10")
+	resultCount := 0
+	view := SharedViewContext{ResultCount: &resultCount, Filters: []SharedViewFilter{{Label: "Team", Value: "engineering"}}, Errors: []string{"Takeover approvals service timed out."}}
+	report := RenderTakeoverQueueReport(queue, nil, &view)
+	for _, want := range []string{"- State: error", "- Summary: Unable to load data for the current filters.", "## Errors", "Takeover approvals service timed out."} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestOrchestrationCanvasSummarizesPolicyAndHandoff(t *testing.T) {
+	run := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-66-canvas", Source: "linear", Title: "Canvas run"}, "run-canvas", "browser")
+	run.Audit("tool.invoke", "worker", "success", map[string]any{"tool": "browser"})
+	plan := workflow.OrchestrationPlan{
+		TaskID:            "OPE-66-canvas",
+		CollaborationMode: "tier-limited",
+		Handoffs: []workflow.DepartmentHandoff{
+			{Department: "operations", Reason: "coordinate"},
+			{Department: "engineering", Reason: "execute", RequiredTools: []string{"browser"}},
+		},
+	}
+	policy := workflow.OrchestrationPolicyDecision{
+		Tier:               "standard",
+		UpgradeRequired:    true,
+		Reason:             "premium tier required for advanced cross-department orchestration",
+		BlockedDepartments: []string{"customer-success"},
+		EntitlementStatus:  "upgrade-required",
+		BillingModel:       "standard-blocked",
+		EstimatedCostUSD:   7.0,
+		IncludedUsageUnits: 2,
+		OverageUsageUnits:  1,
+		OverageCostUSD:     4.0,
+	}
+	handoff := workflow.HandoffRequest{TargetTeam: "operations", Reason: policy.Reason, Status: "pending", RequiredApprovals: []string{"ops-manager"}}
+	canvas := BuildOrchestrationCanvas(run, plan, &policy, &handoff)
+	report := RenderOrchestrationCanvas(canvas)
+	if canvas.Recommendation() != "resolve-entitlement-gap" || !reflect.DeepEqual(canvas.ActiveTools, []string{"browser"}) || !canvas.Actions[3].Enabled || canvas.Actions[4].Enabled {
+		t.Fatalf("unexpected canvas: %+v", canvas)
+	}
+	for _, want := range []string{"# Orchestration Canvas", "- Tier: standard", "- Entitlement Status: upgrade-required", "- Billing Model: standard-blocked", "- Estimated Cost (USD): 7.00", "- Handoff Team: operations", "- Recommendation: resolve-entitlement-gap", "## Actions", "Escalate [escalate] state=enabled target=run-canvas"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in canvas report, got %s", want, report)
+		}
+	}
+}
+
+func TestOrchestrationCanvasReconstructsFlowCollaborationFromLedger(t *testing.T) {
+	entry := map[string]any{
+		"run_id":  "run-flow-1",
+		"task_id": "OPE-113",
+		"audits": []map[string]any{
+			{"action": "orchestration.plan", "actor": "scheduler", "outcome": "enabled", "timestamp": "2026-03-11T11:00:00Z", "details": map[string]any{"collaboration_mode": "cross-functional", "departments": []any{"operations", "engineering"}, "approvals": []any{}}},
+			{"action": "orchestration.policy", "actor": "scheduler", "outcome": "enabled", "timestamp": "2026-03-11T11:01:00Z", "details": map[string]any{"tier": "premium", "entitlement_status": "included", "billing_model": "premium-included"}},
+			{"action": "collaboration.comment", "actor": "ops-lead", "outcome": "recorded", "timestamp": "2026-03-11T11:02:00Z", "details": map[string]any{"surface": "flow", "comment_id": "flow-comment-1", "body": "Route @eng once the dashboard note is resolved.", "mentions": []any{"eng"}, "anchor": "handoff-lane", "status": "open"}},
+			{"action": "collaboration.decision", "actor": "eng-manager", "outcome": "accepted", "timestamp": "2026-03-11T11:03:00Z", "details": map[string]any{"surface": "flow", "decision_id": "flow-decision-1", "summary": "Engineering owns the next flow handoff.", "mentions": []any{"ops-lead"}, "related_comment_ids": []any{"flow-comment-1"}, "follow_up": "Post in the shared channel after deploy."}},
+		},
+	}
+	canvas := BuildOrchestrationCanvasFromLedgerEntry(entry)
+	report := RenderOrchestrationCanvas(canvas)
+	if canvas.Collaboration == nil || canvas.Recommendation() != "resolve-flow-comments" {
+		t.Fatalf("unexpected collaboration canvas: %+v", canvas)
+	}
+	for _, want := range []string{"## Collaboration", "Route @eng once the dashboard note is resolved.", "Engineering owns the next flow handoff."} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestOrchestrationPortfolioRollsUpCanvasAndTakeoverState(t *testing.T) {
+	canvases := []OrchestrationCanvas{
+		{TaskID: "OPE-66-a", RunID: "run-a", CollaborationMode: "cross-functional", Departments: []string{"operations", "engineering", "security"}, Tier: "premium", EntitlementStatus: "included", BillingModel: "premium-included", EstimatedCostUSD: 4.5, IncludedUsageUnits: 3, HandoffTeam: "security", HandoffStatus: "pending"},
+		{TaskID: "OPE-66-b", RunID: "run-b", CollaborationMode: "tier-limited", Departments: []string{"operations", "engineering"}, Tier: "standard", UpgradeRequired: true, EntitlementStatus: "upgrade-required", BillingModel: "standard-blocked", EstimatedCostUSD: 7.0, IncludedUsageUnits: 2, OverageUsageUnits: 1, OverageCostUSD: 4.0, BlockedDepartments: []string{"customer-success"}, HandoffTeam: "operations", HandoffStatus: "pending"},
+	}
+	queue := BuildTakeoverQueueFromLedger([]map[string]any{
+		{"run_id": "run-a", "task_id": "OPE-66-a", "source": "linear", "audits": []map[string]any{{"action": "orchestration.handoff", "outcome": "pending", "details": map[string]any{"target_team": "security", "reason": "risk", "required_approvals": []any{"security-review"}}}}},
+		{"run_id": "run-b", "task_id": "OPE-66-b", "source": "linear", "audits": []map[string]any{{"action": "orchestration.handoff", "outcome": "pending", "details": map[string]any{"target_team": "operations", "reason": "entitlement", "required_approvals": []any{"ops-manager"}}}}},
+	}, "Cross-Team Takeovers", "2026-03-10")
+	portfolio := BuildOrchestrationPortfolio(canvases, "Cross-Team Portfolio", "2026-03-10", &queue)
+	report := RenderOrchestrationPortfolioReport(portfolio, nil)
+	if portfolio.TotalRuns() != 2 || !reflect.DeepEqual(portfolio.CollaborationModes(), map[string]int{"cross-functional": 1, "tier-limited": 1}) || !reflect.DeepEqual(portfolio.TierCounts(), map[string]int{"premium": 1, "standard": 1}) || !reflect.DeepEqual(portfolio.EntitlementCounts(), map[string]int{"included": 1, "upgrade-required": 1}) || !reflect.DeepEqual(portfolio.BillingModelCounts(), map[string]int{"premium-included": 1, "standard-blocked": 1}) || portfolio.TotalEstimatedCostUSD() != 11.5 || portfolio.TotalOverageCostUSD() != 4.0 || portfolio.UpgradeRequiredCount() != 1 || portfolio.ActiveHandoffs() != 2 || portfolio.Recommendation() != "stabilize-security-takeovers" {
+		t.Fatalf("unexpected portfolio: %+v", portfolio)
+	}
+	for _, want := range []string{"# Orchestration Portfolio Report", "- Collaboration Mix: cross-functional=1 tier-limited=1", "- Tier Mix: premium=1 standard=1", "- Entitlement Mix: included=1 upgrade-required=1", "- Billing Models: premium-included=1 standard-blocked=1", "- Estimated Cost (USD): 11.50", "- Overage Cost (USD): 4.00", "- Takeover Queue: pending=2 recommendation=expedite-security-review", "- run-a: mode=cross-functional tier=premium entitlement=included billing=premium-included estimated_cost_usd=4.50 overage_cost_usd=0.00 upgrade_required=False handoff=security", "actions=Drill Down [drill-down]"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestOrchestrationPortfolioReportRendersSharedViewEmptyState(t *testing.T) {
+	portfolio := BuildOrchestrationPortfolio(nil, "Cross-Team Portfolio", "2026-03-10", nil)
+	resultCount := 0
+	view := SharedViewContext{ResultCount: &resultCount, Filters: []SharedViewFilter{{Label: "Team", Value: "engineering"}}}
+	report := RenderOrchestrationPortfolioReport(portfolio, &view)
+	for _, want := range []string{"- State: empty", "- Summary: No records match the current filters.", "## Filters"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestRenderOrchestrationOverviewPage(t *testing.T) {
+	queue := BuildTakeoverQueueFromLedger([]map[string]any{
+		{"run_id": "run-a", "task_id": "OPE-66-a", "source": "linear", "audits": []map[string]any{{"action": "orchestration.handoff", "outcome": "pending", "details": map[string]any{"target_team": "security", "reason": "risk", "required_approvals": []any{"security-review"}}}}},
+	}, "Cross-Team Takeovers", "2026-03-10")
+	portfolio := OrchestrationPortfolio{
+		Name:   "Cross-Team Portfolio",
+		Period: "2026-03-10",
+		Canvases: []OrchestrationCanvas{
+			{TaskID: "OPE-66-a", RunID: "run-a", CollaborationMode: "cross-functional", Departments: []string{"operations", "engineering"}, Tier: "premium", EntitlementStatus: "included", BillingModel: "premium-included", EstimatedCostUSD: 3.0, HandoffTeam: "security"},
+		},
+		TakeoverQueue: &queue,
+	}
+	page := RenderOrchestrationOverviewPage(portfolio)
+	for _, want := range []string{"<title>Orchestration Overview", "Cross-Team Portfolio", "review-security-takeover", "Estimated Cost", "premium-included", "pending=1 recommendation=expedite-security-review", "run-a", "actions=Drill Down [drill-down]"} {
+		if !strings.Contains(page, want) {
+			t.Fatalf("expected %q in page, got %s", want, page)
+		}
+	}
+}
+
+func TestBuildOrchestrationCanvasFromLedgerEntryExtractsAuditState(t *testing.T) {
+	entry := map[string]any{
+		"run_id": "run-ledger", "task_id": "OPE-66-ledger",
+		"audits": []map[string]any{
+			{"action": "orchestration.plan", "outcome": "ready", "details": map[string]any{"collaboration_mode": "tier-limited", "departments": []any{"operations", "engineering"}, "approvals": []any{"security-review"}}},
+			{"action": "orchestration.policy", "outcome": "upgrade-required", "details": map[string]any{"tier": "standard", "entitlement_status": "upgrade-required", "billing_model": "standard-blocked", "estimated_cost_usd": 7.0, "included_usage_units": 2, "overage_usage_units": 1, "overage_cost_usd": 4.0, "blocked_departments": []any{"security", "customer-success"}}},
+			{"action": "orchestration.handoff", "outcome": "pending", "details": map[string]any{"target_team": "operations", "reason": "premium tier required for advanced cross-department orchestration"}},
+			{"action": "tool.invoke", "outcome": "success", "details": map[string]any{"tool": "browser"}},
+		},
+	}
+	canvas := BuildOrchestrationCanvasFromLedgerEntry(entry)
+	if canvas.RunID != "run-ledger" || canvas.CollaborationMode != "tier-limited" || !reflect.DeepEqual(canvas.Departments, []string{"operations", "engineering"}) || !reflect.DeepEqual(canvas.RequiredApprovals, []string{"security-review"}) || canvas.Tier != "standard" || !canvas.UpgradeRequired || canvas.EntitlementStatus != "upgrade-required" || canvas.BillingModel != "standard-blocked" || canvas.EstimatedCostUSD != 7.0 || canvas.IncludedUsageUnits != 2 || canvas.OverageUsageUnits != 1 || canvas.OverageCostUSD != 4.0 || !reflect.DeepEqual(canvas.BlockedDepartments, []string{"security", "customer-success"}) || canvas.HandoffTeam != "operations" || !reflect.DeepEqual(canvas.ActiveTools, []string{"browser"}) || !canvas.Actions[3].Enabled || canvas.Actions[4].Enabled {
+		t.Fatalf("unexpected ledger canvas: %+v", canvas)
+	}
+}
+
+func TestBuildOrchestrationPortfolioFromLedgerRollsUpEntries(t *testing.T) {
+	entries := []map[string]any{
+		{"run_id": "run-a", "task_id": "OPE-66-a", "audits": []map[string]any{
+			{"action": "orchestration.plan", "outcome": "ready", "details": map[string]any{"collaboration_mode": "cross-functional", "departments": []any{"operations", "engineering", "security"}, "approvals": []any{"security-review"}}},
+			{"action": "orchestration.policy", "outcome": "enabled", "details": map[string]any{"tier": "premium", "entitlement_status": "included", "billing_model": "premium-included", "estimated_cost_usd": 4.5, "included_usage_units": 3, "blocked_departments": []any{}}},
+			{"action": "orchestration.handoff", "outcome": "pending", "details": map[string]any{"target_team": "security", "reason": "approval required", "required_approvals": []any{"security-review"}}},
+		}},
+		{"run_id": "run-b", "task_id": "OPE-66-b", "audits": []map[string]any{
+			{"action": "orchestration.plan", "outcome": "ready", "details": map[string]any{"collaboration_mode": "tier-limited", "departments": []any{"operations", "engineering"}, "approvals": []any{}}},
+			{"action": "orchestration.policy", "outcome": "upgrade-required", "details": map[string]any{"tier": "standard", "entitlement_status": "upgrade-required", "billing_model": "standard-blocked", "estimated_cost_usd": 7.0, "included_usage_units": 2, "overage_usage_units": 1, "overage_cost_usd": 4.0, "blocked_departments": []any{"customer-success"}}},
+			{"action": "orchestration.handoff", "outcome": "pending", "details": map[string]any{"target_team": "operations", "reason": "entitlement gap", "required_approvals": []any{"ops-manager"}}},
+		}},
+	}
+	portfolio := BuildOrchestrationPortfolioFromLedger(entries, "Ledger Portfolio", "2026-03-10")
+	if portfolio.TotalRuns() != 2 || !reflect.DeepEqual(portfolio.CollaborationModes(), map[string]int{"cross-functional": 1, "tier-limited": 1}) || !reflect.DeepEqual(portfolio.TierCounts(), map[string]int{"premium": 1, "standard": 1}) || !reflect.DeepEqual(portfolio.EntitlementCounts(), map[string]int{"included": 1, "upgrade-required": 1}) || portfolio.TotalEstimatedCostUSD() != 11.5 || portfolio.TakeoverQueue == nil || portfolio.TakeoverQueue.PendingRequests() != 2 || portfolio.Recommendation() != "stabilize-security-takeovers" {
+		t.Fatalf("unexpected ledger portfolio: %+v", portfolio)
+	}
+}
+
+func TestBuildBillingEntitlementsPageRollsUpOrchestrationCosts(t *testing.T) {
+	portfolio := OrchestrationPortfolio{
+		Name:   "Revenue Ops",
+		Period: "2026-03",
+		Canvases: []OrchestrationCanvas{
+			{TaskID: "OPE-104-a", RunID: "run-billing-a", CollaborationMode: "cross-functional", Departments: []string{"operations", "engineering", "security"}, Tier: "premium", EntitlementStatus: "included", BillingModel: "premium-included", EstimatedCostUSD: 4.5, IncludedUsageUnits: 3, HandoffTeam: "security"},
+			{TaskID: "OPE-104-b", RunID: "run-billing-b", CollaborationMode: "tier-limited", Departments: []string{"operations", "engineering"}, Tier: "standard", UpgradeRequired: true, EntitlementStatus: "upgrade-required", BillingModel: "standard-blocked", EstimatedCostUSD: 7.0, IncludedUsageUnits: 2, OverageUsageUnits: 1, OverageCostUSD: 4.0, BlockedDepartments: []string{"customer-success"}, HandoffTeam: "operations"},
+		},
+	}
+	page := BuildBillingEntitlementsPage(portfolio, "OpenAGI Revenue Cloud", "Standard", "2026-03")
+	report := RenderBillingEntitlementsReport(page, nil)
+	if page.RunCount() != 2 || page.TotalIncludedUsageUnits() != 5 || page.TotalOverageUsageUnits() != 1 || page.TotalEstimatedCostUSD() != 11.5 || page.TotalOverageCostUSD() != 4.0 || page.UpgradeRequiredCount() != 1 || !reflect.DeepEqual(page.EntitlementCounts(), map[string]int{"included": 1, "upgrade-required": 1}) || !reflect.DeepEqual(page.BillingModelCounts(), map[string]int{"premium-included": 1, "standard-blocked": 1}) || !reflect.DeepEqual(page.BlockedCapabilities(), []string{"customer-success"}) || page.Recommendation() != "resolve-plan-gaps" {
+		t.Fatalf("unexpected billing page: %+v", page)
+	}
+	for _, want := range []string{"# Billing & Entitlements Report", "- Workspace: OpenAGI Revenue Cloud", "- Overage Cost (USD): 4.00", "- run-billing-b: task=OPE-104-b entitlement=upgrade-required billing=standard-blocked"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestRenderBillingEntitlementsPageOutputsHTMLDashboard(t *testing.T) {
+	page := BillingEntitlementsPage{
+		WorkspaceName: "OpenAGI Revenue Cloud",
+		PlanName:      "Premium",
+		BillingPeriod: "2026-03",
+		Charges:       []BillingRunCharge{{RunID: "run-billing-a", TaskID: "OPE-104-a", EntitlementStatus: "included", BillingModel: "premium-included", EstimatedCostUSD: 4.5, IncludedUsageUnits: 3, Recommendation: "review-security-takeover"}},
+	}
+	pageHTML := RenderBillingEntitlementsPage(page)
+	for _, want := range []string{"<title>Billing & Entitlements", "OpenAGI Revenue Cloud", "Premium plan for 2026-03", "Charge Feed", "premium-included"} {
+		if !strings.Contains(pageHTML, want) {
+			t.Fatalf("expected %q in page, got %s", want, pageHTML)
+		}
+	}
+}
+
+func TestBuildBillingEntitlementsPageFromLedgerExtractsUpgradeSignals(t *testing.T) {
+	entries := []map[string]any{
+		{"run_id": "run-ledger-a", "task_id": "OPE-104-a", "audits": []map[string]any{
+			{"action": "orchestration.plan", "outcome": "ready", "details": map[string]any{"collaboration_mode": "cross-functional", "departments": []any{"operations", "engineering", "security"}, "approvals": []any{"security-review"}}},
+			{"action": "orchestration.policy", "outcome": "enabled", "details": map[string]any{"tier": "premium", "entitlement_status": "included", "billing_model": "premium-included", "estimated_cost_usd": 4.5, "included_usage_units": 3, "blocked_departments": []any{}}},
+		}},
+		{"run_id": "run-ledger-b", "task_id": "OPE-104-b", "audits": []map[string]any{
+			{"action": "orchestration.plan", "outcome": "ready", "details": map[string]any{"collaboration_mode": "tier-limited", "departments": []any{"operations", "engineering"}, "approvals": []any{}}},
+			{"action": "orchestration.policy", "outcome": "upgrade-required", "details": map[string]any{"tier": "standard", "entitlement_status": "upgrade-required", "billing_model": "standard-blocked", "estimated_cost_usd": 7.0, "included_usage_units": 2, "overage_usage_units": 1, "overage_cost_usd": 4.0, "blocked_departments": []any{"customer-success"}}},
+			{"action": "orchestration.handoff", "outcome": "pending", "details": map[string]any{"target_team": "operations", "reason": "entitlement gap", "required_approvals": []any{"ops-manager"}}},
+		}},
+	}
+	page := BuildBillingEntitlementsPageFromLedger(entries, "OpenAGI Revenue Cloud", "Standard", "2026-03")
+	if page.RunCount() != 2 || page.Recommendation() != "resolve-plan-gaps" || page.TotalOverageCostUSD() != 4.0 || !reflect.DeepEqual(page.Charges[1].BlockedCapabilities, []string{"customer-success"}) || page.Charges[1].HandoffTeam != "operations" {
+		t.Fatalf("unexpected ledger billing page: %+v", page)
+	}
 }
 
 func TestTriageFeedbackRecordAndIssueValidationReportUseTimezoneAwareUTCTimestamps(t *testing.T) {
