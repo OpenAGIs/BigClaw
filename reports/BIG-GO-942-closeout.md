@@ -21,6 +21,15 @@ Date: `2026-03-29`
 - PR seed URL:
   - `https://github.com/OpenAGIs/BigClaw/pull/new/symphony/BIG-GO-942`
 
+## Public GitHub Verification
+
+- 2026-03-29 public compare view is reachable for
+  `main...symphony/BIG-GO-942` and shows the full 5-commit issue history:
+  `87fd42c`, `07f7901`, `6e5e47a`, `8505a05`, and `e901ae4`.
+- GitHub still cannot fully render the diff body in-browser and reports
+  `This comparison is taking too long to generate`, along with repeated `Uh oh!` load failures.
+- The PR seed URL still redirects to GitHub sign-in, so unauthenticated PR creation remains blocked.
+
 ## In-Repo Artifacts
 
 - Validation report:
@@ -62,5 +71,5 @@ bash scripts/ops/symphony_workspace_validate.py --repo-url <tmp bare repo> --wor
 
 No in-repo implementation blocker remains.
 
-External PR creation is still not automated from this workspace because `gh` is not installed and
-both `GITHUB_TOKEN` and `GH_TOKEN` are unset.
+External PR creation is still not automated from this workspace because `gh` is not installed,
+both `GITHUB_TOKEN` and `GH_TOKEN` are unset, and the PR seed URL redirects to GitHub sign-in.

@@ -40,7 +40,18 @@
   "external_verification": {
     "date": "2026-03-29",
     "public_pr_found": false,
-    "notes": "Public GitHub search did not surface a BIG-GO-942 pull request at validation time."
+    "compare_url_reachable": true,
+    "compare_commit_count": 5,
+    "compare_commits": [
+      "87fd42c",
+      "07f7901",
+      "6e5e47a",
+      "8505a05",
+      "e901ae4"
+    ],
+    "compare_page_state": "reachable but diff rendering incomplete",
+    "pr_seed_requires_sign_in": true,
+    "notes": "Public GitHub search did not surface a BIG-GO-942 pull request. The compare page for main...symphony/BIG-GO-942 is reachable and shows the 5 issue commits, but GitHub reports that the comparison is taking too long to generate and the PR seed URL redirects to sign-in."
   },
   "auth_environment": {
     "date": "2026-03-29",
