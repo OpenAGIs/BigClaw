@@ -214,7 +214,7 @@ cd bigclaw-go
 export BIGCLAW_QUEUE_BACKEND=sqlite
 export BIGCLAW_QUEUE_SQLITE_PATH=./state/queue.db
 export BIGCLAW_AUDIT_LOG_PATH=./state/audit.jsonl
-python3 scripts/e2e/run_task_smoke.py \
+go run ./cmd/bigclawctl automation e2e run-task-smoke \
   --autostart \
   --go-root "$PWD" \
   --executor local \
