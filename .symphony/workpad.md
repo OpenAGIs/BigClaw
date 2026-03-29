@@ -108,8 +108,12 @@
     - Reason: it still targets Python planning/report rendering helpers that do not map directly to an existing Go-native rollout/report surface.
   - `tests/test_risk.py`
     - Reason: the pure risk scorer contract is covered in `bigclaw-go/internal/risk/risk_test.go`, but the file also depends on Python scheduler execution records plus ledger trace/audit side effects that do not have a small Go-owned replacement surface.
+  - `tests/test_runtime_matrix.py`
+    - Reason: it still depends on Python `ClawWorkerRuntime` and `ToolRuntime` audit-chain behavior plus Python scheduler medium semantics rather than a narrow Go-owned runtime contract.
   - `tests/test_scheduler.py`
     - Reason: Go scheduler coverage exists in `bigclaw-go/internal/scheduler/scheduler_test.go`, but the Python file asserts different medium names and budget degradation semantics than the Go executor contract.
+  - `tests/test_orchestration.py`
+    - Reason: Go covers orchestration planning and policy decisions, but the file still depends on Python scheduler execution records, ledger traces/audits, and rendered orchestration artifacts.
   - `tests/test_workflow.py`
     - Reason: Go workflow packages cover acceptance, closeout, journal writing, and orchestration pieces, but the Python file still depends on the Python `WorkflowEngine` end-to-end ledger/report side effects rather than a narrow Go-owned API.
   - `tests/test_validation_bundle_continuation_policy_gate.py`
