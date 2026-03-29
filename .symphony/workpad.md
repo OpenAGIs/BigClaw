@@ -2,29 +2,30 @@
 
 ## Scope
 
-Thirteenth-wave cleanup for the remaining Python runtime test by extending the existing Go runtime parity package.
+Fourteenth-wave cleanup for the remaining Python evaluation test by adding a narrow Go-native parity package.
 
 Planned delete set for this continuation:
-- `tests/test_runtime.py`
+- `tests/test_evaluation.py`
 
 Go coverage used for replacement:
-- updated `bigclaw-go/internal/runtimeparity/runtimeparity_test.go`
+- new `bigclaw-go/internal/evaluationparity` package
+- new `bigclaw-go/internal/evaluationparity/evaluationparity_test.go`
 
 ## Acceptance
 
-- Replace the Python runtime test with Go-native parity coverage.
-- Keep the changes narrow: sandbox router profile mapping and paused budget behavior only, layered on the existing runtime parity package.
-- Delete `tests/test_runtime.py` only after Go parity exists.
+- Replace the Python evaluation test with Go-native parity coverage.
+- Keep the new package narrow: benchmark scoring, replay mismatch detection, suite comparison, and small report/detail page rendering only.
+- Delete `tests/test_evaluation.py` only after Go parity exists.
 - Update `reports/BIG-GO-948-validation.md` with the new completed file, replacement coverage, command, result, and remaining plan.
-- Run targeted Go validation for `bigclaw-go/internal/runtimeparity`.
+- Run targeted Go validation for `bigclaw-go/internal/evaluationparity`.
 - Commit and push the continuation changes.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/runtimeparity`
+- `cd bigclaw-go && go test ./internal/evaluationparity`
 - `git status --short`
 
 ## Risks
 
-- This slice should stay inside the existing runtime parity package and avoid turning into a second scheduler or worker implementation.
+- This slice adds another small Go package; it must stay scoped to the Python evaluation contract instead of growing into a general benchmarking framework.
 - The larger remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.
