@@ -8,6 +8,7 @@
 - `tests/test_shadow_matrix_corpus.py`
 - `tests/test_subscriber_takeover_harness.py`
 - `tests/test_validation_bundle_continuation_scorecard.py`
+- `tests/test_parallel_refill.py`
 
 ## Go Replacements
 
@@ -18,12 +19,19 @@
   - `TestLane8ShadowMatrixCorpusCoverageStaysAligned`
   - `TestLane8SubscriberTakeoverHarnessStaysAligned`
   - `TestLane8FollowupDigestsStayAligned`
+- `bigclaw-go/internal/refill/queue_repo_fixture_test.go`
+  - `TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
 
-The deleted Python tests were report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts. Their assertions now live in Go regression tests under `bigclaw-go/internal/regression`, so this lane removes redundant Python-only coverage without expanding into unrelated test domains.
+The deleted Python tests were either:
+- report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts, now covered in Go under `bigclaw-go/internal/regression`
+- refill queue fixture assertions over `docs/parallel-refill-queue.json`, now covered in Go under `bigclaw-go/internal/refill`
+
+This lane removes redundant Python-only coverage without expanding into unrelated runtime migration domains.
 
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLane8|TestCrossProcessCoordinationReadinessDocsStayAligned|TestLiveShadowScorecardBundleStaysAligned|TestProductionCorpus|TestLocalTakeoverReportStaysAligned|TestLiveValidationIndexStaysAligned|TestLiveValidationSummaryStaysAligned|TestFollowUpLaneDocsStayAligned'`
+- `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
 - `git status --short`
 
 ## Residual Risks
