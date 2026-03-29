@@ -70,6 +70,9 @@
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
   - `connectors.py`: retained as the connector-facing surface; folding it further would start mixing transport stubs with unrelated package internals.
   - `legacy_shim.py`: retained as the operator wrapper compatibility surface used by external scripts.
+  - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
+  - `github_sync.py`: retained as a standalone git-sync automation surface; folding it would mix repository mutation logic into unrelated runtime or server modules.
+  - `service.py`: retained as the legacy HTTP serving surface; folding it would widen the issue into UI/server packaging rather than asset compression.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
   - After: `29`
