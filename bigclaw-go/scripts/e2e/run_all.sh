@@ -17,11 +17,8 @@ BROKER_BOOTSTRAP_SUMMARY_PATH="${BIGCLAW_E2E_BROKER_BOOTSTRAP_SUMMARY_PATH:-docs
 REFRESH_CONTINUATION="${BIGCLAW_E2E_REFRESH_CONTINUATION:-1}"
 ENFORCE_CONTINUATION_GATE="${BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE:-0}"
 CONTINUATION_GATE_MODE="${BIGCLAW_E2E_CONTINUATION_GATE_MODE:-}"
-# NOTE: The continuation scripts resolve output paths relative to the repo root,
-# so we must include the bigclaw-go prefix here to avoid emitting repo-root
-# duplicates under docs/reports/.
-CONTINUATION_SCORECARD_PATH="${BIGCLAW_E2E_CONTINUATION_SCORECARD_PATH:-bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json}"
-CONTINUATION_POLICY_GATE_PATH="${BIGCLAW_E2E_CONTINUATION_POLICY_GATE_PATH:-bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json}"
+CONTINUATION_SCORECARD_PATH="${BIGCLAW_E2E_CONTINUATION_SCORECARD_PATH:-docs/reports/validation-bundle-continuation-scorecard.json}"
+CONTINUATION_POLICY_GATE_PATH="${BIGCLAW_E2E_CONTINUATION_POLICY_GATE_PATH:-docs/reports/validation-bundle-continuation-policy-gate.json}"
 
 if [[ -z "$CONTINUATION_GATE_MODE" ]]; then
   if [[ "$ENFORCE_CONTINUATION_GATE" == "1" ]]; then
@@ -43,15 +40,22 @@ K8S_OUT="$(mktemp -t bigclaw-k8s-e2e-out.XXXXXX)"
 K8S_ERR="$(mktemp -t bigclaw-k8s-e2e-err.XXXXXX)"
 RAY_OUT="$(mktemp -t bigclaw-ray-e2e-out.XXXXXX)"
 RAY_ERR="$(mktemp -t bigclaw-ray-e2e-err.XXXXXX)"
-trap 'rm -f "$LOCAL_OUT" "$LOCAL_ERR" "$K8S_OUT" "$K8S_ERR" "$RAY_OUT" "$RAY_ERR"' EXIT
+BIGCLAWCTL_BIN="$(mktemp -t bigclawctl-automation.XXXXXX)"
+trap 'rm -f "$LOCAL_OUT" "$LOCAL_ERR" "$K8S_OUT" "$K8S_ERR" "$RAY_OUT" "$RAY_ERR" "$BIGCLAWCTL_BIN"' EXIT
+
+(
+  cd "$ROOT"
+  go build -o "$BIGCLAWCTL_BIN" ./cmd/bigclawctl
+)
 
 status=0
 pids=()
 
 if [[ "$RUN_LOCAL" == "1" ]]; then
   (
+    cd "$ROOT"
     BIGCLAW_QUEUE_BACKEND=sqlite \
-      python3 "$ROOT/scripts/e2e/run_task_smoke.py" \
+      "$BIGCLAWCTL_BIN" automation e2e run-task-smoke \
         --autostart \
         --go-root "$ROOT" \
         --executor local \
@@ -85,30 +89,33 @@ fi
 export_bundle() {
   go run "$ROOT/scripts/e2e/broker_bootstrap_summary.go" \
     --output "$ROOT/$BROKER_BOOTSTRAP_SUMMARY_PATH"
-  python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
-    --go-root "$ROOT" \
-    --run-id "$RUN_ID" \
-    --bundle-dir "$BUNDLE_DIR_REL" \
-    --summary-path "$SUMMARY_REPORT_PATH" \
-    --index-path "$INDEX_REPORT_PATH" \
-    --manifest-path "$MANIFEST_REPORT_PATH" \
-    --run-local "$RUN_LOCAL" \
-    --run-kubernetes "$RUN_KUBERNETES" \
-    --run-ray "$RUN_RAY" \
-    --run-broker "$RUN_BROKER" \
-    --broker-backend "$BROKER_BACKEND" \
-    --broker-report-path "$BROKER_REPORT_PATH" \
-    --broker-bootstrap-summary-path "$BROKER_BOOTSTRAP_SUMMARY_PATH" \
-    --validation-status "$status" \
-    --local-report-path "$LOCAL_REPORT_REL" \
-    --local-stdout-path "$LOCAL_OUT" \
-    --local-stderr-path "$LOCAL_ERR" \
-    --kubernetes-report-path "$K8S_REPORT_REL" \
-    --kubernetes-stdout-path "$K8S_OUT" \
-    --kubernetes-stderr-path "$K8S_ERR" \
-    --ray-report-path "$RAY_REPORT_REL" \
-    --ray-stdout-path "$RAY_OUT" \
-    --ray-stderr-path "$RAY_ERR"
+  (
+    cd "$ROOT"
+    "$BIGCLAWCTL_BIN" automation e2e export-validation-bundle \
+      --go-root "$ROOT" \
+      --run-id "$RUN_ID" \
+      --bundle-dir "$BUNDLE_DIR_REL" \
+      --summary-path "$SUMMARY_REPORT_PATH" \
+      --index-path "$INDEX_REPORT_PATH" \
+      --manifest-path "$MANIFEST_REPORT_PATH" \
+      --run-local "$RUN_LOCAL" \
+      --run-kubernetes "$RUN_KUBERNETES" \
+      --run-ray "$RUN_RAY" \
+      --run-broker "$RUN_BROKER" \
+      --broker-backend "$BROKER_BACKEND" \
+      --broker-report-path "$BROKER_REPORT_PATH" \
+      --broker-bootstrap-summary-path "$BROKER_BOOTSTRAP_SUMMARY_PATH" \
+      --validation-status "$status" \
+      --local-report-path "$LOCAL_REPORT_REL" \
+      --local-stdout-path "$LOCAL_OUT" \
+      --local-stderr-path "$LOCAL_ERR" \
+      --kubernetes-report-path "$K8S_REPORT_REL" \
+      --kubernetes-stdout-path "$K8S_OUT" \
+      --kubernetes-stderr-path "$K8S_ERR" \
+      --ray-report-path "$RAY_REPORT_REL" \
+      --ray-stdout-path "$RAY_OUT" \
+      --ray-stderr-path "$RAY_ERR"
+  )
 }
 
 export_status=0
@@ -117,16 +124,23 @@ if ! export_bundle; then
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
-  python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
-    --output "$CONTINUATION_SCORECARD_PATH"
+  (
+    cd "$ROOT"
+    "$BIGCLAWCTL_BIN" automation e2e validation-bundle-continuation-scorecard \
+      --output "$CONTINUATION_SCORECARD_PATH"
+  )
 
   gate_status=0
-  if ! python3 "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.py" \
-    --scorecard "$CONTINUATION_SCORECARD_PATH" \
-    --enforcement-mode "$CONTINUATION_GATE_MODE" \
-    --output "$CONTINUATION_POLICY_GATE_PATH"; then
-    gate_status=$?
-  fi
+  set +e
+  (
+    cd "$ROOT"
+    "$BIGCLAWCTL_BIN" automation e2e validation-bundle-continuation-policy-gate \
+      --scorecard "$CONTINUATION_SCORECARD_PATH" \
+      --enforcement-mode "$CONTINUATION_GATE_MODE" \
+      --output "$CONTINUATION_POLICY_GATE_PATH"
+  )
+  gate_status=$?
+  set -e
 
   rerender_status=0
   if ! export_bundle; then

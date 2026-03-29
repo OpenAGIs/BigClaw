@@ -137,6 +137,10 @@ func run(args []string) int {
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		var exitErr exitError
+		if errors.As(err, &exitErr) {
+			return int(exitErr)
+		}
 		return 1
 	}
 	return 0

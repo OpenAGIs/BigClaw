@@ -71,6 +71,64 @@ func TestResolvePathAgainstRepoRootJoinsRelativePaths(t *testing.T) {
 	}
 }
 
+func TestRunPreservesExitErrorCodes(t *testing.T) {
+	scorecardPath := filepath.Join(t.TempDir(), "scorecard.json")
+	if err := os.WriteFile(scorecardPath, []byte(`{
+  "summary": {
+    "latest_run_id": "20260329T161330Z",
+    "latest_bundle_age_hours": 0,
+    "recent_bundle_count": 4,
+    "latest_all_executor_tracks_succeeded": false,
+    "recent_bundle_chain_has_no_failures": true,
+    "all_executor_tracks_have_repeated_recent_coverage": true
+  },
+  "shared_queue_companion": {
+    "available": true,
+    "cross_node_completions": 99
+  }
+}
+`), 0o644); err != nil {
+		t.Fatalf("write scorecard: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	originalStderr := os.Stderr
+	stdoutReader, stdoutWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("stdout pipe: %v", err)
+	}
+	stderrReader, stderrWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("stderr pipe: %v", err)
+	}
+	os.Stdout = stdoutWriter
+	os.Stderr = stderrWriter
+	t.Cleanup(func() {
+		os.Stdout = originalStdout
+		os.Stderr = originalStderr
+	})
+
+	code := run([]string{
+		"automation", "e2e", "validation-bundle-continuation-policy-gate",
+		"--scorecard", scorecardPath,
+		"--output", filepath.Join(t.TempDir(), "gate.json"),
+		"--enforcement-mode", "hold",
+		"--json",
+	})
+
+	_ = stdoutWriter.Close()
+	_ = stderrWriter.Close()
+	stdout, _ := io.ReadAll(stdoutReader)
+	stderr, _ := io.ReadAll(stderrReader)
+
+	if code != 2 {
+		t.Fatalf("expected hold exit code 2, got %d stdout=%s stderr=%s", code, string(stdout), string(stderr))
+	}
+	if !strings.Contains(string(stdout), `"workflow_exit_code": 2`) {
+		t.Fatalf("expected workflow_exit_code in stdout, got %s", string(stdout))
+	}
+}
+
 func initWorkspaceValidateRemote(t *testing.T, root string) string {
 	t.Helper()
 	remote := filepath.Join(root, "remote.git")
