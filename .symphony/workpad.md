@@ -2,30 +2,30 @@
 
 ## Scope
 
-Eleventh-wave cleanup for the remaining Python control center test by adding a narrow Go-native parity package.
+Twelfth-wave cleanup for the remaining Python continuation policy gate test by adding a narrow Go-native parity package.
 
 Planned delete set for this continuation:
-- `tests/test_control_center.py`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
 
 Go coverage used for replacement:
-- new `bigclaw-go/internal/controlcenterparity` package
-- new `bigclaw-go/internal/controlcenterparity/controlcenterparity_test.go`
+- new `bigclaw-go/internal/policygateparity` package
+- new `bigclaw-go/internal/policygateparity/policygateparity_test.go`
 
 ## Acceptance
 
-- Replace the Python control center test with Go-native parity coverage.
-- Keep the new package narrow: persistent queue ordering, queue control center aggregation, actions, and shared-view empty-state rendering only.
-- Delete `tests/test_control_center.py` only after Go parity exists.
+- Replace the Python continuation policy gate test with Go-native parity coverage.
+- Keep the new package narrow: scorecard policy evaluation, checked-in report assertions, and CLI exit-code verification only.
+- Delete `tests/test_validation_bundle_continuation_policy_gate.py` only after Go parity exists.
 - Update `reports/BIG-GO-948-validation.md` with the new completed file, replacement coverage, command, result, and remaining plan.
-- Run targeted Go validation for `bigclaw-go/internal/controlcenterparity`.
+- Run targeted Go validation for `bigclaw-go/internal/policygateparity`.
 - Commit and push the continuation changes.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/controlcenterparity`
+- `cd bigclaw-go && go test ./internal/policygateparity`
 - `git status --short`
 
 ## Risks
 
-- This slice adds another small Go package; it must stay scoped to the Python control center contract instead of changing the established Go reporting surface.
+- This slice adds another small Go package; it must stay scoped to the Python continuation policy gate contract instead of taking ownership of the broader e2e Python script pipeline.
 - The larger remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.
