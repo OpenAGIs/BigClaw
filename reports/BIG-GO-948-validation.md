@@ -14,6 +14,7 @@
 - `tests/test_deprecation.py`
 - `tests/test_legacy_shim.py`
 - `tests/test_service.py`
+- `tests/test_pilot.py`
 
 ## Go Replacements
 
@@ -54,6 +55,10 @@
 - `bigclaw-go/internal/service/server_test.go`
   - `TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures`
   - `TestServerEntryHealthMetrics`
+- `bigclaw-go/internal/pilot/report.go`
+- `bigclaw-go/internal/pilot/report_test.go`
+  - `TestImplementationResultReadyWhenKPIsPassAndNoIncidents`
+  - `TestRenderPilotImplementationReportContainsReadinessFields`
 
 The deleted Python tests were either:
 - report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts, now covered in Go under `bigclaw-go/internal/regression`
@@ -71,7 +76,13 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 - `cd bigclaw-go && go test ./internal/legacyshim -run 'TestAppendMissingFlagPreservesExistingValues|TestWorkspaceBootstrapWrapperInjectsGoDefaults|TestWorkspaceValidateWrapperTranslatesLegacyFlags|TestGitHubSyncAndRefillWrappersTargetGoShim|TestWorkspaceRuntimeWrapperTargetsGoShim|TestRepoRootFromScriptClimbsToRepositoryRoot'`
 - `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunGitHubSyncHelpPrintsUsageAndExitsZero|TestRunWorkspaceHelpPrintsUsageAndExitsZero|TestRunCreateIssuesHelpPrintsUsageAndExitsZero|TestRunDevSmokeHelpPrintsUsageAndExitsZero'`
 - `cd bigclaw-go && go test ./internal/service -run 'TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures|TestServerEntryHealthMetrics'`
+- `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
 - `git status --short`
+
+## Latest Validation Result
+
+- `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
+  - Result: `ok  	bigclaw-go/internal/pilot	0.789s`
 
 ## Residual Risks
 
@@ -98,6 +109,6 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 - `tests/test_issue_archive.py`
   - Plan: requires a Go archive/report surface or a deliberate delete of the Python archive path.
 - `tests/test_pilot.py`
-  - Plan: migrate only if pilot-report generation becomes Go-native; otherwise track as a remaining Python operational artifact.
+  - Completed: replaced by `bigclaw-go/internal/pilot/report.go` and `bigclaw-go/internal/pilot/report_test.go`; Python test deleted.
 
 The remaining low-size files are not automatically low-risk deletes: they still encode behavior that does not yet exist as a Go-native contract in the repository. Their safe removal depends on implementation migration, not only on test translation.

@@ -49,6 +49,8 @@
   - `bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go`
   - `bigclaw-go/internal/service/server.go`
   - `bigclaw-go/internal/service/server_test.go`
+  - `bigclaw-go/internal/pilot/report.go`
+  - `bigclaw-go/internal/pilot/report_test.go`
 - Pushed commits:
   - `b59e941` `test: migrate lane8 remaining python report tests`
   - `cfcd50e` `test: migrate parallel refill queue fixture to go`
@@ -58,3 +60,7 @@
   - `0334358` `test: migrate deprecation compatibility checks to go`
   - `29553fc` `test: migrate legacy shim contracts to go`
 - Remaining Python tests in `tests/` now require broader Go-native implementation or new contract surfaces rather than direct fixture parity moves.
+- Next scoped slice: migrate `tests/test_pilot.py` into a small Go-native pilot package that covers KPI pass-rate math and report rendering without pulling over the broader Python workflow runtime.
+- Migrated `tests/test_pilot.py` to `bigclaw-go/internal/pilot/report.go` and `bigclaw-go/internal/pilot/report_test.go`; deleted the Python test after landing equivalent Go coverage for KPI readiness and report rendering.
+- Validation result:
+  - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'` -> `ok  	bigclaw-go/internal/pilot	0.789s`
