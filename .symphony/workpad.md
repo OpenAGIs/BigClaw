@@ -8,6 +8,7 @@
 4. Run targeted validation commands for the touched modules, record exact commands and results, then verify the resulting `src/bigclaw/*.py` count delta.
 5. Commit the scoped change set for `BIG-GO-964` and push the branch to the remote.
 6. Current slice: fold `issue_archive.py` into `reports.py`, keep the legacy `bigclaw.issue_archive` import path via aliasing, and add focused regression coverage for the archive surface.
+7. Next slice: fold `governance.py` into `planning.py`, keep the legacy `bigclaw.governance` import path via aliasing, and validate both governance and planning behavior.
 
 ## Acceptance
 
@@ -22,6 +23,7 @@
 - A direct Python import check for legacy `bigclaw.<module>` names that are now served by aliases.
 - `git status --short` to confirm the change set stays scoped to this issue before commit.
 - For the current slice, validate `tests/test_issue_archive.py` plus `tests/test_reports.py` and re-check the top-level Python file count.
+- For the next slice, validate `tests/test_governance.py` plus `tests/test_planning.py` and re-check the top-level Python file count.
 
 ## Results
 
@@ -52,6 +54,7 @@
   - `workspace_bootstrap_cli.py`
   - `workspace_bootstrap_validation.py`
   - `audit_events.py`
+  - `governance.py`
   - `issue_archive.py`
   - `orchestration.py`
 - Replacement / consolidation targets:
@@ -63,6 +66,7 @@
   - `queue.py` now owns the parallel refill queue helpers.
   - `queue.py` now owns the task memory helpers.
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
+  - `planning.py` now owns the scope-freeze governance helpers.
   - `repo_plane.py` now owns the repo commit, gateway, governance, link, registry, and triage surfaces.
   - `reports.py` now owns the pilot implementation and validation report policy helpers.
   - `reports.py` now owns the issue-priority archive helpers.
@@ -78,6 +82,7 @@
   - `__init__.py` now registers compatibility aliases so `import bigclaw.<old_module>` still resolves.
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host; repo policy compatibility now aliases into `repo_plane.py` without widening into broader contract semantics.
+  - `planning.py`: retained as the roadmap and gating host after absorbing scope-freeze governance; broader collapsing there would widen this issue beyond adjacent planning policy.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `scheduler.py`: retained as the execution host after absorbing risk and runtime helpers; orchestration moved into `reports.py` instead of broadening scheduler/report cyclic ownership.
   - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
@@ -86,8 +91,8 @@
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `22`
-  - Delta: `-27`
+  - After: `21`
+  - Delta: `-28`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -143,3 +148,13 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `22`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy governance import resolved successfully:
+      `bigclaw.governance -> bigclaw.planning`
+      `bigclaw.planning -> bigclaw.planning`
+  - `PYTHONPATH=src python3 -m pytest tests/test_governance.py tests/test_planning.py`
+    - Result: `18 passed in 0.08s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `21`

@@ -96,14 +96,6 @@ from .saved_views import (
     SavedViewLibrary,
     render_saved_view_report,
 )
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
 from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
 from .scheduler import (
@@ -302,7 +294,6 @@ from .evaluation import (
     render_benchmark_suite_report,
 )
 from .planning import (
-    FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
@@ -311,6 +302,12 @@ from .planning import (
     ExecutionPackRoadmap,
     EntryGate,
     EntryGateDecision,
+    FourWeekExecutionPlan,
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -319,6 +316,7 @@ from .planning import (
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+    render_scope_freeze_report,
 )
 from .repo_plane import (
     CommitDiff,
@@ -777,6 +775,7 @@ for _alias, _target in (
     ("deprecation", "workspace_bootstrap"),
     ("dsl", "workflow"),
     ("event_bus", "observability"),
+    ("governance", "planning"),
     ("github_sync", "workspace_bootstrap"),
     ("issue_archive", "reports"),
     ("legacy_shim", "workspace_bootstrap"),
