@@ -1,21 +1,23 @@
-# BIG-GO-902 Workpad
+# BIG-GO-947 Workpad
 
 ## Plan
 
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+1. Inventory the Lane7 repo governance/reporting/risk/planning/mapping/memory/operations/observability Python tests and map each file to an existing Go test, a new Go replacement, or an explicit deletion-plan entry.
+2. Keep the implementation scoped to the lane by only touching the mapped Python tests, the required Go tests, and the migration/reporting artifacts for this issue.
+3. Add any missing Go coverage needed to replace Python assertions that do not already have repo-native `go test` coverage.
+4. Delete Python tests that are fully replaced by Go tests and document any residual Python files that still need follow-up migration.
+5. Run targeted `go test` commands for the touched Go packages, capture exact commands and results, then commit and push the branch.
 
 ## Acceptance
 
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Produce an explicit Lane7 file inventory for governance/reporting/risk/planning/mapping/memory/operations/observability tests.
+- Land Go test replacements for the migrated Python coverage, or record a concrete deletion plan when the Go replacement is intentionally deferred.
+- Reduce Python / non-Go assets where replacement coverage is complete.
+- Record exact validation commands, results, and residual risks for the lane.
+- Commit the scoped change set and push it to the remote branch.
 
 ## Validation
 
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- `cd bigclaw-go && go test ./internal/governance ./internal/repo ./internal/reporting ./internal/risk ./internal/intake ./internal/events ./internal/observability ./internal/api`
+- Additional narrower `go test` package commands if new tests are added outside the packages above.
+- `git status --short`
