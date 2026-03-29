@@ -71,6 +71,8 @@
     - Reason: covered by `bigclaw-go/internal/contract/execution_test.go` after aligning Go report formatting with the Python `True/False` contract.
   - `tests/test_workspace_bootstrap.py`
     - Reason: covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go` after adding Go parity for cache-root helpers, warm-cache reuse, workspace reuse, stale-seed recovery, and validation-report summary contracts.
+  - `tests/test_validation_policy.py`
+    - Reason: migrated to the Go-owned `bigclaw-go/internal/policy` package via a direct contract port of the validation report gate.
 
 - Kept for later lanes:
   - `tests/test_repo_links.py`
@@ -103,10 +105,14 @@
     - Added warm-cache reuse and workspace reuse coverage.
     - Added stale-seed recovery coverage.
     - Added validation-report summary coverage.
+  - `bigclaw-go/internal/policy/validation_report.go`
+    - Added Go-native validation report closeout policy contract.
+  - `bigclaw-go/internal/policy/validation_report_test.go`
+    - Added blocked/ready policy parity tests for required report artifacts.
 
 - Python file count impact:
-  - `tests/**` Python files: `43 -> 30` (`-13`)
-  - Repository-wide Python files: `123 -> 110` (`-13`)
+  - `tests/**` Python files: `43 -> 29` (`-14`)
+  - Repository-wide Python files: `123 -> 109` (`-14`)
 
 ## Validation Results
 
@@ -168,3 +174,11 @@
   - `30`
 - `rg --files | rg '\.py$' | wc -l`
   - `110`
+- `cd bigclaw-go && go test ./internal/policy -run 'TestValidationReportPolicyBlocksIssueCloseWithoutRequiredReports|TestValidationReportPolicyAllowsIssueCloseWhenReportsComplete|TestResolvePremiumPolicyFromMetadata|TestResolveStandardPolicyDefaults'`
+  - `ok  	bigclaw-go/internal/policy	1.111s`
+- `cd bigclaw-go && go test ./internal/policy`
+  - `ok  	bigclaw-go/internal/policy	1.088s`
+- `rg --files tests | rg '\.py$' | wc -l`
+  - `29`
+- `rg --files | rg '\.py$' | wc -l`
+  - `109`
