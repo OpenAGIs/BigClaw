@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
-from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE
+from .__main__ import LEGACY_RUNTIME_GUIDANCE
 from .models import RiskLevel, Task
 from .observability import APPROVAL_RECORDED_EVENT, ObservabilityLedger, RepoSyncAudit, utc_now
 from .reports import (

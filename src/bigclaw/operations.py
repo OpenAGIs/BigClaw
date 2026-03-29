@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from .observability import ObservabilityLedger
-from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE
+from .__main__ import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
 from .scheduler import ExecutionRecord, Scheduler
 from .reports import (

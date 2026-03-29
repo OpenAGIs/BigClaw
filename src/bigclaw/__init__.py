@@ -75,7 +75,7 @@ from .design_system import (
     render_information_architecture_report,
     render_ui_acceptance_report,
 )
-from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
+from .__main__ import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
 from .scheduler import (
     ClawWorkerRuntime,
@@ -782,6 +782,7 @@ for _alias, _target in (
     ("cost_control", "operations"),
     ("connectors", "models"),
     ("dashboard_run_contract", "execution_contract"),
+    ("workspace_bootstrap", "__main__"),
     ("deprecation", "workspace_bootstrap"),
     ("dsl", "workflow"),
     ("evaluation", "operations"),

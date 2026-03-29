@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from .workspace_bootstrap import LEGACY_RUNTIME_GUIDANCE
+from .__main__ import LEGACY_RUNTIME_GUIDANCE
 from .observability import (
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,

@@ -16,6 +16,7 @@
 12. Current next slice: fold `console_ia.py` into `design_system.py`, keep the legacy `bigclaw.console_ia` import path via aliasing, and validate console IA plus design-system regression surfaces.
 13. Current next slice: fold `saved_views.py` into `reports.py`, keep the legacy `bigclaw.saved_views` import path via aliasing, and validate saved-view plus reporting regression surfaces.
 14. Current next slice: fold `repo_plane.py` into `execution_contract.py`, keep the legacy `bigclaw.repo_plane` import path via aliasing, retarget direct internal imports, and validate repo-plane plus observability regression surfaces.
+15. Current next slice: fold `workspace_bootstrap.py` into `__main__.py`, keep the legacy `bigclaw.workspace_bootstrap` import path via aliasing, retarget direct internal imports, preserve the package entrypoint separately from the bootstrap CLI surface, and validate bootstrap plus entrypoint regression surfaces.
 
 ## Acceptance
 
@@ -38,6 +39,7 @@
 - For the current next slice, validate `tests/test_console_ia.py` plus `tests/test_design_system.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_saved_views.py` plus `tests/test_reports.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_repo_gateway.py`, `tests/test_repo_governance.py`, `tests/test_repo_links.py`, `tests/test_repo_registry.py`, `tests/test_repo_triage.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_workspace_bootstrap.py`, `tests/test_github_sync.py`, `tests/test_scheduler.py`, `tests/test_workflow.py`, and `tests/test_operations.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -52,6 +54,7 @@
   - `console_ia.py`
   - `saved_views.py`
   - `repo_plane.py`
+  - `workspace_bootstrap.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -82,6 +85,7 @@
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `execution_contract.py` now owns the repo permission, registry, commit-lineage, and triage helpers.
+  - `__main__.py` now owns the workspace bootstrap, validation, github-sync, and legacy runtime shim helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
   - `operations.py` now owns the budget control helpers.
@@ -120,10 +124,11 @@
   - `design_system.py`: retained as the UI specification host after absorbing console IA and interaction-contract helpers; the merge removes an existing dependency edge from console IA into design system without widening into saved-view or UI review ownership.
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
+  - `__main__.py`: retained as the package execution entrypoint after also absorbing workspace bootstrap and github-sync helpers; this keeps the migration-only runtime shim and related bootstrap CLI surfaces co-located while preserving `python -m bigclaw`.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `13`
-  - Delta: `-36`
+  - After: `12`
+  - Delta: `-37`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -279,3 +284,16 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `13`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy workspace bootstrap imports resolved successfully:
+      `bigclaw.workspace_bootstrap -> bigclaw.__main__`
+      `bigclaw.workspace_bootstrap_validation -> bigclaw.__main__`
+      `bigclaw.workspace_bootstrap_cli -> bigclaw.__main__`
+      `bigclaw.github_sync -> bigclaw.__main__`
+      `bigclaw.__main__ -> bigclaw.__main__`
+  - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_github_sync.py tests/test_scheduler.py tests/test_workflow.py tests/test_operations.py`
+    - Result: `46 passed in 4.18s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `12`
