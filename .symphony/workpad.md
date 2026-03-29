@@ -25,6 +25,8 @@
 21. Current assessment slice: inventory the remaining host modules after the observability fold and only take another consolidation if it removes an existing dependency edge without collapsing required package entry surfaces.
 22. Current next slice: fold `operations.py` into `scheduler.py`, keep the legacy `bigclaw.operations` import path via aliasing, retarget package re-exports, and validate operations, queue, evaluation, scheduler, workflow, and execution-flow regression surfaces.
 23. Current assessment slice: re-evaluate the post-operations host set and only continue if another merge still follows an existing dependency edge without forcing package-entry or cross-domain host collapse.
+24. Current next slice: fold `reports.py` into `scheduler.py`, keep the legacy `bigclaw.reports` import path via aliasing, retarget package re-exports plus `__main__`, and validate reporting, orchestration, planning, scheduler, workflow, and github-sync regression surfaces.
+25. Current assessment slice: stop further consolidation unless a remaining file can be removed without collapsing the required package entry surfaces (`__init__.py`, `__main__.py`) or merging the final three domain hosts (`design_system.py`, `execution_contract.py`, `scheduler.py`) across unrelated concerns.
 
 ## Acceptance
 
@@ -54,6 +56,7 @@
 - For the current next slice, validate `tests/test_ui_review.py` plus `tests/test_design_system.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_execution_contract.py`, `tests/test_observability.py`, `tests/test_reports.py`, `tests/test_operations.py`, `tests/test_scheduler.py`, and `tests/test_github_sync.py`, then re-check the top-level Python file count.
 - For the current next slice, validate `tests/test_operations.py`, `tests/test_control_center.py`, `tests/test_scheduler.py`, `tests/test_workflow.py`, and `tests/test_execution_flow.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_reports.py`, `tests/test_orchestration.py`, `tests/test_planning.py`, `tests/test_governance.py`, `tests/test_scheduler.py`, `tests/test_workflow.py`, and `tests/test_github_sync.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -102,12 +105,14 @@
   - `ui_review.py`
   - `observability.py`
   - `operations.py`
+  - `reports.py`
 - Replacement / consolidation targets:
   - `execution_contract.py` now owns the dashboard/run schema contract helpers.
   - `execution_contract.py` now owns the repo permission, registry, commit-lineage, and triage helpers.
   - `execution_contract.py` now owns the shared task, flow, billing, connector, and source-issue mapping models.
   - `execution_contract.py` now owns the observability ledger, task-run, collaboration, repo-sync, and event-bus helpers.
   - `scheduler.py` now owns the operations queue, evaluation, dashboard, control-center, and weekly-operations helpers.
+  - `scheduler.py` now owns the reporting, orchestration, planning, rollout, run-detail, and saved-view helpers.
   - `__main__.py` now owns the workspace bootstrap, validation, github-sync, and legacy runtime shim helpers.
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
   - `models.py` now owns the connector stubs and source-issue mapping helpers.
@@ -144,6 +149,10 @@
   - `execution_contract.py`: retained as the generic contract and shared-entity host after also absorbing models; this removes another existing dependency edge into execution contracts and centralizes the compatibility datamodels without widening into UI surfaces.
   - `execution_contract.py`: retained as the shared runtime contract host after also absorbing observability; observability already depended on execution-contract types, so this removes an existing dependency edge while keeping downstream runtime and reporting modules on the same import target.
   - `scheduler.py`: retained as the runtime host after also absorbing operations; operations already depended on scheduler execution records and scheduling decisions, so this removes another existing dependency edge while keeping workflow, queue, and evaluation surfaces co-located.
+  - `scheduler.py`: retained as the final runtime/reporting host after also absorbing reports; scheduler already depended on reporting helpers, and keeping this merge required only a local import deferral in `__main__.py` plus postponed annotation evaluation, without widening into `design_system.py` or `execution_contract.py`.
+  - `design_system.py`: retained as the standalone UI-specification host; there is no remaining dependency edge from or into it that would allow another low-risk fold.
+  - `execution_contract.py`: retained as the standalone shared-contract host; further folding it into `scheduler.py` would collapse the final contract boundary instead of removing an adjacent compatibility module.
+  - `__main__.py`: retained as the package execution entrypoint; removing it would break `python -m bigclaw` rather than compressing internal compatibility modules.
   - `reports.py`: retained as the primary reporting host after absorbing pilot, validation, issue-archive, and orchestration helpers; further consolidation there would stop being low-risk.
   - `reports.py`: retained as the primary reporting host after also absorbing saved-view catalog helpers; this keeps shared-view/reporting semantics co-located without widening into unrelated execution modules.
   - `reports.py`: retained as the closest remaining narrative and governance-adjacent host after also absorbing planning; this removes a standalone policy module without introducing a new internal dependency cycle.
@@ -158,8 +167,8 @@
   - `__main__.py`: retained as the package execution entrypoint after also absorbing workspace bootstrap and github-sync helpers; this keeps the migration-only runtime shim and related bootstrap CLI surfaces co-located while preserving `python -m bigclaw`.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `6`
-  - Delta: `-43`
+  - After: `5`
+  - Delta: `-44`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -405,3 +414,22 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `6`
+  - `PYTHONPATH=src python3 - <<'PY' ... getattr(bigclaw, name) ... PY`
+    - Result: legacy report-path imports resolved successfully:
+      `bigclaw.reports -> bigclaw.scheduler`
+      `bigclaw.planning -> bigclaw.scheduler`
+      `bigclaw.governance -> bigclaw.scheduler`
+      `bigclaw.roadmap -> bigclaw.scheduler`
+      `bigclaw.issue_archive -> bigclaw.scheduler`
+      `bigclaw.orchestration -> bigclaw.scheduler`
+      `bigclaw.pilot -> bigclaw.scheduler`
+      `bigclaw.run_detail -> bigclaw.scheduler`
+      `bigclaw.saved_views -> bigclaw.scheduler`
+      `bigclaw.validation_policy -> bigclaw.scheduler`
+      `bigclaw.scheduler -> bigclaw.scheduler`
+  - `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_orchestration.py tests/test_planning.py tests/test_governance.py tests/test_scheduler.py tests/test_workflow.py tests/test_github_sync.py`
+    - Result: `74 passed in 1.18s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `5`

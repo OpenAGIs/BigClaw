@@ -165,7 +165,7 @@ from .execution_contract import (
     render_dashboard_run_contract_report,
     render_execution_contract_report,
 )
-from .reports import (
+from .scheduler import (
     ArchivedIssue,
     AlertDigestSubscription,
     AutoTriageCenter,
@@ -317,7 +317,7 @@ from .scheduler import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .reports import (
+from .scheduler import (
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
@@ -792,6 +792,7 @@ for _alias, _target in (
     ("dashboard_run_contract", "execution_contract"),
     ("workspace_bootstrap", "__main__"),
     ("deprecation", "workspace_bootstrap"),
+    ("reports", "scheduler"),
     ("evaluation", "operations"),
     ("event_bus", "execution_contract"),
     ("planning", "reports"),

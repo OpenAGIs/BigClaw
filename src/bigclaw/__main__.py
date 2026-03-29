@@ -18,7 +18,6 @@ from typing import Any, Deque, Dict, Iterable, List, Sequence
 from urllib.parse import urlparse
 
 from .execution_contract import RepoSyncAudit
-from .reports import render_repo_sync_audit_report, write_report
 
 
 GO_MAINLINE_REPLACEMENT = "bigclaw-go/cmd/bigclawd/main.go"
@@ -320,6 +319,8 @@ def package_main() -> None:
         return
 
     if args.command == "repo-sync-audit":
+        from .scheduler import render_repo_sync_audit_report, write_report
+
         payload = json.loads(Path(args.input).read_text())
         audit = RepoSyncAudit.from_dict(payload)
         write_report(args.output, render_repo_sync_audit_report(audit))
