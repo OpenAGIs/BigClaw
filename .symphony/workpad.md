@@ -1,82 +1,91 @@
-# BIG-GO-962 Workpad
+# BIG-GO-976 Workpad
 
 ## Scope
 
-Targeted legacy Python modules under `src/bigclaw` for this lane:
+Targeted remaining Python tests for this batch:
 
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/service.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/queue.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_saved_views.py`
+- `tests/test_dsl.py`
 
-Current repository Python file count before this lane: `50`
+Go-native replacement surfaces for this lane:
+
+- `bigclaw-go/internal/product/dashboard_run_contract.go`
+- `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+- `bigclaw-go/internal/product/saved_views.go`
+- `bigclaw-go/internal/product/saved_views_test.go`
+- `bigclaw-go/internal/workflow/definition.go`
+- `bigclaw-go/internal/workflow/definition_test.go`
+- `bigclaw-go/internal/workflow/closeout.go`
+- `bigclaw-go/internal/workflow/closeout_test.go`
+
+Repository Python file count before this lane: `118`
 
 ## Plan
 
-1. Confirm the exact lane-owned Python files and their import/test dependencies.
-2. Consolidate the six targeted modules into fewer implementation files inside `src/bigclaw` while preserving the legacy import surface used by package code and tests.
-3. Delete the superseded module files once compatibility aliases are in place.
-4. Run targeted validation for the touched legacy runtime/service workflow surfaces and record exact commands and results here.
-5. Report the direct file list, deletion/replacement/retention rationale, and the net impact on total Python file count.
+1. Confirm the exact Python test file list owned by this batch and the Go-native replacement coverage for each file.
+2. Remove only the Python tests with clear Go replacements in product contract, saved-view, and workflow-definition surfaces.
+3. Update any in-repo planning references that still point at the deleted Python tests.
+4. Run targeted Go and Python tests for the touched planning and replacement surfaces, and record the exact commands and results here.
+5. Report the batch file list, replacement mapping, and repository Python file count delta.
 6. Commit and push the scoped lane changes.
 
 ## Acceptance
 
-- Produce the exact Python file list directly owned by `BIG-GO-962`.
-- Reduce the number of Python files in the targeted runtime/service/scheduler/workflow/orchestration/queue surface.
-- Preserve the import-compatible legacy API for `bigclaw.runtime`, `bigclaw.service`, `bigclaw.scheduler`, `bigclaw.workflow`, `bigclaw.orchestration`, and `bigclaw.queue`.
-- Record delete/replace/retain reasoning for each targeted legacy file.
-- Report before/after total Python file counts for the repository.
+- Produce the exact batch-owned Python test file list for `BIG-GO-976`.
+- Delete the batch-owned Python test files only where a clear Go-native replacement already exists.
+- Update planning metadata/tests so the repository no longer points at deleted Python tests.
+- Record the exact replacement path for each deleted Python test.
+- Report before/after total repository Python file counts and the net change.
 
 ## Validation
 
-- Import smoke checks for the legacy module names after consolidation.
-- Targeted test execution for affected legacy surfaces, using the project-supported Python test runner available in this checkout.
-- `git status --short` to confirm the change set stays scoped to this lane.
+- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog'`
+- `cd bigclaw-go && go test ./internal/workflow -run 'TestDefinition|TestBuildCloseout'`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+- `git status --short`
 
 ## Notes
 
-- The target scope in this checkout is six top-level modules, not nested directories.
-- `pytest` is not currently on `PATH`; validation must use the project’s available Python environment tooling.
+- `tests/test_console_ia.py` and `tests/test_workflow.py` stay out of this lane because their remaining Python behavior does not yet have a complete Go-native replacement surface in this checkout.
+- Historical validation reports that mention deleted Python tests are treated as historical artifacts, not live planning metadata.
 
 ## Results
 
 ### File Disposition
 
-- `src/bigclaw/runtime.py`
-  - Retained and expanded.
-  - Reason: became the single implementation home for runtime, service, queue, orchestration, scheduler, and workflow compatibility surfaces.
-- `src/bigclaw/service.py`
+- `tests/test_dashboard_run_contract.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.service` import compatibility is now provided from `src/bigclaw/__init__.py`, including the `python -m bigclaw serve` CLI path.
-- `src/bigclaw/queue.py`
+  - Replacement path: `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+  - Reason: the release-ready contract, missing-path audit, and report rendering assertions now live in the Go-native dashboard contract surface.
+- `tests/test_saved_views.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.queue` import compatibility is now provided from `src/bigclaw/__init__.py`.
-- `src/bigclaw/orchestration.py`
+  - Replacement path: `bigclaw-go/internal/product/saved_views_test.go`
+  - Reason: saved-view catalog shape, scoped route generation, digest coverage, and baseline field contracts are already asserted in the Go-native product surface.
+- `tests/test_dsl.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.orchestration` import compatibility is now provided from `src/bigclaw/__init__.py`.
-- `src/bigclaw/scheduler.py`
-  - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.scheduler` import compatibility is now provided from `src/bigclaw/__init__.py`.
-- `src/bigclaw/workflow.py`
-  - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.workflow` import compatibility is now provided from `src/bigclaw/__init__.py`.
+  - Replacement paths: `bigclaw-go/internal/workflow/definition_test.go`, `bigclaw-go/internal/workflow/closeout_test.go`
+  - Reason: workflow-definition parsing/rendering and closeout approval/evidence path rendering now live in the Go-native workflow package.
+- `src/bigclaw/planning.py`
+  - Updated.
+  - Reason: removed the deleted saved-views Python test from the candidate validation command and pointed the saved-views evidence link at the Go-native test file.
+- `tests/test_planning.py`
+  - Updated.
+  - Reason: aligned the planning test expectations with the new saved-views Go-native replacement path.
 
 ### Python File Count Impact
 
-- Repository `src/bigclaw` Python files before: `50`
-- Repository `src/bigclaw` Python files after: `45`
-- Net reduction: `5`
+- Repository Python files before: `118`
+- Repository Python files after: `115`
+- Net reduction: `3`
 
 ### Validation Record
 
-- `python3 -m compileall src/bigclaw`
-  - Result: success
-- `PYTHONPATH=src python3 - <<'PY' ...`
-  - Result: success; verified `bigclaw.runtime`, `bigclaw.service`, `bigclaw.queue`, `bigclaw.orchestration`, `bigclaw.scheduler`, and `bigclaw.workflow` all import cleanly.
-- `PYTHONPATH=src python3 -m bigclaw --help`
-  - Result: success; verified the CLI still resolves `from .service import run_server` through the compatibility shim.
-- `PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_runtime_matrix.py tests/test_scheduler.py tests/test_orchestration.py tests/test_queue.py tests/test_workflow.py tests/test_control_center.py tests/test_execution_flow.py tests/test_dsl.py tests/test_evaluation.py tests/test_risk.py tests/test_audit_events.py tests/test_operations.py tests/test_reports.py`
-  - Result: `107 passed in 0.18s`
+- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog'`
+  - Result: `ok  	bigclaw-go/internal/product	0.878s`
+- `cd bigclaw-go && go test ./internal/workflow -run 'TestDefinition|TestBuildCloseout'`
+  - Result: `ok  	bigclaw-go/internal/workflow	0.449s`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+  - Result: `14 passed in 0.16s`
+- `git status --short`
+  - Result: scoped changes in `.symphony/workpad.md`, `src/bigclaw/planning.py`, `tests/test_planning.py`, and the three deleted Python test files.
