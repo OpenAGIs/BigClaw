@@ -92,8 +92,16 @@
     - Reason: already covered by existing Go-native round-trip/default-contract tests in `bigclaw-go/internal/risk/assessment_test.go`, `bigclaw-go/internal/triage/record_test.go`, `bigclaw-go/internal/workflow/model_test.go`, and `bigclaw-go/internal/billing/statement_test.go`.
 
 - Kept for later lanes:
+  - `tests/test_audit_events.py`
+    - Reason: Go covers audit specs and required-field validation, but this file still depends on Python scheduler/workflow execution plus reporting queue/canvas projections without a small Go-owned end-to-end replacement.
+  - `tests/test_event_bus.py`
+    - Reason: Go `events` covers publish/subscribe transport and replay, but this file still asserts Python event-bus mutation of run status and ledger audit side effects.
   - `tests/test_github_sync.py`
     - Reason: Go `githubsync` uses a different `Pushed` status semantic in clean fast-forward/default-head cases, so direct parity would require a wider behavior decision rather than a scoped migration.
+  - `tests/test_execution_flow.py`
+    - Reason: it still relies on the Python `Scheduler.execute` record shape, report artifact ordering, and ledger trace/audit payloads rather than a narrow Go package contract.
+  - `tests/test_repo_rollout.py`
+    - Reason: it still targets Python planning/report rendering helpers that do not map directly to an existing Go-native rollout/report surface.
   - `tests/test_risk.py`
     - Reason: the pure risk scorer contract is covered in `bigclaw-go/internal/risk/risk_test.go`, but the file also depends on Python scheduler execution records plus ledger trace/audit side effects that do not have a small Go-owned replacement surface.
   - `tests/test_scheduler.py`
