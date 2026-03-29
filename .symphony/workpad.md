@@ -30,6 +30,7 @@
   - `event_bus.py`
   - `github_sync.py`
   - `legacy_shim.py`
+  - `connectors.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -51,8 +52,8 @@
   - `audit_events.py`
 - Replacement / consolidation targets:
   - `legacy_shim.py` now owns the legacy runtime deprecation helpers.
-  - `connectors.py` now owns source-issue mapping helpers.
   - `collaboration.py` now owns the repo discussion board helpers.
+  - `models.py` now owns the connector stubs and source-issue mapping helpers.
   - `operations.py` now owns the budget control helpers.
   - `observability.py` now owns the canonical audit event and event bus helpers.
   - `queue.py` now owns the parallel refill queue helpers.
@@ -74,12 +75,11 @@
   - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
-  - `connectors.py`: retained as the connector-facing surface; folding it further would start mixing transport stubs with unrelated package internals.
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `26`
-  - Delta: `-23`
+  - After: `25`
+  - Delta: `-24`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -109,3 +109,5 @@
     - Result: `38 passed in 3.97s`
   - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_github_sync.py tests/test_runtime.py tests/test_workflow.py tests/test_scheduler.py tests/test_observability.py tests/test_queue.py`
     - Result: `42 passed in 4.07s`
+  - `PYTHONPATH=src python3 -m pytest tests/test_connectors.py tests/test_mapping.py tests/test_models.py`
+    - Result: `7 passed in 0.08s`

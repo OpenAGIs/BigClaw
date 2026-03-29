@@ -5,6 +5,7 @@ from .models import (
     BillingInterval,
     BillingRate,
     BillingSummary,
+    GitHubConnector,
     FlowRun,
     FlowRunStatus,
     FlowStepRun,
@@ -12,6 +13,9 @@ from .models import (
     FlowTemplate,
     FlowTemplateStep,
     FlowTrigger,
+    JiraConnector,
+    LinearConnector,
+    SourceIssue,
     Priority,
     RiskAssessment,
     RiskLevel,
@@ -22,10 +26,10 @@ from .models import (
     TriageRecord,
     TriageStatus,
     UsageRecord,
+    map_source_issue_to_task,
 )
 from .queue import ParallelIssueQueue, PersistentTaskQueue, issue_state_map
 from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
-from .connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue, map_source_issue_to_task
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -763,6 +767,7 @@ def _alias_legacy_module(alias: str, target_name: str) -> None:
 for _alias, _target in (
     ("audit_events", "observability"),
     ("cost_control", "operations"),
+    ("connectors", "models"),
     ("deprecation", "workspace_bootstrap"),
     ("dsl", "workflow"),
     ("event_bus", "observability"),
