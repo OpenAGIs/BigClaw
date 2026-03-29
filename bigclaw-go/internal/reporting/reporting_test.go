@@ -1,6 +1,7 @@
 package reporting
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -260,6 +261,79 @@ func TestAuditDashboardBuilderFlagsGovernanceGaps(t *testing.T) {
 	}
 	if len(audit.EmptyLayouts) != 1 || audit.EmptyLayouts[0] != "empty-layout" {
 		t.Fatalf("unexpected empty layouts: %+v", audit.EmptyLayouts)
+	}
+}
+
+func TestDashboardBuilderRoundTripPreservesManifestShape(t *testing.T) {
+	dashboard := DashboardBuilder{
+		Name:   "Ops Console",
+		Period: "2026-W11",
+		Owner:  "operations",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "operator",
+			AllowedModules: []string{"operations", "audit"},
+		},
+		Widgets: []DashboardWidgetSpec{
+			{WidgetID: "ops-summary", Title: "Ops Summary", Module: "operations", DataSource: "/v2/reports/weekly", DefaultWidth: 4, DefaultHeight: 3, MinWidth: 2, MaxWidth: 12},
+		},
+		Layouts: []DashboardLayout{
+			{
+				LayoutID: "primary",
+				Name:     "Primary",
+				Columns:  12,
+				Placements: []DashboardWidgetPlacement{
+					{PlacementID: "placement-1", WidgetID: "ops-summary", Column: 0, Row: 0, Width: 4, Height: 3, Filters: []string{"team=platform"}},
+				},
+			},
+		},
+		DocumentationComplete: true,
+	}
+	payload, err := json.Marshal(dashboard)
+	if err != nil {
+		t.Fatalf("marshal dashboard: %v", err)
+	}
+	var restored DashboardBuilder
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal dashboard: %v", err)
+	}
+	if restored.Name != dashboard.Name || restored.Period != dashboard.Period || restored.Owner != dashboard.Owner || !restored.DocumentationComplete {
+		t.Fatalf("unexpected restored dashboard header: %+v", restored)
+	}
+	if len(restored.Widgets) != 1 || restored.Widgets[0].WidgetID != "ops-summary" {
+		t.Fatalf("unexpected restored widgets: %+v", restored.Widgets)
+	}
+	if len(restored.Layouts) != 1 || len(restored.Layouts[0].Placements) != 1 || restored.Layouts[0].Placements[0].Filters[0] != "team=platform" {
+		t.Fatalf("unexpected restored layouts: %+v", restored.Layouts)
+	}
+}
+
+func TestNormalizeDashboardLayoutClampsDimensionsAndSortsPlacements(t *testing.T) {
+	widgets := []DashboardWidgetSpec{
+		{WidgetID: "ops-summary", Title: "Ops Summary", Module: "operations", DataSource: "/v2/reports/weekly", MinWidth: 2, MaxWidth: 6},
+	}
+	layout := DashboardLayout{
+		LayoutID: "primary",
+		Name:     "Primary",
+		Columns:  6,
+		Placements: []DashboardWidgetPlacement{
+			{PlacementID: "placement-b", WidgetID: "ops-summary", Column: 5, Row: 2, Width: 10, Height: 0},
+			{PlacementID: "placement-a", WidgetID: "ops-summary", Column: -1, Row: -1, Width: 1, Height: 2},
+		},
+	}
+	normalized := NormalizeDashboardLayout(layout, widgets)
+	if normalized.Columns != 6 {
+		t.Fatalf("expected normalized columns 6, got %+v", normalized)
+	}
+	if len(normalized.Placements) != 2 {
+		t.Fatalf("expected 2 placements, got %+v", normalized.Placements)
+	}
+	first := normalized.Placements[0]
+	second := normalized.Placements[1]
+	if first.PlacementID != "placement-a" || first.Column != 0 || first.Row != 0 || first.Width != 2 || first.Height != 2 {
+		t.Fatalf("unexpected first normalized placement: %+v", first)
+	}
+	if second.PlacementID != "placement-b" || second.Column != 0 || second.Row != 2 || second.Width != 6 || second.Height != 1 {
+		t.Fatalf("unexpected second normalized placement: %+v", second)
 	}
 }
 
@@ -536,6 +610,33 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "## Actions") || !strings.Contains(string(body), "task-retrying") {
 		t.Fatalf("unexpected queue control center content: %s", string(body))
+	}
+}
+
+func TestBuildRepoCollaborationMetrics(t *testing.T) {
+	runs := []map[string]any{
+		{
+			"run_id": "r1",
+			"closeout": map[string]any{
+				"run_commit_links":     []any{map[string]any{"role": "candidate"}},
+				"accepted_commit_hash": "abc123",
+			},
+			"repo_discussion_posts":  3,
+			"accepted_lineage_depth": 2,
+		},
+		{
+			"run_id": "r2",
+			"closeout": map[string]any{
+				"run_commit_links":     []any{},
+				"accepted_commit_hash": "",
+			},
+			"repo_discussion_posts":  1,
+			"accepted_lineage_depth": 4,
+		},
+	}
+	metrics := BuildRepoCollaborationMetrics(runs)
+	if metrics["repo_link_coverage"] != 50.0 || metrics["accepted_commit_rate"] != 50.0 || metrics["discussion_density"] != 2.0 || metrics["accepted_lineage_depth_avg"] != 3.0 {
+		t.Fatalf("unexpected repo collaboration metrics: %+v", metrics)
 	}
 }
 

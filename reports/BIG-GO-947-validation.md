@@ -13,7 +13,7 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 | planning | `tests/test_planning.py` | No direct Go package equivalent in this lane yet | Deferred deletion plan |
 | mapping | `tests/test_mapping.py` | `bigclaw-go/internal/intake/mapping_test.go` | Deleted Python test |
 | memory | `tests/test_memory.py` | `bigclaw-go/internal/memory/store_test.go` | Added Go replacement and deleted Python test |
-| operations | `tests/test_operations.py` | Substantial coverage in `bigclaw-go/internal/reporting/reporting_test.go` and `bigclaw-go/internal/api/expansion_test.go` | Deferred deletion plan |
+| operations | `tests/test_operations.py` | `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/expansion_test.go` | Added missing Go replacements and deleted Python test |
 | observability | `tests/test_observability.py` | Partial coverage in `bigclaw-go/internal/observability/*.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/workflow/closeout_test.go` | Deferred deletion plan |
 
 ## Implemented In This Change
@@ -26,6 +26,11 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_mapping.py`
   - `tests/test_risk.py`
   - `tests/test_memory.py`
+  - `tests/test_operations.py`
+- Expanded Go reporting coverage for operations-only gaps:
+  - Added `NormalizeDashboardLayout()` parity to `bigclaw-go/internal/reporting/reporting.go`
+  - Added `BuildRepoCollaborationMetrics()` parity to `bigclaw-go/internal/reporting/reporting.go`
+  - Added dashboard round-trip, layout normalization, and repo collaboration metric tests to `bigclaw-go/internal/reporting/reporting_test.go`
 
 ## Deferred Deletion Plan
 
@@ -35,9 +40,6 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 - `tests/test_reports.py`
   - Reason: the file mixes multiple report families. Some are already covered in Go, but `ReportStudio`, pilot portfolio/checklist flows, takeover queue, orchestration canvas, and billing entitlement report surfaces are not yet all consolidated into one Go-native replacement set.
   - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
-- `tests/test_operations.py`
-  - Reason: weekly reporting, dashboard builder, engineering overview, regression center, and version center are covered in Go, but the remaining Python-only helper and rendering assertions have not been fully retired as a file-level replacement.
-  - Deletion plan: finish parity for the remaining helper assertions, then delete the whole Python file.
 - `tests/test_observability.py`
   - Reason: Go covers run detail, closeout, audit spec, recorder, and run report surfaces, but there is not yet a single Go-native package mirroring the entire Python observability ledger/task-run API.
   - Deletion plan: continue converging on the Go run-detail/closeout surface and remove the Python file after full behavior parity is represented in Go tests.
@@ -64,7 +66,20 @@ ok  	bigclaw-go/internal/events	3.834s
 ok  	bigclaw-go/internal/api	4.884s
 ```
 
+Additional command run after expanding operations parity:
+
+```sh
+cd bigclaw-go && go test ./internal/reporting ./internal/api
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/reporting	0.488s
+ok  	bigclaw-go/internal/api	2.114s
+```
+
 ## Residual Risks
 
-- `planning`, `reports`, `operations`, and `observability` still retain Python test assets because the Go package boundaries are not yet one-to-one replacements.
+- `planning`, `reports`, and `observability` still retain Python test assets because the Go package boundaries are not yet one-to-one replacements.
 - The missing local `reports/go-migration-lanes-2026-03-29.md` source artifact means the lane inventory had to be reconstructed from the issue scope and current repo contents.

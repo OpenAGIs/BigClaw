@@ -1,6 +1,7 @@
 package reporting
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -172,6 +173,84 @@ func (b DashboardBuilder) WidgetIndex() map[string]DashboardWidgetSpec {
 		out[widget.WidgetID] = widget
 	}
 	return out
+}
+
+func NormalizeDashboardLayout(layout DashboardLayout, widgets []DashboardWidgetSpec) DashboardLayout {
+	widgetIndex := make(map[string]DashboardWidgetSpec, len(widgets))
+	for _, widget := range widgets {
+		widgetIndex[widget.WidgetID] = widget
+	}
+	columns := layout.Columns
+	if columns < 1 {
+		columns = 1
+	}
+	normalized := make([]DashboardWidgetPlacement, 0, len(layout.Placements))
+	for _, placement := range layout.Placements {
+		spec, ok := widgetIndex[placement.WidgetID]
+		minWidth := 1
+		maxWidth := columns
+		if ok {
+			if spec.MinWidth > 0 {
+				minWidth = spec.MinWidth
+			}
+			if spec.MaxWidth > 0 && spec.MaxWidth < maxWidth {
+				maxWidth = spec.MaxWidth
+			}
+		}
+		if maxWidth < minWidth {
+			maxWidth = minWidth
+		}
+		width := placement.Width
+		if width < minWidth {
+			width = minWidth
+		}
+		if width > maxWidth {
+			width = maxWidth
+		}
+		column := placement.Column
+		if column < 0 {
+			column = 0
+		}
+		if column+width > columns {
+			column = columns - width
+			if column < 0 {
+				column = 0
+			}
+		}
+		row := placement.Row
+		if row < 0 {
+			row = 0
+		}
+		height := placement.Height
+		if height < 1 {
+			height = 1
+		}
+		normalized = append(normalized, DashboardWidgetPlacement{
+			PlacementID:   placement.PlacementID,
+			WidgetID:      placement.WidgetID,
+			Column:        column,
+			Row:           row,
+			Width:         width,
+			Height:        height,
+			TitleOverride: placement.TitleOverride,
+			Filters:       append([]string(nil), placement.Filters...),
+		})
+	}
+	sort.SliceStable(normalized, func(i, j int) bool {
+		if normalized[i].Row == normalized[j].Row {
+			if normalized[i].Column == normalized[j].Column {
+				return normalized[i].PlacementID < normalized[j].PlacementID
+			}
+			return normalized[i].Column < normalized[j].Column
+		}
+		return normalized[i].Row < normalized[j].Row
+	})
+	return DashboardLayout{
+		LayoutID:   layout.LayoutID,
+		Name:       layout.Name,
+		Columns:    columns,
+		Placements: normalized,
+	}
 }
 
 type DashboardBuilderAudit struct {
@@ -722,6 +801,39 @@ func WriteDashboardBuilderBundle(rootDir string, dashboard DashboardBuilder, aud
 	return path, nil
 }
 
+func BuildRepoCollaborationMetrics(runs []map[string]any) map[string]float64 {
+	metrics := map[string]float64{
+		"repo_link_coverage":         0,
+		"accepted_commit_rate":       0,
+		"discussion_density":         0,
+		"accepted_lineage_depth_avg": 0,
+	}
+	if len(runs) == 0 {
+		return metrics
+	}
+	repoLinkRuns := 0
+	acceptedCommitRuns := 0
+	discussionPosts := 0.0
+	lineageDepthSum := 0.0
+	for _, run := range runs {
+		closeout, _ := run["closeout"].(map[string]any)
+		if links := anySlice(closeout["run_commit_links"]); len(links) > 0 {
+			repoLinkRuns++
+		}
+		if strings.TrimSpace(anyString(closeout["accepted_commit_hash"])) != "" {
+			acceptedCommitRuns++
+		}
+		discussionPosts += anyFloat(run["repo_discussion_posts"])
+		lineageDepthSum += anyFloat(run["accepted_lineage_depth"])
+	}
+	totalRuns := float64(len(runs))
+	metrics["repo_link_coverage"] = roundTenth((float64(repoLinkRuns) / totalRuns) * 100)
+	metrics["accepted_commit_rate"] = roundTenth((float64(acceptedCommitRuns) / totalRuns) * 100)
+	metrics["discussion_density"] = roundTenth(discussionPosts / totalRuns)
+	metrics["accepted_lineage_depth_avg"] = roundTenth(lineageDepthSum / totalRuns)
+	return metrics
+}
+
 func BuildEngineeringOverview(name, period, viewerRole string, tasks []domain.Task, events []domain.Event, slaTargetMinutes, topNBlockers, recentActivityLimit int) EngineeringOverview {
 	if slaTargetMinutes <= 0 {
 		slaTargetMinutes = 60
@@ -1043,6 +1155,50 @@ func RenderPolicyPromptVersionCenter(center PolicyPromptVersionCenter) string {
 		builder.WriteString("- None\n\n")
 	}
 	return builder.String()
+}
+
+func anySlice(value any) []any {
+	switch typed := value.(type) {
+	case []any:
+		return typed
+	case []map[string]any:
+		out := make([]any, 0, len(typed))
+		for _, item := range typed {
+			out = append(out, item)
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func anyString(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	default:
+		return fmt.Sprintf("%v", value)
+	}
+}
+
+func anyFloat(value any) float64 {
+	switch typed := value.(type) {
+	case float64:
+		return typed
+	case float32:
+		return float64(typed)
+	case int:
+		return float64(typed)
+	case int64:
+		return float64(typed)
+	case int32:
+		return float64(typed)
+	case json.Number:
+		out, _ := typed.Float64()
+		return out
+	default:
+		return 0
+	}
 }
 
 func WritePolicyPromptVersionCenterBundle(rootDir string, center PolicyPromptVersionCenter) (string, error) {
