@@ -11,6 +11,7 @@
 - `tests/test_parallel_refill.py`
 - `tests/test_roadmap.py`
 - `tests/test_cost_control.py`
+- `tests/test_deprecation.py`
 
 ## Go Replacements
 
@@ -26,11 +27,14 @@
 - `bigclaw-go/internal/regression/roadmap_contract_test.go`
   - `TestExecutionPackRoadmapDocsStayAligned`
   - `TestExecutionPackRoadmapUniqueOwnersContract`
+- `bigclaw-go/internal/regression/deprecation_contract_test.go`
+  - `TestLegacyMainlineCompatibilityManifestStaysAligned`
 - `bigclaw-go/internal/costcontrol/controller.go`
 - `bigclaw-go/internal/costcontrol/controller_test.go`
   - `TestControllerDegradesWhenHighMediumGoesOverBudget`
   - `TestControllerPausesWhenEvenDockerExceedsBudget`
   - `TestControllerRespectsBudgetOverrideAmount`
+- `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 
 The deleted Python tests were either:
 - report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts, now covered in Go under `bigclaw-go/internal/regression`
@@ -44,20 +48,19 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 - `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract'`
 - `cd bigclaw-go && go test ./internal/costcontrol -run TestController`
+- `cd bigclaw-go && go test ./internal/regression -run TestLegacyMainlineCompatibilityManifestStaysAligned`
 - `git status --short`
 
 ## Residual Risks
 
 - This lane intentionally leaves other remaining `tests/*.py` files untouched when they do not yet have a tight Go regression home or require broader production code migration.
 - `tests/test_parallel_validation_bundle.py` and other script-execution Python tests remain outside this scoped delete set because they exercise dynamic script behavior rather than only checked-in report fixtures.
-- `tests/test_service.py`, `tests/test_deprecation.py`, `tests/test_control_center.py`, `tests/test_operations.py`, and `tests/test_ui_review.py` still need broader Go-native implementation or contract surfaces before their Python tests can be removed safely.
+- `tests/test_service.py`, `tests/test_control_center.py`, `tests/test_operations.py`, and `tests/test_ui_review.py` still need broader Go-native implementation or contract surfaces before their Python tests can be removed safely.
 
 ## Remaining Python Test Plan
 
 - `tests/test_service.py`
   - Plan: add a Go governance/monitoring HTTP surface with `/health`, `/metrics`, `/metrics.json`, `/alerts`, and `/monitor` contracts before deleting the Python server tests.
-- `tests/test_deprecation.py`
-  - Plan: move legacy-mainline replacement metadata into a Go-owned compatibility manifest or CLI surface, then replace the Python warning tests with Go contract checks.
 - `tests/test_legacy_shim.py`
   - Plan: keep until the remaining Python wrapper entrypoints are retired or until a Go-native compatibility test surface covers the wrapper help and argument translation contracts.
 - `tests/test_parallel_validation_bundle.py`

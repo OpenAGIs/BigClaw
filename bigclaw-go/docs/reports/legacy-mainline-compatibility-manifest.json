@@ -1,0 +1,40 @@
+{
+  "status": "go-mainline-compatibility-manifest",
+  "guidance": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only.",
+  "runtime_warning": {
+    "surface": "python -m bigclaw",
+    "replacement": "bash scripts/ops/bigclawctl",
+    "message": "python -m bigclaw is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl instead."
+  },
+  "service_warning": {
+    "surface": "python -m bigclaw serve",
+    "replacement": "go run ./bigclaw-go/cmd/bigclawd",
+    "message": "python -m bigclaw serve is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use go run ./bigclaw-go/cmd/bigclawd instead."
+  },
+  "modules": {
+    "runtime": {
+      "go_mainline_replacement": "bigclaw-go/internal/worker/runtime.go",
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only."
+    },
+    "scheduler": {
+      "go_mainline_replacement": "bigclaw-go/internal/scheduler/scheduler.go",
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only."
+    },
+    "workflow": {
+      "go_mainline_replacement": "bigclaw-go/internal/workflow/engine.go",
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only."
+    },
+    "orchestration": {
+      "go_mainline_replacement": "bigclaw-go/internal/workflow/orchestration.go",
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only."
+    },
+    "queue": {
+      "go_mainline_replacement": "bigclaw-go/internal/queue/queue.go",
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only."
+    },
+    "service": {
+      "go_mainline_replacement": "bigclaw-go/cmd/bigclawd/main.go",
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; service.py remains migration-only compatibility scaffolding."
+    }
+  }
+}
