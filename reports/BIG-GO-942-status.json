@@ -50,9 +50,13 @@
       "8505a05",
       "e901ae4"
     ],
-    "compare_page_state": "reachable but diff rendering incomplete",
+    "compare_page_state": "reachable but stale and diff rendering incomplete",
+    "latest_remote_head_not_in_public_compare": [
+      "de884b4",
+      "1fde531"
+    ],
     "pr_seed_requires_sign_in": true,
-    "notes": "Public GitHub search did not surface a BIG-GO-942 pull request. The compare page for main...symphony/BIG-GO-942 is reachable and shows the 5 issue commits, but GitHub reports that the comparison is taking too long to generate and the PR seed URL redirects to sign-in."
+    "notes": "Public GitHub search did not surface a BIG-GO-942 pull request. The compare page for main...symphony/BIG-GO-942 is reachable but currently stale: it shows only the first 5 issue commits, omits the latest pushed commits de884b4 and 1fde531, reports that the comparison is taking too long to generate, and the PR seed URL redirects to sign-in."
   },
   "auth_environment": {
     "date": "2026-03-29",
