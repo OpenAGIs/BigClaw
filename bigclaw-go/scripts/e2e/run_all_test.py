@@ -98,19 +98,35 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_scorecard.py',
+            'scripts/e2e/validation_bundle_continuation_scorecard.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+            import (
+                "encoding/json"
+                "flag"
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                output := flag.String("output", "", "output")
+                flag.Parse()
+                if err := os.MkdirAll(filepath.Dir(*output), 0o755); err != nil {
+                    panic(err)
+                }
+                body, err := json.Marshal(map[string]any{
+                    "summary": map[string]any{},
+                    "shared_queue_companion": map[string]any{"available": true},
+                })
+                if err != nil {
+                    panic(err)
+                }
+                if err := os.WriteFile(*output, body, 0o644); err != nil {
+                    panic(err)
+                }
+            }
             """,
-            executable=True,
         )
         self.write_file(
             'scripts/e2e/validation_bundle_continuation_policy_gate.go',

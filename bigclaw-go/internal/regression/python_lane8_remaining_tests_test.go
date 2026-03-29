@@ -482,7 +482,7 @@ func TestLane8FollowupDigestsStayAligned(t *testing.T) {
 				"docs/reports/live-validation-summary.json",
 				"docs/reports/shared-queue-companion-summary.json",
 				"docs/reports/validation-bundle-continuation-scorecard.json",
-				"scripts/e2e/validation_bundle_continuation_scorecard.py",
+				"scripts/e2e/validation_bundle_continuation_scorecard.go",
 				"docs/reports/validation-bundle-continuation-policy-gate.json",
 				"scripts/e2e/validation_bundle_continuation_policy_gate.go",
 				"docs/reports/multi-node-coordination-report.md",

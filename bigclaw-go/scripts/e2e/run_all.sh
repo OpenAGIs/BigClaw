@@ -119,7 +119,7 @@ else
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
-  python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
+  go run "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.go" \
     --output "$ROOT/$CONTINUATION_SCORECARD_PATH"
 
   gate_status=0
