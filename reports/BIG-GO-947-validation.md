@@ -8,13 +8,13 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 | --- | --- | --- | --- |
 | governance | `tests/test_governance.py` | `bigclaw-go/internal/governance/freeze_test.go` | Deleted Python test |
 | repo governance | `tests/test_repo_governance.py` | `bigclaw-go/internal/repo/governance_test.go` | Deleted Python test |
-| reporting | `tests/test_reports.py` | Partial coverage exists in `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/api/expansion_test.go` | Deferred deletion plan |
+| reporting | `tests/test_reports.py` | `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/api/expansion_test.go` | Deleted Python test |
 | risk | `tests/test_risk.py` | `bigclaw-go/internal/risk/risk_test.go` | Deleted Python test |
 | planning | `tests/test_planning.py` | `bigclaw-go/internal/planning/planning_test.go` | Added Go replacement and deleted Python test |
 | mapping | `tests/test_mapping.py` | `bigclaw-go/internal/intake/mapping_test.go` | Deleted Python test |
 | memory | `tests/test_memory.py` | `bigclaw-go/internal/memory/store_test.go` | Added Go replacement and deleted Python test |
 | operations | `tests/test_operations.py` | `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/expansion_test.go` | Added missing Go replacements and deleted Python test |
-| observability | `tests/test_observability.py` | `bigclaw-go/internal/observability/repo_sync_test.go`, `bigclaw-go/internal/observability/task_run_test.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/workflow/closeout_test.go` | Partial migration; HTML-only tests remain |
+| observability | `tests/test_observability.py` | `bigclaw-go/internal/observability/repo_sync_test.go`, `bigclaw-go/internal/observability/task_run_test.go`, `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/workflow/closeout_test.go` | Deleted Python test |
 
 ## Implemented In This Change
 
@@ -28,6 +28,8 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_memory.py`
   - `tests/test_operations.py`
   - `tests/test_planning.py`
+  - `tests/test_reports.py`
+  - `tests/test_observability.py`
 - Removed Python test functions now covered by Go while keeping partially unmigrated files in place:
   - `tests/test_reports.py::test_render_and_write_report`
   - `tests/test_reports.py::test_console_action_state_reflects_enabled_flag`
@@ -58,11 +60,6 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
   - `tests/test_reports.py::test_build_billing_entitlements_page_rolls_up_orchestration_costs`
   - `tests/test_reports.py::test_render_billing_entitlements_page_outputs_html_dashboard`
   - `tests/test_reports.py::test_build_billing_entitlements_page_from_ledger_extracts_upgrade_signals`
-  - `tests/test_observability.py::test_render_task_run_report`
-  - `tests/test_observability.py::test_render_repo_sync_audit_report`
-  - `tests/test_observability.py::test_task_run_captures_logs_trace_artifacts_and_audits`
-  - `tests/test_observability.py::test_task_run_closeout_serializes_repo_sync_audit`
-  - `tests/test_observability.py::test_observability_ledger_load_runs_round_trips_entries`
 - Expanded Go reporting coverage for operations-only gaps:
   - Added `NormalizeDashboardLayout()` parity to `bigclaw-go/internal/reporting/reporting.go`
   - Added `BuildRepoCollaborationMetrics()` parity to `bigclaw-go/internal/reporting/reporting.go`
@@ -75,15 +72,8 @@ Source lane reference requested by the issue was `reports/go-migration-lanes-202
 - Added `bigclaw-go/internal/reporting/report_studio.go` and matching `reporting_test.go` coverage to replace Python report-studio render/export behavior.
 - Added `bigclaw-go/internal/reporting/shared_view.go` and matching `reporting_test.go` coverage to replace Python shared-view collaboration/context rendering behavior.
 - Added `bigclaw-go/internal/reporting/orchestration_reporting.go` and matching `reporting_test.go` coverage to replace Python takeover queue, orchestration canvas/portfolio, orchestration overview HTML, and billing entitlements reporting behavior.
-
-## Deferred Deletion Plan
-
-- `tests/test_reports.py`
-  - Reason: generic report writing, console action state, pilot scorecards, pilot portfolio, validation report, launch checklist, final delivery checklist, issue-closure helpers, report-studio exports, shared-view context rendering, takeover queue, orchestration canvas/portfolio, and billing entitlement report surfaces have been migrated, but auto triage is not yet represented in Go.
-  - Deletion plan: split by feature family and delete each Python slice once a direct Go suite exists.
-- `tests/test_observability.py`
-  - Reason: Go now covers repo-sync audit rendering and task-run ledger/closeout persistence, but the remaining Python file still owns the HTML task-run detail renderer behavior.
-  - Deletion plan: migrate `render_task_run_detail_page` parity into Go and then remove the final Python observability file.
+- Added `bigclaw-go/internal/reporting/auto_triage.go` and matching `reporting_test.go` coverage to replace Python auto-triage center logic and reporting behavior.
+- Added `bigclaw-go/internal/reporting/run_detail_page.go` and matching `reporting_test.go` coverage to replace Python task-run detail-page rendering, including escaped timeline JSON.
 
 ## Validation
 
@@ -209,6 +199,32 @@ Result:
 ok  	bigclaw-go/internal/reporting	0.798s
 ```
 
+Additional commands run after migrating auto-triage parity and deleting the reporting Python file:
+
+```sh
+python3 -m py_compile tests/test_reports.py
+cd bigclaw-go && go test ./internal/reporting
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/reporting	1.119s
+```
+
+Additional commands run after migrating observability detail-page parity and deleting the final observability Python file:
+
+```sh
+python3 -m py_compile tests/test_observability.py
+cd bigclaw-go && go test ./internal/reporting
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/reporting	0.163s
+```
+
 Additional command run after migrating pilot/checklist/issue-closure reporting parity:
 
 ```sh
@@ -223,6 +239,4 @@ ok  	bigclaw-go/internal/reporting	1.127s
 
 ## Residual Risks
 
-- `tests/test_observability.py` still retains the HTML task-run detail renderer tests because that page surface is not yet Go-native.
-- `tests/test_reports.py` still retains only the `auto triage` reporting tests; that slice has not yet been migrated to Go.
 - The missing local `reports/go-migration-lanes-2026-03-29.md` source artifact means the lane inventory had to be reconstructed from the issue scope and current repo contents.

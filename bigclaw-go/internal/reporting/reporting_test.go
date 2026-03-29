@@ -12,6 +12,7 @@ import (
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/regression"
+	"bigclaw-go/internal/repo"
 	"bigclaw-go/internal/workflow"
 )
 
@@ -644,6 +645,140 @@ func TestBuildBillingEntitlementsPageFromLedgerExtractsUpgradeSignals(t *testing
 	page := BuildBillingEntitlementsPageFromLedger(entries, "OpenAGI Revenue Cloud", "Standard", "2026-03")
 	if page.RunCount() != 2 || page.Recommendation() != "resolve-plan-gaps" || page.TotalOverageCostUSD() != 4.0 || !reflect.DeepEqual(page.Charges[1].BlockedCapabilities, []string{"customer-success"}) || page.Charges[1].HandoffTeam != "operations" {
 		t.Fatalf("unexpected ledger billing page: %+v", page)
+	}
+}
+
+func TestAutoTriageCenterPrioritizesFailedAndPendingRuns(t *testing.T) {
+	approvalRun := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-76-risk", Source: "linear", Title: "Prod approval"}, "run-risk", "vm")
+	approvalRun.Trace("scheduler.decide", "pending", nil)
+	approvalRun.Audit("scheduler.decision", "scheduler", "pending", map[string]any{"reason": "requires approval for high-risk task"})
+	approvalRun.Finalize("needs-approval", "requires approval for high-risk task")
+	failedRun := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-76-browser", Source: "linear", Title: "Replay browser task"}, "run-browser", "browser")
+	failedRun.Trace("runtime.execute", "failed", nil)
+	failedRun.Audit("runtime.execute", "worker", "failed", map[string]any{"reason": "browser session crashed"})
+	failedRun.Finalize("failed", "browser session crashed")
+	healthyRun := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-76-ok", Source: "linear", Title: "Healthy run"}, "run-ok", "docker")
+	healthyRun.Trace("scheduler.decide", "ok", nil)
+	healthyRun.Audit("scheduler.decision", "scheduler", "approved", map[string]any{"reason": "default low risk path"})
+	healthyRun.Finalize("approved", "default low risk path")
+	center := BuildAutoTriageCenter([]observability.TaskRun{healthyRun, approvalRun, failedRun}, "Engineering Ops", "2026-03-10", nil)
+	totalRuns := 3
+	report := RenderAutoTriageCenterReport(center, &totalRuns, nil)
+	if center.FlaggedRuns() != 2 || center.InboxSize() != 2 || !reflect.DeepEqual(center.SeverityCounts(), map[string]int{"critical": 1, "high": 1, "medium": 0}) || !reflect.DeepEqual(center.OwnerCounts(), map[string]int{"security": 1, "engineering": 1, "operations": 0}) || center.Recommendation() != "immediate-attention" {
+		t.Fatalf("unexpected auto triage center: %+v", center)
+	}
+	if got := []string{center.Findings[0].RunID, center.Findings[1].RunID}; !reflect.DeepEqual(got, []string{"run-browser", "run-risk"}) {
+		t.Fatalf("unexpected findings order: %v", got)
+	}
+	if got := []string{center.Inbox[0].RunID, center.Inbox[1].RunID}; !reflect.DeepEqual(got, []string{"run-browser", "run-risk"}) {
+		t.Fatalf("unexpected inbox order: %v", got)
+	}
+	if center.Inbox[0].Suggestions[0].Label != "replay candidate" || center.Inbox[0].Suggestions[0].Confidence < 0.55 || center.Findings[0].NextAction != "replay run and inspect tool failures" || center.Findings[1].NextAction != "request approval and queue security review" || !center.Findings[0].Actions[4].Enabled || center.Findings[1].Actions[4].Enabled || center.Findings[1].Actions[6].Enabled {
+		t.Fatalf("unexpected triage detail: %+v", center)
+	}
+	for _, want := range []string{"Flagged Runs: 2", "Inbox Size: 2", "Severity Mix: critical=1 high=1 medium=0", "Feedback Loop: accepted=0 rejected=0 pending=2", "run-browser: severity=critical owner=engineering status=failed", "run-risk: severity=high owner=security status=needs-approval", "actions=Drill Down [drill-down]", "Retry [retry] state=disabled target=run-risk reason=retry available after owner review"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestAutoTriageCenterReportRendersSharedViewPartialState(t *testing.T) {
+	run := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-94-risk", Source: "linear", Title: "Prod approval"}, "run-risk", "vm")
+	run.Audit("scheduler.decision", "scheduler", "pending", map[string]any{"reason": "requires approval for high-risk task"})
+	run.Finalize("needs-approval", "requires approval for high-risk task")
+	center := BuildAutoTriageCenter([]observability.TaskRun{run}, "Engineering Ops", "2026-03-10", nil)
+	totalRuns := 1
+	resultCount := 1
+	view := SharedViewContext{
+		Filters:     []SharedViewFilter{{Label: "Team", Value: "engineering"}, {Label: "Window", Value: "2026-03-10"}},
+		ResultCount: &resultCount,
+		PartialData: []string{"Replay ledger data is still backfilling."},
+		LastUpdated: "2026-03-11T09:00:00Z",
+	}
+	report := RenderAutoTriageCenterReport(center, &totalRuns, &view)
+	for _, want := range []string{"## View State", "- State: partial-data", "- Team: engineering", "## Partial Data", "Replay ledger data is still backfilling."} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestAutoTriageCenterBuildsSimilarityEvidenceAndFeedbackLoop(t *testing.T) {
+	failedBrowserRun := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-100-browser-a", Source: "linear", Title: "Browser replay failure"}, "run-browser-a", "browser")
+	failedBrowserRun.Trace("runtime.execute", "failed", nil)
+	failedBrowserRun.Audit("runtime.execute", "worker", "failed", map[string]any{"reason": "browser session crashed"})
+	failedBrowserRun.Finalize("failed", "browser session crashed")
+	similarBrowserRun := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-100-browser-b", Source: "linear", Title: "Browser replay failure"}, "run-browser-b", "browser")
+	similarBrowserRun.Trace("runtime.execute", "failed", nil)
+	similarBrowserRun.Audit("runtime.execute", "worker", "failed", map[string]any{"reason": "browser session crashed"})
+	similarBrowserRun.Finalize("failed", "browser session crashed")
+	approvalRun := observability.NewTaskRunFromTask(domain.Task{ID: "OPE-100-security", Source: "linear", Title: "Security approval"}, "run-security", "vm")
+	approvalRun.Trace("scheduler.decide", "pending", nil)
+	approvalRun.Audit("scheduler.decision", "scheduler", "pending", map[string]any{"reason": "requires approval for high-risk task"})
+	approvalRun.Finalize("needs-approval", "requires approval for high-risk task")
+	feedback := []TriageFeedbackRecord{
+		NewTriageFeedbackRecord("run-browser-a", "replay run and inspect tool failures", "accepted", "ops-lead", "matched previous recovery path"),
+		NewTriageFeedbackRecord("run-security", "request approval and queue security review", "rejected", "sec-reviewer", "approval already in flight"),
+	}
+	center := BuildAutoTriageCenter([]observability.TaskRun{failedBrowserRun, similarBrowserRun, approvalRun}, "Auto Triage Center", "2026-03-11", feedback)
+	totalRuns := 3
+	report := RenderAutoTriageCenterReport(center, &totalRuns, nil)
+	var browserItem, approvalItem *TriageInboxItem
+	for i := range center.Inbox {
+		if center.Inbox[i].RunID == "run-browser-a" {
+			browserItem = &center.Inbox[i]
+		}
+		if center.Inbox[i].RunID == "run-security" {
+			approvalItem = &center.Inbox[i]
+		}
+	}
+	if browserItem == nil || approvalItem == nil {
+		t.Fatalf("expected browser and approval inbox items, got %+v", center.Inbox)
+	}
+	if !reflect.DeepEqual(center.FeedbackCounts(), map[string]int{"accepted": 1, "rejected": 1, "pending": 1}) || browserItem.Suggestions[0].FeedbackStatus != "accepted" || approvalItem.Suggestions[0].FeedbackStatus != "rejected" || browserItem.Suggestions[0].Evidence[0].RelatedRunID != "run-browser-b" || browserItem.Suggestions[0].Evidence[0].Score < 0.8 {
+		t.Fatalf("unexpected feedback or evidence: %+v", center)
+	}
+	for _, want := range []string{"## Inbox", "run-browser-a: severity=critical owner=engineering status=failed", "similar=run-browser-b:", "Feedback Loop: accepted=1 rejected=1 pending=1"} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
+func TestRenderTaskRunDetailPage(t *testing.T) {
+	tmp := t.TempDir()
+	artifact := filepath.Join(tmp, "artifact.txt")
+	if err := os.WriteFile(artifact, []byte("audit trail"), 0o644); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	run := observability.NewTaskRunFromTask(domain.Task{ID: "BIG-502", Source: "linear", Title: "Observe execution"}, "run-3", "browser")
+	run.Log("info", "opened detail page", nil)
+	run.Trace("playback.render", "ok", nil)
+	run.RegisterArtifact("approval-note", "note", artifact, nil)
+	run.Audit("playback.render", "reviewer", "success", nil)
+	run.AddComment("pm", "Loop in @design before we publish the replay.", []string{"design"}, "overview")
+	run.AddDecisionNote("design", "Replay copy approved for external review.", "approved", []string{"pm"})
+	run.RecordCloseout([]string{"pytest", "playback-smoke"}, true, "main -> origin/main", "commit fedcba\n 1 file changed, 1 insertion(+)", nil, []repo.RunCommitLink{
+		{RunID: "run-3", CommitHash: "abc111", Role: "candidate", RepoSpaceID: "space-1"},
+		{RunID: "run-3", CommitHash: "fedcba", Role: "accepted", RepoSpaceID: "space-1"},
+	})
+	run.Finalize("approved", "detail page ready")
+	page := RenderTaskRunDetailPage(run)
+	for _, want := range []string{"<title>Task Run Detail", "Timeline / Log Sync", `data-detail="title"`, "Reports", "opened detail page", "playback.render", artifact, "detail page ready", "Closeout", "complete", "Repo Evidence", "fedcba", "Actions", "Pause [pause] state=disabled target=run-3 reason=completed or failed runs cannot be paused", "Collaboration", "Loop in @design before we publish the replay.", "Replay copy approved for external review."} {
+		if !strings.Contains(page, want) {
+			t.Fatalf("expected %q in page, got %s", want, page)
+		}
+	}
+}
+
+func TestRenderTaskRunDetailPageEscapesTimelineJSONScriptBreakout(t *testing.T) {
+	run := observability.NewTaskRunFromTask(domain.Task{ID: "BIG-escape", Source: "linear", Title: "Escape check"}, "run-escape", "browser")
+	run.Log("info", "contains </script> marker", nil)
+	run.Finalize("approved", "ok")
+	page := RenderTaskRunDetailPage(run)
+	if !strings.Contains(page, `contains <\/script> marker`) {
+		t.Fatalf("expected escaped script breakout marker, got %s", page)
 	}
 }
 
