@@ -259,7 +259,7 @@ from .reports import (
     write_report,
     write_report_studio_bundle,
 )
-from .operations import (
+from .scheduler import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,
@@ -785,6 +785,7 @@ for _alias, _target in (
     ("collaboration", "execution_contract"),
     ("console_ia", "design_system"),
     ("ui_review", "design_system"),
+    ("operations", "scheduler"),
     ("cost_control", "operations"),
     ("models", "execution_contract"),
     ("connectors", "models"),
