@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -152,6 +154,17 @@ type automationSoakLocalReport struct {
 	ServiceLog            string           `json:"service_log,omitempty"`
 }
 
+type stringListFlag []string
+
+func (f *stringListFlag) String() string {
+	return strings.Join(*f, ",")
+}
+
+func (f *stringListFlag) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
+
 func runAutomation(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
 		printAutomationUsage(os.Stdout)
@@ -184,12 +197,16 @@ func runAutomationE2E(args []string) error {
 
 func runAutomationBenchmark(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <soak-local> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <soak-local|run-matrix|capacity-certification> [flags]\n")
 		return nil
 	}
 	switch args[0] {
 	case "soak-local":
 		return runAutomationSoakLocalCommand(args[1:])
+	case "run-matrix":
+		return runAutomationBenchmarkRunMatrixCommand(args[1:])
+	case "capacity-certification":
+		return runAutomationCapacityCertificationCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation benchmark subcommand: %s", args[0])
 	}
@@ -329,6 +346,114 @@ func runAutomationSoakLocalCommand(args []string) error {
 	}
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func runAutomationBenchmarkRunMatrixCommand(args []string) error {
+	flags := flag.NewFlagSet("automation benchmark run-matrix", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	reportPath := flags.String("report-path", "docs/reports/benchmark-matrix-report.json", "relative or absolute report path")
+	timeoutSeconds := flags.Int("timeout-seconds", 180, "task timeout seconds")
+	scenarios := stringListFlag{}
+	flags.Var(&scenarios, "scenario", "count:workers scenario; default 50:8 and 100:12")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation benchmark run-matrix [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	resolvedScenarios := []benchmarkScenario{{Count: 50, Workers: 8}, {Count: 100, Workers: 12}}
+	if len(scenarios) > 0 {
+		resolvedScenarios = make([]benchmarkScenario, 0, len(scenarios))
+		for _, raw := range scenarios {
+			parts := strings.SplitN(raw, ":", 2)
+			if len(parts) != 2 {
+				return fmt.Errorf("invalid --scenario %q: want count:workers", raw)
+			}
+			count, err := strconv.Atoi(parts[0])
+			if err != nil || count <= 0 {
+				return fmt.Errorf("invalid scenario count in %q", raw)
+			}
+			workers, err := strconv.Atoi(parts[1])
+			if err != nil || workers <= 0 {
+				return fmt.Errorf("invalid scenario workers in %q", raw)
+			}
+			resolvedScenarios = append(resolvedScenarios, benchmarkScenario{Count: count, Workers: workers})
+		}
+	}
+	report, err := automationBenchmarkRunMatrix(automationBenchmarkMatrixOptions{
+		GoRoot:         absPath(*goRoot),
+		ReportPath:     *reportPath,
+		TimeoutSeconds: *timeoutSeconds,
+		Scenarios:      resolvedScenarios,
+	})
+	if err != nil {
+		return err
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationCapacityCertificationCommand(args []string) error {
+	flags := flag.NewFlagSet("automation benchmark capacity-certification", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	benchmarkReport := flags.String("benchmark-report", "docs/reports/benchmark-matrix-report.json", "benchmark matrix report path")
+	mixedWorkloadReport := flags.String("mixed-workload-report", "docs/reports/mixed-workload-matrix-report.json", "mixed workload report path")
+	supplementalSoakReports := stringListFlag{}
+	flags.Var(&supplementalSoakReports, "supplemental-soak-report", "additional soak report path")
+	outputPath := flags.String("output", "docs/reports/capacity-certification-matrix.json", "JSON output path")
+	markdownOutputPath := flags.String("markdown-output", "docs/reports/capacity-certification-report.md", "Markdown output path")
+	pretty := flags.Bool("pretty", false, "print pretty JSON to stdout")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation benchmark capacity-certification [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	resolvedSupplementalReports := []string{
+		"docs/reports/soak-local-1000x24.json",
+		"docs/reports/soak-local-2000x24.json",
+	}
+	if len(supplementalSoakReports) > 0 {
+		resolvedSupplementalReports = append([]string{}, supplementalSoakReports...)
+	}
+	root := absPath(*goRoot)
+	report, err := buildCapacityCertificationReport(capacityCertificationOptions{
+		GoRoot:                      root,
+		BenchmarkReportPath:         *benchmarkReport,
+		MixedWorkloadReportPath:     *mixedWorkloadReport,
+		SupplementalSoakReportPaths: resolvedSupplementalReports,
+		OutputPath:                  *outputPath,
+		MarkdownOutputPath:          *markdownOutputPath,
+		GeneratorPath:               "scripts/benchmark/capacity_certification.sh",
+	})
+	if err != nil {
+		return err
+	}
+	markdown := fmt.Sprintf("%v", report["markdown"])
+	delete(report, "markdown")
+	if err := automationWriteReport(root, *outputPath, report); err != nil {
+		return err
+	}
+	target := *markdownOutputPath
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(root, target)
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(target, []byte(markdown), 0o644); err != nil {
+		return err
+	}
+	if *pretty {
+		encoded, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = os.Stdout.Write(append(encoded, '\n'))
 	}
 	return nil
 }

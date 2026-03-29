@@ -26,7 +26,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 ### `bigclaw-go/scripts/*` first automation batch
 
 - `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `bigclawctl automation e2e run-task-smoke`
-- `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
+- `bigclaw-go/scripts/benchmark/soak_local.sh` -> `bigclawctl automation benchmark soak-local`
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
 
 The compatibility layer is intentionally thin:

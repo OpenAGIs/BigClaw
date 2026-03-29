@@ -7,7 +7,7 @@ Issue: `BIG-GO-902`
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
-| `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/benchmark/soak_local.sh` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | native shell wrapper over the Go CLI |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
 
 ## Remaining Python Script Backlog
@@ -21,8 +21,8 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/benchmark/capacity_certification.py`
-- `bigclaw-go/scripts/benchmark/run_matrix.py`
+- `bigclaw-go/scripts/benchmark/capacity_certification.sh`
+- `bigclaw-go/scripts/benchmark/run_matrix.sh`
 - `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
 - `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
 - `bigclaw-go/scripts/migration/shadow_matrix.py`

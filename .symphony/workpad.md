@@ -1,21 +1,18 @@
-# BIG-GO-902 Workpad
+# BIG-GO-949
 
 ## Plan
-
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+- Inventory `bigclaw-go/scripts/benchmark/**` and map each script to an existing Go/native replacement or a new Go implementation.
+- Replace Python benchmark orchestration/certification scripts with Go commands under the existing BigClaw Go tree, keeping invocation paths repo-native and scoped to benchmark workflows.
+- Remove Python benchmark assets that become obsolete, update any shell wrappers if they remain useful, and keep outputs/paths stable where practical.
+- Run targeted validation for the new Go implementations and benchmark-related tests, then commit and push the issue branch.
 
 ## Acceptance
-
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Lane file list is explicit and covered by the change.
+- `bigclaw-go/scripts/benchmark/**` no longer requires Python for active benchmark workflows, or includes a clear delete/replacement plan embodied in code changes.
+- Verification commands and exact results are recorded in the final response.
+- Residual risks are stated.
 
 ## Validation
-
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- `go test ./...` for any newly added packages if scope is small enough, otherwise targeted package tests.
+- Direct command execution for the benchmark matrix generator and certification generator against checked-in reports.
+- Basic shell wrapper verification if `run_suite.sh` remains.
