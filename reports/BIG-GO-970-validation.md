@@ -26,17 +26,17 @@
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | retained | Active scorecard generator still consumed by continuation artifacts and API surfaces. |
 | `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` | retained | Bundle/index generator for live-shadow review pack with no Go replacement in this slice. |
 | `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | retained | Scorecard generator for checked-in live-shadow evidence, still referenced by docs and regression tests. |
-| `bigclaw-go/scripts/migration/shadow_compare.py` | retained | Already a thin Go-CLI shim, but retained because `shadow_matrix.py` imports it as a Python module in the current design. |
-| `bigclaw-go/scripts/migration/shadow_matrix.py` | retained | Matrix generator still depends on `shadow_compare.py` as a Python module and has no Go replacement in this issue. |
+| `bigclaw-go/scripts/migration/shadow_compare.py` | replaced then deleted | `shadow_matrix.py` now shells out to `go run ./cmd/bigclawctl automation migration shadow-compare`, so the thin Python shim is no longer needed. |
+| `bigclaw-go/scripts/migration/shadow_matrix.py` | retained | Still a Python matrix/report generator, but now depends on the Go CLI directly instead of importing a Python shim module. |
 
 ## Count Impact
 
 - Total repository Python files before: `123`
-- Total repository Python files after: `117`
-- Net change across repository: `-6`
+- Total repository Python files after: `116`
+- Net change across repository: `-7`
 - Target directory Python files before: `19`
-- Target directory Python files after: `13`
-- Net change in `bigclaw-go/scripts/e2e/**` and `bigclaw-go/scripts/migration/**`: `-6`
+- Target directory Python files after: `12`
+- Net change in `bigclaw-go/scripts/e2e/**` and `bigclaw-go/scripts/migration/**`: `-7`
 
 ## Validation Commands
 
@@ -52,8 +52,8 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && find bigclaw-go/scripts/
 ## Validation Results
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
-  - `ok  	bigclaw-go/cmd/bigclawctl	2.147s`
-  - `ok  	bigclaw-go/internal/regression	1.081s`
+  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+  - `ok  	bigclaw-go/internal/regression	0.193s`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
   - `bash -n kubernetes_smoke.sh: PASS`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/ray_smoke.sh`
@@ -62,3 +62,11 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && find bigclaw-go/scripts/
   - `bash -n run_all.sh: PASS`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help`
   - exited `0`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
+  - exited `0`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && python3 -m py_compile bigclaw-go/scripts/migration/shadow_matrix.py`
+  - `py_compile shadow_matrix.py: PASS`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && find . -name '*.py' | wc -l`
+  - `116`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && find bigclaw-go/scripts/e2e bigclaw-go/scripts/migration -name '*.py' | wc -l`
+  - `12`

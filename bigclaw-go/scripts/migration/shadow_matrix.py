@@ -2,10 +2,10 @@
 import argparse
 import json
 import pathlib
+import subprocess
 import sys
+import tempfile
 from collections import defaultdict
-
-import shadow_compare
 
 
 def load_json(path):
@@ -227,6 +227,45 @@ def build_report(results, fixture_entries, corpus_slices=None, manifest_meta=Non
     return report
 
 
+def compare_task(repo_root, primary, shadow, task, timeout_seconds, health_timeout_seconds):
+    bigclaw_go_root = repo_root / 'bigclaw-go'
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as task_file:
+        json.dump(task, task_file, ensure_ascii=False, indent=2)
+        task_file.write('\n')
+        task_path = pathlib.Path(task_file.name)
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as report_file:
+        report_path = pathlib.Path(report_file.name)
+
+    try:
+        command = [
+            'go',
+            'run',
+            './cmd/bigclawctl',
+            'automation',
+            'migration',
+            'shadow-compare',
+            '--primary',
+            primary,
+            '--shadow',
+            shadow,
+            '--task-file',
+            str(task_path),
+            '--timeout-seconds',
+            str(timeout_seconds),
+            '--health-timeout-seconds',
+            str(health_timeout_seconds),
+            '--report-path',
+            str(report_path),
+        ]
+        completed = subprocess.run(command, cwd=bigclaw_go_root, check=False)
+        if completed.returncode not in (0, 1):
+            raise RuntimeError(f'shadow compare command failed with exit code {completed.returncode}')
+        return load_json(report_path)
+    finally:
+        task_path.unlink(missing_ok=True)
+        report_path.unlink(missing_ok=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Run a shadow-comparison matrix across multiple task files')
     parser.add_argument('--primary', required=True)
@@ -253,12 +292,14 @@ def main():
         )
 
     execution_entries = fixture_entries + replay_entries
+    repo_root = pathlib.Path(__file__).resolve().parents[3]
     results = []
     for index, entry in enumerate(execution_entries, start=1):
         task = dict(entry['task'])
         base_id = task.get('id', f'matrix-task-{index}')
         task['id'] = f'{base_id}-m{index}'
-        result = shadow_compare.compare_task(
+        result = compare_task(
+            repo_root,
             args.primary,
             args.shadow,
             task,

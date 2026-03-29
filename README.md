@@ -71,7 +71,7 @@ Notes:
   `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
-  `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
+  `go run ./bigclaw-go/cmd/bigclawctl automation migration shadow-compare ...` now forward into
   `bigclawctl automation ...`; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are

@@ -23,16 +23,18 @@
 
 ## Results
 
-- Deleted 6 Python files from the scoped directories:
+- Deleted 7 Python files from the scoped directories:
   - `bigclaw-go/scripts/e2e/run_task_smoke.py`
   - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
   - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
   - `bigclaw-go/scripts/e2e/run_all_test.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+  - `bigclaw-go/scripts/migration/shadow_compare.py`
 - Repointed the live smoke wrappers and docs from the deleted Python shim to `go run ./cmd/bigclawctl automation e2e run-task-smoke`.
+- Repointed the migration compare docs and `shadow_matrix.py` from the deleted Python shim to `go run ./cmd/bigclawctl automation migration shadow-compare`.
 - Recorded the full retained/deleted/replaced inventory plus Python-count impact in `reports/BIG-GO-970-validation.md`.
-- Python file count changed from `123` to `117` across the repository and from `19` to `13` inside `bigclaw-go/scripts/e2e/**` plus `bigclaw-go/scripts/migration/**`.
+- Python file count changed from `123` to `116` across the repository and from `19` to `12` inside `bigclaw-go/scripts/e2e/**` plus `bigclaw-go/scripts/migration/**`.
 
 ## Validation Results
 
@@ -43,3 +45,5 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/ray_smoke.sh` -> passed
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help` -> passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970/bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help` -> passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-970 && python3 -m py_compile bigclaw-go/scripts/migration/shadow_matrix.py` -> passed

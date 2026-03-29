@@ -8,7 +8,7 @@ Issue: `BIG-GO-902`
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed in `BIG-GO-970` |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
-| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed in `BIG-GO-970` |
 
 ## Remaining Python Script Backlog
 
@@ -44,7 +44,7 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 - HTTP polling against `/healthz`, `/tasks/:id`, and `/events`
 - Temporary `bigclawd` autostart state wiring for smoke and soak commands
 - Report serialization compatibility for JSON consumers that previously read the Python script output
-- Python shim forwarding for operators still calling the remaining legacy script paths
+- Python shim forwarding for operators still calling the remaining legacy Python script paths
 
 ## Compatibility Layer Plan
 
