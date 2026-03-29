@@ -157,6 +157,48 @@ func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	}
 }
 
+func TestBuildValidationReportCoversThreeWorkspacesWithOneCache(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+
+	report, err := BuildValidationReport(
+		remote,
+		filepath.Join(root, "validation-workspaces"),
+		[]string{"OPE-272", "OPE-273", "OPE-274"},
+		"main",
+		"",
+		filepath.Join(root, "repos"),
+		"",
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if report.Summary.WorkspaceCount != 3 {
+		t.Fatalf("expected 3 workspaces, got %+v", report.Summary)
+	}
+	if !report.Summary.SingleCacheRootReused ||
+		!report.Summary.SingleMirrorReused ||
+		!report.Summary.SingleSeedReused ||
+		!report.Summary.CloneSuppressedAfterFirst ||
+		!report.Summary.CacheReusedAfterFirst ||
+		!report.Summary.CleanupPreservedCache {
+		t.Fatalf("unexpected validation summary reuse flags: %+v", report.Summary)
+	}
+	if report.Summary.MirrorCreations != 1 || report.Summary.SeedCreations != 1 {
+		t.Fatalf("unexpected validation summary creation counts: %+v", report.Summary)
+	}
+	if len(report.BootstrapResults) != 3 || len(report.CleanupResults) != 3 {
+		t.Fatalf("unexpected validation result counts: bootstrap=%d cleanup=%d", len(report.BootstrapResults), len(report.CleanupResults))
+	}
+	for _, result := range report.BootstrapResults {
+		if result.WorkspaceMode != "worktree_created" {
+			t.Fatalf("expected worktree_created bootstrap result, got %+v", result)
+		}
+	}
+}
+
 func TestWithCacheLockSerializesAcrossProcesses(t *testing.T) {
 	if os.Getenv("BOOTSTRAP_LOCK_HELPER") == "1" {
 		lockRoot := os.Getenv("BOOTSTRAP_LOCK_ROOT")

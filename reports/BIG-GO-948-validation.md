@@ -2,7 +2,7 @@
 
 ## Completed Work
 
-This lane finishes a second-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go`.
+This lane now includes a third-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go`.
 
 Deleted in this wave:
 - `tests/test_connectors.py`
@@ -24,6 +24,8 @@ Deleted in this wave:
 - `tests/test_audit_events.py`
 - `tests/test_observability.py`
 - `tests/test_queue.py`
+- `tests/test_governance.py`
+- `tests/test_workspace_bootstrap.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -63,6 +65,8 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_audit_events.py`
 - `tests/test_observability.py`
 - `tests/test_queue.py`
+- `tests/test_governance.py`
+- `tests/test_workspace_bootstrap.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -88,7 +92,6 @@ Remaining Python tests after this wave:
 - `tests/test_execution_contract.py`
 - `tests/test_execution_flow.py`
 - `tests/test_github_sync.py`
-- `tests/test_governance.py`
 - `tests/test_live_shadow_bundle.py`
 - `tests/test_memory.py`
 - `tests/test_models.py`
@@ -101,7 +104,6 @@ Remaining Python tests after this wave:
 - `tests/test_ui_review.py`
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 - `tests/test_validation_policy.py`
-- `tests/test_workspace_bootstrap.py`
 
 ## Go Replacements
 
@@ -166,6 +168,16 @@ This wave relies on the following Go-native coverage:
 - `bigclaw-go/internal/queue/sqlite_queue_test.go`
   - `TestSQLiteQueueOrdersByPriority`
   - `TestSQLiteQueueDeadLetterAndRetryRoundTrip`
+- `bigclaw-go/internal/governance/freeze_test.go`
+  - `TestScopeFreezeBoardRoundTripPreservesManifestShape`
+  - `TestScopeFreezeAuditFlagsBacklogGovernanceAndCloseoutGaps`
+  - `TestScopeFreezeAuditRoundTripAndReadyState`
+  - `TestRenderScopeFreezeReportSummarizesBoardAndRunCloseoutRequirements`
+- `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+  - `TestRepoCacheKeyDerivesFromRepoLocator`
+  - `TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed`
+  - `TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch`
+  - `TestBuildValidationReportCoversThreeWorkspacesWithOneCache`
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -190,6 +202,8 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/workflow`
 - `cd bigclaw-go && go test ./internal/observability -run 'TestP0AuditEventSpecsDefineRequiredOperationalEvents|TestAuditSpecEventRequiresRequiredFields|TestTaskRunRecordsAuditSpecEventAndReportBuildersUseCanonicalEvents|TestTaskRunCapturesLogsTraceArtifactsAndAudits|TestTaskRunCloseoutSerializesRepoSyncAudit|TestRenderTaskRunDetailPage'`
 - `cd bigclaw-go && go test ./internal/queue`
+- `cd bigclaw-go && go test ./internal/governance`
+- `cd bigclaw-go && go test ./internal/bootstrap`
 - `git status --short`
 
 ## Latest Validation Result
@@ -212,6 +226,10 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/observability	1.280s`
 - `cd bigclaw-go && go test ./internal/queue`
   - Result: `ok  	bigclaw-go/internal/queue	25.972s`
+- `cd bigclaw-go && go test ./internal/governance`
+  - Result: `ok  	bigclaw-go/internal/governance	1.158s`
+- `cd bigclaw-go && go test ./internal/bootstrap`
+  - Result: `ok  	bigclaw-go/internal/bootstrap	3.139s`
 
 ## Residual Risks
 
@@ -239,8 +257,6 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Plan: migrate after the remaining execution-flow report surface is anchored in Go.
 - `tests/test_github_sync.py`
   - Plan: migrate once the remaining Python sync/report wrapper behavior is covered by `bigclaw-go/internal/githubsync`.
-- `tests/test_governance.py`
-  - Plan: split freeze-policy and repo-governance concerns into smaller Go-native slices.
 - `tests/test_live_shadow_bundle.py`
   - Plan: migrate after the live-shadow bundle exporter is Go-native or exposed through a stable Go wrapper.
 - `tests/test_memory.py`
@@ -265,5 +281,3 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Plan: migrate after the policy gate is implemented in Go or fronted by a stable Go CLI.
 - `tests/test_validation_policy.py`
   - Plan: migrate once validation policy logic is centralized in Go-native contracts.
-- `tests/test_workspace_bootstrap.py`
-  - Plan: migrate after the remaining workspace bootstrap flow is fully exercised through `bigclaw-go/internal/bootstrap` and the legacy shim.
