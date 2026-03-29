@@ -13,6 +13,7 @@
 - `tests/test_cost_control.py`
 - `tests/test_deprecation.py`
 - `tests/test_legacy_shim.py`
+- `tests/test_service.py`
 
 ## Go Replacements
 
@@ -49,6 +50,10 @@
   - `TestRunWorkspaceHelpPrintsUsageAndExitsZero`
   - `TestRunCreateIssuesHelpPrintsUsageAndExitsZero`
   - `TestRunDevSmokeHelpPrintsUsageAndExitsZero`
+- `bigclaw-go/internal/service/server.go`
+- `bigclaw-go/internal/service/server_test.go`
+  - `TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures`
+  - `TestServerEntryHealthMetrics`
 
 The deleted Python tests were either:
 - report and digest regressions over checked-in `bigclaw-go/docs/reports/*` artifacts, now covered in Go under `bigclaw-go/internal/regression`
@@ -65,18 +70,17 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 - `cd bigclaw-go && go test ./internal/regression -run TestLegacyMainlineCompatibilityManifestStaysAligned`
 - `cd bigclaw-go && go test ./internal/legacyshim -run 'TestAppendMissingFlagPreservesExistingValues|TestWorkspaceBootstrapWrapperInjectsGoDefaults|TestWorkspaceValidateWrapperTranslatesLegacyFlags|TestGitHubSyncAndRefillWrappersTargetGoShim|TestWorkspaceRuntimeWrapperTargetsGoShim|TestRepoRootFromScriptClimbsToRepositoryRoot'`
 - `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunGitHubSyncHelpPrintsUsageAndExitsZero|TestRunWorkspaceHelpPrintsUsageAndExitsZero|TestRunCreateIssuesHelpPrintsUsageAndExitsZero|TestRunDevSmokeHelpPrintsUsageAndExitsZero'`
+- `cd bigclaw-go && go test ./internal/service -run 'TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures|TestServerEntryHealthMetrics'`
 - `git status --short`
 
 ## Residual Risks
 
 - This lane intentionally leaves other remaining `tests/*.py` files untouched when they do not yet have a tight Go regression home or require broader production code migration.
 - `tests/test_parallel_validation_bundle.py` and other script-execution Python tests remain outside this scoped delete set because they exercise dynamic script behavior rather than only checked-in report fixtures.
-- `tests/test_service.py`, `tests/test_control_center.py`, `tests/test_operations.py`, and `tests/test_ui_review.py` still need broader Go-native implementation or contract surfaces before their Python tests can be removed safely.
+- `tests/test_control_center.py`, `tests/test_operations.py`, and `tests/test_ui_review.py` still need broader Go-native implementation or contract surfaces before their Python tests can be removed safely.
 
 ## Remaining Python Test Plan
 
-- `tests/test_service.py`
-  - Plan: add a Go governance/monitoring HTTP surface with `/health`, `/metrics`, `/metrics.json`, `/alerts`, and `/monitor` contracts before deleting the Python server tests.
 - `tests/test_parallel_validation_bundle.py`
   - Plan: replace with a Go test once the validation bundle export path moves from Python script orchestration to a Go-native exporter or a stable CLI/API wrapper.
 - `tests/test_control_center.py`

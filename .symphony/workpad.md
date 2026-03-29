@@ -23,7 +23,7 @@
 
 ## Results
 
-- Migrated 12 Python tests to Go-owned coverage and deleted the Python files:
+- Migrated 13 Python tests to Go-owned coverage and deleted the Python files:
   - `test_cross_process_coordination_surface.py`
   - `test_followup_digests.py`
   - `test_live_shadow_scorecard.py`
@@ -35,6 +35,7 @@
   - `test_cost_control.py`
   - `test_deprecation.py`
   - `test_legacy_shim.py`
+  - `test_service.py`
 - Added Go replacements in:
   - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
   - `bigclaw-go/internal/refill/queue_repo_fixture_test.go`
@@ -46,6 +47,8 @@
   - `bigclaw-go/internal/legacyshim/wrappers.go`
   - `bigclaw-go/internal/legacyshim/wrappers_test.go`
   - `bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go`
+  - `bigclaw-go/internal/service/server.go`
+  - `bigclaw-go/internal/service/server_test.go`
 - Pushed commits:
   - `b59e941` `test: migrate lane8 remaining python report tests`
   - `cfcd50e` `test: migrate parallel refill queue fixture to go`
@@ -53,4 +56,5 @@
   - `911a1d6` `docs: record remaining python test migration plan`
   - `bdd3aa4` `test: migrate cost control checks to go`
   - `0334358` `test: migrate deprecation compatibility checks to go`
+  - `29553fc` `test: migrate legacy shim contracts to go`
 - Remaining Python tests in `tests/` now require broader Go-native implementation or new contract surfaces rather than direct fixture parity moves.
