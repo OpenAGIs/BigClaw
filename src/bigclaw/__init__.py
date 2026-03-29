@@ -76,8 +76,9 @@ from .design_system import (
     render_ui_acceptance_report,
 )
 from .__main__ import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
-from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowDefinition, WorkflowEngine, WorkflowRunResult, WorkflowStep, WorkpadJournal
 from .scheduler import (
+    AcceptanceDecision,
+    AcceptanceGate,
     ClawWorkerRuntime,
     ExecutionRecord,
     RiskFactor,
@@ -90,6 +91,11 @@ from .scheduler import (
     ToolCallResult,
     ToolPolicy,
     ToolRuntime,
+    WorkflowDefinition,
+    WorkflowEngine,
+    WorkflowRunResult,
+    WorkflowStep,
+    WorkpadJournal,
     WorkerExecutionResult,
 )
 from .observability import (
@@ -784,7 +790,6 @@ for _alias, _target in (
     ("dashboard_run_contract", "execution_contract"),
     ("workspace_bootstrap", "__main__"),
     ("deprecation", "workspace_bootstrap"),
-    ("dsl", "workflow"),
     ("evaluation", "operations"),
     ("event_bus", "observability"),
     ("governance", "planning"),
@@ -812,6 +817,8 @@ for _alias, _target in (
     ("runtime", "scheduler"),
     ("service", "__main__"),
     ("validation_policy", "reports"),
+    ("workflow", "scheduler"),
+    ("dsl", "workflow"),
     ("workspace_bootstrap_cli", "workspace_bootstrap"),
     ("workspace_bootstrap_validation", "workspace_bootstrap"),
 ):
