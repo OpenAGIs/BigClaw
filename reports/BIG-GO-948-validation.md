@@ -42,6 +42,7 @@ Deleted in this wave:
 - `tests/test_parallel_validation_bundle.py`
 - `tests/test_live_shadow_bundle.py`
 - `tests/test_planning.py`
+- `tests/test_console_ia.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -99,6 +100,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_parallel_validation_bundle.py`
 - `tests/test_live_shadow_bundle.py`
 - `tests/test_planning.py`
+- `tests/test_console_ia.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -115,7 +117,6 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_issue_archive.py`
 
 Remaining Python tests after this wave:
-- `tests/test_console_ia.py`
 - `tests/test_design_system.py`
 - `tests/test_operations.py`
 - `tests/test_reports.py`
@@ -278,6 +279,15 @@ This wave relies on the following Go-native coverage:
   - `TestWeeklyExecutionPlanFlagsAtRiskGoalIDs`
   - `TestBuildV3CandidateBacklogMatchesIssuePlanTraceability`
   - `TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline`
+- `bigclaw-go/internal/consoleiaparity/consoleiaparity_test.go`
+  - `TestConsoleIARoundTripPreservesManifestShape`
+  - `TestConsoleIAAuditSurfacesGlobalInteractionGaps`
+  - `TestConsoleIAAuditRoundTripPreservesFindings`
+  - `TestRenderConsoleIAReportSummarizesSurfaceCoverage`
+  - `TestConsoleInteractionDraftRoundTripPreservesFourPageManifest`
+  - `TestConsoleInteractionAuditSurfacesMissingActionsPermissionsAndBatchOps`
+  - `TestRenderConsoleInteractionReportSummarizesCriticalPageContracts`
+  - `TestBuildBig4203ConsoleInteractionDraftIsReleaseReady`
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -322,6 +332,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ExportLiveShadowBundle|TestLane8CheckedInLiveShadowBundleMatchesExpectedShape'`
 - `cd bigclaw-go && go test ./internal/planningparity`
+- `cd bigclaw-go && go test ./internal/consoleiaparity`
 - `git status --short`
 
 ## Latest Validation Result
@@ -384,16 +395,16 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/regression	0.871s`
 - `cd bigclaw-go && go test ./internal/planningparity`
   - Result: `ok  	bigclaw-go/internal/planningparity	0.445s`
+- `cd bigclaw-go && go test ./internal/consoleiaparity`
+  - Result: `ok  	bigclaw-go/internal/consoleiaparity	0.858s`
 
 ## Residual Risks
 
-- The remaining Python files are intentionally left because they still exercise Python-owned UI, design-system, operations, or report surfaces without a tight Go replacement boundary.
+- The remaining Python files are intentionally left because they still exercise Python-owned design-system, operations, report, or review-pack surfaces without a tight Go replacement boundary.
 - `tests/test_reports.py`, `tests/test_ui_review.py`, `tests/test_operations.py`, and `tests/test_design_system.py` remain high-surface-area Python report/UI suites and need separate migration slices rather than opportunistic deletion here.
 
 ## Remaining Delete Or Migration Plan
 
-- `tests/test_console_ia.py`
-  - Plan: migrate after the console IA/export surface is owned by a Go-native product/report contract.
 - `tests/test_design_system.py`
   - Plan: migrate only after a Go-owned static design-system contract exists.
 - `tests/test_operations.py`
