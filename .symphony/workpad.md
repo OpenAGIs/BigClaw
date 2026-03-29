@@ -43,6 +43,7 @@
   - `roadmap.py`
   - `risk.py`
   - `validation_policy.py`
+  - `workspace_bootstrap_cli.py`
   - `workspace_bootstrap_validation.py`
   - `audit_events.py`
 - Replacement / consolidation targets:
@@ -59,6 +60,7 @@
   - `scheduler.py` now owns the risk scoring helpers.
   - `workflow.py` now owns the workflow DSL helpers.
   - `workspace_bootstrap.py` now owns the bootstrap validation helpers.
+  - `workspace_bootstrap.py` now owns the bootstrap CLI wrapper helpers.
   - `__init__.py` now registers compatibility aliases so `import bigclaw.<old_module>` still resolves.
 - Retained nearby Python files and reasons:
   - `execution_contract.py`: retained as the generic permission-contract host; repo policy compatibility now aliases into `repo_plane.py` without widening into broader contract semantics.
@@ -66,10 +68,12 @@
   - `operations.py`: retained as the operations-policy host after absorbing budget control helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
+  - `connectors.py`: retained as the connector-facing surface; folding it further would start mixing transport stubs with unrelated package internals.
+  - `legacy_shim.py`: retained as the operator wrapper compatibility surface used by external scripts.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `30`
-  - Delta: `-19`
+  - After: `29`
+  - Delta: `-20`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -93,3 +97,5 @@
     - Result: `16 passed in 0.10s`
   - `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_workflow.py tests/test_runtime.py tests/test_observability.py tests/test_queue.py`
     - Result: `28 passed in 0.11s`
+  - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py`
+    - Result: `9 passed in 3.02s`

@@ -780,6 +780,7 @@ for _alias, _target in (
     ("repo_triage", "repo_plane"),
     ("risk", "scheduler"),
     ("validation_policy", "reports"),
+    ("workspace_bootstrap_cli", "workspace_bootstrap"),
     ("workspace_bootstrap_validation", "workspace_bootstrap"),
 ):
     _alias_legacy_module(_alias, _target)
