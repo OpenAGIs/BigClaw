@@ -107,6 +107,8 @@ Repository inventory at start of lane:
   - `src/bigclaw/mapping.py`
   - `src/bigclaw/roadmap.py`
   - `src/bigclaw/pilot.py`
+  - `src/bigclaw/dashboard_run_contract.py`
+  - `src/bigclaw/saved_views.py`
 - `src/bigclaw/planning.py`
   - Replaced.
   - Reason: absorbed `governance.py` and now also serves the compatibility
@@ -129,6 +131,14 @@ Repository inventory at start of lane:
   - Replaced again.
   - Reason: absorbed `pilot.py` and now also serves the compatibility
     `bigclaw.pilot` module surface.
+- `src/bigclaw/execution_contract.py`
+  - Replaced.
+  - Reason: absorbed `dashboard_run_contract.py` and now also serves the
+    compatibility `bigclaw.dashboard_run_contract` module surface.
+- `src/bigclaw/design_system.py`
+  - Replaced.
+  - Reason: absorbed `saved_views.py` and now also serves the compatibility
+    `bigclaw.saved_views` module surface.
 
 ### Inventory Impact
 
@@ -137,7 +147,8 @@ Repository inventory at start of lane:
 - `src/bigclaw` Python files after continuation pass: `35`
 - `src/bigclaw` Python files after continuation pass 2: `33`
 - `src/bigclaw` Python files after continuation pass 3: `30`
-- Net Python file reduction: `15`
+- `src/bigclaw` Python files after continuation pass 4: `28`
+- Net Python file reduction: `17`
 - `src/bigclaw` Go files before: `0`
 - `src/bigclaw` Go files after: `0`
 - Root `pyproject.toml` before/after: absent
@@ -152,6 +163,7 @@ Repository inventory at start of lane:
   - Result after continuation pass: `35`
   - Result after continuation pass 2: `33`
   - Result after continuation pass 3: `30`
+  - Result after continuation pass 4: `28`
 - `find src/bigclaw -type f -name '*.go' | sort | wc -l`
   - Result after: `0`
 - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
@@ -170,6 +182,11 @@ Repository inventory at start of lane:
     `# Pilot Implementation Report`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py`
   - Result: `48 passed in 0.09s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY`
+  - Result: compatibility imports for `bigclaw.dashboard_run_contract` and
+    `bigclaw.saved_views` executed successfully; printed `BIG-4301` and `1`
+- `PYTHONPATH=src python3 -m pytest tests/test_dashboard_run_contract.py tests/test_saved_views.py tests/test_design_system.py tests/test_execution_contract.py`
+  - Result: `30 passed in 0.11s`
 - `cd bigclaw-go && go test ./internal/repo ./internal/governance`
   - Result: `ok   bigclaw-go/internal/repo (cached)`, `ok   bigclaw-go/internal/governance (cached)`
 - `git diff --check`

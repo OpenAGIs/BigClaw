@@ -182,6 +182,7 @@ from .runtime import (
 from .connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue, map_source_issue_to_task
 _install_surface_module("mapping", sys.modules[f"{__name__}.connectors"], ["map_priority", "map_state", "map_source_issue_to_task"])
 from .design_system import (
+    AlertDigestSubscription,
     AuditRequirement,
     CommandAction,
     ComponentLibrary,
@@ -202,6 +203,11 @@ from .design_system import (
     NavigationRoute,
     PerformanceBudget,
     RolePermissionScenario,
+    SavedView,
+    SavedViewCatalog,
+    SavedViewCatalogAudit,
+    SavedViewFilter,
+    SavedViewLibrary,
     UIAcceptanceAudit,
     UIAcceptanceLibrary,
     UIAcceptanceSuite,
@@ -209,6 +215,7 @@ from .design_system import (
     render_console_top_bar_report,
     render_design_system_report,
     render_information_architecture_report,
+    render_saved_view_report,
     render_ui_acceptance_report,
 )
 from .console_ia import (
@@ -236,14 +243,18 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .saved_views import (
-    AlertDigestSubscription,
-    SavedView,
-    SavedViewCatalog,
-    SavedViewCatalogAudit,
-    SavedViewFilter,
-    SavedViewLibrary,
-    render_saved_view_report,
+_install_surface_module(
+    "saved_views",
+    sys.modules[f"{__name__}.design_system"],
+    [
+        "AlertDigestSubscription",
+        "SavedView",
+        "SavedViewCatalog",
+        "SavedViewCatalogAudit",
+        "SavedViewFilter",
+        "SavedViewLibrary",
+        "render_saved_view_report",
+    ],
 )
 from .risk import BudgetDecision, CostController, RiskFactor, RiskScore, RiskScorer
 _install_surface_module("cost_control", sys.modules[f"{__name__}.risk"], ["BudgetDecision", "CostController"])
@@ -279,6 +290,11 @@ _install_surface_module(
 )
 from .execution_contract import (
     AuditPolicy,
+    DashboardRunContract,
+    DashboardRunContractAudit,
+    DashboardRunContractLibrary,
+    SchemaField,
+    SurfaceSchema,
     build_operations_api_contract,
     ExecutionApiSpec,
     ExecutionContract,
@@ -291,15 +307,20 @@ from .execution_contract import (
     ExecutionRole,
     MetricDefinition,
     PermissionCheckResult,
+    render_dashboard_run_contract_report,
     render_execution_contract_report,
 )
-from .dashboard_run_contract import (
-    DashboardRunContract,
-    DashboardRunContractAudit,
-    DashboardRunContractLibrary,
-    SchemaField,
-    SurfaceSchema,
-    render_dashboard_run_contract_report,
+_install_surface_module(
+    "dashboard_run_contract",
+    sys.modules[f"{__name__}.execution_contract"],
+    [
+        "DashboardRunContract",
+        "DashboardRunContractAudit",
+        "DashboardRunContractLibrary",
+        "SchemaField",
+        "SurfaceSchema",
+        "render_dashboard_run_contract_report",
+    ],
 )
 from .reports import (
     ArchivedIssue,
