@@ -20,11 +20,11 @@ func TestCandidateBacklogRoundTripPreservesManifestShape(t *testing.T) {
 			Priority:          "P0",
 			Owner:             "platform-ui",
 			Outcome:           "Unify console release gates and promotion evidence.",
-			ValidationCommand: "python3 -m pytest tests/test_design_system.py -q",
+			ValidationCommand: "cd bigclaw-go && go test ./internal/product",
 			Capabilities:      []string{"release-gate", "reporting"},
 			Evidence:          []string{"acceptance-suite", "validation-report"},
 			EvidenceLinks: []EvidenceLink{{
-				Label: "ui-acceptance", Target: "tests/test_design_system.py", Capability: "release-gate", Note: "role-permission and audit readiness coverage",
+				Label: "ui-acceptance", Target: "bigclaw-go/internal/product/console_test.go", Capability: "release-gate", Note: "repo-native design-system and audit readiness coverage",
 			}},
 		}},
 	}
@@ -44,7 +44,7 @@ func TestCandidateBacklogRanksReadyItemsAheadOfBlockedWork(t *testing.T) {
 		Version: "v4.0-v3",
 		Candidates: []CandidateEntry{
 			{CandidateID: "candidate-risky", Title: "Risky migration", Theme: "runtime", Priority: "P0", Owner: "runtime", Outcome: "Move execution runtime to the next rollout ring.", ValidationCommand: "cd bigclaw-go && go test ./internal/worker ./internal/scheduler", Capabilities: []string{"runtime-hardening"}, Evidence: []string{"benchmark"}, Blockers: []string{"missing rollback plan"}},
-			{CandidateID: "candidate-ready", Title: "Release control center", Theme: "console-governance", Priority: "P1", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "python3 -m pytest tests/test_design_system.py -q", Capabilities: []string{"release-gate", "reporting"}, Evidence: []string{"acceptance-suite", "validation-report"}},
+			{CandidateID: "candidate-ready", Title: "Release control center", Theme: "console-governance", Priority: "P1", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/product", Capabilities: []string{"release-gate", "reporting"}, Evidence: []string{"acceptance-suite", "validation-report"}},
 		},
 	}
 	ranked := backlog.RankedCandidates()
@@ -59,8 +59,8 @@ func TestEntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence(t *te
 		Title:   "v4.0 v3候选与进入条件",
 		Version: "v4.0-v3",
 		Candidates: []CandidateEntry{
-			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "python3 -m pytest tests/test_design_system.py -q", Capabilities: []string{"release-gate", "reporting"}, Evidence: []string{"acceptance-suite", "validation-report"}},
-			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "python3 -m pytest tests/test_operations.py -q", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
+			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/product", Capabilities: []string{"release-gate", "reporting"}, Evidence: []string{"acceptance-suite", "validation-report"}},
+			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/reporting", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
 			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "python3 -m pytest tests/test_orchestration.py -q", Capabilities: []string{"commercialization", "handoff"}, Evidence: []string{"pilot-evidence"}},
 		},
 	}
@@ -78,8 +78,8 @@ func TestEntryGateHoldsWhenV2BaselineIsMissingOrNotReady(t *testing.T) {
 		Title:   "v4.0 v3候选与进入条件",
 		Version: "v4.0-v3",
 		Candidates: []CandidateEntry{
-			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "python3 -m pytest tests/test_design_system.py -q", Capabilities: []string{"release-gate"}, Evidence: []string{"acceptance-suite", "validation-report"}},
-			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "python3 -m pytest tests/test_operations.py -q", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
+			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/product", Capabilities: []string{"release-gate"}, Evidence: []string{"acceptance-suite", "validation-report"}},
+			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/reporting", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
 			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "python3 -m pytest tests/test_orchestration.py -q", Capabilities: []string{"commercialization"}, Evidence: []string{"pilot-evidence"}},
 		},
 	}
@@ -127,16 +127,16 @@ func TestRenderCandidateBacklogReportSummarizesBacklogAndGateFindings(t *testing
 			Priority:          "P0",
 			Owner:             "platform-ui",
 			Outcome:           "Unify console release gates and promotion evidence.",
-			ValidationCommand: "python3 -m pytest tests/test_design_system.py -q",
+			ValidationCommand: "cd bigclaw-go && go test ./internal/product",
 			Capabilities:      []string{"release-gate", "reporting"},
 			Evidence:          []string{"acceptance-suite", "validation-report"},
-			EvidenceLinks:     []EvidenceLink{{Label: "ui-acceptance", Target: "tests/test_design_system.py", Capability: "release-gate"}},
+			EvidenceLinks:     []EvidenceLink{{Label: "ui-acceptance", Target: "bigclaw-go/internal/product/console_test.go", Capability: "release-gate"}},
 		}},
 	}
 	gate := EntryGate{GateID: "gate-v3-entry", Name: "V3 Entry Gate", MinReadyCandidates: 1, RequiredCapabilities: []string{"release-gate"}, RequiredEvidence: []string{"validation-report"}, RequiredBaselineVersion: "v2.0"}
 	decision := (CandidatePlanner{}).EvaluateGate(backlog, gate, &governance.ScopeFreezeAudit{BoardName: "BigClaw v2.0 Freeze", Version: "v2.0", TotalItems: 5})
 	report := RenderCandidateBacklogReport(backlog, gate, decision)
-	for _, fragment := range []string{"# V3 Candidate Backlog Report", "- Epic: BIG-EPIC-20 v4.0 v3候选与进入条件", "- Decision: PASS: ready=1 blocked=0 missing_capabilities=0 missing_evidence=0 baseline_findings=0", "- candidate-release-control: Release control center priority=P0 owner=platform-ui score=100 ready=true", "validation=python3 -m pytest tests/test_design_system.py -q", "- ui-acceptance -> tests/test_design_system.py capability=release-gate", "- Missing evidence: none", "- Baseline ready: true", "- Baseline findings: none"} {
+	for _, fragment := range []string{"# V3 Candidate Backlog Report", "- Epic: BIG-EPIC-20 v4.0 v3候选与进入条件", "- Decision: PASS: ready=1 blocked=0 missing_capabilities=0 missing_evidence=0 baseline_findings=0", "- candidate-release-control: Release control center priority=P0 owner=platform-ui score=100 ready=true", "validation=cd bigclaw-go && go test ./internal/product", "- ui-acceptance -> bigclaw-go/internal/product/console_test.go capability=release-gate", "- Missing evidence: none", "- Baseline ready: true", "- Baseline findings: none"} {
 		if !strings.Contains(report, fragment) {
 			t.Fatalf("expected %q in report, got %s", fragment, report)
 		}
@@ -151,7 +151,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Priority:          "P0",
 		Owner:             "ops-platform",
 		Outcome:           "Package command-center and approval surfaces with linked evidence.",
-		ValidationCommand: "python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
+		ValidationCommand: "cd bigclaw-go && go test ./internal/reporting",
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
@@ -259,7 +259,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	for _, target := range []string{
 		"src/bigclaw/operations.py",
 		"tests/test_control_center.py",
-		"tests/test_operations.py",
+		"bigclaw-go/internal/reporting/reporting_test.go",
 		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/workflow.py",
 		"bigclaw-go/internal/workflow/engine_test.go",
@@ -283,7 +283,7 @@ func TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline(t *testing
 	if !decision.Passed || !reflect.DeepEqual(decision.ReadyCandidateIDs, []string{"candidate-ops-hardening", "candidate-orchestration-rollout", "candidate-release-control"}) || len(decision.MissingCapabilities) != 0 || len(decision.MissingEvidence) != 0 {
 		t.Fatalf("unexpected decision: %+v", decision)
 	}
-	for _, fragment := range []string{"candidate-ops-hardening: Operations command-center hardening", "- command-center-src -> src/bigclaw/operations.py capability=ops-control", "- report-studio-tests -> tests/test_reports.py capability=commercialization"} {
+	for _, fragment := range []string{"candidate-ops-hardening: Operations command-center hardening", "- command-center-src -> src/bigclaw/operations.py capability=ops-control", "- report-studio-tests -> bigclaw-go/internal/reporting/reporting_test.go capability=commercialization"} {
 		if !strings.Contains(report, fragment) {
 			t.Fatalf("expected %q in report, got %s", fragment, report)
 		}
