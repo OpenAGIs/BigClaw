@@ -35,6 +35,13 @@ def _install_legacy_surface_module(name: str, export_names: list[str], **extra_a
     globals()[name] = module
 
 
+def _install_surface_module(name: str, **attrs: object) -> None:
+    module = types.ModuleType(f"{__name__}.{name}")
+    module.__dict__.update(attrs)
+    sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
 _install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
@@ -120,6 +127,43 @@ from .runtime import (
     warn_legacy_service_surface,
 )
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+
+
+def map_priority(p: str) -> Priority:
+    normalized = (p or "").upper()
+    if normalized == "P0":
+        return Priority.P0
+    if normalized == "P1":
+        return Priority.P1
+    return Priority.P2
+
+
+def map_state(s: str) -> TaskState:
+    normalized = (s or "").lower()
+    if "progress" in normalized:
+        return TaskState.IN_PROGRESS
+    if "done" in normalized or "closed" in normalized:
+        return TaskState.DONE
+    if "block" in normalized:
+        return TaskState.BLOCKED
+    return TaskState.TODO
+
+
+def map_source_issue_to_task(issue: SourceIssue) -> Task:
+    risk = RiskLevel.HIGH if "prod" in issue.title.lower() else RiskLevel.LOW
+    return Task(
+        task_id=issue.source_id,
+        source=issue.source,
+        title=issue.title,
+        description=issue.description,
+        labels=issue.labels,
+        priority=map_priority(issue.priority),
+        state=map_state(issue.state),
+        risk_level=risk,
+        required_tools=["github" if issue.source == "github" else "connector"],
+        acceptance_criteria=["Synced from source issue"],
+        validation_plan=["mapping-test"],
+    )
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -187,9 +231,12 @@ from .saved_views import (
 from .governance import (
     FreezeException,
     GovernanceBacklogItem,
+    RepoPermissionContract,
     ScopeFreezeAudit,
     ScopeFreezeBoard,
     ScopeFreezeGovernance,
+    missing_repo_audit_fields,
+    repo_required_audit_fields,
     render_scope_freeze_report,
 )
 from .issue_archive import (
@@ -201,7 +248,6 @@ from .issue_archive import (
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -221,7 +267,78 @@ from .event_bus import (
     BusEvent,
     EventBus,
 )
+from .repo_plane import (
+    CommitDiff,
+    CommitLineage,
+    LineageEvidence,
+    RepoAgent,
+    RepoCommit,
+    RepoGatewayClient,
+    RepoGatewayError,
+    RepoRegistry,
+    RepoSpace,
+    RunCommitBinding,
+    RunCommitLink,
+    TriageRecommendation,
+    VALID_ROLES,
+    approval_evidence_packet,
+    bind_run_commits,
+    normalize_commit,
+    normalize_diff,
+    normalize_gateway_error,
+    normalize_lineage,
+    recommend_triage_action,
+    repo_audit_payload,
+    validate_roles,
+)
 from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
+
+_install_surface_module(
+    "mapping",
+    map_priority=map_priority,
+    map_state=map_state,
+    map_source_issue_to_task=map_source_issue_to_task,
+)
+_install_surface_module(
+    "repo_commits",
+    RepoCommit=RepoCommit,
+    CommitLineage=CommitLineage,
+    CommitDiff=CommitDiff,
+)
+_install_surface_module(
+    "repo_gateway",
+    RepoGatewayClient=RepoGatewayClient,
+    RepoGatewayError=RepoGatewayError,
+    normalize_gateway_error=normalize_gateway_error,
+    normalize_commit=normalize_commit,
+    normalize_lineage=normalize_lineage,
+    normalize_diff=normalize_diff,
+    repo_audit_payload=repo_audit_payload,
+)
+_install_surface_module(
+    "repo_governance",
+    RepoPermissionContract=RepoPermissionContract,
+    repo_required_audit_fields=repo_required_audit_fields,
+    missing_repo_audit_fields=missing_repo_audit_fields,
+)
+_install_surface_module(
+    "repo_links",
+    RunCommitBinding=RunCommitBinding,
+    VALID_ROLES=VALID_ROLES,
+    validate_roles=validate_roles,
+    bind_run_commits=bind_run_commits,
+)
+_install_surface_module(
+    "repo_registry",
+    RepoRegistry=RepoRegistry,
+)
+_install_surface_module(
+    "repo_triage",
+    LineageEvidence=LineageEvidence,
+    TriageRecommendation=TriageRecommendation,
+    recommend_triage_action=recommend_triage_action,
+    approval_evidence_packet=approval_evidence_packet,
+)
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
