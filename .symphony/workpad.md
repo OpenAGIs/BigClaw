@@ -41,6 +41,11 @@
 - `tests/test_reports.py`: retained as the consolidated Python reporting surface. It still covers report studio, launch/final-delivery closeout, pilot portfolio, shared view rendering, repo rollout exports, and collaboration-thread merging that are not yet fully mirrored by Go tests.
 - `tests/test_repo_rollout.py`: deleted by consolidation into `tests/test_reports.py`; kept coverage without needing a separate Python file because direct Go replacements for these rollout/narrative helpers do not yet exist.
 - `tests/test_repo_collaboration.py`: deleted by consolidation into `tests/test_reports.py`; kept coverage without needing a separate Python file because merged collaboration-thread behavior does not yet have a direct Go replacement.
+- Retained Python source modules under `src/bigclaw/` for this sweep because they are still referenced by active Python code paths:
+  - `src/bigclaw/governance.py` is imported by `src/bigclaw/planning.py`, `src/bigclaw/__init__.py`, and exercised via `tests/test_planning.py`.
+  - `src/bigclaw/repo_board.py` is still exercised by `tests/test_reports.py` through collaboration-thread merging coverage.
+  - `src/bigclaw/repo_links.py` is imported by `src/bigclaw/observability.py`.
+  - The remaining `repo_*` Python modules were not removed because this ticket is scoped to final sweep tests, and their deletion would require a broader source-level migration pass.
 
 ## Validation Results
 - Command: `rg --files -g '*.py' | wc -l`
@@ -54,5 +59,7 @@
   - Result: `ok   bigclaw-go/internal/reporting`
 - Command: `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
   - Result: `37 passed in 0.20s`
+- Command: `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q`
+  - Result: `51 passed in 0.10s`
 - Command: `git push -u origin BIG-GO-987`
   - Result: pushed branch `BIG-GO-987` to `origin`
