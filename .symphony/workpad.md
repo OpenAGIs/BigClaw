@@ -22,6 +22,7 @@ Batch file list:
 - `tests/test_repo_triage.py`
 - `tests/test_saved_views.py`
 - `tests/test_validation_bundle_continuation_policy_gate.py`
+- `tests/test_models.py`
 
 Go replacement inventory:
 
@@ -36,6 +37,10 @@ Go replacement inventory:
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
 - `bigclaw-go/internal/product/saved_views_test.go`
+- `bigclaw-go/internal/risk/assessment_test.go`
+- `bigclaw-go/internal/triage/record_test.go`
+- `bigclaw-go/internal/workflow/model_test.go`
+- `bigclaw-go/internal/billing/statement_test.go`
 
 Adjacent in-repo replacement coverage:
 
@@ -85,6 +90,10 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/queue -run 'TestMemoryQueueLeasesByPriority|TestMemoryQueueDeadLetterAndReplay|TestSQLiteQueuePersistsAndLeases|TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen|TestFileQueuePersistsAcrossReload|TestFileQueueDeadLetterReplayPersistsAcrossReload'`
 - `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic'`
 - `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence'`
+- `cd bigclaw-go && go test ./internal/risk -run 'TestAssessmentRoundTripPreservesSignalsAndMitigations|TestAssessmentJSONEmitsPythonContractDefaults'`
+- `cd bigclaw-go && go test ./internal/triage -run 'TestTriageRecordRoundTripPreservesQueueLabelsAndActions|TestTriageRecordJSONEmitsPythonContractDefaults'`
+- `cd bigclaw-go && go test ./internal/workflow -run 'TestWorkflowTemplateAndRunRoundTripPreserveStepsAndOutputs|TestWorkflowModelJSONEmitsPythonContractDefaults'`
+- `cd bigclaw-go && go test ./internal/billing -run 'TestBillingStatementRoundTrip|TestBillingStatementJSONEmitsPythonContractDefaults'`
 - `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndexSummary'`
 - `git diff --check`
@@ -151,15 +160,22 @@ Repository inventory at start of lane:
     while checked-in reviewer metadata and index wiring remain pinned by
     `bigclaw-go/internal/regression/live_validation_index_test.go` and
     `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go`.
+- `tests/test_models.py`
+  - Deleted.
+  - Reason: its four contract slices are already covered directly in Go by
+    `bigclaw-go/internal/risk/assessment_test.go`,
+    `bigclaw-go/internal/triage/record_test.go`,
+    `bigclaw-go/internal/workflow/model_test.go`, and
+    `bigclaw-go/internal/billing/statement_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `25`
-- Net `tests/*.py` reduction: `13`
+- `tests/*.py` files after: `24`
+- Net `tests/*.py` reduction: `14`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `95`
-- Net repo `*.py` reduction: `13`
+- Repo `*.py` files after: `94`
+- Net repo `*.py` reduction: `14`
 - Repo `*.go` files before: `267`
 - Repo `*.go` files after: `267`
 - Net repo `*.go` reduction: `0`
@@ -169,9 +185,9 @@ Repository inventory at start of lane:
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `25`
+  - Result: `24`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `95`
+  - Result: `94`
 - `find . -name '*.go' | sort | wc -l`
   - Result: `267`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
@@ -188,6 +204,14 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/internal/repo	1.546s`
 - `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence'`
   - Result: `ok  	bigclaw-go/internal/triage	1.939s`
+- `cd bigclaw-go && go test ./internal/risk -run 'TestAssessmentRoundTripPreservesSignalsAndMitigations|TestAssessmentJSONEmitsPythonContractDefaults'`
+  - Result: `ok  	bigclaw-go/internal/risk	1.925s`
+- `cd bigclaw-go && go test ./internal/triage -run 'TestTriageRecordRoundTripPreservesQueueLabelsAndActions|TestTriageRecordJSONEmitsPythonContractDefaults'`
+  - Result: `ok  	bigclaw-go/internal/triage	1.105s`
+- `cd bigclaw-go && go test ./internal/workflow -run 'TestWorkflowTemplateAndRunRoundTripPreserveStepsAndOutputs|TestWorkflowModelJSONEmitsPythonContractDefaults'`
+  - Result: `ok  	bigclaw-go/internal/workflow	2.320s`
+- `cd bigclaw-go && go test ./internal/billing -run 'TestBillingStatementRoundTrip|TestBillingStatementJSONEmitsPythonContractDefaults'`
+  - Result: `ok  	bigclaw-go/internal/billing	1.506s`
 - `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
   - Result: `Ran 6 tests in 0.065s` / `OK`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndexSummary'`
