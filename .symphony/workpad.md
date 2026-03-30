@@ -1,20 +1,21 @@
-Issue: BIG-GO-1011
+Issue: BIG-GO-1019
 
 Plan
-- Inspect repository-root and near-root Python packaging/config residue: `pyproject.toml`, `setup.py`, `setup.cfg`, `MANIFEST.in`, `*.egg-info`, and bootstrap/docs references that still imply root packaging workflows.
-- Remove or tighten only the remaining root/config/bootstrap residue that still treats the repo root as a Python-managed environment surface.
-- Run targeted validation for the touched bootstrap/config/docs paths and capture exact commands and results.
-- Commit and push the scoped change set to the current remote branch.
+- Inspect `bigclaw-go/scripts/benchmark/**` Python residue and its repo references to identify a self-contained migration slice.
+- Replace the benchmark Python CLIs with repo-native Go implementations, preserving current outputs and report shapes so existing docs/evidence stay valid.
+- Update direct references in scripts/docs/tests that still point at the removed Python entrypoints.
+- Run targeted validation for the migrated benchmark slice, capture exact commands and results, then commit and push the scoped branch changes.
 
 Acceptance
-- Changes are limited to repository root/config/python packaging residuals and directly related docs or bootstrap scripts.
-- Repository root remains free of `pyproject.toml`, `setup.py`, and `*.egg-info` assets.
-- Any remaining root bootstrap flow avoids unnecessary Python packaging behavior and reflects the Go-mainline posture.
-- Final report includes the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- Changes stay scoped to `bigclaw-go/scripts/**` benchmark residue plus directly coupled references/tests/docs.
+- `.py` file count under `bigclaw-go/scripts/benchmark/**` is reduced as much as feasible for this tranche.
+- Repo behavior for benchmark matrix generation, local soak invocation, and capacity certification remains available through Go-native entrypoints.
+- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
 
 Validation
-- `find . -maxdepth 1 \\( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name 'MANIFEST.in' -o -name '*.egg-info' -o -name '*.py' \\) | sort`
-- `bash scripts/dev_bootstrap.sh`
-- `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
-- `git diff --stat`
-- `git status --short`
+- `find bigclaw-go/scripts -path 'bigclaw-go/scripts/benchmark/*' \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
+- `go test ./cmd/bigclawctl/... ./scripts/benchmark/...`
+- `go run ./cmd/bigclawctl automation benchmark soak-local --help`
+- `go run ./scripts/benchmark/run_matrix.go --scenario 50:8 --report-path docs/reports/benchmark-matrix-report.tmp.json`
+- `go run ./scripts/benchmark/capacity_certification.go --output bigclaw-go/docs/reports/capacity-certification-matrix.tmp.json --markdown-output bigclaw-go/docs/reports/capacity-certification-report.tmp.md --pretty`
+- `git diff --stat && git status --short`

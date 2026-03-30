@@ -30,7 +30,7 @@
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/run_matrix.py \
+go run ./cmd/bigclawctl automation benchmark run-matrix \
   --scenario 50:8 \
   --scenario 100:12 \
   --report-path docs/reports/benchmark-matrix-report.json
@@ -41,7 +41,7 @@ python3 scripts/benchmark/run_matrix.py \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/soak_local.py \
+go run ./cmd/bigclawctl automation benchmark soak-local \
   --autostart \
   --count 2000 \
   --workers 24 \
@@ -53,7 +53,7 @@ python3 scripts/benchmark/soak_local.py \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/capacity_certification.py \
+go run ./cmd/bigclawctl automation benchmark capacity-certification \
   --output docs/reports/capacity-certification-matrix.json \
   --markdown-output docs/reports/capacity-certification-report.md
 ```

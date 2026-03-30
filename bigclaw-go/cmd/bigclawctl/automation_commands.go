@@ -232,12 +232,16 @@ func runAutomationE2E(args []string) error {
 
 func runAutomationBenchmark(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <soak-local> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <soak-local|run-matrix|capacity-certification> [flags]\n")
 		return nil
 	}
 	switch args[0] {
 	case "soak-local":
 		return runAutomationSoakLocalCommand(args[1:])
+	case "run-matrix":
+		return runAutomationBenchmarkRunMatrixCommand(args[1:])
+	case "capacity-certification":
+		return runAutomationBenchmarkCapacityCertificationCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation benchmark subcommand: %s", args[0])
 	}
@@ -717,10 +721,10 @@ func automationShadowCompare(opts automationShadowCompareOptions) (*automationSh
 }
 
 type automationShadowMatrixExecutionEntry struct {
-	Task       map[string]any
-	SourceKind string
-	SourceFile string
-	TaskShape  string
+	Task        map[string]any
+	SourceKind  string
+	SourceFile  string
+	TaskShape   string
 	CorpusSlice map[string]any
 }
 
@@ -737,9 +741,9 @@ type automationShadowMatrixCorpusSlice struct {
 }
 
 type automationShadowMatrixManifestMeta struct {
-	Name       string
+	Name        string
 	GeneratedAt any
-	SourceFile string
+	SourceFile  string
 }
 
 func automationShadowMatrix(opts automationShadowMatrixOptions) (map[string]any, int, error) {
@@ -899,9 +903,9 @@ func automationShadowMatrixLoadCorpusManifestEntries(manifestPath string, replay
 		name = strings.TrimSuffix(filepath.Base(manifestPath), filepath.Ext(manifestPath))
 	}
 	return &automationShadowMatrixManifestMeta{
-		Name:       name,
+		Name:        name,
 		GeneratedAt: manifest["generated_at"],
-		SourceFile: manifestPath,
+		SourceFile:  manifestPath,
 	}, replayEntries, coverageSlices, nil
 }
 
@@ -960,11 +964,11 @@ func automationShadowMatrixBuildCorpusCoverage(fixtureEntries []automationShadow
 		fixtureByShape[entry.TaskShape] = append(fixtureByShape[entry.TaskShape], entry)
 	}
 	type shapeAggregate struct {
-		SliceCount         int
-		ReplayableCount    int
-		CorpusWeight       int
-		SliceIDs           []string
-		Titles             []string
+		SliceCount      int
+		ReplayableCount int
+		CorpusWeight    int
+		SliceIDs        []string
+		Titles          []string
 	}
 	corpusByShape := map[string]*shapeAggregate{}
 	for _, sliceData := range corpusSlices {
@@ -1019,14 +1023,14 @@ func automationShadowMatrixBuildCorpusCoverage(fixtureEntries []automationShadow
 			continue
 		}
 		uncoveredSlices = append(uncoveredSlices, map[string]any{
-			"slice_id":   sliceData.SliceID,
-			"title":      sliceData.Title,
-			"task_shape": sliceData.TaskShape,
-			"weight":     sliceData.Weight,
-			"replayable": sliceData.Task != nil,
+			"slice_id":    sliceData.SliceID,
+			"title":       sliceData.Title,
+			"task_shape":  sliceData.TaskShape,
+			"weight":      sliceData.Weight,
+			"replayable":  sliceData.Task != nil,
 			"source_file": sliceData.SourceFile,
-			"tags":       sliceData.Tags,
-			"notes":      sliceData.Notes,
+			"tags":        sliceData.Tags,
+			"notes":       sliceData.Notes,
 		})
 	}
 	replayableCount := 0
@@ -1176,17 +1180,17 @@ func automationLiveShadowScorecard(opts automationLiveShadowScorecardOptions) (m
 			"generator_script":           "go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
 		},
 		"summary": map[string]any{
-			"total_evidence_runs":           len(parityEntries),
-			"parity_ok_count":               parityOKCount,
-			"drift_detected_count":          driftDetectedCount,
-			"matrix_total":                  automationInt(matrixReport["total"], 0),
-			"matrix_matched":                automationInt(matrixReport["matched"], 0),
-			"matrix_mismatched":             automationInt(matrixReport["mismatched"], 0),
-			"corpus_coverage_present":       len(matrixCorpusCoverage) > 0,
-			"corpus_uncovered_slice_count":  matrixCorpusCoverage["uncovered_corpus_slice_count"],
-			"latest_evidence_timestamp":     stringOrNil(latestEvidenceTimestamp),
-			"fresh_inputs":                  len(freshness) - staleInputs,
-			"stale_inputs":                  staleInputs,
+			"total_evidence_runs":          len(parityEntries),
+			"parity_ok_count":              parityOKCount,
+			"drift_detected_count":         driftDetectedCount,
+			"matrix_total":                 automationInt(matrixReport["total"], 0),
+			"matrix_matched":               automationInt(matrixReport["matched"], 0),
+			"matrix_mismatched":            automationInt(matrixReport["mismatched"], 0),
+			"corpus_coverage_present":      len(matrixCorpusCoverage) > 0,
+			"corpus_uncovered_slice_count": matrixCorpusCoverage["uncovered_corpus_slice_count"],
+			"latest_evidence_timestamp":    stringOrNil(latestEvidenceTimestamp),
+			"fresh_inputs":                 len(freshness) - staleInputs,
+			"stale_inputs":                 staleInputs,
 		},
 		"freshness":           freshness,
 		"parity_entries":      parityEntries,
@@ -1473,12 +1477,12 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 		}
 	}
 	return map[string]any{
-		"run_id":                   runID,
-		"generated_at":             utcISOTime(generatedAt),
-		"status":                   status,
-		"severity":                 severity,
-		"bundle_path":              relAutomationPath(bundleDir, root),
-		"summary_path":             relAutomationPath(filepath.Join(bundleDir, "summary.json"), root),
+		"run_id":       runID,
+		"generated_at": utcISOTime(generatedAt),
+		"status":       status,
+		"severity":     severity,
+		"bundle_path":  relAutomationPath(bundleDir, root),
+		"summary_path": relAutomationPath(filepath.Join(bundleDir, "summary.json"), root),
 		"artifacts": map[string]any{
 			"shadow_compare_report_path":    relAutomationPath(compareBundlePath, root),
 			"shadow_matrix_report_path":     relAutomationPath(matrixBundlePath, root),
@@ -1497,17 +1501,17 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 			"fresh_inputs":         automationInt(scorecardSummary["fresh_inputs"], 0),
 		},
 		"rollback_trigger_surface": map[string]any{
-			"status":                   lookupMap(rollbackReport, "summary", "status"),
-			"automation_boundary":      lookupMap(rollbackReport, "summary", "automation_boundary"),
+			"status":                     lookupMap(rollbackReport, "summary", "status"),
+			"automation_boundary":        lookupMap(rollbackReport, "summary", "automation_boundary"),
 			"automated_rollback_trigger": automationBool(lookupMap(rollbackReport, "summary", "automated_rollback_trigger")),
-			"distinctions":             lookupMap(rollbackReport, "summary", "distinctions"),
-			"issue":                    lookupMap(rollbackReport, "issue"),
-			"digest_path":              rollbackReport["digest_path"],
-			"summary_path":             relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
+			"distinctions":               lookupMap(rollbackReport, "summary", "distinctions"),
+			"issue":                      lookupMap(rollbackReport, "issue"),
+			"digest_path":                rollbackReport["digest_path"],
+			"summary_path":               relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
 		},
-		"compare_trace_id":     compareReport["trace_id"],
-		"matrix_trace_ids":     matrixTraceIDs,
-		"cutover_checkpoints":  scorecardReport["cutover_checkpoints"],
+		"compare_trace_id":    compareReport["trace_id"],
+		"matrix_trace_ids":    matrixTraceIDs,
+		"cutover_checkpoints": scorecardReport["cutover_checkpoints"],
 		"closeout_commands": []string{
 			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
 			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
@@ -1575,15 +1579,15 @@ func buildLiveShadowRollup(recentRuns []map[string]any, limit int, generatedAt t
 			driftDetectedRuns++
 		}
 		entries = append(entries, map[string]any{
-			"run_id":                item["run_id"],
-			"generated_at":          item["generated_at"],
-			"status":                item["status"],
-			"severity":              severity,
+			"run_id":                    item["run_id"],
+			"generated_at":              item["generated_at"],
+			"status":                    item["status"],
+			"severity":                  severity,
 			"latest_evidence_timestamp": item["latest_evidence_timestamp"],
-			"drift_detected_count":  driftDetectedCount,
-			"stale_inputs":          staleInputs,
-			"bundle_path":           item["bundle_path"],
-			"summary_path":          item["summary_path"],
+			"drift_detected_count":      driftDetectedCount,
+			"stale_inputs":              staleInputs,
+			"bundle_path":               item["bundle_path"],
+			"summary_path":              item["summary_path"],
 		})
 	}
 	status := "parity-ok"

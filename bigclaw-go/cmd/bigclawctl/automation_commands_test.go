@@ -330,13 +330,13 @@ func TestAutomationLiveShadowScorecardBuildsReport(t *testing.T) {
 func TestAutomationExportLiveShadowBundleBuildsManifest(t *testing.T) {
 	root := t.TempDir()
 	for path, body := range map[string]string{
-		filepath.Join(root, "docs/reports/shadow-compare-report.json"): `{"trace_id":"shadow-compare-sample","primary":{"task_id":"primary-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"shadow":{"task_id":"shadow-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}`,
-		filepath.Join(root, "docs/reports/shadow-matrix-report.json"):  `{"total":1,"matched":1,"mismatched":0,"results":[{"trace_id":"shadow-compare-sample-m1","primary":{"task_id":"primary-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"shadow":{"task_id":"shadow-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}]}`,
+		filepath.Join(root, "docs/reports/shadow-compare-report.json"):        `{"trace_id":"shadow-compare-sample","primary":{"task_id":"primary-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"shadow":{"task_id":"shadow-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}`,
+		filepath.Join(root, "docs/reports/shadow-matrix-report.json"):         `{"total":1,"matched":1,"mismatched":0,"results":[{"trace_id":"shadow-compare-sample-m1","primary":{"task_id":"primary-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"shadow":{"task_id":"shadow-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}]}`,
 		filepath.Join(root, "docs/reports/live-shadow-mirror-scorecard.json"): `{"summary":{"total_evidence_runs":2,"parity_ok_count":2,"drift_detected_count":0,"matrix_total":1,"matrix_mismatched":0,"stale_inputs":0,"fresh_inputs":2,"latest_evidence_timestamp":"2026-03-13T08:56:55Z"},"freshness":[{"name":"shadow-compare-report","status":"fresh","report_path":"bigclaw-go/docs/reports/shadow-compare-report.json"},{"name":"shadow-matrix-report","status":"fresh","report_path":"bigclaw-go/docs/reports/shadow-matrix-report.json"}],"cutover_checkpoints":[{"name":"checkpoint","passed":true,"detail":"ok"}]}`,
 		filepath.Join(root, "docs/reports/rollback-trigger-surface.json"):     `{"summary":{"status":"manual-review-required","automation_boundary":"manual_only","automated_rollback_trigger":false,"distinctions":{"blockers":3,"warnings":1,"manual_only_paths":2}},"issue":{"id":"OPE-254","slug":"BIG-PAR-088"},"digest_path":"docs/reports/rollback-safeguard-follow-up-digest.md"}`,
-		filepath.Join(root, "docs/migration-shadow.md"):                         `shadow docs`,
-		filepath.Join(root, "docs/reports/migration-readiness-report.md"):       `readiness docs`,
-		filepath.Join(root, "docs/reports/migration-plan-review-notes.md"):      `review notes`,
+		filepath.Join(root, "docs/migration-shadow.md"):                       `shadow docs`,
+		filepath.Join(root, "docs/reports/migration-readiness-report.md"):     `readiness docs`,
+		filepath.Join(root, "docs/reports/migration-plan-review-notes.md"):    `review notes`,
 	} {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)
@@ -373,5 +373,124 @@ func TestAutomationExportLiveShadowBundleBuildsManifest(t *testing.T) {
 	}
 	if !strings.Contains(string(indexBody), "export-live-shadow-bundle") {
 		t.Fatalf("unexpected index body: %s", string(indexBody))
+	}
+}
+
+func TestAutomationBenchmarkRunMatrixBuildsReport(t *testing.T) {
+	root := t.TempDir()
+	report, err := automationBenchmarkRunMatrix(automationBenchmarkRunMatrixOptions{
+		GoRoot:         root,
+		ReportPath:     "docs/reports/benchmark-matrix-report.json",
+		TimeoutSeconds: 123,
+		Scenarios:      []string{"3:2", "5:4"},
+		RunBenchmark: func(string) (string, error) {
+			return "BenchmarkAlpha-8    \t100\t123.45 ns/op\nBenchmarkBeta-8    \t200\t678.90 ns/op\n", nil
+		},
+		RunSoak: func(_ string, count, workers, timeoutSeconds int, reportPath string) (map[string]any, error) {
+			return map[string]any{
+				"count":                    count,
+				"workers":                  workers,
+				"elapsed_seconds":          1.25,
+				"throughput_tasks_per_sec": 9.5,
+				"succeeded":                count,
+				"failed":                   0,
+				"timeout_seconds":          timeoutSeconds,
+				"report_path":              reportPath,
+			}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("run benchmark matrix: %v", err)
+	}
+	benchmark, _ := report["benchmark"].(map[string]any)
+	parsed, _ := benchmark["parsed"].(map[string]any)
+	if len(parsed) != 2 {
+		t.Fatalf("expected parsed benchmarks, got %+v", parsed)
+	}
+	soakMatrix, _ := report["soak_matrix"].([]any)
+	if len(soakMatrix) != 2 {
+		t.Fatalf("expected 2 soak scenarios, got %+v", soakMatrix)
+	}
+	body, err := os.ReadFile(filepath.Join(root, "docs/reports/benchmark-matrix-report.json"))
+	if err != nil {
+		t.Fatalf("read matrix report: %v", err)
+	}
+	if !strings.Contains(string(body), "\"report_path\": \"docs/reports/soak-local-3x2.json\"") {
+		t.Fatalf("unexpected report body: %s", string(body))
+	}
+}
+
+func TestAutomationBenchmarkCapacityCertificationBuildsReport(t *testing.T) {
+	root := t.TempDir()
+	for path, body := range map[string]string{
+		filepath.Join(root, "docs/reports/benchmark-matrix-report.json"): `{
+  "benchmark": {
+    "parsed": {
+      "BenchmarkMemoryQueueEnqueueLease-8": {"ns_per_op": 66075.0},
+      "BenchmarkFileQueueEnqueueLease-8": {"ns_per_op": 31627767.0},
+      "BenchmarkSQLiteQueueEnqueueLease-8": {"ns_per_op": 18057898.0},
+      "BenchmarkSchedulerDecide-8": {"ns_per_op": 73.98}
+    }
+  },
+  "soak_matrix": [
+    {"report_path": "docs/reports/soak-local-50x8.json", "result": {"count": 50, "workers": 8, "elapsed_seconds": 5.0, "throughput_tasks_per_sec": 10.0, "succeeded": 50, "failed": 0, "generated_at": "2026-03-13T09:44:00Z"}},
+    {"report_path": "docs/reports/soak-local-100x12.json", "result": {"count": 100, "workers": 12, "elapsed_seconds": 10.0, "throughput_tasks_per_sec": 9.6, "succeeded": 100, "failed": 0, "generated_at": "2026-03-13T09:44:20Z"}}
+  ]
+}`,
+		filepath.Join(root, "docs/reports/mixed-workload-matrix-report.json"): `{
+  "all_ok": true,
+  "generated_at": "2026-03-13T09:44:42.458392Z",
+  "tasks": [
+    {"name": "local-a", "ok": true, "expected_executor": "local", "routed_executor": "local", "final_state": "succeeded"},
+    {"name": "local-b", "ok": true, "expected_executor": "local", "routed_executor": "local", "final_state": "succeeded"},
+    {"name": "k8s-a", "ok": true, "expected_executor": "kubernetes", "routed_executor": "kubernetes", "final_state": "succeeded"},
+    {"name": "ray-a", "ok": true, "expected_executor": "ray", "routed_executor": "ray", "final_state": "succeeded"},
+    {"name": "ray-b", "ok": true, "expected_executor": "ray", "routed_executor": "ray", "final_state": "succeeded"}
+  ]
+}`,
+		filepath.Join(root, "docs/reports/soak-local-1000x24.json"): `{"count":1000,"workers":24,"elapsed_seconds":100.0,"throughput_tasks_per_sec":9.8,"succeeded":1000,"failed":0,"generated_at":"2026-03-13T09:44:30Z"}`,
+		filepath.Join(root, "docs/reports/soak-local-2000x24.json"): `{"count":2000,"workers":24,"elapsed_seconds":205.0,"throughput_tasks_per_sec":9.1,"succeeded":2000,"failed":0,"generated_at":"2026-03-13T09:44:40Z"}`,
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	report, err := automationBenchmarkCapacityCertification(automationBenchmarkCapacityCertificationOptions{
+		GoRoot:                  root,
+		OutputPath:              "docs/reports/capacity-certification-matrix.json",
+		MarkdownOutputPath:      "docs/reports/capacity-certification-report.md",
+		BenchmarkReportPath:     "docs/reports/benchmark-matrix-report.json",
+		MixedWorkloadReportPath: "docs/reports/mixed-workload-matrix-report.json",
+	})
+	if err != nil {
+		t.Fatalf("build capacity certification: %v", err)
+	}
+	summary, _ := report["summary"].(map[string]any)
+	if summary["overall_status"] != "pass" {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	if report["generated_at"] != "2026-03-13T09:44:42.458392Z" {
+		t.Fatalf("unexpected generated_at: %+v", report["generated_at"])
+	}
+	body, err := os.ReadFile(filepath.Join(root, "docs/reports/capacity-certification-matrix.json"))
+	if err != nil {
+		t.Fatalf("read certification json: %v", err)
+	}
+	if strings.Contains(string(body), "\"markdown\"") {
+		t.Fatalf("json output should not embed markdown: %s", string(body))
+	}
+	if !strings.Contains(string(body), "automation benchmark capacity-certification") {
+		t.Fatalf("unexpected certification json: %s", string(body))
+	}
+	markdownBody, err := os.ReadFile(filepath.Join(root, "docs/reports/capacity-certification-report.md"))
+	if err != nil {
+		t.Fatalf("read certification markdown: %v", err)
+	}
+	if !strings.Contains(string(markdownBody), "Runtime enforcement: `none`") {
+		t.Fatalf("unexpected markdown output: %s", string(markdownBody))
 	}
 }
