@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issue: `BIG-GO-902`
+Issue: `BIG-GO-902`, follow-up sweep `BIG-GO-1010`
 
 ## Implemented In This Slice
 
@@ -24,8 +24,27 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/benchmark/capacity_certification.py`
-- `bigclaw-go/scripts/benchmark/run_matrix.py`
+
+`BIG-GO-1010` removed the Python-only test harnesses under `bigclaw-go/scripts/e2e/*_test.py`.
+Coverage now lives in Go tests and the checked-in regression suite, but the report generators above
+still require Go-native replacements before the repository reaches a true Go-only operational state.
+
+## Final Gap Report
+
+- `migration/**`: no remaining Python files in this checkout.
+- Removed in `BIG-GO-1010`:
+  - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
+  - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+  - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
+  - `bigclaw-go/scripts/e2e/run_all_test.py`
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- Go replacements added for active behavior coverage:
+  - `bigclaw-go/scripts/e2e/run_all_test.go`
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.go`
+- Still blocked on Go-native implementation:
+  - validation bundle export and continuation generators
+  - shared-queue and subscriber-takeover live harnesses
+  - mixed workload, external store, cross-process coordination, and broker failover evidence generators
 
 ## Validation Commands
 
