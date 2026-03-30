@@ -32,6 +32,7 @@ Batch file list:
 - `tests/test_design_system.py`
 - `tests/test_console_ia.py`
 - `tests/test_workspace_bootstrap.py`
+- `tests/test_parallel_validation_bundle.py`
 - `tests/test_control_center.py`
 
 Go replacement inventory:
@@ -52,6 +53,9 @@ Go replacement inventory:
 - `bigclaw-go/internal/designsystemcompat/design_system_test.go`
 - `bigclaw-go/internal/consoleiacompat/console_ia_test.go`
 - `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+- `bigclaw-go/internal/regression/live_validation_summary_test.go`
+- `bigclaw-go/internal/regression/live_validation_index_test.go`
 - `bigclaw-go/internal/controlcentercompat/control_center_test.go`
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
@@ -106,6 +110,9 @@ Repository inventory at start of lane:
 13. Extend the Go workspace bootstrap coverage to match the residual
     cache/worktree validation contract, then delete the root Python test once
     parity is covered.
+14. Delete the residual root validation-bundle exporter test once adjacent
+    script-local exporter coverage and checked-in regression surfaces fully
+    cover the same emitted summary and index contracts.
 
 ## Acceptance
 
@@ -146,6 +153,8 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/designsystemcompat`
 - `cd bigclaw-go && go test ./internal/consoleiacompat`
 - `cd bigclaw-go && go test ./internal/bootstrap`
+- `cd bigclaw-go && python3 scripts/e2e/export_validation_bundle_test.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestLiveValidationIndexStaysAligned'`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
 
 ## Results
@@ -259,15 +268,23 @@ Repository inventory at start of lane:
   - Reason: its repo-cache derivation, warm-cache reuse, stale-seed recovery,
     cleanup preservation, and bootstrap validation-summary coverage is now
     covered directly in `bigclaw-go/internal/bootstrap/bootstrap_test.go`.
+- `tests/test_parallel_validation_bundle.py`
+  - Deleted.
+  - Reason: its root-level validation bundle exporter coverage is now split
+    between adjacent script-local coverage in
+    `bigclaw-go/scripts/e2e/export_validation_bundle_test.py` and checked-in
+    summary/index regression coverage in
+    `bigclaw-go/internal/regression/live_validation_summary_test.go` and
+    `bigclaw-go/internal/regression/live_validation_index_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `15`
-- Net `tests/*.py` reduction: `23`
+- `tests/*.py` files after: `14`
+- Net `tests/*.py` reduction: `24`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `85`
-- Net repo `*.py` reduction: `23`
+- Repo `*.py` files after: `84`
+- Net repo `*.py` reduction: `24`
 - Repo `*.go` files before: `267`
 - Repo `*.go` files after: `281`
 - Net repo `*.go` increase: `14`
@@ -277,9 +294,9 @@ Repository inventory at start of lane:
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `15`
+  - Result: `14`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `85`
+  - Result: `84`
 - `find . -name '*.go' | sort | wc -l`
   - Result: `281`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
@@ -316,8 +333,8 @@ Repository inventory at start of lane:
   - Result: clean
 - `git status --short`
   - Result: `.symphony/workpad.md` modified,
-    `bigclaw-go/internal/bootstrap/bootstrap_test.go` modified, and
-    `tests/test_workspace_bootstrap.py` deleted
+    `bigclaw-go/scripts/e2e/export_validation_bundle.py` modified, and
+    `tests/test_parallel_validation_bundle.py` deleted
 - `cd bigclaw-go && go test ./internal/validationpolicy`
   - Result: `ok  	bigclaw-go/internal/validationpolicy	1.154s`
 - `cd bigclaw-go && go test ./internal/taskmemory`
@@ -334,3 +351,7 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/internal/consoleiacompat	0.902s`
 - `cd bigclaw-go && go test ./internal/bootstrap`
   - Result: `ok  	bigclaw-go/internal/bootstrap	4.163s`
+- `cd bigclaw-go && python3 scripts/e2e/export_validation_bundle_test.py`
+  - Result: `Ran 4 tests in 0.005s` / `OK`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestLiveValidationIndexStaysAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	1.349s`
