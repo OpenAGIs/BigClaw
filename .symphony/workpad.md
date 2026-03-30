@@ -101,12 +101,24 @@ Repository inventory at start of lane:
   - Replaced.
   - Reason: added the collaboration-comment projection assertion that was only
     present in Python before this lane.
+- `tests/test_repo_gateway.py`
+  - Deleted.
+  - Reason: its gateway normalization and audit-payload assertions already had
+    direct Go parity in repo surface tests.
+- `tests/test_repo_registry.py`
+  - Deleted.
+  - Reason: its resolve/agent assertions already had direct Go parity, and the
+    JSON round-trip assertion is now covered in Go.
+- `tests/test_repo_triage.py`
+  - Deleted.
+  - Reason: its lineage recommendation and approval-packet assertions already
+    had direct Go parity in `internal/triage` and repo surface tests.
 
 ### Impact
 
 - Repository `py` files before: `108`
-- Repository `py` files after: `103`
-- Net `py` reduction: `5`
+- Repository `py` files after: `100`
+- Net `py` reduction: `8`
 - Repository `go` files before: `267`
 - Repository `go` files after: `267`
 - Net `go` reduction: `0`
@@ -129,6 +141,11 @@ Repository inventory at start of lane:
 - `go test ./internal/repo`
   - Working directory: `bigclaw-go/`
   - Result: `ok   bigclaw-go/internal/repo  1.112s`
+- `go test ./internal/repo ./internal/triage`
+  - Working directory: `bigclaw-go/`
+  - Result:
+    - `ok   bigclaw-go/internal/repo  1.108s`
+    - `ok   bigclaw-go/internal/triage  1.595s`
 - `git diff --check`
   - Result: clean
 - `git status --short`
@@ -143,7 +160,7 @@ Repository inventory at start of lane:
     - `D tests/test_repo_governance.py`
     - `D tests/test_saved_views.py`
 - `find . -name '*.py' | sort | wc -l`
-  - Result after: `103`
+  - Result after: `100`
 - `find . -name '*.go' | sort | wc -l`
   - Result after: `267`
 - `test -f pyproject.toml; echo $?`
