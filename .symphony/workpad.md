@@ -528,3 +528,32 @@ Repository inventory at start of lane:
 - `python3 -m compileall src/bigclaw/operations.py src/bigclaw/__init__.py`
 - `python3 - <<'PY' ... PY` fake-package load `bigclaw.operations` and exercise `BenchmarkSuiteResult`/`render_benchmark_suite_report`
 - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
+### Results
+
+- Deleted `src/bigclaw/evaluation.py`.
+- Merged the benchmark models, runner, and replay/report render helpers into
+  `src/bigclaw/operations.py`.
+- Updated `src/bigclaw/__init__.py` to source evaluation exports from
+  `operations.py` and install a compatibility `bigclaw.evaluation` submodule.
+- Repository counts after continuation:
+  - total `py` files: `74`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `11`
+- Root manifest impact:
+  - `pyproject.toml`: absent
+  - `setup.py`: absent
+- Validation outcomes:
+  - `python3 -m compileall src/bigclaw/operations.py src/bigclaw/__init__.py`
+    - Result: success
+  - `python3 - <<'PY' ... PY`
+    - Result: fake-package loaded `bigclaw.operations`, executed
+      `BenchmarkRunner.run_case`, rendered the benchmark suite report, replay
+      detail page, and run replay index page successfully; printed
+      `evaluation merge validation ok`
+  - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+    - Result: `PY 74`, `GO 267`, `SRC 11`
+  - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
+    - Result: `pyproject=1`, `setup=1`
+  - `git diff --check`
+    - Result: clean

@@ -525,7 +525,7 @@ from .operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .evaluation import (
+from .operations import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,
@@ -537,6 +537,23 @@ from .evaluation import (
     render_run_replay_index_page,
     render_replay_detail_page,
     render_benchmark_suite_report,
+)
+_install_surface_module(
+    "evaluation",
+    sys.modules[f"{__name__}.operations"],
+    [
+        "BenchmarkCase",
+        "BenchmarkComparison",
+        "BenchmarkResult",
+        "BenchmarkRunner",
+        "BenchmarkSuiteResult",
+        "EvaluationCriterion",
+        "ReplayOutcome",
+        "ReplayRecord",
+        "render_run_replay_index_page",
+        "render_replay_detail_page",
+        "render_benchmark_suite_report",
+    ],
 )
 from .planning import (
     FourWeekExecutionPlan,
