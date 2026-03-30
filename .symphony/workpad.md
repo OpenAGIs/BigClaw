@@ -1,62 +1,116 @@
-# BIG-GO-975 Workpad
+# BIG-GO-982 Workpad
 
 ## Scope
 
-Targeted remaining Python test batch under `tests/` for this lane:
+Final sweep for the remaining Python entrypoints under `scripts/*.py` and
+`scripts/ops/*.py`.
 
-- `tests/test_connectors.py`
-- `tests/test_mapping.py`
+In-scope files:
 
-Existing Go-native replacement paths:
+- `scripts/create_issues.py`
+- `scripts/dev_smoke.py`
+- `scripts/ops/bigclaw_github_sync.py`
+- `scripts/ops/bigclaw_refill_queue.py`
+- `scripts/ops/bigclaw_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_validate.py`
 
-- `bigclaw-go/internal/intake/connector_test.go`
-- `bigclaw-go/internal/intake/mapping_test.go`
-
-Current repository Python file count before this lane: `119`
-Current `tests/**` Python file count before this lane: `43`
+Current repository Python file count before this lane: `116`
+Current in-scope Python file count before this lane: `7`
 
 ## Plan
 
-1. Confirm the selected batch maps cleanly to existing Go-native intake coverage.
-2. Remove the redundant Python test files for connectors and mapping.
-3. Run the targeted Go intake tests that now serve as the replacement coverage.
-4. Record the exact file list, replacement paths, validation commands, and Python file-count impact.
-5. Commit and push the scoped lane changes.
+1. Confirm each in-scope Python file is only a legacy shim and identify the Go
+   replacement command.
+2. Delete the redundant Python wrapper files from `scripts/` and `scripts/ops/`.
+3. Update repo docs that still present these Python paths as supported
+   compatibility entrypoints so they point at `bash scripts/ops/bigclawctl ...`
+   instead.
+4. Run targeted Go CLI validation that covers the replaced entrypoints.
+5. Record exact file disposition, replacement basis, and repository Python file
+   count impact.
+6. Commit and push the scoped lane changes.
 
 ## Acceptance
 
-- Produce the exact `BIG-GO-975` batch file list.
-- Reduce Python files in `tests/**` by removing the selected batch or clearly document the Go replacement path.
-- Keep changes scoped to the intake test migration batch only.
-- Report before/after repository-wide and `tests/**` Python file counts.
+- Produce the exact `BIG-GO-982` batch file list under `scripts/*.py` and
+  `scripts/ops/*.py`.
+- Reduce the Python file count in those directories as far as possible for this
+  batch.
+- Document whether each file was deleted or replaced, with the corresponding Go
+  command as justification.
+- Report repository-wide Python file count before and after the sweep.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/intake`
-- `git status --short`
+- `cd bigclaw-go && go test ./cmd/bigclawctl`
+- `bash scripts/ops/bigclawctl create-issues --help`
+- `bash scripts/ops/bigclawctl dev-smoke`
+- `bash scripts/ops/bigclawctl github-sync status --json`
+- `bash scripts/ops/bigclawctl refill --help`
+- `bash scripts/ops/bigclawctl workspace --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
+- `rg --files scripts -g '*.py'`
+- `rg --files . -g '*.py' | wc -l`
 
 ## Results
 
 ### File Disposition
 
-- `tests/test_connectors.py`
+- `scripts/create_issues.py`
   - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/connector_test.go`.
-- `tests/test_mapping.py`
+  - Replaced by `bash scripts/ops/bigclawctl create-issues`.
+  - Basis: file only proxied CLI arguments into the Go command.
+- `scripts/dev_smoke.py`
   - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/mapping_test.go`.
+  - Replaced by `bash scripts/ops/bigclawctl dev-smoke`.
+  - Basis: file only emitted a deprecation warning and proxied into the Go command.
+- `scripts/ops/bigclaw_github_sync.py`
+  - Deleted.
+  - Replaced by `bash scripts/ops/bigclawctl github-sync`.
+  - Basis: file only routed into the Go command through legacy shim helpers.
+- `scripts/ops/bigclaw_refill_queue.py`
+  - Deleted.
+  - Replaced by `bash scripts/ops/bigclawctl refill`.
+  - Basis: file only routed into the Go command through legacy shim helpers.
+- `scripts/ops/bigclaw_workspace_bootstrap.py`
+  - Deleted.
+  - Replaced by `bash scripts/ops/bigclawctl workspace`.
+  - Basis: file only filled legacy default flags before dispatching to the Go command.
+- `scripts/ops/symphony_workspace_bootstrap.py`
+  - Deleted.
+  - Replaced by `bash scripts/ops/bigclawctl workspace`.
+  - Basis: file only routed into the Go command through legacy shim helpers.
+- `scripts/ops/symphony_workspace_validate.py`
+  - Deleted.
+  - Replaced by `bash scripts/ops/bigclawctl workspace validate`.
+  - Basis: file only translated legacy validate flags before dispatching to the Go command.
 
 ### Python File Count Impact
 
-- Repository Python files before: `119`
-- Repository Python files after: `117`
-- `tests/**` Python files before: `43`
-- `tests/**` Python files after: `41`
-- Net reduction: `2`
+- Repository Python files before: `116`
+- Repository Python files after: `109`
+- In-scope root/ops Python files before: `7`
+- In-scope root/ops Python files after: `0`
+- Net reduction: `7`
 
 ### Validation Record
 
-- `cd bigclaw-go && go test ./internal/intake`
-  - Result: `ok  	bigclaw-go/internal/intake	0.461s`
-- `git status --short`
-  - Result: only `.symphony/workpad.md`, `tests/test_connectors.py`, and `tests/test_mapping.py` changed before commit.
+- `cd bigclaw-go && go test ./cmd/bigclawctl`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.329s`
+- `bash scripts/ops/bigclawctl create-issues --help`
+  - Result: exit `0`; printed `usage: bigclawctl create-issues [flags]`.
+- `bash scripts/ops/bigclawctl dev-smoke`
+  - Result: exit `0`; printed `smoke_ok local`.
+- `bash scripts/ops/bigclawctl github-sync status --json`
+  - Result: exit `0`; returned `status: ok`, `synced: true`, local and remote SHA `d295f07d50e979a3cb62785e62f1d84b674df32a`.
+- `bash scripts/ops/bigclawctl refill --help`
+  - Result: exit `0`; printed `usage: bigclawctl refill [flags]`.
+- `bash scripts/ops/bigclawctl workspace --help`
+  - Result: exit `0`; printed `usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]`.
+- `bash scripts/ops/bigclawctl workspace validate --help`
+  - Result: exit `0`; printed `usage: bigclawctl workspace validate [flags]`.
+- `rg --files scripts -g '*.py' || true`
+  - Result: no output; there are no remaining Python files under `scripts/`.
+- `rg --files . -g '*.py' | wc -l`
+  - Result: `109`.

@@ -64,11 +64,9 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/create_issues.py` and `python3 scripts/dev_smoke.py` are now
-  compatibility shims that dispatch into `bigclawctl` Go subcommands.
-- `python3 scripts/ops/bigclaw_github_sync.py ...`,
-  `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
-  `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
+- The legacy root and ops Python shims have been retired; use
+  `bash scripts/ops/bigclawctl ...` directly for `create-issues`, `dev-smoke`,
+  `github-sync`, `refill`, and `workspace` operations.
 - `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
@@ -103,15 +101,6 @@ make test
 make run &
 curl localhost:8080/healthz
 bash scripts/ops/bigclawctl github-sync status --json
-```
-
-## Legacy Python smoke verify
-
-Use this only when validating a frozen migration-reference path:
-
-```bash
-bash scripts/ops/bigclawctl dev-smoke
-python3 scripts/dev_smoke.py
 ```
 
 ## Quality gates
@@ -152,8 +141,7 @@ Repository: https://github.com/OpenAGIs/BigClaw
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
-the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
-bootstrap wrappers remain only as compatibility shims during migration.
+the Go-first operator entrypoint is `scripts/ops/bigclawctl`.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
