@@ -489,6 +489,124 @@ func TestAutomationValidationBundleContinuationPolicyGateMapsHoldAndFailModes(t 
 	}
 }
 
+func TestAutomationExportValidationBundleBuildsSummaryAndIndex(t *testing.T) {
+	root := t.TempDir()
+	for path, body := range map[string]string{
+		filepath.Join(root, "docs/reports/multi-node-shared-queue-report.json"): `{
+  "generated_at":"2026-03-16T14:01:38Z",
+  "all_ok":true,
+  "count":200,
+  "cross_node_completions":99,
+  "duplicate_started_tasks":[],
+  "duplicate_completed_tasks":[],
+  "missing_completed_tasks":[],
+  "submitted_by_node":{"node-a":100,"node-b":100},
+  "completed_by_node":{"node-a":73,"node-b":127},
+  "nodes":[{"name":"node-a"},{"name":"node-b"}]
+}`,
+		filepath.Join(root, "docs/reports/validation-bundle-continuation-policy-gate.json"): `{
+  "status":"policy-go",
+  "recommendation":"go",
+  "failing_checks":[],
+  "enforcement":{"mode":"review","outcome":"pass","exit_code":0},
+  "summary":{"latest_run_id":"20260316T140138Z","workflow_exit_code":0,"failing_check_count":0},
+  "reviewer_path":{"index_path":"docs/reports/live-validation-index.md","digest_path":"docs/reports/validation-bundle-continuation-digest.md","digest_issue":{"id":"OPE-271","slug":"BIG-PAR-082"}},
+  "next_actions":["set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions"]
+}`,
+		filepath.Join(root, "docs/reports/validation-bundle-continuation-scorecard.json"): `{"status":"local-continuation-scorecard"}`,
+		filepath.Join(root, "docs/reports/validation-bundle-continuation-digest.md"):      `digest`,
+		filepath.Join(root, "local/report.json"): `{
+  "base_url":"http://127.0.0.1:8080",
+  "state_dir":"` + filepath.ToSlash(filepath.Join(root, "state-local")) + `",
+  "service_log":"` + filepath.ToSlash(filepath.Join(root, "state-local", "service.log")) + `",
+  "task":{"id":"local-1","required_executor":"local"},
+  "status":{"state":"succeeded","events":[{"id":"evt-1","type":"queued","timestamp":"2026-03-16T14:00:00Z"},{"id":"evt-2","type":"succeeded","timestamp":"2026-03-16T14:00:05Z"}]},
+  "events":[{"id":"evt-1","type":"queued","timestamp":"2026-03-16T14:00:00Z"},{"id":"evt-2","type":"succeeded","timestamp":"2026-03-16T14:00:05Z"}]
+}`,
+		filepath.Join(root, "k8s/report.json"): `{
+  "base_url":"https://cluster",
+  "state_dir":"` + filepath.ToSlash(filepath.Join(root, "state-k8s")) + `",
+  "service_log":"` + filepath.ToSlash(filepath.Join(root, "state-k8s", "service.log")) + `",
+  "task":{"id":"k8s-1","required_executor":"kubernetes"},
+  "status":{"state":"succeeded","events":[{"id":"evt-3","type":"scheduler.routed","timestamp":"2026-03-16T14:00:00Z","payload":{"reason":"cluster-ready"}},{"id":"evt-4","type":"succeeded","timestamp":"2026-03-16T14:00:10Z"}]},
+  "events":[{"id":"evt-3","type":"scheduler.routed","timestamp":"2026-03-16T14:00:00Z","payload":{"reason":"cluster-ready"}},{"id":"evt-4","type":"succeeded","timestamp":"2026-03-16T14:00:10Z"}]
+}`,
+		filepath.Join(root, "ray/report.json"): `{
+  "base_url":"http://ray",
+  "state_dir":"` + filepath.ToSlash(filepath.Join(root, "state-ray")) + `",
+  "service_log":"` + filepath.ToSlash(filepath.Join(root, "state-ray", "service.log")) + `",
+  "task":{"id":"ray-1","required_executor":"ray"},
+  "status":{"state":"succeeded","events":[{"id":"evt-5","type":"queued","timestamp":"2026-03-16T14:00:00Z"},{"id":"evt-6","type":"succeeded","timestamp":"2026-03-16T14:00:12Z"}]},
+  "events":[{"id":"evt-5","type":"queued","timestamp":"2026-03-16T14:00:00Z"},{"id":"evt-6","type":"succeeded","timestamp":"2026-03-16T14:00:12Z"}]
+}`,
+		filepath.Join(root, "broker-bootstrap-review-summary.json"): `{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}`,
+		filepath.Join(root, "state-local/audit.jsonl"):              "audit-local\n",
+		filepath.Join(root, "state-local/service.log"):              "service-local\n",
+		filepath.Join(root, "state-k8s/audit.jsonl"):                "audit-k8s\n",
+		filepath.Join(root, "state-k8s/service.log"):                "service-k8s\n",
+		filepath.Join(root, "state-ray/audit.jsonl"):                "audit-ray\n",
+		filepath.Join(root, "state-ray/service.log"):                "service-ray\n",
+		filepath.Join(root, "local.stdout"):                         "local stdout\n",
+		filepath.Join(root, "local.stderr"):                         "local stderr\n",
+		filepath.Join(root, "k8s.stdout"):                           "k8s stdout\n",
+		filepath.Join(root, "k8s.stderr"):                           "k8s stderr\n",
+		filepath.Join(root, "ray.stdout"):                           "ray stdout\n",
+		filepath.Join(root, "ray.stderr"):                           "ray stderr\n",
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	report, exitCode, err := automationExportValidationBundle(automationExportValidationBundleOptions{
+		GoRoot:                     root,
+		RunID:                      "20260316T140138Z",
+		BundleDir:                  "docs/reports/live-validation-runs/20260316T140138Z",
+		SummaryPath:                "docs/reports/live-validation-summary.json",
+		IndexPath:                  "docs/reports/live-validation-index.md",
+		ManifestPath:               "docs/reports/live-validation-index.json",
+		RunLocal:                   true,
+		RunKubernetes:              true,
+		RunRay:                     true,
+		ValidationStatus:           0,
+		RunBroker:                  false,
+		BrokerBootstrapSummaryPath: "broker-bootstrap-review-summary.json",
+		LocalReportPath:            "local/report.json",
+		LocalStdoutPath:            filepath.Join(root, "local.stdout"),
+		LocalStderrPath:            filepath.Join(root, "local.stderr"),
+		KubernetesReportPath:       "k8s/report.json",
+		KubernetesStdoutPath:       filepath.Join(root, "k8s.stdout"),
+		KubernetesStderrPath:       filepath.Join(root, "k8s.stderr"),
+		RayReportPath:              "ray/report.json",
+		RayStdoutPath:              filepath.Join(root, "ray.stdout"),
+		RayStderrPath:              filepath.Join(root, "ray.stderr"),
+		Now:                        func() time.Time { return time.Date(2026, 3, 17, 4, 32, 13, 251910000, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("export validation bundle: %v", err)
+	}
+	if exitCode != 0 || report["status"] != "succeeded" {
+		t.Fatalf("unexpected export result: exit=%d report=%+v", exitCode, report)
+	}
+	body, err := os.ReadFile(filepath.Join(root, "docs/reports/live-validation-index.md"))
+	if err != nil {
+		t.Fatalf("read validation index: %v", err)
+	}
+	if !strings.Contains(string(body), "## Continuation gate") || !strings.Contains(string(body), "shared-queue companion") {
+		t.Fatalf("unexpected validation index body: %s", string(body))
+	}
+	manifestBody, err := os.ReadFile(filepath.Join(root, "docs/reports/live-validation-index.json"))
+	if err != nil {
+		t.Fatalf("read manifest: %v", err)
+	}
+	if !strings.Contains(string(manifestBody), "\"continuation_gate\"") || !strings.Contains(string(manifestBody), "\"recent_runs\"") {
+		t.Fatalf("unexpected manifest body: %s", string(manifestBody))
+	}
+}
+
 func TestAutomationExportLiveShadowBundleBuildsManifest(t *testing.T) {
 	root := t.TempDir()
 	for path, body := range map[string]string{

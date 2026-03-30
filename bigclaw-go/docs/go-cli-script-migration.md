@@ -7,6 +7,7 @@ Issue: `BIG-GO-902`, follow-up sweep `BIG-GO-1010`
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/export_validation_bundle.py` | `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/shadow_matrix.py` | `go run ./cmd/bigclawctl automation migration shadow-matrix ...` | migrated and Python shim removed |
@@ -16,7 +17,6 @@ Issue: `BIG-GO-902`, follow-up sweep `BIG-GO-1010`
 ## Remaining Python Script Backlog
 
 - `migration/**`: none in the current checkout
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
@@ -30,28 +30,29 @@ still require Go-native replacements before the repository reaches a true Go-onl
 
 Current residual counts after that sweep:
 
-- repository Python files: `101`
-- `bigclaw-go/scripts/e2e/**` Python files: `7`
+- repository Python files: `100`
+- `bigclaw-go/scripts/e2e/**` Python files: `6`
 
 ## Final Gap Report
 
 - `migration/**`: no remaining Python files in this checkout.
-- Historical reduction delivered by `BIG-GO-1010`: repository `108 -> 101`, scoped batch `14 -> 7`.
+- Historical reduction delivered by `BIG-GO-1010`: repository `108 -> 100`, scoped batch `14 -> 6`.
 - Removed in `BIG-GO-1010`:
   - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
   - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+  - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
   - `bigclaw-go/scripts/e2e/run_all_test.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - Go replacements added for active behavior coverage:
+  - `go run ./cmd/bigclawctl automation e2e export-validation-bundle`
   - `bigclaw-go/scripts/e2e/run_all_test.go`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.go`
   - `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard`
   - `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-policy-gate`
 - Still blocked on Go-native implementation:
-  - validation bundle export generator
   - shared-queue and subscriber-takeover live harnesses
   - mixed workload, external store, cross-process coordination, and broker failover evidence generators
 

@@ -126,15 +126,40 @@ import pathlib
 import sys
 
 args = sys.argv[1:]
+fixture_root = pathlib.Path(sys.argv[0]).resolve().parents[1]
+def arg_value(name: str):
+    if name in args:
+        return args[args.index(name) + 1]
+    prefix = name + '='
+    for arg in args:
+        if arg.startswith(prefix):
+            return arg[len(prefix):]
+    raise ValueError(f'{name} is not in args: {args}')
+
+if '--bundle-dir' in args and '--manifest-path' in args and '--broker-bootstrap-summary-path' in args:
+    bundle_dir = fixture_root / arg_value('--bundle-dir')
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+    calls_path = fixture_root / 'calls.jsonl'
+    gate_path = fixture_root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
+    payload = {
+        'gate_exists': gate_path.exists(),
+        'run_broker': '1' if arg_value('--run-broker') == 'true' else '0',
+        'broker_backend': arg_value('--broker-backend'),
+        'broker_report_path': arg_value('--broker-report-path'),
+        'broker_bootstrap_summary_path': arg_value('--broker-bootstrap-summary-path'),
+    }
+    with calls_path.open('a', encoding='utf-8') as handle:
+        handle.write(json.dumps(payload) + '\n')
+    sys.exit(0)
 if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (
     len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'
 ):
-    if len(args) >= 5 and args[4] == 'validation-bundle-continuation-scorecard':
+    if 'validation-bundle-continuation-scorecard' in args:
         output = pathlib.Path(args[args.index('--output') + 1])
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
         sys.exit(0)
-    if len(args) >= 5 and args[4] == 'validation-bundle-continuation-policy-gate':
+    if 'validation-bundle-continuation-policy-gate' in args:
         mode = args[args.index('--enforcement-mode') + 1]
         output = pathlib.Path(args[args.index('--output') + 1])
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -152,27 +177,6 @@ if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (
     output.write_text('{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\n', encoding='utf-8')
     sys.exit(0)
 raise SystemExit(f'unexpected go args: {args}')
-`, true)
-	writeTestFile(t, root, "scripts/e2e/export_validation_bundle.py", `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-root = pathlib.Path(args[args.index('--go-root') + 1])
-bundle_dir = root / args[args.index('--bundle-dir') + 1]
-bundle_dir.mkdir(parents=True, exist_ok=True)
-calls_path = root / 'calls.jsonl'
-gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
-payload = {
-    'gate_exists': gate_path.exists(),
-    'run_broker': args[args.index('--run-broker') + 1],
-    'broker_backend': args[args.index('--broker-backend') + 1],
-    'broker_report_path': args[args.index('--broker-report-path') + 1],
-    'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
-}
-with calls_path.open('a', encoding='utf-8') as handle:
-    handle.write(json.dumps(payload) + '\n')
 `, true)
 	return root
 }

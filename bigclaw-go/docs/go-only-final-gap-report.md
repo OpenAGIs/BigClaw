@@ -4,7 +4,7 @@ Issue: `BIG-GO-1010`
 
 ## Scope Verification
 
-- Verified current residual Python scope under `bigclaw-go/scripts/e2e/**`: `7` files.
+- Verified current residual Python scope under `bigclaw-go/scripts/e2e/**`: `6` files.
 - `migration/**` does not exist in this checkout, so it contributes `0` residual Python files.
 - Historical removal commit for this issue batch: `76a14bc feat: finalize BIG-GO-1010 python gap sweep`.
 
@@ -12,7 +12,6 @@ Current residual Python files:
 
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
@@ -24,6 +23,7 @@ Python files removed by `BIG-GO-1010`:
 
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
 - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
 - `bigclaw-go/scripts/e2e/run_all_test.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
@@ -32,6 +32,7 @@ Python files removed by `BIG-GO-1010`:
 
 Added Go-native replacement coverage:
 
+- `go run ./cmd/bigclawctl automation e2e export-validation-bundle`
 - `bigclaw-go/scripts/e2e/run_all_test.go`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.go`
 - `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard`
@@ -47,6 +48,9 @@ Deleted or replaced:
 - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
   - Deleted.
   - Reason: redundant Python-only unit test. Generated bundle/index/report surfaces are already pinned by Go regression tests covering live validation summary, index, and follow-up docs.
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
+  - Replaced, then deleted.
+  - Reason: repo-native bundle export now ships as `bigclawctl automation e2e export-validation-bundle`, and `run_all.sh` calls the Go-native command directly.
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
   - Deleted.
   - Reason: redundant Python-only unit test. Canonical shared-queue and live takeover proof outputs are already pinned by Go regression tests.
@@ -71,9 +75,6 @@ Kept:
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
   - Kept.
   - Reason: no Go-native cross-process capability surface generator exists yet.
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-  - Kept.
-  - Reason: `run_all.sh` still depends on this Python bundle/index exporter.
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
   - Kept.
   - Reason: no Go-native external-store validation report generator exists yet.
@@ -89,15 +90,15 @@ Kept:
 
 ## Count Impact
 
-- Historical repository Python files for this batch: `108 -> 101`
-- Historical targeted batch Python files for this batch: `14 -> 7`
-- Current repository Python files in this checkout: `101`
-- Current targeted residual Python files in `bigclaw-go/scripts/e2e/**`: `7`
-- Net reduction delivered by `BIG-GO-1010`: `7`
+- Historical repository Python files for this batch: `108 -> 100`
+- Historical targeted batch Python files for this batch: `14 -> 6`
+- Current repository Python files in this checkout: `100`
+- Current targeted residual Python files in `bigclaw-go/scripts/e2e/**`: `6`
+- Net reduction delivered by `BIG-GO-1010`: `8`
 
 ## Remaining Go-Only Gaps
 
-The repository is not yet Go-only for e2e evidence generation. The remaining blockers are the seven
+The repository is not yet Go-only for e2e evidence generation. The remaining blockers are the six
 Python report generators still living under `bigclaw-go/scripts/e2e/**`. No additional file-count
 reduction is safe inside this issue scope without implementing new Go-native replacements for those
 generators.
@@ -105,9 +106,9 @@ generators.
 ## Validation
 
 - `find . -name '*.py' | wc -l`
-  - Result: `101`
+  - Result: `100`
 - `find bigclaw-go/scripts/e2e -name '*.py' | wc -l`
-  - Result: `7`
+  - Result: `6`
 - `rg --files | rg '(^|/)migration/|/migration/'`
   - Result: no matches
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./scripts/e2e ./internal/regression`
