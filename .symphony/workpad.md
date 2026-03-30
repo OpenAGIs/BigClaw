@@ -84,6 +84,12 @@ Follow-on refactor now queued:
 - Inline the isolated `src/bigclaw/execution_contract.py` surface into
   `src/bigclaw/operations.py` if it remains limited to tests and package
   exports, since its concrete builder already targets the operations API.
+- Inline the small `src/bigclaw/run_detail.py` rendering helpers into
+  `src/bigclaw/reports.py` if the import graph stays acyclic, then preserve
+  `bigclaw.run_detail` as a compatibility module.
+- Inline the smaller `src/bigclaw/audit_events.py` event-spec surface into
+  `src/bigclaw/observability.py` first, since its active consumers already sit
+  on the observability/runtime path.
 
 ## Plan
 
@@ -727,6 +733,63 @@ Follow-on refactor now queued:
   - Result: `12`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `60`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+
+### Follow-on tranche 20
+
+- `src/bigclaw/audit_events.py`
+  - Deleted.
+  - Reason: the audit-event spec surface only fed observability/runtime plus
+    dedicated tests and package exports, so it could be absorbed directly into
+    `src/bigclaw/observability.py`.
+- `src/bigclaw/observability.py`
+  - Updated.
+  - Reason: now owns the audit event constants, `AuditEventSpec`,
+    `P0_AUDIT_EVENT_SPECS`, `get_audit_event_spec`, and
+    `missing_required_fields`.
+- `src/bigclaw/runtime.py`
+  - Updated.
+  - Reason: imports audit event constants from observability instead of the
+    deleted module.
+- `src/bigclaw/reports.py`
+  - Updated.
+  - Reason: imports `FLOW_HANDOFF_EVENT` and `MANUAL_TAKEOVER_EVENT` directly
+    from observability instead of relying on the deleted module path.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: installs a `bigclaw.audit_events` compatibility module backed by
+    observability and re-exports the moved audit-event symbols from there.
+
+### Follow-on tranche 20 inventory
+
+- `src/bigclaw` Python files after tranche 20: `11`
+- Repository-wide Python files after tranche 20: `59`
+- Net repository-wide Python reduction: `49`
+- `bigclaw-go` Go files after tranche 20: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 20 validation
+
+- `rg -n "from \\.audit_events|from bigclaw\\.audit_events|import bigclaw\\.audit_events" src tests scripts`
+  - Result: only the expected compatibility import remains in `tests/test_audit_events.py`
+- `python3 -m py_compile src/bigclaw/observability.py src/bigclaw/runtime.py src/bigclaw/reports.py src/bigclaw/__init__.py tests/test_audit_events.py tests/test_observability.py tests/test_runtime_matrix.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_runtime_matrix.py`
+  - Result: `15 passed in 0.07s`
+- `PYTHONPATH=src python3 - <<'PY'` with `from bigclaw.audit_events import APPROVAL_RECORDED_EVENT, missing_required_fields` and `from bigclaw.observability import AuditEventSpec`
+  - Result: `execution.approval_recorded True AuditEventSpec`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `11`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `59`
 - `find bigclaw-go -type f -name '*.go' | wc -l`
   - Result: `267`
 - `test -f pyproject.toml && echo present || echo absent`
