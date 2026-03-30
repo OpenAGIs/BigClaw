@@ -3,7 +3,9 @@
 ## Scope
 
 Target residual Python tests under `tests/**` whose covered contracts already
-have direct Go-native replacements in `bigclaw-go`.
+have direct in-repo replacement coverage in `bigclaw-go`, preferring Go-native
+replacements and allowing adjacent script-local tests when the root `tests/**`
+file is only duplicating that coverage.
 
 Batch file list:
 
@@ -19,6 +21,7 @@ Batch file list:
 - `tests/test_repo_registry.py`
 - `tests/test_repo_triage.py`
 - `tests/test_saved_views.py`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
 
 Go replacement inventory:
 
@@ -34,6 +37,12 @@ Go replacement inventory:
 - `bigclaw-go/internal/triage/repo_test.go`
 - `bigclaw-go/internal/product/saved_views_test.go`
 
+Adjacent in-repo replacement coverage:
+
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- `bigclaw-go/internal/regression/live_validation_index_test.go`
+- `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go`
+
 Repository inventory at start of lane:
 
 - `tests/*.py` files before: `38`
@@ -45,11 +54,11 @@ Repository inventory at start of lane:
 ## Plan
 
 1. Delete only the residual Python test files that already have concrete
-   Go-native replacements.
+   in-repo replacement coverage.
 2. Keep unrelated Python tests untouched where parity is incomplete or still
    depends on Python runtime behavior.
-3. Run targeted Go tests for each replacement package that justifies the
-   deletions.
+3. Run targeted validation for each replacement package or adjacent script test
+   that justifies the deletions.
 4. Record exact file-count and root packaging impacts for `py files`,
    `go files`, `pyproject.toml`, and `setup.py`.
 5. Commit and push the scoped branch for `BIG-GO-1017`.
@@ -59,8 +68,7 @@ Repository inventory at start of lane:
 - Changes operate directly on repository residual Python test assets under
   `tests/**`.
 - The scoped delete set reduces repository `*.py` file count.
-- Every deleted Python test has an identified Go-native replacement already in
-  the repository.
+- Every deleted Python test has an identified in-repo replacement coverage path.
 - Final report includes impacts on `py files`, `go files`,
   `pyproject.toml`, and `setup.py`.
 - Validation records exact commands and results.
@@ -77,6 +85,8 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/queue -run 'TestMemoryQueueLeasesByPriority|TestMemoryQueueDeadLetterAndReplay|TestSQLiteQueuePersistsAndLeases|TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen|TestFileQueuePersistsAcrossReload|TestFileQueueDeadLetterReplayPersistsAcrossReload'`
 - `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic'`
 - `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence'`
+- `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndexSummary'`
 - `git diff --check`
 - `git status --short`
 
@@ -134,15 +144,22 @@ Repository inventory at start of lane:
   - Deleted.
   - Reason: saved-view catalog, audit, and report coverage already exists in
     `bigclaw-go/internal/product/saved_views_test.go`.
+- `tests/test_validation_bundle_continuation_policy_gate.py`
+  - Deleted.
+  - Reason: root-level policy-gate checks are now covered directly beside the
+    script in `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`,
+    while checked-in reviewer metadata and index wiring remain pinned by
+    `bigclaw-go/internal/regression/live_validation_index_test.go` and
+    `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `26`
-- Net `tests/*.py` reduction: `12`
+- `tests/*.py` files after: `25`
+- Net `tests/*.py` reduction: `13`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `96`
-- Net repo `*.py` reduction: `12`
+- Repo `*.py` files after: `95`
+- Net repo `*.py` reduction: `13`
 - Repo `*.go` files before: `267`
 - Repo `*.go` files after: `267`
 - Net repo `*.go` reduction: `0`
@@ -152,9 +169,9 @@ Repository inventory at start of lane:
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `26`
+  - Result: `25`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `96`
+  - Result: `95`
 - `find . -name '*.go' | sort | wc -l`
   - Result: `267`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
@@ -171,6 +188,10 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/internal/repo	1.546s`
 - `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence'`
   - Result: `ok  	bigclaw-go/internal/triage	1.939s`
+- `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+  - Result: `Ran 6 tests in 0.065s` / `OK`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndexSummary'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.620s`
 - `rg --files -g 'pyproject.toml' -g 'setup.py'`
   - Result: no matches
 - `git diff --check`

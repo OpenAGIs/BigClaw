@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import importlib.util
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 import unittest.mock
@@ -75,7 +77,7 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
         self.assertEqual(report['failing_checks'], [])
         self.assertEqual(report['reviewer_path']['index_path'], 'docs/reports/live-validation-index.md')
         self.assertIn(
-            'BIGCLAW_E2E_CONTINUATION_GATE_MODE=review',
+            'BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail',
             report['next_actions'][0],
         )
 
@@ -131,6 +133,31 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
         self.assertEqual(report['enforcement']['mode'], 'fail')
         self.assertEqual(report['enforcement']['outcome'], 'fail')
         self.assertEqual(report['enforcement']['exit_code'], 1)
+
+    def test_checked_in_policy_gate_matches_expected_shape(self) -> None:
+        report = json.loads(
+            (MODULE_PATH.parents[2] / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
+                encoding='utf-8'
+            )
+        )
+
+        self.assertEqual(report['status'], 'policy-go')
+        self.assertEqual(report['recommendation'], 'go')
+        self.assertEqual(report['summary']['latest_run_id'], '20260316T140138Z')
+        self.assertEqual(report['failing_checks'], [])
+
+    def test_policy_gate_cli_returns_zero_for_checked_in_go(self) -> None:
+        output_path = self.repo_root / 'policy-gate-output.json'
+        result = subprocess.run(
+            [sys.executable, str(MODULE_PATH), '--output', str(output_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=MODULE_PATH.parents[3],
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(output_path.exists())
 
 
 if __name__ == '__main__':
