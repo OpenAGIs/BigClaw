@@ -24,12 +24,19 @@ from .models import (
     UsageRecord,
 )
 from . import runtime as _legacy_runtime_surface
+from . import observability as _legacy_observability_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_legacy_surface_module(
+    name: str,
+    export_names: list[str],
+    *,
+    source_module: object = _legacy_runtime_surface,
+    **extra_attrs: object,
+) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
@@ -88,6 +95,16 @@ _install_legacy_surface_module(
     "risk",
     ["RiskFactor", "RiskScore", "RiskScorer"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
+_install_legacy_surface_module(
+    "event_bus",
+    ["BusEvent", "EventBus", "CI_COMPLETED_EVENT", "PULL_REQUEST_COMMENT_EVENT", "TASK_FAILED_EVENT"],
+    source_module=_legacy_observability_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "event_bus.py remains migration-only compatibility scaffolding."
+    ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
 
@@ -154,14 +171,19 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .event_bus import (
-    CI_COMPLETED_EVENT,
-    PULL_REQUEST_COMMENT_EVENT,
-    TASK_FAILED_EVENT,
+from .observability import (
     BusEvent,
+    CI_COMPLETED_EVENT,
     EventBus,
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PULL_REQUEST_COMMENT_EVENT,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    TASK_FAILED_EVENT,
+    TaskRun,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,

@@ -75,6 +75,9 @@ Follow-on refactor now queued:
 - Inline the small `src/bigclaw/risk.py` scorer surface into
   `src/bigclaw/runtime.py` if its remaining consumers stay limited to runtime,
   tests, and package exports.
+- Inline the small `src/bigclaw/event_bus.py` surface into
+  `src/bigclaw/observability.py` if its remaining consumers stay limited to
+  observability, tests, and package exports.
 
 ## Plan
 
@@ -580,6 +583,51 @@ Follow-on refactor now queued:
   - Result: `15`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `63`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+
+### Follow-on tranche 17
+
+- `src/bigclaw/event_bus.py`
+  - Deleted.
+  - Reason: its event routing surface only depended on observability state,
+    dedicated tests, and package exports, so it could be absorbed into
+    `src/bigclaw/observability.py`.
+- `src/bigclaw/observability.py`
+  - Updated.
+  - Reason: now owns `BusEvent`, `EventBus`, and the event type constants.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: installs a `bigclaw.event_bus` compatibility module backed by the
+    observability surface and re-exports the moved symbols from there.
+
+### Follow-on tranche 17 inventory
+
+- `src/bigclaw` Python files after tranche 17: `14`
+- Repository-wide Python files after tranche 17: `62`
+- Net repository-wide Python reduction: `46`
+- `bigclaw-go` Go files after tranche 17: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 17 validation
+
+- `python3 -m py_compile src/bigclaw/observability.py src/bigclaw/__init__.py tests/test_event_bus.py tests/test_observability.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_event_bus.py tests/test_observability.py`
+  - Result: `10 passed in 0.05s`
+- `PYTHONPATH=src python3 - <<'PY'` with `from bigclaw.event_bus import EventBus, BusEvent, PULL_REQUEST_COMMENT_EVENT` and `from bigclaw.observability import EventBus as ObsEventBus`
+  - Result: `EventBus BusEvent pull_request.comment EventBus`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `14`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `62`
 - `find bigclaw-go -type f -name '*.go' | wc -l`
   - Result: `267`
 - `test -f pyproject.toml && echo present || echo absent`
