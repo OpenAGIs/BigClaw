@@ -22,6 +22,7 @@ Batch file list:
 - `src/bigclaw/roadmap.py`
 - `src/bigclaw/validation_policy.py`
 - `src/bigclaw/dashboard_run_contract.py`
+- `src/bigclaw/memory.py`
 - `src/bigclaw/__init__.py`
 - `tests/test_repo_board.py`
 - `tests/test_repo_gateway.py`
@@ -63,13 +64,15 @@ Reason:
    package exports or dedicated Python-only tests.
 5. Remove isolated Python contract modules that already have Go-owned contract
    implementations and only retain Python-only tests/package exports.
-6. Remove Python tests that only exercised deleted Python-only modules.
-7. Update any remaining Python tests or exports that referenced removed modules so
+6. Remove isolated Python-only helpers that have no remaining in-repo runtime
+   consumers and are retained only by dedicated tests.
+7. Remove Python tests that only exercised deleted Python-only modules.
+8. Update any remaining Python tests or exports that referenced removed modules so
    the suite remains coherent after deletion.
-8. Run targeted validation for remaining observability, repo-link, and
+9. Run targeted validation for remaining observability, repo-link, and
    workspace bootstrap surfaces,
    plus inventory counts and diff hygiene.
-9. Commit and push the scoped lane branch for `BIG-GO-1015`.
+10. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
@@ -170,6 +173,10 @@ Reason:
     `bigclaw-go/internal/product/dashboard_run_contract.go`, and the Python
     module had no remaining in-repo consumers beyond a dedicated test and stale
     package exports.
+- `src/bigclaw/memory.py`
+  - Deleted.
+  - Reason: the helper had no remaining in-repo runtime consumers and was only
+    retained by its dedicated Python-only test.
 - `src/bigclaw/__init__.py`
   - Replaced.
   - Reason: removed the stale `issue_archive`, `roadmap`, and
@@ -199,6 +206,9 @@ Reason:
 - `tests/test_dashboard_run_contract.py`
   - Deleted.
   - Reason: exercised deleted Python-only dashboard/run contract helper.
+- `tests/test_memory.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only memory helper.
 - `tests/test_repo_collaboration.py`
   - Replaced.
   - Reason: preserved the collaboration merge assertion while removing the last
@@ -212,14 +222,16 @@ Reason:
 - `src/bigclaw` Python files after tranche 5: `34`
 - `src/bigclaw` Python files after tranche 6: `32`
 - `src/bigclaw` Python files after tranche 7: `31`
-- Net `src/bigclaw` reduction: `14`
+- `src/bigclaw` Python files after tranche 8: `30`
+- Net `src/bigclaw` reduction: `15`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
 - Repository-wide Python files after tranche 5: `91`
 - Repository-wide Python files after tranche 6: `88`
 - Repository-wide Python files after tranche 7: `86`
-- Net repository-wide Python reduction: `22`
+- Repository-wide Python files after tranche 8: `84`
+- Net repository-wide Python reduction: `24`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -254,3 +266,9 @@ Reason:
   - Result: `import ok`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `20 passed in 3.17s`
+- `rg -n "memory.py|TaskMemoryStore|MemoryPattern|from \\.memory|from bigclaw\\.memory|import bigclaw\\.memory" src tests || true`
+  - Result: no matches
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `20 passed in 3.67s`
