@@ -1,62 +1,77 @@
-# BIG-GO-975 Workpad
+# BIG-GO-981 Workpad
 
 ## Scope
 
-Targeted remaining Python test batch under `tests/` for this lane:
+Final sweep for repository-root Python build removal.
 
-- `tests/test_connectors.py`
-- `tests/test_mapping.py`
+Batch file list for this lane:
 
-Existing Go-native replacement paths:
+- `pyproject.toml`
+- `setup.py`
+- `scripts/dev_bootstrap.sh`
+- `README.md`
 
-- `bigclaw-go/internal/intake/connector_test.go`
-- `bigclaw-go/internal/intake/mapping_test.go`
+Current repository Python file count before this lane: `116`
 
-Current repository Python file count before this lane: `119`
-Current `tests/**` Python file count before this lane: `43`
+Notes:
+
+- `pyproject.toml` and `setup.py` are already absent from the working tree.
+- This lane is limited to finalizing removal criteria, eliminating any remaining root Python build-tool bootstrap, and documenting the Go-only replacement entrypoints.
 
 ## Plan
 
-1. Confirm the selected batch maps cleanly to existing Go-native intake coverage.
-2. Remove the redundant Python test files for connectors and mapping.
-3. Run the targeted Go intake tests that now serve as the replacement coverage.
-4. Record the exact file list, replacement paths, validation commands, and Python file-count impact.
-5. Commit and push the scoped lane changes.
+1. Confirm the repository root no longer exposes Python packaging manifests or `python -m build` style entrypoints.
+2. Remove any remaining root bootstrap behavior that still installs Python build tooling.
+3. Document the exact delete/retain/replace decisions for the build-removal batch.
+4. Run targeted validation for the Go-only root entrypoints and the updated bootstrap helper.
+5. Record the exact commands, results, and repository Python file-count impact.
+6. Commit and push the scoped lane changes.
 
 ## Acceptance
 
-- Produce the exact `BIG-GO-975` batch file list.
-- Reduce Python files in `tests/**` by removing the selected batch or clearly document the Go replacement path.
-- Keep changes scoped to the intake test migration batch only.
-- Report before/after repository-wide and `tests/**` Python file counts.
+- Produce the exact `BIG-GO-981` batch file list for the final sweep.
+- State the deletion criteria for `pyproject.toml` / `setup.py` and any related Python build-tool entrypoints.
+- Document the Go-only replacement entrypoints for root build and operator workflows.
+- Keep changes scoped to Python build removal evidence and replacement guidance.
+- Report before/after repository-wide Python file counts, even if the net reduction is `0`.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/intake`
+- `make test`
+- `bash scripts/dev_bootstrap.sh`
 - `git status --short`
 
 ## Results
 
 ### File Disposition
 
-- `tests/test_connectors.py`
-  - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/connector_test.go`.
-- `tests/test_mapping.py`
-  - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/mapping_test.go`.
+- `pyproject.toml`
+  - Already deleted before this lane.
+  - Reason: root setuptools/build metadata is no longer valid for the Go-only
+    repository contract.
+- `setup.py`
+  - Already deleted before this lane.
+  - Reason: root editable-install packaging is intentionally unsupported.
+- `scripts/dev_bootstrap.sh`
+  - Updated.
+  - Reason: removed the residual `build` package installation so the bootstrap
+    helper no longer implies a root Python build workflow.
+- `README.md`
+  - Updated.
+  - Reason: documents the delete/retain/replace decision and the Go-only root
+    replacement entrypoints.
 
 ### Python File Count Impact
 
-- Repository Python files before: `119`
-- Repository Python files after: `117`
-- `tests/**` Python files before: `43`
-- `tests/**` Python files after: `41`
-- Net reduction: `2`
+- Repository Python files before: `116`
+- Repository Python files after: `116`
+- Net reduction: `0`
 
 ### Validation Record
 
-- `cd bigclaw-go && go test ./internal/intake`
-  - Result: `ok  	bigclaw-go/internal/intake	0.461s`
+- `make test`
+  - Result: `ok` across `bigclaw-go/cmd/*` and `bigclaw-go/internal/*`; `bigclaw-go/scripts/e2e` reported `[no test files]`.
+- `bash scripts/dev_bootstrap.sh`
+  - Result: `ok`; prints `BigClaw Go development environment is ready.` and `Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 to validate the legacy Python migration surface with PYTHONPATH only.`
 - `git status --short`
-  - Result: only `.symphony/workpad.md`, `tests/test_connectors.py`, and `tests/test_mapping.py` changed before commit.
+  - Result: only `.symphony/workpad.md`, `README.md`, `reports/BIG-GO-981.md`, and `scripts/dev_bootstrap.sh` changed before commit.

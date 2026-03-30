@@ -81,15 +81,25 @@ Notes:
 
 ## Legacy Python migration note
 
-Do not use Python packaging from the repository root. When a migration-only
-Python surface must be exercised, validate it directly from source:
+Do not use Python packaging from the repository root. The root
+`pyproject.toml` and `setup.py` build manifests were removed because the active
+build/runtime path is now Go-only:
+
+```bash
+make test
+make build
+make run
+```
+
+When a migration-only Python surface must be exercised, validate it directly
+from source:
 
 ```bash
 PYTHONPATH=src python3 -m pytest
 ```
 
 Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface without editable install:
+Python migration surface without root packaging:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
@@ -136,6 +146,9 @@ ruff check src tests scripts
 PYTHONPATH=src python3 -m pytest
 pre-commit run --all-files
 ```
+
+Root Python packaging/build commands such as `pip install -e .` and
+`python -m build` are intentionally unsupported.
 
 ## Quick verify
 
