@@ -26,9 +26,9 @@
 - Deleted: `tests/test_repo_links.py`
 - Deleted: `tests/test_repo_registry.py`
 - Deleted: `tests/test_repo_triage.py`
-- Retained: `tests/test_reports.py`
-- Retained: `tests/test_repo_rollout.py`
-- Retained: `tests/test_repo_collaboration.py`
+- Consolidated and retained: `tests/test_reports.py`
+- Deleted after consolidation: `tests/test_repo_rollout.py`
+- Deleted after consolidation: `tests/test_repo_collaboration.py`
 
 ## Rationale
 - `tests/test_governance.py`: replaced by `bigclaw-go/internal/governance/freeze_test.go`, which covers scope-freeze manifest round-trip, audit gaps, readiness scoring, and report rendering.
@@ -38,18 +38,21 @@
 - `tests/test_repo_links.py`: replaced by `bigclaw-go/internal/repo/repo_surfaces_test.go`, which covers run-commit binding, accepted commit hash resolution, and invalid role handling.
 - `tests/test_repo_registry.py`: replaced by `bigclaw-go/internal/repo/repo_surfaces_test.go`, which covers repo-space resolution, default channel generation, and agent resolution.
 - `tests/test_repo_triage.py`: replaced by `bigclaw-go/internal/triage/repo_test.go`, which covers lineage-driven triage recommendations and approval evidence packets.
-- `tests/test_reports.py`: retained because it is still a broad Python-only aggregation surface covering report studio, launch/final-delivery closeout, pilot portfolio, shared view rendering, and additional reporting helpers not yet fully mirrored by Go tests.
-- `tests/test_repo_rollout.py`: retained because its rollout-gate and repo-narrative export helpers do not currently have direct Go test replacements in `bigclaw-go`.
-- `tests/test_repo_collaboration.py`: retained because merged collaboration-thread behavior across native and repo-board surfaces is not directly covered by an equivalent Go test.
+- `tests/test_reports.py`: retained as the consolidated Python reporting surface. It still covers report studio, launch/final-delivery closeout, pilot portfolio, shared view rendering, repo rollout exports, and collaboration-thread merging that are not yet fully mirrored by Go tests.
+- `tests/test_repo_rollout.py`: deleted by consolidation into `tests/test_reports.py`; kept coverage without needing a separate Python file because direct Go replacements for these rollout/narrative helpers do not yet exist.
+- `tests/test_repo_collaboration.py`: deleted by consolidation into `tests/test_reports.py`; kept coverage without needing a separate Python file because merged collaboration-thread behavior does not yet have a direct Go replacement.
 
 ## Validation Results
 - Command: `rg --files -g '*.py' | wc -l`
   - Before changes: `116`
   - After deleting replaced tests: `109`
+  - After consolidating retained repo/reporting tests: `107`
 - Command: `cd bigclaw-go && go test ./internal/governance ./internal/repo ./internal/triage ./internal/reporting`
   - Result: `ok   bigclaw-go/internal/governance`
   - Result: `ok   bigclaw-go/internal/repo`
   - Result: `ok   bigclaw-go/internal/triage`
   - Result: `ok   bigclaw-go/internal/reporting`
+- Command: `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
+  - Result: `37 passed in 0.20s`
 - Command: `git push -u origin BIG-GO-987`
   - Result: pushed branch `BIG-GO-987` to `origin`

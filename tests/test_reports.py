@@ -1,7 +1,19 @@
 from pathlib import Path
 from typing import List, Optional
 
-from bigclaw.collaboration import CollaborationComment, DecisionNote, build_collaboration_thread
+from bigclaw.collaboration import (
+    CollaborationComment,
+    DecisionNote,
+    build_collaboration_thread,
+    merge_collaboration_threads,
+)
+from bigclaw.planning import (
+    EntryGateDecision,
+    build_pilot_rollout_scorecard,
+    evaluate_candidate_gate,
+    render_pilot_rollout_gate_report,
+)
+from bigclaw.repo_board import RepoDiscussionBoard
 from bigclaw.reports import (
     ConsoleAction,
     BillingEntitlementsPage,
@@ -36,6 +48,7 @@ from bigclaw.reports import (
     render_orchestration_canvas,
     render_orchestration_overview_page,
     render_orchestration_portfolio_report,
+    render_repo_narrative_exports,
     render_issue_validation_report,
     render_launch_checklist_report,
     render_pilot_portfolio_report,
@@ -45,6 +58,7 @@ from bigclaw.reports import (
     render_report_studio_report,
     render_shared_view_context,
     render_takeover_queue_report,
+    render_weekly_repo_evidence_section,
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
@@ -1303,3 +1317,72 @@ def test_issue_validation_report_uses_timezone_aware_utc_timestamp():
     parsed = __import__("datetime").datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
     assert parsed.tzinfo is not None
     assert parsed.utcoffset().total_seconds() == 0
+
+
+def test_pilot_rollout_scorecard_and_candidate_gate():
+    scorecard = build_pilot_rollout_scorecard(
+        adoption=84,
+        convergence_improvement=78,
+        review_efficiency=82,
+        governance_incidents=1,
+        evidence_completeness=88,
+    )
+    assert scorecard["recommendation"] == "go"
+
+    gate_decision = EntryGateDecision(gate_id="gate-v3", passed=True)
+    result = evaluate_candidate_gate(gate_decision=gate_decision, rollout_scorecard=scorecard)
+
+    assert result["candidate_gate"] == "enable-by-default"
+    report = render_pilot_rollout_gate_report(result)
+    assert "Candidate gate" in report
+
+
+def test_repo_weekly_narrative_exports_remain_consistent():
+    section = render_weekly_repo_evidence_section(
+        experiment_volume=14,
+        converged_tasks=9,
+        accepted_commits=7,
+        hottest_threads=["repo/ope-168", "repo/ope-170"],
+    )
+    exports = render_repo_narrative_exports(
+        experiment_volume=14,
+        converged_tasks=9,
+        accepted_commits=7,
+        hottest_threads=["repo/ope-168", "repo/ope-170"],
+    )
+
+    assert "Accepted Commits: 7" in section
+    assert "Repo Evidence Summary" in exports["markdown"]
+    assert "Accepted Commits: 7" in exports["text"]
+    assert "<section><h2>Repo Evidence Summary</h2>" in exports["html"]
+
+
+def test_merge_collaboration_threads_combines_native_and_repo_surfaces():
+    native = build_collaboration_thread(
+        "run",
+        "run-165",
+        comments=[CollaborationComment(comment_id="c1", author="ops", body="native note", created_at="2026-03-12T10:00:00Z")],
+        decisions=[DecisionNote(decision_id="d1", author="lead", outcome="approved", summary="native decision", recorded_at="2026-03-12T10:05:00Z")],
+    )
+
+    board = RepoDiscussionBoard()
+    repo_post = board.create_post(
+        channel="bigclaw-ope-165",
+        author="repo-agent",
+        body="repo board context",
+        target_surface="run",
+        target_id="run-165",
+    )
+    repo_thread = build_collaboration_thread(
+        "repo-board",
+        "run-165",
+        comments=[repo_post.to_collaboration_comment()],
+    )
+
+    merged = merge_collaboration_threads(target_id="run-165", native_thread=native, repo_thread=repo_thread)
+
+    assert merged is not None
+    assert merged.surface == "merged"
+    assert len(merged.comments) == 2
+    assert len(merged.decisions) == 1
+    assert merged.comments[1].body == "repo board context"
