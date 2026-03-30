@@ -16,6 +16,7 @@ Batch file list:
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/memory.py`
 - `src/bigclaw/issue_archive.py`
+- `src/bigclaw/github_sync.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -111,6 +112,9 @@ Selected tranche rationale:
 - `issue_archive.py` is a report-oriented archival/audit surface and fits
   naturally into `reports.py`, which already owns adjacent reporting and
   closeout structures.
+- `github_sync.py` is repository sync automation and fits naturally into
+  `repo_gateway.py`, which already owns repo commit/diff normalization and
+  related gateway-facing repo state helpers.
 
 ## Plan
 
@@ -193,6 +197,10 @@ Selected tranche rationale:
     `bigclaw.issue_archive` compatibility via `__init__.py`.
 42. Run targeted report/archive validation for the thirteenth consolidation
     batch and push a follow-up commit.
+43. Fold `github_sync.py` into `repo_gateway.py` and preserve
+    `bigclaw.github_sync` compatibility via `__init__.py`.
+44. Run targeted repo-sync validation for the fourteenth consolidation batch
+    and push a follow-up commit.
 
 ## Acceptance
 
@@ -239,6 +247,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_runtime_matrix.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_memory.py tests/test_planning.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.github_sync import ensure_repo_sync, inspect_repo_sync`
+  `print(ensure_repo_sync.__name__, inspect_repo_sync.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.issue_archive import IssuePriorityArchivist, IssuePriorityArchive`
   `print(IssuePriorityArchivist.__name__, IssuePriorityArchive.__name__)`
@@ -481,6 +494,17 @@ Selected tranche rationale:
 - `src/bigclaw/issue_archive.py`
   - Deleted.
   - Reason: its contents moved into `reports.py`.
+- `src/bigclaw/repo_gateway.py`
+  - Replaced again.
+  - Reason: absorbed repository sync automation and hook installation helpers
+    so repo commit normalization and repo sync gateway logic live in one module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.github_sync` compatibility submodule that
+    re-exports the moved repo sync surface from `repo_gateway.py`.
+- `src/bigclaw/github_sync.py`
+  - Deleted.
+  - Reason: its contents moved into `repo_gateway.py`.
 
 ### Inventory Impact
 
@@ -498,7 +522,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 11: `25`
 - `src/bigclaw/**/*.py` after batch 12: `24`
 - `src/bigclaw/**/*.py` after batch 13: `23`
-- Net Python module reduction in tranche so far: `22`
+- `src/bigclaw/**/*.py` after batch 14: `22`
+- Net Python module reduction in tranche so far: `23`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -606,3 +631,9 @@ Selected tranche rationale:
   - Result: `IssuePriorityArchivist IssuePriorityArchive ArchivedIssue`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 13: `23`
+- `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py`
+  - Result: `5 passed in 1.06s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.github_sync`
+  - Result: `ensure_repo_sync inspect_repo_sync`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 14: `22`

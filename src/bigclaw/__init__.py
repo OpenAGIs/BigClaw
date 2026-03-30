@@ -150,6 +150,11 @@ _install_compat_surface_module(
     ["RepoCommit", "CommitLineage", "CommitDiff"],
 )
 _install_compat_surface_module(
+    "github_sync",
+    _repo_gateway_surface,
+    ["GitSyncError", "RepoSyncStatus", "ensure_repo_sync", "inspect_repo_sync", "install_git_hooks"],
+)
+_install_compat_surface_module(
     "repo_links",
     _repo_plane_surface,
     ["RunCommitBinding", "bind_run_commits", "validate_run_commit_roles", "VALID_RUN_COMMIT_ROLES"],
