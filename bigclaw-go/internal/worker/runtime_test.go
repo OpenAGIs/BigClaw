@@ -137,6 +137,63 @@ func TestRuntimeProcessesTask(t *testing.T) {
 	}
 }
 
+func TestRuntimePublishesHighRiskAssessmentOnRoutedEvent(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:            "task-risk",
+		TraceID:       "trace-risk",
+		Title:         "security deploy",
+		Labels:        []string{"security", "prod"},
+		Priority:      1,
+		RequiredTools: []string{"deploy"},
+		CreatedAt:     time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorKubernetes, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	events := recorder.EventsByTask("task-risk", 10)
+	if len(events) != 5 {
+		t.Fatalf("expected 5 lifecycle events with handoff, got %+v", events)
+	}
+	routed := events[1]
+	if routed.Type != domain.EventSchedulerRouted {
+		t.Fatalf("expected routed event, got %+v", routed)
+	}
+	if routed.Payload["risk_score"] != 70 {
+		t.Fatalf("expected high risk score in routed payload, got %+v", routed.Payload)
+	}
+	if routed.Payload["risk_level"] != domain.RiskHigh {
+		t.Fatalf("expected high risk level in routed payload, got %+v", routed.Payload)
+	}
+	if routed.Payload["requires_approval"] != true {
+		t.Fatalf("expected routed payload to require approval for high risk work, got %+v", routed.Payload)
+	}
+	if routed.Payload["executor"] != domain.ExecutorKubernetes {
+		t.Fatalf("expected high risk routing to kubernetes executor, got %+v", routed.Payload)
+	}
+	handoff := events[2]
+	if handoff.Type != domain.EventRunTakeover || handoff.Payload["target_team"] != "operations" || handoff.Payload["risk_score"] != 70 {
+		t.Fatalf("expected operations handoff carrying high risk context, got %+v", handoff)
+	}
+}
+
 func TestRuntimeSkipsCleanlyWhenQueueUnset(t *testing.T) {
 	runtime := Runtime{WorkerID: "worker-no-queue"}
 	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
