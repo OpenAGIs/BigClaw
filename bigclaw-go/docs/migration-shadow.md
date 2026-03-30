@@ -56,7 +56,7 @@ the parity drift rollup, export the live shadow bundle/index:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/export_live_shadow_bundle.py
+go run ./cmd/bigclawctl automation migration export-live-shadow-bundle
 ```
 
 This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into

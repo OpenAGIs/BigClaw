@@ -9,7 +9,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - Shadow comparison for one task via `go run ./cmd/bigclawctl automation migration shadow-compare ...`
 - Shadow comparison matrix across multiple task fixtures via `go run ./cmd/bigclawctl automation migration shadow-matrix ...`
 - Repo-native live shadow mirror scorecard via `go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
-- Repo-native live shadow bundle/index via `scripts/migration/export_live_shadow_bundle.py`
+- Repo-native live shadow bundle/index via `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 - An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
 - Shared `trace_id` correlation across primary/shadow runs
 - JSON reports for single-run and matrix outcomes
@@ -21,7 +21,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - `cmd/bigclawctl/automation_commands.go`
 - `cmd/bigclawctl/automation_commands.go`
 - `go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
-- `scripts/migration/export_live_shadow_bundle.py`
+- `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 - `docs/reports/rollback-trigger-surface.json`
 - `docs/reports/shadow-compare-report.json`
 - `docs/reports/shadow-matrix-report.json`

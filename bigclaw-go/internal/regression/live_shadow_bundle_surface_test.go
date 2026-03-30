@@ -262,7 +262,7 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 	}
 	for _, command := range []string{
 		"go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
-		"python3 scripts/migration/export_live_shadow_bundle.py",
+		"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
 		"go test ./internal/regression -run TestRollbackDocsStayAligned",
 		"git push origin <branch> && git log -1 --stat",
 	} {

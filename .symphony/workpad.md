@@ -70,6 +70,9 @@ Current targeted batch Python file count before this lane: `19`
 - `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
   - Deleted.
   - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, with the scorecard aggregation logic moved into `cmd/bigclawctl`.
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+  - Deleted.
+  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`, with bundle summary, manifest, rollup, and README generation moved into `cmd/bigclawctl`.
 - Remaining targeted Python files
   - Kept for now.
   - Reason: they still own report-generation or Python-only test behavior and do not yet have Go-native replacements in the repo.
@@ -77,10 +80,10 @@ Current targeted batch Python file count before this lane: `19`
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `109`
+- Repository Python files after: `108`
 - Targeted batch Python files before: `19`
-- Targeted batch Python files after: `15`
-- Net reduction: `4`
+- Targeted batch Python files after: `14`
+- Net reduction: `5`
 
 ### Remaining Targeted Python Files
 
@@ -98,23 +101,25 @@ Current targeted batch Python file count before this lane: `19`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
 
 ### Validation Record
 
 - `cd bigclaw-go && python3 -m unittest scripts/e2e/run_all_test.py`
   - Result: `Ran 3 tests in 4.250s` and `OK`
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-  - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.623s`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.418s`
 - `cd bigclaw-go && python3 - <<'PY' ... PY`
   - Purpose: validate that `go run ./cmd/bigclawctl automation migration shadow-matrix ...` produces a matrix report with corpus coverage against stub HTTP endpoints.
   - Result: `shadow_matrix_cli_ok`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation migration --help`
-  - Result: `usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard> [flags]`
+  - Result: `usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle> [flags]`
 - `cd bigclaw-go && python3 - <<'PY' ... PY`
   - Purpose: validate that `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` emits a repo-native scorecard from compare/matrix JSON inputs.
   - Result: `live_shadow_scorecard_cli_ok`
+- `cd bigclaw-go && python3 - <<'PY' ... PY`
+  - Purpose: validate that `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --go-root <tempdir>` emits summary/index/manifest/rollup outputs and bundle README from local artifacts.
+  - Result: `export_live_shadow_bundle_cli_ok`
 - `find . -name '*.py' | wc -l`
-  - Result: `109`
+  - Result: `108`
 - `git status --short`
   - Result: only `.symphony/workpad.md` plus the scoped docs/script changes for this lane are modified.

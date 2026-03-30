@@ -83,6 +83,20 @@ type automationLiveShadowScorecardOptions struct {
 	Now                     func() time.Time
 }
 
+type automationExportLiveShadowBundleOptions struct {
+	GoRoot            string
+	ShadowComparePath string
+	ShadowMatrixPath  string
+	ScorecardPath     string
+	BundleRoot        string
+	SummaryPath       string
+	IndexPath         string
+	ManifestPath      string
+	RollupPath        string
+	RunID             string
+	Now               func() time.Time
+}
+
 type automationSoakLocalOptions struct {
 	Count          int
 	Workers        int
@@ -231,7 +245,7 @@ func runAutomationBenchmark(args []string) error {
 
 func runAutomationMigration(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -241,6 +255,8 @@ func runAutomationMigration(args []string) error {
 		return runAutomationShadowMatrixCommand(args[1:])
 	case "live-shadow-scorecard":
 		return runAutomationLiveShadowScorecardCommand(args[1:])
+	case "export-live-shadow-bundle":
+		return runAutomationExportLiveShadowBundleCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation migration subcommand: %s", args[0])
 	}
@@ -394,6 +410,44 @@ func runAutomationLiveShadowScorecardCommand(args []string) error {
 		ShadowCompareReportPath: *shadowCompareReport,
 		ShadowMatrixReportPath:  *shadowMatrixReport,
 		OutputPath:              *output,
+	})
+	if err != nil {
+		return err
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationExportLiveShadowBundleCommand(args []string) error {
+	flags := flag.NewFlagSet("automation migration export-live-shadow-bundle", flag.ContinueOnError)
+	goRoot := flags.String("go-root", "bigclaw-go", "repo root")
+	shadowCompareReport := flags.String("shadow-compare-report", "docs/reports/shadow-compare-report.json", "shadow compare report path")
+	shadowMatrixReport := flags.String("shadow-matrix-report", "docs/reports/shadow-matrix-report.json", "shadow matrix report path")
+	scorecardReport := flags.String("scorecard-report", "docs/reports/live-shadow-mirror-scorecard.json", "scorecard report path")
+	bundleRoot := flags.String("bundle-root", "docs/reports/live-shadow-runs", "bundle root")
+	summaryPath := flags.String("summary-path", "docs/reports/live-shadow-summary.json", "summary output path")
+	indexPath := flags.String("index-path", "docs/reports/live-shadow-index.md", "index markdown path")
+	manifestPath := flags.String("manifest-path", "docs/reports/live-shadow-index.json", "manifest json path")
+	rollupPath := flags.String("rollup-path", "docs/reports/live-shadow-drift-rollup.json", "rollup path")
+	runID := flags.String("run-id", "", "bundle run id")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation migration export-live-shadow-bundle [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationExportLiveShadowBundle(automationExportLiveShadowBundleOptions{
+		GoRoot:            *goRoot,
+		ShadowComparePath: *shadowCompareReport,
+		ShadowMatrixPath:  *shadowMatrixReport,
+		ScorecardPath:     *scorecardReport,
+		BundleRoot:        *bundleRoot,
+		SummaryPath:       *summaryPath,
+		IndexPath:         *indexPath,
+		ManifestPath:      *manifestPath,
+		RollupPath:        *rollupPath,
+		RunID:             *runID,
 	})
 	if err != nil {
 		return err
@@ -1284,6 +1338,439 @@ func automationLiveShadowClassifyParity(diff map[string]any) map[string]any {
 
 func automationLiveShadowCheck(name string, passed bool, detail string) map[string]any {
 	return map[string]any{"name": name, "passed": passed, "detail": detail}
+}
+
+var liveShadowFollowupDigests = []struct {
+	Path        string
+	Description string
+}{
+	{Path: "docs/reports/live-shadow-comparison-follow-up-digest.md", Description: "Live shadow traffic comparison caveats are consolidated here."},
+	{Path: "docs/reports/rollback-safeguard-follow-up-digest.md", Description: "Rollback remains operator-driven; this digest explains the guardrail visibility and trigger caveats."},
+}
+
+var liveShadowDocLinks = []struct {
+	Path        string
+	Description string
+}{
+	{Path: "docs/migration-shadow.md", Description: "Shadow helper workflow and bundle generation steps."},
+	{Path: "docs/reports/migration-readiness-report.md", Description: "Migration readiness summary linked to the shadow bundle."},
+	{Path: "docs/reports/migration-plan-review-notes.md", Description: "Review notes tied to the shadow bundle index."},
+	{Path: "docs/reports/rollback-trigger-surface.json", Description: "Machine-readable rollback blockers, warnings, and manual-only paths linked from the shadow bundle."},
+}
+
+func automationExportLiveShadowBundle(opts automationExportLiveShadowBundleOptions) (map[string]any, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	root := resolveAutomationGoRoot(opts.GoRoot)
+	compareReport, err := automationShadowMatrixLoadJSON(filepath.Join(root, opts.ShadowComparePath))
+	if err != nil {
+		return nil, err
+	}
+	matrixReport, err := automationShadowMatrixLoadJSON(filepath.Join(root, opts.ShadowMatrixPath))
+	if err != nil {
+		return nil, err
+	}
+	scorecardReport, err := automationShadowMatrixLoadJSON(filepath.Join(root, opts.ScorecardPath))
+	if err != nil {
+		return nil, err
+	}
+	generatedAt := now().UTC()
+	runID := opts.RunID
+	if trim(runID) == "" {
+		runID = deriveLiveShadowRunID(scorecardReport, generatedAt)
+	}
+	bundleDir := filepath.Join(root, opts.BundleRoot, runID)
+	if err := os.MkdirAll(bundleDir, 0o755); err != nil {
+		return nil, err
+	}
+	latest, err := buildLiveShadowRunSummary(root, bundleDir, runID, compareReport, matrixReport, scorecardReport, generatedAt)
+	if err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", filepath.Join(bundleDir, "summary.json"), latest); err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", filepath.Join(root, opts.SummaryPath), latest); err != nil {
+		return nil, err
+	}
+	recentRuns, err := loadLiveShadowRecentRuns(filepath.Join(root, opts.BundleRoot))
+	if err != nil {
+		return nil, err
+	}
+	rollup := buildLiveShadowRollup(recentRuns, 5, generatedAt)
+	manifest := map[string]any{
+		"latest": latest,
+		"recent_runs": func() []map[string]any {
+			out := make([]map[string]any, 0, len(recentRuns))
+			for _, item := range recentRuns {
+				out = append(out, map[string]any{
+					"run_id":       item["run_id"],
+					"generated_at": item["generated_at"],
+					"status":       item["status"],
+					"severity":     item["severity"],
+					"bundle_path":  item["bundle_path"],
+					"summary_path": item["summary_path"],
+				})
+			}
+			return out
+		}(),
+		"drift_rollup": rollup,
+	}
+	if err := automationWriteReport(".", filepath.Join(root, opts.RollupPath), rollup); err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", filepath.Join(root, opts.ManifestPath), manifest); err != nil {
+		return nil, err
+	}
+	indexText := renderLiveShadowIndex(latest, manifest["recent_runs"].([]map[string]any), rollup)
+	if err := os.WriteFile(filepath.Join(root, opts.IndexPath), []byte(indexText), 0o644); err != nil {
+		return nil, err
+	}
+	if err := copyTextFile(filepath.Join(root, opts.IndexPath), filepath.Join(bundleDir, "README.md")); err != nil {
+		return nil, err
+	}
+	return manifest, nil
+}
+
+func buildLiveShadowRunSummary(root string, bundleDir string, runID string, compareReport map[string]any, matrixReport map[string]any, scorecardReport map[string]any, generatedAt time.Time) (map[string]any, error) {
+	compareBundlePath, err := copyJSONFile(filepath.Join(root, "docs/reports/shadow-compare-report.json"), filepath.Join(bundleDir, "shadow-compare-report.json"))
+	if err != nil {
+		return nil, err
+	}
+	matrixBundlePath, err := copyJSONFile(filepath.Join(root, "docs/reports/shadow-matrix-report.json"), filepath.Join(bundleDir, "shadow-matrix-report.json"))
+	if err != nil {
+		return nil, err
+	}
+	scorecardBundlePath, err := copyJSONFile(filepath.Join(root, "docs/reports/live-shadow-mirror-scorecard.json"), filepath.Join(bundleDir, "live-shadow-mirror-scorecard.json"))
+	if err != nil {
+		return nil, err
+	}
+	rollbackBundlePath, err := copyJSONFile(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), filepath.Join(bundleDir, "rollback-trigger-surface.json"))
+	if err != nil {
+		return nil, err
+	}
+	rollbackReport, err := automationShadowMatrixLoadJSON(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"))
+	if err != nil {
+		return nil, err
+	}
+	scorecardSummary, _ := scorecardReport["summary"].(map[string]any)
+	freshness, _ := scorecardReport["freshness"].([]any)
+	staleInputs := automationInt(scorecardSummary["stale_inputs"], 0)
+	driftDetectedCount := automationInt(scorecardSummary["drift_detected_count"], 0)
+	severity := classifyLiveShadowSeverity(scorecardReport)
+	status := "parity-ok"
+	if severityRank(severity) > 0 {
+		status = "attention-needed"
+	}
+	results, _ := matrixReport["results"].([]any)
+	matrixTraceIDs := []string{}
+	for _, raw := range results {
+		item, _ := raw.(map[string]any)
+		if traceID, _ := item["trace_id"].(string); trim(traceID) != "" {
+			matrixTraceIDs = append(matrixTraceIDs, traceID)
+		}
+	}
+	return map[string]any{
+		"run_id":                   runID,
+		"generated_at":             utcISOTime(generatedAt),
+		"status":                   status,
+		"severity":                 severity,
+		"bundle_path":              relAutomationPath(bundleDir, root),
+		"summary_path":             relAutomationPath(filepath.Join(bundleDir, "summary.json"), root),
+		"artifacts": map[string]any{
+			"shadow_compare_report_path":    relAutomationPath(compareBundlePath, root),
+			"shadow_matrix_report_path":     relAutomationPath(matrixBundlePath, root),
+			"live_shadow_scorecard_path":    relAutomationPath(scorecardBundlePath, root),
+			"rollback_trigger_surface_path": relAutomationPath(rollbackBundlePath, root),
+		},
+		"latest_evidence_timestamp": scorecardSummary["latest_evidence_timestamp"],
+		"freshness":                 freshness,
+		"summary": map[string]any{
+			"total_evidence_runs":  automationInt(scorecardSummary["total_evidence_runs"], 0),
+			"parity_ok_count":      automationInt(scorecardSummary["parity_ok_count"], 0),
+			"drift_detected_count": driftDetectedCount,
+			"matrix_total":         automationInt(scorecardSummary["matrix_total"], 0),
+			"matrix_mismatched":    automationInt(scorecardSummary["matrix_mismatched"], 0),
+			"stale_inputs":         staleInputs,
+			"fresh_inputs":         automationInt(scorecardSummary["fresh_inputs"], 0),
+		},
+		"rollback_trigger_surface": map[string]any{
+			"status":                   lookupMap(rollbackReport, "summary", "status"),
+			"automation_boundary":      lookupMap(rollbackReport, "summary", "automation_boundary"),
+			"automated_rollback_trigger": automationBool(lookupMap(rollbackReport, "summary", "automated_rollback_trigger")),
+			"distinctions":             lookupMap(rollbackReport, "summary", "distinctions"),
+			"issue":                    lookupMap(rollbackReport, "issue"),
+			"digest_path":              rollbackReport["digest_path"],
+			"summary_path":             relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
+		},
+		"compare_trace_id":     compareReport["trace_id"],
+		"matrix_trace_ids":     matrixTraceIDs,
+		"cutover_checkpoints":  scorecardReport["cutover_checkpoints"],
+		"closeout_commands": []string{
+			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
+			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+			"cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned",
+			"git push origin <branch> && git log -1 --stat",
+		},
+	}, nil
+}
+
+func loadLiveShadowRecentRuns(bundleRoot string) ([]map[string]any, error) {
+	entries, err := os.ReadDir(bundleRoot)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	recentRuns := []map[string]any{}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		summaryPath := filepath.Join(bundleRoot, entry.Name(), "summary.json")
+		if _, err := os.Stat(summaryPath); err != nil {
+			continue
+		}
+		payload, err := automationShadowMatrixLoadJSON(summaryPath)
+		if err != nil {
+			return nil, err
+		}
+		recentRuns = append(recentRuns, payload)
+	}
+	sort.Slice(recentRuns, func(i, j int) bool {
+		return fmt.Sprint(recentRuns[i]["generated_at"]) > fmt.Sprint(recentRuns[j]["generated_at"])
+	})
+	return recentRuns, nil
+}
+
+func buildLiveShadowRollup(recentRuns []map[string]any, limit int, generatedAt time.Time) map[string]any {
+	if len(recentRuns) > limit {
+		recentRuns = recentRuns[:limit]
+	}
+	highestSeverity := "none"
+	statusCounts := map[string]any{"parity_ok": 0, "attention_needed": 0}
+	staleRuns := 0
+	driftDetectedRuns := 0
+	entries := make([]map[string]any, 0, len(recentRuns))
+	for _, item := range recentRuns {
+		severity := fmt.Sprint(item["severity"])
+		if severityRank(severity) > severityRank(highestSeverity) {
+			highestSeverity = severity
+		}
+		if item["status"] == "parity-ok" {
+			statusCounts["parity_ok"] = automationInt(statusCounts["parity_ok"], 0) + 1
+		} else {
+			statusCounts["attention_needed"] = automationInt(statusCounts["attention_needed"], 0) + 1
+		}
+		summary, _ := item["summary"].(map[string]any)
+		staleInputs := automationInt(summary["stale_inputs"], 0)
+		driftDetectedCount := automationInt(summary["drift_detected_count"], 0)
+		if staleInputs > 0 {
+			staleRuns++
+		}
+		if driftDetectedCount > 0 {
+			driftDetectedRuns++
+		}
+		entries = append(entries, map[string]any{
+			"run_id":                item["run_id"],
+			"generated_at":          item["generated_at"],
+			"status":                item["status"],
+			"severity":              severity,
+			"latest_evidence_timestamp": item["latest_evidence_timestamp"],
+			"drift_detected_count":  driftDetectedCount,
+			"stale_inputs":          staleInputs,
+			"bundle_path":           item["bundle_path"],
+			"summary_path":          item["summary_path"],
+		})
+	}
+	status := "parity-ok"
+	if severityRank(highestSeverity) > 0 {
+		status = "attention-needed"
+	}
+	latestRunID := any(nil)
+	if len(recentRuns) > 0 {
+		latestRunID = recentRuns[0]["run_id"]
+	}
+	return map[string]any{
+		"generated_at": utcISOTime(generatedAt),
+		"status":       status,
+		"window_size":  limit,
+		"summary": map[string]any{
+			"recent_run_count":    len(recentRuns),
+			"drift_detected_runs": driftDetectedRuns,
+			"stale_runs":          staleRuns,
+			"highest_severity":    highestSeverity,
+			"status_counts":       statusCounts,
+			"latest_run_id":       latestRunID,
+		},
+		"recent_runs": entries,
+	}
+}
+
+func renderLiveShadowIndex(latest map[string]any, recentRuns []map[string]any, rollup map[string]any) string {
+	lines := []string{
+		"# Live Shadow Mirror Index",
+		"",
+		fmt.Sprintf("- Latest run: `%v`", latest["run_id"]),
+		fmt.Sprintf("- Generated at: `%v`", latest["generated_at"]),
+		fmt.Sprintf("- Status: `%v`", latest["status"]),
+		fmt.Sprintf("- Severity: `%v`", latest["severity"]),
+		fmt.Sprintf("- Bundle: `%v`", latest["bundle_path"]),
+		fmt.Sprintf("- Summary JSON: `%v`", latest["summary_path"]),
+		"",
+		"## Latest bundle artifacts",
+		"",
+	}
+	artifacts, _ := latest["artifacts"].(map[string]any)
+	for _, item := range []struct{ Key, Label string }{
+		{"shadow_compare_report_path", "Shadow compare report"},
+		{"shadow_matrix_report_path", "Shadow matrix report"},
+		{"live_shadow_scorecard_path", "Parity scorecard"},
+		{"rollback_trigger_surface_path", "Rollback trigger surface"},
+	} {
+		lines = append(lines, fmt.Sprintf("- %s: `%v`", item.Label, artifacts[item.Key]))
+	}
+	lines = append(lines, "", "## Latest run summary", "")
+	lines = append(lines, fmt.Sprintf("- Compare trace: `%v`", latest["compare_trace_id"]))
+	matrixTraceIDs, _ := latest["matrix_trace_ids"].([]any)
+	lines = append(lines, fmt.Sprintf("- Matrix trace count: `%d`", len(matrixTraceIDs)))
+	summary, _ := latest["summary"].(map[string]any)
+	for _, item := range []struct{ Key, Label string }{
+		{"total_evidence_runs", "Evidence runs"},
+		{"parity_ok_count", "Parity-ok entries"},
+		{"drift_detected_count", "Drift-detected entries"},
+		{"matrix_total", "Matrix total"},
+		{"matrix_mismatched", "Matrix mismatched"},
+		{"fresh_inputs", "Fresh inputs"},
+		{"stale_inputs", "Stale inputs"},
+	} {
+		lines = append(lines, fmt.Sprintf("- %s: `%v`", item.Label, summary[item.Key]))
+	}
+	rollback, _ := latest["rollback_trigger_surface"].(map[string]any)
+	lines = append(lines, fmt.Sprintf("- Rollback trigger surface status: `%v`", rollback["status"]))
+	lines = append(lines, fmt.Sprintf("- Rollback automation boundary: `%v`", rollback["automation_boundary"]))
+	lines = append(lines, fmt.Sprintf("- Rollback trigger distinctions: `%v`", rollback["distinctions"]))
+	lines = append(lines, "", "## Parity drift rollup", "")
+	rollupSummary, _ := rollup["summary"].(map[string]any)
+	lines = append(lines, fmt.Sprintf("- Status: `%v`", rollup["status"]))
+	lines = append(lines, fmt.Sprintf("- Latest run: `%v`", rollupSummary["latest_run_id"]))
+	lines = append(lines, fmt.Sprintf("- Highest severity: `%v`", rollupSummary["highest_severity"]))
+	lines = append(lines, fmt.Sprintf("- Drift-detected runs in window: `%v`", rollupSummary["drift_detected_runs"]))
+	lines = append(lines, fmt.Sprintf("- Stale runs in window: `%v`", rollupSummary["stale_runs"]))
+	lines = append(lines, "", "## Workflow closeout commands", "")
+	for _, raw := range latest["closeout_commands"].([]string) {
+		lines = append(lines, fmt.Sprintf("- `%s`", raw))
+	}
+	lines = append(lines, "", "## Recent bundles", "")
+	for _, item := range recentRuns {
+		lines = append(lines, fmt.Sprintf("- `%v` · `%v` · `%v` · `%v` · `%v`", item["run_id"], item["status"], item["severity"], item["generated_at"], item["bundle_path"]))
+	}
+	lines = append(lines, "", "## Linked migration docs", "")
+	for _, item := range liveShadowDocLinks {
+		lines = append(lines, fmt.Sprintf("- `%s` %s", item.Path, item.Description))
+	}
+	lines = append(lines, "", "## Parallel Follow-up Index", "")
+	lines = append(lines, "- `docs/reports/parallel-follow-up-index.md` is the canonical index for the")
+	lines = append(lines, "  remaining live-shadow, rollback, and corpus-coverage follow-up digests.")
+	lines = append(lines, "- Use `docs/reports/parallel-validation-matrix.md` first when a shadow review")
+	lines = append(lines, "  needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the")
+	lines = append(lines, "  shadow evidence bundle.")
+	lines = append(lines, "")
+	return strings.Join(lines, "\n")
+}
+
+func classifyLiveShadowSeverity(scorecard map[string]any) string {
+	summary, _ := scorecard["summary"].(map[string]any)
+	if automationInt(summary["stale_inputs"], 0) > 0 {
+		return "high"
+	}
+	if automationInt(summary["drift_detected_count"], 0) > 0 {
+		return "medium"
+	}
+	checkpoints, _ := scorecard["cutover_checkpoints"].([]any)
+	for _, raw := range checkpoints {
+		item, _ := raw.(map[string]any)
+		if !automationBool(item["passed"]) {
+			return "low"
+		}
+	}
+	return "none"
+}
+
+func severityRank(value string) int {
+	switch value {
+	case "critical":
+		return 4
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
+	}
+}
+
+func relAutomationPath(path string, root string) string {
+	rel, err := filepath.Rel(root, path)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return path
+	}
+	return filepath.ToSlash(rel)
+}
+
+func copyJSONFile(source string, destination string) (string, error) {
+	payload, err := automationShadowMatrixLoadJSON(source)
+	if err != nil {
+		return "", err
+	}
+	if err := automationWriteReport(".", destination, payload); err != nil {
+		return "", err
+	}
+	return destination, nil
+}
+
+func copyTextFile(source string, destination string) error {
+	body, err := os.ReadFile(source)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(destination, body, 0o644)
+}
+
+func resolveAutomationGoRoot(value string) string {
+	requested := value
+	if filepath.IsAbs(requested) {
+		return requested
+	}
+	candidate, _ := filepath.Abs(requested)
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+	cwd, _ := os.Getwd()
+	if filepath.Base(cwd) == requested {
+		if _, err := os.Stat(filepath.Join(cwd, "docs")); err == nil {
+			return cwd
+		}
+	}
+	return candidate
+}
+
+func deriveLiveShadowRunID(scorecard map[string]any, generatedAt time.Time) string {
+	summary, _ := scorecard["summary"].(map[string]any)
+	if latest, _ := summary["latest_evidence_timestamp"].(string); trim(latest) != "" {
+		if parsed, err := time.Parse(time.RFC3339, strings.ReplaceAll(latest, "Z", "+00:00")); err == nil {
+			return parsed.UTC().Format("20060102T150405Z")
+		}
+	}
+	return generatedAt.UTC().Format("20060102T150405Z")
 }
 
 func automationSoakLocal(opts automationSoakLocalOptions) (*automationSoakLocalReport, int, error) {

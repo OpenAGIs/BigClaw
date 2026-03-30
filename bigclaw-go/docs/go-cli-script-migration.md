@@ -11,6 +11,7 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/shadow_matrix.py` | `go run ./cmd/bigclawctl automation migration shadow-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle` | migrated and Python shim removed |
 
 ## Remaining Python Script Backlog
 
@@ -25,7 +26,6 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/benchmark/capacity_certification.py`
 - `bigclaw-go/scripts/benchmark/run_matrix.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
 
 ## Validation Commands
 
@@ -38,6 +38,7 @@ go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation migration shadow-compare --help
 go run ./cmd/bigclawctl automation migration shadow-matrix --help
 go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help
+go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 ```
 
 ## Regression Surface
