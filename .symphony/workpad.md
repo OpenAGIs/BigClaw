@@ -25,6 +25,8 @@ Batch file list:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/parallel_refill.py`
+- `src/bigclaw/risk.py`
+- `src/bigclaw/audit_events.py`
 - `docs/go-mainline-cutover-issue-pack.md`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_triage.py`
@@ -88,6 +90,10 @@ Selected tranche rationale:
 - `parallel_refill.py` appears to be dead Python residue with no remaining code
   imports, so it can be deleted once the remaining repo docs stop pointing at
   the removed file path.
+- `risk.py` is already runtime-owned logic in practice and can be folded into
+  `runtime.py`.
+- `audit_events.py` is now only a shared observability schema surface and can
+  be folded into `observability.py`.
 
 ## Plan
 
@@ -146,6 +152,12 @@ Selected tranche rationale:
     `src/bigclaw/parallel_refill.py`.
 30. Run targeted refill validation for the eighth consolidation batch and push a
     follow-up commit.
+31. Fold `risk.py` into `runtime.py` and preserve `bigclaw.risk` compatibility
+    via `__init__.py`.
+32. Fold `audit_events.py` into `observability.py` and preserve
+    `bigclaw.audit_events` compatibility via `__init__.py`.
+33. Run targeted risk/audit validation for the ninth consolidation batch and
+    push a follow-up commit.
 
 ## Acceptance
 
@@ -187,6 +199,12 @@ Selected tranche rationale:
   `PY`
 - `python3 -m py_compile scripts/ops/bigclaw_refill_queue.py`
 - `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
+- `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_audit_events.py tests/test_runtime_matrix.py tests/test_observability.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.risk import RiskScorer`
+  `from bigclaw.audit_events import SCHEDULER_DECISION_EVENT`
+  `print("ok")`
+  `PY`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
 - `PYTHONPATH=src python3 - <<'PY'`
@@ -344,6 +362,24 @@ Selected tranche rationale:
   - Replaced.
   - Reason: removed stale references to the deleted Python refill module from
     the cutover issue pack.
+- `src/bigclaw/runtime.py`
+  - Replaced again.
+  - Reason: absorbed risk scoring models and logic so runtime scheduling and
+    risk scoring now share one owning module.
+- `src/bigclaw/observability.py`
+  - Replaced again.
+  - Reason: absorbed canonical audit event specifications so operational audit
+    schema and audit consumers now share one module.
+- `src/bigclaw/risk.py`
+  - Deleted.
+  - Reason: its contents moved into `runtime.py`.
+- `src/bigclaw/audit_events.py`
+  - Deleted.
+  - Reason: its contents moved into `observability.py`.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: switched audit-event imports to the new owning observability
+    module.
 
 ### Inventory Impact
 
@@ -356,7 +392,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 6: `33`
 - `src/bigclaw/**/*.py` after batch 7: `31`
 - `src/bigclaw/**/*.py` after batch 8: `30`
-- Net Python module reduction in tranche so far: `15`
+- `src/bigclaw/**/*.py` after batch 9: `28`
+- Net Python module reduction in tranche so far: `17`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -434,3 +471,9 @@ Selected tranche rationale:
   - Result: `ok bigclaw-go/internal/refill 2.238s`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 8: `30`
+- `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_audit_events.py tests/test_runtime_matrix.py tests/test_observability.py`
+  - Result: `18 passed in 0.09s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.risk` / `bigclaw.audit_events`
+  - Result: `ok`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 9: `28`

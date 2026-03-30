@@ -276,19 +276,7 @@ from .issue_archive import (
     IssuePriorityArchivist,
     render_issue_priority_archive_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .audit_events import (
-    APPROVAL_RECORDED_EVENT,
-    BUDGET_OVERRIDE_EVENT,
-    FLOW_HANDOFF_EVENT,
-    MANUAL_TAKEOVER_EVENT,
-    P0_AUDIT_EVENT_SPECS,
-    SCHEDULER_DECISION_EVENT,
-    AuditEventSpec,
-    get_audit_event_spec,
-    missing_required_fields,
-)
 from .event_bus import (
     CI_COMPLETED_EVENT,
     PULL_REQUEST_COMMENT_EVENT,
@@ -296,7 +284,23 @@ from .event_bus import (
     BusEvent,
     EventBus,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
+from .observability import (
+    APPROVAL_RECORDED_EVENT,
+    BUDGET_OVERRIDE_EVENT,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
+    P0_AUDIT_EVENT_SPECS,
+    SCHEDULER_DECISION_EVENT,
+    AuditEventSpec,
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    TaskRun,
+    get_audit_event_spec,
+    missing_required_fields,
+)
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
@@ -329,6 +333,7 @@ _install_compat_surface_module(
         "missing_repo_audit_fields",
     ],
 )
+_install_compat_surface_module("risk", _legacy_runtime_surface, ["RiskFactor", "RiskScore", "RiskScorer"])
 from .dashboard_run_contract import (
     DashboardRunContract,
     DashboardRunContractAudit,
@@ -414,6 +419,21 @@ _install_compat_surface_module(
     "validation_policy",
     sys.modules[f"{__name__}.reports"],
     ["ValidationReportDecision", "REQUIRED_REPORT_ARTIFACTS", "enforce_validation_report_policy"],
+)
+_install_compat_surface_module(
+    "audit_events",
+    sys.modules[f"{__name__}.observability"],
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "BUDGET_OVERRIDE_EVENT",
+        "FLOW_HANDOFF_EVENT",
+        "MANUAL_TAKEOVER_EVENT",
+        "P0_AUDIT_EVENT_SPECS",
+        "SCHEDULER_DECISION_EVENT",
+        "AuditEventSpec",
+        "get_audit_event_spec",
+        "missing_required_fields",
+    ],
 )
 from .operations import (
     DashboardBuilder,
