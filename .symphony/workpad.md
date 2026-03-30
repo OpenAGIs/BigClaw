@@ -19,6 +19,7 @@ Batch file list:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/saved_views.py`
 - `src/bigclaw/dashboard_run_contract.py`
+- `src/bigclaw/run_detail.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -123,6 +124,9 @@ Selected tranche rationale:
 - `dashboard_run_contract.py` is an execution API/schema contract surface and
   fits naturally into `execution_contract.py`, which already owns adjacent API
   models, permissions, and contract reporting logic.
+- `run_detail.py` is a shared run-detail rendering helper used only by
+  `reports.py` and `evaluation.py`, so it can be folded into `reports.py`
+  while keeping `bigclaw.run_detail` as a compatibility surface.
 
 ## Plan
 
@@ -217,6 +221,11 @@ Selected tranche rationale:
     `bigclaw.dashboard_run_contract` compatibility via `__init__.py`.
 48. Run targeted dashboard-contract validation for the sixteenth consolidation
     batch and push a follow-up commit.
+49. Fold `run_detail.py` into `reports.py`, switch evaluation imports to the
+    new owner, and preserve `bigclaw.run_detail` compatibility via
+    `__init__.py`.
+50. Run targeted report/evaluation validation for the seventeenth
+    consolidation batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -266,6 +275,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_saved_views.py tests/test_reports.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_dashboard_run_contract.py tests/test_execution_contract.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_evaluation.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.run_detail import render_run_detail_console, RunDetailStat`
+  `print(render_run_detail_console.__name__, RunDetailStat.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.dashboard_run_contract import DashboardRunContractLibrary`
   `print(DashboardRunContractLibrary.__name__)`
@@ -556,6 +570,20 @@ Selected tranche rationale:
 - `src/bigclaw/dashboard_run_contract.py`
   - Deleted.
   - Reason: its contents moved into `execution_contract.py`.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: absorbed shared run-detail models and rendering helpers so report
+    generation and run-detail presentation share one reporting owner module.
+- `src/bigclaw/evaluation.py`
+  - Replaced.
+  - Reason: switched shared run-detail imports to the new owning reports module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.run_detail` compatibility submodule sourced
+    from `reports.py`.
+- `src/bigclaw/run_detail.py`
+  - Deleted.
+  - Reason: its contents moved into `reports.py`.
 
 ### Inventory Impact
 
@@ -576,7 +604,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 14: `22`
 - `src/bigclaw/**/*.py` after batch 15: `21`
 - `src/bigclaw/**/*.py` after batch 16: `20`
-- Net Python module reduction in tranche so far: `25`
+- `src/bigclaw/**/*.py` after batch 17: `19`
+- Net Python module reduction in tranche so far: `26`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -702,3 +731,9 @@ Selected tranche rationale:
   - Result: `DashboardRunContractLibrary`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 16: `20`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_evaluation.py`
+  - Result: `41 passed in 0.10s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.run_detail`
+  - Result: `render_run_detail_console RunDetailStat`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 17: `19`

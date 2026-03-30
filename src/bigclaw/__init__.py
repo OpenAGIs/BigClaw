@@ -457,6 +457,19 @@ _install_compat_surface_module(
     ["ValidationReportDecision", "REQUIRED_REPORT_ARTIFACTS", "enforce_validation_report_policy"],
 )
 _install_compat_surface_module(
+    "run_detail",
+    sys.modules[f"{__name__}.reports"],
+    [
+        "RunDetailEvent",
+        "RunDetailResource",
+        "RunDetailStat",
+        "RunDetailTab",
+        "render_resource_grid",
+        "render_run_detail_console",
+        "render_timeline_panel",
+    ],
+)
+_install_compat_surface_module(
     "audit_events",
     sys.modules[f"{__name__}.observability"],
     [
