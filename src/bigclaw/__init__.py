@@ -322,7 +322,7 @@ _install_compat_surface_module(
         "render_saved_view_report",
     ],
 )
-from .governance import (
+from .planning import (
     FreezeException,
     GovernanceBacklogItem,
     ScopeFreezeAudit,
@@ -593,6 +593,18 @@ from .planning import (
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+)
+_install_compat_surface_module(
+    "governance",
+    sys.modules[f"{__name__}.planning"],
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+    ],
 )
 _install_compat_surface_module(
     "issue_archive",

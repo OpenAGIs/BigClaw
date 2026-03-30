@@ -23,6 +23,7 @@ Batch file list:
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/collaboration.py`
 - `src/bigclaw/evaluation.py`
+- `src/bigclaw/governance.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -141,6 +142,9 @@ Selected tranche rationale:
 - `evaluation.py` is tightly coupled to report rendering and replay pages, so
   it can be folded into `reports.py` while preserving `bigclaw.evaluation`
   compatibility from `__init__.py`.
+- `governance.py` is already consumed directly by `planning.py` and belongs to
+  the same planning/governance slice, so it can be folded into `planning.py`
+  while preserving `bigclaw.governance` compatibility from `__init__.py`.
 
 ## Plan
 
@@ -255,6 +259,10 @@ Selected tranche rationale:
     via `__init__.py`.
 56. Run targeted evaluation/report/operations validation for the twentieth
     consolidation batch and push a follow-up commit.
+57. Fold `governance.py` into `planning.py` and preserve `bigclaw.governance`
+    compatibility via `__init__.py`.
+58. Run targeted planning/governance validation for the twenty-first
+    consolidation batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -308,6 +316,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_github_sync.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_reports.py tests/test_observability.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_operations.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_governance.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.governance import ScopeFreezeGovernance`
+  `print(ScopeFreezeGovernance.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.evaluation import BenchmarkRunner`
   `print(BenchmarkRunner.__name__)`
@@ -673,6 +686,17 @@ Selected tranche rationale:
 - `src/bigclaw/evaluation.py`
   - Deleted.
   - Reason: its contents moved into `reports.py`.
+- `src/bigclaw/planning.py`
+  - Replaced again.
+  - Reason: absorbed scope-freeze governance models, audit logic, and report
+    rendering so backlog planning and freeze-governance surfaces share one owner.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.governance` compatibility submodule sourced
+    from `planning.py`.
+- `src/bigclaw/governance.py`
+  - Deleted.
+  - Reason: its contents moved into `planning.py`.
 
 ### Inventory Impact
 
@@ -697,7 +721,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 18: `18`
 - `src/bigclaw/**/*.py` after batch 19: `17`
 - `src/bigclaw/**/*.py` after batch 20: `16`
-- Net Python module reduction in tranche so far: `29`
+- `src/bigclaw/**/*.py` after batch 21: `15`
+- Net Python module reduction in tranche so far: `30`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -849,3 +874,9 @@ Selected tranche rationale:
   - Result: `BenchmarkRunner`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 20: `16`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_governance.py`
+  - Result: `18 passed in 0.08s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.governance`
+  - Result: `ScopeFreezeGovernance`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 21: `15`
