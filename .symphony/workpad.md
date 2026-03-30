@@ -441,6 +441,27 @@ Repository inventory at start of lane:
 - `python3 - <<'PY' ... PY` direct-load `src/bigclaw/design_system.py` and exercise `ConsoleIAAuditor`
 - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
 
+### Results
+
+- Deleted `src/bigclaw/console_ia.py`.
+- Merged the console IA models, auditors, reports, and draft builder into
+  `src/bigclaw/design_system.py`.
+- Updated `src/bigclaw/__init__.py` to install a compatibility
+  `bigclaw.console_ia` submodule backed by `design_system.py`.
+- Repository counts after continuation:
+  - total `py` files: `75`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `12`
+- Validation outcomes:
+  - `python3 -m compileall src/bigclaw/design_system.py src/bigclaw/__init__.py`
+    - Result: success
+  - `python3 - <<'PY' ... PY`
+    - Result: direct-loaded `design_system.py`, built a minimal `ConsoleIA`,
+      audited it, and rendered a console IA report successfully; printed `1`,
+      `1`, `0.0`, `True`
+  - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+    - Result: `PY 75`, `GO 267`, `SRC 12`
+
 ## BIG-GO-1014 Refill Sweep D Continuation 7
 
 ### Plan
@@ -484,3 +505,26 @@ Repository inventory at start of lane:
     - Result: `9 passed in 2.99s`
   - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
     - Result: `PY 76`, `GO 267`, `SRC 13`
+
+## BIG-GO-1014 Refill Sweep D Continuation 8
+
+### Plan
+
+- Merge the benchmark/replay surface from `src/bigclaw/evaluation.py` into
+  `src/bigclaw/operations.py`.
+- Update `src/bigclaw/__init__.py` to source evaluation exports from
+  `operations.py` and install a compatibility `bigclaw.evaluation` submodule.
+- Validate with syntax checks plus a direct-load benchmark script that avoids
+  the shared package import path.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve benchmark/replay exports after the move.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/operations.py src/bigclaw/__init__.py`
+- `python3 - <<'PY' ... PY` fake-package load `bigclaw.operations` and exercise `BenchmarkSuiteResult`/`render_benchmark_suite_report`
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
