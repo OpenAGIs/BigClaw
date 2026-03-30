@@ -15,6 +15,7 @@ Issue: `BIG-GO-902`, follow-up sweep `BIG-GO-1010`
 
 ## Remaining Python Script Backlog
 
+- `migration/**`: none in the current checkout
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
@@ -29,9 +30,15 @@ Issue: `BIG-GO-902`, follow-up sweep `BIG-GO-1010`
 Coverage now lives in Go tests and the checked-in regression suite, but the report generators above
 still require Go-native replacements before the repository reaches a true Go-only operational state.
 
+Current residual counts after that sweep:
+
+- repository Python files: `103`
+- `bigclaw-go/scripts/e2e/**` Python files: `9`
+
 ## Final Gap Report
 
 - `migration/**`: no remaining Python files in this checkout.
+- Historical reduction delivered by `BIG-GO-1010`: repository `108 -> 103`, scoped batch `14 -> 9`.
 - Removed in `BIG-GO-1010`:
   - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
   - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
@@ -46,18 +53,13 @@ still require Go-native replacements before the repository reaches a true Go-onl
   - shared-queue and subscriber-takeover live harnesses
   - mixed workload, external store, cross-process coordination, and broker failover evidence generators
 
-## Validation Commands
+## Validation Commands For This Sweep
 
 ```bash
-cd bigclaw-go
-go test ./cmd/bigclawctl/...
-go run ./cmd/bigclawctl automation --help
-go run ./cmd/bigclawctl automation e2e run-task-smoke --help
-go run ./cmd/bigclawctl automation benchmark soak-local --help
-go run ./cmd/bigclawctl automation migration shadow-compare --help
-go run ./cmd/bigclawctl automation migration shadow-matrix --help
-go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help
-go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
+find . -name '*.py' | wc -l
+find bigclaw-go/scripts/e2e -name '*.py' | wc -l
+rg --files | rg '(^|/)migration/|/migration/'
+cd bigclaw-go && go test ./scripts/e2e ./internal/regression
 ```
 
 ## Regression Surface

@@ -4,29 +4,25 @@ Issue: `BIG-GO-1010`
 
 ## Scope Verification
 
-- `bigclaw-go/scripts/e2e/**` still contained Python residue at the start of this sweep.
-- `migration/**` has no remaining Python files in this checkout.
+- Verified current residual Python scope under `bigclaw-go/scripts/e2e/**`: `9` files.
+- `migration/**` does not exist in this checkout, so it contributes `0` residual Python files.
+- Historical removal commit for this issue batch: `76a14bc feat: finalize BIG-GO-1010 python gap sweep`.
 
-Targeted batch at sweep start:
+Current residual Python files:
 
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 
 ## Result
 
-Deleted Python files in this sweep:
+Python files removed by `BIG-GO-1010`:
 
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
 - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
@@ -91,14 +87,27 @@ Kept:
 
 ## Count Impact
 
-- Repository Python files before: `108`
-- Repository Python files after: `103`
-- Targeted batch Python files before: `14`
-- Targeted batch Python files after: `9`
-- Net reduction in this sweep: `5`
+- Historical repository Python files for this batch: `108 -> 103`
+- Historical targeted batch Python files for this batch: `14 -> 9`
+- Current repository Python files in this checkout: `103`
+- Current targeted residual Python files in `bigclaw-go/scripts/e2e/**`: `9`
+- Net reduction delivered by `BIG-GO-1010`: `5`
 
 ## Remaining Go-Only Gaps
 
 The repository is not yet Go-only for e2e evidence generation. The remaining blockers are the nine
-Python report generators still living under `bigclaw-go/scripts/e2e/**`. They need Go-native
-replacements before the e2e/reporting lane can drop Python runtime dependence entirely.
+Python report generators still living under `bigclaw-go/scripts/e2e/**`. No additional file-count
+reduction is safe inside this issue scope without implementing new Go-native replacements for those
+generators.
+
+## Validation
+
+- `find . -name '*.py' | wc -l`
+  - Result: `103`
+- `find bigclaw-go/scripts/e2e -name '*.py' | wc -l`
+  - Result: `9`
+- `rg --files | rg '(^|/)migration/|/migration/'`
+  - Result: no matches
+- `cd bigclaw-go && go test ./scripts/e2e ./internal/regression`
+  - Result: `ok   bigclaw-go/scripts/e2e  4.224s`
+  - Result: `ok   bigclaw-go/internal/regression  1.186s`
