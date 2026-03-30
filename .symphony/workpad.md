@@ -27,6 +27,8 @@ Batch file list:
 - `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/risk.py`
 - `src/bigclaw/audit_events.py`
+- `src/bigclaw/repo_board.py`
+- `src/bigclaw/event_bus.py`
 - `docs/go-mainline-cutover-issue-pack.md`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_triage.py`
@@ -94,6 +96,10 @@ Selected tranche rationale:
   `runtime.py`.
 - `audit_events.py` is now only a shared observability schema surface and can
   be folded into `observability.py`.
+- `repo_board.py` is a collaboration surface and can be folded into
+  `collaboration.py`.
+- `event_bus.py` already centers on `ObservabilityLedger` and `TaskRun`, so it
+  can be folded into `observability.py`.
 
 ## Plan
 
@@ -158,6 +164,12 @@ Selected tranche rationale:
     `bigclaw.audit_events` compatibility via `__init__.py`.
 33. Run targeted risk/audit validation for the ninth consolidation batch and
     push a follow-up commit.
+34. Fold `repo_board.py` into `collaboration.py` and preserve
+    `bigclaw.repo_board` compatibility via `__init__.py`.
+35. Fold `event_bus.py` into `observability.py` and preserve
+    `bigclaw.event_bus` compatibility via `__init__.py`.
+36. Run targeted repo-board/event-bus validation for the tenth consolidation
+    batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -200,9 +212,15 @@ Selected tranche rationale:
 - `python3 -m py_compile scripts/ops/bigclaw_refill_queue.py`
 - `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
 - `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_audit_events.py tests/test_runtime_matrix.py tests/test_observability.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_event_bus.py tests/test_observability.py`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.risk import RiskScorer`
   `from bigclaw.audit_events import SCHEDULER_DECISION_EVENT`
+  `print("ok")`
+  `PY`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.repo_board import RepoDiscussionBoard`
+  `from bigclaw.event_bus import EventBus`
   `print("ok")`
   `PY`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
@@ -380,6 +398,20 @@ Selected tranche rationale:
   - Replaced again.
   - Reason: switched audit-event imports to the new owning observability
     module.
+- `src/bigclaw/collaboration.py`
+  - Replaced again.
+  - Reason: absorbed repo discussion board models and behavior so collaboration
+    records and repo-native discussion state now live together.
+- `src/bigclaw/observability.py`
+  - Replaced again.
+  - Reason: absorbed event bus definitions so event ingestion and ledger state
+    now live in the same observability module.
+- `src/bigclaw/repo_board.py`
+  - Deleted.
+  - Reason: its contents moved into `collaboration.py`.
+- `src/bigclaw/event_bus.py`
+  - Deleted.
+  - Reason: its contents moved into `observability.py`.
 
 ### Inventory Impact
 
@@ -393,7 +425,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 7: `31`
 - `src/bigclaw/**/*.py` after batch 8: `30`
 - `src/bigclaw/**/*.py` after batch 9: `28`
-- Net Python module reduction in tranche so far: `17`
+- `src/bigclaw/**/*.py` after batch 10: `26`
+- Net Python module reduction in tranche so far: `19`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -477,3 +510,9 @@ Selected tranche rationale:
   - Result: `ok`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 9: `28`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_event_bus.py tests/test_observability.py`
+  - Result: `12 passed in 0.08s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.repo_board` / `bigclaw.event_bus`
+  - Result: `ok`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 10: `26`

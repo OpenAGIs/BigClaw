@@ -249,9 +249,12 @@ from .collaboration import (
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
+    RepoDiscussionBoard,
+    RepoPost,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
+_install_compat_surface_module("repo_board", sys.modules[f"{__name__}.collaboration"], ["RepoPost", "RepoDiscussionBoard"])
 from .saved_views import (
     AlertDigestSubscription,
     SavedView,
@@ -277,20 +280,18 @@ from .issue_archive import (
     render_issue_priority_archive_report,
 )
 from .dsl import WorkflowDefinition, WorkflowStep
-from .event_bus import (
-    CI_COMPLETED_EVENT,
-    PULL_REQUEST_COMMENT_EVENT,
-    TASK_FAILED_EVENT,
-    BusEvent,
-    EventBus,
-)
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
+    BusEvent,
+    CI_COMPLETED_EVENT,
+    EventBus,
     FLOW_HANDOFF_EVENT,
     MANUAL_TAKEOVER_EVENT,
     P0_AUDIT_EVENT_SPECS,
+    PULL_REQUEST_COMMENT_EVENT,
     SCHEDULER_DECISION_EVENT,
+    TASK_FAILED_EVENT,
     AuditEventSpec,
     GitSyncTelemetry,
     ObservabilityLedger,
@@ -300,6 +301,11 @@ from .observability import (
     TaskRun,
     get_audit_event_spec,
     missing_required_fields,
+)
+_install_compat_surface_module(
+    "event_bus",
+    sys.modules[f"{__name__}.observability"],
+    ["PULL_REQUEST_COMMENT_EVENT", "CI_COMPLETED_EVENT", "TASK_FAILED_EVENT", "BusEvent", "EventBus"],
 )
 from .execution_contract import (
     AuditPolicy,
