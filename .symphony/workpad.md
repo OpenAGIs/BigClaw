@@ -24,6 +24,7 @@ Batch file list:
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 - `tests/test_models.py`
 - `tests/test_repo_links.py`
+- `tests/test_validation_policy.py`
 
 Go replacement inventory:
 
@@ -35,6 +36,7 @@ Go replacement inventory:
 - `bigclaw-go/internal/queue/sqlite_queue_test.go`
 - `bigclaw-go/internal/queue/file_queue_test.go`
 - `bigclaw-go/internal/repo/repo_surfaces_test.go`
+- `bigclaw-go/internal/validationpolicy/policy_test.go`
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
 - `bigclaw-go/internal/product/saved_views_test.go`
@@ -69,6 +71,8 @@ Repository inventory at start of lane:
 4. Record exact file-count and root packaging impacts for `py files`,
    `go files`, `pyproject.toml`, and `setup.py`.
 5. Commit and push the scoped branch for `BIG-GO-1017`.
+6. Add a minimal Go-native replacement for the residual validation-report
+   policy contract, then delete the root Python test once parity is covered.
 
 ## Acceptance
 
@@ -101,6 +105,7 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndexSummary'`
 - `git diff --check`
 - `git status --short`
+- `cd bigclaw-go && go test ./internal/validationpolicy`
 
 ## Results
 
@@ -176,29 +181,33 @@ Repository inventory at start of lane:
     `bigclaw-go/internal/repo/repo_surfaces_test.go`, which now also asserts
     that source/candidate/accepted link roles survive serialized approval-packet
     output.
+- `tests/test_validation_policy.py`
+  - Deleted.
+  - Reason: its required-report closeout policy is now covered directly in
+    `bigclaw-go/internal/validationpolicy/policy_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `23`
-- Net `tests/*.py` reduction: `15`
+- `tests/*.py` files after: `22`
+- Net `tests/*.py` reduction: `16`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `93`
-- Net repo `*.py` reduction: `15`
+- Repo `*.py` files after: `92`
+- Net repo `*.py` reduction: `16`
 - Repo `*.go` files before: `267`
-- Repo `*.go` files after: `267`
-- Net repo `*.go` reduction: `0`
+- Repo `*.go` files after: `269`
+- Net repo `*.go` increase: `2`
 - Root `pyproject.toml`: absent before, absent after
 - Root `setup.py`: absent before, absent after
 
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `23`
+  - Result: `22`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `93`
+  - Result: `92`
 - `find . -name '*.go' | sort | wc -l`
-  - Result: `267`
+  - Result: `269`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
   - Result: `ok  	bigclaw-go/internal/product	2.711s`
 - `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths'`
@@ -232,4 +241,7 @@ Repository inventory at start of lane:
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result: only `.symphony/workpad.md` plus the 12 targeted Python test deletions
+  - Result: `.symphony/workpad.md`, `tests/test_validation_policy.py` deleted,
+    and `bigclaw-go/internal/validationpolicy/` added
+- `cd bigclaw-go && go test ./internal/validationpolicy`
+  - Result: `ok  	bigclaw-go/internal/validationpolicy	1.154s`
