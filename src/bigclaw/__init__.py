@@ -95,6 +95,7 @@ _install_legacy_surface_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
 _install_surface_module("repo_board", _repository_surface, ["RepoDiscussionBoard", "RepoPost"])
+_install_surface_module("repo_commits", _repository_surface, ["CommitDiff", "CommitLineage", "RepoCommit"])
 _install_surface_module(
     "repo_gateway",
     _repository_surface,
@@ -242,14 +243,6 @@ from .saved_views import (
     SavedViewFilter,
     SavedViewLibrary,
     render_saved_view_report,
-)
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
@@ -436,6 +429,11 @@ from .planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -443,6 +441,19 @@ from .planning import (
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+    render_scope_freeze_report,
+)
+_install_surface_module(
+    "governance",
+    sys.modules[f"{__name__}.planning"],
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+    ],
 )
 from .ui_review import (
     InteractionFlow,

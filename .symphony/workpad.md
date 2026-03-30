@@ -100,12 +100,19 @@ Repository inventory at start of lane:
   - `src/bigclaw/repo_plane.py`
   - `src/bigclaw/repo_registry.py`
   - `src/bigclaw/repo_triage.py`
+  - `src/bigclaw/repo_commits.py`
+  - `src/bigclaw/governance.py`
+- `src/bigclaw/planning.py`
+  - Replaced.
+  - Reason: absorbed `governance.py` and now also serves the compatibility
+    `bigclaw.governance` module surface.
 
 ### Inventory Impact
 
 - `src/bigclaw` Python files before: `45`
-- `src/bigclaw` Python files after: `37`
-- Net Python file reduction: `8`
+- `src/bigclaw` Python files after first pass: `37`
+- `src/bigclaw` Python files after continuation pass: `35`
+- Net Python file reduction: `10`
 - `src/bigclaw` Go files before: `0`
 - `src/bigclaw` Go files after: `0`
 - Root `pyproject.toml` before/after: absent
@@ -116,7 +123,8 @@ Repository inventory at start of lane:
 - `python3 -m compileall src/bigclaw`
   - Result: success
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
-  - Result after: `37`
+  - Result after first pass: `37`
+  - Result after continuation pass: `35`
 - `find src/bigclaw -type f -name '*.go' | sort | wc -l`
   - Result after: `0`
 - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
@@ -125,5 +133,9 @@ Repository inventory at start of lane:
   - Result: `57 passed in 1.20s`
 - `cd bigclaw-go && go test ./internal/repo ./internal/governance ./internal/githubsync ./internal/issuearchive`
   - Result: `ok   bigclaw-go/internal/repo 0.824s`, `ok   bigclaw-go/internal/governance 2.104s`, `ok   bigclaw-go/internal/githubsync 3.887s`, `ok   bigclaw-go/internal/issuearchive 1.688s`
+- `PYTHONPATH=src python3 -m pytest tests/test_governance.py tests/test_planning.py tests/test_repo_gateway.py tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_repo_governance.py tests/test_repo_registry.py tests/test_repo_links.py tests/test_repo_triage.py tests/test_github_sync.py tests/test_observability.py tests/test_reports.py`
+  - Result: `75 passed in 1.15s`
+- `cd bigclaw-go && go test ./internal/repo ./internal/governance`
+  - Result: `ok   bigclaw-go/internal/repo (cached)`, `ok   bigclaw-go/internal/governance (cached)`
 - `git diff --check`
   - Result: clean
