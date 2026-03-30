@@ -3,7 +3,7 @@ Issue: BIG-GO-1020
 Plan
 - Inspect repository-level Python residue and keep the scope on the thinnest removable `.py` assets.
 - Replace another batch of small root Python unit tests with one Go regression test that shells into `python3` and asserts the same stable `src/bigclaw` contracts.
-- Remove `tests/test_dashboard_run_contract.py`, `tests/test_repo_gateway.py`, `tests/test_risk.py`, and `tests/test_runtime_matrix.py` once the Go regression coverage is in place.
+- Remove `tests/test_control_center.py`, `tests/test_event_bus.py`, `tests/test_dsl.py`, and `tests/test_audit_events.py` once the Go regression coverage is in place.
 - Run targeted regression and repo-count validation, then commit and push the scoped change.
 
 Acceptance
@@ -17,6 +17,6 @@ Validation
 - `printf 'go files: '; rg --files -g '*.go' | wc -l`
 - `printf 'pyproject.toml: '; rg --files -g 'pyproject.toml' | wc -l`
 - `printf 'setup.py: '; rg --files -g 'setup.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run PythonRepoSurfaceContractMigration`
+- `cd bigclaw-go && go test ./internal/regression -run PythonRepoWorkflowContractMigration`
 - `git diff --stat`
 - `git status --short`
