@@ -172,6 +172,24 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Deleted.
   - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go`.
 
+### Stop Boundary
+
+- `src/bigclaw/memory.py`
+  - Retained.
+  - Reason: only Python test usage remains, but this lane did not find an explicit Go migration target, parity matrix, or package-level Go test proving equivalent memory-pattern behavior.
+- `src/bigclaw/validation_policy.py`
+  - Retained.
+  - Reason: only Python test usage remains, but this lane did not find an explicit Go migration target or equivalent Go validation-policy contract/test surface.
+- `src/bigclaw/console_ia.py`
+  - Retained.
+  - Reason: operator console ownership exists in Go, but the remaining Python surface is materially broader than the currently verified Go console coverage.
+- `src/bigclaw/ui_review.py`
+  - Retained.
+  - Reason: the Python review-pack surface is large and specialized; this lane did not establish one-to-one Go parity strong enough for safe removal.
+- `src/bigclaw/runtime.py`, `src/bigclaw/planning.py`, `src/bigclaw/operations.py`, `src/bigclaw/reports.py`, `src/bigclaw/observability.py`
+  - Retained.
+  - Reason: these remain active Python contract/runtime surfaces or are still referenced by the remaining Python tree, so deleting them would exceed a safe final-sweep batch.
+
 ### Python File Count Impact
 
 - Repository Python files before: `116`
