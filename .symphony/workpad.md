@@ -23,6 +23,8 @@ Batch file list:
 - `src/bigclaw/validation_policy.py`
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/memory.py`
+- `src/bigclaw/connectors.py`
+- `src/bigclaw/mapping.py`
 - `src/bigclaw/__init__.py`
 - `tests/test_repo_board.py`
 - `tests/test_repo_gateway.py`
@@ -66,13 +68,15 @@ Reason:
    implementations and only retain Python-only tests/package exports.
 6. Remove isolated Python-only helpers that have no remaining in-repo runtime
    consumers and are retained only by dedicated tests.
-7. Remove Python tests that only exercised deleted Python-only modules.
-8. Update any remaining Python tests or exports that referenced removed modules so
+7. Remove isolated Python intake/mapping modules that already have documented
+   Go parity ownership and now only survive via stale package exports.
+8. Remove Python tests that only exercised deleted Python-only modules.
+9. Update any remaining Python tests or exports that referenced removed modules so
    the suite remains coherent after deletion.
-9. Run targeted validation for remaining observability, repo-link, and
+10. Run targeted validation for remaining observability, repo-link, and
    workspace bootstrap surfaces,
    plus inventory counts and diff hygiene.
-10. Commit and push the scoped lane branch for `BIG-GO-1015`.
+11. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
@@ -177,11 +181,21 @@ Reason:
   - Deleted.
   - Reason: the helper had no remaining in-repo runtime consumers and was only
     retained by its dedicated Python-only test.
+- `src/bigclaw/connectors.py`
+  - Deleted.
+  - Reason: intake connector ownership is already documented and implemented in
+    `bigclaw-go/internal/intake/{types,connector}.go`, and the Python module
+    had no remaining in-repo consumers beyond stale package exports.
+- `src/bigclaw/mapping.py`
+  - Deleted.
+  - Reason: source-issue mapping ownership is already documented and implemented
+    in `bigclaw-go/internal/intake/mapping.go`, and the Python module had no
+    remaining in-repo consumers beyond stale package exports.
 - `src/bigclaw/__init__.py`
   - Replaced.
-  - Reason: removed the stale `issue_archive`, `roadmap`, and
-    `dashboard_run_contract` re-export blocks after deleting the underlying
-    Python modules.
+  - Reason: removed the stale `issue_archive`, `roadmap`,
+    `dashboard_run_contract`, `connectors`, and `mapping` re-export blocks
+    after deleting the underlying Python modules.
 - `tests/test_repo_board.py`
   - Deleted.
   - Reason: exercised deleted Python-only board helper.
@@ -223,7 +237,8 @@ Reason:
 - `src/bigclaw` Python files after tranche 6: `32`
 - `src/bigclaw` Python files after tranche 7: `31`
 - `src/bigclaw` Python files after tranche 8: `30`
-- Net `src/bigclaw` reduction: `15`
+- `src/bigclaw` Python files after tranche 9: `28`
+- Net `src/bigclaw` reduction: `17`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
@@ -231,7 +246,8 @@ Reason:
 - Repository-wide Python files after tranche 6: `88`
 - Repository-wide Python files after tranche 7: `86`
 - Repository-wide Python files after tranche 8: `84`
-- Net repository-wide Python reduction: `24`
+- Repository-wide Python files after tranche 9: `82`
+- Net repository-wide Python reduction: `26`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -272,3 +288,9 @@ Reason:
   - Result: `import ok`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `20 passed in 3.67s`
+- `rg -n "from \\.connectors|from bigclaw\\.connectors|from \\.mapping|from bigclaw\\.mapping|map_source_issue_to_task|SourceIssue|GitHubConnector|LinearConnector|JiraConnector" src tests || true`
+  - Result: no matches
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `20 passed in 3.09s`
