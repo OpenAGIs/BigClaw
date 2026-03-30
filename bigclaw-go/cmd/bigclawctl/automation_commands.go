@@ -76,6 +76,13 @@ type automationShadowMatrixOptions struct {
 	Sleep                func(time.Duration)
 }
 
+type automationLiveShadowScorecardOptions struct {
+	ShadowCompareReportPath string
+	ShadowMatrixReportPath  string
+	OutputPath              string
+	Now                     func() time.Time
+}
+
 type automationSoakLocalOptions struct {
 	Count          int
 	Workers        int
@@ -224,7 +231,7 @@ func runAutomationBenchmark(args []string) error {
 
 func runAutomationMigration(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare|shadow-matrix> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -232,6 +239,8 @@ func runAutomationMigration(args []string) error {
 		return runAutomationShadowCompareCommand(args[1:])
 	case "shadow-matrix":
 		return runAutomationShadowMatrixCommand(args[1:])
+	case "live-shadow-scorecard":
+		return runAutomationLiveShadowScorecardCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation migration subcommand: %s", args[0])
 	}
@@ -366,6 +375,30 @@ func runAutomationShadowMatrixCommand(args []string) error {
 		return err
 	}
 	return nil
+}
+
+func runAutomationLiveShadowScorecardCommand(args []string) error {
+	flags := flag.NewFlagSet("automation migration live-shadow-scorecard", flag.ContinueOnError)
+	shadowCompareReport := flags.String("shadow-compare-report", "bigclaw-go/docs/reports/shadow-compare-report.json", "shadow compare report path")
+	shadowMatrixReport := flags.String("shadow-matrix-report", "bigclaw-go/docs/reports/shadow-matrix-report.json", "shadow matrix report path")
+	output := flags.String("output", "bigclaw-go/docs/reports/live-shadow-mirror-scorecard.json", "output path")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation migration live-shadow-scorecard [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationLiveShadowScorecard(automationLiveShadowScorecardOptions{
+		ShadowCompareReportPath: *shadowCompareReport,
+		ShadowMatrixReportPath:  *shadowMatrixReport,
+		OutputPath:              *output,
+	})
+	if err != nil {
+		return err
+	}
+	return emit(report, *asJSON, 0)
 }
 
 func runAutomationSoakLocalCommand(args []string) error {
@@ -1024,6 +1057,235 @@ func automationShadowMatrixLoadJSON(path string) (map[string]any, error) {
 	return payload, nil
 }
 
+func automationLiveShadowScorecard(opts automationLiveShadowScorecardOptions) (map[string]any, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	compareReport, err := automationShadowMatrixLoadJSON(resolveAutomationPath(opts.ShadowCompareReportPath))
+	if err != nil {
+		return nil, err
+	}
+	matrixReport, err := automationShadowMatrixLoadJSON(resolveAutomationPath(opts.ShadowMatrixReportPath))
+	if err != nil {
+		return nil, err
+	}
+	generatedAt := now().UTC()
+	parityEntries := append([]map[string]any{automationLiveShadowBuildCompareEntry(compareReport)}, automationLiveShadowBuildMatrixEntries(matrixReport)...)
+	parityOKCount := 0
+	for _, item := range parityEntries {
+		if parity, ok := item["parity"].(map[string]any); ok && parity["status"] == "parity-ok" {
+			parityOKCount++
+		}
+	}
+	driftDetectedCount := len(parityEntries) - parityOKCount
+	freshness := []map[string]any{
+		automationLiveShadowBuildFreshnessEntry("shadow-compare-report", opts.ShadowCompareReportPath, compareReport, generatedAt),
+		automationLiveShadowBuildFreshnessEntry("shadow-matrix-report", opts.ShadowMatrixReportPath, matrixReport, generatedAt),
+	}
+	staleInputs := 0
+	var latestEvidenceTimestamp string
+	for _, item := range freshness {
+		if item["status"] != "fresh" {
+			staleInputs++
+		}
+		if ts, _ := item["latest_evidence_timestamp"].(string); trim(ts) != "" && ts > latestEvidenceTimestamp {
+			latestEvidenceTimestamp = ts
+		}
+	}
+	matrixCorpusCoverage, _ := matrixReport["corpus_coverage"].(map[string]any)
+	cutoverCheckpoints := []map[string]any{
+		automationLiveShadowCheck("single_compare_matches_terminal_state_and_event_sequence",
+			lookupBool(compareReport, "diff", "state_equal") && lookupBool(compareReport, "diff", "event_types_equal"),
+			fmt.Sprintf("trace_id=%v", compareReport["trace_id"])),
+		automationLiveShadowCheck("matrix_reports_no_state_or_event_sequence_mismatches",
+			automationInt(matrixReport["mismatched"], 0) == 0,
+			fmt.Sprintf("matched=%v mismatched=%v", matrixReport["matched"], matrixReport["mismatched"])),
+		automationLiveShadowCheck("scorecard_detects_no_parity_drift",
+			driftDetectedCount == 0,
+			fmt.Sprintf("parity_ok=%d drift_detected=%d", parityOKCount, driftDetectedCount)),
+		automationLiveShadowCheck("checked_in_evidence_is_fresh_enough_for_review",
+			staleInputs == 0,
+			fmt.Sprintf("freshness_statuses=%v", collectStatuses(freshness))),
+		automationLiveShadowCheck("matrix_includes_corpus_coverage_overlay",
+			len(matrixCorpusCoverage) > 0,
+			fmt.Sprintf("corpus_slice_count=%v", matrixCorpusCoverage["corpus_slice_count"])),
+	}
+	report := map[string]any{
+		"generated_at": utcISOTime(generatedAt),
+		"ticket":       "BIG-PAR-092",
+		"title":        "Live shadow mirror parity drift scorecard",
+		"status":       "repo-native-live-shadow-scorecard",
+		"evidence_inputs": map[string]any{
+			"shadow_compare_report_path": opts.ShadowCompareReportPath,
+			"shadow_matrix_report_path":  opts.ShadowMatrixReportPath,
+			"generator_script":           "go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+		},
+		"summary": map[string]any{
+			"total_evidence_runs":           len(parityEntries),
+			"parity_ok_count":               parityOKCount,
+			"drift_detected_count":          driftDetectedCount,
+			"matrix_total":                  automationInt(matrixReport["total"], 0),
+			"matrix_matched":                automationInt(matrixReport["matched"], 0),
+			"matrix_mismatched":             automationInt(matrixReport["mismatched"], 0),
+			"corpus_coverage_present":       len(matrixCorpusCoverage) > 0,
+			"corpus_uncovered_slice_count":  matrixCorpusCoverage["uncovered_corpus_slice_count"],
+			"latest_evidence_timestamp":     stringOrNil(latestEvidenceTimestamp),
+			"fresh_inputs":                  len(freshness) - staleInputs,
+			"stale_inputs":                  staleInputs,
+		},
+		"freshness":           freshness,
+		"parity_entries":      parityEntries,
+		"cutover_checkpoints": cutoverCheckpoints,
+		"limitations": []string{
+			"repo-native only: this scorecard summarizes checked-in shadow artifacts rather than an always-on production traffic mirror",
+			"parity drift is measured from fixture-backed compare/matrix runs and optional corpus slices, not mirrored tenant traffic",
+			"freshness is derived from the latest artifact event timestamps and should be treated as evidence recency, not live service health",
+		},
+		"future_work": []string{
+			"replace offline fixture submission with a real ingress mirror or tenant-scoped shadow routing control before treating this as cutover-proof traffic parity",
+			"promote parity drift review from checked-in artifacts into a continuously refreshed operational surface",
+			"pair this scorecard with rollback automation only after tenant-scoped rollback guardrails exist",
+		},
+	}
+	if err := automationWriteReport(".", opts.OutputPath, report); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+func automationLiveShadowBuildFreshnessEntry(name string, path string, report map[string]any, generatedAt time.Time) map[string]any {
+	latestTimestamp := automationLiveShadowLatestReportTimestamp(report)
+	var latestISO any
+	var ageHours any
+	status := "missing-timestamps"
+	if !latestTimestamp.IsZero() {
+		latestISO = utcISOTime(latestTimestamp)
+		ageHours = roundTo((generatedAt.Sub(latestTimestamp).Seconds())/3600, 2)
+		if generatedAt.Sub(latestTimestamp).Hours() <= 168 {
+			status = "fresh"
+		} else {
+			status = "stale"
+		}
+	}
+	return map[string]any{
+		"name":                      name,
+		"report_path":               path,
+		"latest_evidence_timestamp": latestISO,
+		"age_hours":                 ageHours,
+		"freshness_slo_hours":       168,
+		"status":                    status,
+	}
+}
+
+func automationLiveShadowLatestReportTimestamp(report map[string]any) time.Time {
+	var timestamps []time.Time
+	if results, ok := report["results"].([]any); ok {
+		for _, raw := range results {
+			item, _ := raw.(map[string]any)
+			timestamps = append(timestamps, automationLiveShadowCollectEventTimestamps(lookupMap(item, "primary", "events"))...)
+			timestamps = append(timestamps, automationLiveShadowCollectEventTimestamps(lookupMap(item, "shadow", "events"))...)
+		}
+	} else {
+		timestamps = append(timestamps, automationLiveShadowCollectEventTimestamps(lookupMap(report, "primary", "events"))...)
+		timestamps = append(timestamps, automationLiveShadowCollectEventTimestamps(lookupMap(report, "shadow", "events"))...)
+	}
+	latest := time.Time{}
+	for _, ts := range timestamps {
+		if ts.After(latest) {
+			latest = ts
+		}
+	}
+	return latest
+}
+
+func automationLiveShadowCollectEventTimestamps(events any) []time.Time {
+	items, _ := events.([]any)
+	out := []time.Time{}
+	for _, raw := range items {
+		event, _ := raw.(map[string]any)
+		timestamp, _ := event["timestamp"].(string)
+		if trim(timestamp) == "" {
+			continue
+		}
+		if parsed, err := time.Parse(time.RFC3339, strings.ReplaceAll(timestamp, "Z", "+00:00")); err == nil {
+			out = append(out, parsed)
+		}
+	}
+	return out
+}
+
+func automationLiveShadowBuildCompareEntry(report map[string]any) map[string]any {
+	diff, _ := lookupMap(report, "diff").(map[string]any)
+	primary, _ := lookupMap(report, "primary").(map[string]any)
+	shadow, _ := lookupMap(report, "shadow").(map[string]any)
+	return map[string]any{
+		"entry_type":      "single-compare",
+		"label":           "single fixture compare",
+		"trace_id":        report["trace_id"],
+		"source_file":     nil,
+		"source_kind":     "fixture",
+		"parity":          automationLiveShadowClassifyParity(diff),
+		"primary_task_id": primary["task_id"],
+		"shadow_task_id":  shadow["task_id"],
+	}
+}
+
+func automationLiveShadowBuildMatrixEntries(report map[string]any) []map[string]any {
+	results, _ := report["results"].([]any)
+	entries := make([]map[string]any, 0, len(results))
+	for _, raw := range results {
+		item, _ := raw.(map[string]any)
+		diff, _ := lookupMap(item, "diff").(map[string]any)
+		primary, _ := lookupMap(item, "primary").(map[string]any)
+		shadow, _ := lookupMap(item, "shadow").(map[string]any)
+		entries = append(entries, map[string]any{
+			"entry_type":      "matrix-row",
+			"label":           item["source_file"],
+			"trace_id":        item["trace_id"],
+			"source_file":     item["source_file"],
+			"source_kind":     item["source_kind"],
+			"task_shape":      item["task_shape"],
+			"corpus_slice":    item["corpus_slice"],
+			"parity":          automationLiveShadowClassifyParity(diff),
+			"primary_task_id": primary["task_id"],
+			"shadow_task_id":  shadow["task_id"],
+		})
+	}
+	return entries
+}
+
+func automationLiveShadowClassifyParity(diff map[string]any) map[string]any {
+	reasons := []string{}
+	if !automationBool(diff["state_equal"]) {
+		reasons = append(reasons, "terminal-state-mismatch")
+	}
+	if !automationBool(diff["event_types_equal"]) {
+		reasons = append(reasons, "event-sequence-mismatch")
+	}
+	if automationInt(diff["event_count_delta"], 0) != 0 {
+		reasons = append(reasons, "event-count-drift")
+	}
+	timelineDelta := roundTo(absFloat(asFloat(diff["primary_timeline_seconds"])-asFloat(diff["shadow_timeline_seconds"])), 6)
+	if timelineDelta > 0.25 {
+		reasons = append(reasons, "timeline-drift")
+	}
+	status := "parity-ok"
+	if len(reasons) > 0 {
+		status = "drift-detected"
+	}
+	return map[string]any{
+		"status":                           status,
+		"timeline_delta_seconds":           timelineDelta,
+		"timeline_drift_tolerance_seconds": 0.25,
+		"reasons":                          reasons,
+	}
+}
+
+func automationLiveShadowCheck(name string, passed bool, detail string) map[string]any {
+	return map[string]any{"name": name, "passed": passed, "detail": detail}
+}
+
 func automationSoakLocal(opts automationSoakLocalOptions) (*automationSoakLocalReport, int, error) {
 	client := opts.HTTPClient
 	if client == nil {
@@ -1310,6 +1572,85 @@ func automationStringSlicesEqual(left []string, right []string) bool {
 		}
 	}
 	return true
+}
+
+func resolveAutomationPath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	if _, err := os.Stat(path); err == nil {
+		return path
+	}
+	return filepath.Join("..", path)
+}
+
+func utcISOTime(moment time.Time) string {
+	return moment.UTC().Format(time.RFC3339Nano)
+}
+
+func lookupMap(value map[string]any, keys ...string) any {
+	current := any(value)
+	for _, key := range keys {
+		next, ok := current.(map[string]any)
+		if !ok {
+			return nil
+		}
+		current = next[key]
+	}
+	return current
+}
+
+func lookupBool(value map[string]any, keys ...string) bool {
+	current := lookupMap(value, keys...)
+	return automationBool(current)
+}
+
+func roundTo(value float64, places int) float64 {
+	pow := 1.0
+	for i := 0; i < places; i++ {
+		pow *= 10
+	}
+	if value >= 0 {
+		return float64(int(value*pow+0.5)) / pow
+	}
+	return float64(int(value*pow-0.5)) / pow
+}
+
+func asFloat(value any) float64 {
+	switch typed := value.(type) {
+	case float64:
+		return typed
+	case int:
+		return float64(typed)
+	case int64:
+		return float64(typed)
+	default:
+		return 0
+	}
+}
+
+func absFloat(value float64) float64 {
+	if value < 0 {
+		return -value
+	}
+	return value
+}
+
+func collectStatuses(items []map[string]any) []string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if status, ok := item["status"].(string); ok {
+			out = append(out, status)
+		}
+	}
+	return out
+}
+
+func stringOrNil(value string) any {
+	if trim(value) == "" {
+		return nil
+	}
+	return value
 }
 
 func automationStringSlice(value any) []string {

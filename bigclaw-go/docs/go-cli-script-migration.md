@@ -10,6 +10,7 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/shadow_matrix.py` | `go run ./cmd/bigclawctl automation migration shadow-matrix ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` | migrated and Python shim removed |
 
 ## Remaining Python Script Backlog
 
@@ -25,7 +26,6 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/benchmark/capacity_certification.py`
 - `bigclaw-go/scripts/benchmark/run_matrix.py`
 - `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
 
 ## Validation Commands
 
@@ -37,6 +37,7 @@ go run ./cmd/bigclawctl automation e2e run-task-smoke --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation migration shadow-compare --help
 go run ./cmd/bigclawctl automation migration shadow-matrix --help
+go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help
 ```
 
 ## Regression Surface

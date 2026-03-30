@@ -41,7 +41,7 @@ surface, generate the repo-native live shadow mirror scorecard:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/live_shadow_scorecard.py \
+go run ./cmd/bigclawctl automation migration live-shadow-scorecard \
   --shadow-compare-report ./docs/reports/shadow-compare-report.json \
   --shadow-matrix-report ./docs/reports/shadow-matrix-report.json \
   --output ./docs/reports/live-shadow-mirror-scorecard.json

@@ -269,3 +269,60 @@ func TestAutomationShadowMatrixBuildsCorpusCoverage(t *testing.T) {
 		t.Fatalf("expected uncovered slice in report, got %s", string(body))
 	}
 }
+
+func TestAutomationLiveShadowScorecardBuildsReport(t *testing.T) {
+	root := t.TempDir()
+	comparePath := filepath.Join(root, "shadow-compare-report.json")
+	matrixPath := filepath.Join(root, "shadow-matrix-report.json")
+	outputPath := filepath.Join(root, "live-shadow-mirror-scorecard.json")
+	compare := `{
+  "trace_id": "shadow-compare-sample",
+  "primary": {"task_id": "primary-1", "events": [{"type":"queued","timestamp":"2026-03-28T00:00:00Z"},{"type":"succeeded","timestamp":"2026-03-28T00:00:03Z"}]},
+  "shadow": {"task_id": "shadow-1", "events": [{"type":"queued","timestamp":"2026-03-28T00:00:00Z"},{"type":"succeeded","timestamp":"2026-03-28T00:00:03Z"}]},
+  "diff": {"state_equal": true, "event_types_equal": true, "event_count_delta": 0, "primary_timeline_seconds": 3.0, "shadow_timeline_seconds": 3.0}
+}`
+	matrix := `{
+  "total": 1,
+  "matched": 1,
+  "mismatched": 0,
+  "corpus_coverage": {"uncovered_corpus_slice_count": 1, "corpus_slice_count": 2},
+  "results": [{
+    "trace_id": "shadow-compare-sample-m1",
+    "source_file": "task.json",
+    "source_kind": "fixture",
+    "task_shape": "executor:local",
+    "primary": {"task_id": "primary-m1", "events": [{"type":"queued","timestamp":"2026-03-28T00:00:00Z"},{"type":"succeeded","timestamp":"2026-03-28T00:00:03Z"}]},
+    "shadow": {"task_id": "shadow-m1", "events": [{"type":"queued","timestamp":"2026-03-28T00:00:00Z"},{"type":"succeeded","timestamp":"2026-03-28T00:00:03Z"}]},
+    "diff": {"state_equal": true, "event_types_equal": true, "event_count_delta": 0, "primary_timeline_seconds": 3.0, "shadow_timeline_seconds": 3.0}
+  }]
+}`
+	for path, body := range map[string]string{comparePath: compare, matrixPath: matrix} {
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	report, err := automationLiveShadowScorecard(automationLiveShadowScorecardOptions{
+		ShadowCompareReportPath: comparePath,
+		ShadowMatrixReportPath:  matrixPath,
+		OutputPath:              outputPath,
+		Now:                     func() time.Time { return time.Date(2026, 3, 28, 6, 0, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("build live shadow scorecard: %v", err)
+	}
+	summary, _ := report["summary"].(map[string]any)
+	if summary["total_evidence_runs"] != 2 || summary["parity_ok_count"] != 2 || summary["stale_inputs"] != 0 {
+		t.Fatalf("unexpected scorecard summary: %+v", summary)
+	}
+	inputs, _ := report["evidence_inputs"].(map[string]any)
+	if inputs["generator_script"] != "go run ./cmd/bigclawctl automation migration live-shadow-scorecard" {
+		t.Fatalf("unexpected evidence inputs: %+v", inputs)
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if !strings.Contains(string(body), "\"repo-native-live-shadow-scorecard\"") {
+		t.Fatalf("unexpected output body: %s", string(body))
+	}
+}
