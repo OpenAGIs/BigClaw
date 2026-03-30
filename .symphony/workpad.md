@@ -28,6 +28,7 @@ Candidate batch:
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/validation_policy.py`
+- `src/bigclaw/memory.py`
 
 Planned retainers for this lane:
 
@@ -130,6 +131,9 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `src/bigclaw/validation_policy.py`
   - Deleted.
   - Reason: isolated dead helper with no production callers; its issue-close behavior is superseded by the richer `reports.py` validation/closure gate that remains covered by `tests/test_reports.py`.
+- `src/bigclaw/memory.py`
+  - Deleted.
+  - Reason: isolated dead helper with no production callers or package exports; only a standalone Python test referenced it.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
@@ -178,12 +182,15 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `tests/test_validation_policy.py`
   - Deleted.
   - Reason: it only covered the deleted dead helper; the active issue-close validation behavior remains covered by `tests/test_reports.py`.
+- `tests/test_memory.py`
+  - Deleted.
+  - Reason: it only covered the deleted dead helper and had no remaining production surface to validate.
 
 ### Stop Boundary
 
 - `src/bigclaw/memory.py`
-  - Retained.
-  - Reason: only Python test usage remains, but this lane did not find an explicit Go migration target, parity matrix, or package-level Go test proving equivalent memory-pattern behavior.
+  - Deleted above.
+  - Reason: explicit Go parity was not required because the module was already dead from a production-callers perspective.
 - `src/bigclaw/validation_policy.py`
   - Deleted above.
   - Reason: no separate Go migration target was needed because the helper was already functionally subsumed by the still-active Python reports closeout gate.
@@ -200,10 +207,10 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `80`
+- Repository Python files after: `78`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `23`
-- Net reduction: `36`
+- `src/bigclaw/**` Python files after: `22`
+- Net reduction: `38`
 
 ### Validation Record
 
