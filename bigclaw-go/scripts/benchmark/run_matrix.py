@@ -30,7 +30,7 @@ def run_benchmarks(go_root):
 def run_soak(go_root, count, workers, timeout_seconds, report_path):
     subprocess.run(
         [
-            'python3', 'scripts/benchmark/soak_local.py',
+            'go', 'run', './cmd/bigclawctl', 'automation', 'benchmark', 'soak-local',
             '--autostart',
             '--count', str(count),
             '--workers', str(workers),

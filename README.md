@@ -69,7 +69,7 @@ Notes:
   `bash scripts/ops/symphony-workspace-bootstrap ...`, and
   `bash scripts/ops/symphony-workspace-validate ...` are compatibility wrappers over the same Go CLI.
 - `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
-  `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
+  `bash bigclaw-go/scripts/benchmark/soak-local`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
   `bigclawctl automation ...`; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
