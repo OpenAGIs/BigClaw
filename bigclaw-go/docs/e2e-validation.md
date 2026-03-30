@@ -152,7 +152,7 @@ Use this to regenerate the executable local takeover harness report for lease-aw
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
+bash scripts/e2e/subscriber-takeover-fault-matrix --pretty
 ```
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.

@@ -2,6 +2,7 @@ Issue: BIG-GO-1020
 
 Plan
 - Inspect repository-level Python residue and pick a narrow slice that lowers the `.py` file count without changing core product behavior.
+- Port `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` to a Go-native command plus shell wrapper, then remove the Python entrypoint.
 - Port `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` to a Go-native command plus shell wrapper, then remove the Python entrypoint.
 - Port `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` to a Go-native command plus shell wrapper, then remove the Python entrypoint.
 - Port `bigclaw-go/scripts/e2e/mixed_workload_matrix.py` to a Go-native command plus shell wrapper, then remove the Python entrypoint.
@@ -37,7 +38,9 @@ Validation
 - `cd bigclaw-go && go test ./internal/regression -run ValidationBundleContinuationPolicyGate`
 - `cd bigclaw-go && go test ./internal/regression -run ValidationBundleContinuationScorecard`
 - `cd bigclaw-go && go test ./internal/regression -run CrossProcessCoordinationSurface`
+- `cd bigclaw-go && go test ./internal/regression -run SubscriberTakeoverHarnessScript`
 - `cd bigclaw-go && go test ./internal/regression -run RunAllScript`
+- `bash bigclaw-go/scripts/e2e/subscriber-takeover-fault-matrix --help`
 - `bash bigclaw-go/scripts/e2e/cross-process-coordination-surface --help`
 - `bash bigclaw-go/scripts/e2e/validation-bundle-continuation-scorecard --help`
 - `bash bigclaw-go/scripts/e2e/validation-bundle-continuation-policy-gate --help`

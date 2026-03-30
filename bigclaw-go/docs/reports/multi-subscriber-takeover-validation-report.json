@@ -15,7 +15,7 @@
       "docs/reports/multi-node-shared-queue-report.json"
     ],
     "takeover_harness": [
-      "scripts/e2e/subscriber_takeover_fault_matrix.py",
+      "scripts/e2e/subscriber-takeover-fault-matrix",
       "docs/reports/multi-subscriber-takeover-validation-report.json"
     ]
   },

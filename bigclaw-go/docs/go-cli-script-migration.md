@@ -11,6 +11,7 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/e2e/validation-bundle-continuation-policy-gate` | `go run ./scripts/e2e/validationgate ...` | migrated with shell compatibility wrapper |
 | `bigclaw-go/scripts/e2e/mixed-workload-matrix` | `go run ./scripts/e2e/mixedworkload ...` | migrated with shell compatibility wrapper |
 | `bigclaw-go/scripts/e2e/cross-process-coordination-surface` | `go run ./scripts/e2e/coordinationsurface ...` | migrated with shell compatibility wrapper |
+| `bigclaw-go/scripts/e2e/subscriber-takeover-fault-matrix` | `go run ./scripts/e2e/takeovermatrix ...` | migrated with shell compatibility wrapper |
 | `bigclaw-go/scripts/benchmark/soak-local` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with shell compatibility wrapper |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/shadow_matrix.py` | `go run ./cmd/bigclawctl automation migration shadow-matrix ...` | migrated and Python shim removed |
@@ -23,7 +24,6 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/benchmark/capacitycert/main.go`
 - `bigclaw-go/scripts/benchmark/run_matrix.go`
 
