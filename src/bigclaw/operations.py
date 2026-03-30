@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Sequence
 from .models import Task
 from .queue import PersistentTaskQueue
 
-from .evaluation import BenchmarkSuiteResult
 from .reports import (
+    BenchmarkSuiteResult,
     SharedViewContext,
     build_console_actions,
     render_console_actions,

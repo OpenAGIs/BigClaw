@@ -1007,3 +1007,86 @@ Follow-on refactor now queued:
   - Result: `absent`
 - `git diff --check`
   - Result: success
+
+### Follow-on tranche 24 queued
+
+- Target `src/bigclaw/evaluation.py` next.
+- Reason: the evaluation surface is now a leaf on top of reports,
+  observability, scheduler, and models; `reports.py` does not depend on
+  evaluation, and `operations.py` only imports `BenchmarkSuiteResult`, so the
+  move can stay acyclic by repointing those imports into `reports.py`.
+- Planned edits:
+  - Move the benchmark/evaluation dataclasses, runner, and report renderers
+    into `src/bigclaw/reports.py`.
+  - Repoint `src/bigclaw/operations.py` and package exports to the reports
+    surface.
+  - Install a `bigclaw.evaluation` compatibility shim in
+    `src/bigclaw/__init__.py`.
+  - Delete `src/bigclaw/evaluation.py`.
+
+### Follow-on tranche 24
+
+- `src/bigclaw/evaluation.py`
+  - Deleted.
+  - Reason: the benchmark/evaluation surface was a leaf on top of reports,
+    observability, scheduler, and models, so it could be absorbed into the
+    active reports surface without creating a cycle.
+- `src/bigclaw/reports.py`
+  - Updated.
+  - Reason: now owns `EvaluationCriterion`, `BenchmarkCase`,
+    `ReplayRecord`, `ReplayOutcome`, `BenchmarkResult`,
+    `BenchmarkComparison`, `BenchmarkSuiteResult`, `BenchmarkRunner`,
+    `render_benchmark_suite_report`, `render_replay_detail_page`, and
+    `render_run_replay_index_page`.
+- `src/bigclaw/operations.py`
+  - Updated.
+  - Reason: imports `BenchmarkSuiteResult` from reports instead of the deleted
+    evaluation module.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: installs a `bigclaw.evaluation` compatibility module backed by the
+    reports surface and re-exports the moved evaluation symbols there.
+- `src/bigclaw/planning.py`
+  - Updated.
+  - Reason: repointed rollback-simulation evidence metadata from the deleted
+    `evaluation.py` module to the folded `reports.py` surface.
+- `tests/test_planning.py`
+  - Updated.
+  - Reason: now asserts the retained `src/bigclaw/reports.py` evidence target
+    instead of the deleted `src/bigclaw/evaluation.py` path.
+
+### Follow-on tranche 24 inventory
+
+- `src/bigclaw` Python files after tranche 24: `7`
+- Repository-wide Python files after tranche 24: `55`
+- Net repository-wide Python reduction: `53`
+- `bigclaw-go` Go files after tranche 24: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 24 validation
+
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/operations.py src/bigclaw/__init__.py tests/test_evaluation.py tests/test_reports.py tests/test_operations.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_operations.py`
+  - Result: `61 passed in 0.09s`
+- `PYTHONPATH=src python3 - <<'PY'` with `from bigclaw.evaluation import BenchmarkRunner, render_benchmark_suite_report` and `from bigclaw.reports import BenchmarkSuiteResult`
+  - Result: `BenchmarkRunner True 0`
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_operations.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `38 passed in 0.08s`
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`, `import bigclaw.evaluation`, and inspection of `bigclaw.evaluation.BenchmarkRunner.__module__`
+  - Result: `import ok`, module=`bigclaw.reports`, shim attr present=`True`
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_operations.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py tests/test_planning.py`
+  - Result: `52 passed in 0.10s`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `7`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `55`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
