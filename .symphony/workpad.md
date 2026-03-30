@@ -8,6 +8,7 @@ Plan
 - Prefer end-to-end or function-level Go shims that execute the remaining Python generators with fixed inputs, so the `.py` verification count falls without changing the checked-in Python generator behavior.
 - When the Python test validates multiple derived summaries from one generator, collapse that coverage into one Go regression test that shells into Python once and asserts the returned JSON payloads.
 - Keep these Go replacements focused on stable contract points from checked-in evidence or deterministic synthetic inputs, so they reduce `.py` count without introducing fragile cross-language harnessing.
+- Use the same deterministic-tempdir pattern for shell harness tests when their behavior can be covered from Go with stub executables and temporary files.
 - Update the minimal operator-facing docs that still advertise those Python wrapper paths so the repository no longer points users at deleted `.py` entrypoints.
 - Run targeted validation on the new shell wrappers and repo counts, then commit and push the scoped change.
 
