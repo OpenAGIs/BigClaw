@@ -10,6 +10,7 @@ Plan
 - Keep these Go replacements focused on stable contract points from checked-in evidence or deterministic synthetic inputs, so they reduce `.py` count without introducing fragile cross-language harnessing.
 - Use the same deterministic-tempdir pattern for shell harness tests when their behavior can be covered from Go with stub executables and temporary files.
 - Where a remaining Python generator uses newer type syntax, prefer a no-behavior-change compatibility import over abandoning the file-count reduction.
+- For small active benchmark/e2e orchestration scripts, prefer a direct Go port plus a shell wrapper when the logic is already just subprocess orchestration and JSON assembly.
 - Update the minimal operator-facing docs that still advertise those Python wrapper paths so the repository no longer points users at deleted `.py` entrypoints.
 - Run targeted validation on the new shell wrappers and repo counts, then commit and push the scoped change.
 

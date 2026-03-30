@@ -4,7 +4,7 @@
 
 - Run date: 2026-03-13
 - Commands:
-  - `python3 scripts/benchmark/run_matrix.py --scenario 50:8 --scenario 100:12 --report-path docs/reports/benchmark-matrix-report.json`
+  - `bash scripts/benchmark/run-matrix --scenario 50:8 --scenario 100:12 --report-path docs/reports/benchmark-matrix-report.json`
   - `bash scripts/benchmark/soak-local --autostart --count 2000 --workers 24 --timeout-seconds 480 --report-path docs/reports/soak-local-2000x24.json`
 - Goal: refresh `OPE-186` with a repeatable local benchmark matrix plus concurrent and longer-duration soak evidence.
 - Evidence class: bootstrap proof for local benchmark health, not the final certification artifact.
@@ -38,7 +38,7 @@ Every sampled task reached `task.completed`, preserved `trace_id`, and emitted `
 - `docs/reports/benchmark-report.md`
 - `docs/reports/capacity-certification-matrix.json`
 - `docs/reports/capacity-certification-report.md`
-- `scripts/benchmark/run_matrix.py`
+- `scripts/benchmark/run-matrix`
 - `scripts/benchmark/capacity_certification.py`
 
 ## Bootstrap Meaning

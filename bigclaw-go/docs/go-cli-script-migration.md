@@ -25,7 +25,7 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/benchmark/capacity_certification.py`
-- `bigclaw-go/scripts/benchmark/run_matrix.py`
+- `bigclaw-go/scripts/benchmark/run_matrix.go`
 
 ## Validation Commands
 

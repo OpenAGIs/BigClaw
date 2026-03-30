@@ -30,7 +30,7 @@
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/run_matrix.py \
+bash scripts/benchmark/run-matrix \
   --scenario 50:8 \
   --scenario 100:12 \
   --report-path docs/reports/benchmark-matrix-report.json
