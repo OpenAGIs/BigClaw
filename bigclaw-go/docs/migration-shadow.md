@@ -20,7 +20,7 @@ so the resulting timelines stay easy to correlate in audit/event tooling.
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/shadow_matrix.py \
+go run ./cmd/bigclawctl automation migration shadow-matrix \
   --primary http://127.0.0.1:8080 \
   --shadow http://127.0.0.1:8081 \
   --task-file ./examples/shadow-task.json \

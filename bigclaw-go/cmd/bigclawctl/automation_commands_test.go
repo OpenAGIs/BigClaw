@@ -194,3 +194,78 @@ func TestAutomationShadowCompareDetectsMismatch(t *testing.T) {
 		t.Fatalf("expected mismatch diff, got %+v", report.Diff)
 	}
 }
+
+func TestAutomationShadowMatrixBuildsCorpusCoverage(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/healthz":
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		case r.Method == http.MethodPost && r.URL.Path == "/tasks":
+			w.WriteHeader(http.StatusAccepted)
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/tasks/"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"state": "succeeded"})
+		case r.Method == http.MethodGet && r.URL.Path == "/events":
+			_ = json.NewEncoder(w).Encode(map[string]any{"events": []map[string]any{
+				{"type": "queued", "timestamp": "2026-03-28T00:00:00Z"},
+				{"type": "succeeded", "timestamp": "2026-03-28T00:00:03Z"},
+			}})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.String())
+		}
+	})
+	primary := httptest.NewServer(handler)
+	defer primary.Close()
+	shadow := httptest.NewServer(handler)
+	defer shadow.Close()
+
+	root := t.TempDir()
+	fixturePath := filepath.Join(root, "task.json")
+	if err := os.WriteFile(fixturePath, []byte(`{"id":"compare","title":"compare","entrypoint":"echo hi","execution_timeout_seconds":1,"required_executor":"local"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifestPath := filepath.Join(root, "manifest.json")
+	manifest := `{
+  "name": "anonymized-production-corpus-v1",
+  "generated_at": "2026-03-28T00:00:00Z",
+  "slices": [
+    {"slice_id": "fixture-covered", "title": "fixture covered", "weight": 3, "task_shape": "executor:local"},
+    {"slice_id": "browser-human-review", "title": "browser human review", "weight": 2, "task_shape": "executor:browser"}
+  ]
+}`
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reportPath := filepath.Join(root, "shadow-matrix-report.json")
+
+	report, exitCode, err := automationShadowMatrix(automationShadowMatrixOptions{
+		PrimaryBaseURL:       primary.URL,
+		ShadowBaseURL:        shadow.URL,
+		TaskFiles:            []string{fixturePath},
+		CorpusManifest:       manifestPath,
+		TimeoutSeconds:       1,
+		HealthTimeoutSeconds: 1,
+		ReportPath:           reportPath,
+		HTTPClient:           primary.Client(),
+		Sleep:                func(time.Duration) {},
+	})
+	if err != nil {
+		t.Fatalf("run shadow matrix: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("expected success exit code, got %d", exitCode)
+	}
+	if report["matched"] != 1 || report["mismatched"] != 0 {
+		t.Fatalf("unexpected matrix summary: %+v", report)
+	}
+	coverage, ok := report["corpus_coverage"].(map[string]any)
+	if !ok || coverage["manifest_name"] != "anonymized-production-corpus-v1" || coverage["uncovered_corpus_slice_count"] != 1 {
+		t.Fatalf("unexpected corpus coverage: %+v", coverage)
+	}
+	body, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(body), "\"browser-human-review\"") {
+		t.Fatalf("expected uncovered slice in report, got %s", string(body))
+	}
+}

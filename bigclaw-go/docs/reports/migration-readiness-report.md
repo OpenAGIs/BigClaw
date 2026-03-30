@@ -7,7 +7,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 ## Implemented surfaces
 
 - Shadow comparison for one task via `go run ./cmd/bigclawctl automation migration shadow-compare ...`
-- Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
+- Shadow comparison matrix across multiple task fixtures via `go run ./cmd/bigclawctl automation migration shadow-matrix ...`
 - Repo-native live shadow mirror scorecard via `scripts/migration/live_shadow_scorecard.py`
 - Repo-native live shadow bundle/index via `scripts/migration/export_live_shadow_bundle.py`
 - An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
@@ -19,7 +19,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - `docs/migration.md`
 - `docs/migration-shadow.md`
 - `cmd/bigclawctl/automation_commands.go`
-- `scripts/migration/shadow_matrix.py`
+- `cmd/bigclawctl/automation_commands.go`
 - `scripts/migration/live_shadow_scorecard.py`
 - `scripts/migration/export_live_shadow_bundle.py`
 - `docs/reports/rollback-trigger-surface.json`

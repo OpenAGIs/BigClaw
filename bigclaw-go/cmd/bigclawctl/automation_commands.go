@@ -12,9 +12,22 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 )
+
+type multiStringFlag []string
+
+func (m *multiStringFlag) String() string {
+	return strings.Join(*m, ",")
+}
+
+func (m *multiStringFlag) Set(value string) error {
+	*m = append(*m, value)
+	return nil
+}
 
 type automationRunTaskSmokeOptions struct {
 	Executor       string
@@ -41,6 +54,20 @@ type automationShadowCompareOptions struct {
 	PrimaryBaseURL       string
 	ShadowBaseURL        string
 	TaskFile             string
+	TimeoutSeconds       int
+	HealthTimeoutSeconds int
+	ReportPath           string
+	HTTPClient           *http.Client
+	Now                  func() time.Time
+	Sleep                func(time.Duration)
+}
+
+type automationShadowMatrixOptions struct {
+	PrimaryBaseURL       string
+	ShadowBaseURL        string
+	TaskFiles            []string
+	CorpusManifest       string
+	ReplayCorpusSlices   bool
 	TimeoutSeconds       int
 	HealthTimeoutSeconds int
 	ReportPath           string
@@ -197,12 +224,14 @@ func runAutomationBenchmark(args []string) error {
 
 func runAutomationMigration(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare|shadow-matrix> [flags]\n")
 		return nil
 	}
 	switch args[0] {
 	case "shadow-compare":
 		return runAutomationShadowCompareCommand(args[1:])
+	case "shadow-matrix":
+		return runAutomationShadowMatrixCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation migration subcommand: %s", args[0])
 	}
@@ -287,6 +316,51 @@ func runAutomationShadowCompareCommand(args []string) error {
 	})
 	if report != nil {
 		return emit(structToMap(report), *asJSON, exitCode)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func runAutomationShadowMatrixCommand(args []string) error {
+	flags := flag.NewFlagSet("automation migration shadow-matrix", flag.ContinueOnError)
+	primary := flags.String("primary", "", "primary base URL")
+	shadow := flags.String("shadow", "", "shadow base URL")
+	var taskFiles multiStringFlag
+	flags.Var(&taskFiles, "task-file", "task JSON file")
+	corpusManifest := flags.String("corpus-manifest", "", "corpus manifest JSON file")
+	replayCorpusSlices := flags.Bool("replay-corpus-slices", false, "submit replayable corpus slices")
+	timeoutSeconds := flags.Int("timeout-seconds", 180, "task timeout seconds")
+	healthTimeoutSeconds := flags.Int("health-timeout-seconds", 60, "health wait timeout seconds")
+	reportPath := flags.String("report-path", "", "relative or absolute report path")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation migration shadow-matrix [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	if trim(*primary) == "" || trim(*shadow) == "" {
+		return errors.New("--primary and --shadow are required")
+	}
+	if len(taskFiles) == 0 && trim(*corpusManifest) == "" {
+		return errors.New("at least one --task-file or --corpus-manifest must be provided")
+	}
+	report, exitCode, err := automationShadowMatrix(automationShadowMatrixOptions{
+		PrimaryBaseURL:       *primary,
+		ShadowBaseURL:        *shadow,
+		TaskFiles:            append([]string(nil), taskFiles...),
+		CorpusManifest:       *corpusManifest,
+		ReplayCorpusSlices:   *replayCorpusSlices,
+		TimeoutSeconds:       *timeoutSeconds,
+		HealthTimeoutSeconds: *healthTimeoutSeconds,
+		ReportPath:           *reportPath,
+		HTTPClient:           http.DefaultClient,
+	})
+	if report != nil {
+		return emit(report, *asJSON, exitCode)
 	}
 	if err != nil {
 		return err
@@ -553,6 +627,401 @@ func automationShadowCompare(opts automationShadowCompareOptions) (*automationSh
 		return report, 0, nil
 	}
 	return report, 1, nil
+}
+
+type automationShadowMatrixExecutionEntry struct {
+	Task       map[string]any
+	SourceKind string
+	SourceFile string
+	TaskShape  string
+	CorpusSlice map[string]any
+}
+
+type automationShadowMatrixCorpusSlice struct {
+	SliceID    string
+	Title      string
+	Weight     int
+	Tags       []string
+	TaskShape  string
+	Task       map[string]any
+	SourceFile string
+	Replay     bool
+	Notes      string
+}
+
+type automationShadowMatrixManifestMeta struct {
+	Name       string
+	GeneratedAt any
+	SourceFile string
+}
+
+func automationShadowMatrix(opts automationShadowMatrixOptions) (map[string]any, int, error) {
+	fixtureEntries, err := automationShadowMatrixLoadFixtureEntries(opts.TaskFiles)
+	if err != nil {
+		return nil, 0, err
+	}
+	var manifestMeta *automationShadowMatrixManifestMeta
+	corpusSlices := []automationShadowMatrixCorpusSlice{}
+	replayEntries := []automationShadowMatrixExecutionEntry{}
+	if trim(opts.CorpusManifest) != "" {
+		var err error
+		manifestMeta, replayEntries, corpusSlices, err = automationShadowMatrixLoadCorpusManifestEntries(opts.CorpusManifest, opts.ReplayCorpusSlices)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	executionEntries := append(fixtureEntries, replayEntries...)
+	results := make([]map[string]any, 0, len(executionEntries))
+	allMatched := true
+	for index, entry := range executionEntries {
+		task := cloneMap(entry.Task)
+		baseID, _ := task["id"].(string)
+		if trim(baseID) == "" {
+			baseID = fmt.Sprintf("matrix-task-%d", index+1)
+		}
+		task["id"] = fmt.Sprintf("%s-m%d", baseID, index+1)
+		result, exitCode, err := automationShadowMatrixCompareTask(opts, task)
+		if err != nil {
+			return nil, 0, err
+		}
+		if exitCode != 0 {
+			allMatched = false
+		}
+		result["source_file"] = entry.SourceFile
+		result["source_kind"] = entry.SourceKind
+		result["task_shape"] = entry.TaskShape
+		if entry.CorpusSlice != nil {
+			result["corpus_slice"] = entry.CorpusSlice
+		}
+		results = append(results, result)
+	}
+
+	report := map[string]any{
+		"total": len(results),
+		"matched": func() int {
+			count := 0
+			for _, item := range results {
+				diff, _ := item["diff"].(map[string]any)
+				if diff["state_equal"] == true && diff["event_types_equal"] == true {
+					count++
+				}
+			}
+			return count
+		}(),
+		"mismatched": len(results),
+		"inputs": map[string]any{
+			"fixture_task_count": len(fixtureEntries),
+			"corpus_slice_count": len(corpusSlices),
+			"manifest_name": func() any {
+				if manifestMeta == nil {
+					return nil
+				}
+				return manifestMeta.Name
+			}(),
+		},
+		"results": results,
+	}
+	report["mismatched"] = report["total"].(int) - report["matched"].(int)
+	if manifestMeta != nil && len(corpusSlices) > 0 {
+		report["corpus_coverage"] = automationShadowMatrixBuildCorpusCoverage(fixtureEntries, corpusSlices, *manifestMeta)
+	}
+	if err := automationWriteReport(".", opts.ReportPath, report); err != nil {
+		return nil, 0, err
+	}
+	if allMatched {
+		return report, 0, nil
+	}
+	return report, 1, nil
+}
+
+func automationShadowMatrixCompareTask(opts automationShadowMatrixOptions, task map[string]any) (map[string]any, int, error) {
+	body, err := json.MarshalIndent(task, "", "  ")
+	if err != nil {
+		return nil, 0, err
+	}
+	taskFile, err := os.CreateTemp("", "shadow-matrix-task-*.json")
+	if err != nil {
+		return nil, 0, err
+	}
+	defer os.Remove(taskFile.Name())
+	if _, err := taskFile.Write(append(body, '\n')); err != nil {
+		_ = taskFile.Close()
+		return nil, 0, err
+	}
+	if err := taskFile.Close(); err != nil {
+		return nil, 0, err
+	}
+	report, exitCode, err := automationShadowCompare(automationShadowCompareOptions{
+		PrimaryBaseURL:       opts.PrimaryBaseURL,
+		ShadowBaseURL:        opts.ShadowBaseURL,
+		TaskFile:             taskFile.Name(),
+		TimeoutSeconds:       opts.TimeoutSeconds,
+		HealthTimeoutSeconds: opts.HealthTimeoutSeconds,
+		HTTPClient:           opts.HTTPClient,
+		Now:                  opts.Now,
+		Sleep:                opts.Sleep,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	return structToMap(report), exitCode, nil
+}
+
+func automationShadowMatrixLoadFixtureEntries(taskFiles []string) ([]automationShadowMatrixExecutionEntry, error) {
+	entries := make([]automationShadowMatrixExecutionEntry, 0, len(taskFiles))
+	for _, taskFile := range taskFiles {
+		task, err := automationShadowMatrixLoadJSON(taskFile)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, automationShadowMatrixMakeExecutionEntry(task, "fixture", taskFile, automationShadowMatrixDeriveTaskShape(task), nil))
+	}
+	return entries, nil
+}
+
+func automationShadowMatrixLoadCorpusManifestEntries(manifestPath string, replayCorpusSlices bool) (*automationShadowMatrixManifestMeta, []automationShadowMatrixExecutionEntry, []automationShadowMatrixCorpusSlice, error) {
+	manifest, err := automationShadowMatrixLoadJSON(manifestPath)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	rawSlices, _ := manifest["slices"].([]any)
+	if rawSlices == nil {
+		return nil, nil, nil, errors.New("corpus manifest must contain a top-level slices array")
+	}
+	coverageSlices := make([]automationShadowMatrixCorpusSlice, 0, len(rawSlices))
+	replayEntries := []automationShadowMatrixExecutionEntry{}
+	for index, rawSlice := range rawSlices {
+		sliceMap, _ := rawSlice.(map[string]any)
+		sliceData, err := automationShadowMatrixNormalizeCorpusSlice(sliceMap, index+1, manifestPath)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		coverageSlices = append(coverageSlices, sliceData)
+		if replayCorpusSlices && sliceData.Task != nil {
+			replayEntries = append(replayEntries, automationShadowMatrixMakeExecutionEntry(sliceData.Task, "corpus", sliceData.SourceFile, sliceData.TaskShape, map[string]any{
+				"id":     sliceData.SliceID,
+				"title":  sliceData.Title,
+				"weight": sliceData.Weight,
+				"tags":   sliceData.Tags,
+			}))
+		}
+	}
+	name, _ := manifest["name"].(string)
+	if trim(name) == "" {
+		name = strings.TrimSuffix(filepath.Base(manifestPath), filepath.Ext(manifestPath))
+	}
+	return &automationShadowMatrixManifestMeta{
+		Name:       name,
+		GeneratedAt: manifest["generated_at"],
+		SourceFile: manifestPath,
+	}, replayEntries, coverageSlices, nil
+}
+
+func automationShadowMatrixNormalizeCorpusSlice(sliceData map[string]any, index int, manifestPath string) (automationShadowMatrixCorpusSlice, error) {
+	sliceID, _ := sliceData["slice_id"].(string)
+	if trim(sliceID) == "" {
+		sliceID = fmt.Sprintf("corpus-slice-%d", index)
+	}
+	title, _ := sliceData["title"].(string)
+	if trim(title) == "" {
+		title = sliceID
+	}
+	weight := automationInt(sliceData["weight"], 1)
+	tags := automationStringSlice(sliceData["tags"])
+	var task map[string]any
+	var sourceFile string
+	if rawTaskFile, ok := sliceData["task_file"].(string); ok && trim(rawTaskFile) != "" {
+		sourceFile = rawTaskFile
+		resolved := rawTaskFile
+		if !filepath.IsAbs(resolved) {
+			resolved = filepath.Join(filepath.Dir(absPath(manifestPath)), rawTaskFile)
+		}
+		var err error
+		task, err = automationShadowMatrixLoadJSON(resolved)
+		if err != nil {
+			return automationShadowMatrixCorpusSlice{}, err
+		}
+	} else if rawTask, ok := sliceData["task"].(map[string]any); ok {
+		task = cloneMap(rawTask)
+		sourceFile = fmt.Sprintf("%s#%s", filepath.Base(manifestPath), sliceID)
+	}
+	taskShape, _ := sliceData["task_shape"].(string)
+	if trim(taskShape) == "" && task != nil {
+		taskShape = automationShadowMatrixDeriveTaskShape(task)
+	}
+	if trim(taskShape) == "" {
+		return automationShadowMatrixCorpusSlice{}, fmt.Errorf("corpus slice %s must define task_shape or provide task/task_file", sliceID)
+	}
+	notes, _ := sliceData["notes"].(string)
+	return automationShadowMatrixCorpusSlice{
+		SliceID:    sliceID,
+		Title:      title,
+		Weight:     weight,
+		Tags:       tags,
+		TaskShape:  taskShape,
+		Task:       task,
+		SourceFile: sourceFile,
+		Replay:     automationBool(sliceData["replay"]),
+		Notes:      notes,
+	}, nil
+}
+
+func automationShadowMatrixBuildCorpusCoverage(fixtureEntries []automationShadowMatrixExecutionEntry, corpusSlices []automationShadowMatrixCorpusSlice, manifestMeta automationShadowMatrixManifestMeta) map[string]any {
+	fixtureByShape := map[string][]automationShadowMatrixExecutionEntry{}
+	for _, entry := range fixtureEntries {
+		fixtureByShape[entry.TaskShape] = append(fixtureByShape[entry.TaskShape], entry)
+	}
+	type shapeAggregate struct {
+		SliceCount         int
+		ReplayableCount    int
+		CorpusWeight       int
+		SliceIDs           []string
+		Titles             []string
+	}
+	corpusByShape := map[string]*shapeAggregate{}
+	for _, sliceData := range corpusSlices {
+		aggregate := corpusByShape[sliceData.TaskShape]
+		if aggregate == nil {
+			aggregate = &shapeAggregate{}
+			corpusByShape[sliceData.TaskShape] = aggregate
+		}
+		aggregate.SliceCount++
+		if sliceData.Task != nil {
+			aggregate.ReplayableCount++
+		}
+		aggregate.CorpusWeight += sliceData.Weight
+		aggregate.SliceIDs = append(aggregate.SliceIDs, sliceData.SliceID)
+		aggregate.Titles = append(aggregate.Titles, sliceData.Title)
+	}
+	taskShapes := make([]string, 0, len(corpusByShape))
+	for taskShape := range corpusByShape {
+		taskShapes = append(taskShapes, taskShape)
+	}
+	sort.Slice(taskShapes, func(i, j int) bool {
+		left := corpusByShape[taskShapes[i]]
+		right := corpusByShape[taskShapes[j]]
+		if left.CorpusWeight != right.CorpusWeight {
+			return left.CorpusWeight > right.CorpusWeight
+		}
+		return taskShapes[i] < taskShapes[j]
+	})
+	shapeScorecard := make([]map[string]any, 0, len(taskShapes))
+	for _, taskShape := range taskShapes {
+		aggregate := corpusByShape[taskShape]
+		fixtures := fixtureByShape[taskShape]
+		sources := make([]string, 0, len(fixtures))
+		for _, entry := range fixtures {
+			sources = append(sources, entry.SourceFile)
+		}
+		shapeScorecard = append(shapeScorecard, map[string]any{
+			"task_shape":             taskShape,
+			"fixture_task_count":     len(fixtures),
+			"fixture_sources":        sources,
+			"corpus_slice_count":     aggregate.SliceCount,
+			"replayable_slice_count": aggregate.ReplayableCount,
+			"corpus_weight":          aggregate.CorpusWeight,
+			"corpus_slice_ids":       aggregate.SliceIDs,
+			"corpus_titles":          aggregate.Titles,
+			"covered_by_fixture":     len(fixtures) > 0,
+		})
+	}
+	uncoveredSlices := []map[string]any{}
+	for _, sliceData := range corpusSlices {
+		if len(fixtureByShape[sliceData.TaskShape]) > 0 {
+			continue
+		}
+		uncoveredSlices = append(uncoveredSlices, map[string]any{
+			"slice_id":   sliceData.SliceID,
+			"title":      sliceData.Title,
+			"task_shape": sliceData.TaskShape,
+			"weight":     sliceData.Weight,
+			"replayable": sliceData.Task != nil,
+			"source_file": sliceData.SourceFile,
+			"tags":       sliceData.Tags,
+			"notes":      sliceData.Notes,
+		})
+	}
+	replayableCount := 0
+	for _, sliceData := range corpusSlices {
+		if sliceData.Task != nil {
+			replayableCount++
+		}
+	}
+	return map[string]any{
+		"manifest_name":                 manifestMeta.Name,
+		"manifest_source_file":          manifestMeta.SourceFile,
+		"generated_at":                  manifestMeta.GeneratedAt,
+		"fixture_task_count":            len(fixtureEntries),
+		"corpus_slice_count":            len(corpusSlices),
+		"corpus_replayable_slice_count": replayableCount,
+		"covered_corpus_slice_count":    len(corpusSlices) - len(uncoveredSlices),
+		"uncovered_corpus_slice_count":  len(uncoveredSlices),
+		"shape_scorecard":               shapeScorecard,
+		"uncovered_slices":              uncoveredSlices,
+	}
+}
+
+func automationShadowMatrixMakeExecutionEntry(task map[string]any, sourceKind string, sourceFile string, taskShape string, corpusSlice map[string]any) automationShadowMatrixExecutionEntry {
+	entryTask := cloneMap(task)
+	if entryTask == nil {
+		entryTask = map[string]any{}
+	}
+	entryTask["_source_file"] = sourceFile
+	if trim(taskShape) == "" {
+		taskShape = automationShadowMatrixDeriveTaskShape(entryTask)
+	}
+	return automationShadowMatrixExecutionEntry{
+		Task:        entryTask,
+		SourceKind:  sourceKind,
+		SourceFile:  sourceFile,
+		TaskShape:   taskShape,
+		CorpusSlice: corpusSlice,
+	}
+}
+
+func automationShadowMatrixDeriveTaskShape(task map[string]any) string {
+	features := []string{}
+	executor, _ := task["required_executor"].(string)
+	if trim(executor) == "" {
+		executor, _ = task["executor"].(string)
+	}
+	if trim(executor) == "" {
+		executor = "default"
+	}
+	features = append(features, "executor:"+executor)
+	labels := automationStringSlice(task["labels"])
+	sort.Strings(labels)
+	if len(labels) > 0 {
+		features = append(features, "labels:"+strings.Join(labels, ","))
+	}
+	if task["budget_cents"] != nil {
+		features = append(features, "budgeted")
+	}
+	if values, ok := task["acceptance_criteria"].([]any); ok && len(values) > 0 {
+		features = append(features, "acceptance")
+	}
+	if values, ok := task["validation_plan"].([]any); ok && len(values) > 0 {
+		features = append(features, "validation-plan")
+	}
+	if metadata, ok := task["metadata"].(map[string]any); ok {
+		if scenario, _ := metadata["scenario"].(string); trim(scenario) != "" {
+			features = append(features, "scenario:"+scenario)
+		}
+	}
+	return strings.Join(features, "|")
+}
+
+func automationShadowMatrixLoadJSON(path string) (map[string]any, error) {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
 }
 
 func automationSoakLocal(opts automationSoakLocalOptions) (*automationSoakLocalReport, int, error) {
@@ -841,6 +1310,52 @@ func automationStringSlicesEqual(left []string, right []string) bool {
 		}
 	}
 	return true
+}
+
+func automationStringSlice(value any) []string {
+	items, _ := value.([]any)
+	if items == nil {
+		if stringsValue, ok := value.([]string); ok {
+			return append([]string(nil), stringsValue...)
+		}
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if str, ok := item.(string); ok {
+			out = append(out, str)
+		}
+	}
+	return out
+}
+
+func automationInt(value any, fallback int) int {
+	switch typed := value.(type) {
+	case int:
+		return typed
+	case int64:
+		return int(typed)
+	case float64:
+		return int(typed)
+	default:
+		return fallback
+	}
+}
+
+func automationBool(value any) bool {
+	typed, _ := value.(bool)
+	return typed
+}
+
+func cloneMap(value map[string]any) map[string]any {
+	if value == nil {
+		return nil
+	}
+	out := make(map[string]any, len(value))
+	for key, item := range value {
+		out[key] = item
+	}
+	return out
 }
 
 func startAutomationBigClawd(goRoot string, extraEnv map[string]string) (*exec.Cmd, string, string, string, error) {
