@@ -35,7 +35,8 @@
   - `scripts/ops/bigclaw-symphony`
   - `scripts/ops/bigclaw-issue`
   - `scripts/ops/bigclaw-panel`
-- centralized common shim behavior in `src/bigclaw/legacy_shim.py`
+- centralized common shim behavior in the legacy runtime compatibility surface
+  exposed as `bigclaw.legacy_shim`
 - added Go-owned automation commands for:
   - `bigclawctl automation e2e run-task-smoke`
   - `bigclawctl automation benchmark soak-local`
@@ -58,7 +59,7 @@
 ```bash
 cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill
 python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
-python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py
+python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py
 bash scripts/ops/bigclawctl dev-smoke
 python3 scripts/dev_smoke.py
 python3 scripts/create_issues.py --help

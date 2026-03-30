@@ -37,8 +37,9 @@ This issue now covers two delivered migration batches:
   - `scripts/ops/bigclaw-symphony`
   - `scripts/ops/bigclaw-issue`
   - `scripts/ops/bigclaw-panel`
-- Shared shim behavior and path resolution are centralized in:
-  - `src/bigclaw/legacy_shim.py`
+- Shared shim behavior and path resolution are centralized in the legacy
+  runtime compatibility surface under `src/bigclaw/runtime.py` via the
+  `bigclaw.legacy_shim` module.
 - Go CLI now also owns the first `bigclaw-go/scripts/*` automation batch:
   - `automation e2e run-task-smoke`
   - `automation benchmark soak-local`
@@ -90,7 +91,7 @@ Result:
 Command:
 
 ```bash
-python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py
+python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py
 ```
 
 Result: exit code `0`

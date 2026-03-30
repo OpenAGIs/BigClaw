@@ -13,6 +13,7 @@ Batch file list:
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/planning.py`
 - `src/bigclaw/runtime.py`
+- `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/observability.py`
@@ -33,6 +34,13 @@ Batch file list:
 - `tests/test_validation_policy.py`
 - `tests/test_repo_governance.py`
 - `tests/test_repo_triage.py`
+- `bigclaw-go/internal/legacyshim/compilecheck.go`
+- `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+- `bigclaw-go/cmd/bigclawctl/main_test.go`
+- `reports/BIG-GO-902-validation.md`
+- `reports/BIG-GO-902-closeout.md`
+- `reports/BIG-GO-902-pr.md`
+- `reports/BIG-GO-902-status.json`
 
 Repository inventory at start of lane:
 
@@ -65,6 +73,9 @@ Selected tranche rationale:
   `runtime.py`.
 - `cost_control.py` is a runtime budget helper with no external fan-out and can
   be folded into `runtime.py`.
+- `legacy_shim.py` still fronts multiple Python operator wrappers, but its
+  logic is self-contained and can be folded into `runtime.py` if the frozen Go
+  compile-check list and repository docs are updated in the same batch.
 
 ## Plan
 
@@ -102,6 +113,14 @@ Selected tranche rationale:
     `bigclaw.cost_control` compatibility via `__init__.py`.
 20. Run targeted runtime smoke validation for the fifth consolidation batch and
     push a follow-up commit.
+21. Fold `legacy_shim.py` into `runtime.py` and preserve `bigclaw.legacy_shim`
+    compatibility via `__init__.py`.
+22. Update Go-side frozen compile-check coverage to remove the deleted Python
+    file from the shim file list.
+23. Refresh the remaining repository reports that hard-code
+    `src/bigclaw/legacy_shim.py`.
+24. Run targeted Python and Go validation for the sixth consolidation batch and
+    push a follow-up commit.
 
 ## Acceptance
 
@@ -131,6 +150,12 @@ Selected tranche rationale:
   `from bigclaw.cost_control import CostController`
   `print("ok")`
   `PY`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.legacy_shim import run_bigclawctl_shim`
+  `print("ok")`
+  `PY`
+- `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.mapping import map_source_issue_to_task`
   `from bigclaw.validation_policy import enforce_validation_report_policy`
@@ -231,6 +256,43 @@ Selected tranche rationale:
 - `src/bigclaw/cost_control.py`
   - Deleted.
   - Reason: its contents moved into `runtime.py`.
+- `src/bigclaw/runtime.py`
+  - Replaced again.
+  - Reason: absorbed legacy operator shim helpers so the remaining Python
+    compatibility helpers now share the frozen migration-only runtime surface.
+- `src/bigclaw/legacy_shim.py`
+  - Deleted.
+  - Reason: its contents moved into `runtime.py`, with `bigclaw.legacy_shim`
+    preserved via a compatibility submodule in `__init__.py`.
+- `bigclaw-go/internal/legacyshim/compilecheck.go`
+  - Replaced.
+  - Reason: removed deleted `src/bigclaw/legacy_shim.py` from the frozen
+    compile-check file list.
+- `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+  - Replaced.
+  - Reason: aligned the frozen compile-check expectations with the updated shim
+    file inventory.
+- `bigclaw-go/cmd/bigclawctl/main_test.go`
+  - Replaced.
+  - Reason: aligned JSON compile-check fixture setup with the updated shim file
+    inventory.
+- `reports/BIG-GO-902-validation.md`
+  - Replaced.
+  - Reason: removed the deleted file path from the historical py_compile command
+    and described the shim behavior as living behind the runtime compatibility
+    surface.
+- `reports/BIG-GO-902-closeout.md`
+  - Replaced.
+  - Reason: removed the deleted file path from the historical validation
+    command list.
+- `reports/BIG-GO-902-pr.md`
+  - Replaced.
+  - Reason: removed the deleted file path and replaced the stale module-path
+    statement with the surviving compatibility surface wording.
+- `reports/BIG-GO-902-status.json`
+  - Replaced.
+  - Reason: removed the deleted file path from the frozen validation command
+    list.
 
 ### Inventory Impact
 
@@ -240,7 +302,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 3: `38`
 - `src/bigclaw/**/*.py` after batch 4: `36`
 - `src/bigclaw/**/*.py` after batch 5: `34`
-- Net Python module reduction in tranche so far: `11`
+- `src/bigclaw/**/*.py` after batch 6: `33`
+- Net Python module reduction in tranche so far: `12`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -294,3 +357,13 @@ Selected tranche rationale:
   - Result: `ok`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 5: `34`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.legacy_shim`
+  - Result: `ok`
+- `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
+  - Result: exit `0`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+  - Result: `ok bigclaw-go/internal/legacyshim 3.126s`; `ok bigclaw-go/cmd/bigclawctl 3.964s`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py`
+  - Result: `3 passed in 0.07s`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 6: `33`
