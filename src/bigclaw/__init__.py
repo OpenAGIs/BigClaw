@@ -161,6 +161,7 @@ _install_compat_surface_module(
     ["LineageEvidence", "TriageRecommendation", "recommend_triage_action", "approval_evidence_packet"],
 )
 _install_compat_surface_module("mapping", _connectors_surface, ["map_priority", "map_state", "map_source_issue_to_task"])
+_install_compat_surface_module("dsl", _legacy_runtime_surface, ["WorkflowDefinition", "WorkflowStep"])
 
 from .runtime import (
     AcceptanceDecision,
@@ -187,6 +188,8 @@ from .runtime import (
     ToolCallResult,
     ToolPolicy,
     ToolRuntime,
+    WorkflowDefinition,
+    WorkflowStep,
     WorkerExecutionResult,
     WorkflowEngine,
     WorkflowRunResult,
@@ -279,7 +282,6 @@ from .issue_archive import (
     IssuePriorityArchivist,
     render_issue_priority_archive_report,
 )
-from .dsl import WorkflowDefinition, WorkflowStep
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,

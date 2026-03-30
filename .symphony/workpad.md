@@ -29,6 +29,7 @@ Batch file list:
 - `src/bigclaw/audit_events.py`
 - `src/bigclaw/repo_board.py`
 - `src/bigclaw/event_bus.py`
+- `src/bigclaw/dsl.py`
 - `docs/go-mainline-cutover-issue-pack.md`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_triage.py`
@@ -100,6 +101,8 @@ Selected tranche rationale:
   `collaboration.py`.
 - `event_bus.py` already centers on `ObservabilityLedger` and `TaskRun`, so it
   can be folded into `observability.py`.
+- `dsl.py` is legacy workflow-definition scaffolding and can be folded into the
+  frozen runtime/workflow surface.
 
 ## Plan
 
@@ -170,6 +173,10 @@ Selected tranche rationale:
     `bigclaw.event_bus` compatibility via `__init__.py`.
 36. Run targeted repo-board/event-bus validation for the tenth consolidation
     batch and push a follow-up commit.
+37. Fold `dsl.py` into `runtime.py` and preserve `bigclaw.dsl` compatibility
+    via `__init__.py`.
+38. Run targeted DSL validation for the eleventh consolidation batch and push a
+    follow-up commit.
 
 ## Acceptance
 
@@ -213,6 +220,7 @@ Selected tranche rationale:
 - `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
 - `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_audit_events.py tests/test_runtime_matrix.py tests/test_observability.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_event_bus.py tests/test_observability.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_runtime_matrix.py`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.risk import RiskScorer`
   `from bigclaw.audit_events import SCHEDULER_DECISION_EVENT`
@@ -221,6 +229,10 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.repo_board import RepoDiscussionBoard`
   `from bigclaw.event_bus import EventBus`
+  `print("ok")`
+  `PY`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.dsl import WorkflowDefinition`
   `print("ok")`
   `PY`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
@@ -412,6 +424,18 @@ Selected tranche rationale:
 - `src/bigclaw/event_bus.py`
   - Deleted.
   - Reason: its contents moved into `observability.py`.
+- `src/bigclaw/runtime.py`
+  - Replaced again.
+  - Reason: absorbed workflow DSL dataclasses and JSON loading helpers so the
+    frozen runtime/workflow surface owns the remaining workflow-definition
+    compatibility layer.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.dsl` compatibility submodule that re-exports
+    the moved workflow DSL types from `runtime.py`.
+- `src/bigclaw/dsl.py`
+  - Deleted.
+  - Reason: its contents moved into `runtime.py`.
 
 ### Inventory Impact
 
@@ -426,7 +450,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 8: `30`
 - `src/bigclaw/**/*.py` after batch 9: `28`
 - `src/bigclaw/**/*.py` after batch 10: `26`
-- Net Python module reduction in tranche so far: `19`
+- `src/bigclaw/**/*.py` after batch 11: `25`
+- Net Python module reduction in tranche so far: `20`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -516,3 +541,9 @@ Selected tranche rationale:
   - Result: `ok`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 10: `26`
+- `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_runtime_matrix.py`
+  - Result: `7 passed in 0.08s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `WorkflowDefinition.from_json`
+  - Result: `ok`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 11: `25`
