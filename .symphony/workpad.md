@@ -855,3 +855,86 @@ Follow-on refactor now queued:
   - Result: `absent`
 - `git diff --check`
   - Result: success
+
+### Follow-on tranche 22 queued
+
+- Target `src/bigclaw/legacy_shim.py` next.
+- Reason: it is an isolated migration helper only consumed by five legacy
+  `scripts/ops/*` wrappers, so its small argument-translation and subprocess
+  helpers can be inlined into those wrappers without touching the runtime /
+  reporting graph.
+- Planned edits:
+  - Inline `append_missing_flag` and repo-root resolution into
+    `scripts/ops/bigclaw_workspace_bootstrap.py`.
+  - Inline workspace-validate argument translation into
+    `scripts/ops/symphony_workspace_validate.py`.
+  - Inline direct `bigclawctl` subprocess wrappers into
+    `scripts/ops/symphony_workspace_bootstrap.py`,
+    `scripts/ops/bigclaw_github_sync.py`, and
+    `scripts/ops/bigclaw_refill_queue.py`.
+  - Delete `src/bigclaw/legacy_shim.py`.
+
+### Follow-on tranche 22
+
+- `src/bigclaw/legacy_shim.py`
+  - Deleted.
+  - Reason: the module was only a migration helper for five legacy
+    `scripts/ops/*` wrappers and had no remaining runtime or test ownership in
+    `src/bigclaw/**`.
+- `scripts/ops/bigclaw_workspace_bootstrap.py`
+  - Updated.
+  - Reason: now owns its minimal `append_missing_flag` helper and repo-root
+    resolution locally, so it no longer imports `bigclaw.legacy_shim`.
+- `scripts/ops/symphony_workspace_validate.py`
+  - Updated.
+  - Reason: now owns the small workspace-validate argument translation locally.
+- `scripts/ops/symphony_workspace_bootstrap.py`
+  - Updated.
+  - Reason: now shells directly to `scripts/ops/bigclawctl workspace`.
+- `scripts/ops/bigclaw_github_sync.py`
+  - Updated.
+  - Reason: now shells directly to `scripts/ops/bigclawctl github-sync`.
+- `scripts/ops/bigclaw_refill_queue.py`
+  - Updated.
+  - Reason: now shells directly to `scripts/ops/bigclawctl refill`.
+
+### Follow-on tranche 22 inventory
+
+- `src/bigclaw` Python files after tranche 22: `9`
+- Repository-wide Python files after tranche 22: `57`
+- Net repository-wide Python reduction: `51`
+- `bigclaw-go` Go files after tranche 22: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 22 validation
+
+- `python3 -m py_compile scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py`
+  - Result: success
+- `rg -n "legacy_shim|workspace_validate_args|translate_workspace_validate_args|run_bigclawctl_shim|append_missing_flag|repo_root_from_script" src tests scripts`
+  - Result: only the newly inlined local helper definitions/usages remain in
+    the updated scripts; no `src/bigclaw/legacy_shim.py` imports remain
+- `python3 scripts/ops/bigclaw_github_sync.py --help`
+  - Result: `usage: bigclawctl github-sync <install|status|sync> [flags]`
+- `python3 scripts/ops/bigclaw_refill_queue.py --help`
+  - Result: refill usage text printed successfully, including `seed`
+    subcommand and flags
+- `python3 scripts/ops/symphony_workspace_bootstrap.py --help`
+  - Result: `usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]`
+- `python3 scripts/ops/symphony_workspace_validate.py --help`
+  - Result: workspace-validate usage text printed successfully, including
+    translated `--report` / `--cleanup` flag forms
+- `python3 scripts/ops/bigclaw_workspace_bootstrap.py --help`
+  - Result: `usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `9`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `57`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success

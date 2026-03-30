@@ -8,15 +8,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(repo_root / "src"))
 
-from bigclaw.legacy_shim import append_missing_flag, repo_root_from_script
+def append_missing_flag(args: list[str], flag: str, value: str) -> list[str]:
+    flag_prefix = flag + "="
+    if any(arg == flag or arg.startswith(flag_prefix) for arg in args):
+        return list(args)
+    return [*args, flag, value]
 
 
 def main() -> int:
-    repo_root = repo_root_from_script(__file__)
-    args = append_missing_flag(sys.argv[1:], "--repo-url", os.getenv("BIGCLAW_BOOTSTRAP_REPO_URL", "git@github.com:OpenAGIs/BigClaw.git"))
+    repo_root = Path(__file__).resolve().parents[2]
+    args = append_missing_flag(
+        list(sys.argv[1:]),
+        "--repo-url",
+        os.getenv("BIGCLAW_BOOTSTRAP_REPO_URL", "git@github.com:OpenAGIs/BigClaw.git"),
+    )
     args = append_missing_flag(args, "--cache-key", os.getenv("BIGCLAW_BOOTSTRAP_CACHE_KEY", "openagis-bigclaw"))
     command = ["bash", str(repo_root / "scripts/ops/bigclawctl"), "workspace", *args]
     return subprocess.call(command, cwd=repo_root)
