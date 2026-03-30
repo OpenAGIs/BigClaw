@@ -2,6 +2,8 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
+	"slices"
 	"strings"
 
 	"bigclaw-go/internal/domain"
@@ -57,6 +59,14 @@ type Definition struct {
 	Approvals           []string `json:"approvals,omitempty"`
 }
 
+var validStepKinds = []string{
+	"scheduler",
+	"approval",
+	"orchestration",
+	"report",
+	"closeout",
+}
+
 func (d Definition) MarshalJSON() ([]byte, error) {
 	payload := map[string]any{
 		"name":                  d.Name,
@@ -93,8 +103,13 @@ func (d *Definition) UnmarshalJSON(data []byte) error {
 
 func ParseDefinition(text string) (Definition, error) {
 	var definition Definition
-	err := json.Unmarshal([]byte(text), &definition)
-	return definition, err
+	if err := json.Unmarshal([]byte(text), &definition); err != nil {
+		return definition, err
+	}
+	if err := definition.Validate(); err != nil {
+		return Definition{}, err
+	}
+	return definition, nil
 }
 
 func (d Definition) RenderPath(template string, task domain.Task, runID string) string {
@@ -128,6 +143,23 @@ func cloneMetadata(metadata map[string]any) map[string]any {
 		out[key] = value
 	}
 	return out
+}
+
+func (d Definition) Validate() error {
+	var invalid []string
+	for _, step := range d.Steps {
+		kind := strings.TrimSpace(step.Kind)
+		if kind == "" || slices.Contains(validStepKinds, kind) {
+			continue
+		}
+		if !slices.Contains(invalid, kind) {
+			invalid = append(invalid, kind)
+		}
+	}
+	if len(invalid) == 0 {
+		return nil
+	}
+	return fmt.Errorf("invalid workflow step kind(s): %s", strings.Join(invalid, ", "))
 }
 
 func stringsOrEmpty(values []string) []string {
