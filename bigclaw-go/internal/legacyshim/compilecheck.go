@@ -17,7 +17,6 @@ func FrozenCompileCheckFiles(repoRoot string) []string {
 	relative := []string{
 		"src/bigclaw/service.py",
 		"src/bigclaw/__main__.py",
-		"src/bigclaw/legacy_shim.py",
 	}
 	files := make([]string, 0, len(relative))
 	for _, item := range relative {

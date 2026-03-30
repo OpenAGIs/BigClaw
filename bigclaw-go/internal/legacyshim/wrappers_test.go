@@ -2,6 +2,7 @@ package legacyshim
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -63,8 +64,8 @@ func TestGitHubSyncAndRefillWrappersTargetGoShim(t *testing.T) {
 	if got := BuildRefillArgs("/repo", []string{"--apply"}); !reflect.DeepEqual(got, []string{"bash", "/repo/scripts/ops/bigclawctl", "refill", "--apply"}) {
 		t.Fatalf("unexpected refill args: %+v", got)
 	}
-	if !stringsContain(LegacyPythonWrapperNotice, "compatibility shim during migration") {
-		t.Fatalf("expected wrapper notice to mention compatibility shim, got %q", LegacyPythonWrapperNotice)
+	if !strings.Contains(LegacyScriptWrapperNotice, "shell-only") {
+		t.Fatalf("expected wrapper notice to mention shell-only aliases, got %q", LegacyScriptWrapperNotice)
 	}
 }
 
@@ -77,7 +78,7 @@ func TestWorkspaceRuntimeWrapperTargetsGoShim(t *testing.T) {
 }
 
 func TestRepoRootFromScriptClimbsToRepositoryRoot(t *testing.T) {
-	if got := RepoRootFromScript("/repo/scripts/ops/bigclaw_refill_queue.py"); got != "/repo" {
+	if got := RepoRootFromScript("/repo/scripts/ops/bigclaw-refill-queue"); got != "/repo" {
 		t.Fatalf("unexpected repo root: %s", got)
 	}
 }
@@ -90,21 +91,4 @@ func assertContains(t *testing.T, values []string, want string) {
 		}
 	}
 	t.Fatalf("expected %+v to contain %q", values, want)
-}
-
-func stringsContain(value, want string) bool {
-	return len(value) >= len(want) && reflect.ValueOf(value).String() != "" && stringContains(value, want)
-}
-
-func stringContains(value, want string) bool {
-	return len(want) == 0 || (len(value) >= len(want) && indexOf(value, want) >= 0)
-}
-
-func indexOf(value, want string) int {
-	for i := 0; i+len(want) <= len(value); i++ {
-		if value[i:i+len(want)] == want {
-			return i
-		}
-	}
-	return -1
 }
