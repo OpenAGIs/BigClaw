@@ -6,7 +6,7 @@
   "recommendation": "go",
   "evidence_inputs": {
     "scorecard_path": "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
-    "generator_script": "scripts/e2e/validation_bundle_continuation_policy_gate.py"
+    "generator_script": "go run ./cmd/bigclawctl automation e2e continuation-policy-gate"
   },
   "policy_inputs": {
     "max_latest_age_hours": 72.0,

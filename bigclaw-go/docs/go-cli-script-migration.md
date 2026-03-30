@@ -7,6 +7,9 @@ Issue: `BIG-GO-902`
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/export_validation_bundle.py` | `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/run_matrix.py` | `go run ./cmd/bigclawctl automation benchmark run-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/capacity_certification.py` | `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` | migrated and Python shim removed |
@@ -17,9 +20,6 @@ Issue: `BIG-GO-902`
 
 ## Remaining Python Script Backlog
 
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
@@ -33,6 +33,9 @@ cd bigclaw-go
 go test ./cmd/bigclawctl/...
 go run ./cmd/bigclawctl automation --help
 go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
+go run ./cmd/bigclawctl automation e2e continuation-scorecard --help
+go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation benchmark run-matrix --help
 go run ./cmd/bigclawctl automation benchmark capacity-certification --help
@@ -52,7 +55,6 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 
 - Keep new behavior in Go-native entrypoints and reserve Python only for batches that are not yet migrated.
 - Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
-  - validation bundle generators
   - migration scorecards/bundle exporters
 - Remaining Python generators still need native replacements before they can be removed.
 

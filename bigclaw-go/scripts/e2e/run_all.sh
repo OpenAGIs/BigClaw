@@ -85,7 +85,7 @@ fi
 export_bundle() {
   go run "$ROOT/scripts/e2e/broker_bootstrap_summary.go" \
     --output "$ROOT/$BROKER_BOOTSTRAP_SUMMARY_PATH"
-  python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
+  go run "$ROOT/cmd/bigclawctl" automation e2e export-validation-bundle \
     --go-root "$ROOT" \
     --run-id "$RUN_ID" \
     --bundle-dir "$BUNDLE_DIR_REL" \
@@ -117,11 +117,13 @@ if ! export_bundle; then
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
-  python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
+  go run "$ROOT/cmd/bigclawctl" automation e2e continuation-scorecard \
+    --go-root "$ROOT" \
     --output "$CONTINUATION_SCORECARD_PATH"
 
   gate_status=0
-  if ! python3 "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.py" \
+  if ! go run "$ROOT/cmd/bigclawctl" automation e2e continuation-policy-gate \
+    --go-root "$ROOT" \
     --scorecard "$CONTINUATION_SCORECARD_PATH" \
     --enforcement-mode "$CONTINUATION_GATE_MODE" \
     --output "$CONTINUATION_POLICY_GATE_PATH"; then
