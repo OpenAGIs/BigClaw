@@ -64,6 +64,31 @@ func (j WorkpadJournal) Write(path string) (string, error) {
 	return path, nil
 }
 
+func ReadWorkpadJournal(path string) (WorkpadJournal, error) {
+	var journal WorkpadJournal
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return WorkpadJournal{}, err
+	}
+	if err := json.Unmarshal(body, &journal); err != nil {
+		return WorkpadJournal{}, err
+	}
+	return journal, nil
+}
+
+func (j WorkpadJournal) Replay() []string {
+	replay := make([]string, 0, len(j.Entries))
+	for _, entry := range j.Entries {
+		step := strings.TrimSpace(entry.Step)
+		status := strings.TrimSpace(entry.Status)
+		if step == "" && status == "" {
+			continue
+		}
+		replay = append(replay, step+":"+status)
+	}
+	return replay
+}
+
 func (g AcceptanceGate) Evaluate(task domain.Task, outcome ExecutionOutcome, validationEvidence []string, approvals []string, pilotRecommendation string) AcceptanceDecision {
 	evidence := make(map[string]struct{}, len(validationEvidence))
 	for _, item := range validationEvidence {

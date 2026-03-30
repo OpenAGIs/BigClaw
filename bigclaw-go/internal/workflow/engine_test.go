@@ -1,8 +1,6 @@
 package workflow
 
 import (
-	"encoding/json"
-	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -14,28 +12,28 @@ import (
 func TestWorkpadJournalRecordAndWrite(t *testing.T) {
 	dir := t.TempDir()
 	journal := WorkpadJournal{
-		TaskID: "BIG-401",
-		RunID:  "run-7",
+		TaskID: "BIG-402-replay",
+		RunID:  "run-journal-1",
 		Now:    func() time.Time { return time.Date(2026, 3, 20, 10, 0, 0, 0, time.UTC) },
 	}
-	journal.Record("execution", "running", map[string]any{"medium": "kubernetes"})
-	path, err := journal.Write(filepath.Join(dir, "journals", "run-7.json"))
+	journal.Record("intake", "recorded", map[string]any{"source": "local"})
+	journal.Record("execution", "approved", map[string]any{"medium": "kubernetes"})
+	path, err := journal.Write(filepath.Join(dir, "journals", "run-journal-1.json"))
 	if err != nil {
 		t.Fatalf("write journal: %v", err)
 	}
-	body, err := os.ReadFile(path)
+	restored, err := ReadWorkpadJournal(path)
 	if err != nil {
 		t.Fatalf("read journal: %v", err)
 	}
-	var restored WorkpadJournal
-	if err := json.Unmarshal(body, &restored); err != nil {
-		t.Fatalf("unmarshal journal: %v", err)
-	}
-	if restored.TaskID != "BIG-401" || restored.RunID != "run-7" || len(restored.Entries) != 1 {
+	if restored.TaskID != "BIG-402-replay" || restored.RunID != "run-journal-1" || len(restored.Entries) != 2 {
 		t.Fatalf("unexpected restored journal: %+v", restored)
 	}
-	if restored.Entries[0].Timestamp != "2026-03-20T10:00:00Z" || restored.Entries[0].Details["medium"] != "kubernetes" {
+	if restored.Entries[0].Timestamp != "2026-03-20T10:00:00Z" || restored.Entries[0].Details["source"] != "local" {
 		t.Fatalf("unexpected journal entry: %+v", restored.Entries[0])
+	}
+	if got := restored.Replay(); !reflect.DeepEqual(got, []string{"intake:recorded", "execution:approved"}) {
+		t.Fatalf("unexpected replay output: %+v", got)
 	}
 }
 
