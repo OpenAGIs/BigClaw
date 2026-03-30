@@ -61,5 +61,7 @@
   - Result: `37 passed in 0.20s`
 - Command: `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q`
   - Result: `51 passed in 0.10s`
+- Command: `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_planning.py tests/test_reports.py -q`
+  - Result: `58 passed in 0.11s`
 - Command: `git push -u origin BIG-GO-987`
   - Result: pushed branch `BIG-GO-987` to `origin`
