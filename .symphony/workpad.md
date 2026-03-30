@@ -124,6 +124,10 @@ Repository inventory at start of lane:
 16. Add a minimal Go-native replacement for the residual orchestration planner,
     policy, report, and ledger contract, then delete the root Python test once
     parity is covered.
+17. Add a minimal Go-native replacement for the residual audit-event contract,
+    including spec validation, scheduler/workflow emitted P0 audit events, and
+    report-side handoff/takeover interpretation, then delete the root Python
+    test once parity is covered.
 
 ## Acceptance
 
@@ -170,6 +174,7 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned'`
 - `cd bigclaw-go && go test ./internal/orchestrationcompat`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
+- `cd bigclaw-go && go test ./internal/auditeventscompat`
 
 ## Results
 
@@ -257,6 +262,36 @@ Repository inventory at start of lane:
   - Deleted.
   - Reason: its legacy runtime matrix contract is now covered directly in
     `bigclaw-go/internal/runtimecompat/runtime_test.go`.
+- `tests/test_audit_events.py`
+  - Deleted.
+  - Reason: its residual spec-validation, emitted P0 audit-event, and
+    report-side handoff/takeover contract is now covered directly in
+    `bigclaw-go/internal/auditeventscompat/audit_events_test.go`.
+
+### Latest Tranche Impact
+
+- `tests/*.py` files after audit-events tranche: `11`
+- Repo `*.py` files after audit-events tranche: `81`
+- Repo `*.go` files after audit-events tranche: `285`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Latest Validation Results
+
+- `cd bigclaw-go && go test ./internal/auditeventscompat`
+  - `ok  	bigclaw-go/internal/auditeventscompat	1.431s`
+- `find tests -name '*.py' | sort | wc -l`
+  - `11`
+- `find . -name '*.py' | sort | wc -l`
+  - `81`
+- `find . -name '*.go' | sort | wc -l`
+  - `285`
+- `git diff --check`
+  - clean
+- `git status --short`
+  - `M .symphony/workpad.md`
+  - `D tests/test_audit_events.py`
+  - `?? bigclaw-go/internal/auditeventscompat/`
 - `tests/test_control_center.py`
   - Deleted.
   - Reason: its queue peeking, control-center rollup, and shared-view empty
