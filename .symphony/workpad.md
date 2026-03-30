@@ -22,6 +22,7 @@ Batch file list:
 - `src/bigclaw/run_detail.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/collaboration.py`
+- `src/bigclaw/evaluation.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -137,6 +138,9 @@ Selected tranche rationale:
   surface; it can be folded into `observability.py` without introducing report
   cycles, while preserving `bigclaw.collaboration` and `bigclaw.repo_board`
   compatibility in `__init__.py`.
+- `evaluation.py` is tightly coupled to report rendering and replay pages, so
+  it can be folded into `reports.py` while preserving `bigclaw.evaluation`
+  compatibility from `__init__.py`.
 
 ## Plan
 
@@ -246,6 +250,11 @@ Selected tranche rationale:
     `__init__.py`.
 54. Run targeted collaboration/report/observability validation for the
     nineteenth consolidation batch and push a follow-up commit.
+55. Fold `evaluation.py` into `reports.py`, switch `operations.py` and package
+    exports to the new owner, and preserve `bigclaw.evaluation` compatibility
+    via `__init__.py`.
+56. Run targeted evaluation/report/operations validation for the twentieth
+    consolidation batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -298,6 +307,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_evaluation.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_github_sync.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_reports.py tests/test_observability.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_operations.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.evaluation import BenchmarkRunner`
+  `print(BenchmarkRunner.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.collaboration import build_collaboration_thread`
   `from bigclaw.repo_board import RepoDiscussionBoard`
@@ -645,6 +659,20 @@ Selected tranche rationale:
 - `src/bigclaw/collaboration.py`
   - Deleted.
   - Reason: its contents moved into `observability.py`.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: absorbed benchmark/replay evaluation models and replay/report
+    rendering so reporting and evaluation surfaces share one owner.
+- `src/bigclaw/operations.py`
+  - Replaced.
+  - Reason: switched benchmark suite imports to the new owning reports module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.evaluation` compatibility submodule sourced
+    from `reports.py`.
+- `src/bigclaw/evaluation.py`
+  - Deleted.
+  - Reason: its contents moved into `reports.py`.
 
 ### Inventory Impact
 
@@ -668,7 +696,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 17: `19`
 - `src/bigclaw/**/*.py` after batch 18: `18`
 - `src/bigclaw/**/*.py` after batch 19: `17`
-- Net Python module reduction in tranche so far: `28`
+- `src/bigclaw/**/*.py` after batch 20: `16`
+- Net Python module reduction in tranche so far: `29`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -813,3 +842,10 @@ Selected tranche rationale:
   - Result: `build_collaboration_thread RepoDiscussionBoard`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 19: `17`
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_operations.py`
+  - First run failed during collection because the moved evaluation dataclasses needed `Task` imported in `reports.py`.
+  - After fixing import: `61 passed in 0.11s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.evaluation`
+  - Result: `BenchmarkRunner`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 20: `16`

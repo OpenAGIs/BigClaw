@@ -560,7 +560,7 @@ from .operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .evaluation import (
+from .reports import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,
@@ -603,6 +603,23 @@ _install_compat_surface_module(
         "IssuePriorityArchiveAudit",
         "IssuePriorityArchivist",
         "render_issue_priority_archive_report",
+    ],
+)
+_install_compat_surface_module(
+    "evaluation",
+    sys.modules[f"{__name__}.reports"],
+    [
+        "BenchmarkCase",
+        "BenchmarkComparison",
+        "BenchmarkResult",
+        "BenchmarkRunner",
+        "BenchmarkSuiteResult",
+        "EvaluationCriterion",
+        "ReplayOutcome",
+        "ReplayRecord",
+        "render_run_replay_index_page",
+        "render_replay_detail_page",
+        "render_benchmark_suite_report",
     ],
 )
 _install_compat_surface_module(
