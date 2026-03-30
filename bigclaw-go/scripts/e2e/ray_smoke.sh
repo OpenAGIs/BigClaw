@@ -15,4 +15,7 @@ ARGS=(
 if [[ -n "$RUNTIME_ENV_JSON" ]]; then
   ARGS+=(--runtime-env-json "$RUNTIME_ENV_JSON")
 fi
-python3 "$ROOT/scripts/e2e/run_task_smoke.py" "${ARGS[@]}"
+(
+  cd "$ROOT"
+  go run ./cmd/bigclawctl automation e2e run-task-smoke "${ARGS[@]}"
+)
