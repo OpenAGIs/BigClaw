@@ -16,6 +16,15 @@ Candidate batch:
 - `src/bigclaw/connectors.py`
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
+- `src/bigclaw/repo_governance.py`
+- `src/bigclaw/repo_board.py`
+- `src/bigclaw/repo_gateway.py`
+- `src/bigclaw/repo_registry.py`
+- `src/bigclaw/repo_triage.py`
+- `src/bigclaw/dsl.py`
+- `src/bigclaw/dashboard_run_contract.py`
+- `src/bigclaw/saved_views.py`
+- `src/bigclaw/event_bus.py`
 
 Planned retainers for this lane:
 
@@ -82,6 +91,33 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `src/bigclaw/workspace_bootstrap_validation.py`
   - Deleted.
   - Reason: only legacy Python tests referenced it; cutover docs assign validation/report generation to `bigclaw-go/internal/bootstrap/*` and `bigclaw-go/cmd/bigclawctl workspace validate`.
+- `src/bigclaw/repo_governance.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; cutover docs explicitly map it to `bigclaw-go/internal/repo/governance.go`, with Go tests covering the permission matrix and audit-field contract.
+- `src/bigclaw/repo_board.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; the repo discussion surface now lives under `bigclaw-go/internal/repo/board.go` and `repo_surfaces_test.go`.
+- `src/bigclaw/repo_gateway.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; the normalized gateway payload/error surface now lives under `bigclaw-go/internal/repo/gateway.go` and `repo_surfaces_test.go`.
+- `src/bigclaw/repo_registry.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; the registry/channel/agent surface now lives under `bigclaw-go/internal/repo/registry.go` and `repo_surfaces_test.go`.
+- `src/bigclaw/repo_triage.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; the lineage-aware triage surface now lives under `bigclaw-go/internal/repo/triage.go` and `repo_surfaces_test.go`.
+- `src/bigclaw/dsl.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; parity docs map the workflow-definition contract to `bigclaw-go/internal/workflow/definition.go`, covered by Go workflow tests.
+- `src/bigclaw/dashboard_run_contract.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; the active dashboard/run contract now lives under `bigclaw-go/internal/product/dashboard_run_contract.go` with Go tests.
+- `src/bigclaw/saved_views.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; the active saved-view/digest surface now lives under `bigclaw-go/internal/product/saved_views.go` with Go tests.
+- `src/bigclaw/event_bus.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; the active event bus surface now lives under `bigclaw-go/internal/events/bus.go` with Go tests.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
@@ -91,14 +127,44 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `tests/test_workspace_bootstrap.py`
   - Updated.
   - Reason: removed the helper-specific validation-report test that only covered the deleted Python compatibility wrapper; remaining tests still cover `workspace_bootstrap.py`.
+- `tests/test_repo_governance.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/repo/governance_test.go`.
+- `tests/test_repo_board.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`.
+- `tests/test_repo_gateway.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`.
+- `tests/test_repo_registry.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`.
+- `tests/test_repo_triage.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`.
+- `tests/test_repo_collaboration.py`
+  - Deleted.
+  - Reason: it existed only to exercise the deleted Python repo-board compatibility surface.
+- `tests/test_dsl.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/workflow/definition_test.go`.
+- `tests/test_dashboard_run_contract.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/product/dashboard_run_contract_test.go`.
+- `tests/test_saved_views.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/product/saved_views_test.go`.
+- `tests/test_event_bus.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/events/bus_test.go`.
 
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `105`
+- Repository Python files after: `86`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `35`
-- Net reduction: `11`
+- `src/bigclaw/**` Python files after: `26`
+- Net reduction: `30`
 
 ### Validation Record
 
@@ -119,5 +185,11 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Result: `ok  	bigclaw-go/internal/githubsync	(cached)`
   - Result: `ok  	bigclaw-go/internal/bootstrap	(cached)`
   - Result: `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+- `cd bigclaw-go && go test ./internal/repo`
+  - Result: `ok  	bigclaw-go/internal/repo	1.150s`
+- `cd bigclaw-go && go test ./internal/workflow ./internal/product ./internal/events`
+  - Result: `ok  	bigclaw-go/internal/workflow	1.129s`
+  - Result: `ok  	bigclaw-go/internal/product	1.497s`
+  - Result: `ok  	bigclaw-go/internal/events	2.062s`
 - `git status --short`
-  - Result: before the latest commit, `src/bigclaw/github_sync.py`, `src/bigclaw/workspace_bootstrap_validation.py`, `tests/test_github_sync.py`, and `tests/test_workspace_bootstrap.py` changed.
+  - Result: later cleanup waves removed repo compatibility modules, workflow/product/events compatibility modules, and their Python-only tests.
