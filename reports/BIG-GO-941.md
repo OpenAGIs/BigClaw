@@ -26,3 +26,13 @@
 
 - Legacy workflows that still assume `pip install -e .` from the repository root will now fail and must switch to direct source execution or Go CLI entrypoints.
 - Python migration-only checks still depend on external Python tooling availability when `BIGCLAW_ENABLE_LEGACY_PYTHON=1` is used.
+
+## Follow-up status
+
+`BIG-GO-1001` removed the remaining repository-root packaging residue left after
+this lane:
+
+- `.github/workflows/ci.yml` no longer runs `pip install -e .[dev]` or
+  `python -m build`; CI validates the Python migration surface via
+  `PYTHONPATH=src pytest`.
+- `scripts/dev_bootstrap.sh` no longer installs the Python `build` package.

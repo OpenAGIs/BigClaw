@@ -10,7 +10,7 @@ if [ "${BIGCLAW_ENABLE_LEGACY_PYTHON:-0}" = "1" ]; then
   # shellcheck disable=SC1091
   source "$repo_root/.venv/bin/activate"
   python -m pip install -U pip
-  python -m pip install pytest ruff build pre-commit
+  python -m pip install pytest ruff pre-commit
   PYTHONPATH="$repo_root/src" python -m pytest
   echo "BigClaw Go environment is ready, and the legacy Python migration surface was validated without editable install."
 else

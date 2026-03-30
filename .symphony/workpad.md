@@ -1,56 +1,64 @@
-# BIG-GO-990 Workpad
+# BIG-GO-1001 Workpad
 
 ## Scope
 
-Target the remaining Python scripts under:
+Target the remaining repository-root packaging-exit residue after prior removal
+of the Python build surface.
 
-- `bigclaw-go/scripts/e2e/**`
-- `bigclaw-go/scripts/migration/**`
+Batch file list:
 
-Initial batch file list:
+- `.github/workflows/ci.yml`
+- `README.md`
+- `reports/OPE-66-validation.md`
+- `reports/BIG-GO-941.md`
+- `scripts/dev_bootstrap.sh`
 
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
+Packaging artifact inventory at start of lane:
 
-Current repository Python file count before this lane: `116`
-Current targeted batch Python file count before this lane: `19`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+- Root `setup.cfg`: absent
+- Active workflow references still invoking root packaging:
+  - `.github/workflows/ci.yml`: `pip install -e .[dev]`
+  - `.github/workflows/ci.yml`: `python -m build`
+- Bootstrap residue still installing packaging tooling:
+  - `scripts/dev_bootstrap.sh`: installs Python `build`
+- Historical packaging evidence still describing the removed build path:
+  - `reports/OPE-66-validation.md`
+  - `reports/BIG-GO-941.md`
+
+Current repository Python file count before this lane: `108`
+Current packaging-entry file count before this lane: `5`
 
 ## Plan
 
-1. Inspect every Python file in the batch and map it to an existing Go/sh replacement or determine if a small Go port is needed.
-2. Remove redundant Python files where a repository-native replacement already exists or add a Go-native replacement where missing and then remove the Python version.
-3. Run targeted validation for the touched replacement paths.
-4. Record exact file disposition, rationale, and repository Python count impact.
-5. Commit and push the scoped changes for `BIG-GO-990`.
+1. Remove active CI usage of deleted root Python packaging entrypoints.
+2. Remove Python bootstrap packaging-tool installation that is no longer needed.
+3. Update operator-facing documentation so it no longer points at obsolete
+   packaging behavior.
+4. Preserve only historical report content that still matches repository
+   reality; delete or rewrite stale packaging-install claims.
+5. Run targeted validation for the touched CI, shell, and documentation paths.
+6. Record delete/replace/keep rationale and Python file count impact.
+7. Commit and push the scoped changes for `BIG-GO-1001`.
 
 ## Acceptance
 
-- Produce the exact `BIG-GO-990` batch file list for `scripts/e2e` and `scripts/migration`.
-- Reduce the number of Python files in the targeted directories as far as practical within this lane.
-- Document keep/replace/delete rationale for every targeted Python file.
+- Produce the exact `BIG-GO-1001` batch file list for packaging-exit residue.
+- Reduce file count where a packaging-related artifact can be deleted safely in
+  this lane.
+- Document delete/replace/keep rationale for each targeted file.
 - Report the repository-wide Python file count impact.
 
 ## Validation
 
-- `find . -name '*.py' | wc -l`
-- Targeted validation commands for any Go/sh replacements touched in this lane
+- `find . -name '*.py' | sort | wc -l`
+- `python3 - <<'PY' ... PY` to assert no active CI step still references
+  `pip install -e .` or `python -m build`
+- `python3 - <<'PY' ... PY` to assert `scripts/dev_bootstrap.sh` no longer
+  installs Python `build`
+- `python3 - <<'PY' ... PY` to assert README no longer suggests root packaging
+- `git diff --check`
 - `git status --short`
 - `git log -1 --stat`
 
@@ -58,68 +66,73 @@ Current targeted batch Python file count before this lane: `19`
 
 ### File Disposition
 
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
+- `.github/workflows/ci.yml`
+  - Replaced.
+  - Reason: removed the last active root packaging calls (`pip install -e .[dev]`
+    and `python -m build`) and switched CI to source-based validation with
+    `PYTHONPATH=src pytest`.
+- `scripts/dev_bootstrap.sh`
+  - Replaced.
+  - Reason: removed Python `build` installation because the repository root is
+    no longer a Python package build surface.
+- `reports/OPE-66-validation.md`
   - Deleted.
-  - Reason: already fully replaced by `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`; callers and docs in this lane now invoke the Go entrypoint directly.
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-  - Deleted.
-  - Reason: already fully replaced by `go run ./cmd/bigclawctl automation migration shadow-compare ...`; docs now point at the Go command directly.
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
-  - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration shadow-matrix ...`, with the matrix orchestration and corpus coverage logic moved into `cmd/bigclawctl`.
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-  - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, with the scorecard aggregation logic moved into `cmd/bigclawctl`.
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-  - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`, with bundle summary, manifest, rollup, and README generation moved into `cmd/bigclawctl`.
-- Remaining targeted Python files
-  - Kept for now.
-  - Reason: they still own report-generation or Python-only test behavior and do not yet have Go-native replacements in the repo.
+  - Reason: it only documented the obsolete editable-install / `setup.py`
+    packaging path and had no remaining repository references.
+- `reports/BIG-GO-941.md`
+  - Replaced.
+  - Reason: kept as historical evidence for the original root build removal and
+    appended follow-up status that closes the residual packaging references.
+- `README.md`
+  - Kept.
+  - Reason: it already states that root Python packaging must not be used and
+    already documents `PYTHONPATH=src` validation.
+
+### Packaging Batch Summary
+
+- Packaging-residue batch files: `.github/workflows/ci.yml`, `README.md`,
+  `reports/OPE-66-validation.md`, `reports/BIG-GO-941.md`,
+  `scripts/dev_bootstrap.sh`
+- Packaging-related Python files in this batch: none
+- Root packaging entry files currently present: none (`pyproject.toml`,
+  `setup.py`, `setup.cfg` are absent)
 
 ### Python File Count Impact
 
-- Repository Python files before: `116`
+- Repository Python files before: `108`
 - Repository Python files after: `108`
-- Targeted batch Python files before: `19`
-- Targeted batch Python files after: `14`
-- Net reduction: `5`
-
-### Remaining Targeted Python Files
-
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
+- Net reduction: `0`
+- Deleted packaging-related files in this lane: `1` markdown report
 
 ### Validation Record
 
-- `cd bigclaw-go && python3 -m unittest scripts/e2e/run_all_test.py`
-  - Result: `Ran 3 tests in 4.250s` and `OK`
-- `cd bigclaw-go && go test ./cmd/bigclawctl`
-  - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.418s`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration shadow-matrix ...` produces a matrix report with corpus coverage against stub HTTP endpoints.
-  - Result: `shadow_matrix_cli_ok`
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration --help`
-  - Result: `usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle> [flags]`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` emits a repo-native scorecard from compare/matrix JSON inputs.
-  - Result: `live_shadow_scorecard_cli_ok`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --go-root <tempdir>` emits summary/index/manifest/rollup outputs and bundle README from local artifacts.
-  - Result: `export_live_shadow_bundle_cli_ok`
-- `find . -name '*.py' | wc -l`
-  - Result: `108`
+- `find . -name '*.py' | sort | wc -l`
+  - Result before: `108`
+  - Result after: `108`
+- `python3 - <<'PY' ... PY` on `.github/workflows/ci.yml`
+  - Result: `ok`
+- `python3 - <<'PY' ... PY` on `scripts/dev_bootstrap.sh`
+  - Result: `ok`
+- `python3 - <<'PY' ... PY` on `README.md`
+  - Result: `ok`
+- `bash -n scripts/dev_bootstrap.sh`
+  - Result: exit `0`
+- `PYTHONPATH=src python3 -m pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml`
+  - Result: failed under local Python `3.9.6`; one collection error from
+    `bigclaw-go/scripts/e2e/export_validation_bundle.py` using `Path | None`
+    syntax that requires Python `3.10+`
+- `PYTHONPATH=src python3 -m pytest tests --cov=bigclaw --cov-report=term-missing --cov-report=xml`
+  - Result: `226 passed`, `3 failed`
+  - Known unrelated failures:
+    - `tests/test_live_shadow_bundle.py::test_export_live_shadow_bundle_generates_index_and_rollup`
+    - `tests/test_live_shadow_bundle.py::test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd`
+    - `tests/test_parallel_validation_bundle.py::test_export_validation_bundle_generates_latest_reports_and_index`
+  - Failure basis: two tests still point at migration scripts already removed by
+    an earlier lane; one still executes the Python 3.11-only
+    `export_validation_bundle.py` under local Python `3.9.6`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_reports.py`
+  - Result: `43 passed in 3.11s`
+- `git diff --check`
+  - Result: clean
 - `git status --short`
-  - Result: only `.symphony/workpad.md` plus the scoped docs/script changes for this lane are modified.
+  - Result: scoped issue files only before commit
