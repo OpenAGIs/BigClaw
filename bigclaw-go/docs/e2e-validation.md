@@ -141,7 +141,7 @@ Use this deterministic local harness to exercise the same scenario ids without a
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/broker_failover_stub_matrix.py --pretty
+go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --pretty
 ```
 
 This refreshes `docs/reports/broker-failover-stub-report.json` plus per-scenario raw artifacts under `docs/reports/broker-failover-stub-artifacts/`. The stub backend is provider-neutral and deterministic, so sequence accounting, replay resume behavior, ambiguous publish resolution, and checkpoint fencing can be validated before a live Kafka / NATS / Redis adapter exists.
