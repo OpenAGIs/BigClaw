@@ -28,6 +28,12 @@ Batch file list:
 - `src/bigclaw/pilot.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
+- `src/bigclaw/__main__.py`
+- `bigclaw-go/internal/legacyshim/compilecheck.go`
+- `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+- `bigclaw-go/cmd/bigclawctl/main_test.go`
+- `bigclaw-go/internal/regression/deprecation_contract_test.go`
+- `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 - `src/bigclaw/__init__.py`
 - `tests/test_repo_board.py`
 - `tests/test_repo_gateway.py`
@@ -77,13 +83,15 @@ Reason:
    and already have repo-native Go replacements.
 9. Remove isolated Python bootstrap helpers whose ownership is already moved to
    the Go bootstrap toolchain and which only survive via dedicated tests.
-10. Remove Python tests that only exercised deleted Python-only modules.
-11. Update any remaining Python tests or exports that referenced removed modules so
-   the suite remains coherent after deletion.
-12. Run targeted validation for remaining observability, repo-link, and
-   workspace bootstrap surfaces,
-   plus inventory counts and diff hygiene.
-13. Commit and push the scoped lane branch for `BIG-GO-1015`.
+10. Remove stale Python entrypoint residue and reconcile Go-side compatibility
+    evidence/tests that still claim the deleted entrypoints exist.
+11. Remove Python tests that only exercised deleted Python-only modules.
+12. Update any remaining Python tests or exports that referenced removed modules so
+    the suite remains coherent after deletion.
+13. Run targeted validation for remaining observability, repo-link, and
+    workspace bootstrap surfaces,
+    plus inventory counts and diff hygiene.
+14. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
@@ -211,6 +219,31 @@ Reason:
   - Deleted.
   - Reason: validation ownership is already moved to the Go bootstrap toolchain
     and the Python helper only remained through the deleted bootstrap test.
+- `src/bigclaw/__main__.py`
+  - Deleted.
+  - Reason: the legacy Python entrypoint is no longer needed now that Go-first
+    operator/tooling ownership is established, and the remaining repo evidence
+    was updated to stop claiming that the deleted entrypoint still exists.
+- `bigclaw-go/internal/legacyshim/compilecheck.go`
+  - Replaced.
+  - Reason: removed deleted Python entrypoints from the frozen compile-check
+    list so the Go compatibility check matches repository reality.
+- `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+  - Replaced.
+  - Reason: updated the frozen compile-check expectations to match the retained
+    shim file set.
+- `bigclaw-go/cmd/bigclawctl/main_test.go`
+  - Replaced.
+  - Reason: updated the legacy-python JSON-output fixture to match the retained
+    shim file list after removing stale Python entrypoints.
+- `bigclaw-go/internal/regression/deprecation_contract_test.go`
+  - Replaced.
+  - Reason: removed assertions for deleted `python -m bigclaw` entrypoint
+    warnings from the compatibility manifest contract.
+- `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+  - Replaced.
+  - Reason: removed runtime/service warning entries that referred to the
+    deleted Python `__main__` entrypoint.
 - `src/bigclaw/design_system.py`
   - Deleted.
   - Reason: console design-system ownership is already moved to
@@ -305,7 +338,8 @@ Reason:
 - `src/bigclaw` Python files after tranche 10: `27`
 - `src/bigclaw` Python files after tranche 11: `22`
 - `src/bigclaw` Python files after tranche 12: `20`
-- Net `src/bigclaw` reduction: `25`
+- `src/bigclaw` Python files after tranche 13: `19`
+- Net `src/bigclaw` reduction: `26`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
@@ -317,7 +351,8 @@ Reason:
 - Repository-wide Python files after tranche 10: `81`
 - Repository-wide Python files after tranche 11: `71`
 - Repository-wide Python files after tranche 12: `68`
-- Net repository-wide Python reduction: `40`
+- Repository-wide Python files after tranche 13: `67`
+- Net repository-wide Python reduction: `41`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -384,3 +419,9 @@ Reason:
   - Result: `import ok`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `11 passed in 0.06s`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl ./internal/regression -run 'Test(FrozenCompileCheckFilesUsesFrozenShimList|CompileCheckRunsPyCompileAgainstFrozenShimList|RunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens|LegacyMainlineCompatibilityManifestStaysAligned)'`
+  - Result: `ok` for `./internal/legacyshim`, `./cmd/bigclawctl`, and `./internal/regression`
+- `rg -n "src/bigclaw/__main__\\.py|python -m bigclaw|python -m bigclaw serve" bigclaw-go docs src tests scripts || true`
+  - Result: remaining matches are historical issue-pack entries plus the
+    retained `warn_legacy_service_surface` default string in `src/bigclaw/runtime.py`;
+    no live Python entrypoint file remains

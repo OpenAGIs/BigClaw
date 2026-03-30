@@ -13,16 +13,6 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 	var manifest struct {
 		Status         string `json:"status"`
 		Guidance       string `json:"guidance"`
-		RuntimeWarning struct {
-			Surface     string `json:"surface"`
-			Replacement string `json:"replacement"`
-			Message     string `json:"message"`
-		} `json:"runtime_warning"`
-		ServiceWarning struct {
-			Surface     string `json:"surface"`
-			Replacement string `json:"replacement"`
-			Message     string `json:"message"`
-		} `json:"service_warning"`
 		Modules map[string]struct {
 			GoMainlineReplacement string `json:"go_mainline_replacement"`
 			LegacyMainlineStatus  string `json:"legacy_mainline_status"`
@@ -35,19 +25,6 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 	}
 	if !strings.Contains(manifest.Guidance, "sole implementation mainline") || !strings.Contains(manifest.Guidance, "migration-only") {
 		t.Fatalf("unexpected guidance: %q", manifest.Guidance)
-	}
-
-	if manifest.RuntimeWarning.Surface != "python -m bigclaw" ||
-		manifest.RuntimeWarning.Replacement != "bash scripts/ops/bigclawctl" ||
-		!strings.Contains(manifest.RuntimeWarning.Message, "frozen for migration-only use") ||
-		!strings.Contains(manifest.RuntimeWarning.Message, "Use bash scripts/ops/bigclawctl instead.") {
-		t.Fatalf("unexpected runtime warning payload: %+v", manifest.RuntimeWarning)
-	}
-	if manifest.ServiceWarning.Surface != "python -m bigclaw serve" ||
-		manifest.ServiceWarning.Replacement != "go run ./bigclaw-go/cmd/bigclawd" ||
-		!strings.Contains(manifest.ServiceWarning.Message, "frozen for migration-only use") ||
-		!strings.Contains(manifest.ServiceWarning.Message, "Use go run ./bigclaw-go/cmd/bigclawd instead.") {
-		t.Fatalf("unexpected service warning payload: %+v", manifest.ServiceWarning)
 	}
 
 	expectedReplacements := map[string]string{
