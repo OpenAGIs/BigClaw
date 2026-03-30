@@ -1161,3 +1161,83 @@ Follow-on refactor now queued:
   - Result: `6`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `54`
+
+### Follow-on tranche 26 queued
+
+- Target `src/bigclaw/planning.py` next.
+- Reason: the remaining planning surface is isolated from the runtime/reporting
+  core, only feeds dedicated tests, package exports, and the existing
+  `bigclaw.governance`/`bigclaw.planning` compatibility surfaces, and can be
+  merged into `src/bigclaw/operations.py` without creating an import cycle.
+- Planned edits:
+  - Move the planning/governance dataclasses, builders, and render helpers from
+    `src/bigclaw/planning.py` into `src/bigclaw/operations.py`.
+  - Repoint package exports plus `bigclaw.governance` and `bigclaw.planning`
+    compatibility modules to the operations-owned surface.
+  - Delete `src/bigclaw/planning.py`.
+
+### Follow-on tranche 26
+
+- `src/bigclaw/planning.py`
+  - Deleted.
+  - Reason: the remaining planning/governance surface was isolated from the
+    runtime/reporting core and only served dedicated tests, package exports,
+    and compatibility shims, so it could be absorbed into operations without
+    creating an import cycle.
+- `src/bigclaw/operations.py`
+  - Updated.
+  - Reason: now owns the former planning/governance dataclasses, builders, and
+    render helpers, including `ScopeFreeze*`, candidate backlog/entry-gate
+    types, rollout helpers, and the four-week execution plan surface.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: package imports now source planning/governance symbols from
+    operations and install `bigclaw.planning` plus `bigclaw.governance`
+    compatibility modules backed by that surface.
+
+### Follow-on tranche 26 inventory
+
+- `src/bigclaw` Python files after tranche 26: `5`
+- Repository-wide Python files after tranche 26: `53`
+- Net repository-wide Python reduction: `55`
+- `bigclaw-go` Go files after tranche 26: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 26 validation
+
+- `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py tests/test_planning.py tests/test_governance.py tests/test_repo_rollout.py tests/test_operations.py`
+  - Result: success
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`, `import bigclaw.planning`, and `import bigclaw.governance`
+  - Result: `import ok`; `bigclaw.planning.CandidatePlanner.__module__ == "bigclaw.operations"`; `bigclaw.governance.ScopeFreezeAudit.__module__ == "bigclaw.operations"`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_governance.py tests/test_repo_rollout.py`
+  - Result: `20 passed in 0.05s`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_control_center.py tests/test_evaluation.py`
+  - Result: `30 passed in 0.07s`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `5`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `53`
+
+### Continuation turn 20 validation refresh
+
+- `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py tests/test_planning.py tests/test_governance.py tests/test_repo_rollout.py tests/test_operations.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_governance.py tests/test_repo_rollout.py`
+  - Result: `20 passed in 0.05s`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_control_center.py tests/test_evaluation.py`
+  - Result: `30 passed in 0.07s`
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`, `import bigclaw.planning`, and `import bigclaw.governance`
+  - Result: `import ok`; `bigclaw.planning.CandidatePlanner.__module__ == "bigclaw.operations"`; `bigclaw.governance.ScopeFreezeAudit.__module__ == "bigclaw.operations"`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `5`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `53`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success

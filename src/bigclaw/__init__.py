@@ -25,7 +25,6 @@ from .observability import (
     UsageRecord,
 )
 from . import runtime as _legacy_runtime_surface
-from . import planning as _legacy_planning_surface
 
 
 def _install_legacy_surface_module(
@@ -178,6 +177,7 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
+from . import operations as _legacy_operations_surface
 _install_legacy_surface_module(
     "governance",
     [
@@ -188,14 +188,13 @@ _install_legacy_surface_module(
         "ScopeFreezeGovernance",
         "render_scope_freeze_report",
     ],
-    source_module=_legacy_planning_surface,
+    source_module=_legacy_operations_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
         "governance.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
-from . import operations as _legacy_operations_surface
 _install_legacy_surface_module(
     "execution_contract",
     [
@@ -373,17 +372,28 @@ from .reports import (
 from .operations import (
     AuditPolicy,
     build_operations_api_contract,
+    build_big_4701_execution_plan,
+    build_pilot_rollout_scorecard,
+    build_v3_candidate_backlog,
+    build_v3_entry_gate,
+    CandidateBacklog,
+    CandidateEntry,
+    CandidatePlanner,
     DashboardBuilder,
     DashboardBuilderAudit,
     DashboardLayout,
     DashboardWidgetPlacement,
     DashboardWidgetSpec,
+    EntryGate,
+    EntryGateDecision,
+    EvidenceLink,
     EngineeringActivity,
     EngineeringFunnelStage,
     EngineeringOverview,
     EngineeringOverviewBlocker,
     EngineeringOverviewKPI,
     EngineeringOverviewPermission,
+    evaluate_candidate_gate,
     ExecutionApiSpec,
     ExecutionContract,
     ExecutionContractAudit,
@@ -393,6 +403,9 @@ from .operations import (
     ExecutionPermission,
     ExecutionPermissionMatrix,
     ExecutionRole,
+    FourWeekExecutionPlan,
+    FreezeException,
+    GovernanceBacklogItem,
     MetricDefinition,
     OperationsAnalytics,
     OperationsMetricDefinition,
@@ -401,49 +414,70 @@ from .operations import (
     OperationsSnapshot,
     PermissionCheckResult,
     PolicyPromptVersionCenter,
-    RegressionFinding,
     RegressionCenter,
-    TriageCluster,
     QueueControlCenter,
+    RegressionFinding,
+    render_candidate_backlog_report,
     VersionChangeSummary,
     VersionedArtifact,
     VersionedArtifactHistory,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
+    TriageCluster,
+    WeeklyExecutionPlan,
+    WeeklyGoal,
     WeeklyOperationsArtifacts,
     WeeklyOperationsReport,
     render_dashboard_builder_report,
     render_engineering_overview,
     render_execution_contract_report,
+    render_four_week_execution_report,
     render_operations_metric_spec,
     render_operations_dashboard,
+    render_pilot_rollout_gate_report,
     render_policy_prompt_version_center,
     render_queue_control_center,
     render_regression_center,
+    render_scope_freeze_report,
     render_weekly_operations_report,
     write_dashboard_builder_bundle,
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .planning import (
-    FourWeekExecutionPlan,
-    CandidateBacklog,
-    CandidateEntry,
-    CandidatePlanner,
-    EvidenceLink,
-    EntryGate,
-    EntryGateDecision,
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    WeeklyExecutionPlan,
-    WeeklyGoal,
-    build_big_4701_execution_plan,
-    build_v3_candidate_backlog,
-    build_v3_entry_gate,
-    render_candidate_backlog_report,
-    render_four_week_execution_report,
-    render_scope_freeze_report,
+_install_legacy_surface_module(
+    "planning",
+    [
+        "FourWeekExecutionPlan",
+        "CandidateBacklog",
+        "CandidateEntry",
+        "CandidatePlanner",
+        "EvidenceLink",
+        "EntryGate",
+        "EntryGateDecision",
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "WeeklyExecutionPlan",
+        "WeeklyGoal",
+        "build_big_4701_execution_plan",
+        "build_pilot_rollout_scorecard",
+        "build_v3_candidate_backlog",
+        "build_v3_entry_gate",
+        "evaluate_candidate_gate",
+        "render_candidate_backlog_report",
+        "render_four_week_execution_report",
+        "render_pilot_rollout_gate_report",
+        "render_scope_freeze_report",
+    ],
+    source_module=_legacy_operations_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "planning.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
 _install_legacy_surface_module(
     "evaluation",
