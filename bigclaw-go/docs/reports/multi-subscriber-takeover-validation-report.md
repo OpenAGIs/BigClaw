@@ -9,7 +9,7 @@ This report captures the executable local takeover harness for `OPE-269` / `BIG-
 - `internal/events/subscriber_leases.go`
 - `internal/events/subscriber_leases_test.go`
 - `docs/reports/event-bus-reliability-report.md`
-- `scripts/e2e/subscriber_takeover_fault_matrix.py`
+- `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`
 - `scripts/e2e/multi_node_shared_queue.py`
 - `docs/reports/multi-node-shared-queue-report.json`
 
