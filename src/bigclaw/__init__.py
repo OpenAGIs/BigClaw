@@ -1,6 +1,7 @@
 import sys
 import types
 
+from . import connectors as _connectors_surface
 from . import repo_gateway as _repo_gateway_surface
 from . import repo_plane as _repo_plane_surface
 from .models import (
@@ -110,11 +111,8 @@ _install_compat_surface_module(
     _repo_plane_surface,
     ["RunCommitBinding", "bind_run_commits", "validate_run_commit_roles", "VALID_RUN_COMMIT_ROLES"],
 )
-_install_compat_surface_module(
-    "repo_registry",
-    _repo_plane_surface,
-    ["RepoRegistry"],
-)
+_install_compat_surface_module("repo_registry", _repo_plane_surface, ["RepoRegistry"])
+_install_compat_surface_module("mapping", _connectors_surface, ["map_priority", "map_state", "map_source_issue_to_task"])
 
 from .runtime import (
     AcceptanceDecision,
@@ -150,7 +148,7 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector, map_source_issue_to_task
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -232,7 +230,6 @@ from .issue_archive import (
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -304,6 +301,8 @@ from .reports import (
     TriageInboxItem,
     TriageSimilarityEvidence,
     TriageSuggestion,
+    ValidationReportDecision,
+    REQUIRED_REPORT_ARTIFACTS,
     build_auto_triage_center,
     build_console_actions,
     build_billing_entitlements_page,
@@ -335,9 +334,15 @@ from .reports import (
     render_repo_sync_audit_report,
     render_task_run_detail_page,
     render_task_run_report,
+    enforce_validation_report_policy,
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
+)
+_install_compat_surface_module(
+    "validation_policy",
+    sys.modules[f"{__name__}.reports"],
+    ["ValidationReportDecision", "REQUIRED_REPORT_ARTIFACTS", "enforce_validation_report_policy"],
 )
 from .operations import (
     DashboardBuilder,
@@ -557,6 +562,9 @@ __all__ = [
     "WorkflowDefinition",
     "WorkflowStep",
     "map_source_issue_to_task",
+    "ValidationReportDecision",
+    "REQUIRED_REPORT_ARTIFACTS",
+    "enforce_validation_report_policy",
     "EpicMilestone",
     "ExecutionPackRoadmap",
     "build_execution_pack_roadmap",
