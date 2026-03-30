@@ -11,9 +11,12 @@ Batch file list:
 - `src/bigclaw/connectors.py`
 - `src/bigclaw/reports.py`
 - `src/bigclaw/execution_contract.py`
+- `src/bigclaw/planning.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/observability.py`
+- `src/bigclaw/pilot.py`
+- `src/bigclaw/roadmap.py`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_triage.py`
 - `src/bigclaw/mapping.py`
@@ -51,6 +54,10 @@ Selected tranche rationale:
   naturally inside `execution_contract.py`.
 - `repo_triage.py` is a repo-run decision helper that fits naturally inside
   `repo_plane.py`.
+- `pilot.py` is a reporting-oriented artifact generator that fits naturally
+  inside `reports.py`.
+- `roadmap.py` is a planning-oriented structure that fits naturally inside
+  `planning.py`.
 
 ## Plan
 
@@ -76,6 +83,12 @@ Selected tranche rationale:
     `__init__.py`.
 14. Run targeted repo-domain tests for the third consolidation batch and push a
     follow-up commit.
+15. Fold `pilot.py` into `reports.py` and preserve `bigclaw.pilot`
+    compatibility via `__init__.py`.
+16. Fold `roadmap.py` into `planning.py` and preserve `bigclaw.roadmap`
+    compatibility via `__init__.py`.
+17. Run targeted smoke validation for the fourth consolidation batch and push a
+    follow-up commit.
 
 ## Acceptance
 
@@ -95,6 +108,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_validation_policy.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py tests/test_repo_triage.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.pilot import PilotImplementationResult, PilotKPI, render_pilot_implementation_report`
+  `from bigclaw.roadmap import build_execution_pack_roadmap`
+  `print("ok")`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.mapping import map_source_issue_to_task`
   `from bigclaw.validation_policy import enforce_validation_report_policy`
@@ -171,6 +189,20 @@ Selected tranche rationale:
 - `src/bigclaw/repo_triage.py`
   - Deleted.
   - Reason: its contents moved into `repo_plane.py`.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: absorbed pilot implementation KPI/report helpers so pilot-oriented
+    report generation now lives with the rest of the reporting surface.
+- `src/bigclaw/planning.py`
+  - Replaced.
+  - Reason: absorbed execution-pack roadmap structures so roadmap planning data
+    lives with the existing planning surface.
+- `src/bigclaw/pilot.py`
+  - Deleted.
+  - Reason: its contents moved into `reports.py`.
+- `src/bigclaw/roadmap.py`
+  - Deleted.
+  - Reason: its contents moved into `planning.py`.
 
 ### Inventory Impact
 
@@ -178,7 +210,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 1: `42`
 - `src/bigclaw/**/*.py` after batch 2: `40`
 - `src/bigclaw/**/*.py` after batch 3: `38`
-- Net Python module reduction in tranche so far: `7`
+- `src/bigclaw/**/*.py` after batch 4: `36`
+- Net Python module reduction in tranche so far: `9`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -216,3 +249,11 @@ Selected tranche rationale:
   - Result: `7 passed in 0.08s`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 3: `38`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_planning.py`
+  - Result: `48 passed in 0.10s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.pilot` / `bigclaw.roadmap`
+  - Result: `ok`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on package-root exports
+  - Result: `ok`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 4: `36`

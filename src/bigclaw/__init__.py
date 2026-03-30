@@ -235,7 +235,6 @@ from .issue_archive import (
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -308,6 +307,8 @@ from .reports import (
     IssueClosureDecision,
     OrchestrationCanvas,
     OrchestrationPortfolio,
+    PilotImplementationResult,
+    PilotKPI,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
@@ -351,6 +352,7 @@ from .reports import (
     render_report_studio_report,
     render_takeover_queue_report,
     render_pilot_portfolio_report,
+    render_pilot_implementation_report,
     render_pilot_scorecard,
     render_repo_sync_audit_report,
     render_task_run_detail_page,
@@ -359,6 +361,11 @@ from .reports import (
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
+)
+_install_compat_surface_module(
+    "pilot",
+    sys.modules[f"{__name__}.reports"],
+    ["PilotKPI", "PilotImplementationResult", "render_pilot_implementation_report"],
 )
 _install_compat_surface_module(
     "validation_policy",
@@ -418,6 +425,8 @@ from .evaluation import (
     render_benchmark_suite_report,
 )
 from .planning import (
+    EpicMilestone,
+    ExecutionPackRoadmap,
     FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
@@ -427,11 +436,17 @@ from .planning import (
     EntryGateDecision,
     WeeklyExecutionPlan,
     WeeklyGoal,
+    build_execution_pack_roadmap,
     build_big_4701_execution_plan,
     build_v3_candidate_backlog,
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+)
+_install_compat_surface_module(
+    "roadmap",
+    sys.modules[f"{__name__}.planning"],
+    ["EpicMilestone", "ExecutionPackRoadmap", "build_execution_pack_roadmap"],
 )
 from .ui_review import (
     InteractionFlow,
@@ -660,9 +675,12 @@ __all__ = [
     "IssueClosureDecision",
     "OrchestrationCanvas",
     "OrchestrationPortfolio",
+    "PilotKPI",
+    "PilotImplementationResult",
     "PilotMetric",
     "PilotPortfolio",
     "PilotScorecard",
+    "render_pilot_implementation_report",
     "ReportStudio",
     "ReportStudioArtifacts",
     "SharedViewContext",
@@ -770,6 +788,9 @@ __all__ = [
     "FourWeekExecutionPlan",
     "WeeklyExecutionPlan",
     "WeeklyGoal",
+    "EpicMilestone",
+    "ExecutionPackRoadmap",
+    "build_execution_pack_roadmap",
     "build_big_4701_execution_plan",
     "build_v3_candidate_backlog",
     "build_v3_entry_gate",
