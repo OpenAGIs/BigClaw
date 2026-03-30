@@ -1,5 +1,7 @@
 import sys
 import types
+from dataclasses import dataclass, field
+from typing import Dict, List
 
 from .models import (
     BillingInterval,
@@ -23,6 +25,8 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
+from .connectors import SourceIssue
+from .execution_contract import ExecutionPermission, ExecutionPermissionMatrix, ExecutionRole
 from . import runtime as _legacy_runtime_surface
 
 
@@ -32,6 +36,20 @@ def _install_legacy_surface_module(name: str, export_names: list[str], **extra_a
         module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
+def _install_inline_surface_module(name: str, **attrs: object) -> None:
+    module_name = f"{__name__}.{name}"
+    module = types.ModuleType(module_name)
+    for attr_name, value in attrs.items():
+        if hasattr(value, "__module__"):
+            try:
+                value.__module__ = module_name
+            except (AttributeError, TypeError):
+                pass
+        module.__dict__[attr_name] = value
+    sys.modules[module_name] = module
     globals()[name] = module
 
 
@@ -83,6 +101,297 @@ _install_legacy_surface_module(
         "service.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+)
+
+
+@dataclass
+class ValidationReportDecision:
+    allowed_to_close: bool
+    status: str
+    summary: str
+    missing_reports: List[str] = field(default_factory=list)
+
+
+REQUIRED_REPORT_ARTIFACTS = [
+    "task-run",
+    "replay",
+    "benchmark-suite",
+]
+
+
+def enforce_validation_report_policy(artifacts: List[str]) -> ValidationReportDecision:
+    existing = set(artifacts)
+    missing = [name for name in REQUIRED_REPORT_ARTIFACTS if name not in existing]
+    if missing:
+        return ValidationReportDecision(
+            allowed_to_close=False,
+            status="blocked",
+            summary="validation report policy not satisfied",
+            missing_reports=missing,
+        )
+    return ValidationReportDecision(
+        allowed_to_close=True,
+        status="ready",
+        summary="validation report policy satisfied",
+    )
+
+
+@dataclass(frozen=True)
+class LineageEvidence:
+    candidate_commit: str
+    accepted_ancestor: str = ""
+    similar_failure_count: int = 0
+    discussion_open: int = 0
+
+
+@dataclass(frozen=True)
+class TriageRecommendation:
+    action: str
+    reason: str
+
+
+def recommend_triage_action(*, status: str, evidence: LineageEvidence) -> TriageRecommendation:
+    if status in {"failed", "rejected"} and evidence.similar_failure_count >= 2:
+        return TriageRecommendation(action="replay", reason="similar lineage failures detected")
+    if status == "needs-approval" and evidence.accepted_ancestor:
+        return TriageRecommendation(action="approve", reason="accepted ancestor exists")
+    if evidence.discussion_open > 0:
+        return TriageRecommendation(action="handoff", reason="open repo discussion requires reviewer")
+    return TriageRecommendation(action="retry", reason="default retry path")
+
+
+def approval_evidence_packet(*, run_id: str, links: List[Dict[str, str]], lineage_summary: str) -> Dict[str, object]:
+    accepted = next((link.get("commit_hash", "") for link in links if link.get("role") == "accepted"), "")
+    candidate = next((link.get("commit_hash", "") for link in links if link.get("role") == "candidate"), "")
+    return {
+        "run_id": run_id,
+        "accepted_commit_hash": accepted,
+        "candidate_commit_hash": candidate,
+        "lineage_summary": lineage_summary,
+        "links": links,
+    }
+
+
+REPO_ACTION_PERMISSIONS = [
+    ExecutionPermission(name="repo.push", resource="repo", actions=["push"], scopes=["project"]),
+    ExecutionPermission(name="repo.fetch", resource="repo", actions=["fetch"], scopes=["project"]),
+    ExecutionPermission(name="repo.diff", resource="repo", actions=["diff"], scopes=["project"]),
+    ExecutionPermission(name="repo.post", resource="repo-board", actions=["create"], scopes=["channel"]),
+    ExecutionPermission(name="repo.reply", resource="repo-board", actions=["reply"], scopes=["channel"]),
+    ExecutionPermission(name="repo.accept", resource="repo", actions=["approve"], scopes=["run"]),
+    ExecutionPermission(name="repo.inspect", resource="repo", actions=["inspect"], scopes=["project"]),
+]
+
+REPO_ROLE_POLICIES = [
+    ExecutionRole(
+        name="platform-admin",
+        personas=["Platform Admin"],
+        granted_permissions=[p.name for p in REPO_ACTION_PERMISSIONS],
+        scope_bindings=["workspace"],
+        escalation_target="security",
+    ),
+    ExecutionRole(
+        name="eng-lead",
+        personas=["Eng Lead"],
+        granted_permissions=["repo.push", "repo.fetch", "repo.diff", "repo.post", "repo.reply", "repo.accept", "repo.inspect"],
+        scope_bindings=["project"],
+        escalation_target="platform-admin",
+    ),
+    ExecutionRole(
+        name="reviewer",
+        personas=["Reviewer"],
+        granted_permissions=["repo.fetch", "repo.diff", "repo.reply", "repo.inspect", "repo.accept"],
+        scope_bindings=["project"],
+        escalation_target="eng-lead",
+    ),
+    ExecutionRole(
+        name="execution-agent",
+        personas=["Execution Agent"],
+        granted_permissions=["repo.fetch", "repo.diff", "repo.post", "repo.reply"],
+        scope_bindings=["run"],
+        escalation_target="reviewer",
+    ),
+]
+
+
+@dataclass
+class RepoPermissionContract:
+    matrix: ExecutionPermissionMatrix = field(
+        default_factory=lambda: ExecutionPermissionMatrix(REPO_ACTION_PERMISSIONS, REPO_ROLE_POLICIES)
+    )
+
+    def check(self, *, action_permission: str, actor_roles: List[str]) -> bool:
+        result = self.matrix.evaluate_roles([action_permission], actor_roles)
+        return result.allowed
+
+
+def repo_required_audit_fields(action: str) -> List[str]:
+    common = ["task_id", "run_id", "repo_space_id", "actor"]
+    if action == "repo.accept":
+        return [*common, "accepted_commit_hash", "reviewer"]
+    if action in {"repo.push", "repo.fetch", "repo.diff"}:
+        return [*common, "commit_hash", "outcome"]
+    if action in {"repo.post", "repo.reply"}:
+        return [*common, "channel", "post_id", "outcome"]
+    return common
+
+
+def missing_repo_audit_fields(action: str, payload: Dict[str, object]) -> List[str]:
+    required = repo_required_audit_fields(action)
+    return [field for field in required if field not in payload]
+
+
+def map_priority(p: str) -> Priority:
+    normalized = (p or "").upper()
+    if normalized == "P0":
+        return Priority.P0
+    if normalized == "P1":
+        return Priority.P1
+    return Priority.P2
+
+
+def map_state(s: str) -> TaskState:
+    normalized = (s or "").lower()
+    if "progress" in normalized:
+        return TaskState.IN_PROGRESS
+    if "done" in normalized or "closed" in normalized:
+        return TaskState.DONE
+    if "block" in normalized:
+        return TaskState.BLOCKED
+    return TaskState.TODO
+
+
+def map_source_issue_to_task(issue: SourceIssue) -> Task:
+    risk = RiskLevel.HIGH if "prod" in issue.title.lower() else RiskLevel.LOW
+    return Task(
+        task_id=issue.source_id,
+        source=issue.source,
+        title=issue.title,
+        description=issue.description,
+        labels=issue.labels,
+        priority=map_priority(issue.priority),
+        state=map_state(issue.state),
+        risk_level=risk,
+        required_tools=["github" if issue.source == "github" else "connector"],
+        acceptance_criteria=["Synced from source issue"],
+        validation_plan=["mapping-test"],
+    )
+
+
+@dataclass(frozen=True)
+class EpicMilestone:
+    epic_id: str
+    title: str
+    phase: str
+    owner: str
+    milestone: str
+
+
+@dataclass
+class ExecutionPackRoadmap:
+    name: str
+    epics: List[EpicMilestone] = field(default_factory=list)
+
+    def phase_map(self) -> Dict[str, List[EpicMilestone]]:
+        phases: Dict[str, List[EpicMilestone]] = {}
+        for epic in self.epics:
+            phases.setdefault(epic.phase, []).append(epic)
+        return phases
+
+    def epic_map(self) -> Dict[str, EpicMilestone]:
+        return {epic.epic_id: epic for epic in self.epics}
+
+    def validate_unique_owners(self) -> None:
+        seen: Dict[str, str] = {}
+        for epic in self.epics:
+            owner = epic.owner.strip().lower()
+            if owner in seen:
+                raise ValueError(f"Owner '{epic.owner}' is assigned to both {seen[owner]} and {epic.epic_id}")
+            seen[owner] = epic.epic_id
+
+
+def build_execution_pack_roadmap() -> ExecutionPackRoadmap:
+    roadmap = ExecutionPackRoadmap(
+        name="BigClaw v4.0 Execution Pack",
+        epics=[
+            EpicMilestone(
+                epic_id="BIG-EPIC-8",
+                title="研发自治执行平台增强",
+                phase="Phase 1",
+                owner="engineering-platform",
+                milestone="M1 Foundation uplift",
+            ),
+            EpicMilestone(
+                epic_id="BIG-EPIC-9",
+                title="工程运营系统",
+                phase="Phase 2",
+                owner="engineering-operations",
+                milestone="M2 Operations control plane",
+            ),
+            EpicMilestone(
+                epic_id="BIG-EPIC-10",
+                title="跨部门 Agent Orchestration",
+                phase="Phase 3",
+                owner="orchestration-office",
+                milestone="M3 Cross-team orchestration",
+            ),
+            EpicMilestone(
+                epic_id="BIG-EPIC-11",
+                title="产品化 UI 与控制台",
+                phase="Phase 4",
+                owner="product-experience",
+                milestone="M4 Productized console",
+            ),
+            EpicMilestone(
+                epic_id="BIG-EPIC-12",
+                title="计费、套餐与商业化控制",
+                phase="Phase 5",
+                owner="commercialization",
+                milestone="M5 Billing and packaging",
+            ),
+        ],
+    )
+    roadmap.validate_unique_owners()
+    return roadmap
+
+
+_install_inline_surface_module(
+    "validation_policy",
+    ValidationReportDecision=ValidationReportDecision,
+    REQUIRED_REPORT_ARTIFACTS=REQUIRED_REPORT_ARTIFACTS,
+    enforce_validation_report_policy=enforce_validation_report_policy,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/closeout.go",
+)
+_install_inline_surface_module(
+    "repo_triage",
+    LineageEvidence=LineageEvidence,
+    TriageRecommendation=TriageRecommendation,
+    recommend_triage_action=recommend_triage_action,
+    approval_evidence_packet=approval_evidence_packet,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/triage.go",
+)
+_install_inline_surface_module(
+    "repo_governance",
+    REPO_ACTION_PERMISSIONS=REPO_ACTION_PERMISSIONS,
+    REPO_ROLE_POLICIES=REPO_ROLE_POLICIES,
+    RepoPermissionContract=RepoPermissionContract,
+    repo_required_audit_fields=repo_required_audit_fields,
+    missing_repo_audit_fields=missing_repo_audit_fields,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/governance.go",
+)
+_install_inline_surface_module(
+    "mapping",
+    map_priority=map_priority,
+    map_state=map_state,
+    map_source_issue_to_task=map_source_issue_to_task,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/mapping.go",
+)
+_install_inline_surface_module(
+    "roadmap",
+    EpicMilestone=EpicMilestone,
+    ExecutionPackRoadmap=ExecutionPackRoadmap,
+    build_execution_pack_roadmap=build_execution_pack_roadmap,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/regression/roadmap_contract_test.go",
 )
 
 from .runtime import (
@@ -201,8 +510,6 @@ from .issue_archive import (
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
-from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
