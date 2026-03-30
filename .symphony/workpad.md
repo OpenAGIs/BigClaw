@@ -28,6 +28,7 @@ Batch file list:
 - `tests/test_memory.py`
 - `tests/test_runtime_matrix.py`
 - `tests/test_control_center.py`
+- `tests/test_event_bus.py`
 - `tests/test_control_center.py`
 
 Go replacement inventory:
@@ -44,6 +45,7 @@ Go replacement inventory:
 - `bigclaw-go/internal/taskmemory/store_test.go`
 - `bigclaw-go/internal/runtimecompat/runtime_test.go`
 - `bigclaw-go/internal/controlcentercompat/control_center_test.go`
+- `bigclaw-go/internal/eventbuscompat/event_bus_test.go`
 - `bigclaw-go/internal/controlcentercompat/control_center_test.go`
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
@@ -87,6 +89,8 @@ Repository inventory at start of lane:
    contract, then delete the root Python test once parity is covered.
 9. Add a minimal Go-native replacement for the residual control-center queue
    contract, then delete the root Python test once parity is covered.
+10. Add a minimal Go-native replacement for the residual event-bus transition
+    contract, then delete the root Python test once parity is covered.
 
 ## Acceptance
 
@@ -123,6 +127,7 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/taskmemory`
 - `cd bigclaw-go && go test ./internal/runtimecompat`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
+- `cd bigclaw-go && go test ./internal/eventbuscompat`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
 
 ## Results
@@ -216,29 +221,33 @@ Repository inventory at start of lane:
   - Reason: its queue peeking, control-center rollup, and shared-view empty
     state contract is now covered directly in
     `bigclaw-go/internal/controlcentercompat/control_center_test.go`.
+- `tests/test_event_bus.py`
+  - Deleted.
+  - Reason: its event-bus transition and persisted ledger audit contract is now
+    covered directly in `bigclaw-go/internal/eventbuscompat/event_bus_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `19`
-- Net `tests/*.py` reduction: `19`
+- `tests/*.py` files after: `18`
+- Net `tests/*.py` reduction: `20`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `89`
-- Net repo `*.py` reduction: `19`
+- Repo `*.py` files after: `88`
+- Net repo `*.py` reduction: `20`
 - Repo `*.go` files before: `267`
-- Repo `*.go` files after: `275`
-- Net repo `*.go` increase: `8`
+- Repo `*.go` files after: `277`
+- Net repo `*.go` increase: `10`
 - Root `pyproject.toml`: absent before, absent after
 - Root `setup.py`: absent before, absent after
 
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `19`
+  - Result: `18`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `89`
+  - Result: `88`
 - `find . -name '*.go' | sort | wc -l`
-  - Result: `275`
+  - Result: `277`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
   - Result: `ok  	bigclaw-go/internal/product	2.711s`
 - `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths'`
@@ -272,8 +281,8 @@ Repository inventory at start of lane:
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result: `.symphony/workpad.md`, `tests/test_control_center.py` deleted,
-    and `bigclaw-go/internal/controlcentercompat/` added
+  - Result: `.symphony/workpad.md`, `tests/test_event_bus.py` deleted,
+    and `bigclaw-go/internal/eventbuscompat/` added
 - `cd bigclaw-go && go test ./internal/validationpolicy`
   - Result: `ok  	bigclaw-go/internal/validationpolicy	1.154s`
 - `cd bigclaw-go && go test ./internal/taskmemory`
@@ -282,3 +291,5 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/internal/runtimecompat	1.103s`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
   - Result: `ok  	bigclaw-go/internal/controlcentercompat	0.138s`
+- `cd bigclaw-go && go test ./internal/eventbuscompat`
+  - Result: `ok  	bigclaw-go/internal/eventbuscompat	0.469s`
