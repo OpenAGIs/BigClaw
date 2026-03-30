@@ -558,6 +558,61 @@ Repository inventory at start of lane:
   - `git diff --check`
     - Result: clean
 
+## BIG-GO-1014 Refill Sweep D Continuation 10
+
+### Plan
+
+- Merge the design system surface from `src/bigclaw/design_system.py` into
+  `src/bigclaw/ui_review.py`.
+- Update `src/bigclaw/__init__.py` to source design system exports from
+  `ui_review.py`, keep `console_ia` and `saved_views` compatibility modules
+  pointed at the merged surface, and install a compatibility
+  `bigclaw.design_system` submodule.
+- Validate with syntax checks plus a direct-load `ui_review.py` script that
+  exercises both design-system and UI-review exports.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve design-system and UI-review exports after the move.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/ui_review.py src/bigclaw/__init__.py`
+- `python3 - <<'PY' ... PY` direct-load `bigclaw.ui_review` and exercise
+  design-system plus UI-review builders and renderers
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
+### Results
+
+- Deleted `src/bigclaw/design_system.py`.
+- Merged the design-system surface into `src/bigclaw/ui_review.py`.
+- Updated `src/bigclaw/__init__.py` to source design-system exports from
+  `ui_review.py`, keep `console_ia` and `saved_views` compatibility surfaces
+  pointed at the merged module, and install a compatibility
+  `bigclaw.design_system` submodule.
+- Repository counts after continuation:
+  - total `py` files: `72`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `9`
+- Root manifest impact:
+  - `pyproject.toml`: absent
+  - `setup.py`: absent
+- Validation outcomes:
+  - `python3 -m compileall src/bigclaw/ui_review.py src/bigclaw/__init__.py`
+    - Result: success
+  - `python3 - <<'PY' ... PY`
+    - Result: direct-loaded `bigclaw.ui_review`, built and audited both the
+      UI-review pack and console IA surfaces, and printed
+      `True 4 100.0 True`
+  - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+    - Result: `PY 72`, `GO 267`, `SRC 9`
+  - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
+    - Result: `pyproject=1`, `setup=1`
+  - `git diff --check`
+    - Result: clean
+
 ## BIG-GO-1014 Refill Sweep D Continuation 9
 
 ### Plan

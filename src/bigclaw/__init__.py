@@ -234,7 +234,7 @@ _install_surface_module(
         "write_validation_report",
     ],
 )
-from .design_system import (
+from .ui_review import (
     AlertDigestSubscription,
     AuditRequirement,
     CommandAction,
@@ -287,6 +287,63 @@ from .design_system import (
     render_saved_view_report,
     render_ui_acceptance_report,
 )
+_install_surface_module(
+    "design_system",
+    sys.modules[f"{__name__}.ui_review"],
+    [
+        "AlertDigestSubscription",
+        "AuditRequirement",
+        "CommandAction",
+        "ComponentLibrary",
+        "ComponentSpec",
+        "ComponentVariant",
+        "ConsoleChromeLibrary",
+        "ConsoleCommandEntry",
+        "ConsoleIA",
+        "ConsoleIAAudit",
+        "ConsoleIAAuditor",
+        "ConsoleInteractionAudit",
+        "ConsoleInteractionAuditor",
+        "ConsoleInteractionDraft",
+        "ConsoleSurface",
+        "ConsoleTopBar",
+        "ConsoleTopBarAudit",
+        "DataAccuracyCheck",
+        "DesignSystem",
+        "DesignSystemAudit",
+        "DesignToken",
+        "FilterDefinition",
+        "GlobalAction",
+        "InformationArchitecture",
+        "InformationArchitectureAudit",
+        "NavigationItem",
+        "NavigationEntry",
+        "NavigationNode",
+        "NavigationRoute",
+        "PerformanceBudget",
+        "RolePermissionScenario",
+        "SavedView",
+        "SavedViewCatalog",
+        "SavedViewCatalogAudit",
+        "SavedViewFilter",
+        "SavedViewLibrary",
+        "UIAcceptanceAudit",
+        "UIAcceptanceLibrary",
+        "UIAcceptanceSuite",
+        "UsabilityJourney",
+        "SurfaceInteractionContract",
+        "SurfacePermissionRule",
+        "SurfaceState",
+        "build_big_4203_console_interaction_draft",
+        "render_console_interaction_report",
+        "render_console_ia_report",
+        "render_console_top_bar_report",
+        "render_design_system_report",
+        "render_information_architecture_report",
+        "render_saved_view_report",
+        "render_ui_acceptance_report",
+    ],
+)
 from .collaboration import (
     CollaborationComment,
     CollaborationThread,
@@ -296,7 +353,7 @@ from .collaboration import (
 )
 _install_surface_module(
     "console_ia",
-    sys.modules[f"{__name__}.design_system"],
+    sys.modules[f"{__name__}.ui_review"],
     [
         "ConsoleIA",
         "ConsoleIAAudit",
@@ -318,7 +375,7 @@ _install_surface_module(
 )
 _install_surface_module(
     "saved_views",
-    sys.modules[f"{__name__}.design_system"],
+    sys.modules[f"{__name__}.ui_review"],
     [
         "AlertDigestSubscription",
         "SavedView",
