@@ -558,6 +558,32 @@ Repository inventory at start of lane:
   - `git diff --check`
     - Result: clean
 
+## BIG-GO-1014 Refill Sweep D Continuation 11
+
+### Plan
+
+- Merge the UI-review surface from `src/bigclaw/ui_review.py` into
+  `src/bigclaw/repository.py`.
+- Update `src/bigclaw/__init__.py` to source UI-review and merged
+  design-system exports from `repository.py`, and install a compatibility
+  `bigclaw.ui_review` submodule backed by the merged surface.
+- Validate with syntax checks plus a direct-load `repository.py` script that
+  exercises both repository and UI-review exports without importing the shared
+  package root.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve UI-review and merged design-system exports after the move.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/repository.py src/bigclaw/__init__.py`
+- `python3 - <<'PY' ... PY` fake-package load `bigclaw.repository` and
+  exercise repository plus UI-review surfaces
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
 ## BIG-GO-1014 Refill Sweep D Continuation 10
 
 ### Plan
@@ -663,6 +689,81 @@ Repository inventory at start of lane:
       `execution contract merge validation ok`
   - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
     - Result: `PY 73`, `GO 267`, `SRC 10`
+  - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
+    - Result: `pyproject=1`, `setup=1`
+  - `git diff --check`
+    - Result: clean
+
+## BIG-GO-1014 Refill Sweep D Continuation 11
+
+### Plan
+
+- Finish the final consolidation pass for deleted residual module paths that
+  still had direct imports wired into the package root or surviving modules.
+- Keep the remaining `src/bigclaw` footprint at eight Python files by using
+  `__init__.py` compatibility submodules instead of restoring deleted files.
+- Revalidate the merged `collaboration`, `audit_events`, `dsl`, `run_detail`,
+  and `ui_review` surfaces plus the directly affected Go ownership packages.
+
+### Acceptance
+
+- Keep `src/bigclaw/*.py` reduced to `8`.
+- Preserve imports for deleted residual module names without reintroducing
+  module files.
+- Record exact validation commands and outcomes for the final continuation.
+
+### Validation
+
+- `python3 - <<'PY' ... PY` import-check `bigclaw` and
+  `bigclaw.collaboration`, `bigclaw.audit_events`, `bigclaw.dsl`,
+  `bigclaw.run_detail`, `bigclaw.ui_review`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_ui_review.py tests/test_audit_events.py tests/test_dsl.py tests/test_repo_collaboration.py tests/test_observability.py`
+- `cd bigclaw-go && go test ./internal/repo ./internal/governance ./internal/githubsync ./internal/issuearchive`
+- `python3 -m compileall src/bigclaw`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+- `find src/bigclaw -type f -name '*.go' | sort | wc -l`
+- `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
+- `git diff --check`
+
+### Results
+
+- Deleted residual files retained by this continuation:
+  - `src/bigclaw/audit_events.py`
+  - `src/bigclaw/collaboration.py`
+  - `src/bigclaw/dsl.py`
+  - `src/bigclaw/run_detail.py`
+  - `src/bigclaw/ui_review.py`
+- Updated `src/bigclaw/observability.py` to own the absorbed audit-event and
+  collaboration thread surfaces, including render helpers and merge logic.
+- Updated `src/bigclaw/planning.py` to remain the `WorkflowDefinition` /
+  `WorkflowStep` owner for the deleted `dsl` surface.
+- Updated `src/bigclaw/reports.py` to keep the absorbed run-detail renderer
+  behavior aligned with the legacy HTML contract.
+- Updated `src/bigclaw/runtime.py`, `src/bigclaw/repository.py`, and
+  `src/bigclaw/__init__.py` to remove direct imports of deleted files and
+  install compatibility submodules for the deleted module paths.
+- Repository counts after continuation:
+  - total `py` files: `72`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `8`
+- Root manifest impact:
+  - `pyproject.toml`: absent
+  - `setup.py`: absent
+- Validation outcomes:
+  - `python3 - <<'PY' ... PY`
+    - Result: imported `bigclaw` and compatibility paths
+      `bigclaw.collaboration`, `bigclaw.audit_events`, `bigclaw.dsl`,
+      `bigclaw.run_detail`, and `bigclaw.ui_review` successfully
+  - `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_ui_review.py tests/test_audit_events.py tests/test_dsl.py tests/test_repo_collaboration.py tests/test_observability.py`
+    - Result: `78 passed in 0.14s`
+  - `cd bigclaw-go && go test ./internal/repo ./internal/governance ./internal/githubsync ./internal/issuearchive`
+    - Result: `ok   bigclaw-go/internal/repo (cached)`, `ok   bigclaw-go/internal/governance (cached)`, `ok   bigclaw-go/internal/githubsync 3.578s`, `ok   bigclaw-go/internal/issuearchive (cached)`
+  - `python3 -m compileall src/bigclaw`
+    - Result: success
+  - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+    - Result: `8`
+  - `find src/bigclaw -type f -name '*.go' | sort | wc -l`
+    - Result: `0`
   - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
     - Result: `pyproject=1`, `setup=1`
   - `git diff --check`

@@ -234,7 +234,7 @@ _install_surface_module(
         "write_validation_report",
     ],
 )
-from .ui_review import (
+from .repository import (
     AlertDigestSubscription,
     AuditRequirement,
     CommandAction,
@@ -289,7 +289,7 @@ from .ui_review import (
 )
 _install_surface_module(
     "design_system",
-    sys.modules[f"{__name__}.ui_review"],
+    sys.modules[f"{__name__}.repository"],
     [
         "AlertDigestSubscription",
         "AuditRequirement",
@@ -344,16 +344,29 @@ _install_surface_module(
         "render_ui_acceptance_report",
     ],
 )
-from .collaboration import (
+from .observability import (
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
+    merge_collaboration_threads,
+)
+_install_surface_module(
+    "collaboration",
+    sys.modules[f"{__name__}.observability"],
+    [
+        "CollaborationComment",
+        "CollaborationThread",
+        "DecisionNote",
+        "build_collaboration_thread",
+        "build_collaboration_thread_from_audits",
+        "merge_collaboration_threads",
+    ],
 )
 _install_surface_module(
     "console_ia",
-    sys.modules[f"{__name__}.ui_review"],
+    sys.modules[f"{__name__}.repository"],
     [
         "ConsoleIA",
         "ConsoleIAAudit",
@@ -375,7 +388,7 @@ _install_surface_module(
 )
 _install_surface_module(
     "saved_views",
-    sys.modules[f"{__name__}.ui_review"],
+    sys.modules[f"{__name__}.repository"],
     [
         "AlertDigestSubscription",
         "SavedView",
@@ -388,8 +401,13 @@ _install_surface_module(
 )
 _install_surface_module("risk", sys.modules[f"{__name__}.models"], ["BudgetDecision", "CostController", "RiskFactor", "RiskScore", "RiskScorer"])
 _install_surface_module("cost_control", sys.modules[f"{__name__}.models"], ["BudgetDecision", "CostController"])
-from .dsl import WorkflowDefinition, WorkflowStep
-from .audit_events import (
+from .planning import WorkflowDefinition, WorkflowStep
+_install_surface_module(
+    "dsl",
+    sys.modules[f"{__name__}.planning"],
+    ["WorkflowDefinition", "WorkflowStep"],
+)
+from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
@@ -412,6 +430,21 @@ from .observability import (
     RepoSyncAudit,
     RunCloseout,
     TaskRun,
+)
+_install_surface_module(
+    "audit_events",
+    sys.modules[f"{__name__}.observability"],
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "AuditEventSpec",
+        "BUDGET_OVERRIDE_EVENT",
+        "FLOW_HANDOFF_EVENT",
+        "MANUAL_TAKEOVER_EVENT",
+        "P0_AUDIT_EVENT_SPECS",
+        "SCHEDULER_DECISION_EVENT",
+        "get_audit_event_spec",
+        "missing_required_fields",
+    ],
 )
 _install_surface_module(
     "event_bus",
@@ -560,6 +593,19 @@ _install_surface_module(
     ],
 )
 _install_surface_module(
+    "run_detail",
+    sys.modules[f"{__name__}.reports"],
+    [
+        "RunDetailEvent",
+        "RunDetailResource",
+        "RunDetailStat",
+        "RunDetailTab",
+        "render_resource_grid",
+        "render_run_detail_console",
+        "render_timeline_panel",
+    ],
+)
+_install_surface_module(
     "pilot",
     sys.modules[f"{__name__}.reports"],
     ["PilotImplementationResult", "PilotKPI", "render_pilot_implementation_report"],
@@ -683,7 +729,7 @@ _install_surface_module(
         "render_scope_freeze_report",
     ],
 )
-from .ui_review import (
+from .repository import (
     InteractionFlow,
     OpenQuestion,
     ReviewBlocker,
@@ -734,6 +780,62 @@ from .ui_review import (
     render_ui_review_signoff_log,
     render_ui_review_pack_report,
     write_ui_review_pack_bundle,
+)
+_install_surface_module(
+    "ui_review",
+    sys.modules[f"{__name__}.repository"],
+    [
+        "InteractionFlow",
+        "OpenQuestion",
+        "ReviewBlocker",
+        "ReviewBlockerEvent",
+        "ReviewDecision",
+        "ReviewObjective",
+        "ReviewRoleAssignment",
+        "ReviewSignoff",
+        "ReviewerChecklistItem",
+        "UIReviewPack",
+        "UIReviewPackArtifacts",
+        "UIReviewPackAudit",
+        "UIReviewPackAuditor",
+        "WireframeSurface",
+        "build_big_4204_review_pack",
+        "render_ui_review_blocker_log",
+        "render_ui_review_blocker_timeline",
+        "render_ui_review_blocker_timeline_summary",
+        "render_ui_review_escalation_dashboard",
+        "render_ui_review_escalation_handoff_ledger",
+        "render_ui_review_exception_log",
+        "render_ui_review_exception_matrix",
+        "render_ui_review_freeze_approval_trail",
+        "render_ui_review_freeze_exception_board",
+        "render_ui_review_freeze_renewal_tracker",
+        "render_ui_review_handoff_ack_ledger",
+        "render_ui_review_interaction_coverage_board",
+        "render_ui_review_objective_coverage_board",
+        "render_ui_review_open_question_tracker",
+        "render_ui_review_owner_escalation_digest",
+        "render_ui_review_persona_readiness_board",
+        "render_ui_review_review_summary_board",
+        "render_ui_review_owner_review_queue",
+        "render_ui_review_owner_workload_board",
+        "render_ui_review_checklist_traceability_board",
+        "render_ui_review_decision_followup_tracker",
+        "render_ui_review_audit_density_board",
+        "render_ui_review_reminder_cadence_board",
+        "render_ui_review_role_coverage_board",
+        "render_ui_review_wireframe_readiness_board",
+        "render_ui_review_signoff_breach_board",
+        "render_ui_review_signoff_dependency_board",
+        "render_ui_review_signoff_reminder_queue",
+        "render_ui_review_signoff_sla_dashboard",
+        "render_ui_review_decision_log",
+        "render_ui_review_pack_html",
+        "render_ui_review_role_matrix",
+        "render_ui_review_signoff_log",
+        "render_ui_review_pack_report",
+        "write_ui_review_pack_bundle",
+    ],
 )
 
 __all__ = [
