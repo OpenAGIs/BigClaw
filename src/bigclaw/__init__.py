@@ -4,6 +4,7 @@ import types
 from . import connectors as _connectors_surface
 from . import repo_gateway as _repo_gateway_surface
 from . import repo_plane as _repo_plane_surface
+from . import workspace_bootstrap as _workspace_bootstrap_surface
 from .models import (
     BillingInterval,
     BillingRate,
@@ -122,6 +123,25 @@ _install_compat_surface_module(
         "build_github_sync_args",
         "build_refill_args",
         "build_workspace_runtime_bootstrap_args",
+    ],
+)
+_install_compat_surface_module(
+    "workspace_bootstrap_cli",
+    _workspace_bootstrap_surface,
+    [
+        "build_parser",
+        "emit",
+        "main",
+    ],
+    DEFAULT_CACHE_BASE="~/.cache/symphony/repos",
+)
+_install_compat_surface_module(
+    "workspace_bootstrap_validation",
+    _workspace_bootstrap_surface,
+    [
+        "build_validation_report",
+        "render_validation_markdown",
+        "write_validation_report",
     ],
 )
 _install_compat_surface_module(

@@ -13,6 +13,7 @@ Batch file list:
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/planning.py`
 - `src/bigclaw/runtime.py`
+- `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -21,6 +22,8 @@ Batch file list:
 - `src/bigclaw/roadmap.py`
 - `src/bigclaw/deprecation.py`
 - `src/bigclaw/cost_control.py`
+- `src/bigclaw/workspace_bootstrap_cli.py`
+- `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_triage.py`
 - `src/bigclaw/mapping.py`
@@ -34,6 +37,7 @@ Batch file list:
 - `tests/test_validation_policy.py`
 - `tests/test_repo_governance.py`
 - `tests/test_repo_triage.py`
+- `tests/test_workspace_bootstrap.py`
 - `bigclaw-go/internal/legacyshim/compilecheck.go`
 - `bigclaw-go/internal/legacyshim/compilecheck_test.go`
 - `bigclaw-go/cmd/bigclawctl/main_test.go`
@@ -76,6 +80,9 @@ Selected tranche rationale:
 - `legacy_shim.py` still fronts multiple Python operator wrappers, but its
   logic is self-contained and can be folded into `runtime.py` if the frozen Go
   compile-check list and repository docs are updated in the same batch.
+- `workspace_bootstrap_cli.py` and `workspace_bootstrap_validation.py` are thin
+  wrappers around `workspace_bootstrap.py` and can be folded into that owning
+  module without widening scope.
 
 ## Plan
 
@@ -121,6 +128,13 @@ Selected tranche rationale:
     `src/bigclaw/legacy_shim.py`.
 24. Run targeted Python and Go validation for the sixth consolidation batch and
     push a follow-up commit.
+25. Fold `workspace_bootstrap_cli.py` into `workspace_bootstrap.py` and
+    preserve `bigclaw.workspace_bootstrap_cli` compatibility via `__init__.py`.
+26. Fold `workspace_bootstrap_validation.py` into `workspace_bootstrap.py` and
+    preserve `bigclaw.workspace_bootstrap_validation` compatibility via
+    `__init__.py`.
+27. Run targeted workspace bootstrap validation for the seventh consolidation
+    batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -152,6 +166,12 @@ Selected tranche rationale:
   `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.legacy_shim import run_bigclawctl_shim`
+  `print("ok")`
+  `PY`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.workspace_bootstrap_cli import build_parser`
+  `from bigclaw.workspace_bootstrap_validation import build_validation_report`
   `print("ok")`
   `PY`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
@@ -293,6 +313,16 @@ Selected tranche rationale:
   - Replaced.
   - Reason: removed the deleted file path from the frozen validation command
     list.
+- `src/bigclaw/workspace_bootstrap.py`
+  - Replaced again.
+  - Reason: absorbed the workspace bootstrap CLI and validation helper surface
+    so all shared bootstrap behavior now lives in the owning bootstrap module.
+- `src/bigclaw/workspace_bootstrap_cli.py`
+  - Deleted.
+  - Reason: its contents moved into `workspace_bootstrap.py`.
+- `src/bigclaw/workspace_bootstrap_validation.py`
+  - Deleted.
+  - Reason: its contents moved into `workspace_bootstrap.py`.
 
 ### Inventory Impact
 
@@ -303,7 +333,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 4: `36`
 - `src/bigclaw/**/*.py` after batch 5: `34`
 - `src/bigclaw/**/*.py` after batch 6: `33`
-- Net Python module reduction in tranche so far: `12`
+- `src/bigclaw/**/*.py` after batch 7: `31`
+- Net Python module reduction in tranche so far: `14`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -367,3 +398,11 @@ Selected tranche rationale:
   - Result: `3 passed in 0.07s`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 6: `33`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py`
+  - Result: `9 passed in 3.20s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on workspace bootstrap compatibility modules
+  - Result: `ok`
+- `python3 -m py_compile src/bigclaw/workspace_bootstrap.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py`
+  - Result: exit `0`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 7: `31`
