@@ -29,6 +29,54 @@ from .risk import RiskScore, RiskScorer
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
 GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/worker/runtime.go"
+LEGACY_RUNTIME_BATCH_INVENTORY: Tuple[Dict[str, str], ...] = (
+    {
+        "logical_surface": "runtime",
+        "physical_python_file": "src/bigclaw/runtime.py",
+        "status": "kept",
+        "go_replacement": GO_MAINLINE_REPLACEMENT,
+        "rationale": "owns the last local compatibility implementation for the frozen Python runtime surface",
+    },
+    {
+        "logical_surface": "queue",
+        "physical_python_file": "src/bigclaw/runtime.py",
+        "status": "re-exported",
+        "go_replacement": "bigclaw-go/internal/queue/queue.go",
+        "rationale": "queue compatibility imports are projected from runtime.py via package shims",
+    },
+    {
+        "logical_surface": "orchestration",
+        "physical_python_file": "src/bigclaw/runtime.py",
+        "status": "re-exported",
+        "go_replacement": "bigclaw-go/internal/workflow/orchestration.go",
+        "rationale": "orchestration compatibility imports are projected from runtime.py via package shims",
+    },
+    {
+        "logical_surface": "scheduler",
+        "physical_python_file": "src/bigclaw/runtime.py",
+        "status": "re-exported",
+        "go_replacement": "bigclaw-go/internal/scheduler/scheduler.go",
+        "rationale": "scheduler compatibility imports are projected from runtime.py via package shims",
+    },
+    {
+        "logical_surface": "workflow",
+        "physical_python_file": "src/bigclaw/runtime.py",
+        "status": "re-exported",
+        "go_replacement": "bigclaw-go/internal/workflow/engine.go",
+        "rationale": "workflow compatibility imports are projected from runtime.py via package shims",
+    },
+    {
+        "logical_surface": "service",
+        "physical_python_file": "src/bigclaw/runtime.py",
+        "status": "re-exported",
+        "go_replacement": "bigclaw-go/cmd/bigclawd/main.go",
+        "rationale": "service compatibility imports are projected from runtime.py via package shims",
+    },
+)
+
+
+def legacy_runtime_batch_inventory() -> List[Dict[str, str]]:
+    return [dict(item) for item in LEGACY_RUNTIME_BATCH_INVENTORY]
 
 
 @dataclass

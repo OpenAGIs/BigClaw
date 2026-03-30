@@ -1,5 +1,9 @@
+import importlib
+from pathlib import Path
+
 from bigclaw.models import RiskLevel, Task
 from bigclaw.observability import TaskRun
+from bigclaw import runtime as legacy_runtime
 from bigclaw.runtime import ClawWorkerRuntime, ToolPolicy, ToolRuntime
 from bigclaw.scheduler import Scheduler
 
@@ -65,3 +69,34 @@ def test_big303_tool_runtime_policy_and_audit_chain():
     outcomes = [audit.outcome for audit in run.audits if audit.action == "tool.invoke"]
     assert "success" in outcomes
     assert "blocked" in outcomes
+
+
+def test_big_go_1003_runtime_batch_inventory_is_single_file_residual():
+    inventory = legacy_runtime.legacy_runtime_batch_inventory()
+
+    assert [item["logical_surface"] for item in inventory] == [
+        "runtime",
+        "queue",
+        "orchestration",
+        "scheduler",
+        "workflow",
+        "service",
+    ]
+    assert {item["physical_python_file"] for item in inventory} == {"src/bigclaw/runtime.py"}
+    assert Path("src/bigclaw/runtime.py").exists()
+    assert inventory[0]["status"] == "kept"
+    assert all(item["go_replacement"].startswith("bigclaw-go/") for item in inventory)
+
+
+def test_big_go_1003_legacy_surface_modules_reexport_runtime_objects():
+    queue = importlib.import_module("bigclaw.queue")
+    orchestration = importlib.import_module("bigclaw.orchestration")
+    scheduler = importlib.import_module("bigclaw.scheduler")
+    workflow = importlib.import_module("bigclaw.workflow")
+    service = importlib.import_module("bigclaw.service")
+
+    assert queue.PersistentTaskQueue is legacy_runtime.PersistentTaskQueue
+    assert orchestration.CrossDepartmentOrchestrator is legacy_runtime.CrossDepartmentOrchestrator
+    assert scheduler.Scheduler is legacy_runtime.Scheduler
+    assert workflow.WorkflowEngine is legacy_runtime.WorkflowEngine
+    assert service.create_server is legacy_runtime.create_server

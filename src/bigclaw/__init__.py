@@ -25,6 +25,10 @@ from .models import (
 )
 from . import runtime as _legacy_runtime_surface
 
+_LEGACY_RUNTIME_BATCH_BY_SURFACE = {
+    item["logical_surface"]: item for item in _legacy_runtime_surface.LEGACY_RUNTIME_BATCH_INVENTORY
+}
+
 
 def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
@@ -39,7 +43,7 @@ _install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/queue/queue.go",
+    GO_MAINLINE_REPLACEMENT=_LEGACY_RUNTIME_BATCH_BY_SURFACE["queue"]["go_replacement"],
 )
 _install_legacy_surface_module(
     "orchestration",
@@ -53,19 +57,19 @@ _install_legacy_surface_module(
         "render_orchestration_plan",
     ],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
+    GO_MAINLINE_REPLACEMENT=_LEGACY_RUNTIME_BATCH_BY_SURFACE["orchestration"]["go_replacement"],
 )
 _install_legacy_surface_module(
     "scheduler",
     ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/scheduler/scheduler.go",
+    GO_MAINLINE_REPLACEMENT=_LEGACY_RUNTIME_BATCH_BY_SURFACE["scheduler"]["go_replacement"],
 )
 _install_legacy_surface_module(
     "workflow",
     ["AcceptanceDecision", "AcceptanceGate", "JournalEntry", "WorkflowEngine", "WorkflowRunResult", "WorkpadJournal"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
+    GO_MAINLINE_REPLACEMENT=_LEGACY_RUNTIME_BATCH_BY_SURFACE["workflow"]["go_replacement"],
 )
 _install_legacy_surface_module(
     "service",
@@ -82,7 +86,7 @@ _install_legacy_surface_module(
         "bigclaw-go is the sole implementation mainline for active development; "
         "service.py remains migration-only compatibility scaffolding."
     ),
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+    GO_MAINLINE_REPLACEMENT=_LEGACY_RUNTIME_BATCH_BY_SURFACE["service"]["go_replacement"],
 )
 
 from .runtime import (
