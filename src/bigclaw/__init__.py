@@ -80,7 +80,7 @@ _install_legacy_surface_module(
     ],
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "service.py remains migration-only compatibility scaffolding."
+        "runtime.py remains migration-only compatibility scaffolding for the legacy service surface."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )

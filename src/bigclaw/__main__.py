@@ -5,7 +5,7 @@ from pathlib import Path
 from .deprecation import warn_legacy_runtime_surface
 from .observability import RepoSyncAudit
 from .reports import render_repo_sync_audit_report, write_report
-from .service import run_server
+from .runtime import run_server
 
 
 def main() -> None:
