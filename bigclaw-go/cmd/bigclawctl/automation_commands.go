@@ -219,7 +219,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate|broker-failover-stub-matrix|mixed-workload-matrix> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate|broker-failover-stub-matrix|mixed-workload-matrix|cross-process-coordination-surface> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -235,6 +235,8 @@ func runAutomationE2E(args []string) error {
 		return runAutomationBrokerFailoverStubMatrixCommand(args[1:])
 	case "mixed-workload-matrix":
 		return runAutomationMixedWorkloadMatrixCommand(args[1:])
+	case "cross-process-coordination-surface":
+		return runAutomationCrossProcessCoordinationSurfaceCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation e2e subcommand: %s", args[0])
 	}
