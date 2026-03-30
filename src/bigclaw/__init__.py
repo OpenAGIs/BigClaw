@@ -125,6 +125,32 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
+from . import operations as _legacy_operations_surface
+_install_legacy_surface_module(
+    "execution_contract",
+    [
+        "AuditPolicy",
+        "build_operations_api_contract",
+        "ExecutionApiSpec",
+        "ExecutionContract",
+        "ExecutionContractAudit",
+        "ExecutionContractLibrary",
+        "ExecutionField",
+        "ExecutionModel",
+        "ExecutionPermission",
+        "ExecutionPermissionMatrix",
+        "ExecutionRole",
+        "MetricDefinition",
+        "PermissionCheckResult",
+        "render_execution_contract_report",
+    ],
+    source_module=_legacy_operations_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "execution_contract.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -194,22 +220,6 @@ from .observability import (
     TASK_FAILED_EVENT,
     TaskRun,
 )
-from .execution_contract import (
-    AuditPolicy,
-    build_operations_api_contract,
-    ExecutionApiSpec,
-    ExecutionContract,
-    ExecutionContractAudit,
-    ExecutionContractLibrary,
-    ExecutionField,
-    ExecutionModel,
-    ExecutionPermission,
-    ExecutionPermissionMatrix,
-    ExecutionRole,
-    MetricDefinition,
-    PermissionCheckResult,
-    render_execution_contract_report,
-)
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
@@ -273,6 +283,8 @@ from .reports import (
     write_report_studio_bundle,
 )
 from .operations import (
+    AuditPolicy,
+    build_operations_api_contract,
     DashboardBuilder,
     DashboardBuilderAudit,
     DashboardLayout,
@@ -284,11 +296,22 @@ from .operations import (
     EngineeringOverviewBlocker,
     EngineeringOverviewKPI,
     EngineeringOverviewPermission,
+    ExecutionApiSpec,
+    ExecutionContract,
+    ExecutionContractAudit,
+    ExecutionContractLibrary,
+    ExecutionField,
+    ExecutionModel,
+    ExecutionPermission,
+    ExecutionPermissionMatrix,
+    ExecutionRole,
+    MetricDefinition,
     OperationsAnalytics,
     OperationsMetricDefinition,
     OperationsMetricSpec,
     OperationsMetricValue,
     OperationsSnapshot,
+    PermissionCheckResult,
     PolicyPromptVersionCenter,
     RegressionFinding,
     RegressionCenter,
@@ -301,6 +324,7 @@ from .operations import (
     WeeklyOperationsReport,
     render_dashboard_builder_report,
     render_engineering_overview,
+    render_execution_contract_report,
     render_operations_metric_spec,
     render_operations_dashboard,
     render_policy_prompt_version_center,

@@ -81,6 +81,9 @@ Follow-on refactor now queued:
 - Inline the small `src/bigclaw/governance.py` surface into
   `src/bigclaw/planning.py` if its remaining consumers stay limited to
   planning, tests, and package exports.
+- Inline the isolated `src/bigclaw/execution_contract.py` surface into
+  `src/bigclaw/operations.py` if it remains limited to tests and package
+  exports, since its concrete builder already targets the operations API.
 
 ## Plan
 
@@ -677,6 +680,53 @@ Follow-on refactor now queued:
   - Result: `13`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `61`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+
+### Follow-on tranche 19
+
+- `src/bigclaw/execution_contract.py`
+  - Deleted.
+  - Reason: the execution-contract surface had no remaining in-repo runtime
+    consumers beyond tests and package exports, and its concrete builder is an
+    operations contract now owned in `src/bigclaw/operations.py`.
+- `src/bigclaw/operations.py`
+  - Updated.
+  - Reason: now owns the execution-contract dataclasses, audit library,
+    permission matrix, report renderer, and `build_operations_api_contract`.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: installs a `bigclaw.execution_contract` compatibility module backed
+    by the operations surface and re-exports the moved contract symbols from
+    there.
+
+### Follow-on tranche 19 inventory
+
+- `src/bigclaw` Python files after tranche 19: `12`
+- Repository-wide Python files after tranche 19: `60`
+- Net repository-wide Python reduction: `48`
+- `bigclaw-go` Go files after tranche 19: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 19 validation
+
+- `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py tests/test_execution_contract.py tests/test_operations.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_execution_contract.py tests/test_operations.py`
+  - Result: `27 passed in 0.06s`
+- `PYTHONPATH=src python3 - <<'PY'` with `from bigclaw.execution_contract import build_operations_api_contract, ExecutionContractLibrary`
+  - Result: last API entry is `GET /operations/billing/entitlements` and `audit.release_ready` is `True`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `12`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `60`
 - `find bigclaw-go -type f -name '*.go' | wc -l`
   - Result: `267`
 - `test -f pyproject.toml && echo present || echo absent`
