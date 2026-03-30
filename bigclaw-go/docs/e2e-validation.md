@@ -63,7 +63,7 @@ You can then refresh the rolling continuation overlay from the checked-in bundle
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
+bash scripts/e2e/validation-bundle-continuation-scorecard --pretty
 ```
 
 This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` refreshes the scorecard automatically during closeout.

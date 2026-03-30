@@ -2,6 +2,7 @@ Issue: BIG-GO-1020
 
 Plan
 - Inspect repository-level Python residue and pick a narrow slice that lowers the `.py` file count without changing core product behavior.
+- Port `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` to a Go-native command plus shell wrapper, then remove the Python entrypoint.
 - Port `bigclaw-go/scripts/e2e/mixed_workload_matrix.py` to a Go-native command plus shell wrapper, then remove the Python entrypoint.
 - Port `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` to a Go-native command plus shell wrapper, then remove the Python entrypoint.
 - Replace the five `scripts/ops/*.py` operator compatibility shims with shell wrappers that dispatch into `scripts/ops/bigclawctl`, preserving the existing wrapper behavior for `github-sync`, `refill`, and workspace commands.
@@ -33,7 +34,9 @@ Validation
 - `BIGCLAW_BOOTSTRAP_REPO_URL=git@github.com:OpenAGIs/BigClaw.git BIGCLAW_BOOTSTRAP_CACHE_KEY=openagis-bigclaw bash scripts/ops/bigclaw-workspace-bootstrap --help`
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
 - `cd bigclaw-go && go test ./internal/regression -run ValidationBundleContinuationPolicyGate`
+- `cd bigclaw-go && go test ./internal/regression -run ValidationBundleContinuationScorecard`
 - `cd bigclaw-go && go test ./internal/regression -run RunAllScript`
+- `bash bigclaw-go/scripts/e2e/validation-bundle-continuation-scorecard --help`
 - `bash bigclaw-go/scripts/e2e/validation-bundle-continuation-policy-gate --help`
 - `cd bigclaw-go && go test ./internal/regression -run MixedWorkloadMatrix`
 - `bash bigclaw-go/scripts/e2e/mixed-workload-matrix --help`

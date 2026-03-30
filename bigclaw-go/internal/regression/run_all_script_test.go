@@ -91,15 +91,16 @@ with calls_path.open('a', encoding='utf-8') as handle:
     handle.write(json.dumps(payload) + '\n')
 `)
 
-		writeFile("scripts/e2e/validation_bundle_continuation_scorecard.py", `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+		writeFile("scripts/e2e/validation-bundle-continuation-scorecard", `#!/usr/bin/env bash
+set -euo pipefail
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+  if [[ "${args[$i]}" == "--output" ]]; then
+    output="${args[$((i + 1))]}"
+  fi
+done
+mkdir -p "$(dirname "$output")"
+printf '{"summary":{},"shared_queue_companion":{"available":true}}' >"$output"
 `)
 
 		writeFile("scripts/e2e/validation-bundle-continuation-policy-gate", `#!/usr/bin/env bash

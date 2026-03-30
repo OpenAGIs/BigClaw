@@ -7,6 +7,7 @@ Issue: `BIG-GO-902`
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/validation-bundle-continuation-scorecard` | `go run ./scripts/e2e/validationscorecard ...` | migrated with shell compatibility wrapper |
 | `bigclaw-go/scripts/e2e/validation-bundle-continuation-policy-gate` | `go run ./scripts/e2e/validationgate ...` | migrated with shell compatibility wrapper |
 | `bigclaw-go/scripts/e2e/mixed-workload-matrix` | `go run ./scripts/e2e/mixedworkload ...` | migrated with shell compatibility wrapper |
 | `bigclaw-go/scripts/benchmark/soak-local` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with shell compatibility wrapper |
@@ -18,7 +19,6 @@ Issue: `BIG-GO-902`
 ## Remaining Python Script Backlog
 
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
