@@ -109,6 +109,25 @@ _install_legacy_surface_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
 _install_legacy_surface_module(
+    "collaboration",
+    [
+        "CollaborationComment",
+        "CollaborationThread",
+        "DecisionNote",
+        "build_collaboration_thread",
+        "build_collaboration_thread_from_audits",
+        "merge_collaboration_threads",
+        "render_collaboration_lines",
+        "render_collaboration_panel_html",
+    ],
+    source_module=_legacy_observability_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "collaboration.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
+_install_legacy_surface_module(
     "audit_events",
     [
         "APPROVAL_RECORDED_EVENT",
@@ -208,12 +227,15 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .collaboration import (
+from .observability import (
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
+    merge_collaboration_threads,
+    render_collaboration_lines,
+    render_collaboration_panel_html,
 )
 from .observability import (
     APPROVAL_RECORDED_EVENT,
@@ -451,6 +473,9 @@ __all__ = [
     "DecisionNote",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
+    "merge_collaboration_threads",
+    "render_collaboration_lines",
+    "render_collaboration_panel_html",
     "APPROVAL_RECORDED_EVENT",
     "BUDGET_OVERRIDE_EVENT",
     "FLOW_HANDOFF_EVENT",

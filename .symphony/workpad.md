@@ -938,3 +938,72 @@ Follow-on refactor now queued:
   - Result: `absent`
 - `git diff --check`
   - Result: success
+
+### Follow-on tranche 23 queued
+
+- Target `src/bigclaw/collaboration.py` next.
+- Reason: the collaboration surface is only consumed by
+  `observability.py`, `reports.py`, package exports, and focused tests; moving
+  it into `observability.py` keeps the import graph acyclic because
+  `reports.py` already imports observability while observability does not
+  import reports.
+- Planned edits:
+  - Move the collaboration dataclasses and helper/render functions into
+    `src/bigclaw/observability.py`.
+  - Repoint `src/bigclaw/reports.py` to import collaboration symbols from
+    observability.
+  - Install a `bigclaw.collaboration` compatibility shim in
+    `src/bigclaw/__init__.py`.
+  - Delete `src/bigclaw/collaboration.py`.
+
+### Follow-on tranche 23
+
+- `src/bigclaw/collaboration.py`
+  - Deleted.
+  - Reason: the collaboration surface only fed observability, reports, package
+    exports, and focused tests, so it could be absorbed into the active
+    observability module without creating an import cycle.
+- `src/bigclaw/observability.py`
+  - Updated.
+  - Reason: now owns `CollaborationComment`, `DecisionNote`,
+    `CollaborationThread`, `build_collaboration_thread`,
+    `merge_collaboration_threads`, `build_collaboration_thread_from_audits`,
+    `render_collaboration_lines`, and `render_collaboration_panel_html`.
+- `src/bigclaw/reports.py`
+  - Updated.
+  - Reason: imports the collaboration surface from observability instead of the
+    deleted module.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: installs a `bigclaw.collaboration` compatibility module backed by
+    observability and re-exports the moved collaboration symbols there.
+
+### Follow-on tranche 23 inventory
+
+- `src/bigclaw` Python files after tranche 23: `8`
+- Repository-wide Python files after tranche 23: `56`
+- Net repository-wide Python reduction: `52`
+- `bigclaw-go` Go files after tranche 23: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 23 validation
+
+- `python3 -m py_compile src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/__init__.py tests/test_observability.py tests/test_reports.py tests/test_repo_collaboration.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_reports.py tests/test_repo_collaboration.py`
+  - Result: `42 passed in 0.07s`
+- `PYTHONPATH=src python3 - <<'PY'` with `from bigclaw.collaboration import CollaborationComment, merge_collaboration_threads` and `from bigclaw.observability import DecisionNote, build_collaboration_thread`
+  - Result: `CollaborationComment merged`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `8`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `56`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success

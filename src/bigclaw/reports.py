@@ -6,13 +6,16 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from .collaboration import (
+from .observability import (
     CollaborationThread,
     build_collaboration_thread_from_audits,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
     render_collaboration_lines,
     render_collaboration_panel_html,
+    RepoSyncAudit,
+    TaskRun,
 )
-from .observability import FLOW_HANDOFF_EVENT, MANUAL_TAKEOVER_EVENT, RepoSyncAudit, TaskRun
 from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
