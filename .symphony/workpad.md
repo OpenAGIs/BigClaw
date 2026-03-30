@@ -1,11 +1,11 @@
 # BIG-GO-1018
 
 ## Plan
-- Migrate the next scoped residual `tests/**` tranche for the pilot rollout scorecard and repo evidence exports.
-- Port that narrow Python rollout/reporting slice into a dedicated Go package instead of the full planning surface.
-- Remove `tests/test_repo_rollout.py` after validating the new Go package tests.
+- Migrate the next scoped residual `tests/**` tranche for the benchmark/replay evaluation surface.
+- Port the narrow Python benchmark runner and replay report helpers into a dedicated Go package with simple file outputs.
+- Remove `tests/test_evaluation.py` after validating the new Go package tests.
 - Remove the migrated Python test file from `tests/`.
-- Run targeted Go tests for `bigclaw-go/internal/rollout`, capture exact commands and results, then commit and push the branch.
+- Run targeted Go tests for `bigclaw-go/internal/evaluation`, capture exact commands and results, then commit and push the branch.
 
 ## Acceptance
 - Changes stay scoped to this issue's residual `tests/**` tranche.
@@ -14,16 +14,22 @@
 - Final report includes impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
 
 ## Validation
-- `go test ./internal/rollout`
+- `go test ./internal/evaluation`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
 - `git status --short`
 
 ## Results
-- `cd bigclaw-go && go test ./internal/rollout` -> `ok  	bigclaw-go/internal/rollout	1.447s`
-- `find . -name '*.py' | wc -l` -> `78`
-- `find . -name '*.go' | wc -l` -> `275`
-- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/rollout/rollout.go` and `bigclaw-go/internal/rollout/rollout_test.go` added; `tests/test_repo_rollout.py` deleted
+- Current tranche: `cd bigclaw-go && go test ./internal/evaluation` -> `ok  	bigclaw-go/internal/evaluation	1.099s`
+- Current tranche: `find . -name '*.py' | wc -l` -> `77`
+- Current tranche: `find . -name '*.go' | wc -l` -> `277`
+- Current tranche: `git status --short` -> `M .symphony/workpad.md`; `D tests/test_evaluation.py`; `?? bigclaw-go/internal/evaluation/`
+- Current tranche impact: `py files` decreased from `78` to `77`; `go files` increased from `275` to `277`; `pyproject.toml` absent and unchanged; `setup.py` absent and unchanged
+- Current tranche status: `.symphony/workpad.md` modified; `bigclaw-go/internal/evaluation/evaluation.go` and `bigclaw-go/internal/evaluation/evaluation_test.go` added; `tests/test_evaluation.py` deleted
+- Previous completed tranche: `cd bigclaw-go && go test ./internal/rollout` -> `ok  	bigclaw-go/internal/rollout	1.447s`
+- Previous completed tranche: `find . -name '*.py' | wc -l` -> `78`
+- Previous completed tranche: `find . -name '*.go' | wc -l` -> `275`
+- Previous completed tranche status: `.symphony/workpad.md` modified; `bigclaw-go/internal/rollout/rollout.go` and `bigclaw-go/internal/rollout/rollout_test.go` added; `tests/test_repo_rollout.py` deleted
 - Previous completed tranche: `cd bigclaw-go && go test ./internal/runbus` -> `ok  	bigclaw-go/internal/runbus	0.446s`
 - Previous completed tranche: `find . -name '*.py' | wc -l` -> `79`
 - Previous completed tranche: `find . -name '*.go' | wc -l` -> `273`
