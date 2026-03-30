@@ -15,6 +15,7 @@ Batch file list:
 - `src/bigclaw/runtime.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/memory.py`
+- `src/bigclaw/issue_archive.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -107,6 +108,9 @@ Selected tranche rationale:
 - `memory.py` is an isolated task-pattern persistence helper that operates on
   planning fields already present on `Task`, so it can be folded into
   `planning.py` without widening into unrelated runtime or UI surfaces.
+- `issue_archive.py` is a report-oriented archival/audit surface and fits
+  naturally into `reports.py`, which already owns adjacent reporting and
+  closeout structures.
 
 ## Plan
 
@@ -185,6 +189,10 @@ Selected tranche rationale:
     compatibility via `__init__.py`.
 40. Run targeted planning/memory validation for the twelfth consolidation batch
     and push a follow-up commit.
+41. Fold `issue_archive.py` into `reports.py` and preserve
+    `bigclaw.issue_archive` compatibility via `__init__.py`.
+42. Run targeted report/archive validation for the thirteenth consolidation
+    batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -230,6 +238,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_event_bus.py tests/test_observability.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_runtime_matrix.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_memory.py tests/test_planning.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.issue_archive import IssuePriorityArchivist, IssuePriorityArchive`
+  `print(IssuePriorityArchivist.__name__, IssuePriorityArchive.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.risk import RiskScorer`
   `from bigclaw.audit_events import SCHEDULER_DECISION_EVENT`
@@ -456,6 +469,18 @@ Selected tranche rationale:
 - `src/bigclaw/memory.py`
   - Deleted.
   - Reason: its contents moved into `planning.py`.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: absorbed issue-priority archive models, audit logic, and markdown
+    rendering so report generation and archive closeout summaries live in one
+    module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.issue_archive` compatibility submodule while
+    continuing to export the archive surface from the package root.
+- `src/bigclaw/issue_archive.py`
+  - Deleted.
+  - Reason: its contents moved into `reports.py`.
 
 ### Inventory Impact
 
@@ -472,7 +497,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 10: `26`
 - `src/bigclaw/**/*.py` after batch 11: `25`
 - `src/bigclaw/**/*.py` after batch 12: `24`
-- Net Python module reduction in tranche so far: `21`
+- `src/bigclaw/**/*.py` after batch 13: `23`
+- Net Python module reduction in tranche so far: `22`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -574,3 +600,9 @@ Selected tranche rationale:
   - Result: `TaskMemoryStore MemoryPattern`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 12: `24`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
+  - Result: `34 passed in 0.09s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.issue_archive` / root archive exports
+  - Result: `IssuePriorityArchivist IssuePriorityArchive ArchivedIssue`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 13: `23`

@@ -275,7 +275,7 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .issue_archive import (
+from .reports import (
     ArchivedIssue,
     IssuePriorityArchive,
     IssuePriorityArchiveAudit,
@@ -515,6 +515,17 @@ from .planning import (
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+)
+_install_compat_surface_module(
+    "issue_archive",
+    sys.modules[f"{__name__}.reports"],
+    [
+        "ArchivedIssue",
+        "IssuePriorityArchive",
+        "IssuePriorityArchiveAudit",
+        "IssuePriorityArchivist",
+        "render_issue_priority_archive_report",
+    ],
 )
 _install_compat_surface_module(
     "roadmap",
