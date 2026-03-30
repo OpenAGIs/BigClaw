@@ -17,6 +17,9 @@ Batch file list:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/workspace_bootstrap_cli.py`
+- `src/bigclaw/cost_control.py`
+- `src/bigclaw/issue_archive.py`
+- `src/bigclaw/__init__.py`
 - `tests/test_repo_board.py`
 - `tests/test_repo_gateway.py`
 - `tests/test_repo_governance.py`
@@ -51,13 +54,15 @@ Reason:
    `bigclaw-go/internal/triage`.
 2. Remove the migration-era Python operator helpers already superseded by
    `bigclawctl` and `bigclaw-go/internal/{bootstrap,githubsync,refill}`.
-3. Remove Python tests that only exercised deleted Python-only modules.
-4. Update any remaining Python tests that referenced the removed board helper so
+3. Remove isolated Python compatibility/data modules with direct Go ownership
+   and no remaining in-repo consumers.
+4. Remove Python tests that only exercised deleted Python-only modules.
+5. Update any remaining Python tests or exports that referenced removed modules so
    the suite remains coherent after deletion.
-5. Run targeted validation for remaining observability, repo-link, and
+6. Run targeted validation for remaining observability, repo-link, and
    workspace bootstrap surfaces,
    plus inventory counts and diff hygiene.
-6. Commit and push the scoped lane branch for `BIG-GO-1015`.
+7. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
@@ -78,6 +83,7 @@ Reason:
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py`
 - `rg -n "github_sync|parallel_refill|workspace_bootstrap_cli" src tests || true`
+- `python3 - <<'PY'` to import `bigclaw` after trimming stale package exports
 - `git diff --check`
 - `git status --short`
 - `git log -1 --stat`
@@ -128,6 +134,20 @@ Reason:
   - Reason: the CLI wrapper was migration-only glue for the already-retained
     library code in `workspace_bootstrap.py`; the active operator path is
     `bigclawctl workspace bootstrap`.
+- `src/bigclaw/cost_control.py`
+  - Deleted.
+  - Reason: budget-control logic already exists in
+    `bigclaw-go/internal/costcontrol/controller.go` and had no remaining Python
+    imports or package exports.
+- `src/bigclaw/issue_archive.py`
+  - Deleted.
+  - Reason: issue archive serialization/audit/reporting already exists in
+    `bigclaw-go/internal/issuearchive/archive.go` and had no remaining in-repo
+    Python consumers.
+- `src/bigclaw/__init__.py`
+  - Replaced.
+  - Reason: removed the stale `issue_archive` re-export block after deleting the
+    underlying Python module.
 - `tests/test_repo_board.py`
   - Deleted.
   - Reason: exercised deleted Python-only board helper.
@@ -156,11 +176,13 @@ Reason:
 - `src/bigclaw` Python files before: `45`
 - `src/bigclaw` Python files after tranche 3: `39`
 - `src/bigclaw` Python files after tranche 4: `36`
-- Net `src/bigclaw` reduction: `9`
+- `src/bigclaw` Python files after tranche 5: `34`
+- Net `src/bigclaw` reduction: `11`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
-- Net repository-wide Python reduction: `15`
+- Repository-wide Python files after tranche 5: `91`
+- Net repository-wide Python reduction: `17`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -179,3 +201,7 @@ Reason:
     imports remain
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `20 passed in 3.14s`
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `20 passed in 3.16s`
