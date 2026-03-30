@@ -69,6 +69,9 @@ Follow-on refactor now queued:
 - Repoint the two remaining tests at the active `observability` surface.
 - Delete `src/bigclaw/repo_links.py` and `src/bigclaw/repo_plane.py` once
   their last in-repo references are gone.
+- Inline the tiny `src/bigclaw/deprecation.py` warning helpers into
+  `src/bigclaw/runtime.py` and repoint `scripts/dev_smoke.py` if the helper
+  remains isolated after the repo-link cleanup.
 
 ## Plan
 
@@ -478,6 +481,57 @@ Follow-on refactor now queued:
   - Result: `17`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `65`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+
+### Follow-on tranche 15
+
+- `src/bigclaw/deprecation.py`
+  - Deleted.
+  - Reason: its warning helpers were only used by `runtime.py` and
+    `scripts/dev_smoke.py`, so the migration-only surface could be absorbed
+    into `src/bigclaw/runtime.py` without changing behavior.
+- `src/bigclaw/runtime.py`
+  - Updated.
+  - Reason: now owns `LEGACY_RUNTIME_GUIDANCE`,
+    `legacy_runtime_message`, and `warn_legacy_runtime_surface` directly.
+- `scripts/dev_smoke.py`
+  - Updated.
+  - Reason: imports `warn_legacy_runtime_surface` from `bigclaw.runtime`
+    instead of the deleted module.
+
+### Follow-on tranche 15 inventory
+
+- `src/bigclaw` Python files after tranche 15: `16`
+- Repository-wide Python files after tranche 15: `64`
+- Net repository-wide Python reduction: `44`
+- `bigclaw-go` Go files after tranche 15: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 15 validation
+
+- `rg -n "bigclaw\\.deprecation|from \\.deprecation" src tests scripts`
+  - Result: no matches
+- `python3 -m py_compile src/bigclaw/runtime.py scripts/dev_smoke.py tests/test_runtime_matrix.py tests/test_reports.py tests/test_evaluation.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_reports.py tests/test_evaluation.py`
+  - Result: `44 passed in 0.18s`
+- `PYTHONPATH=src python3 scripts/dev_smoke.py --help`
+  - Result: emitted the expected deprecation warning and `bigclawctl dev-smoke`
+    usage text; exited successfully
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw` and `import bigclaw.runtime`
+  - Result: `import ok`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `16`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `64`
 - `find bigclaw-go -type f -name '*.go' | wc -l`
   - Result: `267`
 - `test -f pyproject.toml && echo present || echo absent`
