@@ -250,3 +250,28 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Result: `ok  	bigclaw-go/internal/repo	(cached)`
 - `git status --short`
   - Result: later cleanup waves removed repo compatibility modules, workflow/product/events compatibility modules, and their Python-only tests.
+
+### Final Stop Boundary
+
+- `src/bigclaw/governance.py`, `src/bigclaw/risk.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/run_detail.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/models.py`, `src/bigclaw/design_system.py`
+  - Retained.
+  - Reason: these remain active Python contract/model surfaces with direct test coverage and no verified Go one-to-one replacement evidence in this lane.
+- `src/bigclaw/planning.py`, `src/bigclaw/reports.py`, `src/bigclaw/operations.py`, `src/bigclaw/runtime.py`, `src/bigclaw/observability.py`, `src/bigclaw/repo_links.py`, `src/bigclaw/repo_plane.py`
+  - Retained.
+  - Reason: these are still linked together as active Python runtime/reporting surfaces; deleting any of them would break remaining in-repo imports and exceed the safe batch scope.
+- `src/bigclaw/console_ia.py`, `src/bigclaw/ui_review.py`
+  - Retained.
+  - Reason: they are currently exercised by dedicated Python test suites, but this batch did not establish enough Go parity to remove the broader review/console feature set safely.
+- `src/bigclaw/__main__.py`, `src/bigclaw/deprecation.py`, `src/bigclaw/legacy_shim.py`
+  - Retained.
+  - Reason: they still back legacy entrypoints and compatibility scripts under `scripts/` and therefore remain live migration shims rather than dead modules.
+- No additional `src/bigclaw/**` Python files met the delete threshold after the final reference scan on the remaining batch.
+
+- `git status --short --branch`
+  - Result before closeout commit: `## BIG-GO-983...origin/BIG-GO-983` then ` M .symphony/workpad.md`
+- `rg --files src/bigclaw -g '*.py' | wc -l`
+  - Result: `21`
+- `rg --files -g '*.py' | wc -l`
+  - Result: `77`
+- `python3 -m compileall src/bigclaw/__init__.py`
+  - Result: command completed successfully with no output.
