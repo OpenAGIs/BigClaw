@@ -3,9 +3,8 @@ from pathlib import Path
 
 from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.models import Priority, Task
-from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, TaskRun
+from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCommitLink, TaskRun
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
-from bigclaw.repo_plane import RunCommitLink
 
 
 def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):

@@ -62,6 +62,14 @@ Reason:
   `repo_plane.RunCommitLink`, so deleting those modules in this lane would
   broaden scope beyond the safe tranche.
 
+Follow-on refactor now queued:
+
+- Move `RunCommitLink`, `RunCommitBinding`, and run-commit role validation into
+  `src/bigclaw/observability.py`.
+- Repoint the two remaining tests at the active `observability` surface.
+- Delete `src/bigclaw/repo_links.py` and `src/bigclaw/repo_plane.py` once
+  their last in-repo references are gone.
+
 ## Plan
 
 1. Remove the six repo-surface Python modules that already map to checked-in Go
@@ -425,3 +433,56 @@ Reason:
   - Result: remaining matches are historical issue-pack entries plus the
     retained `warn_legacy_service_surface` default string in `src/bigclaw/runtime.py`;
     no live Python entrypoint file remains
+
+### Follow-on tranche 14
+
+- `src/bigclaw/repo_links.py`
+  - Deleted.
+  - Reason: after inlining `RunCommitBinding`, role validation, and
+    `bind_run_commits` into `src/bigclaw/observability.py`, the module had no
+    remaining in-repo consumers.
+- `src/bigclaw/repo_plane.py`
+  - Deleted.
+  - Reason: `RepoSpace` and `RepoAgent` had no surviving in-repo references,
+    and `RunCommitLink` now lives in `src/bigclaw/observability.py`.
+- `src/bigclaw/observability.py`
+  - Updated.
+  - Reason: it now owns the run-commit link model and binding helpers used by
+    `TaskRun.record_closeout`.
+- `tests/test_observability.py`
+  - Updated.
+  - Reason: import `RunCommitLink` from `bigclaw.observability`.
+- `tests/test_repo_links.py`
+  - Updated.
+  - Reason: import `RunCommitLink` and `bind_run_commits` from
+    `bigclaw.observability`.
+
+### Follow-on tranche 14 inventory
+
+- `src/bigclaw` Python files after tranche 14: `17`
+- Repository-wide Python files after tranche 14: `65`
+- Net repository-wide Python reduction: `43`
+- `bigclaw-go` Go files after tranche 14: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 14 validation
+
+- `python3 -m py_compile src/bigclaw/observability.py tests/test_repo_links.py tests/test_observability.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `11 passed in 0.06s`
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `17`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `65`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
