@@ -1,11 +1,11 @@
 # BIG-GO-1018
 
 ## Plan
-- Migrate the next scoped residual `tests/**` tranche for the run event bus.
-- Port the small Python run-transition event bus into a dedicated Go package with file-backed ledger persistence.
-- Remove `tests/test_event_bus.py` after validating the new Go package tests.
+- Migrate the next scoped residual `tests/**` tranche for the pilot rollout scorecard and repo evidence exports.
+- Port that narrow Python rollout/reporting slice into a dedicated Go package instead of the full planning surface.
+- Remove `tests/test_repo_rollout.py` after validating the new Go package tests.
 - Remove the migrated Python test file from `tests/`.
-- Run targeted Go tests for `bigclaw-go/internal/runbus`, capture exact commands and results, then commit and push the branch.
+- Run targeted Go tests for `bigclaw-go/internal/rollout`, capture exact commands and results, then commit and push the branch.
 
 ## Acceptance
 - Changes stay scoped to this issue's residual `tests/**` tranche.
@@ -14,16 +14,20 @@
 - Final report includes impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
 
 ## Validation
-- `go test ./internal/runbus`
+- `go test ./internal/rollout`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
 - `git status --short`
 
 ## Results
-- `cd bigclaw-go && go test ./internal/runbus` -> `ok  	bigclaw-go/internal/runbus	0.446s`
-- `find . -name '*.py' | wc -l` -> `79`
-- `find . -name '*.go' | wc -l` -> `273`
-- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/runbus/runbus.go` and `bigclaw-go/internal/runbus/runbus_test.go` added; `tests/test_event_bus.py` deleted
+- `cd bigclaw-go && go test ./internal/rollout` -> `ok  	bigclaw-go/internal/rollout	1.447s`
+- `find . -name '*.py' | wc -l` -> `78`
+- `find . -name '*.go' | wc -l` -> `275`
+- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/rollout/rollout.go` and `bigclaw-go/internal/rollout/rollout_test.go` added; `tests/test_repo_rollout.py` deleted
+- Previous completed tranche: `cd bigclaw-go && go test ./internal/runbus` -> `ok  	bigclaw-go/internal/runbus	0.446s`
+- Previous completed tranche: `find . -name '*.py' | wc -l` -> `79`
+- Previous completed tranche: `find . -name '*.go' | wc -l` -> `273`
+- Previous completed tranche status: `.symphony/workpad.md` modified; `bigclaw-go/internal/runbus/runbus.go` and `bigclaw-go/internal/runbus/runbus_test.go` added; `tests/test_event_bus.py` deleted
 - Previous completed tranche: `cd bigclaw-go && go test ./internal/memory` -> `ok  	bigclaw-go/internal/memory	1.805s`
 - Previous completed tranche: `find . -name '*.py' | wc -l` -> `80`
 - Previous completed tranche: `find . -name '*.go' | wc -l` -> `271`
