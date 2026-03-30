@@ -26,6 +26,8 @@ Batch file list:
 - `src/bigclaw/connectors.py`
 - `src/bigclaw/mapping.py`
 - `src/bigclaw/pilot.py`
+- `src/bigclaw/workspace_bootstrap.py`
+- `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/__init__.py`
 - `tests/test_repo_board.py`
 - `tests/test_repo_gateway.py`
@@ -73,13 +75,15 @@ Reason:
    Go parity ownership and now only survive via stale package exports.
 8. Remove isolated Python modules that have no remaining package/runtime users
    and already have repo-native Go replacements.
-9. Remove Python tests that only exercised deleted Python-only modules.
-10. Update any remaining Python tests or exports that referenced removed modules so
+9. Remove isolated Python bootstrap helpers whose ownership is already moved to
+   the Go bootstrap toolchain and which only survive via dedicated tests.
+10. Remove Python tests that only exercised deleted Python-only modules.
+11. Update any remaining Python tests or exports that referenced removed modules so
    the suite remains coherent after deletion.
-11. Run targeted validation for remaining observability, repo-link, and
+12. Run targeted validation for remaining observability, repo-link, and
    workspace bootstrap surfaces,
    plus inventory counts and diff hygiene.
-12. Commit and push the scoped lane branch for `BIG-GO-1015`.
+13. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
@@ -198,6 +202,15 @@ Reason:
   - Deleted.
   - Reason: the module had no remaining Python imports or package exports and
     already had a repo-native Go replacement in `bigclaw-go/internal/pilot`.
+- `src/bigclaw/workspace_bootstrap.py`
+  - Deleted.
+  - Reason: bootstrap ownership is already moved to
+    `bigclaw-go/internal/bootstrap/*` and the Python module only remained
+    through a dedicated Python-only test plus the now-removed validation helper.
+- `src/bigclaw/workspace_bootstrap_validation.py`
+  - Deleted.
+  - Reason: validation ownership is already moved to the Go bootstrap toolchain
+    and the Python helper only remained through the deleted bootstrap test.
 - `src/bigclaw/design_system.py`
   - Deleted.
   - Reason: console design-system ownership is already moved to
@@ -271,6 +284,9 @@ Reason:
 - `tests/test_ui_review.py`
   - Deleted.
   - Reason: exercised deleted Python-only UI review helper.
+- `tests/test_workspace_bootstrap.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only bootstrap helpers.
 - `tests/test_repo_collaboration.py`
   - Replaced.
   - Reason: preserved the collaboration merge assertion while removing the last
@@ -288,7 +304,8 @@ Reason:
 - `src/bigclaw` Python files after tranche 9: `28`
 - `src/bigclaw` Python files after tranche 10: `27`
 - `src/bigclaw` Python files after tranche 11: `22`
-- Net `src/bigclaw` reduction: `23`
+- `src/bigclaw` Python files after tranche 12: `20`
+- Net `src/bigclaw` reduction: `25`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
@@ -299,7 +316,8 @@ Reason:
 - Repository-wide Python files after tranche 9: `82`
 - Repository-wide Python files after tranche 10: `81`
 - Repository-wide Python files after tranche 11: `71`
-- Net repository-wide Python reduction: `37`
+- Repository-wide Python files after tranche 12: `68`
+- Net repository-wide Python reduction: `40`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -358,3 +376,11 @@ Reason:
   - Result: `import ok`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `20 passed in 3.06s`
+- `rg -n "workspace_bootstrap|workspace_bootstrap_validation|bootstrap_workspace|cleanup_workspace|build_validation_report" src tests || true`
+  - Result: one expected match in `src/bigclaw/legacy_shim.py` for the retained
+    shim-builder function name `build_workspace_bootstrap_args`; no deleted
+    module imports remain
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `11 passed in 0.06s`
