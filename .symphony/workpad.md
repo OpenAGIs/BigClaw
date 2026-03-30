@@ -11,11 +11,12 @@ Candidate batch:
 - `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/pilot.py`
 - `src/bigclaw/workspace_bootstrap_cli.py`
+- `src/bigclaw/cost_control.py`
+- `src/bigclaw/roadmap.py`
 
 Planned retainers for this lane:
 
-- `src/bigclaw/cost_control.py`
-- `src/bigclaw/roadmap.py`
+- none
 
 Current repository Python file count before this lane: `116`
 Current `src/bigclaw/**` Python file count before this lane: `45`
@@ -64,11 +65,11 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Deleted.
   - Reason: no remaining in-repo Python imports; cutover docs assign bootstrap CLI ownership to `bigclaw-go/cmd/bigclawctl` and `bigclaw-go/internal/bootstrap/*`, which are already covered by Go tests.
 - `src/bigclaw/cost_control.py`
-  - Retained.
-  - Reason: no equally explicit Go replacement path was identified in this lane, so deleting it would be evidence-thin.
+  - Deleted.
+  - Reason: no remaining in-repo Python imports; equivalent budget-evaluation behavior exists in `bigclaw-go/internal/costcontrol/controller.go` with package tests.
 - `src/bigclaw/roadmap.py`
-  - Retained.
-  - Reason: cutover planning mentions roadmap migration, but this lane did not find a direct, package-level Go replacement with the same contract shape.
+  - Deleted.
+  - Reason: no remaining in-repo Python imports; Go regression coverage in `bigclaw-go/internal/regression/roadmap_contract_test.go` now owns the canonical execution-pack roadmap contract.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
@@ -76,10 +77,10 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `111`
+- Repository Python files after: `109`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `40`
-- Net reduction: `5`
+- `src/bigclaw/**` Python files after: `38`
+- Net reduction: `7`
 
 ### Validation Record
 
@@ -91,5 +92,8 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.818s`
 - `python3 -m compileall src/bigclaw/__init__.py`
   - Result: `Compiling 'src/bigclaw/__init__.py'...`
+- `cd bigclaw-go && go test ./internal/costcontrol ./internal/regression`
+  - Result: `ok  	bigclaw-go/internal/costcontrol	1.088s`
+  - Result: `ok  	bigclaw-go/internal/regression	1.332s`
 - `git status --short`
-  - Result: only `.symphony/workpad.md`, `src/bigclaw/__init__.py`, and the five deleted `src/bigclaw/*.py` files changed before commit.
+  - Result: before the second commit, only `src/bigclaw/__init__.py`, `src/bigclaw/cost_control.py`, and `src/bigclaw/roadmap.py` changed.
