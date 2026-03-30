@@ -270,6 +270,52 @@ func TestAuditSavedViewCatalogAndRenderReport(t *testing.T) {
 	}
 }
 
+func TestRenderSavedViewReportSummarizesViewsAndDigestCoverage(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "BigClaw Views",
+		Version: "v3",
+		Views: []SavedView{
+			{
+				ViewID:     "view-ops-needs-approval",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "team",
+				Filters: []SavedViewFilter{
+					{Field: "status", Operator: "=", Value: "needs-approval"},
+				},
+				SortBy:    "-updated_at",
+				Pinned:    true,
+				IsDefault: true,
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "digest-ops-daily",
+				SavedViewID:    "view-ops-needs-approval",
+				Channel:        "email",
+				Cadence:        "daily",
+				Recipients:     []string{"ops@bigclaw.dev"},
+			},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	report := RenderSavedViewReport(catalog, audit)
+	for _, want := range []string{
+		"# Saved Views & Alert Digests Report",
+		"- Saved Views: 1",
+		"- Needs Approval: route=/operations/overview owner=ops visibility=team filters=status=needs-approval sort=-updated_at pinned=true default=true",
+		"- digest-ops-daily: view=view-ops-needs-approval channel=email cadence=daily recipients=ops@bigclaw.dev include_empty=false muted=false",
+		"- Duplicate view names: none",
+		"- Orphan subscriptions: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
+	}
+}
+
 func TestSavedViewCatalogJSONRoundTrip(t *testing.T) {
 	catalog := BuildSavedViewCatalog([]domain.Task{{ID: "task-1", State: domain.TaskRunning, Metadata: map[string]string{"owner": "alice"}}}, "alice", "", "")
 	payload, err := json.Marshal(catalog)

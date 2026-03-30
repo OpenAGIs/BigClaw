@@ -1,6 +1,7 @@
 package product
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -21,15 +22,26 @@ func TestBuildDefaultDashboardRunContractIsReleaseReady(t *testing.T) {
 
 func TestDashboardRunContractAuditDetectsMissingPaths(t *testing.T) {
 	contract := BuildDefaultDashboardRunContract()
-	contract.DashboardSchema.Fields = contract.DashboardSchema.Fields[:len(contract.DashboardSchema.Fields)-1]
+	contract.DashboardSchema.Fields = filterContractFields(contract.DashboardSchema.Fields, "summary.sla_risk_runs")
+	delete(contract.DashboardSchema.Sample["summary"].(map[string]any), "active_runs")
 	delete(contract.RunDetailSchema.Sample["closeout"].(map[string]any), "git_log_stat_output")
+	contract.RunDetailSchema.Fields = filterContractFields(contract.RunDetailSchema.Fields, "closeout.git_log_stat_output")
 
 	audit := AuditDashboardRunContract(contract)
 	if audit.ReleaseReady {
 		t.Fatalf("expected audit to detect gaps, got %+v", audit)
 	}
-	if len(audit.DashboardMissingFields) == 0 || len(audit.RunDetailSampleGaps) == 0 {
-		t.Fatalf("expected missing field and sample gap findings, got %+v", audit)
+	if got := strings.Join(audit.DashboardMissingFields, ","); got != "summary.sla_risk_runs" {
+		t.Fatalf("unexpected dashboard missing fields: %+v", audit)
+	}
+	if got := strings.Join(audit.DashboardSampleGaps, ","); got != "summary.active_runs" {
+		t.Fatalf("unexpected dashboard sample gaps: %+v", audit)
+	}
+	if got := strings.Join(audit.RunDetailMissingFields, ","); got != "closeout.git_log_stat_output" {
+		t.Fatalf("unexpected run detail missing fields: %+v", audit)
+	}
+	if got := strings.Join(audit.RunDetailSampleGaps, ","); got != "closeout.git_log_stat_output" {
+		t.Fatalf("unexpected run detail sample gaps: %+v", audit)
 	}
 }
 
@@ -98,4 +110,54 @@ func TestDashboardContractFormattingHelpers(t *testing.T) {
 	if got := boolText(false); got != "false" {
 		t.Fatalf("boolText(false) = %q, want %q", got, "false")
 	}
+}
+
+func TestDashboardRunContractJSONRoundTripPreservesSchemasAndAudit(t *testing.T) {
+	contract := BuildDefaultDashboardRunContract()
+	payload, err := json.Marshal(contract)
+	if err != nil {
+		t.Fatalf("marshal contract: %v", err)
+	}
+
+	var restored DashboardRunContract
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal contract: %v", err)
+	}
+	if restored.ContractID != contract.ContractID || restored.Version != contract.Version {
+		t.Fatalf("unexpected restored contract metadata: %+v", restored)
+	}
+	var dashboardIDFound bool
+	for _, field := range restored.DashboardSchema.Fields {
+		if field.Name == "dashboard_id" && field.FieldType == "string" && field.Description == "Stable dashboard identifier." {
+			dashboardIDFound = true
+			break
+		}
+	}
+	if !dashboardIDFound {
+		t.Fatalf("expected dashboard_id field contract after round trip, got %+v", restored.DashboardSchema.Fields)
+	}
+
+	audit := AuditDashboardRunContract(contract)
+	auditPayload, err := json.Marshal(audit)
+	if err != nil {
+		t.Fatalf("marshal audit: %v", err)
+	}
+	var restoredAudit DashboardRunContractAudit
+	if err := json.Unmarshal(auditPayload, &restoredAudit); err != nil {
+		t.Fatalf("unmarshal audit: %v", err)
+	}
+	if !restoredAudit.ReleaseReady {
+		t.Fatalf("expected release-ready audit after round trip, got %+v", restoredAudit)
+	}
+}
+
+func filterContractFields(fields []ContractField, fieldName string) []ContractField {
+	filtered := make([]ContractField, 0, len(fields))
+	for _, field := range fields {
+		if field.Name == fieldName {
+			continue
+		}
+		filtered = append(filtered, field)
+	}
+	return filtered
 }
