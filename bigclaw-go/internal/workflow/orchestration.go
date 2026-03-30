@@ -194,6 +194,23 @@ func BuildHandoffRequest(accepted bool, plan OrchestrationPlan, policyDecision O
 	}
 }
 
+func RenderOrchestrationPlan(plan OrchestrationPlan, policyDecision OrchestrationPolicyDecision) string {
+	lines := []string{
+		"# Cross-Department Orchestration Plan",
+		"",
+		"- Task ID: " + plan.TaskID,
+		"- Collaboration Mode: " + plan.CollaborationMode,
+		"- Departments: " + joinOrNone(plan.Departments()),
+		"- Required Approvals: " + joinOrNone(plan.RequiredApprovals()),
+		"- Tier: " + policyDecision.Tier,
+		"- Entitlement Status: " + policyDecision.EntitlementStatus,
+		"- Billing Model: " + policyDecision.BillingModel,
+		fmt.Sprintf("- Estimated Cost (USD): %.2f", policyDecision.EstimatedCostUSD),
+		"- Blocked Departments: " + joinOrNone(policyDecision.BlockedDepartments),
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func operationsReason(task domain.Task, labels []string, text string) string {
 	if hasAny(labels, "program", "ops", "release") || strings.Contains(text, "rollout") || matchesAny(strings.ToLower(task.Source), "linear", "jira") {
 		return "coordinates issue intake, handoffs, and completion tracking"
@@ -258,6 +275,13 @@ func matchesAny(value string, wants ...string) bool {
 		}
 	}
 	return false
+}
+
+func joinOrNone(values []string) string {
+	if len(values) == 0 {
+		return "none"
+	}
+	return strings.Join(values, ", ")
 }
 
 func intersect(values []string, allowed []string) []string {

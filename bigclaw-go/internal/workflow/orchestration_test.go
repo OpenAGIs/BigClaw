@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"bigclaw-go/internal/domain"
@@ -97,5 +98,37 @@ func TestBuildHandoffRequest(t *testing.T) {
 	}
 	if got := BuildHandoffRequest(true, plan, OrchestrationPolicyDecision{}); got != nil {
 		t.Fatalf("expected no request when execution accepted, got %+v", got)
+	}
+}
+
+func TestRenderOrchestrationPlanListsHandoffsAndPolicy(t *testing.T) {
+	task := domain.Task{
+		ID:            "OPE-66-render",
+		Source:        "jira",
+		Title:         "Warehouse rollout",
+		Description:   "Customer-ready release",
+		Labels:        []string{"data", "customer"},
+		RequiredTools: []string{"sql"},
+	}
+
+	rawPlan := CrossDepartmentOrchestrator{}.Plan(task)
+	plan, policy := PremiumOrchestrationPolicy{}.Apply(task, rawPlan)
+	content := RenderOrchestrationPlan(plan, policy)
+
+	for _, want := range []string{
+		"# Cross-Department Orchestration Plan",
+		"- Departments: operations, engineering",
+		"- Tier: standard",
+		"- Entitlement Status: upgrade-required",
+		"- Billing Model: standard-blocked",
+		"- Estimated Cost (USD): 11.00",
+		"- Blocked Departments: data, customer-success",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("expected report to contain %q, got %s", want, content)
+		}
+	}
+	if strings.Contains(content, "- Human Handoff Team:") {
+		t.Fatalf("expected render to omit legacy human handoff line, got %s", content)
 	}
 }

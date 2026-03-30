@@ -363,7 +363,7 @@ func TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent(t *testing.T) {
 		t.Fatalf("expected orchestration payload on routed event, got %+v", routed.Payload)
 	}
 	policy, ok := routed.Payload["policy"].(map[string]any)
-	if !ok || policy["upgrade_required"] != true || policy["tier"] != "standard" {
+	if !ok || policy["upgrade_required"] != true || policy["tier"] != "standard" || policy["entitlement_status"] != "upgrade-required" || policy["billing_model"] != "standard-blocked" {
 		t.Fatalf("expected policy payload on routed event, got %+v", routed.Payload)
 	}
 	handoff := events[2]
