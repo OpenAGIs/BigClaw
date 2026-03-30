@@ -1090,3 +1090,74 @@ Follow-on refactor now queued:
   - Result: `absent`
 - `git diff --check`
   - Result: success
+
+### Follow-on tranche 25 queued
+
+- Target `src/bigclaw/models.py` next.
+- Reason: the remaining model surface is a leaf of enums/dataclasses consumed by
+  observability, runtime, reports, operations, package exports, and focused
+  tests; `observability.py` can absorb those types without creating an import
+  cycle because it only depended on `Task` from the deleted module.
+- Planned edits:
+  - Move the model enums/dataclasses from `src/bigclaw/models.py` into
+    `src/bigclaw/observability.py`.
+  - Repoint `runtime.py`, `reports.py`, `operations.py`, and package exports to
+    the observability-owned model surface.
+  - Install a `bigclaw.models` compatibility shim in `src/bigclaw/__init__.py`.
+  - Delete `src/bigclaw/models.py`.
+
+### Follow-on tranche 25
+
+- `src/bigclaw/models.py`
+  - Deleted.
+  - Reason: the remaining model enums/dataclasses were pure shared types with
+    no behavior beyond serialization helpers, so they could be absorbed into
+    the active observability surface without introducing an import cycle.
+- `src/bigclaw/observability.py`
+  - Updated.
+  - Reason: now owns the former `models.py` enums and dataclasses:
+    `TaskState`, `RiskLevel`, `Priority`, `TriageStatus`, `FlowTrigger`,
+    `FlowRunStatus`, `FlowStepStatus`, `BillingInterval`, `Task`,
+    `RiskSignal`, `RiskAssessment`, `TriageLabel`, `TriageRecord`,
+    `FlowTemplateStep`, `FlowTemplate`, `FlowStepRun`, `FlowRun`,
+    `BillingRate`, `UsageRecord`, and `BillingSummary`.
+- `src/bigclaw/runtime.py`
+  - Updated.
+  - Reason: now imports `Priority`, `RiskLevel`, and `Task` from
+    observability instead of the deleted models module.
+- `src/bigclaw/reports.py`
+  - Updated.
+  - Reason: now imports `Task` and other shared model types from
+    observability instead of the deleted models module.
+- `src/bigclaw/operations.py`
+  - Updated.
+  - Reason: now imports `Task` from observability instead of the deleted
+    models module.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: package exports now source model symbols from observability and
+    install a `bigclaw.models` compatibility module backed by that surface.
+
+### Follow-on tranche 25 inventory
+
+- `src/bigclaw` Python files after tranche 25: `6`
+- Repository-wide Python files after tranche 25: `54`
+- Net repository-wide Python reduction: `54`
+- `bigclaw-go` Go files after tranche 25: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 25 validation
+
+- `python3 -m py_compile src/bigclaw/observability.py src/bigclaw/runtime.py src/bigclaw/reports.py src/bigclaw/operations.py src/bigclaw/__init__.py tests/test_models.py tests/test_observability.py tests/test_runtime_matrix.py tests/test_reports.py tests/test_operations.py`
+  - Result: success
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`, `import bigclaw.models`, and inspection of `Task.__module__` / `Priority.P0.value`
+  - Result: `import ok`, module=`bigclaw.observability`, `0`
+- `PYTHONPATH=src python3 -m pytest tests/test_models.py tests/test_observability.py tests/test_runtime_matrix.py tests/test_reports.py tests/test_operations.py`
+  - Result: `68 passed in 0.09s`
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_orchestration.py tests/test_queue.py tests/test_risk.py tests/test_event_bus.py tests/test_control_center.py tests/test_audit_events.py tests/test_repo_links.py tests/test_evaluation.py`
+  - Result: `35 passed in 0.11s`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `6`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `54`

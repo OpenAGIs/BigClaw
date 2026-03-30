@@ -1,7 +1,8 @@
 import sys
 import types
 
-from .models import (
+from . import observability as _legacy_observability_surface
+from .observability import (
     BillingInterval,
     BillingRate,
     BillingSummary,
@@ -24,7 +25,6 @@ from .models import (
     UsageRecord,
 )
 from . import runtime as _legacy_runtime_surface
-from . import observability as _legacy_observability_surface
 from . import planning as _legacy_planning_surface
 
 
@@ -43,6 +43,37 @@ def _install_legacy_surface_module(
     globals()[name] = module
 
 
+_install_legacy_surface_module(
+    "models",
+    [
+        "BillingInterval",
+        "BillingRate",
+        "BillingSummary",
+        "FlowRun",
+        "FlowRunStatus",
+        "FlowStepRun",
+        "FlowStepStatus",
+        "FlowTemplate",
+        "FlowTemplateStep",
+        "FlowTrigger",
+        "Priority",
+        "RiskAssessment",
+        "RiskLevel",
+        "RiskSignal",
+        "Task",
+        "TaskState",
+        "TriageLabel",
+        "TriageRecord",
+        "TriageStatus",
+        "UsageRecord",
+    ],
+    source_module=_legacy_observability_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "models.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
 _install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
