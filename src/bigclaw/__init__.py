@@ -25,6 +25,7 @@ from .models import (
 )
 from . import runtime as _legacy_runtime_surface
 from . import observability as _legacy_observability_surface
+from . import planning as _legacy_planning_surface
 
 
 def _install_legacy_surface_module(
@@ -107,6 +108,23 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
+_install_legacy_surface_module(
+    "governance",
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+    ],
+    source_module=_legacy_planning_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "governance.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -151,14 +169,6 @@ from .collaboration import (
     DecisionNote,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
-)
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
 )
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -322,6 +332,11 @@ from .planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -329,6 +344,7 @@ from .planning import (
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+    render_scope_freeze_report,
 )
 __all__ = [
     "Task",

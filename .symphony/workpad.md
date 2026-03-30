@@ -78,6 +78,9 @@ Follow-on refactor now queued:
 - Inline the small `src/bigclaw/event_bus.py` surface into
   `src/bigclaw/observability.py` if its remaining consumers stay limited to
   observability, tests, and package exports.
+- Inline the small `src/bigclaw/governance.py` surface into
+  `src/bigclaw/planning.py` if its remaining consumers stay limited to
+  planning, tests, and package exports.
 
 ## Plan
 
@@ -628,6 +631,52 @@ Follow-on refactor now queued:
   - Result: `14`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `62`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+
+### Follow-on tranche 18
+
+- `src/bigclaw/governance.py`
+  - Deleted.
+  - Reason: its scope-freeze surface only fed `planning.py`, dedicated tests,
+    and package exports, so it could be absorbed into `src/bigclaw/planning.py`.
+- `src/bigclaw/planning.py`
+  - Updated.
+  - Reason: now owns `FreezeException`, `GovernanceBacklogItem`,
+    `ScopeFreezeBoard`, `ScopeFreezeAudit`, `ScopeFreezeGovernance`, and
+    `render_scope_freeze_report`.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: installs a `bigclaw.governance` compatibility module backed by the
+    planning surface and re-exports the moved governance symbols from there.
+
+### Follow-on tranche 18 inventory
+
+- `src/bigclaw` Python files after tranche 18: `13`
+- Repository-wide Python files after tranche 18: `61`
+- Net repository-wide Python reduction: `47`
+- `bigclaw-go` Go files after tranche 18: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 18 validation
+
+- `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py tests/test_governance.py tests/test_planning.py tests/test_repo_rollout.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_governance.py tests/test_planning.py tests/test_repo_rollout.py`
+  - Result: `20 passed in 0.07s`
+- `PYTHONPATH=src python3 - <<'PY'` with `from bigclaw.governance import ScopeFreezeAudit, ScopeFreezeGovernance` and `from bigclaw.planning import ScopeFreezeAudit as PlanningScopeFreezeAudit`
+  - Result: `ScopeFreezeAudit ScopeFreezeGovernance ScopeFreezeAudit`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `13`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `61`
 - `find bigclaw-go -type f -name '*.go' | wc -l`
   - Result: `267`
 - `test -f pyproject.toml && echo present || echo absent`
