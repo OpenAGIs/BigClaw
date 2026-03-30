@@ -75,11 +75,6 @@ Remaining `src/bigclaw/**/*.py` files after this batch:
 - `src/bigclaw/operations.py`
 - `src/bigclaw/planning.py`
 - `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_registry.py`
 - `src/bigclaw/reports.py`
 - `src/bigclaw/risk.py`
 - `src/bigclaw/run_detail.py`
@@ -120,29 +115,44 @@ Deleted in this batch:
 - `src/bigclaw/roadmap.py`
   - deleted because its compatibility surface is now registered from `src/bigclaw/__init__.py`
   - replaced by `bigclaw.__init__` compatibility wiring for `bigclaw.roadmap`
+- `src/bigclaw/repo_commits.py`
+  - deleted because its compatibility surface is now registered from `src/bigclaw/__init__.py`
+  - replaced by `bigclaw.__init__` compatibility wiring for `bigclaw.repo_commits` and `bigclaw-go/internal/repo/commits.go`
+- `src/bigclaw/repo_plane.py`
+  - deleted because its compatibility surface is now registered from `src/bigclaw/__init__.py`
+  - replaced by `bigclaw.__init__` compatibility wiring for `bigclaw.repo_plane` and `bigclaw-go/internal/repo/plane.go`
+- `src/bigclaw/repo_links.py`
+  - deleted because its compatibility surface is now registered from `src/bigclaw/__init__.py`
+  - replaced by `bigclaw.__init__` compatibility wiring for `bigclaw.repo_links` and `bigclaw-go/internal/repo/links.go`
+- `src/bigclaw/repo_registry.py`
+  - deleted because its compatibility surface is now registered from `src/bigclaw/__init__.py`
+  - replaced by `bigclaw.__init__` compatibility wiring for `bigclaw.repo_registry` and `bigclaw-go/internal/repo/registry.go`
+- `src/bigclaw/repo_gateway.py`
+  - deleted because its compatibility surface is now registered from `src/bigclaw/__init__.py`
+  - replaced by `bigclaw.__init__` compatibility wiring for `bigclaw.repo_gateway` and `bigclaw-go/internal/repo/gateway.go`
 
 Kept in this batch:
 
 - `src/bigclaw/workspace_bootstrap_validation.py`
   - kept because [tests/test_workspace_bootstrap.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1005/tests/test_workspace_bootstrap.py) imports it directly
-- `src/bigclaw/repo_gateway.py`
-  - kept because [tests/test_repo_gateway.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1005/tests/test_repo_gateway.py) still validates the Python surface directly
 - `src/bigclaw/github_sync.py`
   - kept because [tests/test_github_sync.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1005/tests/test_github_sync.py) still exercises the Python compatibility surface
 - `src/bigclaw/issue_archive.py`
   - kept because `bigclaw.__init__` still re-exports the archive models and report renderer from a dedicated module
+- `src/bigclaw/repo_board.py`
+  - kept because repo board collaboration behavior still lives in its own dedicated Python surface
 - all other listed `src/bigclaw/*.py`
   - kept because this batch stayed scoped to modules with no remaining in-repo Python coupling or larger active compatibility surfaces
 
 ## Python File Count Impact
 
 - Repo-wide Python files before: `108`
-- Repo-wide Python files after: `99`
-- Net reduction: `9`
+- Repo-wide Python files after: `94`
+- Net reduction: `14`
 
 - `src/bigclaw/*.py` files before: `45`
-- `src/bigclaw/*.py` files after: `36`
-- Net reduction inside batch: `9`
+- `src/bigclaw/*.py` files after: `31`
+- Net reduction inside batch: `14`
 
 ## Validation Commands
 
@@ -151,19 +161,22 @@ Kept in this batch:
 - `python3 -m compileall src/bigclaw`
 - `python3 -m pytest tests/test_workspace_bootstrap.py tests/test_github_sync.py tests/test_validation_policy.py tests/test_repo_triage.py`
 - `python3 -m pytest tests/test_validation_policy.py tests/test_repo_triage.py tests/test_repo_governance.py tests/test_repo_rollout.py`
+- `python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_observability.py`
 - `python3 - <<'PY' ... PY`
 
 ## Validation Results
 
 - `rg --files src/bigclaw -g '*.py'`
-  - pass; confirmed the deleted files no longer exist and `src/bigclaw` now contains `36` Python files
+  - pass; confirmed the deleted files no longer exist and `src/bigclaw` now contains `31` Python files
 - `find . -name '*.py' | wc -l`
-  - pass; repo-wide Python file count dropped from `108` to `99`
+  - pass; repo-wide Python file count dropped from `108` to `94`
 - `python3 -m compileall src/bigclaw`
   - pass
 - `python3 -m pytest tests/test_workspace_bootstrap.py tests/test_github_sync.py tests/test_validation_policy.py tests/test_repo_triage.py`
   - pass; `18 passed in 4.02s`
 - `python3 -m pytest tests/test_validation_policy.py tests/test_repo_triage.py tests/test_repo_governance.py tests/test_repo_rollout.py`
   - pass; `8 passed in 0.09s`
+- `python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_observability.py`
+  - pass; `12 passed in 0.08s`
 - `python3 - <<'PY' ... PY`
-  - pass; confirmed direct imports still work for `bigclaw.mapping`, `bigclaw.roadmap`, and `bigclaw.validation_policy` after moving those surfaces into `bigclaw.__init__`
+  - pass; confirmed direct imports still work for the moved compatibility surfaces after registering them from `bigclaw.__init__`
