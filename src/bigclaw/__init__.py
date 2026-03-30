@@ -244,7 +244,8 @@ from .saved_views import (
     SavedViewLibrary,
     render_saved_view_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
+from .risk import BudgetDecision, CostController, RiskFactor, RiskScore, RiskScorer
+_install_surface_module("cost_control", sys.modules[f"{__name__}.risk"], ["BudgetDecision", "CostController"])
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
@@ -259,14 +260,24 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .event_bus import (
+from .observability import (
     CI_COMPLETED_EVENT,
     PULL_REQUEST_COMMENT_EVENT,
     TASK_FAILED_EVENT,
     BusEvent,
     EventBus,
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    TaskRun,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
+_install_surface_module(
+    "event_bus",
+    sys.modules[f"{__name__}.observability"],
+    ["CI_COMPLETED_EVENT", "PULL_REQUEST_COMMENT_EVENT", "TASK_FAILED_EVENT", "BusEvent", "EventBus"],
+)
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
