@@ -33,6 +33,7 @@ Batch file list:
 - `tests/test_console_ia.py`
 - `tests/test_workspace_bootstrap.py`
 - `tests/test_parallel_validation_bundle.py`
+- `tests/test_live_shadow_bundle.py`
 - `tests/test_control_center.py`
 
 Go replacement inventory:
@@ -56,6 +57,8 @@ Go replacement inventory:
 - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
 - `bigclaw-go/internal/regression/live_validation_summary_test.go`
 - `bigclaw-go/internal/regression/live_validation_index_test.go`
+- `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`
+- `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
 - `bigclaw-go/internal/controlcentercompat/control_center_test.go`
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
@@ -113,6 +116,9 @@ Repository inventory at start of lane:
 14. Delete the residual root validation-bundle exporter test once adjacent
     script-local exporter coverage and checked-in regression surfaces fully
     cover the same emitted summary and index contracts.
+15. Delete the residual root live-shadow bundle exporter test once the
+    Go-native CLI exporter and checked-in live-shadow regression surfaces fully
+    cover the same manifest and bundle contracts.
 
 ## Acceptance
 
@@ -155,6 +161,8 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/bootstrap`
 - `cd bigclaw-go && python3 scripts/e2e/export_validation_bundle_test.py`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestLiveValidationIndexStaysAligned'`
+- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestAutomationExportLiveShadowBundleBuildsManifest'`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned'`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
 
 ## Results
@@ -276,15 +284,22 @@ Repository inventory at start of lane:
     summary/index regression coverage in
     `bigclaw-go/internal/regression/live_validation_summary_test.go` and
     `bigclaw-go/internal/regression/live_validation_index_test.go`.
+- `tests/test_live_shadow_bundle.py`
+  - Deleted.
+  - Reason: its root-level live-shadow bundle exporter coverage is now covered
+    by the Go-native CLI bundle-generation test in
+    `bigclaw-go/cmd/bigclawctl/automation_commands_test.go` plus checked-in
+    bundle summary/index regression coverage in
+    `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `14`
-- Net `tests/*.py` reduction: `24`
+- `tests/*.py` files after: `13`
+- Net `tests/*.py` reduction: `25`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `84`
-- Net repo `*.py` reduction: `24`
+- Repo `*.py` files after: `83`
+- Net repo `*.py` reduction: `25`
 - Repo `*.go` files before: `267`
 - Repo `*.go` files after: `281`
 - Net repo `*.go` increase: `14`
@@ -294,9 +309,9 @@ Repository inventory at start of lane:
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `14`
+  - Result: `13`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `84`
+  - Result: `83`
 - `find . -name '*.go' | sort | wc -l`
   - Result: `281`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
@@ -332,9 +347,8 @@ Repository inventory at start of lane:
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result: `.symphony/workpad.md` modified,
-    `bigclaw-go/scripts/e2e/export_validation_bundle.py` modified, and
-    `tests/test_parallel_validation_bundle.py` deleted
+  - Result: `.symphony/workpad.md` modified and
+    `tests/test_live_shadow_bundle.py` deleted
 - `cd bigclaw-go && go test ./internal/validationpolicy`
   - Result: `ok  	bigclaw-go/internal/validationpolicy	1.154s`
 - `cd bigclaw-go && go test ./internal/taskmemory`
@@ -355,3 +369,7 @@ Repository inventory at start of lane:
   - Result: `Ran 4 tests in 0.005s` / `OK`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestLiveValidationIndexStaysAligned'`
   - Result: `ok  	bigclaw-go/internal/regression	1.349s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestAutomationExportLiveShadowBundleBuildsManifest'`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	1.775s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	1.641s`
