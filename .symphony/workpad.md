@@ -282,3 +282,49 @@ Repository inventory at start of lane:
     - Result: `9 passed in 3.02s`
   - `python3 -m compileall src/bigclaw/workspace_bootstrap.py tests/test_workspace_bootstrap.py`
     - Result: success
+
+## BIG-GO-1014 Refill Sweep D Continuation 3
+
+### Plan
+
+- Retire the broken legacy Python module entrypoint in `src/bigclaw/__main__.py`.
+- Update the Go-side `legacy-python compile-check` path to tolerate a fully
+  retired shim set instead of requiring deleted Python files.
+- Revalidate only the affected Go packages and inventory counts.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` again without pulling in unrelated dirty files.
+- Keep `bigclawctl legacy-python compile-check` coherent after the shim list
+  reaches zero live files.
+- Record exact commands and results.
+
+### Validation
+
+- `rg -n "src/bigclaw/__main__\\.py|service\\.py|FrozenCompileCheckFiles|legacy-python compile-check" bigclaw-go src tests docs -g '*.py' -g '*.go' -g '*.md'`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
+### Results
+
+- Deleted `src/bigclaw/__main__.py`, which was already broken because it
+  imported deleted `deprecation.py` and `service.py`.
+- Updated `bigclaw-go/internal/legacyshim/compilecheck.go` so
+  `bigclawctl legacy-python compile-check` succeeds when the frozen shim list is
+  empty instead of trying to compile deleted files.
+- Updated Go tests in `bigclaw-go/internal/legacyshim/compilecheck_test.go` and
+  `bigclaw-go/cmd/bigclawctl/main_test.go` to cover the zero-shim path while
+  preserving the failure-path helper coverage.
+- Repository counts after continuation:
+  - total `py` files: `79`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `16`
+- Validation outcomes:
+  - `rg -n "src/bigclaw/__main__\\.py|service\\.py|FrozenCompileCheckFiles|legacy-python compile-check" bigclaw-go src tests docs -g '*.py' -g '*.go' -g '*.md'`
+    - Result: only docs/stale messaging plus the updated Go compile-check code
+      remained.
+  - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+    - Result: `ok   bigclaw-go/internal/legacyshim 0.509s`
+    - Result: `ok   bigclaw-go/cmd/bigclawctl 2.029s`
+  - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+    - Result: `PY 79`, `GO 267`, `SRC 16`
