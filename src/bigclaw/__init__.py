@@ -171,7 +171,6 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
-
 from .runtime import (
     AcceptanceDecision,
     AcceptanceGate,
@@ -256,6 +255,10 @@ from .reports import (
     PilotScorecard,
     ReportStudio,
     ReportStudioArtifacts,
+    RunDetailEvent,
+    RunDetailResource,
+    RunDetailStat,
+    RunDetailTab,
     SharedViewContext,
     SharedViewFilter,
     TakeoverQueue,
@@ -294,8 +297,11 @@ from .reports import (
     render_pilot_portfolio_report,
     render_pilot_scorecard,
     render_repo_sync_audit_report,
+    render_resource_grid,
+    render_run_detail_console,
     render_task_run_detail_page,
     render_task_run_report,
+    render_timeline_panel,
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
@@ -387,6 +393,24 @@ from .planning import (
     render_candidate_backlog_report,
     render_four_week_execution_report,
     render_scope_freeze_report,
+)
+_install_legacy_surface_module(
+    "run_detail",
+    [
+        "RunDetailEvent",
+        "RunDetailResource",
+        "RunDetailStat",
+        "RunDetailTab",
+        "render_resource_grid",
+        "render_run_detail_console",
+        "render_timeline_panel",
+    ],
+    source_module=sys.modules[f"{__name__}.reports"],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "run_detail.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
 __all__ = [
     "Task",
@@ -492,6 +516,10 @@ __all__ = [
     "PilotScorecard",
     "ReportStudio",
     "ReportStudioArtifacts",
+    "RunDetailEvent",
+    "RunDetailResource",
+    "RunDetailStat",
+    "RunDetailTab",
     "SharedViewContext",
     "SharedViewFilter",
     "TakeoverQueue",
@@ -530,8 +558,11 @@ __all__ = [
     "render_pilot_portfolio_report",
     "render_pilot_scorecard",
     "render_repo_sync_audit_report",
+    "render_resource_grid",
+    "render_run_detail_console",
     "render_task_run_detail_page",
     "render_task_run_report",
+    "render_timeline_panel",
     "validation_report_exists",
     "write_report",
     "write_report_studio_bundle",

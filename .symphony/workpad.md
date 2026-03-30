@@ -90,6 +90,9 @@ Follow-on refactor now queued:
 - Inline the smaller `src/bigclaw/audit_events.py` event-spec surface into
   `src/bigclaw/observability.py` first, since its active consumers already sit
   on the observability/runtime path.
+- Active tranche: fold `src/bigclaw/run_detail.py` into `src/bigclaw/reports.py`,
+  repoint `evaluation.py`, preserve `bigclaw.run_detail` via package shim, and
+  delete the residual leaf module.
 
 ## Plan
 
@@ -790,6 +793,60 @@ Follow-on refactor now queued:
   - Result: `11`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `59`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+
+### Follow-on tranche 21
+
+- `src/bigclaw/run_detail.py`
+  - Deleted.
+  - Reason: the run-detail rendering dataclasses and HTML helpers were only
+    consumed by `reports.py`, `evaluation.py`, and package compatibility
+    exports, so they could be folded into the active reports surface.
+- `src/bigclaw/reports.py`
+  - Updated.
+  - Reason: now owns `RunDetailStat`, `RunDetailResource`,
+    `RunDetailEvent`, `RunDetailTab`, `render_run_detail_console`,
+    `render_resource_grid`, and `render_timeline_panel`.
+- `src/bigclaw/evaluation.py`
+  - Updated.
+  - Reason: imports the run-detail surface from `reports.py` instead of the
+    deleted leaf module.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: installs a `bigclaw.run_detail` compatibility module backed by the
+    reports surface and re-exports the moved run-detail symbols there.
+
+### Follow-on tranche 21 inventory
+
+- `src/bigclaw` Python files after tranche 21: `10`
+- Repository-wide Python files after tranche 21: `58`
+- Net repository-wide Python reduction: `50`
+- `bigclaw-go` Go files after tranche 21: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 21 validation
+
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py src/bigclaw/__init__.py tests/test_reports.py tests/test_evaluation.py tests/test_observability.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_evaluation.py tests/test_observability.py`
+  - Result: initial run failed during collection because `src/bigclaw/__init__.py`
+    imported `reports.py` before the existing legacy `bigclaw.orchestration`
+    shim was installed; after moving the `run_detail` shim installation to the
+    normal post-import phase, the rerun passed with `48 passed in 0.08s`
+- `PYTHONPATH=src python3 - <<'PY'` with `from bigclaw.run_detail import RunDetailStat, render_run_detail_console` and `from bigclaw.reports import RunDetailEvent, RunDetailTab`
+  - Result: `status RunDetailEvent RunDetailTab True`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `10`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `58`
 - `find bigclaw-go -type f -name '*.go' | wc -l`
   - Result: `267`
 - `test -f pyproject.toml && echo present || echo absent`
