@@ -1,237 +1,237 @@
 {
-  "generated_at": "2026-03-13T09:44:42.458392Z",
-  "ticket": "BIG-PAR-098",
-  "title": "Production-grade capacity certification matrix",
-  "status": "repo-native-capacity-certification",
+  "certification_checks": [
+    {
+      "detail": "[pass pass pass pass]",
+      "name": "all_microbenchmark_thresholds_hold",
+      "passed": true
+    },
+    {
+      "detail": "[pass pass pass pass]",
+      "name": "all_soak_lanes_hold",
+      "passed": true
+    },
+    {
+      "detail": "all sampled mixed-workload routes landed on the expected executor path",
+      "name": "mixed_workload_routes_match_expected_executors",
+      "passed": true
+    },
+    {
+      "detail": "drop_pct=5.02 threshold=12.0",
+      "name": "ceiling_lane_does_not_show_excessive_throughput_drop",
+      "passed": true
+    }
+  ],
   "evidence_inputs": {
     "benchmark_report_path": "bigclaw-go/docs/reports/benchmark-matrix-report.json",
+    "generator_script": "go run ./cmd/bigclawctl automation benchmark capacity-certification",
     "mixed_workload_report_path": "bigclaw-go/docs/reports/mixed-workload-matrix-report.json",
     "soak_report_paths": [
       "docs/reports/soak-local-50x8.json",
       "docs/reports/soak-local-100x12.json",
       "bigclaw-go/docs/reports/soak-local-1000x24.json",
       "bigclaw-go/docs/reports/soak-local-2000x24.json"
-    ],
-    "generator_script": "bigclaw-go/scripts/benchmark/capacity_certification.py"
+    ]
   },
-  "summary": {
-    "overall_status": "pass",
-    "total_lanes": 9,
-    "passed_lanes": 9,
-    "failed_lanes": [],
-    "recommended_sustained_envelope": "<=1000 tasks with 24 submit workers",
-    "ceiling_envelope": "<=2000 tasks with 24 submit workers"
-  },
+  "generated_at": "2026-03-13T09:44:42.458392Z",
+  "limits": [
+    "Evidence is repo-native and single-instance; it does not certify multi-node or multi-tenant production saturation behavior.",
+    "The matrix uses checked-in local runs from 2026-03-13 and should be refreshed when queue, scheduler, or executor behavior changes materially.",
+    "Recommended envelopes are conservative reviewer guidance derived from current evidence, not an automated runtime admission policy."
+  ],
   "microbenchmarks": [
     {
-      "lane": "BenchmarkMemoryQueueEnqueueLease-8",
-      "metric": "ns_per_op",
-      "observed": 66075.0,
-      "threshold": {
-        "operator": "<=",
-        "value": 100000
-      },
-      "status": "pass",
-      "detail": "observed=66075.0ns/op limit=100000ns/op"
-    },
-    {
+      "detail": "observed=3.1627767e+07ns/op limit=4e+07ns/op",
       "lane": "BenchmarkFileQueueEnqueueLease-8",
       "metric": "ns_per_op",
-      "observed": 31627767.0,
-      "threshold": {
-        "operator": "<=",
-        "value": 40000000
-      },
+      "observed": 31627767,
       "status": "pass",
-      "detail": "observed=31627767.0ns/op limit=40000000ns/op"
+      "threshold": {
+        "operator": "\u003c=",
+        "value": 40000000
+      }
     },
     {
+      "detail": "observed=66075ns/op limit=100000ns/op",
+      "lane": "BenchmarkMemoryQueueEnqueueLease-8",
+      "metric": "ns_per_op",
+      "observed": 66075,
+      "status": "pass",
+      "threshold": {
+        "operator": "\u003c=",
+        "value": 100000
+      }
+    },
+    {
+      "detail": "observed=1.8057898e+07ns/op limit=2.5e+07ns/op",
       "lane": "BenchmarkSQLiteQueueEnqueueLease-8",
       "metric": "ns_per_op",
-      "observed": 18057898.0,
-      "threshold": {
-        "operator": "<=",
-        "value": 25000000
-      },
+      "observed": 18057898,
       "status": "pass",
-      "detail": "observed=18057898.0ns/op limit=25000000ns/op"
+      "threshold": {
+        "operator": "\u003c=",
+        "value": 25000000
+      }
     },
     {
+      "detail": "observed=73.98ns/op limit=1000ns/op",
       "lane": "BenchmarkSchedulerDecide-8",
       "metric": "ns_per_op",
       "observed": 73.98,
+      "status": "pass",
       "threshold": {
-        "operator": "<=",
+        "operator": "\u003c=",
         "value": 1000
-      },
-      "status": "pass",
-      "detail": "observed=73.98ns/op limit=1000ns/op"
-    }
-  ],
-  "soak_matrix": [
-    {
-      "lane": "50x8",
-      "scenario": {
-        "count": 50,
-        "workers": 8
-      },
-      "observed": {
-        "elapsed_seconds": 8.232,
-        "throughput_tasks_per_sec": 6.074,
-        "succeeded": 50,
-        "failed": 0
-      },
-      "thresholds": {
-        "min_throughput_tasks_per_sec": 5.0,
-        "max_failures": 0
-      },
-      "operating_envelope": "bootstrap-burst",
-      "status": "pass",
-      "detail": "throughput=6.074tps min=5.0 failures=0 max=0"
-    },
-    {
-      "lane": "100x12",
-      "scenario": {
-        "count": 100,
-        "workers": 12
-      },
-      "observed": {
-        "elapsed_seconds": 10.294,
-        "throughput_tasks_per_sec": 9.714,
-        "succeeded": 100,
-        "failed": 0
-      },
-      "thresholds": {
-        "min_throughput_tasks_per_sec": 8.5,
-        "max_failures": 0
-      },
-      "operating_envelope": "bootstrap-burst",
-      "status": "pass",
-      "detail": "throughput=9.714tps min=8.5 failures=0 max=0"
-    },
-    {
-      "lane": "1000x24",
-      "scenario": {
-        "count": 1000,
-        "workers": 24
-      },
-      "observed": {
-        "elapsed_seconds": 104.091,
-        "throughput_tasks_per_sec": 9.607,
-        "succeeded": 1000,
-        "failed": 0
-      },
-      "thresholds": {
-        "min_throughput_tasks_per_sec": 9.0,
-        "max_failures": 0
-      },
-      "operating_envelope": "recommended-local-sustained",
-      "status": "pass",
-      "detail": "throughput=9.607tps min=9.0 failures=0 max=0"
-    },
-    {
-      "lane": "2000x24",
-      "scenario": {
-        "count": 2000,
-        "workers": 24
-      },
-      "observed": {
-        "elapsed_seconds": 219.167,
-        "throughput_tasks_per_sec": 9.125,
-        "succeeded": 2000,
-        "failed": 0
-      },
-      "thresholds": {
-        "min_throughput_tasks_per_sec": 8.5,
-        "max_failures": 0
-      },
-      "operating_envelope": "recommended-local-ceiling",
-      "status": "pass",
-      "detail": "throughput=9.125tps min=8.5 failures=0 max=0"
+      }
     }
   ],
   "mixed_workload": {
-    "lane": "mixed-workload-routing",
-    "observed": {
-      "all_ok": true,
-      "task_count": 5,
-      "successful_tasks": 5
-    },
-    "thresholds": {
-      "all_ok_required": true,
-      "minimum_task_count": 5,
-      "executor_route_match_required": true
-    },
-    "status": "pass",
     "detail": "all sampled mixed-workload routes landed on the expected executor path",
+    "lane": "mixed-workload-routing",
     "limitations": [
       "executor-mix coverage is functional rather than high-volume",
       "mixed-workload evidence proves route correctness but not sustained cross-executor saturation limits"
-    ]
-  },
-  "saturation_indicator": {
-    "baseline_lane": "1000x24",
-    "ceiling_lane": "2000x24",
-    "baseline_throughput_tasks_per_sec": 9.607,
-    "ceiling_throughput_tasks_per_sec": 9.125,
-    "throughput_drop_pct": 5.02,
-    "drop_warn_threshold_pct": 12.0,
+    ],
+    "observed": {
+      "all_ok": true,
+      "successful_tasks": 5,
+      "task_count": 5
+    },
     "status": "pass",
-    "detail": "throughput remains in the same single-instance local band at the 2000-task ceiling"
+    "thresholds": {
+      "all_ok_required": true,
+      "executor_route_match_required": true,
+      "minimum_task_count": 5
+    }
   },
   "operating_envelopes": [
     {
-      "name": "recommended-local-sustained",
-      "recommendation": "Use up to 1000 queued tasks with 24 submit workers when a stable single-instance local review lane is required.",
       "evidence_lanes": [
         "1000x24"
-      ]
+      ],
+      "name": "recommended-local-sustained",
+      "recommendation": "Use up to 1000 queued tasks with 24 submit workers when a stable single-instance local review lane is required."
     },
     {
-      "name": "recommended-local-ceiling",
-      "recommendation": "Treat 2000 queued tasks with 24 submit workers as the checked-in local ceiling, not the default operating point.",
       "evidence_lanes": [
         "2000x24"
-      ]
+      ],
+      "name": "recommended-local-ceiling",
+      "recommendation": "Treat 2000 queued tasks with 24 submit workers as the checked-in local ceiling, not the default operating point."
     },
     {
-      "name": "mixed-workload-routing",
-      "recommendation": "Use the mixed-workload matrix for executor routing correctness, but do not infer sustained multi-executor throughput from it.",
       "evidence_lanes": [
         "mixed-workload-routing"
-      ]
+      ],
+      "name": "mixed-workload-routing",
+      "recommendation": "Use the mixed-workload matrix for executor routing correctness, but do not infer sustained multi-executor throughput from it."
     }
   ],
-  "certification_checks": [
-    {
-      "name": "all_microbenchmark_thresholds_hold",
-      "passed": true,
-      "detail": "['pass', 'pass', 'pass', 'pass']"
-    },
-    {
-      "name": "all_soak_lanes_hold",
-      "passed": true,
-      "detail": "['pass', 'pass', 'pass', 'pass']"
-    },
-    {
-      "name": "mixed_workload_routes_match_expected_executors",
-      "passed": true,
-      "detail": "all sampled mixed-workload routes landed on the expected executor path"
-    },
-    {
-      "name": "ceiling_lane_does_not_show_excessive_throughput_drop",
-      "passed": true,
-      "detail": "drop_pct=5.02 threshold=12.0"
-    }
-  ],
+  "saturation_indicator": {
+    "baseline_lane": "1000x24",
+    "baseline_throughput_tasks_per_sec": 9.607,
+    "ceiling_lane": "2000x24",
+    "ceiling_throughput_tasks_per_sec": 9.125,
+    "detail": "throughput remains in the same single-instance local band at the 2000-task ceiling",
+    "drop_warn_threshold_pct": 12,
+    "status": "pass",
+    "throughput_drop_pct": 5.02
+  },
   "saturation_notes": [
     "Throughput plateaus around 9-10 tasks/s across the checked-in 100x12, 1000x24, and 2000x24 local lanes.",
     "The 2000x24 lane remains within the same throughput band as 1000x24, so the checked-in local ceiling is evidence-backed but not substantially headroom-rich.",
     "Mixed-workload evidence verifies executor-routing correctness across local, Kubernetes, and Ray, but it is a functional routing proof rather than a concurrency ceiling."
   ],
-  "limits": [
-    "Evidence is repo-native and single-instance; it does not certify multi-node or multi-tenant production saturation behavior.",
-    "The matrix uses checked-in local runs from 2026-03-13 and should be refreshed when queue, scheduler, or executor behavior changes materially.",
-    "Recommended envelopes are conservative reviewer guidance derived from current evidence, not an automated runtime admission policy."
-  ]
+  "soak_matrix": [
+    {
+      "detail": "throughput=6.074tps min=5.0 failures=0 max=0",
+      "lane": "50x8",
+      "observed": {
+        "elapsed_seconds": 8.232,
+        "failed": 0,
+        "succeeded": 50,
+        "throughput_tasks_per_sec": 6.074
+      },
+      "operating_envelope": "bootstrap-burst",
+      "scenario": {
+        "count": 50,
+        "workers": 8
+      },
+      "status": "pass",
+      "thresholds": {
+        "max_failures": 0,
+        "min_throughput_tasks_per_sec": 5
+      }
+    },
+    {
+      "detail": "throughput=9.714tps min=8.5 failures=0 max=0",
+      "lane": "100x12",
+      "observed": {
+        "elapsed_seconds": 10.294,
+        "failed": 0,
+        "succeeded": 100,
+        "throughput_tasks_per_sec": 9.714
+      },
+      "operating_envelope": "bootstrap-burst",
+      "scenario": {
+        "count": 100,
+        "workers": 12
+      },
+      "status": "pass",
+      "thresholds": {
+        "max_failures": 0,
+        "min_throughput_tasks_per_sec": 8.5
+      }
+    },
+    {
+      "detail": "throughput=9.607tps min=9.0 failures=0 max=0",
+      "lane": "1000x24",
+      "observed": {
+        "elapsed_seconds": 104.091,
+        "failed": 0,
+        "succeeded": 1000,
+        "throughput_tasks_per_sec": 9.607
+      },
+      "operating_envelope": "recommended-local-sustained",
+      "scenario": {
+        "count": 1000,
+        "workers": 24
+      },
+      "status": "pass",
+      "thresholds": {
+        "max_failures": 0,
+        "min_throughput_tasks_per_sec": 9
+      }
+    },
+    {
+      "detail": "throughput=9.125tps min=8.5 failures=0 max=0",
+      "lane": "2000x24",
+      "observed": {
+        "elapsed_seconds": 219.167,
+        "failed": 0,
+        "succeeded": 2000,
+        "throughput_tasks_per_sec": 9.125
+      },
+      "operating_envelope": "recommended-local-ceiling",
+      "scenario": {
+        "count": 2000,
+        "workers": 24
+      },
+      "status": "pass",
+      "thresholds": {
+        "max_failures": 0,
+        "min_throughput_tasks_per_sec": 8.5
+      }
+    }
+  ],
+  "status": "repo-native-capacity-certification",
+  "summary": {
+    "ceiling_envelope": "\u003c=2000 tasks with 24 submit workers",
+    "failed_lanes": [],
+    "overall_status": "pass",
+    "passed_lanes": 9,
+    "recommended_sustained_envelope": "\u003c=1000 tasks with 24 submit workers",
+    "total_lanes": 9
+  },
+  "ticket": "BIG-PAR-098",
+  "title": "Production-grade capacity certification matrix"
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -128,6 +129,117 @@ func TestAutomationSoakLocalWritesReport(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "\"succeeded\": 4") {
 		t.Fatalf("unexpected report body: %s", string(body))
+	}
+}
+
+func TestRunAutomationBenchmarkHelpIncludesMigratedCommands(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		return runAutomation([]string{"benchmark", "--help"})
+	})
+	if err != nil {
+		t.Fatalf("benchmark help: %v", err)
+	}
+	text := string(output)
+	if !strings.Contains(text, "soak-local|run-matrix|capacity-certification") {
+		t.Fatalf("unexpected benchmark help: %s", text)
+	}
+}
+
+func TestAutomationBenchmarkRunMatrixWritesReport(t *testing.T) {
+	goRoot := t.TempDir()
+	reportPath := "docs/reports/benchmark-matrix-report.json"
+	report, err := automationBenchmarkRunMatrix(automationBenchmarkRunMatrixOptions{
+		GoRoot:         goRoot,
+		ReportPath:     reportPath,
+		TimeoutSeconds: 30,
+		Scenarios:      []string{"50:8"},
+		RunBenchmarks: func(string) (string, error) {
+			return "BenchmarkMemoryQueueEnqueueLease-8\t1\t66075 ns/op\nBenchmarkSchedulerDecide-8\t1\t73.98 ns/op\n", nil
+		},
+		RunSoak: func(opts automationSoakLocalOptions) (*automationSoakLocalReport, int, error) {
+			if opts.Count != 50 || opts.Workers != 8 || !opts.Autostart {
+				t.Fatalf("unexpected soak options: %+v", opts)
+			}
+			return &automationSoakLocalReport{
+				Count:                 50,
+				Workers:               8,
+				ElapsedSeconds:        8.232,
+				ThroughputTasksPerSec: 6.074,
+				Succeeded:             50,
+				Failed:                0,
+			}, 0, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("run benchmark matrix: %v", err)
+	}
+	parsed, _ := lookupMap(report, "benchmark", "parsed").(map[string]any)
+	if asFloat(lookupMap(parsed, "BenchmarkMemoryQueueEnqueueLease-8", "ns_per_op")) != 66075 {
+		t.Fatalf("unexpected parsed benchmark payload: %+v", report)
+	}
+	entries, _ := report["soak_matrix"].([]map[string]any)
+	if len(entries) != 1 {
+		rawEntries, _ := report["soak_matrix"].([]any)
+		if len(rawEntries) != 1 {
+			t.Fatalf("unexpected soak matrix entries: %+v", report["soak_matrix"])
+		}
+	}
+	body, err := os.ReadFile(filepath.Join(goRoot, reportPath))
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(body), "\"report_path\": \"docs/reports/soak-local-50x8.json\"") {
+		t.Fatalf("unexpected report body: %s", string(body))
+	}
+}
+
+func TestAutomationCapacityCertificationMatchesCheckedInEvidence(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	repoRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputPath := filepath.Join(t.TempDir(), "capacity-certification-matrix.json")
+	markdownPath := filepath.Join(t.TempDir(), "capacity-certification-report.md")
+	report, err := automationCapacityCertification(automationCapacityCertificationOptions{
+		BenchmarkReportPath:        filepath.Join(repoRoot, "docs", "reports", "benchmark-matrix-report.json"),
+		MixedWorkloadReportPath:    filepath.Join(repoRoot, "docs", "reports", "mixed-workload-matrix-report.json"),
+		SupplementalSoakReportPath: []string{filepath.Join(repoRoot, "docs", "reports", "soak-local-1000x24.json"), filepath.Join(repoRoot, "docs", "reports", "soak-local-2000x24.json")},
+		OutputPath:                 outputPath,
+		MarkdownOutputPath:         markdownPath,
+		Now:                        func() time.Time { return time.Date(2026, 3, 30, 0, 0, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("build capacity certification: %v", err)
+	}
+	summary, _ := report["summary"].(map[string]any)
+	if summary["overall_status"] != "pass" {
+		t.Fatalf("unexpected overall status: %+v", report)
+	}
+	if report["generated_at"] != "2026-03-13T09:44:42.458392Z" {
+		t.Fatalf("unexpected generated_at: %+v", report["generated_at"])
+	}
+	evidenceInputs, _ := report["evidence_inputs"].(map[string]any)
+	if evidenceInputs["generator_script"] != "go run ./cmd/bigclawctl automation benchmark capacity-certification" {
+		t.Fatalf("unexpected generator script: %+v", evidenceInputs)
+	}
+	if !strings.Contains(fmt.Sprint(report["markdown"]), "## Admission Policy Summary") ||
+		!strings.Contains(fmt.Sprint(report["markdown"]), "Runtime enforcement: `none`") {
+		t.Fatalf("unexpected markdown: %v", report["markdown"])
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read output json: %v", err)
+	}
+	if !strings.Contains(string(body), "\"repo-native-capacity-certification\"") {
+		t.Fatalf("unexpected output body: %s", string(body))
+	}
+	markdownBody, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatalf("read markdown output: %v", err)
+	}
+	if !strings.Contains(string(markdownBody), "# Capacity Certification Report") {
+		t.Fatalf("unexpected markdown output: %s", string(markdownBody))
 	}
 }
 
@@ -330,13 +442,13 @@ func TestAutomationLiveShadowScorecardBuildsReport(t *testing.T) {
 func TestAutomationExportLiveShadowBundleBuildsManifest(t *testing.T) {
 	root := t.TempDir()
 	for path, body := range map[string]string{
-		filepath.Join(root, "docs/reports/shadow-compare-report.json"): `{"trace_id":"shadow-compare-sample","primary":{"task_id":"primary-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"shadow":{"task_id":"shadow-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}`,
-		filepath.Join(root, "docs/reports/shadow-matrix-report.json"):  `{"total":1,"matched":1,"mismatched":0,"results":[{"trace_id":"shadow-compare-sample-m1","primary":{"task_id":"primary-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"shadow":{"task_id":"shadow-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}]}`,
+		filepath.Join(root, "docs/reports/shadow-compare-report.json"):        `{"trace_id":"shadow-compare-sample","primary":{"task_id":"primary-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"shadow":{"task_id":"shadow-1","events":[{"type":"queued","timestamp":"2026-03-13T07:53:21Z"},{"type":"succeeded","timestamp":"2026-03-13T07:53:24Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}`,
+		filepath.Join(root, "docs/reports/shadow-matrix-report.json"):         `{"total":1,"matched":1,"mismatched":0,"results":[{"trace_id":"shadow-compare-sample-m1","primary":{"task_id":"primary-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"shadow":{"task_id":"shadow-m1","events":[{"type":"queued","timestamp":"2026-03-13T08:56:55Z"},{"type":"succeeded","timestamp":"2026-03-13T08:56:58Z"}]},"diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":3.0,"shadow_timeline_seconds":3.0}}]}`,
 		filepath.Join(root, "docs/reports/live-shadow-mirror-scorecard.json"): `{"summary":{"total_evidence_runs":2,"parity_ok_count":2,"drift_detected_count":0,"matrix_total":1,"matrix_mismatched":0,"stale_inputs":0,"fresh_inputs":2,"latest_evidence_timestamp":"2026-03-13T08:56:55Z"},"freshness":[{"name":"shadow-compare-report","status":"fresh","report_path":"bigclaw-go/docs/reports/shadow-compare-report.json"},{"name":"shadow-matrix-report","status":"fresh","report_path":"bigclaw-go/docs/reports/shadow-matrix-report.json"}],"cutover_checkpoints":[{"name":"checkpoint","passed":true,"detail":"ok"}]}`,
 		filepath.Join(root, "docs/reports/rollback-trigger-surface.json"):     `{"summary":{"status":"manual-review-required","automation_boundary":"manual_only","automated_rollback_trigger":false,"distinctions":{"blockers":3,"warnings":1,"manual_only_paths":2}},"issue":{"id":"OPE-254","slug":"BIG-PAR-088"},"digest_path":"docs/reports/rollback-safeguard-follow-up-digest.md"}`,
-		filepath.Join(root, "docs/migration-shadow.md"):                         `shadow docs`,
-		filepath.Join(root, "docs/reports/migration-readiness-report.md"):       `readiness docs`,
-		filepath.Join(root, "docs/reports/migration-plan-review-notes.md"):      `review notes`,
+		filepath.Join(root, "docs/migration-shadow.md"):                       `shadow docs`,
+		filepath.Join(root, "docs/reports/migration-readiness-report.md"):     `readiness docs`,
+		filepath.Join(root, "docs/reports/migration-plan-review-notes.md"):    `review notes`,
 	} {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)

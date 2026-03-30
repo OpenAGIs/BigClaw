@@ -1,14 +1,18 @@
-# BIG-GO-990 Workpad
+# BIG-GO-1009 Workpad
 
 ## Scope
 
 Target the remaining Python scripts under:
 
-- `bigclaw-go/scripts/e2e/**`
-- `bigclaw-go/scripts/migration/**`
+- `bigclaw-go/scripts/benchmark/**`
+- selected `bigclaw-go/scripts/e2e/**` files that can be removed or replaced within the same benchmark/e2e batch
 
 Initial batch file list:
 
+- `bigclaw-go/scripts/benchmark/capacity_certification.py`
+- `bigclaw-go/scripts/benchmark/capacity_certification_test.py`
+- `bigclaw-go/scripts/benchmark/run_matrix.py`
+- `bigclaw-go/scripts/benchmark/soak_local.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
@@ -19,38 +23,34 @@ Initial batch file list:
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
 - `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
 
-Current repository Python file count before this lane: `116`
-Current targeted batch Python file count before this lane: `19`
+Current repository Python file count before this lane: `108`
+Current targeted batch Python file count before this lane: `18`
+Current benchmark-batch Python file count before this lane: `4`
 
 ## Plan
 
-1. Inspect every Python file in the batch and map it to an existing Go/sh replacement or determine if a small Go port is needed.
-2. Remove redundant Python files where a repository-native replacement already exists or add a Go-native replacement where missing and then remove the Python version.
-3. Run targeted validation for the touched replacement paths.
-4. Record exact file disposition, rationale, and repository Python count impact.
-5. Commit and push the scoped changes for `BIG-GO-990`.
+1. Inspect the benchmark scripts and the adjacent `e2e` Python files to find existing Go or shell entrypoints already covering their behavior.
+2. Port benchmark-only Python orchestration into `bigclawctl` or shell where practical, then delete the Python originals.
+3. Remove any selected `e2e` Python files that are already redundant because a checked-in shell/Go surface is the canonical path.
+4. Update docs/tests only where required by the scoped migration.
+5. Run targeted validation, capture exact commands/results, and report the before/after Python counts plus per-file disposition.
 
 ## Acceptance
 
-- Produce the exact `BIG-GO-990` batch file list for `scripts/e2e` and `scripts/migration`.
-- Reduce the number of Python files in the targeted directories as far as practical within this lane.
-- Document keep/replace/delete rationale for every targeted Python file.
-- Report the repository-wide Python file count impact.
+- Produce the exact `BIG-GO-1009` batch file list for `scripts/benchmark/**` and the touched subset of `scripts/e2e/**`.
+- Reduce Python file count in this batch as far as practical without broadening scope.
+- Document delete/replace/keep rationale for every file in the batch.
+- Report repository-wide Python count impact.
 
 ## Validation
 
 - `find . -name '*.py' | wc -l`
-- Targeted validation commands for any Go/sh replacements touched in this lane
+- targeted `go test` and any script-level verification needed for touched benchmark/e2e replacements
 - `git status --short`
 - `git log -1 --stat`
 
@@ -58,32 +58,24 @@ Current targeted batch Python file count before this lane: `19`
 
 ### File Disposition
 
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
+- `bigclaw-go/scripts/benchmark/soak_local.py`
   - Deleted.
-  - Reason: already fully replaced by `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`; callers and docs in this lane now invoke the Go entrypoint directly.
-- `bigclaw-go/scripts/migration/shadow_compare.py`
+  - Reason: fully replaced by `go run ./cmd/bigclawctl automation benchmark soak-local ...`; the compatibility shim is no longer needed.
+- `bigclaw-go/scripts/benchmark/run_matrix.py`
   - Deleted.
-  - Reason: already fully replaced by `go run ./cmd/bigclawctl automation migration shadow-compare ...`; docs now point at the Go command directly.
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
+  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, with benchmark stdout parsing, soak scenario orchestration, and JSON report writing moved into `cmd/bigclawctl`.
+- `bigclaw-go/scripts/benchmark/capacity_certification.py`
   - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration shadow-matrix ...`, with the matrix orchestration and corpus coverage logic moved into `cmd/bigclawctl`.
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
+  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation benchmark capacity-certification ...`, with report generation and markdown rendering moved into `cmd/bigclawctl`.
+- `bigclaw-go/scripts/benchmark/capacity_certification_test.py`
   - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, with the scorecard aggregation logic moved into `cmd/bigclawctl`.
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+  - Reason: coverage moved into `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`.
+- `bigclaw-go/scripts/e2e/run_all_test.py`
   - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`, with bundle summary, manifest, rollup, and README generation moved into `cmd/bigclawctl`.
-- Remaining targeted Python files
+  - Reason: coverage moved into `bigclaw-go/internal/regression/run_all_script_test.go`, so `run_all.sh` behavior is now exercised by Go tests instead of Python unittest.
+- Remaining targeted `e2e` Python files
   - Kept for now.
-  - Reason: they still own report-generation or Python-only test behavior and do not yet have Go-native replacements in the repo.
-
-### Python File Count Impact
-
-- Repository Python files before: `116`
-- Repository Python files after: `108`
-- Targeted batch Python files before: `19`
-- Targeted batch Python files after: `14`
-- Net reduction: `5`
+  - Reason: they still own live/report-generation logic with no checked-in Go-native replacement in this slice.
 
 ### Remaining Targeted Python Files
 
@@ -96,30 +88,34 @@ Current targeted batch Python file count before this lane: `19`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 
+### Python File Count Impact
+
+- Repository Python files before: `108`
+- Repository Python files after: `103`
+- Targeted batch Python files before: `18`
+- Targeted batch Python files after: `13`
+- Benchmark-batch Python files before: `4`
+- Benchmark-batch Python files after: `0`
+- Net reduction: `5`
+
 ### Validation Record
 
-- `cd bigclaw-go && python3 -m unittest scripts/e2e/run_all_test.py`
-  - Result: `Ran 3 tests in 4.250s` and `OK`
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-  - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.418s`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration shadow-matrix ...` produces a matrix report with corpus coverage against stub HTTP endpoints.
-  - Result: `shadow_matrix_cli_ok`
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration --help`
-  - Result: `usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle> [flags]`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` emits a repo-native scorecard from compare/matrix JSON inputs.
-  - Result: `live_shadow_scorecard_cli_ok`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --go-root <tempdir>` emits summary/index/manifest/rollup outputs and bundle README from local artifacts.
-  - Result: `export_live_shadow_bundle_cli_ok`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.260s`
+- `cd bigclaw-go && go test ./internal/regression -run RunAll`
+  - Result: `ok  	bigclaw-go/internal/regression	3.981s`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark --help`
+  - Result: `usage: bigclawctl automation benchmark <soak-local|run-matrix|capacity-certification> [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
+  - Result: command returned `0` and printed the new `run-matrix` flags, including `--scenario` and `--report-path`.
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
+  - Result: command returned `0` and printed the new `capacity-certification` flags, including `--benchmark-report`, `--supplemental-soak-report`, `--output`, and `--markdown-output`.
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --output docs/reports/capacity-certification-matrix.json --markdown-output docs/reports/capacity-certification-report.md`
+  - Result: command returned `0` and regenerated the checked-in certification JSON/Markdown with `generator_script` set to the new Go CLI entrypoint.
 - `find . -name '*.py' | wc -l`
-  - Result: `108`
-- `git status --short`
-  - Result: only `.symphony/workpad.md` plus the scoped docs/script changes for this lane are modified.
+  - Result: `103`

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -109,6 +110,24 @@ type automationSoakLocalOptions struct {
 	Now            func() time.Time
 	Sleep          func(time.Duration)
 	StartBigClawd  func(string, map[string]string) (*exec.Cmd, string, string, string, error)
+}
+
+type automationBenchmarkRunMatrixOptions struct {
+	GoRoot         string
+	ReportPath     string
+	TimeoutSeconds int
+	Scenarios      []string
+	RunBenchmarks  func(string) (string, error)
+	RunSoak        func(automationSoakLocalOptions) (*automationSoakLocalReport, int, error)
+}
+
+type automationCapacityCertificationOptions struct {
+	BenchmarkReportPath        string
+	MixedWorkloadReportPath    string
+	SupplementalSoakReportPath []string
+	OutputPath                 string
+	MarkdownOutputPath         string
+	Now                        func() time.Time
 }
 
 type automationTask struct {
@@ -232,12 +251,16 @@ func runAutomationE2E(args []string) error {
 
 func runAutomationBenchmark(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <soak-local> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation benchmark <soak-local|run-matrix|capacity-certification> [flags]\n")
 		return nil
 	}
 	switch args[0] {
 	case "soak-local":
 		return runAutomationSoakLocalCommand(args[1:])
+	case "run-matrix":
+		return runAutomationBenchmarkRunMatrixCommand(args[1:])
+	case "capacity-certification":
+		return runAutomationCapacityCertificationCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation benchmark subcommand: %s", args[0])
 	}
@@ -494,6 +517,73 @@ func runAutomationSoakLocalCommand(args []string) error {
 	return nil
 }
 
+func runAutomationBenchmarkRunMatrixCommand(args []string) error {
+	flags := flag.NewFlagSet("automation benchmark run-matrix", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	reportPath := flags.String("report-path", "docs/reports/benchmark-matrix-report.json", "relative or absolute report path")
+	timeoutSeconds := flags.Int("timeout-seconds", 180, "task timeout seconds")
+	var scenarios multiStringFlag
+	flags.Var(&scenarios, "scenario", "count:workers benchmark soak scenario")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation benchmark run-matrix [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationBenchmarkRunMatrix(automationBenchmarkRunMatrixOptions{
+		GoRoot:         absPath(*goRoot),
+		ReportPath:     *reportPath,
+		TimeoutSeconds: *timeoutSeconds,
+		Scenarios:      append([]string(nil), scenarios...),
+	})
+	if err != nil {
+		return err
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationCapacityCertificationCommand(args []string) error {
+	flags := flag.NewFlagSet("automation benchmark capacity-certification", flag.ContinueOnError)
+	benchmarkReport := flags.String("benchmark-report", "bigclaw-go/docs/reports/benchmark-matrix-report.json", "benchmark matrix report path")
+	mixedWorkloadReport := flags.String("mixed-workload-report", "bigclaw-go/docs/reports/mixed-workload-matrix-report.json", "mixed workload report path")
+	var supplementalSoakReports multiStringFlag
+	flags.Var(&supplementalSoakReports, "supplemental-soak-report", "additional soak report path")
+	output := flags.String("output", "bigclaw-go/docs/reports/capacity-certification-matrix.json", "output path")
+	markdownOutput := flags.String("markdown-output", "bigclaw-go/docs/reports/capacity-certification-report.md", "markdown output path")
+	pretty := flags.Bool("pretty", false, "pretty-print report to stdout")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation benchmark capacity-certification [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationCapacityCertification(automationCapacityCertificationOptions{
+		BenchmarkReportPath:        *benchmarkReport,
+		MixedWorkloadReportPath:    *mixedWorkloadReport,
+		SupplementalSoakReportPath: append([]string(nil), supplementalSoakReports...),
+		OutputPath:                 *output,
+		MarkdownOutputPath:         *markdownOutput,
+	})
+	if err != nil {
+		return err
+	}
+	if *pretty {
+		body, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = os.Stdout.Write(append(body, '\n'))
+		if !*asJSON {
+			return nil
+		}
+	}
+	return emit(report, *asJSON, 0)
+}
+
 func automationRunTaskSmoke(opts automationRunTaskSmokeOptions) (*automationRunTaskSmokeReport, int, error) {
 	client := opts.HTTPClient
 	if client == nil {
@@ -717,10 +807,10 @@ func automationShadowCompare(opts automationShadowCompareOptions) (*automationSh
 }
 
 type automationShadowMatrixExecutionEntry struct {
-	Task       map[string]any
-	SourceKind string
-	SourceFile string
-	TaskShape  string
+	Task        map[string]any
+	SourceKind  string
+	SourceFile  string
+	TaskShape   string
 	CorpusSlice map[string]any
 }
 
@@ -737,9 +827,9 @@ type automationShadowMatrixCorpusSlice struct {
 }
 
 type automationShadowMatrixManifestMeta struct {
-	Name       string
+	Name        string
 	GeneratedAt any
-	SourceFile string
+	SourceFile  string
 }
 
 func automationShadowMatrix(opts automationShadowMatrixOptions) (map[string]any, int, error) {
@@ -899,9 +989,9 @@ func automationShadowMatrixLoadCorpusManifestEntries(manifestPath string, replay
 		name = strings.TrimSuffix(filepath.Base(manifestPath), filepath.Ext(manifestPath))
 	}
 	return &automationShadowMatrixManifestMeta{
-		Name:       name,
+		Name:        name,
 		GeneratedAt: manifest["generated_at"],
-		SourceFile: manifestPath,
+		SourceFile:  manifestPath,
 	}, replayEntries, coverageSlices, nil
 }
 
@@ -960,11 +1050,11 @@ func automationShadowMatrixBuildCorpusCoverage(fixtureEntries []automationShadow
 		fixtureByShape[entry.TaskShape] = append(fixtureByShape[entry.TaskShape], entry)
 	}
 	type shapeAggregate struct {
-		SliceCount         int
-		ReplayableCount    int
-		CorpusWeight       int
-		SliceIDs           []string
-		Titles             []string
+		SliceCount      int
+		ReplayableCount int
+		CorpusWeight    int
+		SliceIDs        []string
+		Titles          []string
 	}
 	corpusByShape := map[string]*shapeAggregate{}
 	for _, sliceData := range corpusSlices {
@@ -1019,14 +1109,14 @@ func automationShadowMatrixBuildCorpusCoverage(fixtureEntries []automationShadow
 			continue
 		}
 		uncoveredSlices = append(uncoveredSlices, map[string]any{
-			"slice_id":   sliceData.SliceID,
-			"title":      sliceData.Title,
-			"task_shape": sliceData.TaskShape,
-			"weight":     sliceData.Weight,
-			"replayable": sliceData.Task != nil,
+			"slice_id":    sliceData.SliceID,
+			"title":       sliceData.Title,
+			"task_shape":  sliceData.TaskShape,
+			"weight":      sliceData.Weight,
+			"replayable":  sliceData.Task != nil,
 			"source_file": sliceData.SourceFile,
-			"tags":       sliceData.Tags,
-			"notes":      sliceData.Notes,
+			"tags":        sliceData.Tags,
+			"notes":       sliceData.Notes,
 		})
 	}
 	replayableCount := 0
@@ -1176,17 +1266,17 @@ func automationLiveShadowScorecard(opts automationLiveShadowScorecardOptions) (m
 			"generator_script":           "go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
 		},
 		"summary": map[string]any{
-			"total_evidence_runs":           len(parityEntries),
-			"parity_ok_count":               parityOKCount,
-			"drift_detected_count":          driftDetectedCount,
-			"matrix_total":                  automationInt(matrixReport["total"], 0),
-			"matrix_matched":                automationInt(matrixReport["matched"], 0),
-			"matrix_mismatched":             automationInt(matrixReport["mismatched"], 0),
-			"corpus_coverage_present":       len(matrixCorpusCoverage) > 0,
-			"corpus_uncovered_slice_count":  matrixCorpusCoverage["uncovered_corpus_slice_count"],
-			"latest_evidence_timestamp":     stringOrNil(latestEvidenceTimestamp),
-			"fresh_inputs":                  len(freshness) - staleInputs,
-			"stale_inputs":                  staleInputs,
+			"total_evidence_runs":          len(parityEntries),
+			"parity_ok_count":              parityOKCount,
+			"drift_detected_count":         driftDetectedCount,
+			"matrix_total":                 automationInt(matrixReport["total"], 0),
+			"matrix_matched":               automationInt(matrixReport["matched"], 0),
+			"matrix_mismatched":            automationInt(matrixReport["mismatched"], 0),
+			"corpus_coverage_present":      len(matrixCorpusCoverage) > 0,
+			"corpus_uncovered_slice_count": matrixCorpusCoverage["uncovered_corpus_slice_count"],
+			"latest_evidence_timestamp":    stringOrNil(latestEvidenceTimestamp),
+			"fresh_inputs":                 len(freshness) - staleInputs,
+			"stale_inputs":                 staleInputs,
 		},
 		"freshness":           freshness,
 		"parity_entries":      parityEntries,
@@ -1473,12 +1563,12 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 		}
 	}
 	return map[string]any{
-		"run_id":                   runID,
-		"generated_at":             utcISOTime(generatedAt),
-		"status":                   status,
-		"severity":                 severity,
-		"bundle_path":              relAutomationPath(bundleDir, root),
-		"summary_path":             relAutomationPath(filepath.Join(bundleDir, "summary.json"), root),
+		"run_id":       runID,
+		"generated_at": utcISOTime(generatedAt),
+		"status":       status,
+		"severity":     severity,
+		"bundle_path":  relAutomationPath(bundleDir, root),
+		"summary_path": relAutomationPath(filepath.Join(bundleDir, "summary.json"), root),
 		"artifacts": map[string]any{
 			"shadow_compare_report_path":    relAutomationPath(compareBundlePath, root),
 			"shadow_matrix_report_path":     relAutomationPath(matrixBundlePath, root),
@@ -1497,17 +1587,17 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 			"fresh_inputs":         automationInt(scorecardSummary["fresh_inputs"], 0),
 		},
 		"rollback_trigger_surface": map[string]any{
-			"status":                   lookupMap(rollbackReport, "summary", "status"),
-			"automation_boundary":      lookupMap(rollbackReport, "summary", "automation_boundary"),
+			"status":                     lookupMap(rollbackReport, "summary", "status"),
+			"automation_boundary":        lookupMap(rollbackReport, "summary", "automation_boundary"),
 			"automated_rollback_trigger": automationBool(lookupMap(rollbackReport, "summary", "automated_rollback_trigger")),
-			"distinctions":             lookupMap(rollbackReport, "summary", "distinctions"),
-			"issue":                    lookupMap(rollbackReport, "issue"),
-			"digest_path":              rollbackReport["digest_path"],
-			"summary_path":             relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
+			"distinctions":               lookupMap(rollbackReport, "summary", "distinctions"),
+			"issue":                      lookupMap(rollbackReport, "issue"),
+			"digest_path":                rollbackReport["digest_path"],
+			"summary_path":               relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
 		},
-		"compare_trace_id":     compareReport["trace_id"],
-		"matrix_trace_ids":     matrixTraceIDs,
-		"cutover_checkpoints":  scorecardReport["cutover_checkpoints"],
+		"compare_trace_id":    compareReport["trace_id"],
+		"matrix_trace_ids":    matrixTraceIDs,
+		"cutover_checkpoints": scorecardReport["cutover_checkpoints"],
 		"closeout_commands": []string{
 			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
 			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
@@ -1575,15 +1665,15 @@ func buildLiveShadowRollup(recentRuns []map[string]any, limit int, generatedAt t
 			driftDetectedRuns++
 		}
 		entries = append(entries, map[string]any{
-			"run_id":                item["run_id"],
-			"generated_at":          item["generated_at"],
-			"status":                item["status"],
-			"severity":              severity,
+			"run_id":                    item["run_id"],
+			"generated_at":              item["generated_at"],
+			"status":                    item["status"],
+			"severity":                  severity,
 			"latest_evidence_timestamp": item["latest_evidence_timestamp"],
-			"drift_detected_count":  driftDetectedCount,
-			"stale_inputs":          staleInputs,
-			"bundle_path":           item["bundle_path"],
-			"summary_path":          item["summary_path"],
+			"drift_detected_count":      driftDetectedCount,
+			"stale_inputs":              staleInputs,
+			"bundle_path":               item["bundle_path"],
+			"summary_path":              item["summary_path"],
 		})
 	}
 	status := "parity-ok"
@@ -1771,6 +1861,583 @@ func deriveLiveShadowRunID(scorecard map[string]any, generatedAt time.Time) stri
 		}
 	}
 	return generatedAt.UTC().Format("20060102T150405Z")
+}
+
+var benchmarkStdoutPattern = regexp.MustCompile(`(?m)^(Benchmark\S+)\s+\d+\s+([0-9.]+)\s+ns/op$`)
+
+var benchmarkMicrobenchmarkLimits = map[string]float64{
+	"BenchmarkMemoryQueueEnqueueLease-8": 100000,
+	"BenchmarkFileQueueEnqueueLease-8":   40000000,
+	"BenchmarkSQLiteQueueEnqueueLease-8": 25000000,
+	"BenchmarkSchedulerDecide-8":         1000,
+}
+
+type benchmarkSoakThreshold struct {
+	MinThroughput float64
+	MaxFailures   int
+	Envelope      string
+}
+
+var benchmarkSoakThresholds = map[string]benchmarkSoakThreshold{
+	"50x8":    {MinThroughput: 5.0, MaxFailures: 0, Envelope: "bootstrap-burst"},
+	"100x12":  {MinThroughput: 8.5, MaxFailures: 0, Envelope: "bootstrap-burst"},
+	"1000x24": {MinThroughput: 9.0, MaxFailures: 0, Envelope: "recommended-local-sustained"},
+	"2000x24": {MinThroughput: 8.5, MaxFailures: 0, Envelope: "recommended-local-ceiling"},
+}
+
+const benchmarkSaturationDropThresholdPct = 12.0
+
+func automationBenchmarkRunMatrix(opts automationBenchmarkRunMatrixOptions) (map[string]any, error) {
+	runBenchmarks := opts.RunBenchmarks
+	if runBenchmarks == nil {
+		runBenchmarks = automationRunGoBenchmarks
+	}
+	runSoak := opts.RunSoak
+	if runSoak == nil {
+		runSoak = automationSoakLocal
+	}
+	scenarios := append([]string(nil), opts.Scenarios...)
+	if len(scenarios) == 0 {
+		scenarios = []string{"50:8", "100:12"}
+	}
+	stdout, err := runBenchmarks(opts.GoRoot)
+	if err != nil {
+		return nil, err
+	}
+	parsed := automationParseBenchmarkStdout(stdout)
+	soakMatrix := make([]map[string]any, 0, len(scenarios))
+	for _, scenario := range scenarios {
+		count, workers, err := automationParseBenchmarkScenario(scenario)
+		if err != nil {
+			return nil, err
+		}
+		reportPath := filepath.ToSlash(filepath.Join("docs", "reports", fmt.Sprintf("soak-local-%dx%d.json", count, workers)))
+		report, _, err := runSoak(automationSoakLocalOptions{
+			Count:          count,
+			Workers:        workers,
+			BaseURL:        "http://127.0.0.1:8080",
+			GoRoot:         opts.GoRoot,
+			TimeoutSeconds: opts.TimeoutSeconds,
+			Autostart:      true,
+			ReportPath:     reportPath,
+		})
+		if err != nil {
+			return nil, err
+		}
+		soakMatrix = append(soakMatrix, map[string]any{
+			"scenario": map[string]any{
+				"count":   count,
+				"workers": workers,
+			},
+			"report_path": reportPath,
+			"result":      structToMap(report),
+		})
+	}
+	payload := map[string]any{
+		"benchmark": map[string]any{
+			"stdout": stdout,
+			"parsed": parsed,
+		},
+		"soak_matrix": soakMatrix,
+	}
+	if err := automationWriteReport(opts.GoRoot, opts.ReportPath, payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
+func automationRunGoBenchmarks(goRoot string) (string, error) {
+	cmd := exec.Command("go", "test", "-bench", ".", "./internal/queue", "./internal/scheduler")
+	cmd.Dir = goRoot
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("run go benchmarks: %w: %s", err, trim(string(output)))
+	}
+	return string(output), nil
+}
+
+func automationParseBenchmarkStdout(stdout string) map[string]any {
+	parsed := map[string]any{}
+	for _, match := range benchmarkStdoutPattern.FindAllStringSubmatch(stdout, -1) {
+		value := asFloat(match[2])
+		parsed[match[1]] = map[string]any{"ns_per_op": value}
+	}
+	return parsed
+}
+
+func automationParseBenchmarkScenario(value string) (int, int, error) {
+	parts := strings.SplitN(value, ":", 2)
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid benchmark scenario %q, want count:workers", value)
+	}
+	count := automationInt(parts[0], 0)
+	workers := automationInt(parts[1], 0)
+	if count <= 0 || workers <= 0 {
+		return 0, 0, fmt.Errorf("invalid benchmark scenario %q, want count:workers with positive integers", value)
+	}
+	return count, workers, nil
+}
+
+func automationCapacityCertification(opts automationCapacityCertificationOptions) (map[string]any, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	benchmarkReportPath := opts.BenchmarkReportPath
+	if trim(benchmarkReportPath) == "" {
+		benchmarkReportPath = "bigclaw-go/docs/reports/benchmark-matrix-report.json"
+	}
+	mixedWorkloadReportPath := opts.MixedWorkloadReportPath
+	if trim(mixedWorkloadReportPath) == "" {
+		mixedWorkloadReportPath = "bigclaw-go/docs/reports/mixed-workload-matrix-report.json"
+	}
+	supplementalSoakPaths := append([]string(nil), opts.SupplementalSoakReportPath...)
+	if len(supplementalSoakPaths) == 0 {
+		supplementalSoakPaths = []string{
+			"bigclaw-go/docs/reports/soak-local-1000x24.json",
+			"bigclaw-go/docs/reports/soak-local-2000x24.json",
+		}
+	}
+	benchmarkReport, err := automationReadJSONReport(resolveAutomationPath(benchmarkReportPath))
+	if err != nil {
+		return nil, err
+	}
+	mixedWorkloadReport, err := automationReadJSONReport(resolveAutomationPath(mixedWorkloadReportPath))
+	if err != nil {
+		return nil, err
+	}
+
+	parsed, _ := lookupMap(benchmarkReport, "benchmark", "parsed").(map[string]any)
+	microNames := make([]string, 0, len(benchmarkMicrobenchmarkLimits))
+	for name := range benchmarkMicrobenchmarkLimits {
+		microNames = append(microNames, name)
+	}
+	sort.Strings(microNames)
+	microbenchmarks := make([]map[string]any, 0, len(microNames))
+	for _, name := range microNames {
+		value, ok := lookupMap(parsed, name, "ns_per_op").(float64)
+		if !ok {
+			value = asFloat(lookupMap(parsed, name, "ns_per_op"))
+		}
+		microbenchmarks = append(microbenchmarks, automationCapacityBenchmarkLane(name, value, benchmarkMicrobenchmarkLimits[name]))
+	}
+
+	soakResultsByLabel := map[string]map[string]any{}
+	soakInputPaths := []string{}
+	if items, ok := benchmarkReport["soak_matrix"].([]any); ok {
+		for _, raw := range items {
+			entry, _ := raw.(map[string]any)
+			result, _ := entry["result"].(map[string]any)
+			label := fmt.Sprintf("%dx%d", automationInt(result["count"], 0), automationInt(result["workers"], 0))
+			soakResultsByLabel[label] = result
+			if path, _ := entry["report_path"].(string); trim(path) != "" {
+				soakInputPaths = append(soakInputPaths, path)
+			}
+		}
+	}
+	supplementalReports := make([]map[string]any, 0, len(supplementalSoakPaths))
+	for _, path := range supplementalSoakPaths {
+		report, err := automationReadJSONReport(resolveAutomationPath(path))
+		if err != nil {
+			return nil, err
+		}
+		supplementalReports = append(supplementalReports, report)
+		label := fmt.Sprintf("%dx%d", automationInt(report["count"], 0), automationInt(report["workers"], 0))
+		soakResultsByLabel[label] = report
+		soakInputPaths = append(soakInputPaths, path)
+	}
+	soakLabels := make([]string, 0, len(benchmarkSoakThresholds))
+	for label := range benchmarkSoakThresholds {
+		soakLabels = append(soakLabels, label)
+	}
+	sort.Slice(soakLabels, func(i, j int) bool {
+		leftCount, leftWorkers, _ := automationParseBenchmarkScenario(strings.ReplaceAll(soakLabels[i], "x", ":"))
+		rightCount, rightWorkers, _ := automationParseBenchmarkScenario(strings.ReplaceAll(soakLabels[j], "x", ":"))
+		if leftCount != rightCount {
+			return leftCount < rightCount
+		}
+		return leftWorkers < rightWorkers
+	})
+	soakMatrix := make([]map[string]any, 0, len(soakLabels))
+	for _, label := range soakLabels {
+		result := soakResultsByLabel[label]
+		soakMatrix = append(soakMatrix, automationCapacitySoakLane(label, result, benchmarkSoakThresholds[label]))
+	}
+
+	mixedWorkload := automationCapacityMixedWorkloadLane(mixedWorkloadReport)
+	saturationIndicator := automationCapacitySaturationSummary(soakMatrix)
+
+	allLanes := append([]map[string]any{}, microbenchmarks...)
+	allLanes = append(allLanes, soakMatrix...)
+	allLanes = append(allLanes, mixedWorkload)
+	passedLanes := 0
+	failedLanes := []string{}
+	for _, lane := range allLanes {
+		status, _ := lane["status"].(string)
+		if status == "pass" || status == "pass-with-ceiling" {
+			passedLanes++
+			continue
+		}
+		failedLanes = append(failedLanes, fmt.Sprint(lane["lane"]))
+	}
+
+	timestampInputs := append([]map[string]any{benchmarkReport, mixedWorkloadReport}, supplementalReports...)
+	report := map[string]any{
+		"generated_at": automationCapacityDeriveGeneratedAt(now(), timestampInputs...),
+		"ticket":       "BIG-PAR-098",
+		"title":        "Production-grade capacity certification matrix",
+		"status":       "repo-native-capacity-certification",
+		"evidence_inputs": map[string]any{
+			"benchmark_report_path":      benchmarkReportPath,
+			"mixed_workload_report_path": mixedWorkloadReportPath,
+			"soak_report_paths":          soakInputPaths,
+			"generator_script":           "go run ./cmd/bigclawctl automation benchmark capacity-certification",
+		},
+		"summary": map[string]any{
+			"overall_status":                 ternaryString(len(failedLanes) == 0, "pass", "fail"),
+			"total_lanes":                    len(allLanes),
+			"passed_lanes":                   passedLanes,
+			"failed_lanes":                   failedLanes,
+			"recommended_sustained_envelope": "<=1000 tasks with 24 submit workers",
+			"ceiling_envelope":               "<=2000 tasks with 24 submit workers",
+		},
+		"microbenchmarks":      microbenchmarks,
+		"soak_matrix":          soakMatrix,
+		"mixed_workload":       mixedWorkload,
+		"saturation_indicator": saturationIndicator,
+		"operating_envelopes": []map[string]any{
+			{
+				"name":           "recommended-local-sustained",
+				"recommendation": "Use up to 1000 queued tasks with 24 submit workers when a stable single-instance local review lane is required.",
+				"evidence_lanes": []string{"1000x24"},
+			},
+			{
+				"name":           "recommended-local-ceiling",
+				"recommendation": "Treat 2000 queued tasks with 24 submit workers as the checked-in local ceiling, not the default operating point.",
+				"evidence_lanes": []string{"2000x24"},
+			},
+			{
+				"name":           "mixed-workload-routing",
+				"recommendation": "Use the mixed-workload matrix for executor routing correctness, but do not infer sustained multi-executor throughput from it.",
+				"evidence_lanes": []string{"mixed-workload-routing"},
+			},
+		},
+		"certification_checks": []map[string]any{
+			automationCapacityCheck("all_microbenchmark_thresholds_hold", automationAllLaneStatuses(microbenchmarks, "pass"), fmt.Sprint(automationLaneStatuses(microbenchmarks))),
+			automationCapacityCheck("all_soak_lanes_hold", automationAllLaneStatuses(soakMatrix, "pass"), fmt.Sprint(automationLaneStatuses(soakMatrix))),
+			automationCapacityCheck("mixed_workload_routes_match_expected_executors", automationLaneStatusAllowed(mixedWorkload["status"], "pass", "pass-with-ceiling"), fmt.Sprint(mixedWorkload["detail"])),
+			automationCapacityCheck("ceiling_lane_does_not_show_excessive_throughput_drop", saturationIndicator["status"] == "pass", fmt.Sprintf("drop_pct=%v threshold=%.1f", saturationIndicator["throughput_drop_pct"], benchmarkSaturationDropThresholdPct)),
+		},
+		"saturation_notes": []string{
+			"Throughput plateaus around 9-10 tasks/s across the checked-in 100x12, 1000x24, and 2000x24 local lanes.",
+			"The 2000x24 lane remains within the same throughput band as 1000x24, so the checked-in local ceiling is evidence-backed but not substantially headroom-rich.",
+			"Mixed-workload evidence verifies executor-routing correctness across local, Kubernetes, and Ray, but it is a functional routing proof rather than a concurrency ceiling.",
+		},
+		"limits": []string{
+			"Evidence is repo-native and single-instance; it does not certify multi-node or multi-tenant production saturation behavior.",
+			"The matrix uses checked-in local runs from 2026-03-13 and should be refreshed when queue, scheduler, or executor behavior changes materially.",
+			"Recommended envelopes are conservative reviewer guidance derived from current evidence, not an automated runtime admission policy.",
+		},
+	}
+	report["markdown"] = automationCapacityMarkdown(report)
+	if trim(opts.OutputPath) != "" {
+		writeReport := cloneMap(report)
+		delete(writeReport, "markdown")
+		if err := automationWriteReport(".", opts.OutputPath, writeReport); err != nil {
+			return nil, err
+		}
+	}
+	if trim(opts.MarkdownOutputPath) != "" {
+		if err := automationWriteTextReport(".", opts.MarkdownOutputPath, fmt.Sprint(report["markdown"])); err != nil {
+			return nil, err
+		}
+	}
+	return report, nil
+}
+
+func automationCapacityBenchmarkLane(name string, nsPerOp float64, maxNsPerOp float64) map[string]any {
+	return map[string]any{
+		"lane":     name,
+		"metric":   "ns_per_op",
+		"observed": nsPerOp,
+		"threshold": map[string]any{
+			"operator": "<=",
+			"value":    maxNsPerOp,
+		},
+		"status": ternaryString(nsPerOp <= maxNsPerOp, "pass", "fail"),
+		"detail": fmt.Sprintf("observed=%vns/op limit=%vns/op", nsPerOp, maxNsPerOp),
+	}
+}
+
+func automationCapacitySoakLane(label string, result map[string]any, threshold benchmarkSoakThreshold) map[string]any {
+	throughput := roundTo(asFloat(result["throughput_tasks_per_sec"]), 3)
+	failures := automationInt(result["failed"], 0)
+	return map[string]any{
+		"lane": label,
+		"scenario": map[string]any{
+			"count":   automationInt(result["count"], 0),
+			"workers": automationInt(result["workers"], 0),
+		},
+		"observed": map[string]any{
+			"elapsed_seconds":          roundTo(asFloat(result["elapsed_seconds"]), 3),
+			"throughput_tasks_per_sec": throughput,
+			"succeeded":                automationInt(result["succeeded"], 0),
+			"failed":                   failures,
+		},
+		"thresholds": map[string]any{
+			"min_throughput_tasks_per_sec": threshold.MinThroughput,
+			"max_failures":                 threshold.MaxFailures,
+		},
+		"operating_envelope": threshold.Envelope,
+		"status":             ternaryString(throughput >= threshold.MinThroughput && failures <= threshold.MaxFailures, "pass", "fail"),
+		"detail":             fmt.Sprintf("throughput=%.3ftps min=%.1f failures=%d max=%d", throughput, threshold.MinThroughput, failures, threshold.MaxFailures),
+	}
+}
+
+func automationCapacityMixedWorkloadLane(report map[string]any) map[string]any {
+	rawTasks, _ := report["tasks"].([]any)
+	mismatches := []string{}
+	successfulTasks := 0
+	for _, raw := range rawTasks {
+		task, _ := raw.(map[string]any)
+		if !automationBool(task["ok"]) {
+			mismatches = append(mismatches, fmt.Sprintf("%v: task-level ok=false", task["name"]))
+		}
+		if fmt.Sprint(task["expected_executor"]) != fmt.Sprint(task["routed_executor"]) {
+			mismatches = append(mismatches, fmt.Sprintf("%v: expected=%v routed=%v", task["name"], task["expected_executor"], task["routed_executor"]))
+		}
+		if fmt.Sprint(task["final_state"]) != "succeeded" {
+			mismatches = append(mismatches, fmt.Sprintf("%v: final_state=%v", task["name"], task["final_state"]))
+		}
+		if fmt.Sprint(task["final_state"]) == "succeeded" {
+			successfulTasks++
+		}
+	}
+	allOK := automationBool(report["all_ok"])
+	status := "fail"
+	if allOK && len(rawTasks) >= 5 && len(mismatches) == 0 {
+		status = "pass"
+	} else if allOK {
+		status = "pass-with-ceiling"
+	}
+	detail := "all sampled mixed-workload routes landed on the expected executor path"
+	if len(mismatches) > 0 {
+		detail = strings.Join(mismatches, "; ")
+	}
+	return map[string]any{
+		"lane": "mixed-workload-routing",
+		"observed": map[string]any{
+			"all_ok":           allOK,
+			"task_count":       len(rawTasks),
+			"successful_tasks": successfulTasks,
+		},
+		"thresholds": map[string]any{
+			"all_ok_required":               true,
+			"minimum_task_count":            5,
+			"executor_route_match_required": true,
+		},
+		"status": status,
+		"detail": detail,
+		"limitations": []string{
+			"executor-mix coverage is functional rather than high-volume",
+			"mixed-workload evidence proves route correctness but not sustained cross-executor saturation limits",
+		},
+	}
+}
+
+func automationCapacitySaturationSummary(soakLanes []map[string]any) map[string]any {
+	var baseline, ceiling map[string]any
+	for _, lane := range soakLanes {
+		switch lane["lane"] {
+		case "1000x24":
+			baseline = lane
+		case "2000x24":
+			ceiling = lane
+		}
+	}
+	baselineTPS := asFloat(lookupMap(baseline, "observed", "throughput_tasks_per_sec"))
+	ceilingTPS := asFloat(lookupMap(ceiling, "observed", "throughput_tasks_per_sec"))
+	dropPct := 0.0
+	if baselineTPS > 0 {
+		dropPct = roundTo(((baselineTPS-ceilingTPS)/baselineTPS)*100, 2)
+	}
+	status := ternaryString(dropPct <= benchmarkSaturationDropThresholdPct, "pass", "warn")
+	detail := "throughput remains in the same single-instance local band at the 2000-task ceiling"
+	if status != "pass" {
+		detail = "throughput drops materially at the 2000-task ceiling and should be treated as saturation"
+	}
+	return map[string]any{
+		"baseline_lane":                     "1000x24",
+		"ceiling_lane":                      "2000x24",
+		"baseline_throughput_tasks_per_sec": baselineTPS,
+		"ceiling_throughput_tasks_per_sec":  ceilingTPS,
+		"throughput_drop_pct":               dropPct,
+		"drop_warn_threshold_pct":           benchmarkSaturationDropThresholdPct,
+		"status":                            status,
+		"detail":                            detail,
+	}
+}
+
+func automationCapacityCheck(name string, passed bool, detail string) map[string]any {
+	return map[string]any{"name": name, "passed": passed, "detail": detail}
+}
+
+func automationLaneStatuses(lanes []map[string]any) []string {
+	statuses := make([]string, 0, len(lanes))
+	for _, lane := range lanes {
+		statuses = append(statuses, fmt.Sprint(lane["status"]))
+	}
+	return statuses
+}
+
+func automationAllLaneStatuses(lanes []map[string]any, want string) bool {
+	for _, lane := range lanes {
+		if fmt.Sprint(lane["status"]) != want {
+			return false
+		}
+	}
+	return true
+}
+
+func automationLaneStatusAllowed(value any, allowed ...string) bool {
+	actual := fmt.Sprint(value)
+	for _, item := range allowed {
+		if actual == item {
+			return true
+		}
+	}
+	return false
+}
+
+func automationCapacityMarkdown(report map[string]any) string {
+	summary, _ := report["summary"].(map[string]any)
+	saturation, _ := report["saturation_indicator"].(map[string]any)
+	lines := []string{
+		"# Capacity Certification Report",
+		"",
+		"## Scope",
+		"",
+		fmt.Sprintf("- Generated at: `%v`", report["generated_at"]),
+		fmt.Sprintf("- Ticket: `%v`", report["ticket"]),
+		"- Goal: convert checked-in benchmark, soak, and mixed-workload evidence into a repo-native certification matrix with explicit thresholds and operating envelopes.",
+		"- Boundary: this is a single-instance repo-native certification slice, not a live multi-tenant production attestation.",
+		"",
+		"## Certification Summary",
+		"",
+		fmt.Sprintf("- Overall status: `%v`", summary["overall_status"]),
+		fmt.Sprintf("- Passed lanes: `%v/%v`", summary["passed_lanes"], summary["total_lanes"]),
+		fmt.Sprintf("- Recommended local sustained envelope: `%v`", summary["recommended_sustained_envelope"]),
+		fmt.Sprintf("- Local ceiling envelope: `%v`", summary["ceiling_envelope"]),
+		fmt.Sprintf("- Saturation signal: `%v`", saturation["detail"]),
+		"",
+		"## Admission Policy Summary",
+		"",
+		"- Policy mode: `advisory-only reviewer guidance`",
+		"- Runtime enforcement: `none`",
+		fmt.Sprintf("- Default reviewer envelope: `%v`", summary["recommended_sustained_envelope"]),
+		fmt.Sprintf("- Ceiling reviewer envelope: `%v`", summary["ceiling_envelope"]),
+		"- Scheduler note: recommended envelopes guide reviewer admission decisions and are not scheduler-enforced runtime limits.",
+		"",
+		"## Microbenchmark Thresholds",
+		"",
+	}
+	if lanes, ok := report["microbenchmarks"].([]map[string]any); ok {
+		for _, lane := range lanes {
+			threshold, _ := lane["threshold"].(map[string]any)
+			lines = append(lines, fmt.Sprintf("- `%v`: `%.2f ns/op` vs limit `%v` -> `%v`", lane["lane"], asFloat(lane["observed"]), threshold["value"], lane["status"]))
+		}
+	} else if rawLanes, ok := report["microbenchmarks"].([]any); ok {
+		for _, raw := range rawLanes {
+			lane, _ := raw.(map[string]any)
+			threshold, _ := lane["threshold"].(map[string]any)
+			lines = append(lines, fmt.Sprintf("- `%v`: `%.2f ns/op` vs limit `%v` -> `%v`", lane["lane"], asFloat(lane["observed"]), threshold["value"], lane["status"]))
+		}
+	}
+	lines = append(lines, "", "## Soak Matrix", "")
+	if rawLanes, ok := report["soak_matrix"].([]map[string]any); ok {
+		for _, lane := range rawLanes {
+			observed, _ := lane["observed"].(map[string]any)
+			lines = append(lines, fmt.Sprintf("- `%v`: `%v tasks/s`, `%v failed`, envelope `%v` -> `%v`", lane["lane"], observed["throughput_tasks_per_sec"], observed["failed"], lane["operating_envelope"], lane["status"]))
+		}
+	} else if rawLanes, ok := report["soak_matrix"].([]any); ok {
+		for _, raw := range rawLanes {
+			lane, _ := raw.(map[string]any)
+			observed, _ := lane["observed"].(map[string]any)
+			lines = append(lines, fmt.Sprintf("- `%v`: `%v tasks/s`, `%v failed`, envelope `%v` -> `%v`", lane["lane"], observed["throughput_tasks_per_sec"], observed["failed"], lane["operating_envelope"], lane["status"]))
+		}
+	}
+	mixed, _ := report["mixed_workload"].(map[string]any)
+	lines = append(lines, "", "## Workload Mix", "", fmt.Sprintf("- `mixed-workload-routing`: `%v` -> `%v`", mixed["detail"], mixed["status"]), "", "## Recommended Operating Envelopes", "")
+	if rawEnvelopes, ok := report["operating_envelopes"].([]map[string]any); ok {
+		for _, envelope := range rawEnvelopes {
+			lines = append(lines, fmt.Sprintf("- `%v`: %v Evidence: `%s`.", envelope["name"], envelope["recommendation"], strings.Join(automationStringSlice(envelope["evidence_lanes"]), ", ")))
+		}
+	} else if rawEnvelopes, ok := report["operating_envelopes"].([]any); ok {
+		for _, raw := range rawEnvelopes {
+			envelope, _ := raw.(map[string]any)
+			lines = append(lines, fmt.Sprintf("- `%v`: %v Evidence: `%s`.", envelope["name"], envelope["recommendation"], strings.Join(automationStringSlice(envelope["evidence_lanes"]), ", ")))
+		}
+	}
+	lines = append(lines, "", "## Saturation Notes", "")
+	for _, note := range automationStringSlice(report["saturation_notes"]) {
+		lines = append(lines, fmt.Sprintf("- %s", note))
+	}
+	lines = append(lines, "", "## Limits", "")
+	for _, note := range automationStringSlice(report["limits"]) {
+		lines = append(lines, fmt.Sprintf("- %s", note))
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func automationCapacityDeriveGeneratedAt(now time.Time, payloads ...map[string]any) string {
+	timestamps := []time.Time{}
+	for _, payload := range payloads {
+		timestamps = append(timestamps, automationCollectTimestamps(payload)...)
+	}
+	if len(timestamps) == 0 {
+		return utcISOTime(now.UTC())
+	}
+	latest := timestamps[0]
+	for _, ts := range timestamps[1:] {
+		if ts.After(latest) {
+			latest = ts
+		}
+	}
+	return utcISOTime(latest.UTC())
+}
+
+func automationCollectTimestamps(value any) []time.Time {
+	out := []time.Time{}
+	switch typed := value.(type) {
+	case map[string]any:
+		for key, item := range typed {
+			switch key {
+			case "generated_at", "timestamp", "created_at", "completed_at", "started_at":
+				if parsed, ok := automationParseTimeAny(item); ok {
+					out = append(out, parsed)
+				}
+			}
+			out = append(out, automationCollectTimestamps(item)...)
+		}
+	case []any:
+		for _, item := range typed {
+			out = append(out, automationCollectTimestamps(item)...)
+		}
+	}
+	return out
+}
+
+func automationParseTimeAny(value any) (time.Time, bool) {
+	text := fmt.Sprint(value)
+	if trim(text) == "" {
+		return time.Time{}, false
+	}
+	candidate := strings.ReplaceAll(text, "Z", "+00:00")
+	parsed, err := time.Parse(time.RFC3339Nano, candidate)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return parsed.UTC(), true
 }
 
 func automationSoakLocal(opts automationSoakLocalOptions) (*automationSoakLocalReport, int, error) {
@@ -2012,6 +2679,32 @@ func automationWriteReport(root string, reportPath string, payload any) error {
 	return os.WriteFile(target, append(body, '\n'), 0o644)
 }
 
+func automationWriteTextReport(root string, reportPath string, body string) error {
+	if trim(reportPath) == "" {
+		return nil
+	}
+	target := reportPath
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(root, reportPath)
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(target, []byte(body), 0o644)
+}
+
+func automationReadJSONReport(path string) (map[string]any, error) {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
 func automationEventTypes(events []map[string]any) []string {
 	types := make([]string, 0, len(events))
 	for _, event := range events {
@@ -2111,6 +2804,10 @@ func asFloat(value any) float64 {
 		return float64(typed)
 	case int64:
 		return float64(typed)
+	case string:
+		var parsed float64
+		_, _ = fmt.Sscanf(typed, "%f", &parsed)
+		return parsed
 	default:
 		return 0
 	}
@@ -2140,6 +2837,13 @@ func stringOrNil(value string) any {
 	return value
 }
 
+func ternaryString(condition bool, truthy string, falsy string) string {
+	if condition {
+		return truthy
+	}
+	return falsy
+}
+
 func automationStringSlice(value any) []string {
 	items, _ := value.([]any)
 	if items == nil {
@@ -2165,6 +2869,12 @@ func automationInt(value any, fallback int) int {
 		return int(typed)
 	case float64:
 		return int(typed)
+	case string:
+		var parsed int
+		if _, err := fmt.Sscanf(typed, "%d", &parsed); err == nil {
+			return parsed
+		}
+		return fallback
 	default:
 		return fallback
 	}

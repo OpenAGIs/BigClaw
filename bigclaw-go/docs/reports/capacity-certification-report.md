@@ -25,9 +25,9 @@
 
 ## Microbenchmark Thresholds
 
+- `BenchmarkFileQueueEnqueueLease-8`: `31627767.00 ns/op` vs limit `4e+07` -> `pass`
 - `BenchmarkMemoryQueueEnqueueLease-8`: `66075.00 ns/op` vs limit `100000` -> `pass`
-- `BenchmarkFileQueueEnqueueLease-8`: `31627767.00 ns/op` vs limit `40000000` -> `pass`
-- `BenchmarkSQLiteQueueEnqueueLease-8`: `18057898.00 ns/op` vs limit `25000000` -> `pass`
+- `BenchmarkSQLiteQueueEnqueueLease-8`: `18057898.00 ns/op` vs limit `2.5e+07` -> `pass`
 - `BenchmarkSchedulerDecide-8`: `73.98 ns/op` vs limit `1000` -> `pass`
 
 ## Soak Matrix
