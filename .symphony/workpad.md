@@ -218,6 +218,44 @@ Selected tranche rationale:
 37. Fold `dsl.py` into `runtime.py` and preserve `bigclaw.dsl` compatibility
     via `__init__.py`.
 38. Run targeted DSL validation for the eleventh consolidation batch and push a
+
+## Final tranche assessment
+
+Current residual inventory after the completed consolidation batches:
+
+- `src/bigclaw/**/*.py`: `15`
+- `src/**/*.go`: pending validation refresh for closeout
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+Assessment of remaining Python modules:
+
+- `src/bigclaw/__main__.py` is the package entrypoint and cannot be removed
+  without changing invocation semantics.
+- `src/bigclaw/connectors.py` is now the owning source-boundary surface for
+  connector stubs, source issue DTOs, and task mapping; it is no longer a thin
+  residual wrapper after `mapping.py` was folded into it.
+- `src/bigclaw/workspace_bootstrap.py` is the owning bootstrap implementation
+  and absorbed both CLI and validation helpers already.
+- The remaining larger files are owner modules for reports, runtime,
+  operations, planning, observability, repo plane, UI review, design system,
+  console IA, execution contract, and core models.
+
+Stop condition for this tranche:
+
+- No additional low-risk consolidation remains inside `src/bigclaw/**` without
+  collapsing legitimate owner surfaces together or changing package entrypoint
+  behavior.
+
+Closeout validation plan:
+
+1. Refresh repository inventory counts for Python files, Go files,
+   `pyproject.toml`, and `setup.py`.
+2. Run a targeted compatibility and regression test slice covering the most
+   recent consolidation surfaces.
+3. Run `git diff --check` and confirm the branch is clean for closeout.
+4. Commit and push the workpad closeout note if no further code reduction is
+   justified.
     follow-up commit.
 39. Fold `memory.py` into `planning.py` and preserve `bigclaw.memory`
     compatibility via `__init__.py`.
