@@ -6,13 +6,16 @@ from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from .collaboration import (
+from .observability import (
     CollaborationThread,
     build_collaboration_thread_from_audits,
     render_collaboration_lines,
     render_collaboration_panel_html,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
+    RepoSyncAudit,
+    TaskRun,
 )
-from .observability import FLOW_HANDOFF_EVENT, MANUAL_TAKEOVER_EVENT, RepoSyncAudit, TaskRun
 from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
 
 

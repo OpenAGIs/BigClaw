@@ -273,7 +273,7 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .collaboration import (
+from .observability import (
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
@@ -281,8 +281,25 @@ from .collaboration import (
     RepoPost,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
+    merge_collaboration_threads,
 )
-_install_compat_surface_module("repo_board", sys.modules[f"{__name__}.collaboration"], ["RepoPost", "RepoDiscussionBoard"])
+_install_compat_surface_module(
+    "collaboration",
+    sys.modules[f"{__name__}.observability"],
+    [
+        "CollaborationComment",
+        "CollaborationThread",
+        "DecisionNote",
+        "RepoDiscussionBoard",
+        "RepoPost",
+        "build_collaboration_thread",
+        "build_collaboration_thread_from_audits",
+        "merge_collaboration_threads",
+        "render_collaboration_lines",
+        "render_collaboration_panel_html",
+    ],
+)
+_install_compat_surface_module("repo_board", sys.modules[f"{__name__}.observability"], ["RepoPost", "RepoDiscussionBoard"])
 from .reports import (
     AlertDigestSubscription,
     SavedView,

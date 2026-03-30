@@ -21,6 +21,7 @@ Batch file list:
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/run_detail.py`
 - `src/bigclaw/repo_gateway.py`
+- `src/bigclaw/collaboration.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -132,6 +133,10 @@ Selected tranche rationale:
   into the broader `repo_plane.py` owner while preserving `bigclaw.repo_gateway`,
   `bigclaw.repo_commits`, and `bigclaw.github_sync` compatibility from
   `__init__.py`.
+- `collaboration.py` is an event-adjacent collaboration ledger/rendering
+  surface; it can be folded into `observability.py` without introducing report
+  cycles, while preserving `bigclaw.collaboration` and `bigclaw.repo_board`
+  compatibility in `__init__.py`.
 
 ## Plan
 
@@ -236,6 +241,11 @@ Selected tranche rationale:
     compatibility via `__init__.py`.
 52. Run targeted repo-domain and repo-sync validation for the eighteenth
     consolidation batch and push a follow-up commit.
+53. Fold `collaboration.py` into `observability.py` and preserve
+    `bigclaw.collaboration` and `bigclaw.repo_board` compatibility via
+    `__init__.py`.
+54. Run targeted collaboration/report/observability validation for the
+    nineteenth consolidation batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -287,6 +297,12 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_dashboard_run_contract.py tests/test_execution_contract.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_evaluation.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_github_sync.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_reports.py tests/test_observability.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.collaboration import build_collaboration_thread`
+  `from bigclaw.repo_board import RepoDiscussionBoard`
+  `print(build_collaboration_thread.__name__, RepoDiscussionBoard.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.repo_gateway import normalize_commit`
   `from bigclaw.github_sync import ensure_repo_sync`
@@ -613,6 +629,22 @@ Selected tranche rationale:
 - `src/bigclaw/repo_gateway.py`
   - Deleted.
   - Reason: its contents moved into `repo_plane.py`.
+- `src/bigclaw/observability.py`
+  - Replaced again.
+  - Reason: absorbed collaboration thread models, repo discussion board state,
+    and collaboration rendering helpers so event, audit, and collaboration
+    ledger surfaces share one owner.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: switched collaboration imports to the new owning observability
+    module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs `bigclaw.collaboration` and `bigclaw.repo_board`
+    compatibility submodules sourced from `observability.py`.
+- `src/bigclaw/collaboration.py`
+  - Deleted.
+  - Reason: its contents moved into `observability.py`.
 
 ### Inventory Impact
 
@@ -635,7 +667,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 16: `20`
 - `src/bigclaw/**/*.py` after batch 17: `19`
 - `src/bigclaw/**/*.py` after batch 18: `18`
-- Net Python module reduction in tranche so far: `27`
+- `src/bigclaw/**/*.py` after batch 19: `17`
+- Net Python module reduction in tranche so far: `28`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -774,3 +807,9 @@ Selected tranche rationale:
   - Result: `normalize_commit ensure_repo_sync`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 18: `18`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_reports.py tests/test_observability.py`
+  - Result: `42 passed in 0.10s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.collaboration` / `bigclaw.repo_board`
+  - Result: `build_collaboration_thread RepoDiscussionBoard`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 19: `17`
