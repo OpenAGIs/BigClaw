@@ -1,62 +1,48 @@
-# BIG-GO-975 Workpad
-
-## Scope
-
-Targeted remaining Python test batch under `tests/` for this lane:
-
-- `tests/test_connectors.py`
-- `tests/test_mapping.py`
-
-Existing Go-native replacement paths:
-
-- `bigclaw-go/internal/intake/connector_test.go`
-- `bigclaw-go/internal/intake/mapping_test.go`
-
-Current repository Python file count before this lane: `119`
-Current `tests/**` Python file count before this lane: `43`
+# BIG-GO-984 Workpad
 
 ## Plan
-
-1. Confirm the selected batch maps cleanly to existing Go-native intake coverage.
-2. Remove the redundant Python test files for connectors and mapping.
-3. Run the targeted Go intake tests that now serve as the replacement coverage.
-4. Record the exact file list, replacement paths, validation commands, and Python file-count impact.
-5. Commit and push the scoped lane changes.
+1. Identify the exact `src/bigclaw/**` Python files that belong to this batch and measure current Python file counts.
+2. Inspect references, Go replacements, and packaging entry points to decide whether each target can be removed, replaced, or must be retained.
+3. Apply the minimal scoped changes for this batch to reduce Python files where safe.
+4. Run targeted validation and count Python files before/after.
+5. Commit and push changes to the remote branch.
 
 ## Acceptance
-
-- Produce the exact `BIG-GO-975` batch file list.
-- Reduce Python files in `tests/**` by removing the selected batch or clearly document the Go replacement path.
-- Keep changes scoped to the intake test migration batch only.
-- Report before/after repository-wide and `tests/**` Python file counts.
+- Produce a clear list of Python files covered by this batch under `src/bigclaw/**`.
+- Reduce Python file count in the targeted area where safe.
+- Record rationale for each file as removed, replaced, or retained.
+- Report impact on total repository Python file count.
 
 ## Validation
+- Capture exact discovery commands for the batch file list and total Python file counts.
+- Run targeted tests or checks covering touched packaging/runtime paths.
+- Record exact commands and outcomes in the final report.
 
-- `cd bigclaw-go && go test ./internal/intake`
-- `git status --short`
+## Batch Files
+- Removed: `src/bigclaw/repo_board.py`
+- Removed: `src/bigclaw/repo_commits.py`
+- Removed: `src/bigclaw/repo_gateway.py`
+- Removed: `src/bigclaw/repo_governance.py`
+- Removed: `src/bigclaw/repo_registry.py`
+- Removed: `src/bigclaw/repo_triage.py`
+- Removed: `src/bigclaw/issue_archive.py`
+- Removed: `src/bigclaw/roadmap.py`
+- Retained: `src/bigclaw/collaboration.py`
+- Retained: `src/bigclaw/repo_links.py`
+- Retained: `src/bigclaw/repo_plane.py`
+
+## Rationale
+- The eight removed files had no active `src/bigclaw` or script consumers; remaining references were limited to legacy Python tests and stale package exports.
+- Go-owned replacements already exist for the removed repo-oriented surfaces under `bigclaw-go/internal/repo/*` and related `bigclaw-go/internal/api/*` wiring.
+- `issue_archive.py` and `roadmap.py` had no active consumers beyond `src/bigclaw/__init__.py`, so keeping them only preserved dead Python surface area.
+- `collaboration.py`, `repo_links.py`, and `repo_plane.py` remain because `src/bigclaw/observability.py` and `src/bigclaw/reports.py` still import them directly.
 
 ## Results
+- Total Python files before: `116`
+- Total Python files after: `102`
+- `src/bigclaw` Python files before: `45`
+- `src/bigclaw` Python files after: `37`
 
-### File Disposition
-
-- `tests/test_connectors.py`
-  - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/connector_test.go`.
-- `tests/test_mapping.py`
-  - Deleted.
-  - Reason: replaced by existing Go-native intake coverage in `bigclaw-go/internal/intake/mapping_test.go`.
-
-### Python File Count Impact
-
-- Repository Python files before: `119`
-- Repository Python files after: `117`
-- `tests/**` Python files before: `43`
-- `tests/**` Python files after: `41`
-- Net reduction: `2`
-
-### Validation Record
-
-- `cd bigclaw-go && go test ./internal/intake`
-  - Result: `ok  	bigclaw-go/internal/intake	0.461s`
-- `git status --short`
-  - Result: only `.symphony/workpad.md`, `tests/test_connectors.py`, and `tests/test_mapping.py` changed before commit.
+## Validation Results
+- `PYTHONPATH=src python3 -m pytest -q tests/test_observability.py tests/test_reports.py` -> `41 passed in 0.22s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/collaboration.py src/bigclaw/repo_links.py src/bigclaw/repo_plane.py` -> passed
