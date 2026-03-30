@@ -175,9 +175,17 @@ from .runtime import (
     WorkflowRunResult,
     WorkpadJournal,
     create_server,
+    legacy_runtime_message,
     render_orchestration_plan,
     run_server,
+    LEGACY_RUNTIME_GUIDANCE,
     warn_legacy_service_surface,
+    warn_legacy_runtime_surface,
+)
+_install_surface_module(
+    "deprecation",
+    sys.modules[f"{__name__}.runtime"],
+    ["LEGACY_RUNTIME_GUIDANCE", "legacy_runtime_message", "warn_legacy_runtime_surface"],
 )
 from .connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue, map_source_issue_to_task
 _install_surface_module("mapping", sys.modules[f"{__name__}.connectors"], ["map_priority", "map_state", "map_source_issue_to_task"])
@@ -408,6 +416,11 @@ _install_surface_module(
     sys.modules[f"{__name__}.reports"],
     ["PilotImplementationResult", "PilotKPI", "render_pilot_implementation_report"],
 )
+_install_surface_module(
+    "validation_policy",
+    sys.modules[f"{__name__}.reports"],
+    ["ValidationReportDecision", "enforce_validation_report_policy"],
+)
 from .operations import (
     DashboardBuilder,
     DashboardBuilderAudit,
@@ -472,9 +485,11 @@ from .planning import (
     ExecutionPackRoadmap,
     FreezeException,
     GovernanceBacklogItem,
+    MemoryPattern,
     ScopeFreezeAudit,
     ScopeFreezeBoard,
     ScopeFreezeGovernance,
+    TaskMemoryStore,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -485,6 +500,7 @@ from .planning import (
     render_four_week_execution_report,
     render_scope_freeze_report,
 )
+_install_surface_module("memory", sys.modules[f"{__name__}.planning"], ["MemoryPattern", "TaskMemoryStore"])
 _install_surface_module(
     "roadmap",
     sys.modules[f"{__name__}.planning"],
