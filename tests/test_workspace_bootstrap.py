@@ -7,7 +7,6 @@ from bigclaw.workspace_bootstrap import (
     cleanup_workspace,
     repo_cache_key,
 )
-from bigclaw.workspace_bootstrap_validation import build_validation_report
 
 
 def git(repo: Path, *args: str) -> str:
@@ -181,24 +180,3 @@ def test_cleanup_workspace_prunes_worktree_and_bootstrap_branch(tmp_path: Path) 
     assert not workspace.exists()
     assert "symphony/OPE-329" not in git(cache_root / "seed", "branch", "--format", "%(refname:short)").splitlines()
     assert str(workspace.resolve()) not in git(cache_root / "seed", "worktree", "list", "--porcelain")
-
-
-def test_validation_report_covers_three_workspaces_with_one_cache(tmp_path: Path) -> None:
-    remote = init_remote_with_main(tmp_path)
-    report = build_validation_report(
-        repo_url=str(remote),
-        workspace_root=tmp_path / "validation-workspaces",
-        issue_identifiers=["OPE-272", "OPE-273", "OPE-274"],
-        cache_base=tmp_path / "repos",
-        cleanup=True,
-    )
-
-    assert report["summary"]["workspace_count"] == 3
-    assert report["summary"]["single_cache_root_reused"] is True
-    assert report["summary"]["single_mirror_reused"] is True
-    assert report["summary"]["single_seed_reused"] is True
-    assert report["summary"]["mirror_creations"] == 1
-    assert report["summary"]["seed_creations"] == 1
-    assert report["summary"]["clone_suppressed_after_first"] is True
-    assert report["summary"]["cache_reused_after_first"] is True
-    assert report["summary"]["cleanup_preserved_cache"] is True

@@ -14,6 +14,8 @@ Candidate batch:
 - `src/bigclaw/cost_control.py`
 - `src/bigclaw/roadmap.py`
 - `src/bigclaw/connectors.py`
+- `src/bigclaw/github_sync.py`
+- `src/bigclaw/workspace_bootstrap_validation.py`
 
 Planned retainers for this lane:
 
@@ -74,17 +76,29 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `src/bigclaw/connectors.py`
   - Deleted.
   - Reason: no remaining in-repo Python imports; parity matrix maps `SourceIssue` and connector stubs to `bigclaw-go/internal/intake/types.go` and `bigclaw-go/internal/intake/connector.go`, both covered by Go intake tests.
+- `src/bigclaw/github_sync.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; cutover docs assign this surface to `bigclaw-go/internal/githubsync/*` and `bigclaw-go/cmd/bigclawctl`, both already covered by Go tests.
+- `src/bigclaw/workspace_bootstrap_validation.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; cutover docs assign validation/report generation to `bigclaw-go/internal/bootstrap/*` and `bigclaw-go/cmd/bigclawctl workspace validate`.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
+- `tests/test_github_sync.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is validated by Go package tests.
+- `tests/test_workspace_bootstrap.py`
+  - Updated.
+  - Reason: removed the helper-specific validation-report test that only covered the deleted Python compatibility wrapper; remaining tests still cover `workspace_bootstrap.py`.
 
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `108`
+- Repository Python files after: `105`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `37`
-- Net reduction: `8`
+- `src/bigclaw/**` Python files after: `35`
+- Net reduction: `11`
 
 ### Validation Record
 
@@ -101,5 +115,9 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Result: `ok  	bigclaw-go/internal/regression	1.332s`
 - `cd bigclaw-go && go test ./internal/intake`
   - Result: `ok  	bigclaw-go/internal/intake	(cached)`
+- `cd bigclaw-go && go test ./internal/githubsync ./internal/bootstrap ./cmd/bigclawctl`
+  - Result: `ok  	bigclaw-go/internal/githubsync	(cached)`
+  - Result: `ok  	bigclaw-go/internal/bootstrap	(cached)`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
 - `git status --short`
-  - Result: before the third commit, only `src/bigclaw/__init__.py` and `src/bigclaw/connectors.py` changed.
+  - Result: before the latest commit, `src/bigclaw/github_sync.py`, `src/bigclaw/workspace_bootstrap_validation.py`, `tests/test_github_sync.py`, and `tests/test_workspace_bootstrap.py` changed.
