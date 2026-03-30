@@ -27,6 +27,7 @@ Candidate batch:
 - `src/bigclaw/event_bus.py`
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/workspace_bootstrap.py`
+- `src/bigclaw/validation_policy.py`
 
 Planned retainers for this lane:
 
@@ -126,6 +127,9 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `src/bigclaw/workspace_bootstrap.py`
   - Deleted.
   - Reason: only legacy Python tests referenced it; cutover docs assign the shared-worktree bootstrap flow to `bigclaw-go/internal/bootstrap/*` and `bigclaw-go/cmd/bigclawctl workspace ...`, both already covered by Go tests.
+- `src/bigclaw/validation_policy.py`
+  - Deleted.
+  - Reason: isolated dead helper with no production callers; its issue-close behavior is superseded by the richer `reports.py` validation/closure gate that remains covered by `tests/test_reports.py`.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
@@ -171,6 +175,9 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `tests/test_workspace_bootstrap.py`
   - Deleted.
   - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go`.
+- `tests/test_validation_policy.py`
+  - Deleted.
+  - Reason: it only covered the deleted dead helper; the active issue-close validation behavior remains covered by `tests/test_reports.py`.
 
 ### Stop Boundary
 
@@ -178,8 +185,8 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Retained.
   - Reason: only Python test usage remains, but this lane did not find an explicit Go migration target, parity matrix, or package-level Go test proving equivalent memory-pattern behavior.
 - `src/bigclaw/validation_policy.py`
-  - Retained.
-  - Reason: only Python test usage remains, but this lane did not find an explicit Go migration target or equivalent Go validation-policy contract/test surface.
+  - Deleted above.
+  - Reason: no separate Go migration target was needed because the helper was already functionally subsumed by the still-active Python reports closeout gate.
 - `src/bigclaw/console_ia.py`
   - Retained.
   - Reason: operator console ownership exists in Go, but the remaining Python surface is materially broader than the currently verified Go console coverage.
@@ -193,10 +200,10 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `82`
+- Repository Python files after: `80`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `24`
-- Net reduction: `34`
+- `src/bigclaw/**` Python files after: `23`
+- Net reduction: `36`
 
 ### Validation Record
 
