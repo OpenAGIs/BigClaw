@@ -21,6 +21,7 @@ Batch file list:
 - `src/bigclaw/issue_archive.py`
 - `src/bigclaw/roadmap.py`
 - `src/bigclaw/validation_policy.py`
+- `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/__init__.py`
 - `tests/test_repo_board.py`
 - `tests/test_repo_gateway.py`
@@ -60,13 +61,15 @@ Reason:
    and no remaining in-repo consumers.
 4. Remove isolated Python policy/helpers that are now only covered by stale
    package exports or dedicated Python-only tests.
-5. Remove Python tests that only exercised deleted Python-only modules.
-6. Update any remaining Python tests or exports that referenced removed modules so
+5. Remove isolated Python contract modules that already have Go-owned contract
+   implementations and only retain Python-only tests/package exports.
+6. Remove Python tests that only exercised deleted Python-only modules.
+7. Update any remaining Python tests or exports that referenced removed modules so
    the suite remains coherent after deletion.
-7. Run targeted validation for remaining observability, repo-link, and
+8. Run targeted validation for remaining observability, repo-link, and
    workspace bootstrap surfaces,
    plus inventory counts and diff hygiene.
-8. Commit and push the scoped lane branch for `BIG-GO-1015`.
+9. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
@@ -161,10 +164,17 @@ Reason:
   - Deleted.
   - Reason: the module was isolated to its dedicated Python-only test and had
     no remaining in-repo runtime consumers.
+- `src/bigclaw/dashboard_run_contract.py`
+  - Deleted.
+  - Reason: dashboard/run contract ownership already exists in
+    `bigclaw-go/internal/product/dashboard_run_contract.go`, and the Python
+    module had no remaining in-repo consumers beyond a dedicated test and stale
+    package exports.
 - `src/bigclaw/__init__.py`
   - Replaced.
-  - Reason: removed the stale `issue_archive` and `roadmap` re-export blocks
-    after deleting the underlying Python modules.
+  - Reason: removed the stale `issue_archive`, `roadmap`, and
+    `dashboard_run_contract` re-export blocks after deleting the underlying
+    Python modules.
 - `tests/test_repo_board.py`
   - Deleted.
   - Reason: exercised deleted Python-only board helper.
@@ -186,6 +196,9 @@ Reason:
 - `tests/test_validation_policy.py`
   - Deleted.
   - Reason: exercised deleted Python-only validation policy helper.
+- `tests/test_dashboard_run_contract.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only dashboard/run contract helper.
 - `tests/test_repo_collaboration.py`
   - Replaced.
   - Reason: preserved the collaboration merge assertion while removing the last
@@ -198,13 +211,15 @@ Reason:
 - `src/bigclaw` Python files after tranche 4: `36`
 - `src/bigclaw` Python files after tranche 5: `34`
 - `src/bigclaw` Python files after tranche 6: `32`
-- Net `src/bigclaw` reduction: `13`
+- `src/bigclaw` Python files after tranche 7: `31`
+- Net `src/bigclaw` reduction: `14`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
 - Repository-wide Python files after tranche 5: `91`
 - Repository-wide Python files after tranche 6: `88`
-- Net repository-wide Python reduction: `20`
+- Repository-wide Python files after tranche 7: `86`
+- Net repository-wide Python reduction: `22`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -233,3 +248,9 @@ Reason:
   - Result: `import ok`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `20 passed in 3.20s`
+- `rg -n "dashboard_run_contract|DashboardRunContract|DashboardRunContractAudit|DashboardRunContractLibrary|SchemaField|SurfaceSchema" src tests || true`
+  - Result: no matches
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `20 passed in 3.17s`
