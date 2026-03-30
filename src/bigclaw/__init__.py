@@ -112,6 +112,11 @@ _install_compat_surface_module(
     ["RunCommitBinding", "bind_run_commits", "validate_run_commit_roles", "VALID_RUN_COMMIT_ROLES"],
 )
 _install_compat_surface_module("repo_registry", _repo_plane_surface, ["RepoRegistry"])
+_install_compat_surface_module(
+    "repo_triage",
+    _repo_plane_surface,
+    ["LineageEvidence", "TriageRecommendation", "recommend_triage_action", "approval_evidence_packet"],
+)
 _install_compat_surface_module("mapping", _connectors_surface, ["map_priority", "map_state", "map_source_issue_to_task"])
 
 from .runtime import (
@@ -264,7 +269,23 @@ from .execution_contract import (
     ExecutionRole,
     MetricDefinition,
     PermissionCheckResult,
+    REPO_ACTION_PERMISSIONS,
+    REPO_ROLE_POLICIES,
+    RepoPermissionContract,
+    missing_repo_audit_fields,
+    repo_required_audit_fields,
     render_execution_contract_report,
+)
+_install_compat_surface_module(
+    "repo_governance",
+    sys.modules[f"{__name__}.execution_contract"],
+    [
+        "REPO_ACTION_PERMISSIONS",
+        "REPO_ROLE_POLICIES",
+        "RepoPermissionContract",
+        "repo_required_audit_fields",
+        "missing_repo_audit_fields",
+    ],
 )
 from .dashboard_run_contract import (
     DashboardRunContract,
@@ -612,6 +633,11 @@ __all__ = [
     "ExecutionPermission",
     "ExecutionPermissionMatrix",
     "ExecutionRole",
+    "REPO_ACTION_PERMISSIONS",
+    "REPO_ROLE_POLICIES",
+    "RepoPermissionContract",
+    "repo_required_audit_fields",
+    "missing_repo_audit_fields",
     "MetricDefinition",
     "PermissionCheckResult",
     "render_execution_contract_report",

@@ -10,9 +10,12 @@ Batch file list:
 - `src/bigclaw/__init__.py`
 - `src/bigclaw/connectors.py`
 - `src/bigclaw/reports.py`
+- `src/bigclaw/execution_contract.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/observability.py`
+- `src/bigclaw/repo_governance.py`
+- `src/bigclaw/repo_triage.py`
 - `src/bigclaw/mapping.py`
 - `src/bigclaw/validation_policy.py`
 - `src/bigclaw/repo_commits.py`
@@ -22,6 +25,8 @@ Batch file list:
 - `tests/test_repo_links.py`
 - `tests/test_repo_registry.py`
 - `tests/test_validation_policy.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_triage.py`
 
 Repository inventory at start of lane:
 
@@ -42,6 +47,10 @@ Selected tranche rationale:
   `connectors.py`.
 - `validation_policy.py` is a tiny report-artifact policy layer whose natural
   owner is `reports.py`.
+- `repo_governance.py` is an execution-permission specialization that fits
+  naturally inside `execution_contract.py`.
+- `repo_triage.py` is a repo-run decision helper that fits naturally inside
+  `repo_plane.py`.
 
 ## Plan
 
@@ -61,6 +70,12 @@ Selected tranche rationale:
    `bigclaw.validation_policy` compatibility via `__init__.py`.
 11. Run targeted validation for the second consolidation batch and push a
    follow-up commit.
+12. Fold `repo_governance.py` into `execution_contract.py` with compatibility
+    preserved via `__init__.py`.
+13. Fold `repo_triage.py` into `repo_plane.py` with compatibility preserved via
+    `__init__.py`.
+14. Run targeted repo-domain tests for the third consolidation batch and push a
+    follow-up commit.
 
 ## Acceptance
 
@@ -79,9 +94,15 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_validation_policy.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py tests/test_repo_triage.py`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.mapping import map_source_issue_to_task`
   `from bigclaw.validation_policy import enforce_validation_report_policy`
+  `print("ok")`
+  `PY`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.repo_governance import RepoPermissionContract`
+  `from bigclaw.repo_triage import recommend_triage_action`
   `print("ok")`
   `PY`
 - `git diff --check`
@@ -135,13 +156,29 @@ Selected tranche rationale:
 - `src/bigclaw/validation_policy.py`
   - Deleted.
   - Reason: its contents moved into `reports.py`.
+- `src/bigclaw/execution_contract.py`
+  - Replaced.
+  - Reason: absorbed repo-specific permission policy and audit-field helpers so
+    execution permissions and repo permission specializations live together.
+- `src/bigclaw/repo_plane.py`
+  - Replaced again.
+  - Reason: absorbed repo triage evidence and recommendation helpers so repo
+    topology, run linkage, registry state, and triage decisions now share one
+    repo-plane module.
+- `src/bigclaw/repo_governance.py`
+  - Deleted.
+  - Reason: its contents moved into `execution_contract.py`.
+- `src/bigclaw/repo_triage.py`
+  - Deleted.
+  - Reason: its contents moved into `repo_plane.py`.
 
 ### Inventory Impact
 
 - `src/bigclaw/**/*.py` before: `45`
 - `src/bigclaw/**/*.py` after batch 1: `42`
 - `src/bigclaw/**/*.py` after batch 2: `40`
-- Net Python module reduction in tranche so far: `5`
+- `src/bigclaw/**/*.py` after batch 3: `38`
+- Net Python module reduction in tranche so far: `7`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -171,3 +208,11 @@ Selected tranche rationale:
   - Result: `34 passed in 0.08s`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 2: `40`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py tests/test_repo_triage.py tests/test_repo_links.py tests/test_repo_registry.py`
+  - Result: `7 passed in 0.08s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY`
+  - Result: `ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_execution_contract.py`
+  - Result: `7 passed in 0.08s`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 3: `38`
