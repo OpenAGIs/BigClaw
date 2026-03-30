@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -147,5 +148,36 @@ func TestFileQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
 	}
 	if _, err := reloaded.GetTask(ctx, "task-expire"); !errors.Is(err, ErrTaskNotFound) {
 		t.Fatalf("expected task to be purged after reload, got %v", err)
+	}
+}
+
+func TestFileQueueListTasksReturnsPriorityOrder(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	base := time.Now()
+	for _, task := range []domain.Task{
+		{ID: "p2", Priority: 2, CreatedAt: base},
+		{ID: "p0", Priority: 0, CreatedAt: base.Add(time.Second)},
+		{ID: "p1", Priority: 1, CreatedAt: base.Add(2 * time.Second)},
+	} {
+		if err := q.Enqueue(ctx, task); err != nil {
+			t.Fatalf("enqueue %s: %v", task.ID, err)
+		}
+	}
+
+	snapshots, err := q.ListTasks(ctx, 10)
+	if err != nil {
+		t.Fatalf("list tasks: %v", err)
+	}
+	ids := make([]string, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		ids = append(ids, snapshot.Task.ID)
+	}
+	if !reflect.DeepEqual(ids, []string{"p0", "p1", "p2"}) {
+		t.Fatalf("expected priority-ordered tasks, got %+v", ids)
 	}
 }

@@ -539,6 +539,26 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	}
 }
 
+func TestRenderQueueControlCenterWithSharedViewEmptyState(t *testing.T) {
+	center := BuildQueueControlCenter(nil)
+	rendered := RenderQueueControlCenterWithView(center, &SharedViewContext{
+		Filters:      []SharedViewFilter{{Label: "Team", Value: "operations"}},
+		ResultCount:  0,
+		EmptyMessage: "No queued work for the selected team.",
+	})
+
+	for _, fragment := range []string{
+		"## View State",
+		"- State: empty",
+		"- Summary: No queued work for the selected team.",
+		"- Team: operations",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in shared view render, got %s", fragment, rendered)
+		}
+	}
+}
+
 func TestBuildPolicyPromptVersionCenterSummarizesRevisionDiffs(t *testing.T) {
 	center := BuildPolicyPromptVersionCenter(
 		"Policy/Prompt Version Center",

@@ -112,6 +112,21 @@ type QueueControlCenter struct {
 	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
+type SharedViewFilter struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type SharedViewContext struct {
+	Filters      []SharedViewFilter `json:"filters,omitempty"`
+	ResultCount  int                `json:"result_count"`
+	Loading      bool               `json:"loading"`
+	Errors       []string           `json:"errors,omitempty"`
+	PartialData  []string           `json:"partial_data,omitempty"`
+	LastUpdated  string             `json:"last_updated,omitempty"`
+	EmptyMessage string             `json:"empty_message,omitempty"`
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -898,11 +913,28 @@ func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 }
 
 func RenderQueueControlCenter(center QueueControlCenter) string {
+	return RenderQueueControlCenterWithView(center, nil)
+}
+
+func RenderQueueControlCenterWithView(center QueueControlCenter, view *SharedViewContext) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Queue Control Center\n\n")
 	builder.WriteString(fmt.Sprintf("- Queue Depth: %d\n", center.QueueDepth))
 	builder.WriteString(fmt.Sprintf("- Waiting Approval Runs: %d\n", center.WaitingApprovalRuns))
 	builder.WriteString(fmt.Sprintf("- Queued Tasks: %s\n\n", joinOrNone(center.QueuedTasks)))
+	if view != nil {
+		builder.WriteString("## View State\n\n")
+		builder.WriteString(fmt.Sprintf("- State: %s\n", queueViewState(*view)))
+		builder.WriteString(fmt.Sprintf("- Summary: %s\n", queueViewSummary(*view)))
+		if len(view.Filters) > 0 {
+			for _, filter := range view.Filters {
+				builder.WriteString(fmt.Sprintf("- %s: %s\n", filter.Label, filter.Value))
+			}
+		} else {
+			builder.WriteString("- Filters: none\n")
+		}
+		builder.WriteString("\n")
+	}
 	builder.WriteString("## Queue By Priority\n\n")
 	for _, priority := range []string{"P0", "P1", "P2"} {
 		builder.WriteString(fmt.Sprintf("- %s: %d\n", priority, center.QueuedByPriority[priority]))
@@ -936,6 +968,35 @@ func RenderQueueControlCenter(center QueueControlCenter) string {
 		builder.WriteString(fmt.Sprintf("- %s: %s\n", taskID, RenderConsoleActions(center.Actions[taskID])))
 	}
 	return builder.String()
+}
+
+func queueViewState(view SharedViewContext) string {
+	switch {
+	case view.Loading:
+		return "loading"
+	case len(view.Errors) > 0:
+		return "error"
+	case view.ResultCount == 0:
+		return "empty"
+	default:
+		return "ready"
+	}
+}
+
+func queueViewSummary(view SharedViewContext) string {
+	if message := strings.TrimSpace(view.EmptyMessage); message != "" && view.ResultCount == 0 {
+		return message
+	}
+	if len(view.Errors) > 0 {
+		return strings.Join(view.Errors, ", ")
+	}
+	if len(view.PartialData) > 0 {
+		return "partial data: " + strings.Join(view.PartialData, ", ")
+	}
+	if view.ResultCount == 0 {
+		return "No queue results for the selected view."
+	}
+	return fmt.Sprintf("%d results", view.ResultCount)
 }
 
 func WriteQueueControlCenterBundle(rootDir string, center QueueControlCenter) (string, error) {
