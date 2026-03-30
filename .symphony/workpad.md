@@ -29,6 +29,7 @@ Candidate batch:
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/validation_policy.py`
 - `src/bigclaw/memory.py`
+- `src/bigclaw/repo_commits.py`
 
 Planned retainers for this lane:
 
@@ -134,6 +135,9 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `src/bigclaw/memory.py`
   - Deleted.
   - Reason: isolated dead helper with no production callers or package exports; only a standalone Python test referenced it.
+- `src/bigclaw/repo_commits.py`
+  - Deleted.
+  - Reason: zero remaining in-repo references; the commit/lineage/diff contract is already present in `bigclaw-go/internal/repo/commits.go` and exercised by Go repo surface tests.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
@@ -207,10 +211,10 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `78`
+- Repository Python files after: `77`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `22`
-- Net reduction: `38`
+- `src/bigclaw/**` Python files after: `21`
+- Net reduction: `39`
 
 ### Validation Record
 
@@ -242,5 +246,7 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `cd bigclaw-go && go test ./internal/bootstrap ./cmd/bigclawctl`
   - Result: `ok  	bigclaw-go/internal/bootstrap	(cached)`
   - Result: `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+- `cd bigclaw-go && go test ./internal/repo`
+  - Result: `ok  	bigclaw-go/internal/repo	(cached)`
 - `git status --short`
   - Result: later cleanup waves removed repo compatibility modules, workflow/product/events compatibility modules, and their Python-only tests.
