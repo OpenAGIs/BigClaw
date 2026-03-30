@@ -20,6 +20,7 @@ Batch file list:
 - `src/bigclaw/saved_views.py`
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/run_detail.py`
+- `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -127,6 +128,10 @@ Selected tranche rationale:
 - `run_detail.py` is a shared run-detail rendering helper used only by
   `reports.py` and `evaluation.py`, so it can be folded into `reports.py`
   while keeping `bigclaw.run_detail` as a compatibility surface.
+- `repo_gateway.py` is still a repo-domain DTO/sync surface and can be folded
+  into the broader `repo_plane.py` owner while preserving `bigclaw.repo_gateway`,
+  `bigclaw.repo_commits`, and `bigclaw.github_sync` compatibility from
+  `__init__.py`.
 
 ## Plan
 
@@ -226,6 +231,11 @@ Selected tranche rationale:
     `__init__.py`.
 50. Run targeted report/evaluation validation for the seventeenth
     consolidation batch and push a follow-up commit.
+51. Fold `repo_gateway.py` into `repo_plane.py` and preserve
+    `bigclaw.repo_gateway`, `bigclaw.repo_commits`, and `bigclaw.github_sync`
+    compatibility via `__init__.py`.
+52. Run targeted repo-domain and repo-sync validation for the eighteenth
+    consolidation batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -276,6 +286,12 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_saved_views.py tests/test_reports.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_dashboard_run_contract.py tests/test_execution_contract.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_evaluation.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_github_sync.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.repo_gateway import normalize_commit`
+  `from bigclaw.github_sync import ensure_repo_sync`
+  `print(normalize_commit.__name__, ensure_repo_sync.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.run_detail import render_run_detail_console, RunDetailStat`
   `print(render_run_detail_console.__name__, RunDetailStat.__name__)`
@@ -584,6 +600,19 @@ Selected tranche rationale:
 - `src/bigclaw/run_detail.py`
   - Deleted.
   - Reason: its contents moved into `reports.py`.
+- `src/bigclaw/repo_plane.py`
+  - Replaced again.
+  - Reason: absorbed repo gateway DTOs, gateway normalization helpers, and repo
+    sync automation so repo topology, commit lineage, and repo sync state share
+    one repo-domain owner.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: retargets `bigclaw.repo_commits` and `bigclaw.github_sync` to the
+    merged repo-plane owner and installs a `bigclaw.repo_gateway`
+    compatibility submodule.
+- `src/bigclaw/repo_gateway.py`
+  - Deleted.
+  - Reason: its contents moved into `repo_plane.py`.
 
 ### Inventory Impact
 
@@ -605,7 +634,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 15: `21`
 - `src/bigclaw/**/*.py` after batch 16: `20`
 - `src/bigclaw/**/*.py` after batch 17: `19`
-- Net Python module reduction in tranche so far: `26`
+- `src/bigclaw/**/*.py` after batch 18: `18`
+- Net Python module reduction in tranche so far: `27`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -737,3 +767,10 @@ Selected tranche rationale:
   - Result: `render_run_detail_console RunDetailStat`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 17: `19`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_registry.py tests/test_github_sync.py`
+  - First run failed during collection because `Protocol` was not imported after relocation.
+  - After fixing import: `10 passed in 1.05s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.repo_gateway` / `bigclaw.github_sync`
+  - Result: `normalize_commit ensure_repo_sync`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 18: `18`

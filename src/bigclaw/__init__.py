@@ -2,7 +2,6 @@ import sys
 import types
 
 from . import connectors as _connectors_surface
-from . import repo_gateway as _repo_gateway_surface
 from . import repo_plane as _repo_plane_surface
 from . import workspace_bootstrap as _workspace_bootstrap_surface
 from .models import (
@@ -146,13 +145,34 @@ _install_compat_surface_module(
 )
 _install_compat_surface_module(
     "repo_commits",
-    _repo_gateway_surface,
+    _repo_plane_surface,
     ["RepoCommit", "CommitLineage", "CommitDiff"],
 )
 _install_compat_surface_module(
     "github_sync",
-    _repo_gateway_surface,
+    _repo_plane_surface,
     ["GitSyncError", "RepoSyncStatus", "ensure_repo_sync", "inspect_repo_sync", "install_git_hooks"],
+)
+_install_compat_surface_module(
+    "repo_gateway",
+    _repo_plane_surface,
+    [
+        "RepoCommit",
+        "CommitLineage",
+        "CommitDiff",
+        "RepoGatewayClient",
+        "RepoGatewayError",
+        "GitSyncError",
+        "RepoSyncStatus",
+        "normalize_gateway_error",
+        "normalize_commit",
+        "normalize_lineage",
+        "normalize_diff",
+        "repo_audit_payload",
+        "ensure_repo_sync",
+        "inspect_repo_sync",
+        "install_git_hooks",
+    ],
 )
 _install_compat_surface_module(
     "repo_links",
