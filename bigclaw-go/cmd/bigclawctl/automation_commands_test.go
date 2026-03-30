@@ -375,3 +375,37 @@ func TestAutomationExportLiveShadowBundleBuildsManifest(t *testing.T) {
 		t.Fatalf("unexpected index body: %s", string(indexBody))
 	}
 }
+
+func TestResolveAutomationGoRootUsesDocumentedBigClawGoCWD(t *testing.T) {
+	parent := t.TempDir()
+	goRoot := filepath.Join(parent, "bigclaw-go")
+	if err := os.MkdirAll(filepath.Join(goRoot, "docs"), 0o755); err != nil {
+		t.Fatalf("mkdir docs: %v", err)
+	}
+
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(goRoot); err != nil {
+		t.Fatalf("chdir goRoot: %v", err)
+	}
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	}()
+
+	resolved := resolveAutomationGoRoot("bigclaw-go")
+	resolvedInfo, err := os.Stat(resolved)
+	if err != nil {
+		t.Fatalf("stat resolved path: %v", err)
+	}
+	goRootInfo, err := os.Stat(goRoot)
+	if err != nil {
+		t.Fatalf("stat goRoot: %v", err)
+	}
+	if !os.SameFile(resolvedInfo, goRootInfo) {
+		t.Fatalf("expected cwd bigclaw-go resolution to return %q, got %q", goRoot, resolved)
+	}
+}
