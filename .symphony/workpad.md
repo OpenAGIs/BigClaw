@@ -372,3 +372,48 @@ Repository inventory at start of lane:
       printed `demo#1`, `demo#1`, `Priority.P0`, `In Progress`, `github`
   - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
     - Result: `PY 78`, `GO 267`, `SRC 15`
+
+## BIG-GO-1014 Refill Sweep D Continuation 5
+
+### Plan
+
+- Merge the low-coupling risk and cost-control helpers from `src/bigclaw/risk.py`
+  into `src/bigclaw/models.py`.
+- Update `src/bigclaw/runtime.py` and `src/bigclaw/__init__.py` to source the
+  moved symbols from `models.py`, then delete `risk.py`.
+- Validate with syntax checks, import-reference grep, and direct module loading
+  to avoid unrelated package-import failures from other dirty files.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve `RiskScorer`, `RiskScore`, `BudgetDecision`, `CostController`, and
+  `RiskFactor` exports after the merge.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/models.py src/bigclaw/runtime.py src/bigclaw/__init__.py`
+- `python3 - <<'PY' ... PY` direct-load `src/bigclaw/models.py` and exercise `RiskScorer`/`CostController`
+- `rg -n "from \\.risk import|from bigclaw\\.risk|RiskScorer|CostController" src tests docs bigclaw-go -g '*.py' -g '*.md' -g '*.go'`
+
+### Results
+
+- Deleted `src/bigclaw/risk.py`.
+- Merged the risk and cost-control helpers into `src/bigclaw/models.py`.
+- Updated `src/bigclaw/runtime.py` and `src/bigclaw/__init__.py` to source the
+  moved symbols from `models.py`, and installed a compatibility `bigclaw.risk`
+  surface from the merged module.
+- Repository counts after continuation:
+  - total `py` files: `77`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `14`
+- Validation outcomes:
+  - `python3 -m compileall src/bigclaw/models.py src/bigclaw/runtime.py src/bigclaw/__init__.py`
+    - Result: success
+  - `python3 - <<'PY' ... PY`
+    - Result: direct-loaded `models.py`, scored a high-risk task, and evaluated
+      budget control successfully; printed `high`, `70`, `True`, `allow`, `3.0`
+  - `rg -n "from \\.risk import|from bigclaw\\.risk|RiskScorer|CostController" src tests docs bigclaw-go -g '*.py' -g '*.md' -g '*.go'`
+    - Result: live imports now point at `models.py`/compatibility surfaces;
+      only test/docs references to `bigclaw.risk` remain as expected

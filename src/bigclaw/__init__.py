@@ -15,10 +15,15 @@ from .models import (
     GitHubConnector,
     JiraConnector,
     LinearConnector,
+    BudgetDecision,
+    CostController,
     SourceIssue,
     Priority,
     RiskAssessment,
+    RiskFactor,
     RiskLevel,
+    RiskScore,
+    RiskScorer,
     RiskSignal,
     Task,
     TaskState,
@@ -275,8 +280,8 @@ _install_surface_module(
         "render_saved_view_report",
     ],
 )
-from .risk import BudgetDecision, CostController, RiskFactor, RiskScore, RiskScorer
-_install_surface_module("cost_control", sys.modules[f"{__name__}.risk"], ["BudgetDecision", "CostController"])
+_install_surface_module("risk", sys.modules[f"{__name__}.models"], ["BudgetDecision", "CostController", "RiskFactor", "RiskScore", "RiskScorer"])
+_install_surface_module("cost_control", sys.modules[f"{__name__}.models"], ["BudgetDecision", "CostController"])
 from .dsl import WorkflowDefinition, WorkflowStep
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
