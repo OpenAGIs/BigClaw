@@ -89,12 +89,24 @@ Repository inventory at start of lane:
   - Replaced.
   - Reason: added parent-directory creation, payload persistence,
     dead-letter-reason persistence, and legacy-list reload coverage.
+- `tests/test_repo_board.py`
+  - Deleted.
+  - Reason: its create/reply/filter/comment-projection assertions now land in
+    Go repo surface tests.
+- `bigclaw-go/internal/repo/board.go`
+  - Replaced.
+  - Reason: added repo-post to collaboration-comment projection so the Python
+    board surface can be removed.
+- `bigclaw-go/internal/repo/repo_surfaces_test.go`
+  - Replaced.
+  - Reason: added the collaboration-comment projection assertion that was only
+    present in Python before this lane.
 
 ### Impact
 
 - Repository `py` files before: `108`
-- Repository `py` files after: `104`
-- Net `py` reduction: `4`
+- Repository `py` files after: `103`
+- Net `py` reduction: `5`
 - Repository `go` files before: `267`
 - Repository `go` files after: `267`
 - Net `go` reduction: `0`
@@ -114,6 +126,9 @@ Repository inventory at start of lane:
   - Result:
     - `ok   bigclaw-go/internal/queue  26.877s`
     - `ok   bigclaw-go/internal/repo  0.437s`
+- `go test ./internal/repo`
+  - Working directory: `bigclaw-go/`
+  - Result: `ok   bigclaw-go/internal/repo  1.112s`
 - `git diff --check`
   - Result: clean
 - `git status --short`
@@ -128,7 +143,7 @@ Repository inventory at start of lane:
     - `D tests/test_repo_governance.py`
     - `D tests/test_saved_views.py`
 - `find . -name '*.py' | sort | wc -l`
-  - Result after: `104`
+  - Result after: `103`
 - `find . -name '*.go' | sort | wc -l`
   - Result after: `267`
 - `test -f pyproject.toml; echo $?`
