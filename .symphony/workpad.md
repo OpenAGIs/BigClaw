@@ -1,10 +1,10 @@
 # BIG-GO-1018
 
 ## Plan
-- Migrate the next scoped residual `tests/**` tranche for the obsolete Python scheduler contract.
-- Add direct Go scheduler tests that lock the current routing and reason strings in `bigclaw-go/internal/scheduler`, then remove `tests/test_scheduler.py` as superseded by the Go scheduler semantics.
+- Migrate the next scoped residual `tests/**` tranche for the frozen legacy Python runtime matrix.
+- Remove `tests/test_runtime_matrix.py` as stale residual coverage for `src/bigclaw/runtime.py`, which already points to Go mainline replacements, and validate against the current Go worker and scheduler tests.
 - Remove the migrated Python test file from `tests/`.
-- Run targeted Go tests for `bigclaw-go/internal/scheduler`, capture exact commands and results, then commit and push the branch.
+- Run targeted Go tests for `bigclaw-go/internal/worker` and `bigclaw-go/internal/scheduler`, capture exact commands and results, then commit and push the branch.
 
 ## Acceptance
 - Changes stay scoped to this issue's residual `tests/**` tranche.
@@ -13,6 +13,7 @@
 - Final report includes impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
 
 ## Validation
+- `go test ./internal/worker`
 - `go test ./internal/scheduler`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
