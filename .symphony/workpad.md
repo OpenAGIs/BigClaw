@@ -1241,3 +1241,75 @@ Follow-on refactor now queued:
   - Result: `absent`
 - `git diff --check`
   - Result: success
+
+### Follow-on tranche 27 queued
+
+- Target `src/bigclaw/reports.py` next.
+- Reason: the remaining report/rendering surface has no direct import cycle back
+  into `operations.py` beyond the current one-way dependency, and most of its
+  consumers already route through package exports or runtime deferred imports,
+  so it can be merged into `src/bigclaw/operations.py` and preserved via a
+  package-installed `bigclaw.reports` compatibility shim.
+- Planned edits:
+  - Move the report dataclasses, renderers, writers, replay helpers, and repo
+    narrative exports from `src/bigclaw/reports.py` into
+    `src/bigclaw/operations.py`.
+  - Repoint package exports so `bigclaw.reports` resolves to the
+    operations-owned surface.
+  - Delete `src/bigclaw/reports.py`.
+
+### Follow-on tranche 27
+
+- `src/bigclaw/reports.py`
+  - Deleted.
+  - Reason: the remaining report/rendering surface was a leaf relative to the
+    runtime/observability core and could be absorbed into operations while
+    preserving `bigclaw.reports`, `bigclaw.evaluation`, and
+    `bigclaw.run_detail` through package-installed compatibility shims.
+- `src/bigclaw/operations.py`
+  - Updated.
+  - Reason: now owns the former reports dataclasses, renderers, writers,
+    replay helpers, orchestration/takeover reporting helpers, and repo
+    narrative export helpers.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: package imports now source report symbols from operations and
+    install a `bigclaw.reports` compatibility module backed by that surface.
+
+### Follow-on tranche 27 inventory
+
+- `src/bigclaw` Python files after tranche 27: `4`
+- Repository-wide Python files after tranche 27: `52`
+- Net repository-wide Python reduction: `56`
+- `bigclaw-go` Go files after tranche 27: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 27 validation
+
+- `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py`
+  - Result: success
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`, `import bigclaw.reports`, `import bigclaw.evaluation`, and `import bigclaw.run_detail`
+  - Result: `import ok`; `bigclaw.reports.SharedViewContext.__module__ == "bigclaw.operations"`; `bigclaw.evaluation.BenchmarkSuiteResult.__module__ == "bigclaw.operations"`; `bigclaw.run_detail.RunDetailTab.__module__ == "bigclaw.operations"`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_observability.py tests/test_evaluation.py`
+  - Result: `48 passed in 0.08s`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_control_center.py tests/test_repo_rollout.py`
+  - Result: `25 passed in 0.06s`
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_runtime_matrix.py`
+  - Result: `8 passed in 0.06s`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_governance.py`
+  - Result: `18 passed in 0.05s`
+- `PYTHONPATH=src python3 -m pytest tests/test_parallel_validation_bundle.py`
+  - Result: failed, unrelated pre-existing blocker in `bigclaw-go/scripts/e2e/export_validation_bundle.py` on Python 3.9: `TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'` from `Path | None`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `4`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `52`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
