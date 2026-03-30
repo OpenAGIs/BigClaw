@@ -14,6 +14,7 @@ Batch file list:
 - `src/bigclaw/planning.py`
 - `src/bigclaw/runtime.py`
 - `src/bigclaw/workspace_bootstrap.py`
+- `src/bigclaw/memory.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -103,6 +104,9 @@ Selected tranche rationale:
   can be folded into `observability.py`.
 - `dsl.py` is legacy workflow-definition scaffolding and can be folded into the
   frozen runtime/workflow surface.
+- `memory.py` is an isolated task-pattern persistence helper that operates on
+  planning fields already present on `Task`, so it can be folded into
+  `planning.py` without widening into unrelated runtime or UI surfaces.
 
 ## Plan
 
@@ -177,6 +181,10 @@ Selected tranche rationale:
     via `__init__.py`.
 38. Run targeted DSL validation for the eleventh consolidation batch and push a
     follow-up commit.
+39. Fold `memory.py` into `planning.py` and preserve `bigclaw.memory`
+    compatibility via `__init__.py`.
+40. Run targeted planning/memory validation for the twelfth consolidation batch
+    and push a follow-up commit.
 
 ## Acceptance
 
@@ -221,6 +229,7 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_audit_events.py tests/test_runtime_matrix.py tests/test_observability.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_event_bus.py tests/test_observability.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_runtime_matrix.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_memory.py tests/test_planning.py`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.risk import RiskScorer`
   `from bigclaw.audit_events import SCHEDULER_DECISION_EVENT`
@@ -436,6 +445,17 @@ Selected tranche rationale:
 - `src/bigclaw/dsl.py`
   - Deleted.
   - Reason: its contents moved into `runtime.py`.
+- `src/bigclaw/planning.py`
+  - Replaced again.
+  - Reason: absorbed task-memory pattern persistence and rule suggestion
+    helpers so backlog planning and task-pattern reuse live in one module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.memory` compatibility submodule and exports the
+    moved task-memory types from `planning.py`.
+- `src/bigclaw/memory.py`
+  - Deleted.
+  - Reason: its contents moved into `planning.py`.
 
 ### Inventory Impact
 
@@ -451,7 +471,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 9: `28`
 - `src/bigclaw/**/*.py` after batch 10: `26`
 - `src/bigclaw/**/*.py` after batch 11: `25`
-- Net Python module reduction in tranche so far: `20`
+- `src/bigclaw/**/*.py` after batch 12: `24`
+- Net Python module reduction in tranche so far: `21`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -547,3 +568,9 @@ Selected tranche rationale:
   - Result: `ok`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 11: `25`
+- `PYTHONPATH=src python3 -m pytest tests/test_memory.py tests/test_planning.py`
+  - Result: `15 passed in 0.08s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.memory` / root memory exports
+  - Result: `TaskMemoryStore MemoryPattern`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 12: `24`

@@ -505,6 +505,8 @@ from .planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    MemoryPattern,
+    TaskMemoryStore,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_execution_pack_roadmap,
@@ -518,6 +520,11 @@ _install_compat_surface_module(
     "roadmap",
     sys.modules[f"{__name__}.planning"],
     ["EpicMilestone", "ExecutionPackRoadmap", "build_execution_pack_roadmap"],
+)
+_install_compat_surface_module(
+    "memory",
+    sys.modules[f"{__name__}.planning"],
+    ["MemoryPattern", "TaskMemoryStore"],
 )
 from .ui_review import (
     InteractionFlow,
@@ -856,6 +863,8 @@ __all__ = [
     "EvidenceLink",
     "EntryGate",
     "EntryGateDecision",
+    "MemoryPattern",
+    "TaskMemoryStore",
     "FourWeekExecutionPlan",
     "WeeklyExecutionPlan",
     "WeeklyGoal",
