@@ -557,3 +557,58 @@ Repository inventory at start of lane:
     - Result: `pyproject=1`, `setup=1`
   - `git diff --check`
     - Result: clean
+
+## BIG-GO-1014 Refill Sweep D Continuation 9
+
+### Plan
+
+- Merge the execution contract surface from
+  `src/bigclaw/execution_contract.py` into `src/bigclaw/repository.py`.
+- Update `src/bigclaw/__init__.py` to source execution contract exports from
+  `repository.py` and install compatibility `bigclaw.execution_contract` and
+  `bigclaw.dashboard_run_contract` submodules from the merged surface.
+- Validate with syntax checks plus a direct-load repository script that
+  exercises the merged execution contract classes without importing the shared
+  package root.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve execution contract and dashboard contract exports after the move.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/repository.py src/bigclaw/__init__.py`
+- `python3 - <<'PY' ... PY` fake-package load `bigclaw.repository` and
+  exercise `ExecutionContractLibrary` plus `render_dashboard_run_contract_report`
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
+### Results
+
+- Deleted `src/bigclaw/execution_contract.py`.
+- Merged the execution contract and dashboard contract surface into
+  `src/bigclaw/repository.py`.
+- Updated `src/bigclaw/__init__.py` to source execution contract exports from
+  `repository.py` and install compatibility `bigclaw.execution_contract` and
+  `bigclaw.dashboard_run_contract` submodules from the merged surface.
+- Repository counts after continuation:
+  - total `py` files: `73`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `10`
+- Root manifest impact:
+  - `pyproject.toml`: absent
+  - `setup.py`: absent
+- Validation outcomes:
+  - `python3 -m compileall src/bigclaw/repository.py src/bigclaw/__init__.py`
+    - Result: success
+  - `python3 - <<'PY' ... PY`
+    - Result: fake-package loaded `bigclaw.repository`, audited the merged
+      execution contract and dashboard contract surfaces, and printed
+      `execution contract merge validation ok`
+  - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+    - Result: `PY 73`, `GO 267`, `SRC 10`
+  - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
+    - Result: `pyproject=1`, `setup=1`
+  - `git diff --check`
+    - Result: clean

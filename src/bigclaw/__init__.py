@@ -361,7 +361,7 @@ _install_surface_module(
     sys.modules[f"{__name__}.observability"],
     ["CI_COMPLETED_EVENT", "PULL_REQUEST_COMMENT_EVENT", "TASK_FAILED_EVENT", "BusEvent", "EventBus"],
 )
-from .execution_contract import (
+from .repository import (
     AuditPolicy,
     DashboardRunContract,
     DashboardRunContractAudit,
@@ -384,8 +384,34 @@ from .execution_contract import (
     render_execution_contract_report,
 )
 _install_surface_module(
+    "execution_contract",
+    sys.modules[f"{__name__}.repository"],
+    [
+        "AuditPolicy",
+        "DashboardRunContract",
+        "DashboardRunContractAudit",
+        "DashboardRunContractLibrary",
+        "SchemaField",
+        "SurfaceSchema",
+        "build_operations_api_contract",
+        "ExecutionApiSpec",
+        "ExecutionContract",
+        "ExecutionContractAudit",
+        "ExecutionContractLibrary",
+        "ExecutionField",
+        "ExecutionModel",
+        "ExecutionPermission",
+        "ExecutionPermissionMatrix",
+        "ExecutionRole",
+        "MetricDefinition",
+        "PermissionCheckResult",
+        "render_dashboard_run_contract_report",
+        "render_execution_contract_report",
+    ],
+)
+_install_surface_module(
     "dashboard_run_contract",
-    sys.modules[f"{__name__}.execution_contract"],
+    sys.modules[f"{__name__}.repository"],
     [
         "DashboardRunContract",
         "DashboardRunContractAudit",
