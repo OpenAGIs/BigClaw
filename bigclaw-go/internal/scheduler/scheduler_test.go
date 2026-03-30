@@ -17,6 +17,9 @@ func TestSchedulerBudgetGuardrail(t *testing.T) {
 	if decision.Accepted {
 		t.Fatalf("expected budget rejection")
 	}
+	if decision.Reason != "budget exceeded" {
+		t.Fatalf("expected budget exceeded reason, got %+v", decision)
+	}
 }
 
 func TestSchedulerRoutesHighRiskToKubernetes(t *testing.T) {
@@ -63,6 +66,23 @@ func TestSchedulerRoutesBrowserToKubernetes(t *testing.T) {
 	}
 	if decision.Assignment.Executor != domain.ExecutorKubernetes {
 		t.Fatalf("expected kubernetes executor, got %s", decision.Assignment.Executor)
+	}
+	if decision.Reason != "browser workloads default to kubernetes executor" {
+		t.Fatalf("expected browser routing reason, got %+v", decision)
+	}
+}
+
+func TestSchedulerRoutesLowRiskToLocalWithDefaultReason(t *testing.T) {
+	s := New()
+	decision := s.Decide(domain.Task{ID: "low-1"}, QuotaSnapshot{})
+	if !decision.Accepted {
+		t.Fatalf("expected accepted decision")
+	}
+	if decision.Assignment.Executor != domain.ExecutorLocal {
+		t.Fatalf("expected local executor, got %s", decision.Assignment.Executor)
+	}
+	if decision.Reason != "default local executor for low/medium risk" {
+		t.Fatalf("expected default low-risk reason, got %+v", decision)
 	}
 }
 
