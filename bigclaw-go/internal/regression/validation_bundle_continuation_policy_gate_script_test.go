@@ -12,8 +12,9 @@ import (
 func TestValidationBundleContinuationPolicyGateBuilderStaysAligned(t *testing.T) {
 	repoRoot := repoRoot(t)
 	tmpDir := t.TempDir()
-	scriptPath := filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py")
+	scriptPath := filepath.Join(repoRoot, "scripts", "e2e", "validation-bundle-continuation-policy-gate")
 	scorecardPath := filepath.Join(tmpDir, "docs", "reports", "validation-bundle-continuation-scorecard.json")
+	outputPath := filepath.Join(tmpDir, "docs", "reports", "validation-bundle-continuation-policy-gate.json")
 	if err := os.MkdirAll(filepath.Dir(scorecardPath), 0o755); err != nil {
 		t.Fatalf("mkdir reports dir: %v", err)
 	}
@@ -45,41 +46,45 @@ func TestValidationBundleContinuationPolicyGateBuilderStaysAligned(t *testing.T)
 
 	runBuildReport := func(extraArgs ...string) map[string]any {
 		args := []string{
-			"-c",
-			`
-import importlib.util
-import json
-import pathlib
-import sys
-
-script_path = pathlib.Path(sys.argv[1])
-scorecard_path = sys.argv[2]
-extra = sys.argv[3:]
-spec = importlib.util.spec_from_file_location("validation_bundle_continuation_policy_gate", script_path)
-module = importlib.util.module_from_spec(spec)
-assert spec.loader is not None
-spec.loader.exec_module(module)
-
-kwargs = {"scorecard_path": scorecard_path}
-for item in extra:
-    key, value = item.split("=", 1)
-    if value == "true":
-        kwargs[key] = True
-    elif value == "false":
-        kwargs[key] = False
-    else:
-        kwargs[key] = value
-print(json.dumps(module.build_report(**kwargs)))
-`,
 			scriptPath,
-			scorecardPath,
+			"--scorecard", scorecardPath,
+			"--output", outputPath,
 		}
-		args = append(args, extraArgs...)
-		cmd := exec.Command("python3", args...)
+		for _, item := range extraArgs {
+			key, value, ok := strings.Cut(item, "=")
+			if !ok {
+				t.Fatalf("malformed arg %q", item)
+			}
+			switch key {
+			case "enforcement_mode":
+				args = append(args, "--enforcement-mode", value)
+			case "legacy_enforce_continuation_gate":
+				if value == "true" {
+					args = append(args, "--enforce")
+				}
+			case "require_repeated_lane_coverage":
+				if value == "false" {
+					args = append(args, "--allow-partial-lane-history")
+				}
+			default:
+				t.Fatalf("unexpected arg key %q", key)
+			}
+		}
+		cmd := exec.Command("bash", args...)
 		cmd.Dir = repoRoot
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			t.Fatalf("run continuation gate builder: %v\n%s", err, output)
+			exitErr, ok := err.(*exec.ExitError)
+			if !ok {
+				t.Fatalf("run continuation gate builder: %v\n%s", err, output)
+			}
+			if exitErr.ExitCode() != 1 && exitErr.ExitCode() != 2 {
+				t.Fatalf("run continuation gate builder: %v\n%s", err, output)
+			}
+		}
+		output, err = os.ReadFile(outputPath)
+		if err != nil {
+			t.Fatalf("read continuation gate output: %v", err)
 		}
 		var report map[string]any
 		if err := json.Unmarshal(output, &report); err != nil {

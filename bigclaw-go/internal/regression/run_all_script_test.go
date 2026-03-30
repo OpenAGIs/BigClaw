@@ -102,16 +102,20 @@ output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
 `)
 
-		writeFile("scripts/e2e/validation_bundle_continuation_policy_gate.py", `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-mode = args[args.index('--enforcement-mode') + 1]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
+		writeFile("scripts/e2e/validation-bundle-continuation-policy-gate", `#!/usr/bin/env bash
+set -euo pipefail
+args=("$@")
+mode=hold
+for ((i = 0; i < ${#args[@]}; i++)); do
+  if [[ "${args[$i]}" == "--enforcement-mode" ]]; then
+    mode="${args[$((i + 1))]}"
+  fi
+  if [[ "${args[$i]}" == "--output" ]]; then
+    output="${args[$((i + 1))]}"
+  fi
+done
+mkdir -p "$(dirname "$output")"
+printf '{"status":"policy-go","recommendation":"go","enforcement":{"mode":"%s","outcome":"pass","exit_code":0}}' "$mode" >"$output"
 `)
 
 		return root
@@ -179,18 +183,22 @@ output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'en
 
 	t.Run("defaults to hold mode", func(t *testing.T) {
 		root := makeRoot(t)
-		gateStub := `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-mode = args[args.index('--enforcement-mode') + 1]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+		gateStub := `#!/usr/bin/env bash
+set -euo pipefail
+args=("$@")
+mode=hold
+for ((i = 0; i < ${#args[@]}; i++)); do
+  if [[ "${args[$i]}" == "--enforcement-mode" ]]; then
+    mode="${args[$((i + 1))]}"
+  fi
+  if [[ "${args[$i]}" == "--output" ]]; then
+    output="${args[$((i + 1))]}"
+  fi
+done
+mkdir -p "$(dirname "$output")"
+printf '{"enforcement":{"mode":"%s"}}' "$mode" >"$output"
 `
-		if err := os.WriteFile(filepath.Join(root, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py"), []byte(gateStub), 0o755); err != nil {
+		if err := os.WriteFile(filepath.Join(root, "scripts", "e2e", "validation-bundle-continuation-policy-gate"), []byte(gateStub), 0o755); err != nil {
 			t.Fatalf("override gate stub: %v", err)
 		}
 		runScript(t, root, map[string]string{
@@ -211,18 +219,22 @@ output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
 
 	t.Run("legacy enforce alias maps to fail mode", func(t *testing.T) {
 		root := makeRoot(t)
-		gateStub := `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-mode = args[args.index('--enforcement-mode') + 1]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+		gateStub := `#!/usr/bin/env bash
+set -euo pipefail
+args=("$@")
+mode=hold
+for ((i = 0; i < ${#args[@]}; i++)); do
+  if [[ "${args[$i]}" == "--enforcement-mode" ]]; then
+    mode="${args[$((i + 1))]}"
+  fi
+  if [[ "${args[$i]}" == "--output" ]]; then
+    output="${args[$((i + 1))]}"
+  fi
+done
+mkdir -p "$(dirname "$output")"
+printf '{"enforcement":{"mode":"%s"}}' "$mode" >"$output"
 `
-		if err := os.WriteFile(filepath.Join(root, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py"), []byte(gateStub), 0o755); err != nil {
+		if err := os.WriteFile(filepath.Join(root, "scripts", "e2e", "validation-bundle-continuation-policy-gate"), []byte(gateStub), 0o755); err != nil {
 			t.Fatalf("override gate stub: %v", err)
 		}
 		runScript(t, root, map[string]string{

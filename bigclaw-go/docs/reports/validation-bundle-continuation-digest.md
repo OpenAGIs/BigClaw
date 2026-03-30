@@ -12,7 +12,7 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 - `docs/reports/validation-bundle-continuation-scorecard.json` adds a rolling continuation scorecard across recent bundle generations plus the shared-queue companion proof.
 - `scripts/e2e/validation_bundle_continuation_scorecard.py` regenerates the scorecard from checked-in bundle summaries and shared-queue evidence.
 - `docs/reports/validation-bundle-continuation-policy-gate.json` records the current continuation policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
-- `scripts/e2e/validation_bundle_continuation_policy_gate.py` evaluates the scorecard as a repo-native policy gate.
+- `scripts/e2e/validation-bundle-continuation-policy-gate` evaluates the scorecard as a repo-native policy gate.
 - `docs/reports/multi-node-coordination-report.md` captures the current shared-queue coordination proof that complements the validation bundle.
 - `docs/reports/review-readiness.md` records which validation claims are already closure-safe.
 - `docs/openclaw-parallel-gap-analysis.md` captures the remaining mainline gap between current evidence and future distributed validation continuation.
