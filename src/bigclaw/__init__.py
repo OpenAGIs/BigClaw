@@ -1,8 +1,10 @@
 import sys
 import types
 
-from . import observability as _legacy_observability_surface
-from .observability import (
+from . import operations as _legacy_operations_surface
+_legacy_observability_surface = _legacy_operations_surface
+_legacy_runtime_surface = _legacy_operations_surface
+from .operations import (
     BillingInterval,
     BillingRate,
     BillingSummary,
@@ -24,7 +26,6 @@ from .observability import (
     TriageStatus,
     UsageRecord,
 )
-_legacy_runtime_surface = _legacy_observability_surface
 
 
 def _install_legacy_surface_module(
@@ -40,6 +41,10 @@ def _install_legacy_surface_module(
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
+
+
+sys.modules[f"{__name__}.observability"] = _legacy_observability_surface
+globals()["observability"] = _legacy_observability_surface
 
 
 _install_legacy_surface_module(
@@ -221,7 +226,6 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
-from . import operations as _legacy_operations_surface
 _install_legacy_surface_module(
     "governance",
     [
@@ -264,7 +268,7 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
-from .observability import (
+from .operations import (
     AcceptanceDecision,
     AcceptanceGate,
     ClawWorkerRuntime,
@@ -301,7 +305,7 @@ from .observability import (
     run_server,
     warn_legacy_service_surface,
 )
-from .observability import (
+from .operations import (
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
@@ -311,7 +315,7 @@ from .observability import (
     render_collaboration_lines,
     render_collaboration_panel_html,
 )
-from .observability import (
+from .operations import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     BusEvent,
@@ -332,7 +336,7 @@ from .observability import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import ObservabilityLedger
+from .operations import ObservabilityLedger
 from .operations import (
     AutoTriageCenter,
     BenchmarkCase,
