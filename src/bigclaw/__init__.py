@@ -1,6 +1,8 @@
 import sys
 import types
 
+from . import repo_gateway as _repo_gateway_surface
+from . import repo_plane as _repo_plane_surface
 from .models import (
     BillingInterval,
     BillingRate,
@@ -30,6 +32,20 @@ def _install_legacy_surface_module(name: str, export_names: list[str], **extra_a
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
         module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+    module.__dict__.update(extra_attrs)
+    sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
+def _install_compat_surface_module(
+    name: str,
+    source_module: types.ModuleType,
+    export_names: list[str],
+    **extra_attrs: object,
+) -> None:
+    module = types.ModuleType(f"{__name__}.{name}")
+    for export_name in export_names:
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
@@ -83,6 +99,21 @@ _install_legacy_surface_module(
         "service.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+)
+_install_compat_surface_module(
+    "repo_commits",
+    _repo_gateway_surface,
+    ["RepoCommit", "CommitLineage", "CommitDiff"],
+)
+_install_compat_surface_module(
+    "repo_links",
+    _repo_plane_surface,
+    ["RunCommitBinding", "bind_run_commits", "validate_run_commit_roles", "VALID_RUN_COMMIT_ROLES"],
+)
+_install_compat_surface_module(
+    "repo_registry",
+    _repo_plane_surface,
+    ["RepoRegistry"],
 )
 
 from .runtime import (
