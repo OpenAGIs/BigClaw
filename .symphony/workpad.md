@@ -1,125 +1,85 @@
-# BIG-GO-990 Workpad
-
-## Scope
-
-Target the remaining Python scripts under:
-
-- `bigclaw-go/scripts/e2e/**`
-- `bigclaw-go/scripts/migration/**`
-
-Initial batch file list:
-
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
-
-Current repository Python file count before this lane: `116`
-Current targeted batch Python file count before this lane: `19`
+# BIG-GO-1008
 
 ## Plan
-
-1. Inspect every Python file in the batch and map it to an existing Go/sh replacement or determine if a small Go port is needed.
-2. Remove redundant Python files where a repository-native replacement already exists or add a Go-native replacement where missing and then remove the Python version.
-3. Run targeted validation for the touched replacement paths.
-4. Record exact file disposition, rationale, and repository Python count impact.
-5. Commit and push the scoped changes for `BIG-GO-990`.
+1. Inventory every remaining `tests/**` Python file and group them by replacement status: Go-covered, still Python-owned, or blocked pending migration.
+2. Inspect the current overflow batch and delete only the Python tests whose assertions are already covered by Go-native tests or repo-native regression fixtures.
+3. Record delete/replace/keep rationale for the full batch in an issue report so the remaining tail is explicit instead of implicit.
+4. Run targeted validation for the Go packages that replace deleted tests, then re-count remaining `tests/**` and repo-wide Python files.
+5. Commit the scoped issue changes and push the branch to the remote.
 
 ## Acceptance
-
-- Produce the exact `BIG-GO-990` batch file list for `scripts/e2e` and `scripts/migration`.
-- Reduce the number of Python files in the targeted directories as far as practical within this lane.
-- Document keep/replace/delete rationale for every targeted Python file.
-- Report the repository-wide Python file count impact.
+- Produce the explicit `tests/**` Python file list for this overflow batch.
+- Reduce the number of Python files where safe in this issue scope.
+- Capture delete/replace/keep rationale for each file in the batch.
+- Report the delta for remaining `tests/**` Python files and total repo Python files.
 
 ## Validation
-
-- `find . -name '*.py' | wc -l`
-- Targeted validation commands for any Go/sh replacements touched in this lane
+- `rg --files tests -g '*.py'`
+- `rg --files . -g '*.py' | wc -l`
+- `cd bigclaw-go && go test ...` for the Go packages replacing deleted Python coverage
 - `git status --short`
-- `git log -1 --stat`
 
 ## Results
 
-### File Disposition
+### Deleted
 
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
-  - Deleted.
-  - Reason: already fully replaced by `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`; callers and docs in this lane now invoke the Go entrypoint directly.
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-  - Deleted.
-  - Reason: already fully replaced by `go run ./cmd/bigclawctl automation migration shadow-compare ...`; docs now point at the Go command directly.
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
-  - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration shadow-matrix ...`, with the matrix orchestration and corpus coverage logic moved into `cmd/bigclawctl`.
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-  - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, with the scorecard aggregation logic moved into `cmd/bigclawctl`.
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-  - Deleted.
-  - Reason: replaced in this lane by `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`, with bundle summary, manifest, rollup, and README generation moved into `cmd/bigclawctl`.
-- Remaining targeted Python files
-  - Kept for now.
-  - Reason: they still own report-generation or Python-only test behavior and do not yet have Go-native replacements in the repo.
+- `tests/test_saved_views.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_triage.py`
+- `tests/test_repo_links.py`
+- `tests/test_github_sync.py`
+- `tests/test_risk.py`
+- `tests/test_queue.py`
 
-### Python File Count Impact
+### Kept
 
-- Repository Python files before: `116`
-- Repository Python files after: `108`
-- Targeted batch Python files before: `19`
-- Targeted batch Python files after: `14`
-- Net reduction: `5`
+- `tests/conftest.py`
+- `tests/test_audit_events.py`
+- `tests/test_console_ia.py`
+- `tests/test_control_center.py`
+- `tests/test_design_system.py`
+- `tests/test_dsl.py`
+- `tests/test_evaluation.py`
+- `tests/test_event_bus.py`
+- `tests/test_execution_contract.py`
+- `tests/test_governance.py`
+- `tests/test_live_shadow_bundle.py`
+- `tests/test_memory.py`
+- `tests/test_models.py`
+- `tests/test_observability.py`
+- `tests/test_operations.py`
+- `tests/test_orchestration.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_planning.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_rollout.py`
+- `tests/test_reports.py`
+- `tests/test_runtime_matrix.py`
+- `tests/test_scheduler.py`
+- `tests/test_ui_review.py`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
+- `tests/test_validation_policy.py`
+- `tests/test_workspace_bootstrap.py`
 
-### Remaining Targeted Python Files
+### Count Impact
 
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
+- Repository Python files before: `108`
+- Repository Python files after: `97`
+- `tests/**` Python files before: `38`
+- `tests/**` Python files after: `27`
+- Net reduction: `11`
 
 ### Validation Record
 
-- `cd bigclaw-go && python3 -m unittest scripts/e2e/run_all_test.py`
-  - Result: `Ran 3 tests in 4.250s` and `OK`
-- `cd bigclaw-go && go test ./cmd/bigclawctl`
-  - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.418s`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration shadow-matrix ...` produces a matrix report with corpus coverage against stub HTTP endpoints.
-  - Result: `shadow_matrix_cli_ok`
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration --help`
-  - Result: `usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle> [flags]`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` emits a repo-native scorecard from compare/matrix JSON inputs.
-  - Result: `live_shadow_scorecard_cli_ok`
-- `cd bigclaw-go && python3 - <<'PY' ... PY`
-  - Purpose: validate that `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --go-root <tempdir>` emits summary/index/manifest/rollup outputs and bundle README from local artifacts.
-  - Result: `export_live_shadow_bundle_cli_ok`
-- `find . -name '*.py' | wc -l`
-  - Result: `108`
+- `rg --files tests -g '*.py' | sort`
+  - Result: `27` remaining files
+- `rg --files . -g '*.py' | wc -l`
+  - Result: `97`
+- `cd bigclaw-go && go test ./internal/product ./internal/repo ./internal/triage ./internal/githubsync ./internal/risk ./internal/queue`
+  - Result: all packages passed
 - `git status --short`
-  - Result: only `.symphony/workpad.md` plus the scoped docs/script changes for this lane are modified.
+  - Result: only `.symphony/workpad.md`, `reports/BIG-GO-1008-validation.md`, and the scoped test deletions are modified
