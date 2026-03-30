@@ -15,9 +15,9 @@ func TestCapacityCertificationScriptMatchesCheckedInEvidence(t *testing.T) {
 	tmpDir := t.TempDir()
 	jsonOutput := filepath.Join(tmpDir, "capacity-certification-matrix.json")
 	markdownOutput := filepath.Join(tmpDir, "capacity-certification-report.md")
-	scriptPath := filepath.Join(repoRoot, "scripts", "benchmark", "capacity_certification.py")
+	scriptPath := filepath.Join(repoRoot, "scripts", "benchmark", "capacity-certification")
 
-	cmd := exec.Command("python3", scriptPath, "--output", jsonOutput, "--markdown-output", markdownOutput)
+	cmd := exec.Command("bash", scriptPath, "--output", jsonOutput, "--markdown-output", markdownOutput)
 	cmd.Dir = repoRoot
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
@@ -113,7 +113,7 @@ func TestCapacityCertificationCheckedInArtifactStaysAligned(t *testing.T) {
 	if report.SaturationIndicator.Status != "pass" || report.MixedWorkload.Status != "pass" {
 		t.Fatalf("unexpected checked-in statuses: saturation=%+v mixed=%+v", report.SaturationIndicator, report.MixedWorkload)
 	}
-	if report.EvidenceInputs.GeneratorScript != "bigclaw-go/scripts/benchmark/capacity_certification.py" {
+	if report.EvidenceInputs.GeneratorScript != "scripts/benchmark/capacitycert/main.go" {
 		t.Fatalf("unexpected generator script: %s", report.EvidenceInputs.GeneratorScript)
 	}
 	if report.GeneratedAt != "2026-03-13T09:44:42.458392Z" {

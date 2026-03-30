@@ -53,7 +53,7 @@ bash scripts/benchmark/soak-local \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/capacity_certification.py \
+bash scripts/benchmark/capacity-certification \
   --output docs/reports/capacity-certification-matrix.json \
   --markdown-output docs/reports/capacity-certification-report.md
 ```

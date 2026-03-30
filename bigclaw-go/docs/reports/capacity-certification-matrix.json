@@ -4,15 +4,15 @@
   "title": "Production-grade capacity certification matrix",
   "status": "repo-native-capacity-certification",
   "evidence_inputs": {
-    "benchmark_report_path": "bigclaw-go/docs/reports/benchmark-matrix-report.json",
-    "mixed_workload_report_path": "bigclaw-go/docs/reports/mixed-workload-matrix-report.json",
+    "benchmark_report_path": "docs/reports/benchmark-matrix-report.json",
+    "mixed_workload_report_path": "docs/reports/mixed-workload-matrix-report.json",
     "soak_report_paths": [
       "docs/reports/soak-local-50x8.json",
       "docs/reports/soak-local-100x12.json",
-      "bigclaw-go/docs/reports/soak-local-1000x24.json",
-      "bigclaw-go/docs/reports/soak-local-2000x24.json"
+      "docs/reports/soak-local-1000x24.json",
+      "docs/reports/soak-local-2000x24.json"
     ],
-    "generator_script": "bigclaw-go/scripts/benchmark/capacity_certification.py"
+    "generator_script": "scripts/benchmark/capacitycert/main.go"
   },
   "summary": {
     "overall_status": "pass",
