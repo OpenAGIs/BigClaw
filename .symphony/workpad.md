@@ -198,11 +198,37 @@ Reason:
   - Deleted.
   - Reason: the module had no remaining Python imports or package exports and
     already had a repo-native Go replacement in `bigclaw-go/internal/pilot`.
+- `src/bigclaw/design_system.py`
+  - Deleted.
+  - Reason: console design-system ownership is already moved to
+    `bigclaw-go/internal/product/console.go`, and the Python module only
+    remained through dedicated tests and stale package exports.
+- `src/bigclaw/console_ia.py`
+  - Deleted.
+  - Reason: console IA ownership is already moved to
+    `bigclaw-go/internal/product/console.go`, and the Python module only
+    remained through dedicated tests and stale package exports.
+- `src/bigclaw/saved_views.py`
+  - Deleted.
+  - Reason: saved-view ownership is already moved to
+    `bigclaw-go/internal/product/saved_views.go`, and the Python module only
+    remained through dedicated tests and stale package exports.
+- `src/bigclaw/dsl.py`
+  - Deleted.
+  - Reason: workflow-definition ownership is already moved to
+    `bigclaw-go/internal/workflow/definition.go`, and the Python module only
+    remained through dedicated tests and stale package exports.
+- `src/bigclaw/ui_review.py`
+  - Deleted.
+  - Reason: reviewer-facing console/UI review surfaces are already covered by
+    Go-side console ownership in the cutover plan, and the Python module only
+    remained through dedicated tests and stale package exports.
 - `src/bigclaw/__init__.py`
   - Replaced.
   - Reason: removed the stale `issue_archive`, `roadmap`,
-    `dashboard_run_contract`, `connectors`, and `mapping` re-export blocks
-    after deleting the underlying Python modules.
+    `dashboard_run_contract`, `connectors`, `mapping`, `dsl`,
+    `design_system`, `console_ia`, `saved_views`, and `ui_review` re-export
+    blocks after deleting the underlying Python modules.
 - `tests/test_repo_board.py`
   - Deleted.
   - Reason: exercised deleted Python-only board helper.
@@ -230,6 +256,21 @@ Reason:
 - `tests/test_memory.py`
   - Deleted.
   - Reason: exercised deleted Python-only memory helper.
+- `tests/test_design_system.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only design-system helper.
+- `tests/test_console_ia.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only console IA helper.
+- `tests/test_saved_views.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only saved-view helper.
+- `tests/test_dsl.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only workflow-definition helper.
+- `tests/test_ui_review.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only UI review helper.
 - `tests/test_repo_collaboration.py`
   - Replaced.
   - Reason: preserved the collaboration merge assertion while removing the last
@@ -246,7 +287,8 @@ Reason:
 - `src/bigclaw` Python files after tranche 8: `30`
 - `src/bigclaw` Python files after tranche 9: `28`
 - `src/bigclaw` Python files after tranche 10: `27`
-- Net `src/bigclaw` reduction: `18`
+- `src/bigclaw` Python files after tranche 11: `22`
+- Net `src/bigclaw` reduction: `23`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
@@ -256,7 +298,8 @@ Reason:
 - Repository-wide Python files after tranche 8: `84`
 - Repository-wide Python files after tranche 9: `82`
 - Repository-wide Python files after tranche 10: `81`
-- Net repository-wide Python reduction: `27`
+- Repository-wide Python files after tranche 11: `71`
+- Net repository-wide Python reduction: `37`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -309,3 +352,9 @@ Reason:
   - Result: `import ok`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `20 passed in 3.02s`
+- `rg -n "from \\.design_system|from \\.console_ia|from \\.saved_views|from \\.ui_review|from \\.dsl|from bigclaw\\.(design_system|console_ia|saved_views|ui_review|dsl)|WorkflowDefinition|SavedView|ConsoleIA|DesignSystem|UIReviewPack" src tests || true`
+  - Result: no matches
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `20 passed in 3.06s`
