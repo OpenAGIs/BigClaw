@@ -73,12 +73,28 @@ Repository inventory at start of lane:
   - Replaced.
   - Reason: added exact missing-path assertions and JSON round-trip checks so
     the Python test can be removed without losing coverage.
+- `tests/test_repo_governance.py`
+  - Deleted.
+  - Reason: its permission and audit-field assertions already had direct Go
+    parity in `bigclaw-go/internal/repo/governance_test.go`.
+- `tests/test_queue.py`
+  - Deleted.
+  - Reason: its persistence, payload, dead-letter replay, and legacy-storage
+    assertions now land in file-backed Go queue tests.
+- `bigclaw-go/internal/queue/file_queue.go`
+  - Replaced.
+  - Reason: added legacy JSON-list queue loading so old persisted queue state
+    remains readable after the Python test removal.
+- `bigclaw-go/internal/queue/file_queue_test.go`
+  - Replaced.
+  - Reason: added parent-directory creation, payload persistence,
+    dead-letter-reason persistence, and legacy-list reload coverage.
 
 ### Impact
 
 - Repository `py` files before: `108`
-- Repository `py` files after: `106`
-- Net `py` reduction: `2`
+- Repository `py` files after: `104`
+- Net `py` reduction: `4`
 - Repository `go` files before: `267`
 - Repository `go` files after: `267`
 - Net `go` reduction: `0`
@@ -93,17 +109,26 @@ Repository inventory at start of lane:
 - `go test ./internal/product`
   - Working directory: `bigclaw-go/`
   - Result: `ok   bigclaw-go/internal/product  0.453s`
+- `go test ./internal/queue ./internal/repo`
+  - Working directory: `bigclaw-go/`
+  - Result:
+    - `ok   bigclaw-go/internal/queue  26.877s`
+    - `ok   bigclaw-go/internal/repo  0.437s`
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result before commit:
+  - Result after second tranche, before commit:
     - `M .symphony/workpad.md`
     - `M bigclaw-go/internal/product/dashboard_run_contract_test.go`
     - `M bigclaw-go/internal/product/saved_views_test.go`
+    - `M bigclaw-go/internal/queue/file_queue.go`
+    - `M bigclaw-go/internal/queue/file_queue_test.go`
     - `D tests/test_dashboard_run_contract.py`
+    - `D tests/test_queue.py`
+    - `D tests/test_repo_governance.py`
     - `D tests/test_saved_views.py`
 - `find . -name '*.py' | sort | wc -l`
-  - Result after: `106`
+  - Result after: `104`
 - `find . -name '*.go' | sort | wc -l`
   - Result after: `267`
 - `test -f pyproject.toml; echo $?`

@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -309,6 +310,9 @@ func (q *FileQueue) load() error {
 	if len(contents) == 0 {
 		return nil
 	}
+	if trimmed := bytes.TrimSpace(contents); len(trimmed) > 0 && trimmed[0] == '[' {
+		return q.loadLegacyList(contents)
+	}
 	return json.Unmarshal(contents, &q.items)
 }
 
@@ -346,4 +350,35 @@ func (q *FileQueue) recoverExpiredLeases(now time.Time) (bool, error) {
 		return false, nil
 	}
 	return true, q.save()
+}
+
+func (q *FileQueue) loadLegacyList(contents []byte) error {
+	type legacyItem struct {
+		Priority int         `json:"priority"`
+		TaskID   string      `json:"task_id"`
+		Task     domain.Task `json:"task"`
+	}
+
+	var legacy []legacyItem
+	if err := json.Unmarshal(contents, &legacy); err != nil {
+		return err
+	}
+
+	for _, entry := range legacy {
+		task := entry.Task
+		if task.ID == "" {
+			task.ID = entry.TaskID
+		}
+		if task.Priority == 0 {
+			task.Priority = entry.Priority
+		}
+		if task.State == "" {
+			task.State = domain.TaskQueued
+		}
+		q.items[task.ID] = &item{
+			Task:        task,
+			AvailableAt: time.Now(),
+		}
+	}
+	return nil
 }
