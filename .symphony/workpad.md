@@ -68,9 +68,39 @@ Current migration batch Python file count before this lane: `0`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
   - Deleted.
   - Reason: it only validated the removed Python entrypoint; coverage now lives in Go CLI tests plus the `run_all.sh` regression harness.
-- Remaining targeted `bigclaw-go/scripts/e2e/*.py`
-  - Kept for now.
-  - Reason: they still own report generation or deterministic local harness behavior that does not yet have a Go-native replacement in this lane.
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
+  - Kept.
+  - Reason: still generates the checked-in broker failover proof pack and no Go entrypoint produces the same scenario matrix/report surface.
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
+  - Kept.
+  - Reason: it validates the retained Python broker failover harness.
+- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
+  - Kept.
+  - Reason: still generates the cross-process coordination capability surface JSON consumed by docs/regression checks; no Go replacement exists yet.
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
+  - Kept.
+  - Reason: `run_all.sh` still depends on it to build the live validation bundle/index/README export surface; no Go-native exporter exists yet.
+- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+  - Kept.
+  - Reason: it validates the retained Python bundle exporter.
+- `bigclaw-go/scripts/e2e/external_store_validation.py`
+  - Kept.
+  - Reason: still authors the external-store validation evidence pack and no Go CLI command replaces that report generator yet.
+- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
+  - Kept.
+  - Reason: still generates the mixed workload validation matrix and has no repo-native Go replacement.
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
+  - Kept.
+  - Reason: still generates the shared-queue and live takeover companion proofs referenced by checked-in reports and docs; no Go-native harness exists yet.
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
+  - Kept.
+  - Reason: it validates the retained Python shared-queue harness.
+- `bigclaw-go/scripts/e2e/run_all_test.py`
+  - Kept.
+  - Reason: it regression-tests the retained shell workflow wrapper `run_all.sh`; this is test coverage, not an obsolete automation entrypoint.
+- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
+  - Kept.
+  - Reason: still generates the deterministic subscriber takeover harness report and no Go replacement exists yet.
 
 ### Python File Count Impact
 
@@ -83,12 +113,16 @@ Current migration batch Python file count before this lane: `0`
 ### Validation Record
 
 - `cd bigclaw-go && python3 scripts/e2e/run_all_test.py`
-  - Result: `Ran 3 tests in 5.219s` and `OK`
+  - Result: `Ran 3 tests in 4.012s` and `OK`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
   - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.853s` and `ok  	bigclaw-go/internal/regression	0.763s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8FollowupDigestsStayAligned'`
+  - Result: `ok  	bigclaw-go/internal/regression	1.358s`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard --help`
   - Result: usage text printed with the expected continuation scorecard flags.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-policy-gate --help`
   - Result: usage text printed with the expected continuation policy-gate flags.
+- `git diff --check`
+  - Result: no whitespace or merge-marker errors.
 - `find .. -name '*.py' | wc -l`
   - Result: `105`
