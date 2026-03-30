@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import importlib.util
+import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,6 +17,150 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ExportValidationBundleTest(unittest.TestCase):
+    def write_json(self, path: Path, payload: dict) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+    def test_export_validation_bundle_generates_latest_reports_and_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_root = Path(tmpdir)
+            root = tmp_root / 'repo'
+            bundle = root / 'docs' / 'reports' / 'live-validation-runs' / '20260315T120000Z'
+            state_dir = tmp_root / 'state-local'
+            state_dir.mkdir(parents=True)
+            (state_dir / 'audit.jsonl').write_text('{"event":"ok"}\n', encoding='utf-8')
+            service_log = tmp_root / 'local-service.log'
+            service_log.write_text('local service ready\n', encoding='utf-8')
+
+            local_report = {
+                'base_url': 'http://127.0.0.1:19090',
+                'task': {'id': 'local-1'},
+                'status': {'state': 'succeeded'},
+                'state_dir': str(state_dir),
+                'service_log': str(service_log),
+            }
+            self.write_json(bundle / 'sqlite-smoke-report.json', local_report)
+            self.write_json(bundle / 'kubernetes-live-smoke-report.json', {'task': {'id': 'k8s-1'}, 'status': {'state': 'succeeded'}})
+            self.write_json(bundle / 'ray-live-smoke-report.json', {'task': {'id': 'ray-1'}, 'status': {'state': 'succeeded'}})
+
+            (root / 'docs' / 'reports').mkdir(parents=True, exist_ok=True)
+            self.write_json(
+                root / 'docs' / 'reports' / 'multi-node-shared-queue-report.json',
+                {
+                    'generated_at': '2026-03-15T11:55:00Z',
+                    'count': 12,
+                    'submitted_by_node': {'node-a': 6, 'node-b': 6},
+                    'completed_by_node': {'node-a': 5, 'node-b': 7},
+                    'cross_node_completions': 4,
+                    'duplicate_started_tasks': [],
+                    'duplicate_completed_tasks': [],
+                    'missing_completed_tasks': [],
+                    'all_ok': True,
+                    'nodes': [{'name': 'node-a'}, {'name': 'node-b'}],
+                },
+            )
+            (root / 'docs' / 'reports' / 'validation-bundle-continuation-scorecard.json').write_text('{}\n', encoding='utf-8')
+            self.write_json(
+                root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json',
+                {
+                    'status': 'policy-hold',
+                    'recommendation': 'hold',
+                    'failing_checks': ['latest_bundle_all_executor_tracks_succeeded'],
+                    'enforcement': {'mode': 'review'},
+                    'summary': {'latest_bundle_age_hours': 12.5},
+                    'reviewer_path': {'digest': 'docs/reports/validation-bundle-continuation-digest.md'},
+                    'next_actions': ['rerun ./scripts/e2e/run_all.sh'],
+                },
+            )
+            (root / 'docs' / 'reports' / 'validation-bundle-continuation-digest.md').write_text('# digest\n', encoding='utf-8')
+
+            local_stdout = tmp_root / 'local.stdout'
+            local_stderr = tmp_root / 'local.stderr'
+            k8s_stdout = tmp_root / 'k8s.stdout'
+            k8s_stderr = tmp_root / 'k8s.stderr'
+            ray_stdout = tmp_root / 'ray.stdout'
+            ray_stderr = tmp_root / 'ray.stderr'
+            for path, content in [
+                (local_stdout, 'local ok\n'),
+                (local_stderr, ''),
+                (k8s_stdout, 'k8s ok\n'),
+                (k8s_stderr, ''),
+                (ray_stdout, 'ray ok\n'),
+                (ray_stderr, ''),
+            ]:
+                path.write_text(content, encoding='utf-8')
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(MODULE_PATH),
+                    '--go-root', str(root),
+                    '--run-id', '20260315T120000Z',
+                    '--bundle-dir', 'docs/reports/live-validation-runs/20260315T120000Z',
+                    '--summary-path', 'docs/reports/live-validation-summary.json',
+                    '--index-path', 'docs/reports/live-validation-index.md',
+                    '--manifest-path', 'docs/reports/live-validation-index.json',
+                    '--run-local', '1',
+                    '--run-kubernetes', '1',
+                    '--run-ray', '1',
+                    '--validation-status', '0',
+                    '--local-report-path', 'docs/reports/live-validation-runs/20260315T120000Z/sqlite-smoke-report.json',
+                    '--local-stdout-path', str(local_stdout),
+                    '--local-stderr-path', str(local_stderr),
+                    '--kubernetes-report-path', 'docs/reports/live-validation-runs/20260315T120000Z/kubernetes-live-smoke-report.json',
+                    '--kubernetes-stdout-path', str(k8s_stdout),
+                    '--kubernetes-stderr-path', str(k8s_stderr),
+                    '--ray-report-path', 'docs/reports/live-validation-runs/20260315T120000Z/ray-live-smoke-report.json',
+                    '--ray-stdout-path', str(ray_stdout),
+                    '--ray-stderr-path', str(ray_stderr),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            summary = json.loads((root / 'docs' / 'reports' / 'live-validation-summary.json').read_text(encoding='utf-8'))
+            self.assertEqual(summary['status'], 'succeeded')
+            self.assertEqual(summary['local']['canonical_report_path'], 'docs/reports/sqlite-smoke-report.json')
+            self.assertTrue(summary['local']['audit_log_path'].endswith('local.audit.jsonl'))
+            self.assertTrue(summary['local']['service_log_path'].endswith('local.service.log'))
+            self.assertEqual(summary['shared_queue_companion']['status'], 'succeeded')
+            self.assertEqual(summary['shared_queue_companion']['cross_node_completions'], 4)
+            self.assertEqual(summary['shared_queue_companion']['canonical_summary_path'], 'docs/reports/shared-queue-companion-summary.json')
+            self.assertTrue(summary['shared_queue_companion']['bundle_summary_path'].endswith('shared-queue-companion-summary.json'))
+            self.assertEqual(summary['continuation_gate']['status'], 'policy-hold')
+            self.assertEqual(summary['continuation_gate']['recommendation'], 'hold')
+            self.assertEqual(summary['continuation_gate']['summary']['latest_bundle_age_hours'], 12.5)
+            self.assertEqual(summary['continuation_gate']['failing_checks'], ['latest_bundle_all_executor_tracks_succeeded'])
+            self.assertEqual(summary['continuation_gate']['next_actions'], ['rerun ./scripts/e2e/run_all.sh'])
+
+            latest_local = json.loads((root / 'docs' / 'reports' / 'sqlite-smoke-report.json').read_text(encoding='utf-8'))
+            self.assertEqual(latest_local['task']['id'], 'local-1')
+            shared_queue_summary = json.loads((root / 'docs' / 'reports' / 'shared-queue-companion-summary.json').read_text(encoding='utf-8'))
+            self.assertEqual(shared_queue_summary['nodes'], ['node-a', 'node-b'])
+            self.assertTrue(shared_queue_summary['bundle_report_path'].endswith('multi-node-shared-queue-report.json'))
+
+            index_text = (root / 'docs' / 'reports' / 'live-validation-index.md').read_text(encoding='utf-8')
+            for expected in [
+                'Live Validation Index',
+                '20260315T120000Z',
+                'docs/reports/live-validation-runs/20260315T120000Z',
+                'shared-queue companion',
+                'docs/reports/shared-queue-companion-summary.json',
+                'docs/reports/multi-node-shared-queue-report.json',
+                'docs/reports/validation-bundle-continuation-scorecard.json',
+                'docs/reports/validation-bundle-continuation-policy-gate.json',
+                'docs/reports/validation-bundle-continuation-digest.md',
+            ]:
+                self.assertIn(expected, index_text)
+
+            manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
+            self.assertEqual(manifest['latest']['run_id'], '20260315T120000Z')
+            self.assertEqual(manifest['latest']['shared_queue_companion']['nodes'], ['node-a', 'node-b'])
+            self.assertEqual(manifest['recent_runs'][0]['run_id'], '20260315T120000Z')
+
     def test_render_index_surfaces_continuation_workflow_mode_and_outcome(self) -> None:
         summary = {
             'run_id': '20260316T140138Z',
