@@ -72,6 +72,9 @@ Follow-on refactor now queued:
 - Inline the tiny `src/bigclaw/deprecation.py` warning helpers into
   `src/bigclaw/runtime.py` and repoint `scripts/dev_smoke.py` if the helper
   remains isolated after the repo-link cleanup.
+- Inline the small `src/bigclaw/risk.py` scorer surface into
+  `src/bigclaw/runtime.py` if its remaining consumers stay limited to runtime,
+  tests, and package exports.
 
 ## Plan
 
@@ -532,6 +535,51 @@ Follow-on refactor now queued:
   - Result: `16`
 - `find . -type f -name '*.py' | wc -l`
   - Result: `64`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+
+### Follow-on tranche 16
+
+- `src/bigclaw/risk.py`
+  - Deleted.
+  - Reason: its scorer surface only fed `runtime.py`, a dedicated test slice,
+    and package exports, so the behavior could move into `runtime.py` without
+    widening the active module graph.
+- `src/bigclaw/runtime.py`
+  - Updated.
+  - Reason: now owns `RiskFactor`, `RiskScore`, and `RiskScorer` directly.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: exports the moved risk symbols from `runtime.py` and installs a
+    `bigclaw.risk` compatibility module backed by the runtime surface.
+
+### Follow-on tranche 16 inventory
+
+- `src/bigclaw` Python files after tranche 16: `15`
+- Repository-wide Python files after tranche 16: `63`
+- Net repository-wide Python reduction: `45`
+- `bigclaw-go` Go files after tranche 16: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 16 validation
+
+- `python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/__init__.py tests/test_risk.py tests/test_runtime_matrix.py`
+  - Result: success
+- `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_runtime_matrix.py`
+  - Result: `6 passed in 0.05s`
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`, `from bigclaw.risk import RiskScorer`, and `from bigclaw.scheduler import Scheduler`
+  - Result: `import ok RiskScorer Scheduler`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `15`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `63`
 - `find bigclaw-go -type f -name '*.go' | wc -l`
   - Result: `267`
 - `test -f pyproject.toml && echo present || echo absent`

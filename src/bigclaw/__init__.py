@@ -84,6 +84,12 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
+_install_legacy_surface_module(
+    "risk",
+    ["RiskFactor", "RiskScore", "RiskScorer"],
+    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -102,6 +108,9 @@ from .runtime import (
     RepoGovernanceEnforcer,
     RepoGovernancePolicy,
     RepoGovernanceResult,
+    RiskFactor,
+    RiskScore,
+    RiskScorer,
     SandboxProfile,
     SandboxRouter,
     Scheduler,
@@ -134,7 +143,6 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
