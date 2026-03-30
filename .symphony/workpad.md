@@ -12,11 +12,14 @@ Batch file list:
 - `src/bigclaw/reports.py`
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/planning.py`
+- `src/bigclaw/runtime.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/observability.py`
 - `src/bigclaw/pilot.py`
 - `src/bigclaw/roadmap.py`
+- `src/bigclaw/deprecation.py`
+- `src/bigclaw/cost_control.py`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_triage.py`
 - `src/bigclaw/mapping.py`
@@ -58,6 +61,10 @@ Selected tranche rationale:
   inside `reports.py`.
 - `roadmap.py` is a planning-oriented structure that fits naturally inside
   `planning.py`.
+- `deprecation.py` is a legacy-runtime helper that fits directly inside
+  `runtime.py`.
+- `cost_control.py` is a runtime budget helper with no external fan-out and can
+  be folded into `runtime.py`.
 
 ## Plan
 
@@ -89,6 +96,12 @@ Selected tranche rationale:
     compatibility via `__init__.py`.
 17. Run targeted smoke validation for the fourth consolidation batch and push a
     follow-up commit.
+18. Fold `deprecation.py` into `runtime.py` and preserve `bigclaw.deprecation`
+    compatibility via `__init__.py`.
+19. Fold `cost_control.py` into `runtime.py` and preserve
+    `bigclaw.cost_control` compatibility via `__init__.py`.
+20. Run targeted runtime smoke validation for the fifth consolidation batch and
+    push a follow-up commit.
 
 ## Acceptance
 
@@ -111,6 +124,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.pilot import PilotImplementationResult, PilotKPI, render_pilot_implementation_report`
   `from bigclaw.roadmap import build_execution_pack_roadmap`
+  `print("ok")`
+  `PY`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.deprecation import warn_legacy_runtime_surface`
+  `from bigclaw.cost_control import CostController`
   `print("ok")`
   `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
@@ -203,6 +221,16 @@ Selected tranche rationale:
 - `src/bigclaw/roadmap.py`
   - Deleted.
   - Reason: its contents moved into `planning.py`.
+- `src/bigclaw/runtime.py`
+  - Replaced again.
+  - Reason: absorbed legacy deprecation helpers and runtime budget controller
+    helpers so migration-only runtime behavior now lives in one module.
+- `src/bigclaw/deprecation.py`
+  - Deleted.
+  - Reason: its contents moved into `runtime.py`.
+- `src/bigclaw/cost_control.py`
+  - Deleted.
+  - Reason: its contents moved into `runtime.py`.
 
 ### Inventory Impact
 
@@ -211,7 +239,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 2: `40`
 - `src/bigclaw/**/*.py` after batch 3: `38`
 - `src/bigclaw/**/*.py` after batch 4: `36`
-- Net Python module reduction in tranche so far: `9`
+- `src/bigclaw/**/*.py` after batch 5: `34`
+- Net Python module reduction in tranche so far: `11`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -257,3 +286,11 @@ Selected tranche rationale:
   - Result: `ok`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 4: `36`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py`
+  - Result: `3 passed in 0.07s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.deprecation` / `bigclaw.cost_control`
+  - Result: `ok` with expected `DeprecationWarning`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.__main__`
+  - Result: `ok`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 5: `34`

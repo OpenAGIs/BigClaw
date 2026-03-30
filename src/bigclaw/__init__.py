@@ -102,6 +102,12 @@ _install_legacy_surface_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
 _install_compat_surface_module(
+    "deprecation",
+    _legacy_runtime_surface,
+    ["LEGACY_RUNTIME_GUIDANCE", "legacy_runtime_message", "warn_legacy_runtime_surface"],
+)
+_install_compat_surface_module("cost_control", _legacy_runtime_surface, ["BudgetDecision", "CostController"])
+_install_compat_surface_module(
     "repo_commits",
     _repo_gateway_surface,
     ["RepoCommit", "CommitLineage", "CommitDiff"],
