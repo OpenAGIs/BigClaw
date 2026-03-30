@@ -6,6 +6,7 @@ Plan
 - Replace additional thin Python trampolines when they only forward into Go automation entrypoints and can be retired without touching non-wrapper benchmark/report logic.
 - Replace small Python-only verification files with equivalent Go regression tests when the underlying Python generator remains active but the `.py` test file itself is not required.
 - Prefer end-to-end or function-level Go shims that execute the remaining Python generators with fixed inputs, so the `.py` verification count falls without changing the checked-in Python generator behavior.
+- When the Python test validates multiple derived summaries from one generator, collapse that coverage into one Go regression test that shells into Python once and asserts the returned JSON payloads.
 - Update the minimal operator-facing docs that still advertise those Python wrapper paths so the repository no longer points users at deleted `.py` entrypoints.
 - Run targeted validation on the new shell wrappers and repo counts, then commit and push the scoped change.
 
