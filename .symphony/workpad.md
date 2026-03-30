@@ -4,7 +4,6 @@ Plan
 - Inspect repository-level Python residue and pick a narrow slice that lowers the `.py` file count without changing core product behavior.
 - Replace the five `scripts/ops/*.py` operator compatibility shims with shell wrappers that dispatch into `scripts/ops/bigclawctl`, preserving the existing wrapper behavior for `github-sync`, `refill`, and workspace commands.
 - Replace additional thin Python trampolines when they only forward into Go automation entrypoints and can be retired without touching non-wrapper benchmark/report logic.
-- Remove obsolete Python tests that still target deleted legacy execution-kernel modules (`scheduler`, `queue`, `workflow`, `orchestration`) so the repo no longer carries dead Python assets for non-existent modules.
 - Update the minimal operator-facing docs that still advertise those Python wrapper paths so the repository no longer points users at deleted `.py` entrypoints.
 - Run targeted validation on the new shell wrappers and repo counts, then commit and push the scoped change.
 
