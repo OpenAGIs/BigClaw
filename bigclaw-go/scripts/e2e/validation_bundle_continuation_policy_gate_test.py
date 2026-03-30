@@ -75,7 +75,7 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
         self.assertEqual(report['failing_checks'], [])
         self.assertEqual(report['reviewer_path']['index_path'], 'docs/reports/live-validation-index.md')
         self.assertIn(
-            'BIGCLAW_E2E_CONTINUATION_GATE_MODE=review',
+            'BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail',
             report['next_actions'][0],
         )
 
