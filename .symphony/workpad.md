@@ -23,6 +23,7 @@ Batch file list:
 - `tests/test_saved_views.py`
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 - `tests/test_models.py`
+- `tests/test_repo_links.py`
 
 Go replacement inventory:
 
@@ -41,6 +42,7 @@ Go replacement inventory:
 - `bigclaw-go/internal/triage/record_test.go`
 - `bigclaw-go/internal/workflow/model_test.go`
 - `bigclaw-go/internal/billing/statement_test.go`
+- `bigclaw-go/internal/repo/repo_surfaces_test.go`
 
 Adjacent in-repo replacement coverage:
 
@@ -94,6 +96,7 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/triage -run 'TestTriageRecordRoundTripPreservesQueueLabelsAndActions|TestTriageRecordJSONEmitsPythonContractDefaults'`
 - `cd bigclaw-go && go test ./internal/workflow -run 'TestWorkflowTemplateAndRunRoundTripPreserveStepsAndOutputs|TestWorkflowModelJSONEmitsPythonContractDefaults'`
 - `cd bigclaw-go && go test ./internal/billing -run 'TestBillingStatementRoundTrip|TestBillingStatementJSONEmitsPythonContractDefaults'`
+- `cd bigclaw-go && go test ./internal/repo -run 'TestBindRunCommitsAndAcceptedHash|TestBuildApprovalEvidencePacket'`
 - `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndexSummary'`
 - `git diff --check`
@@ -167,15 +170,21 @@ Repository inventory at start of lane:
     `bigclaw-go/internal/triage/record_test.go`,
     `bigclaw-go/internal/workflow/model_test.go`, and
     `bigclaw-go/internal/billing/statement_test.go`.
+- `tests/test_repo_links.py`
+  - Deleted.
+  - Reason: run-commit binding and accepted-hash behavior are already covered in
+    `bigclaw-go/internal/repo/repo_surfaces_test.go`, which now also asserts
+    that source/candidate/accepted link roles survive serialized approval-packet
+    output.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `24`
-- Net `tests/*.py` reduction: `14`
+- `tests/*.py` files after: `23`
+- Net `tests/*.py` reduction: `15`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `94`
-- Net repo `*.py` reduction: `14`
+- Repo `*.py` files after: `93`
+- Net repo `*.py` reduction: `15`
 - Repo `*.go` files before: `267`
 - Repo `*.go` files after: `267`
 - Net repo `*.go` reduction: `0`
@@ -185,9 +194,9 @@ Repository inventory at start of lane:
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `24`
+  - Result: `23`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `94`
+  - Result: `93`
 - `find . -name '*.go' | sort | wc -l`
   - Result: `267`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
@@ -212,6 +221,8 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/internal/workflow	2.320s`
 - `cd bigclaw-go && go test ./internal/billing -run 'TestBillingStatementRoundTrip|TestBillingStatementJSONEmitsPythonContractDefaults'`
   - Result: `ok  	bigclaw-go/internal/billing	1.506s`
+- `cd bigclaw-go && go test ./internal/repo -run 'TestBindRunCommitsAndAcceptedHash|TestBuildApprovalEvidencePacket'`
+  - Result: `ok  	bigclaw-go/internal/repo	0.828s`
 - `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
   - Result: `Ran 6 tests in 0.065s` / `OK`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndexSummary'`

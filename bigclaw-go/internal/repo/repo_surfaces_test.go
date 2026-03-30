@@ -297,11 +297,15 @@ func TestRecommendTriageAction(t *testing.T) {
 
 func TestBuildApprovalEvidencePacket(t *testing.T) {
 	packet := BuildApprovalEvidencePacket("run-77", []RunCommitLink{
+		{RunID: "run-77", CommitHash: "000111", Role: "source", RepoSpaceID: "space-1"},
 		{RunID: "run-77", CommitHash: "abc123", Role: "candidate", RepoSpaceID: "space-1"},
 		{RunID: "run-77", CommitHash: "def456", Role: "accepted", RepoSpaceID: "space-1"},
 	}, "accepted ancestor def456 already passed review")
 
-	if packet.RunID != "run-77" || packet.CandidateCommitHash != "abc123" || packet.AcceptedCommitHash != "def456" || packet.LineageSummary == "" || len(packet.Links) != 2 {
+	if packet.RunID != "run-77" || packet.CandidateCommitHash != "abc123" || packet.AcceptedCommitHash != "def456" || packet.LineageSummary == "" || len(packet.Links) != 3 {
 		t.Fatalf("unexpected approval packet: %+v", packet)
+	}
+	if packet.Links[0].Role != "source" || packet.Links[1].Role != "candidate" || packet.Links[2].Role != "accepted" {
+		t.Fatalf("expected link roles to survive packet serialization, got %+v", packet.Links)
 	}
 }
