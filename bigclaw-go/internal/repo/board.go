@@ -37,6 +37,21 @@ func (b *RepoDiscussionBoard) CreatePost(channel, author, body, targetSurface, t
 	return post
 }
 
+func (p RepoPost) ToCollaborationComment() CollaborationComment {
+	status := "open"
+	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
+		status = "resolved"
+	}
+	return CollaborationComment{
+		CommentID: "repo-" + p.PostID,
+		Author:    p.Author,
+		Body:      p.Body,
+		CreatedAt: p.CreatedAt,
+		Anchor:    p.TargetSurface + ":" + p.TargetID,
+		Status:    status,
+	}
+}
+
 func (b *RepoDiscussionBoard) Reply(parentPostID, author, body string) (RepoPost, error) {
 	for _, post := range b.Posts {
 		if post.PostID != parentPostID {
