@@ -44,12 +44,19 @@ These Python files remain in the `scripts/e2e` batch after this lane because the
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 
-Supporting Python tests that remain because the generators above still exist:
+`bigclaw-go/scripts/migration/**` has no remaining Python files in the current worktree.
 
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
+Python test wrappers removed in this lane and replaced with Go tests:
+
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py` -> `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.go`
+- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py` -> `bigclaw-go/scripts/e2e/export_validation_bundle_test.go`
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py` -> `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.go`
+- `bigclaw-go/scripts/e2e/run_all_test.py` -> `bigclaw-go/scripts/e2e/run_all_test.go`
+
+Python count impact for this lane:
+
+- Repository total: `105 -> 101`
+- Targeted `scripts/e2e` + `scripts/migration` total: `11 -> 7`
 
 ## Validation Commands
 
