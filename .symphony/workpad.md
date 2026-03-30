@@ -19,6 +19,8 @@ Batch file list:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/cost_control.py`
 - `src/bigclaw/issue_archive.py`
+- `src/bigclaw/roadmap.py`
+- `src/bigclaw/validation_policy.py`
 - `src/bigclaw/__init__.py`
 - `tests/test_repo_board.py`
 - `tests/test_repo_gateway.py`
@@ -56,13 +58,15 @@ Reason:
    `bigclawctl` and `bigclaw-go/internal/{bootstrap,githubsync,refill}`.
 3. Remove isolated Python compatibility/data modules with direct Go ownership
    and no remaining in-repo consumers.
-4. Remove Python tests that only exercised deleted Python-only modules.
-5. Update any remaining Python tests or exports that referenced removed modules so
+4. Remove isolated Python policy/helpers that are now only covered by stale
+   package exports or dedicated Python-only tests.
+5. Remove Python tests that only exercised deleted Python-only modules.
+6. Update any remaining Python tests or exports that referenced removed modules so
    the suite remains coherent after deletion.
-6. Run targeted validation for remaining observability, repo-link, and
+7. Run targeted validation for remaining observability, repo-link, and
    workspace bootstrap surfaces,
    plus inventory counts and diff hygiene.
-7. Commit and push the scoped lane branch for `BIG-GO-1015`.
+8. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
@@ -82,7 +86,10 @@ Reason:
 - `test -f setup.py && echo present || echo absent`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_validation_policy.py`
 - `rg -n "github_sync|parallel_refill|workspace_bootstrap_cli" src tests || true`
+- `rg -n "roadmap|validation_policy" src tests || true`
 - `python3 - <<'PY'` to import `bigclaw` after trimming stale package exports
 - `git diff --check`
 - `git status --short`
@@ -144,10 +151,20 @@ Reason:
   - Reason: issue archive serialization/audit/reporting already exists in
     `bigclaw-go/internal/issuearchive/archive.go` and had no remaining in-repo
     Python consumers.
+- `src/bigclaw/roadmap.py`
+  - Deleted.
+  - Reason: execution-pack roadmap ownership and uniqueness checks are already
+    covered by docs plus `bigclaw-go/internal/regression/roadmap_contract_test.go`,
+    and the Python module had no remaining in-repo consumers beyond stale
+    package exports.
+- `src/bigclaw/validation_policy.py`
+  - Deleted.
+  - Reason: the module was isolated to its dedicated Python-only test and had
+    no remaining in-repo runtime consumers.
 - `src/bigclaw/__init__.py`
   - Replaced.
-  - Reason: removed the stale `issue_archive` re-export block after deleting the
-    underlying Python module.
+  - Reason: removed the stale `issue_archive` and `roadmap` re-export blocks
+    after deleting the underlying Python modules.
 - `tests/test_repo_board.py`
   - Deleted.
   - Reason: exercised deleted Python-only board helper.
@@ -166,6 +183,9 @@ Reason:
 - `tests/test_github_sync.py`
   - Deleted.
   - Reason: exercised deleted Python-only GitHub sync helper.
+- `tests/test_validation_policy.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only validation policy helper.
 - `tests/test_repo_collaboration.py`
   - Replaced.
   - Reason: preserved the collaboration merge assertion while removing the last
@@ -177,12 +197,14 @@ Reason:
 - `src/bigclaw` Python files after tranche 3: `39`
 - `src/bigclaw` Python files after tranche 4: `36`
 - `src/bigclaw` Python files after tranche 5: `34`
-- Net `src/bigclaw` reduction: `11`
+- `src/bigclaw` Python files after tranche 6: `32`
+- Net `src/bigclaw` reduction: `13`
 - Repository-wide Python files before: `108`
 - Repository-wide Python files after tranche 3: `97`
 - Repository-wide Python files after tranche 4: `93`
 - Repository-wide Python files after tranche 5: `91`
-- Net repository-wide Python reduction: `17`
+- Repository-wide Python files after tranche 6: `88`
+- Net repository-wide Python reduction: `20`
 - `bigclaw-go` Go files before: `267`
 - `bigclaw-go` Go files after: `267`
 - Net Go file reduction: `0`
@@ -205,3 +227,9 @@ Reason:
   - Result: `import ok`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
   - Result: `20 passed in 3.16s`
+- `rg -n "roadmap|validation_policy" src tests || true`
+  - Result: no matches
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`
+  - Result: `import ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `20 passed in 3.20s`
