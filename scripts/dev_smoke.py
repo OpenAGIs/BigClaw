@@ -5,12 +5,21 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 
 repo_root = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(repo_root / "src"))
 
-from bigclaw.deprecation import warn_legacy_runtime_surface
+LEGACY_RUNTIME_GUIDANCE = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "the legacy Python runtime surface remains migration-only."
+)
+
+
+def warn_legacy_runtime_surface(surface: str, replacement: str) -> str:
+    message = f"{surface} is frozen for migration-only use. {LEGACY_RUNTIME_GUIDANCE} Use {replacement} instead."
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return message
 
 
 def main() -> int:
