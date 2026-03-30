@@ -4,6 +4,7 @@ Plan
 - Inspect repository-level Python residue and pick a narrow slice that lowers the `.py` file count without changing core product behavior.
 - Replace the five `scripts/ops/*.py` operator compatibility shims with shell wrappers that dispatch into `scripts/ops/bigclawctl`, preserving the existing wrapper behavior for `github-sync`, `refill`, and workspace commands.
 - Replace additional thin Python trampolines when they only forward into Go automation entrypoints and can be retired without touching non-wrapper benchmark/report logic.
+- Replace small Python-only verification files with equivalent Go regression tests when the underlying Python generator remains active but the `.py` test file itself is not required.
 - Update the minimal operator-facing docs that still advertise those Python wrapper paths so the repository no longer points users at deleted `.py` entrypoints.
 - Run targeted validation on the new shell wrappers and repo counts, then commit and push the scoped change.
 
