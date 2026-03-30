@@ -23,7 +23,6 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
 - `bigclaw-go/scripts/benchmark/capacitycert/main.go`
 - `bigclaw-go/scripts/benchmark/run_matrix.go`
 
