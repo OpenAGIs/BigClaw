@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "src" / "bigclaw" / "workspace_bootstrap.py"
+MODULE_PATH = Path(__file__).resolve().parents[1] / "src" / "bigclaw" / "models.py"
 SPEC = importlib.util.spec_from_file_location("bigclaw_workspace_bootstrap_test_module", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None
 WORKSPACE_BOOTSTRAP = importlib.util.module_from_spec(SPEC)

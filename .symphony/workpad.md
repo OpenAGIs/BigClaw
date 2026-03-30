@@ -417,3 +417,70 @@ Repository inventory at start of lane:
   - `rg -n "from \\.risk import|from bigclaw\\.risk|RiskScorer|CostController" src tests docs bigclaw-go -g '*.py' -g '*.md' -g '*.go'`
     - Result: live imports now point at `models.py`/compatibility surfaces;
       only test/docs references to `bigclaw.risk` remain as expected
+
+## BIG-GO-1014 Refill Sweep D Continuation 6
+
+### Plan
+
+- Merge the console IA contracts from `src/bigclaw/console_ia.py` into
+  `src/bigclaw/design_system.py`.
+- Update `src/bigclaw/__init__.py` to import the moved symbols from
+  `design_system.py` and install a compatibility `bigclaw.console_ia` surface.
+- Validate with syntax checks and direct loading of `design_system.py`, keeping
+  the verification isolated from unrelated package-level dirty imports.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve all `ConsoleIA*` and console interaction exports after the merge.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/design_system.py src/bigclaw/__init__.py`
+- `python3 - <<'PY' ... PY` direct-load `src/bigclaw/design_system.py` and exercise `ConsoleIAAuditor`
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
+## BIG-GO-1014 Refill Sweep D Continuation 7
+
+### Plan
+
+- Merge the isolated workspace bootstrap helpers from
+  `src/bigclaw/workspace_bootstrap.py` into `src/bigclaw/models.py`.
+- Install a compatibility `bigclaw.workspace_bootstrap` submodule from
+  `src/bigclaw/__init__.py` and retarget the direct-load bootstrap tests to the
+  merged module.
+- Validate via syntax checks and the focused workspace bootstrap pytest slice.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve the bootstrap helper API after the move.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/models.py src/bigclaw/__init__.py tests/test_workspace_bootstrap.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py -q`
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
+### Results
+
+- Deleted `src/bigclaw/workspace_bootstrap.py`.
+- Merged the workspace bootstrap/cache validation helpers into
+  `src/bigclaw/models.py`.
+- Updated `src/bigclaw/__init__.py` to install a compatibility
+  `bigclaw.workspace_bootstrap` submodule from the merged `models` surface.
+- Retargeted `tests/test_workspace_bootstrap.py` to direct-load
+  `src/bigclaw/models.py`.
+- Repository counts after continuation:
+  - total `py` files: `76`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `13`
+- Validation outcomes:
+  - `python3 -m compileall src/bigclaw/models.py src/bigclaw/__init__.py tests/test_workspace_bootstrap.py`
+    - Result: success
+  - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py -q`
+    - Result: `9 passed in 2.99s`
+  - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+    - Result: `PY 76`, `GO 267`, `SRC 13`
