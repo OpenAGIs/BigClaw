@@ -1,33 +1,58 @@
 {
-  "generated_at": "2026-03-16T15:54:25.278091Z",
-  "ticket": "BIG-PAR-086-local-prework",
-  "title": "Validation bundle continuation scorecard",
-  "status": "local-continuation-scorecard",
+  "continuation_checks": [
+    {
+      "detail": "latest lane statuses={'local': 'succeeded', 'kubernetes': 'succeeded', 'ray': 'succeeded'}",
+      "name": "latest_bundle_all_executor_tracks_succeeded",
+      "passed": true
+    },
+    {
+      "detail": "recent bundle count=3",
+      "name": "recent_bundle_chain_has_multiple_runs",
+      "passed": true
+    },
+    {
+      "detail": "recent bundle statuses=['succeeded', 'succeeded', 'succeeded']",
+      "name": "recent_bundle_chain_has_no_failures",
+      "passed": true
+    },
+    {
+      "detail": "enabled_runs_by_lane={'local': 3, 'kubernetes': 3, 'ray': 2}",
+      "name": "all_executor_tracks_have_repeated_recent_coverage",
+      "passed": true
+    },
+    {
+      "detail": "cross_node_completions=99",
+      "name": "shared_queue_companion_proof_available",
+      "passed": true
+    },
+    {
+      "detail": "run_all closeout now refreshes the scorecard and gate automatically, but continuation still depends on explicit workflow execution instead of an always-on service",
+      "name": "continuation_surface_is_workflow_triggered",
+      "passed": true
+    }
+  ],
+  "current_ceiling": [
+    "continuation across future validation bundles remains workflow-triggered",
+    "shared-queue coordination proof now ships as adjacent bundle metadata rather than an executor-native lane",
+    "recent history is bounded to the exported bundle index and not an always-on service"
+  ],
   "evidence_inputs": {
-    "manifest_path": "bigclaw-go/docs/reports/live-validation-index.json",
-    "latest_summary_path": "bigclaw-go/docs/reports/live-validation-summary.json",
     "bundle_root": "bigclaw-go/docs/reports/live-validation-runs",
+    "generator_script": "go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard",
+    "latest_summary_path": "bigclaw-go/docs/reports/live-validation-summary.json",
+    "manifest_path": "bigclaw-go/docs/reports/live-validation-index.json",
     "recent_run_summaries": [
       "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json"
     ],
-    "shared_queue_report_path": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
-    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py"
-  },
-  "summary": {
-    "recent_bundle_count": 3,
-    "latest_run_id": "20260316T140138Z",
-    "latest_status": "succeeded",
-    "latest_bundle_age_hours": 0.01,
-    "latest_all_executor_tracks_succeeded": true,
-    "recent_bundle_chain_has_no_failures": true,
-    "all_executor_tracks_have_repeated_recent_coverage": true,
-    "bundle_gap_minutes": 2826.67,
-    "bundle_root_exists": true
+    "shared_queue_report_path": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json"
   },
   "executor_lanes": [
     {
+      "all_recent_runs_succeeded": true,
+      "consecutive_successes": 3,
+      "enabled_runs": 3,
       "lane": "local",
       "latest_enabled": true,
       "latest_status": "succeeded",
@@ -36,12 +61,12 @@
         "succeeded",
         "succeeded"
       ],
-      "enabled_runs": 3,
-      "succeeded_runs": 3,
-      "consecutive_successes": 3,
-      "all_recent_runs_succeeded": true
+      "succeeded_runs": 3
     },
     {
+      "all_recent_runs_succeeded": true,
+      "consecutive_successes": 3,
+      "enabled_runs": 3,
       "lane": "kubernetes",
       "latest_enabled": true,
       "latest_status": "succeeded",
@@ -50,12 +75,12 @@
         "succeeded",
         "succeeded"
       ],
-      "enabled_runs": 3,
-      "succeeded_runs": 3,
-      "consecutive_successes": 3,
-      "all_recent_runs_succeeded": true
+      "succeeded_runs": 3
     },
     {
+      "all_recent_runs_succeeded": true,
+      "consecutive_successes": 2,
+      "enabled_runs": 2,
       "lane": "ray",
       "latest_enabled": true,
       "latest_status": "succeeded",
@@ -64,64 +89,39 @@
         "succeeded",
         "disabled"
       ],
-      "enabled_runs": 2,
-      "succeeded_runs": 2,
-      "consecutive_successes": 2,
-      "all_recent_runs_succeeded": true
+      "succeeded_runs": 2
     }
   ],
-  "shared_queue_companion": {
-    "available": true,
-    "report_path": "docs/reports/multi-node-shared-queue-report.json",
-    "summary_path": "docs/reports/shared-queue-companion-summary.json",
-    "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json",
-    "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
-    "cross_node_completions": 99,
-    "duplicate_completed_tasks": 0,
-    "duplicate_started_tasks": 0,
-    "mode": "bundle-companion-summary"
-  },
-  "continuation_checks": [
-    {
-      "name": "latest_bundle_all_executor_tracks_succeeded",
-      "passed": true,
-      "detail": "latest lane statuses={'local': 'succeeded', 'kubernetes': 'succeeded', 'ray': 'succeeded'}"
-    },
-    {
-      "name": "recent_bundle_chain_has_multiple_runs",
-      "passed": true,
-      "detail": "recent bundle count=3"
-    },
-    {
-      "name": "recent_bundle_chain_has_no_failures",
-      "passed": true,
-      "detail": "recent bundle statuses=['succeeded', 'succeeded', 'succeeded']"
-    },
-    {
-      "name": "all_executor_tracks_have_repeated_recent_coverage",
-      "passed": true,
-      "detail": "enabled_runs_by_lane={'local': 3, 'kubernetes': 3, 'ray': 2}"
-    },
-    {
-      "name": "shared_queue_companion_proof_available",
-      "passed": true,
-      "detail": "cross_node_completions=99"
-    },
-    {
-      "name": "continuation_surface_is_workflow_triggered",
-      "passed": true,
-      "detail": "run_all closeout now refreshes the scorecard and gate automatically, but continuation still depends on explicit workflow execution instead of an always-on service"
-    }
-  ],
-  "current_ceiling": [
-    "continuation across future validation bundles remains workflow-triggered",
-    "shared-queue coordination proof now ships as adjacent bundle metadata rather than an executor-native lane",
-    "recent history is bounded to the exported bundle index and not an always-on service"
-  ],
+  "generated_at": "2026-03-16T15:54:25.278091Z",
   "next_runtime_hooks": [
     "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold or fail in workflow closeout when continuation holds should block or fail the run",
     "decide whether shared-queue coordination should stay as adjacent bundle metadata or gain its own executor-native validation lane",
     "extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators",
     "extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists"
-  ]
+  ],
+  "shared_queue_companion": {
+    "available": true,
+    "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json",
+    "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
+    "cross_node_completions": 99,
+    "duplicate_completed_tasks": 0,
+    "duplicate_started_tasks": 0,
+    "mode": "bundle-companion-summary",
+    "report_path": "docs/reports/multi-node-shared-queue-report.json",
+    "summary_path": "docs/reports/shared-queue-companion-summary.json"
+  },
+  "status": "local-continuation-scorecard",
+  "summary": {
+    "all_executor_tracks_have_repeated_recent_coverage": true,
+    "bundle_gap_minutes": 2826.67,
+    "bundle_root_exists": true,
+    "latest_all_executor_tracks_succeeded": true,
+    "latest_bundle_age_hours": 0.01,
+    "latest_run_id": "20260316T140138Z",
+    "latest_status": "succeeded",
+    "recent_bundle_chain_has_no_failures": true,
+    "recent_bundle_count": 3
+  },
+  "ticket": "BIG-PAR-086-local-prework",
+  "title": "Validation bundle continuation scorecard"
 }

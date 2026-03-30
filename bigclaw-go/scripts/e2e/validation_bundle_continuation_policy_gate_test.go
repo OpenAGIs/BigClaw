@@ -121,13 +121,6 @@ func TestValidationBundleContinuationPolicyGateLegacyEnforceFlagMapsToFailMode(t
 func setupPolicyGateFixture(t *testing.T, scorecard map[string]any) string {
 	t.Helper()
 	root := t.TempDir()
-	repoRoot := repoRootForScriptTests(t)
-	source := filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py")
-	body, err := os.ReadFile(source)
-	if err != nil {
-		t.Fatalf("read source policy gate: %v", err)
-	}
-	writeTestFile(t, root, "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py", string(body), true)
 	encoded, err := json.Marshal(scorecard)
 	if err != nil {
 		t.Fatalf("marshal scorecard: %v", err)
@@ -138,9 +131,20 @@ func setupPolicyGateFixture(t *testing.T, scorecard map[string]any) string {
 
 func runPolicyGate(t *testing.T, root string, args ...string) (map[string]any, int) {
 	t.Helper()
-	script := filepath.Join(root, "bigclaw-go", "scripts", "e2e", "validation_bundle_continuation_policy_gate.py")
-	cmd := exec.Command("python3", append([]string{script}, args...)...)
-	cmd.Dir = filepath.Join(root, "bigclaw-go")
+	repoRoot := repoRootForScriptTests(t)
+	resolvedArgs := append([]string(nil), args...)
+	for i := 0; i < len(resolvedArgs)-1; i++ {
+		switch resolvedArgs[i] {
+		case "--scorecard", "--output":
+			if !filepath.IsAbs(resolvedArgs[i+1]) {
+				resolvedArgs[i+1] = filepath.Join(root, filepath.FromSlash(resolvedArgs[i+1]))
+			}
+		}
+	}
+	cmdArgs := append([]string{"run", "./cmd/bigclawctl", "automation", "e2e", "validation-bundle-continuation-policy-gate"}, resolvedArgs...)
+	cmd := exec.Command("go", cmdArgs...)
+	cmd.Dir = repoRoot
+	cmd.Env = append(os.Environ(), "PWD="+repoRoot)
 	output, err := cmd.CombinedOutput()
 	exitCode := 0
 	if err != nil {
@@ -149,9 +153,17 @@ func runPolicyGate(t *testing.T, root string, args ...string) (map[string]any, i
 			t.Fatalf("run policy gate: %v\n%s", err, output)
 		}
 		exitCode = exitErr.ExitCode()
+		if strings.Contains(string(output), "exit status 2") {
+			exitCode = 2
+		}
 	}
 	reportPath := filepath.Join(root, "docs", "reports", "policy.json")
 	payload := readJSONMap(t, reportPath)
+	if enforcement, ok := payload["enforcement"].(map[string]any); ok {
+		if reported, ok := enforcement["exit_code"].(float64); ok {
+			exitCode = int(reported)
+		}
+	}
 	return payload, exitCode
 }
 

@@ -62,17 +62,6 @@ func TestRunAllRerendersBundleAfterGateRefresh(t *testing.T) {
 
 func TestRunAllDefaultsToHoldMode(t *testing.T) {
 	root := setupRunAllFixture(t)
-	writeTestFile(t, root, "scripts/e2e/validation_bundle_continuation_policy_gate.py", `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-mode = args[args.index('--enforcement-mode') + 1]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
-`, true)
 
 	env := append(os.Environ(),
 		"BIGCLAW_E2E_RUN_KUBERNETES=0",
@@ -98,17 +87,6 @@ output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
 
 func TestRunAllLegacyEnforceAliasStillMapsToFailMode(t *testing.T) {
 	root := setupRunAllFixture(t)
-	writeTestFile(t, root, "scripts/e2e/validation_bundle_continuation_policy_gate.py", `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-mode = args[args.index('--enforcement-mode') + 1]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
-`, true)
 
 	env := append(os.Environ(),
 		"BIGCLAW_E2E_RUN_KUBERNETES=0",
@@ -151,6 +129,17 @@ args = sys.argv[1:]
 if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (
     len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'
 ):
+    if len(args) >= 5 and args[4] == 'validation-bundle-continuation-scorecard':
+        output = pathlib.Path(args[args.index('--output') + 1])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+        sys.exit(0)
+    if len(args) >= 5 and args[4] == 'validation-bundle-continuation-policy-gate':
+        mode = args[args.index('--enforcement-mode') + 1]
+        output = pathlib.Path(args[args.index('--output') + 1])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
+        sys.exit(0)
     report_path = pathlib.Path(args[args.index('--report-path') + 1])
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
@@ -184,27 +173,6 @@ payload = {
 }
 with calls_path.open('a', encoding='utf-8') as handle:
     handle.write(json.dumps(payload) + '\n')
-`, true)
-	writeTestFile(t, root, "scripts/e2e/validation_bundle_continuation_scorecard.py", `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
-`, true)
-	writeTestFile(t, root, "scripts/e2e/validation_bundle_continuation_policy_gate.py", `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-mode = args[args.index('--enforcement-mode') + 1]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
 `, true)
 	return root
 }

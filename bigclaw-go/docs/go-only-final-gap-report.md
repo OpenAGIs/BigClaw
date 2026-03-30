@@ -4,7 +4,7 @@ Issue: `BIG-GO-1010`
 
 ## Scope Verification
 
-- Verified current residual Python scope under `bigclaw-go/scripts/e2e/**`: `9` files.
+- Verified current residual Python scope under `bigclaw-go/scripts/e2e/**`: `7` files.
 - `migration/**` does not exist in this checkout, so it contributes `0` residual Python files.
 - Historical removal commit for this issue batch: `76a14bc feat: finalize BIG-GO-1010 python gap sweep`.
 
@@ -17,8 +17,6 @@ Current residual Python files:
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 
 ## Result
 
@@ -28,12 +26,16 @@ Python files removed by `BIG-GO-1010`:
 - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
 - `bigclaw-go/scripts/e2e/run_all_test.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 
 Added Go-native replacement coverage:
 
 - `bigclaw-go/scripts/e2e/run_all_test.go`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.go`
+- `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard`
+- `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-policy-gate`
 
 ## File Disposition
 
@@ -51,6 +53,12 @@ Deleted or replaced:
 - `bigclaw-go/scripts/e2e/run_all_test.py`
   - Replaced, then deleted.
   - Reason: shell orchestration still matters, but the coverage no longer needs to live in Python. Replaced by `bigclaw-go/scripts/e2e/run_all_test.go`.
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
+  - Replaced, then deleted.
+  - Reason: the continuation scorecard now ships as `bigclawctl automation e2e validation-bundle-continuation-scorecard`, and `run_all.sh` calls the Go-native command directly.
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
+  - Replaced, then deleted.
+  - Reason: the continuation policy gate now ships as `bigclawctl automation e2e validation-bundle-continuation-policy-gate`, and `run_all.sh` calls the Go-native command directly.
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
   - Replaced, then deleted.
   - Reason: policy gate branching still matters, but the coverage no longer needs to live in Python. Replaced by `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.go`.
@@ -78,24 +86,18 @@ Kept:
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
   - Kept.
   - Reason: no Go-native deterministic subscriber-takeover harness exists yet.
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-  - Kept.
-  - Reason: no Go-native continuation policy gate command exists yet.
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-  - Kept.
-  - Reason: no Go-native continuation scorecard generator exists yet.
 
 ## Count Impact
 
-- Historical repository Python files for this batch: `108 -> 103`
-- Historical targeted batch Python files for this batch: `14 -> 9`
-- Current repository Python files in this checkout: `103`
-- Current targeted residual Python files in `bigclaw-go/scripts/e2e/**`: `9`
-- Net reduction delivered by `BIG-GO-1010`: `5`
+- Historical repository Python files for this batch: `108 -> 101`
+- Historical targeted batch Python files for this batch: `14 -> 7`
+- Current repository Python files in this checkout: `101`
+- Current targeted residual Python files in `bigclaw-go/scripts/e2e/**`: `7`
+- Net reduction delivered by `BIG-GO-1010`: `7`
 
 ## Remaining Go-Only Gaps
 
-The repository is not yet Go-only for e2e evidence generation. The remaining blockers are the nine
+The repository is not yet Go-only for e2e evidence generation. The remaining blockers are the seven
 Python report generators still living under `bigclaw-go/scripts/e2e/**`. No additional file-count
 reduction is safe inside this issue scope without implementing new Go-native replacements for those
 generators.
@@ -103,11 +105,12 @@ generators.
 ## Validation
 
 - `find . -name '*.py' | wc -l`
-  - Result: `103`
+  - Result: `101`
 - `find bigclaw-go/scripts/e2e -name '*.py' | wc -l`
-  - Result: `9`
+  - Result: `7`
 - `rg --files | rg '(^|/)migration/|/migration/'`
   - Result: no matches
-- `cd bigclaw-go && go test ./scripts/e2e ./internal/regression`
-  - Result: `ok   bigclaw-go/scripts/e2e  4.224s`
-  - Result: `ok   bigclaw-go/internal/regression  1.186s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./scripts/e2e ./internal/regression`
+  - Result: `ok   bigclaw-go/cmd/bigclawctl  2.961s`
+  - Result: `ok   bigclaw-go/scripts/e2e  4.851s`
+  - Result: `ok   bigclaw-go/internal/regression  (cached)`

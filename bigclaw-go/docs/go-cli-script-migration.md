@@ -17,8 +17,6 @@ Issue: `BIG-GO-902`, follow-up sweep `BIG-GO-1010`
 
 - `migration/**`: none in the current checkout
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
@@ -32,24 +30,28 @@ still require Go-native replacements before the repository reaches a true Go-onl
 
 Current residual counts after that sweep:
 
-- repository Python files: `103`
-- `bigclaw-go/scripts/e2e/**` Python files: `9`
+- repository Python files: `101`
+- `bigclaw-go/scripts/e2e/**` Python files: `7`
 
 ## Final Gap Report
 
 - `migration/**`: no remaining Python files in this checkout.
-- Historical reduction delivered by `BIG-GO-1010`: repository `108 -> 103`, scoped batch `14 -> 9`.
+- Historical reduction delivered by `BIG-GO-1010`: repository `108 -> 101`, scoped batch `14 -> 7`.
 - Removed in `BIG-GO-1010`:
   - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
   - `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
   - `bigclaw-go/scripts/e2e/run_all_test.py`
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - Go replacements added for active behavior coverage:
   - `bigclaw-go/scripts/e2e/run_all_test.go`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.go`
+  - `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard`
+  - `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-policy-gate`
 - Still blocked on Go-native implementation:
-  - validation bundle export and continuation generators
+  - validation bundle export generator
   - shared-queue and subscriber-takeover live harnesses
   - mixed workload, external store, cross-process coordination, and broker failover evidence generators
 
@@ -59,7 +61,7 @@ Current residual counts after that sweep:
 find . -name '*.py' | wc -l
 find bigclaw-go/scripts/e2e -name '*.py' | wc -l
 rg --files | rg '(^|/)migration/|/migration/'
-cd bigclaw-go && go test ./scripts/e2e ./internal/regression
+cd bigclaw-go && go test ./cmd/bigclawctl ./scripts/e2e ./internal/regression
 ```
 
 ## Regression Surface

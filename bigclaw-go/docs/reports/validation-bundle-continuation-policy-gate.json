@@ -1,90 +1,90 @@
 {
-  "generated_at": "2026-03-22T00:56:46.489567Z",
-  "ticket": "OPE-262",
-  "title": "Validation workflow continuation gate",
-  "status": "policy-go",
-  "recommendation": "go",
-  "evidence_inputs": {
-    "scorecard_path": "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
-    "generator_script": "scripts/e2e/validation_bundle_continuation_policy_gate.py"
-  },
-  "policy_inputs": {
-    "max_latest_age_hours": 72.0,
-    "min_recent_bundles": 2,
-    "require_repeated_lane_coverage": true
-  },
   "enforcement": {
     "mode": "hold",
     "outcome": "pass",
     "exit_code": 0
   },
-  "summary": {
-    "latest_run_id": "20260316T140138Z",
-    "latest_bundle_age_hours": 0.01,
-    "recent_bundle_count": 3,
-    "latest_all_executor_tracks_succeeded": true,
-    "recent_bundle_chain_has_no_failures": true,
-    "all_executor_tracks_have_repeated_recent_coverage": true,
-    "recommendation": "go",
-    "enforcement_mode": "hold",
-    "workflow_outcome": "pass",
-    "workflow_exit_code": 0,
-    "passing_check_count": 6,
-    "failing_check_count": 0
+  "evidence_inputs": {
+    "generator_script": "go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-policy-gate",
+    "scorecard_path": "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json"
   },
+  "failing_checks": [],
+  "generated_at": "2026-03-22T00:56:46.489567Z",
+  "next_actions": [
+    "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions"
+  ],
   "policy_checks": [
     {
+      "detail": "latest_bundle_age_hours=0.01 threshold=72.0",
       "name": "latest_bundle_age_within_threshold",
-      "passed": true,
-      "detail": "latest_bundle_age_hours=0.01 threshold=72.0"
+      "passed": true
     },
     {
+      "detail": "recent_bundle_count=3 floor=2",
       "name": "recent_bundle_count_meets_floor",
-      "passed": true,
-      "detail": "recent_bundle_count=3 floor=2"
+      "passed": true
     },
     {
+      "detail": "latest_all_executor_tracks_succeeded=True",
       "name": "latest_bundle_all_executor_tracks_succeeded",
-      "passed": true,
-      "detail": "latest_all_executor_tracks_succeeded=True"
+      "passed": true
     },
     {
+      "detail": "recent_bundle_chain_has_no_failures=True",
       "name": "recent_bundle_chain_has_no_failures",
-      "passed": true,
-      "detail": "recent_bundle_chain_has_no_failures=True"
+      "passed": true
     },
     {
+      "detail": "cross_node_completions=99",
       "name": "shared_queue_companion_available",
-      "passed": true,
-      "detail": "cross_node_completions=99"
+      "passed": true
     },
     {
+      "detail": "require_repeated_lane_coverage=True actual=True",
       "name": "repeated_lane_coverage_meets_policy",
-      "passed": true,
-      "detail": "require_repeated_lane_coverage=True actual=True"
+      "passed": true
     }
   ],
-  "failing_checks": [],
+  "policy_inputs": {
+    "max_latest_age_hours": 72.0,
+    "min_recent_bundles": 2,
+    "require_repeated_lane_coverage": true
+  },
+  "recommendation": "go",
   "reviewer_path": {
-    "index_path": "docs/reports/live-validation-index.md",
     "digest_path": "docs/reports/validation-bundle-continuation-digest.md",
     "digest_issue": {
       "id": "OPE-271",
       "slug": "BIG-PAR-082"
-    }
+    },
+    "index_path": "docs/reports/live-validation-index.md"
   },
   "shared_queue_companion": {
     "available": true,
-    "report_path": "docs/reports/multi-node-shared-queue-report.json",
-    "summary_path": "docs/reports/shared-queue-companion-summary.json",
     "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json",
     "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
     "cross_node_completions": 99,
     "duplicate_completed_tasks": 0,
     "duplicate_started_tasks": 0,
-    "mode": "bundle-companion-summary"
+    "mode": "bundle-companion-summary",
+    "report_path": "docs/reports/multi-node-shared-queue-report.json",
+    "summary_path": "docs/reports/shared-queue-companion-summary.json"
   },
-  "next_actions": [
-    "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions"
-  ]
+  "status": "policy-go",
+  "summary": {
+    "all_executor_tracks_have_repeated_recent_coverage": true,
+    "enforcement_mode": "hold",
+    "failing_check_count": 0,
+    "latest_all_executor_tracks_succeeded": true,
+    "latest_bundle_age_hours": 0.01,
+    "latest_run_id": "20260316T140138Z",
+    "passing_check_count": 6,
+    "recent_bundle_chain_has_no_failures": true,
+    "recent_bundle_count": 3,
+    "recommendation": "go",
+    "workflow_exit_code": 0,
+    "workflow_outcome": "pass"
+  },
+  "ticket": "OPE-262",
+  "title": "Validation workflow continuation gate"
 }

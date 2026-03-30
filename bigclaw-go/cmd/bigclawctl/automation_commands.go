@@ -83,6 +83,26 @@ type automationLiveShadowScorecardOptions struct {
 	Now                     func() time.Time
 }
 
+type automationValidationBundleContinuationScorecardOptions struct {
+	IndexManifestPath     string
+	BundleRootPath        string
+	SummaryPath           string
+	SharedQueueReportPath string
+	OutputPath            string
+	Now                   func() time.Time
+}
+
+type automationValidationBundleContinuationPolicyGateOptions struct {
+	ScorecardPath                 string
+	MaxLatestAgeHours             float64
+	MinRecentBundles              int
+	RequireRepeatedLaneCoverage   bool
+	EnforcementMode               string
+	LegacyEnforceContinuationGate bool
+	OutputPath                    string
+	Now                           func() time.Time
+}
+
 type automationExportLiveShadowBundleOptions struct {
 	GoRoot            string
 	ShadowComparePath string
@@ -219,12 +239,16 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|validation-bundle-continuation-scorecard|validation-bundle-continuation-policy-gate> [flags]\n")
 		return nil
 	}
 	switch args[0] {
 	case "run-task-smoke":
 		return runAutomationRunTaskSmokeCommand(args[1:])
+	case "validation-bundle-continuation-scorecard":
+		return runAutomationValidationBundleContinuationScorecardCommand(args[1:])
+	case "validation-bundle-continuation-policy-gate":
+		return runAutomationValidationBundleContinuationPolicyGateCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation e2e subcommand: %s", args[0])
 	}
@@ -304,6 +328,72 @@ func runAutomationRunTaskSmokeCommand(args []string) error {
 	})
 	if report != nil {
 		return emit(structToMap(report), *asJSON, exitCode)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func runAutomationValidationBundleContinuationScorecardCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e validation-bundle-continuation-scorecard", flag.ContinueOnError)
+	indexManifest := flags.String("index-manifest", "bigclaw-go/docs/reports/live-validation-index.json", "validation bundle manifest path")
+	bundleRoot := flags.String("bundle-root", "bigclaw-go/docs/reports/live-validation-runs", "validation bundle root")
+	summaryPath := flags.String("summary-path", "bigclaw-go/docs/reports/live-validation-summary.json", "latest validation summary path")
+	sharedQueueReport := flags.String("shared-queue-report", "bigclaw-go/docs/reports/multi-node-shared-queue-report.json", "shared queue proof report path")
+	output := flags.String("output", "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json", "output path")
+	asJSON := flags.Bool("json", true, "json")
+	_ = flags.Bool("pretty", false, "compatibility alias; JSON output is already formatted")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e validation-bundle-continuation-scorecard [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationValidationBundleContinuationScorecard(automationValidationBundleContinuationScorecardOptions{
+		IndexManifestPath:     *indexManifest,
+		BundleRootPath:        *bundleRoot,
+		SummaryPath:           *summaryPath,
+		SharedQueueReportPath: *sharedQueueReport,
+		OutputPath:            *output,
+	})
+	if err != nil {
+		return err
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationValidationBundleContinuationPolicyGateCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e validation-bundle-continuation-policy-gate", flag.ContinueOnError)
+	scorecardPath := flags.String("scorecard", "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json", "scorecard input path")
+	output := flags.String("output", "bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json", "output path")
+	maxLatestAgeHours := flags.Float64("max-latest-age-hours", 72.0, "max age in hours for the latest bundle")
+	minRecentBundles := flags.Int("min-recent-bundles", 2, "minimum number of recent bundles")
+	requireRepeatedLaneCoverage := flags.Bool("require-repeated-lane-coverage", true, "require repeated recent coverage for every executor lane")
+	allowPartialLaneHistory := flags.Bool("allow-partial-lane-history", false, "disable repeated lane coverage enforcement")
+	enforcementMode := flags.String("enforcement-mode", "", "enforcement mode (review|hold|fail)")
+	enforce := flags.Bool("enforce", false, "legacy alias that maps to fail mode when set")
+	asJSON := flags.Bool("json", true, "json")
+	_ = flags.Bool("pretty", false, "compatibility alias; JSON output is already formatted")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e validation-bundle-continuation-policy-gate [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, exitCode, err := automationValidationBundleContinuationPolicyGate(automationValidationBundleContinuationPolicyGateOptions{
+		ScorecardPath:                 *scorecardPath,
+		MaxLatestAgeHours:             *maxLatestAgeHours,
+		MinRecentBundles:              *minRecentBundles,
+		RequireRepeatedLaneCoverage:   *requireRepeatedLaneCoverage && !*allowPartialLaneHistory,
+		EnforcementMode:               *enforcementMode,
+		LegacyEnforceContinuationGate: *enforce,
+		OutputPath:                    *output,
+	})
+	if report != nil {
+		return emit(report, *asJSON, exitCode)
 	}
 	if err != nil {
 		return err
@@ -628,6 +718,317 @@ func automationRunTaskSmoke(opts automationRunTaskSmokeOptions) (*automationRunT
 	return report, 1, nil
 }
 
+func automationValidationBundleContinuationScorecard(opts automationValidationBundleContinuationScorecardOptions) (map[string]any, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	manifest, err := automationShadowMatrixLoadJSON(resolveAutomationPath(opts.IndexManifestPath))
+	if err != nil {
+		return nil, err
+	}
+	latestSummary, err := automationShadowMatrixLoadJSON(resolveAutomationPath(opts.SummaryPath))
+	if err != nil {
+		return nil, err
+	}
+	sharedQueue, err := automationShadowMatrixLoadJSON(resolveAutomationPath(opts.SharedQueueReportPath))
+	if err != nil {
+		return nil, err
+	}
+
+	repoRoot := resolveAutomationPath("..")
+	bigclawGoRoot := resolveAutomationPath(".")
+	recentRunsMeta, _ := manifest["recent_runs"].([]any)
+	recentRuns := make([]map[string]any, 0, len(recentRunsMeta))
+	recentRunInputs := make([]any, 0, len(recentRunsMeta))
+	for _, raw := range recentRunsMeta {
+		item, _ := raw.(map[string]any)
+		summaryFile, ok := item["summary_path"].(string)
+		if !ok || trim(summaryFile) == "" {
+			continue
+		}
+		resolved := resolveAutomationEvidencePath(repoRoot, bigclawGoRoot, summaryFile)
+		report, err := automationShadowMatrixLoadJSON(resolved)
+		if err != nil {
+			return nil, err
+		}
+		recentRuns = append(recentRuns, report)
+		recentRunInputs = append(recentRunInputs, relAutomationPath(resolved, repoRoot))
+	}
+
+	latest, _ := manifest["latest"].(map[string]any)
+	bundleRoot := resolveAutomationPath(opts.BundleRootPath)
+	bundledSharedQueue, _ := latestSummary["shared_queue_companion"].(map[string]any)
+	laneScorecards := []map[string]any{
+		automationValidationLaneScorecard(recentRuns, "local"),
+		automationValidationLaneScorecard(recentRuns, "kubernetes"),
+		automationValidationLaneScorecard(recentRuns, "ray"),
+	}
+
+	generatedAt := now().UTC()
+	latestGeneratedAt := parseAutomationTime(fmt.Sprint(latest["generated_at"]))
+	latestAgeHours := roundTo(generatedAt.Sub(latestGeneratedAt).Seconds()/3600, 2)
+	bundleGapMinutes := any(nil)
+	if len(recentRuns) > 1 {
+		previousGeneratedAt := parseAutomationTime(fmt.Sprint(recentRuns[1]["generated_at"]))
+		if !latestGeneratedAt.IsZero() && !previousGeneratedAt.IsZero() {
+			bundleGapMinutes = roundTo(latestGeneratedAt.Sub(previousGeneratedAt).Seconds()/60, 2)
+		}
+	}
+
+	latestLaneStatuses := map[string]any{}
+	latestAllSucceeded := true
+	for _, lane := range []string{"local", "kubernetes", "ray"} {
+		section, _ := latestSummary[lane].(map[string]any)
+		status := fmt.Sprint(section["status"])
+		latestLaneStatuses[lane] = status
+		if status != "succeeded" {
+			latestAllSucceeded = false
+		}
+	}
+	recentAllSucceeded := true
+	for _, run := range recentRuns {
+		if fmt.Sprint(run["status"]) != "succeeded" {
+			recentAllSucceeded = false
+			break
+		}
+	}
+	repeatedLaneCoverage := true
+	enabledRunsByLane := map[string]any{}
+	for _, lane := range laneScorecards {
+		enabledRunsByLane[fmt.Sprint(lane["lane"])] = lane["enabled_runs"]
+		if automationInt(lane["enabled_runs"], 0) < 2 {
+			repeatedLaneCoverage = false
+		}
+	}
+
+	sharedQueueAvailable := automationBool(bundledSharedQueue["available"]) || automationBool(sharedQueue["all_ok"])
+	sharedQueueCompanion := map[string]any{
+		"available":                 sharedQueueAvailable,
+		"report_path":               firstNonEmptyAny(bundledSharedQueue["canonical_report_path"], opts.SharedQueueReportPath),
+		"summary_path":              firstNonEmptyAny(bundledSharedQueue["canonical_summary_path"], "docs/reports/shared-queue-companion-summary.json"),
+		"bundle_report_path":        stringOrNil(fmt.Sprint(bundledSharedQueue["bundle_report_path"])),
+		"bundle_summary_path":       stringOrNil(fmt.Sprint(bundledSharedQueue["bundle_summary_path"])),
+		"cross_node_completions":    firstIntAny(bundledSharedQueue["cross_node_completions"], sharedQueue["cross_node_completions"]),
+		"duplicate_completed_tasks": firstIntAny(bundledSharedQueue["duplicate_completed_tasks"], len(automationAnySlice(sharedQueue["duplicate_completed_tasks"]))),
+		"duplicate_started_tasks":   firstIntAny(bundledSharedQueue["duplicate_started_tasks"], len(automationAnySlice(sharedQueue["duplicate_started_tasks"]))),
+		"mode":                      "standalone-proof",
+	}
+	if len(bundledSharedQueue) > 0 {
+		sharedQueueCompanion["mode"] = "bundle-companion-summary"
+	}
+
+	continuationChecks := []map[string]any{
+		automationLiveShadowCheck(
+			"latest_bundle_all_executor_tracks_succeeded",
+			latestAllSucceeded,
+			fmt.Sprintf("latest lane statuses=%s", automationPythonDictString(latestLaneStatuses)),
+		),
+		automationLiveShadowCheck(
+			"recent_bundle_chain_has_multiple_runs",
+			len(recentRuns) >= 2,
+			fmt.Sprintf("recent bundle count=%d", len(recentRuns)),
+		),
+		automationLiveShadowCheck(
+			"recent_bundle_chain_has_no_failures",
+			recentAllSucceeded,
+			fmt.Sprintf("recent bundle statuses=%s", automationPythonListString(automationCollectStatusesFromRuns(recentRuns))),
+		),
+		automationLiveShadowCheck(
+			"all_executor_tracks_have_repeated_recent_coverage",
+			repeatedLaneCoverage,
+			fmt.Sprintf("enabled_runs_by_lane=%s", automationPythonDictString(enabledRunsByLane)),
+		),
+		automationLiveShadowCheck(
+			"shared_queue_companion_proof_available",
+			sharedQueueAvailable,
+			fmt.Sprintf("cross_node_completions=%v", sharedQueueCompanion["cross_node_completions"]),
+		),
+		automationLiveShadowCheck(
+			"continuation_surface_is_workflow_triggered",
+			true,
+			"run_all closeout now refreshes the scorecard and gate automatically, but continuation still depends on explicit workflow execution instead of an always-on service",
+		),
+	}
+
+	currentCeiling := []string{
+		"continuation across future validation bundles remains workflow-triggered",
+		"shared-queue coordination proof now ships as adjacent bundle metadata rather than an executor-native lane",
+		"recent history is bounded to the exported bundle index and not an always-on service",
+	}
+	if !repeatedLaneCoverage {
+		currentCeiling = append(currentCeiling, "not every executor lane is enabled across every indexed bundle in the current recent window")
+	}
+
+	report := map[string]any{
+		"generated_at": utcISOTime(generatedAt),
+		"ticket":       "BIG-PAR-086-local-prework",
+		"title":        "Validation bundle continuation scorecard",
+		"status":       "local-continuation-scorecard",
+		"evidence_inputs": map[string]any{
+			"manifest_path":            opts.IndexManifestPath,
+			"latest_summary_path":      opts.SummaryPath,
+			"bundle_root":              opts.BundleRootPath,
+			"recent_run_summaries":     recentRunInputs,
+			"shared_queue_report_path": opts.SharedQueueReportPath,
+			"generator_script":         "go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard",
+		},
+		"summary": map[string]any{
+			"recent_bundle_count":                               len(recentRuns),
+			"latest_run_id":                                     latest["run_id"],
+			"latest_status":                                     latest["status"],
+			"latest_bundle_age_hours":                           latestAgeHours,
+			"latest_all_executor_tracks_succeeded":              latestAllSucceeded,
+			"recent_bundle_chain_has_no_failures":               recentAllSucceeded,
+			"all_executor_tracks_have_repeated_recent_coverage": repeatedLaneCoverage,
+			"bundle_gap_minutes":                                bundleGapMinutes,
+			"bundle_root_exists":                                automationPathExists(bundleRoot),
+		},
+		"executor_lanes":         laneScorecards,
+		"shared_queue_companion": sharedQueueCompanion,
+		"continuation_checks":    continuationChecks,
+		"current_ceiling":        currentCeiling,
+		"next_runtime_hooks": []string{
+			"set BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold or fail in workflow closeout when continuation holds should block or fail the run",
+			"decide whether shared-queue coordination should stay as adjacent bundle metadata or gain its own executor-native validation lane",
+			"extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators",
+			"extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists",
+		},
+	}
+	if err := automationWriteReport(".", opts.OutputPath, report); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+func automationValidationBundleContinuationPolicyGate(opts automationValidationBundleContinuationPolicyGateOptions) (map[string]any, int, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	scorecard, err := automationShadowMatrixLoadJSON(resolveAutomationPath(opts.ScorecardPath))
+	if err != nil {
+		return nil, 0, err
+	}
+	summary, _ := scorecard["summary"].(map[string]any)
+	sharedQueue, _ := scorecard["shared_queue_companion"].(map[string]any)
+	normalizedMode, err := normalizeAutomationContinuationEnforcementMode(opts.EnforcementMode, opts.LegacyEnforceContinuationGate)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	checks := []map[string]any{
+		automationLiveShadowCheck(
+			"latest_bundle_age_within_threshold",
+			asFloat(summary["latest_bundle_age_hours"]) <= opts.MaxLatestAgeHours,
+			fmt.Sprintf("latest_bundle_age_hours=%v threshold=%v", summary["latest_bundle_age_hours"], opts.MaxLatestAgeHours),
+		),
+		automationLiveShadowCheck(
+			"recent_bundle_count_meets_floor",
+			automationInt(summary["recent_bundle_count"], 0) >= opts.MinRecentBundles,
+			fmt.Sprintf("recent_bundle_count=%v floor=%d", summary["recent_bundle_count"], opts.MinRecentBundles),
+		),
+		automationLiveShadowCheck(
+			"latest_bundle_all_executor_tracks_succeeded",
+			automationBool(summary["latest_all_executor_tracks_succeeded"]),
+			fmt.Sprintf("latest_all_executor_tracks_succeeded=%s", automationPythonBoolString(automationBool(summary["latest_all_executor_tracks_succeeded"]))),
+		),
+		automationLiveShadowCheck(
+			"recent_bundle_chain_has_no_failures",
+			automationBool(summary["recent_bundle_chain_has_no_failures"]),
+			fmt.Sprintf("recent_bundle_chain_has_no_failures=%s", automationPythonBoolString(automationBool(summary["recent_bundle_chain_has_no_failures"]))),
+		),
+		automationLiveShadowCheck(
+			"shared_queue_companion_available",
+			automationBool(sharedQueue["available"]),
+			fmt.Sprintf("cross_node_completions=%v", sharedQueue["cross_node_completions"]),
+		),
+		automationLiveShadowCheck(
+			"repeated_lane_coverage_meets_policy",
+			!opts.RequireRepeatedLaneCoverage || automationBool(summary["all_executor_tracks_have_repeated_recent_coverage"]),
+			fmt.Sprintf("require_repeated_lane_coverage=%s actual=%s", automationPythonBoolString(opts.RequireRepeatedLaneCoverage), automationPythonBoolString(automationBool(summary["all_executor_tracks_have_repeated_recent_coverage"]))),
+		),
+	}
+
+	failingChecks := []string{}
+	passingCheckCount := 0
+	for _, check := range checks {
+		if automationBool(check["passed"]) {
+			passingCheckCount++
+			continue
+		}
+		failingChecks = append(failingChecks, fmt.Sprint(check["name"]))
+	}
+	recommendation := "go"
+	if len(failingChecks) > 0 {
+		recommendation = "hold"
+	}
+	enforcement := buildAutomationContinuationEnforcementSummary(recommendation, normalizedMode)
+	nextActions := []string{}
+	for _, failing := range failingChecks {
+		switch failing {
+		case "latest_bundle_age_within_threshold":
+			nextActions = append(nextActions, "rerun `cd bigclaw-go && ./scripts/e2e/run_all.sh` to refresh the latest validation bundle")
+		case "recent_bundle_count_meets_floor":
+			nextActions = append(nextActions, "export additional validation bundles so the continuation window spans multiple indexed runs")
+		case "shared_queue_companion_available":
+			nextActions = append(nextActions, "rerun `cd bigclaw-go && python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json`")
+		case "repeated_lane_coverage_meets_policy":
+			nextActions = append(nextActions, "refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage")
+		}
+	}
+	if len(nextActions) == 0 {
+		nextActions = append(nextActions, "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions")
+	}
+	report := map[string]any{
+		"generated_at":   utcISOTime(now().UTC()),
+		"ticket":         "OPE-262",
+		"title":          "Validation workflow continuation gate",
+		"status":         map[bool]string{true: "policy-go", false: "policy-hold"}[recommendation == "go"],
+		"recommendation": recommendation,
+		"evidence_inputs": map[string]any{
+			"scorecard_path":   opts.ScorecardPath,
+			"generator_script": "go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-policy-gate",
+		},
+		"policy_inputs": map[string]any{
+			"max_latest_age_hours":           opts.MaxLatestAgeHours,
+			"min_recent_bundles":             opts.MinRecentBundles,
+			"require_repeated_lane_coverage": opts.RequireRepeatedLaneCoverage,
+		},
+		"enforcement": enforcement,
+		"summary": map[string]any{
+			"latest_run_id":                                     summary["latest_run_id"],
+			"latest_bundle_age_hours":                           summary["latest_bundle_age_hours"],
+			"recent_bundle_count":                               summary["recent_bundle_count"],
+			"latest_all_executor_tracks_succeeded":              summary["latest_all_executor_tracks_succeeded"],
+			"recent_bundle_chain_has_no_failures":               summary["recent_bundle_chain_has_no_failures"],
+			"all_executor_tracks_have_repeated_recent_coverage": summary["all_executor_tracks_have_repeated_recent_coverage"],
+			"recommendation":                                    recommendation,
+			"enforcement_mode":                                  enforcement["mode"],
+			"workflow_outcome":                                  enforcement["outcome"],
+			"workflow_exit_code":                                enforcement["exit_code"],
+			"passing_check_count":                               passingCheckCount,
+			"failing_check_count":                               len(failingChecks),
+		},
+		"policy_checks":  checks,
+		"failing_checks": failingChecks,
+		"reviewer_path": map[string]any{
+			"index_path":  "docs/reports/live-validation-index.md",
+			"digest_path": "docs/reports/validation-bundle-continuation-digest.md",
+			"digest_issue": map[string]any{
+				"id":   "OPE-271",
+				"slug": "BIG-PAR-082",
+			},
+		},
+		"shared_queue_companion": sharedQueue,
+		"next_actions":           nextActions,
+	}
+	if err := automationWriteReport(".", opts.OutputPath, report); err != nil {
+		return nil, 0, err
+	}
+	return report, automationInt(enforcement["exit_code"], 0), nil
+}
+
 func automationShadowCompare(opts automationShadowCompareOptions) (*automationShadowCompareReport, int, error) {
 	client := opts.HTTPClient
 	if client == nil {
@@ -717,10 +1118,10 @@ func automationShadowCompare(opts automationShadowCompareOptions) (*automationSh
 }
 
 type automationShadowMatrixExecutionEntry struct {
-	Task       map[string]any
-	SourceKind string
-	SourceFile string
-	TaskShape  string
+	Task        map[string]any
+	SourceKind  string
+	SourceFile  string
+	TaskShape   string
 	CorpusSlice map[string]any
 }
 
@@ -737,9 +1138,9 @@ type automationShadowMatrixCorpusSlice struct {
 }
 
 type automationShadowMatrixManifestMeta struct {
-	Name       string
+	Name        string
 	GeneratedAt any
-	SourceFile string
+	SourceFile  string
 }
 
 func automationShadowMatrix(opts automationShadowMatrixOptions) (map[string]any, int, error) {
@@ -899,9 +1300,9 @@ func automationShadowMatrixLoadCorpusManifestEntries(manifestPath string, replay
 		name = strings.TrimSuffix(filepath.Base(manifestPath), filepath.Ext(manifestPath))
 	}
 	return &automationShadowMatrixManifestMeta{
-		Name:       name,
+		Name:        name,
 		GeneratedAt: manifest["generated_at"],
-		SourceFile: manifestPath,
+		SourceFile:  manifestPath,
 	}, replayEntries, coverageSlices, nil
 }
 
@@ -960,11 +1361,11 @@ func automationShadowMatrixBuildCorpusCoverage(fixtureEntries []automationShadow
 		fixtureByShape[entry.TaskShape] = append(fixtureByShape[entry.TaskShape], entry)
 	}
 	type shapeAggregate struct {
-		SliceCount         int
-		ReplayableCount    int
-		CorpusWeight       int
-		SliceIDs           []string
-		Titles             []string
+		SliceCount      int
+		ReplayableCount int
+		CorpusWeight    int
+		SliceIDs        []string
+		Titles          []string
 	}
 	corpusByShape := map[string]*shapeAggregate{}
 	for _, sliceData := range corpusSlices {
@@ -1019,14 +1420,14 @@ func automationShadowMatrixBuildCorpusCoverage(fixtureEntries []automationShadow
 			continue
 		}
 		uncoveredSlices = append(uncoveredSlices, map[string]any{
-			"slice_id":   sliceData.SliceID,
-			"title":      sliceData.Title,
-			"task_shape": sliceData.TaskShape,
-			"weight":     sliceData.Weight,
-			"replayable": sliceData.Task != nil,
+			"slice_id":    sliceData.SliceID,
+			"title":       sliceData.Title,
+			"task_shape":  sliceData.TaskShape,
+			"weight":      sliceData.Weight,
+			"replayable":  sliceData.Task != nil,
 			"source_file": sliceData.SourceFile,
-			"tags":       sliceData.Tags,
-			"notes":      sliceData.Notes,
+			"tags":        sliceData.Tags,
+			"notes":       sliceData.Notes,
 		})
 	}
 	replayableCount := 0
@@ -1176,17 +1577,17 @@ func automationLiveShadowScorecard(opts automationLiveShadowScorecardOptions) (m
 			"generator_script":           "go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
 		},
 		"summary": map[string]any{
-			"total_evidence_runs":           len(parityEntries),
-			"parity_ok_count":               parityOKCount,
-			"drift_detected_count":          driftDetectedCount,
-			"matrix_total":                  automationInt(matrixReport["total"], 0),
-			"matrix_matched":                automationInt(matrixReport["matched"], 0),
-			"matrix_mismatched":             automationInt(matrixReport["mismatched"], 0),
-			"corpus_coverage_present":       len(matrixCorpusCoverage) > 0,
-			"corpus_uncovered_slice_count":  matrixCorpusCoverage["uncovered_corpus_slice_count"],
-			"latest_evidence_timestamp":     stringOrNil(latestEvidenceTimestamp),
-			"fresh_inputs":                  len(freshness) - staleInputs,
-			"stale_inputs":                  staleInputs,
+			"total_evidence_runs":          len(parityEntries),
+			"parity_ok_count":              parityOKCount,
+			"drift_detected_count":         driftDetectedCount,
+			"matrix_total":                 automationInt(matrixReport["total"], 0),
+			"matrix_matched":               automationInt(matrixReport["matched"], 0),
+			"matrix_mismatched":            automationInt(matrixReport["mismatched"], 0),
+			"corpus_coverage_present":      len(matrixCorpusCoverage) > 0,
+			"corpus_uncovered_slice_count": matrixCorpusCoverage["uncovered_corpus_slice_count"],
+			"latest_evidence_timestamp":    stringOrNil(latestEvidenceTimestamp),
+			"fresh_inputs":                 len(freshness) - staleInputs,
+			"stale_inputs":                 staleInputs,
 		},
 		"freshness":           freshness,
 		"parity_entries":      parityEntries,
@@ -1473,12 +1874,12 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 		}
 	}
 	return map[string]any{
-		"run_id":                   runID,
-		"generated_at":             utcISOTime(generatedAt),
-		"status":                   status,
-		"severity":                 severity,
-		"bundle_path":              relAutomationPath(bundleDir, root),
-		"summary_path":             relAutomationPath(filepath.Join(bundleDir, "summary.json"), root),
+		"run_id":       runID,
+		"generated_at": utcISOTime(generatedAt),
+		"status":       status,
+		"severity":     severity,
+		"bundle_path":  relAutomationPath(bundleDir, root),
+		"summary_path": relAutomationPath(filepath.Join(bundleDir, "summary.json"), root),
 		"artifacts": map[string]any{
 			"shadow_compare_report_path":    relAutomationPath(compareBundlePath, root),
 			"shadow_matrix_report_path":     relAutomationPath(matrixBundlePath, root),
@@ -1497,17 +1898,17 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 			"fresh_inputs":         automationInt(scorecardSummary["fresh_inputs"], 0),
 		},
 		"rollback_trigger_surface": map[string]any{
-			"status":                   lookupMap(rollbackReport, "summary", "status"),
-			"automation_boundary":      lookupMap(rollbackReport, "summary", "automation_boundary"),
+			"status":                     lookupMap(rollbackReport, "summary", "status"),
+			"automation_boundary":        lookupMap(rollbackReport, "summary", "automation_boundary"),
 			"automated_rollback_trigger": automationBool(lookupMap(rollbackReport, "summary", "automated_rollback_trigger")),
-			"distinctions":             lookupMap(rollbackReport, "summary", "distinctions"),
-			"issue":                    lookupMap(rollbackReport, "issue"),
-			"digest_path":              rollbackReport["digest_path"],
-			"summary_path":             relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
+			"distinctions":               lookupMap(rollbackReport, "summary", "distinctions"),
+			"issue":                      lookupMap(rollbackReport, "issue"),
+			"digest_path":                rollbackReport["digest_path"],
+			"summary_path":               relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
 		},
-		"compare_trace_id":     compareReport["trace_id"],
-		"matrix_trace_ids":     matrixTraceIDs,
-		"cutover_checkpoints":  scorecardReport["cutover_checkpoints"],
+		"compare_trace_id":    compareReport["trace_id"],
+		"matrix_trace_ids":    matrixTraceIDs,
+		"cutover_checkpoints": scorecardReport["cutover_checkpoints"],
 		"closeout_commands": []string{
 			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
 			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
@@ -1575,15 +1976,15 @@ func buildLiveShadowRollup(recentRuns []map[string]any, limit int, generatedAt t
 			driftDetectedRuns++
 		}
 		entries = append(entries, map[string]any{
-			"run_id":                item["run_id"],
-			"generated_at":          item["generated_at"],
-			"status":                item["status"],
-			"severity":              severity,
+			"run_id":                    item["run_id"],
+			"generated_at":              item["generated_at"],
+			"status":                    item["status"],
+			"severity":                  severity,
 			"latest_evidence_timestamp": item["latest_evidence_timestamp"],
-			"drift_detected_count":  driftDetectedCount,
-			"stale_inputs":          staleInputs,
-			"bundle_path":           item["bundle_path"],
-			"summary_path":          item["summary_path"],
+			"drift_detected_count":      driftDetectedCount,
+			"stale_inputs":              staleInputs,
+			"bundle_path":               item["bundle_path"],
+			"summary_path":              item["summary_path"],
 		})
 	}
 	status := "parity-ok"
@@ -2071,6 +2472,23 @@ func resolveAutomationPath(path string) string {
 	return filepath.Join("..", path)
 }
 
+func resolveAutomationEvidencePath(repoRoot string, bigclawGoRoot string, path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	searchRoots := []string{repoRoot}
+	if !strings.HasPrefix(filepath.ToSlash(path), "bigclaw-go/") {
+		searchRoots = append(searchRoots, bigclawGoRoot)
+	}
+	for _, root := range searchRoots {
+		resolved := filepath.Join(root, path)
+		if _, err := os.Stat(resolved); err == nil {
+			return resolved
+		}
+	}
+	return filepath.Join(searchRoots[0], path)
+}
+
 func utcISOTime(moment time.Time) string {
 	return moment.UTC().Format(time.RFC3339Nano)
 }
@@ -2140,6 +2558,35 @@ func stringOrNil(value string) any {
 	return value
 }
 
+func firstNonEmptyAny(values ...any) any {
+	for _, value := range values {
+		text := trim(fmt.Sprint(value))
+		if text != "" && text != "<nil>" {
+			return text
+		}
+	}
+	return nil
+}
+
+func firstIntAny(values ...any) int {
+	for _, value := range values {
+		switch typed := value.(type) {
+		case int:
+			return typed
+		case int64:
+			return int(typed)
+		case float64:
+			return int(typed)
+		}
+	}
+	return 0
+}
+
+func automationAnySlice(value any) []any {
+	items, _ := value.([]any)
+	return items
+}
+
 func automationStringSlice(value any) []string {
 	items, _ := value.([]any)
 	if items == nil {
@@ -2155,6 +2602,145 @@ func automationStringSlice(value any) []string {
 		}
 	}
 	return out
+}
+
+func parseAutomationTime(value string) time.Time {
+	value = trim(value)
+	if value == "" {
+		return time.Time{}
+	}
+	parsed, err := time.Parse(time.RFC3339, strings.ReplaceAll(value, "Z", "+00:00"))
+	if err != nil {
+		return time.Time{}
+	}
+	return parsed
+}
+
+func automationCollectStatusesFromRuns(runs []map[string]any) []string {
+	statuses := make([]string, 0, len(runs))
+	for _, run := range runs {
+		statuses = append(statuses, fmt.Sprint(run["status"]))
+	}
+	return statuses
+}
+
+func automationPythonBoolString(value bool) string {
+	if value {
+		return "True"
+	}
+	return "False"
+}
+
+func automationPythonListString(values []string) string {
+	items := make([]string, 0, len(values))
+	for _, value := range values {
+		items = append(items, fmt.Sprintf("'%s'", value))
+	}
+	return "[" + strings.Join(items, ", ") + "]"
+}
+
+func automationPythonDictString(values map[string]any) string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	items := make([]string, 0, len(keys))
+	for _, key := range keys {
+		value := values[key]
+		switch typed := value.(type) {
+		case string:
+			items = append(items, fmt.Sprintf("'%s': '%s'", key, typed))
+		default:
+			items = append(items, fmt.Sprintf("'%s': %v", key, typed))
+		}
+	}
+	return "{" + strings.Join(items, ", ") + "}"
+}
+
+func automationValidationLaneScorecard(runs []map[string]any, lane string) map[string]any {
+	statuses := []string{}
+	enabledRuns := 0
+	succeededRuns := 0
+	for _, run := range runs {
+		section, _ := run[lane].(map[string]any)
+		enabled := automationBool(section["enabled"])
+		status := "disabled"
+		if enabled {
+			status = fmt.Sprint(section["status"])
+			enabledRuns++
+			if status == "succeeded" {
+				succeededRuns++
+			}
+		}
+		statuses = append(statuses, status)
+	}
+	latest := map[string]any{}
+	if len(runs) > 0 {
+		latest, _ = runs[0][lane].(map[string]any)
+	}
+	return map[string]any{
+		"lane":           lane,
+		"latest_enabled": automationBool(latest["enabled"]),
+		"latest_status": func() string {
+			if len(latest) == 0 {
+				return "missing"
+			}
+			return fmt.Sprint(latest["status"])
+		}(),
+		"recent_statuses":           statuses,
+		"enabled_runs":              enabledRuns,
+		"succeeded_runs":            succeededRuns,
+		"consecutive_successes":     automationConsecutiveSuccesses(statuses),
+		"all_recent_runs_succeeded": enabledRuns > 0 && enabledRuns == succeededRuns,
+	}
+}
+
+func automationConsecutiveSuccesses(statuses []string) int {
+	count := 0
+	for _, status := range statuses {
+		if status != "succeeded" {
+			break
+		}
+		count++
+	}
+	return count
+}
+
+func normalizeAutomationContinuationEnforcementMode(mode string, legacy bool) (string, error) {
+	mode = strings.ToLower(trim(mode))
+	if mode == "" {
+		if legacy {
+			mode = "fail"
+		} else {
+			mode = "hold"
+		}
+	}
+	switch mode {
+	case "review", "hold", "fail":
+		return mode, nil
+	default:
+		return "", fmt.Errorf("unsupported enforcement mode %q; expected one of review, hold, fail", mode)
+	}
+}
+
+func buildAutomationContinuationEnforcementSummary(recommendation string, mode string) map[string]any {
+	if recommendation == "go" {
+		return map[string]any{"mode": mode, "outcome": "pass", "exit_code": 0}
+	}
+	switch mode {
+	case "review":
+		return map[string]any{"mode": mode, "outcome": "review-only", "exit_code": 0}
+	case "hold":
+		return map[string]any{"mode": mode, "outcome": "hold", "exit_code": 2}
+	default:
+		return map[string]any{"mode": mode, "outcome": "fail", "exit_code": 1}
+	}
+}
+
+func automationPathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 func automationInt(value any, fallback int) int {
