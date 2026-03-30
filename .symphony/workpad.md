@@ -236,3 +236,49 @@ Repository inventory at start of lane:
 - `rg -n "legacy_shim|workspace_bootstrap_cli" src scripts tests bigclaw-go -g '*.py' -g '*.go' -g '*.md' -g '*.sh'`
 - `python3 -m compileall scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py src/bigclaw/__main__.py`
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+
+## BIG-GO-1014 Refill Sweep D Continuation 2
+
+### Plan
+
+- Remove additional `src/bigclaw/**` residual modules that have no remaining
+  live code imports.
+- Fold workspace bootstrap validation helpers into
+  `src/bigclaw/workspace_bootstrap.py` so the standalone validation module can
+  be retired.
+- Update the targeted workspace bootstrap test import path and rerun only the
+  affected validation slice.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` further without touching unrelated dirty files in
+  the worktree.
+- Preserve the workspace bootstrap validation helper behavior after the merge.
+- Record exact validation commands and outcomes for this continuation.
+
+### Validation
+
+- `rg -n "parallel_refill|workspace_bootstrap_validation|build_validation_report" src tests docs bigclaw-go -g '*.py' -g '*.md' -g '*.go'`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py -q`
+- `python3 -m compileall src/bigclaw/workspace_bootstrap.py`
+
+### Results
+
+- Deleted `src/bigclaw/parallel_refill.py`.
+- Merged validation helpers from `src/bigclaw/workspace_bootstrap_validation.py`
+  into `src/bigclaw/workspace_bootstrap.py`, then deleted the standalone module.
+- Updated `tests/test_workspace_bootstrap.py` to load
+  `workspace_bootstrap.py` directly, isolating this validation slice from
+  unrelated package-level dirty imports in the shared worktree.
+- Repository counts after continuation:
+  - total `py` files: `80`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `17`
+- Validation outcomes:
+  - `rg -n "parallel_refill|workspace_bootstrap_validation|build_validation_report" src tests docs bigclaw-go -g '*.py' -g '*.md' -g '*.go'`
+    - Result: only live references left were the updated test import, merged
+      helper definitions, and stale doc mentions.
+  - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py -q`
+    - Result: `9 passed in 3.02s`
+  - `python3 -m compileall src/bigclaw/workspace_bootstrap.py tests/test_workspace_bootstrap.py`
+    - Result: success

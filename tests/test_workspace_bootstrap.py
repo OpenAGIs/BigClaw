@@ -1,13 +1,20 @@
+import importlib.util
 import subprocess
+import sys
 from pathlib import Path
 
-from bigclaw.workspace_bootstrap import (
-    bootstrap_workspace,
-    cache_root_for_repo,
-    cleanup_workspace,
-    repo_cache_key,
-)
-from bigclaw.workspace_bootstrap_validation import build_validation_report
+MODULE_PATH = Path(__file__).resolve().parents[1] / "src" / "bigclaw" / "workspace_bootstrap.py"
+SPEC = importlib.util.spec_from_file_location("bigclaw_workspace_bootstrap_test_module", MODULE_PATH)
+assert SPEC is not None and SPEC.loader is not None
+WORKSPACE_BOOTSTRAP = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = WORKSPACE_BOOTSTRAP
+SPEC.loader.exec_module(WORKSPACE_BOOTSTRAP)
+
+bootstrap_workspace = WORKSPACE_BOOTSTRAP.bootstrap_workspace
+build_validation_report = WORKSPACE_BOOTSTRAP.build_validation_report
+cache_root_for_repo = WORKSPACE_BOOTSTRAP.cache_root_for_repo
+cleanup_workspace = WORKSPACE_BOOTSTRAP.cleanup_workspace
+repo_cache_key = WORKSPACE_BOOTSTRAP.repo_cache_key
 
 
 def git(repo: Path, *args: str) -> str:
