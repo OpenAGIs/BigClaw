@@ -1,20 +1,26 @@
-Issue: BIG-GO-1011
+Issue: BIG-GO-1020
 
 Plan
-- Inspect repository-root and near-root Python packaging/config residue: `pyproject.toml`, `setup.py`, `setup.cfg`, `MANIFEST.in`, `*.egg-info`, and bootstrap/docs references that still imply root packaging workflows.
-- Remove or tighten only the remaining root/config/bootstrap residue that still treats the repo root as a Python-managed environment surface.
-- Run targeted validation for the touched bootstrap/config/docs paths and capture exact commands and results.
-- Commit and push the scoped change set to the current remote branch.
+- Inspect repository-level Python residue and pick a narrow slice that lowers the `.py` file count without changing core product behavior.
+- Replace the five `scripts/ops/*.py` operator compatibility shims with shell wrappers that dispatch into `scripts/ops/bigclawctl`, preserving the existing wrapper behavior for `github-sync`, `refill`, and workspace commands.
+- Update the minimal operator-facing docs that still advertise those Python wrapper paths so the repository no longer points users at deleted `.py` entrypoints.
+- Run targeted validation on the new shell wrappers and repo counts, then commit and push the scoped change.
 
 Acceptance
-- Changes are limited to repository root/config/python packaging residuals and directly related docs or bootstrap scripts.
-- Repository root remains free of `pyproject.toml`, `setup.py`, and `*.egg-info` assets.
-- Any remaining root bootstrap flow avoids unnecessary Python packaging behavior and reflects the Go-mainline posture.
-- Final report includes the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- Repository Python file count decreases through direct removal of repo-level `.py` assets.
+- The removed Python assets are replaced by working repo-native wrappers or equivalent documented entrypoints.
+- Changes stay scoped to the wrapper migration slice and directly related docs/workpad updates.
+- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
 
 Validation
-- `find . -maxdepth 1 \\( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name 'MANIFEST.in' -o -name '*.egg-info' -o -name '*.py' \\) | sort`
-- `bash scripts/dev_bootstrap.sh`
-- `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
+- `find . -type f -name '*.py' | wc -l`
+- `find . -type f -name '*.go' | wc -l`
+- `find . -maxdepth 2 \\( -name 'pyproject.toml' -o -name 'setup.py' \\) | sort`
+- `bash scripts/ops/bigclaw-github-sync status --json`
+- `bash scripts/ops/bigclaw-refill-queue --help`
+- `bash scripts/ops/symphony-workspace-bootstrap --help`
+- `bash scripts/ops/symphony-workspace-validate --help`
+- `BIGCLAW_BOOTSTRAP_REPO_URL=git@github.com:OpenAGIs/BigClaw.git BIGCLAW_BOOTSTRAP_CACHE_KEY=openagis-bigclaw bash scripts/ops/bigclaw-workspace-bootstrap --help`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
 - `git diff --stat`
 - `git status --short`

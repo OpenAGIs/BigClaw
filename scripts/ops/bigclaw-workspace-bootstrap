@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+append_flag=true
+for arg in "$@"; do
+  case "$arg" in
+    --repo-url|--repo-url=*)
+      append_flag=false
+      ;;
+  esac
+done
+
+args=("$@")
+if [ "$append_flag" = true ]; then
+  args+=(--repo-url "${BIGCLAW_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}")
+fi
+
+append_flag=true
+for arg in "${args[@]}"; do
+  case "$arg" in
+    --cache-key|--cache-key=*)
+      append_flag=false
+      ;;
+  esac
+done
+
+if [ "$append_flag" = true ]; then
+  args+=(--cache-key "${BIGCLAW_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}")
+fi
+
+exec bash "$script_dir/bigclawctl" workspace "${args[@]}"
