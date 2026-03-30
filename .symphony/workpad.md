@@ -25,6 +25,7 @@ Candidate batch:
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/saved_views.py`
 - `src/bigclaw/event_bus.py`
+- `src/bigclaw/execution_contract.py`
 
 Planned retainers for this lane:
 
@@ -118,6 +119,9 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `src/bigclaw/event_bus.py`
   - Deleted.
   - Reason: only legacy Python tests referenced it; the active event bus surface now lives under `bigclaw-go/internal/events/bus.go` with Go tests.
+- `src/bigclaw/execution_contract.py`
+  - Deleted.
+  - Reason: only legacy Python tests referenced it; cutover docs explicitly assign the execution contract to `bigclaw-go/internal/contract/execution.go`, with Go tests covering the contract audit, role matrix, and operations API draft.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
@@ -157,14 +161,17 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `tests/test_event_bus.py`
   - Deleted.
   - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/events/bus_test.go`.
+- `tests/test_execution_contract.py`
+  - Deleted.
+  - Reason: legacy Python-only test for a module removed in this lane; equivalent behavior is covered by `bigclaw-go/internal/contract/execution_test.go`.
 
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `86`
+- Repository Python files after: `84`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `26`
-- Net reduction: `30`
+- `src/bigclaw/**` Python files after: `25`
+- Net reduction: `32`
 
 ### Validation Record
 
@@ -191,5 +198,7 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
   - Result: `ok  	bigclaw-go/internal/workflow	1.129s`
   - Result: `ok  	bigclaw-go/internal/product	1.497s`
   - Result: `ok  	bigclaw-go/internal/events	2.062s`
+- `cd bigclaw-go && go test ./internal/contract`
+  - Result: `ok  	bigclaw-go/internal/contract	1.188s`
 - `git status --short`
   - Result: later cleanup waves removed repo compatibility modules, workflow/product/events compatibility modules, and their Python-only tests.
