@@ -1,63 +1,74 @@
-# BIG-GO-1001 Workpad
+# BIG-GO-1015 Workpad
 
 ## Scope
 
-Target the remaining repository-root packaging-exit residue after prior removal
-of the Python build surface.
+Target tranche 3 of the remaining `src/bigclaw/**` repository-surface Python
+helpers that already have repo-native Go replacements and no longer need to
+exist as active Python modules.
 
 Batch file list:
 
-- `.github/workflows/ci.yml`
-- `README.md`
-- `reports/OPE-66-validation.md`
-- `reports/BIG-GO-941.md`
-- `scripts/dev_bootstrap.sh`
+- `src/bigclaw/repo_board.py`
+- `src/bigclaw/repo_commits.py`
+- `src/bigclaw/repo_gateway.py`
+- `src/bigclaw/repo_governance.py`
+- `src/bigclaw/repo_registry.py`
+- `src/bigclaw/repo_triage.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_triage.py`
+- `tests/test_repo_collaboration.py`
 
-Packaging artifact inventory at start of lane:
+Context at start of lane:
 
+- `src/bigclaw` Python files: `45`
+- `bigclaw-go` Go files: `267`
 - Root `pyproject.toml`: absent
 - Root `setup.py`: absent
-- Root `setup.cfg`: absent
-- Active workflow references still invoking root packaging:
-  - `.github/workflows/ci.yml`: `pip install -e .[dev]`
-  - `.github/workflows/ci.yml`: `python -m build`
-- Bootstrap residue still installing packaging tooling:
-  - `scripts/dev_bootstrap.sh`: installs Python `build`
-- Historical packaging evidence still describing the removed build path:
-  - `reports/OPE-66-validation.md`
-  - `reports/BIG-GO-941.md`
 
-Current repository Python file count before this lane: `108`
-Current packaging-entry file count before this lane: `5`
+Keep-out files for this lane:
+
+- `src/bigclaw/repo_links.py`
+- `src/bigclaw/repo_plane.py`
+- `src/bigclaw/observability.py`
+
+Reason:
+
+- `observability.py` still imports `repo_links.bind_run_commits` and
+  `repo_plane.RunCommitLink`, so deleting those modules in this lane would
+  broaden scope beyond the safe tranche.
 
 ## Plan
 
-1. Remove active CI usage of deleted root Python packaging entrypoints.
-2. Remove Python bootstrap packaging-tool installation that is no longer needed.
-3. Update operator-facing documentation so it no longer points at obsolete
-   packaging behavior.
-4. Preserve only historical report content that still matches repository
-   reality; delete or rewrite stale packaging-install claims.
-5. Run targeted validation for the touched CI, shell, and documentation paths.
-6. Record delete/replace/keep rationale and Python file count impact.
-7. Commit and push the scoped changes for `BIG-GO-1001`.
+1. Remove the six repo-surface Python modules that already map to checked-in Go
+   implementations under `bigclaw-go/internal/repo` and
+   `bigclaw-go/internal/triage`.
+2. Remove Python tests that only exercised those deleted modules.
+3. Update any remaining Python tests that referenced the removed board helper so
+   the suite remains coherent after deletion.
+4. Run targeted validation for remaining observability and repo-link surfaces,
+   plus inventory counts and diff hygiene.
+5. Commit and push the scoped lane branch for `BIG-GO-1015`.
 
 ## Acceptance
 
-- Produce the exact `BIG-GO-1001` batch file list for packaging-exit residue.
-- Reduce file count where a packaging-related artifact can be deleted safely in
-  this lane.
-- Document delete/replace/keep rationale for each targeted file.
-- Report the repository-wide Python file count impact.
+- Directly reduce repository-resident Python assets under `src/bigclaw/**`.
+- Keep changes scoped to the tranche-3 repo helper slice only.
+- Report exact impact on `py files`, `go files`, `pyproject.toml`, and
+  `setup.py`.
+- Record exact validation commands and results.
+- End with committed and pushed repository changes; do not substitute tracker
+  state for repo results.
 
 ## Validation
 
-- `find . -name '*.py' | sort | wc -l`
-- `python3 - <<'PY' ... PY` to assert no active CI step still references
-  `pip install -e .` or `python -m build`
-- `python3 - <<'PY' ... PY` to assert `scripts/dev_bootstrap.sh` no longer
-  installs Python `build`
-- `python3 - <<'PY' ... PY` to assert README no longer suggests root packaging
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+- `test -f pyproject.toml && echo present || echo absent`
+- `test -f setup.py && echo present || echo absent`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py`
 - `git diff --check`
 - `git status --short`
 - `git log -1 --stat`
@@ -66,73 +77,70 @@ Current packaging-entry file count before this lane: `5`
 
 ### File Disposition
 
-- `.github/workflows/ci.yml`
-  - Replaced.
-  - Reason: removed the last active root packaging calls (`pip install -e .[dev]`
-    and `python -m build`) and switched CI to source-based validation with
-    `PYTHONPATH=src pytest`.
-- `scripts/dev_bootstrap.sh`
-  - Replaced.
-  - Reason: removed Python `build` installation because the repository root is
-    no longer a Python package build surface.
-- `reports/OPE-66-validation.md`
+- `src/bigclaw/repo_board.py`
   - Deleted.
-  - Reason: it only documented the obsolete editable-install / `setup.py`
-    packaging path and had no remaining repository references.
-- `reports/BIG-GO-941.md`
+  - Reason: repo discussion-board helper already exists in
+    `bigclaw-go/internal/repo/board.go` and had no remaining production Python
+    callers.
+- `src/bigclaw/repo_commits.py`
+  - Deleted.
+  - Reason: repo commit and lineage structs already exist in
+    `bigclaw-go/internal/repo/commits.go`; remaining Python usage was only the
+    deleted gateway test.
+- `src/bigclaw/repo_gateway.py`
+  - Deleted.
+  - Reason: gateway client contract and normalization logic already exist in
+    `bigclaw-go/internal/repo/gateway.go` and had no remaining Python imports.
+- `src/bigclaw/repo_governance.py`
+  - Deleted.
+  - Reason: repo permission contract already exists in
+    `bigclaw-go/internal/repo/governance.go` and had no remaining production
+    Python imports.
+- `src/bigclaw/repo_registry.py`
+  - Deleted.
+  - Reason: repo registry logic already exists in
+    `bigclaw-go/internal/repo/registry.go` and had no remaining Python imports.
+- `src/bigclaw/repo_triage.py`
+  - Deleted.
+  - Reason: repo triage recommendation logic already exists in
+    `bigclaw-go/internal/repo/triage.go` and had no remaining Python imports.
+- `tests/test_repo_board.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only board helper.
+- `tests/test_repo_gateway.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only gateway helper.
+- `tests/test_repo_governance.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only governance helper.
+- `tests/test_repo_registry.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only registry helper.
+- `tests/test_repo_triage.py`
+  - Deleted.
+  - Reason: exercised deleted Python-only triage helper.
+- `tests/test_repo_collaboration.py`
   - Replaced.
-  - Reason: kept as historical evidence for the original root build removal and
-    appended follow-up status that closes the residual packaging references.
-- `README.md`
-  - Kept.
-  - Reason: it already states that root Python packaging must not be used and
-    already documents `PYTHONPATH=src` validation.
+  - Reason: preserved the collaboration merge assertion while removing the last
+    dependency on the deleted `RepoDiscussionBoard` helper.
 
-### Packaging Batch Summary
+### Inventory Impact
 
-- Packaging-residue batch files: `.github/workflows/ci.yml`, `README.md`,
-  `reports/OPE-66-validation.md`, `reports/BIG-GO-941.md`,
-  `scripts/dev_bootstrap.sh`
-- Packaging-related Python files in this batch: none
-- Root packaging entry files currently present: none (`pyproject.toml`,
-  `setup.py`, `setup.cfg` are absent)
-
-### Python File Count Impact
-
-- Repository Python files before: `108`
-- Repository Python files after: `108`
-- Net reduction: `0`
-- Deleted packaging-related files in this lane: `1` markdown report
+- `src/bigclaw` Python files before: `45`
+- `src/bigclaw` Python files after: `39`
+- Net `src/bigclaw` reduction: `6`
+- Repository-wide Python files before: `108`
+- Repository-wide Python files after: `97`
+- Net repository-wide Python reduction: `11`
+- `bigclaw-go` Go files before: `267`
+- `bigclaw-go` Go files after: `267`
+- Net Go file reduction: `0`
+- Root `pyproject.toml`: absent before and after
+- Root `setup.py`: absent before and after
 
 ### Validation Record
 
-- `find . -name '*.py' | sort | wc -l`
-  - Result before: `108`
-  - Result after: `108`
-- `python3 - <<'PY' ... PY` on `.github/workflows/ci.yml`
-  - Result: `ok`
-- `python3 - <<'PY' ... PY` on `scripts/dev_bootstrap.sh`
-  - Result: `ok`
-- `python3 - <<'PY' ... PY` on `README.md`
-  - Result: `ok`
-- `bash -n scripts/dev_bootstrap.sh`
-  - Result: exit `0`
-- `PYTHONPATH=src python3 -m pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml`
-  - Result: failed under local Python `3.9.6`; one collection error from
-    `bigclaw-go/scripts/e2e/export_validation_bundle.py` using `Path | None`
-    syntax that requires Python `3.10+`
-- `PYTHONPATH=src python3 -m pytest tests --cov=bigclaw --cov-report=term-missing --cov-report=xml`
-  - Result: `226 passed`, `3 failed`
-  - Known unrelated failures:
-    - `tests/test_live_shadow_bundle.py::test_export_live_shadow_bundle_generates_index_and_rollup`
-    - `tests/test_live_shadow_bundle.py::test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd`
-    - `tests/test_parallel_validation_bundle.py::test_export_validation_bundle_generates_latest_reports_and_index`
-  - Failure basis: two tests still point at migration scripts already removed by
-    an earlier lane; one still executes the Python 3.11-only
-    `export_validation_bundle.py` under local Python `3.9.6`
-- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_reports.py`
-  - Result: `43 passed in 3.11s`
-- `git diff --check`
-  - Result: clean
-- `git status --short`
-  - Result: scoped issue files only before commit
+- `rg -n "repo_board|repo_commits|repo_gateway|repo_governance|repo_registry|repo_triage" src tests || true`
+  - Result: no matches
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py tests/test_repo_rollout.py tests/test_repo_collaboration.py`
+  - Result: `11 passed in 0.17s`
