@@ -341,25 +341,25 @@ Repository inventory at start of lane:
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `12`
-- Net `tests/*.py` reduction: `26`
+- `tests/*.py` files after: `11`
+- Net `tests/*.py` reduction: `27`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `82`
-- Net repo `*.py` reduction: `26`
+- Repo `*.py` files after: `81`
+- Net repo `*.py` reduction: `27`
 - Repo `*.go` files before: `267`
-- Repo `*.go` files after: `283`
-- Net repo `*.go` increase: `16`
+- Repo `*.go` files after: `285`
+- Net repo `*.go` increase: `18`
 - Root `pyproject.toml`: absent before, absent after
 - Root `setup.py`: absent before, absent after
 
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `12`
+  - Result: `11`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `82`
+  - Result: `81`
 - `find . -name '*.go' | sort | wc -l`
-  - Result: `283`
+  - Result: `285`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
   - Result: `ok  	bigclaw-go/internal/product	2.711s`
 - `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths'`
@@ -422,3 +422,7 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/internal/regression	1.641s`
 - `cd bigclaw-go && go test ./internal/orchestrationcompat`
   - Result: `ok  	bigclaw-go/internal/orchestrationcompat	1.071s`
+- `cd bigclaw-go && go test ./internal/auditeventscompat`
+  - Result: `ok  	bigclaw-go/internal/auditeventscompat	1.431s`
+- `git status --short`
+  - Result: clean
