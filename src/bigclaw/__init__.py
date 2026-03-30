@@ -263,7 +263,7 @@ from .collaboration import (
     build_collaboration_thread_from_audits,
 )
 _install_compat_surface_module("repo_board", sys.modules[f"{__name__}.collaboration"], ["RepoPost", "RepoDiscussionBoard"])
-from .saved_views import (
+from .reports import (
     AlertDigestSubscription,
     SavedView,
     SavedViewCatalog,
@@ -271,6 +271,19 @@ from .saved_views import (
     SavedViewFilter,
     SavedViewLibrary,
     render_saved_view_report,
+)
+_install_compat_surface_module(
+    "saved_views",
+    sys.modules[f"{__name__}.reports"],
+    [
+        "AlertDigestSubscription",
+        "SavedView",
+        "SavedViewCatalog",
+        "SavedViewCatalogAudit",
+        "SavedViewFilter",
+        "SavedViewLibrary",
+        "render_saved_view_report",
+    ],
 )
 from .governance import (
     FreezeException,

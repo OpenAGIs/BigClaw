@@ -17,6 +17,7 @@ Batch file list:
 - `src/bigclaw/memory.py`
 - `src/bigclaw/issue_archive.py`
 - `src/bigclaw/github_sync.py`
+- `src/bigclaw/saved_views.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -115,6 +116,9 @@ Selected tranche rationale:
 - `github_sync.py` is repository sync automation and fits naturally into
   `repo_gateway.py`, which already owns repo commit/diff normalization and
   related gateway-facing repo state helpers.
+- `saved_views.py` is a report/UI catalog and audit surface that fits
+  naturally into `reports.py`, which already owns adjacent report rendering and
+  operator-facing closeout/dashboard structures.
 
 ## Plan
 
@@ -201,6 +205,10 @@ Selected tranche rationale:
     `bigclaw.github_sync` compatibility via `__init__.py`.
 44. Run targeted repo-sync validation for the fourteenth consolidation batch
     and push a follow-up commit.
+45. Fold `saved_views.py` into `reports.py` and preserve
+    `bigclaw.saved_views` compatibility via `__init__.py`.
+46. Run targeted saved-view/report validation for the fifteenth consolidation
+    batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -248,6 +256,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_memory.py tests/test_planning.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_saved_views.py tests/test_reports.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.saved_views import SavedViewLibrary, SavedViewCatalog`
+  `print(SavedViewLibrary.__name__, SavedViewCatalog.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.github_sync import ensure_repo_sync, inspect_repo_sync`
   `print(ensure_repo_sync.__name__, inspect_repo_sync.__name__)`
@@ -505,6 +518,18 @@ Selected tranche rationale:
 - `src/bigclaw/github_sync.py`
   - Deleted.
   - Reason: its contents moved into `repo_gateway.py`.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: absorbed saved-view catalog models, audit logic, and report
+    rendering so operator-facing report and dashboard support surfaces live in
+    one module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.saved_views` compatibility submodule while
+    keeping the saved-view types exported from the package root.
+- `src/bigclaw/saved_views.py`
+  - Deleted.
+  - Reason: its contents moved into `reports.py`.
 
 ### Inventory Impact
 
@@ -523,7 +548,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 12: `24`
 - `src/bigclaw/**/*.py` after batch 13: `23`
 - `src/bigclaw/**/*.py` after batch 14: `22`
-- Net Python module reduction in tranche so far: `23`
+- `src/bigclaw/**/*.py` after batch 15: `21`
+- Net Python module reduction in tranche so far: `24`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -637,3 +663,9 @@ Selected tranche rationale:
   - Result: `ensure_repo_sync inspect_repo_sync`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 14: `22`
+- `PYTHONPATH=src python3 -m pytest tests/test_saved_views.py tests/test_reports.py`
+  - Result: `38 passed in 0.10s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.saved_views`
+  - Result: `SavedViewLibrary SavedViewCatalog`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 15: `21`
