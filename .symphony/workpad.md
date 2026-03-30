@@ -31,6 +31,7 @@ Batch file list:
 - `tests/test_event_bus.py`
 - `tests/test_design_system.py`
 - `tests/test_console_ia.py`
+- `tests/test_workspace_bootstrap.py`
 - `tests/test_control_center.py`
 
 Go replacement inventory:
@@ -50,6 +51,7 @@ Go replacement inventory:
 - `bigclaw-go/internal/eventbuscompat/event_bus_test.go`
 - `bigclaw-go/internal/designsystemcompat/design_system_test.go`
 - `bigclaw-go/internal/consoleiacompat/console_ia_test.go`
+- `bigclaw-go/internal/bootstrap/bootstrap_test.go`
 - `bigclaw-go/internal/controlcentercompat/control_center_test.go`
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
@@ -101,6 +103,9 @@ Repository inventory at start of lane:
 12. Add a minimal Go-native replacement for the residual console information
     architecture and interaction-draft contract, then delete the root Python
     test once parity is covered.
+13. Extend the Go workspace bootstrap coverage to match the residual
+    cache/worktree validation contract, then delete the root Python test once
+    parity is covered.
 
 ## Acceptance
 
@@ -140,6 +145,7 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/eventbuscompat`
 - `cd bigclaw-go && go test ./internal/designsystemcompat`
 - `cd bigclaw-go && go test ./internal/consoleiacompat`
+- `cd bigclaw-go && go test ./internal/bootstrap`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
 
 ## Results
@@ -248,15 +254,20 @@ Repository inventory at start of lane:
     page interaction-draft, and `BIG-4203` release-ready builder coverage is
     now covered directly in
     `bigclaw-go/internal/consoleiacompat/console_ia_test.go`.
+- `tests/test_workspace_bootstrap.py`
+  - Deleted.
+  - Reason: its repo-cache derivation, warm-cache reuse, stale-seed recovery,
+    cleanup preservation, and bootstrap validation-summary coverage is now
+    covered directly in `bigclaw-go/internal/bootstrap/bootstrap_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `16`
-- Net `tests/*.py` reduction: `22`
+- `tests/*.py` files after: `15`
+- Net `tests/*.py` reduction: `23`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `86`
-- Net repo `*.py` reduction: `22`
+- Repo `*.py` files after: `85`
+- Net repo `*.py` reduction: `23`
 - Repo `*.go` files before: `267`
 - Repo `*.go` files after: `281`
 - Net repo `*.go` increase: `14`
@@ -266,9 +277,9 @@ Repository inventory at start of lane:
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `16`
+  - Result: `15`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `86`
+  - Result: `85`
 - `find . -name '*.go' | sort | wc -l`
   - Result: `281`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
@@ -304,8 +315,9 @@ Repository inventory at start of lane:
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result: `.symphony/workpad.md` modified, `tests/test_console_ia.py`
-    deleted, and `bigclaw-go/internal/consoleiacompat/` added
+  - Result: `.symphony/workpad.md` modified,
+    `bigclaw-go/internal/bootstrap/bootstrap_test.go` modified, and
+    `tests/test_workspace_bootstrap.py` deleted
 - `cd bigclaw-go && go test ./internal/validationpolicy`
   - Result: `ok  	bigclaw-go/internal/validationpolicy	1.154s`
 - `cd bigclaw-go && go test ./internal/taskmemory`
@@ -320,3 +332,5 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/internal/designsystemcompat	0.514s`
 - `cd bigclaw-go && go test ./internal/consoleiacompat`
   - Result: `ok  	bigclaw-go/internal/consoleiacompat	0.902s`
+- `cd bigclaw-go && go test ./internal/bootstrap`
+  - Result: `ok  	bigclaw-go/internal/bootstrap	4.163s`
