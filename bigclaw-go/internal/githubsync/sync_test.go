@@ -539,3 +539,126 @@ func TestInspectRepoSyncReportsDivergedWhenLocalAndRemoteBothMoved(t *testing.T)
 		t.Fatalf("expected diverged relation, got %+v", status)
 	}
 }
+
+func TestEnsureRepoSyncFastForwardsCleanBranchBeforePush(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", "--initial-branch=main", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	seed := filepath.Join(tmp, "seed")
+	if err := os.MkdirAll(seed, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, seed)
+	branchRename := exec.Command("git", "branch", "-M", "main")
+	branchRename.Dir = seed
+	if output, err := branchRename.CombinedOutput(); err != nil {
+		t.Fatalf("git branch -M main failed: %v (%s)", err, string(output))
+	}
+	addOrigin := exec.Command("git", "remote", "add", "origin", remote)
+	addOrigin.Dir = seed
+	if output, err := addOrigin.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	configHooks := exec.Command("git", "config", "core.hooksPath", "/dev/null")
+	configHooks.Dir = seed
+	if output, err := configHooks.CombinedOutput(); err != nil {
+		t.Fatalf("git config core.hooksPath failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, seed, "README.md", "seed\n", "seed")
+	pushSeed := exec.Command("git", "push", "-u", "origin", "main")
+	pushSeed.Dir = seed
+	if output, err := pushSeed.CombinedOutput(); err != nil {
+		t.Fatalf("git push -u origin main failed: %v (%s)", err, string(output))
+	}
+
+	stale := filepath.Join(tmp, "stale")
+	if output, err := exec.Command("git", "clone", "-b", "main", remote, stale).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+
+	commitFile(t, seed, "README.md", "seed\nnext\n", "next")
+	pushNext := exec.Command("git", "push", "origin", "main")
+	pushNext.Dir = seed
+	if output, err := pushNext.CombinedOutput(); err != nil {
+		t.Fatalf("git push origin main failed: %v (%s)", err, string(output))
+	}
+
+	status, err := EnsureRepoSync(stale, "origin", true, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !status.Synced || !status.RelationKnown || status.Ahead != 0 || status.Behind != 0 || status.Diverged {
+		t.Fatalf("expected fast-forwarded clean branch to converge with remote, got %+v", status)
+	}
+	if status.LocalSHA != status.RemoteSHA {
+		t.Fatalf("expected local and remote SHAs to match after fast-forward, got %+v", status)
+	}
+	if gotHead, gotRemote := gitOutput(t, stale, "rev-parse", "HEAD"), gitOutput(t, stale, "rev-parse", "origin/main"); gotHead != gotRemote {
+		t.Fatalf("expected local HEAD and origin/main to match, got HEAD=%s origin/main=%s", gotHead, gotRemote)
+	}
+}
+
+func TestEnsureRepoSyncSkipsPushingCleanBranchAtOriginDefaultHead(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", "--initial-branch=main", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	seed := filepath.Join(tmp, "seed")
+	if err := os.MkdirAll(seed, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, seed)
+	branchRename := exec.Command("git", "branch", "-M", "main")
+	branchRename.Dir = seed
+	if output, err := branchRename.CombinedOutput(); err != nil {
+		t.Fatalf("git branch -M main failed: %v (%s)", err, string(output))
+	}
+	addOrigin := exec.Command("git", "remote", "add", "origin", remote)
+	addOrigin.Dir = seed
+	if output, err := addOrigin.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, seed, "README.md", "seed\n", "seed")
+	pushSeed := exec.Command("git", "push", "-u", "origin", "main")
+	pushSeed.Dir = seed
+	if output, err := pushSeed.CombinedOutput(); err != nil {
+		t.Fatalf("git push -u origin main failed: %v (%s)", err, string(output))
+	}
+
+	repo := filepath.Join(tmp, "repo")
+	if output, err := exec.Command("git", "clone", "-b", "main", remote, repo).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+	checkoutBranch := exec.Command("git", "checkout", "-b", "symphony/OPE-321")
+	checkoutBranch.Dir = repo
+	if output, err := checkoutBranch.CombinedOutput(); err != nil {
+		t.Fatalf("git checkout -b symphony/OPE-321 failed: %v (%s)", err, string(output))
+	}
+
+	inspected, err := InspectRepoSync(repo, "origin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	status, err := EnsureRepoSync(repo, "origin", true, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if inspected.RemoteExists || !inspected.Synced {
+		t.Fatalf("expected clean issue branch at remote default head to be treated as synced without remote branch, got %+v", inspected)
+	}
+	if status.RemoteExists || !status.Synced || status.Pushed {
+		t.Fatalf("expected ensure sync to skip push for default-head fallback, got %+v", status)
+	}
+	if got := gitOutput(t, repo, "ls-remote", "--heads", "origin", "symphony/OPE-321"); got != "" {
+		t.Fatalf("expected no remote issue branch, got %q", got)
+	}
+	if gotHead, gotRemote := gitOutput(t, repo, "rev-parse", "HEAD"), gitOutput(t, repo, "rev-parse", "origin/main"); gotHead != gotRemote {
+		t.Fatalf("expected local HEAD to stay at origin/main, got HEAD=%s origin/main=%s", gotHead, gotRemote)
+	}
+}
