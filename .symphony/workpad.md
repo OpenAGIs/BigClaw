@@ -13,6 +13,7 @@ Candidate batch:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/cost_control.py`
 - `src/bigclaw/roadmap.py`
+- `src/bigclaw/connectors.py`
 
 Planned retainers for this lane:
 
@@ -70,6 +71,9 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `src/bigclaw/roadmap.py`
   - Deleted.
   - Reason: no remaining in-repo Python imports; Go regression coverage in `bigclaw-go/internal/regression/roadmap_contract_test.go` now owns the canonical execution-pack roadmap contract.
+- `src/bigclaw/connectors.py`
+  - Deleted.
+  - Reason: no remaining in-repo Python imports; parity matrix maps `SourceIssue` and connector stubs to `bigclaw-go/internal/intake/types.go` and `bigclaw-go/internal/intake/connector.go`, both covered by Go intake tests.
 - `src/bigclaw/__init__.py`
   - Updated.
   - Reason: removed stale package-level imports/exports for deleted modules so `import bigclaw` no longer hard-fails on removed files.
@@ -77,10 +81,10 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 ### Python File Count Impact
 
 - Repository Python files before: `116`
-- Repository Python files after: `109`
+- Repository Python files after: `108`
 - `src/bigclaw/**` Python files before: `45`
-- `src/bigclaw/**` Python files after: `38`
-- Net reduction: `7`
+- `src/bigclaw/**` Python files after: `37`
+- Net reduction: `8`
 
 ### Validation Record
 
@@ -95,5 +99,7 @@ Current `src/bigclaw/**` Python file count before this lane: `45`
 - `cd bigclaw-go && go test ./internal/costcontrol ./internal/regression`
   - Result: `ok  	bigclaw-go/internal/costcontrol	1.088s`
   - Result: `ok  	bigclaw-go/internal/regression	1.332s`
+- `cd bigclaw-go && go test ./internal/intake`
+  - Result: `ok  	bigclaw-go/internal/intake	(cached)`
 - `git status --short`
-  - Result: before the second commit, only `src/bigclaw/__init__.py`, `src/bigclaw/cost_control.py`, and `src/bigclaw/roadmap.py` changed.
+  - Result: before the third commit, only `src/bigclaw/__init__.py` and `src/bigclaw/connectors.py` changed.

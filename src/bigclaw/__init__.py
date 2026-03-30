@@ -119,7 +119,6 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -445,10 +444,6 @@ __all__ = [
     "Scheduler",
     "SchedulerDecision",
     "ExecutionRecord",
-    "SourceIssue",
-    "GitHubConnector",
-    "LinearConnector",
-    "JiraConnector",
     "CommandAction",
     "AuditRequirement",
     "ComponentLibrary",
