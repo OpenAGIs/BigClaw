@@ -34,6 +34,7 @@ Batch file list:
 - `tests/test_workspace_bootstrap.py`
 - `tests/test_parallel_validation_bundle.py`
 - `tests/test_live_shadow_bundle.py`
+- `tests/test_orchestration.py`
 - `tests/test_control_center.py`
 
 Go replacement inventory:
@@ -59,6 +60,7 @@ Go replacement inventory:
 - `bigclaw-go/internal/regression/live_validation_index_test.go`
 - `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`
 - `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
+- `bigclaw-go/internal/orchestrationcompat/orchestration_test.go`
 - `bigclaw-go/internal/controlcentercompat/control_center_test.go`
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
@@ -119,6 +121,9 @@ Repository inventory at start of lane:
 15. Delete the residual root live-shadow bundle exporter test once the
     Go-native CLI exporter and checked-in live-shadow regression surfaces fully
     cover the same manifest and bundle contracts.
+16. Add a minimal Go-native replacement for the residual orchestration planner,
+    policy, report, and ledger contract, then delete the root Python test once
+    parity is covered.
 
 ## Acceptance
 
@@ -163,6 +168,7 @@ Repository inventory at start of lane:
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestLiveValidationIndexStaysAligned'`
 - `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestAutomationExportLiveShadowBundleBuildsManifest'`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned'`
+- `cd bigclaw-go && go test ./internal/orchestrationcompat`
 - `cd bigclaw-go && go test ./internal/controlcentercompat`
 
 ## Results
@@ -291,29 +297,34 @@ Repository inventory at start of lane:
     `bigclaw-go/cmd/bigclawctl/automation_commands_test.go` plus checked-in
     bundle summary/index regression coverage in
     `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`.
+- `tests/test_orchestration.py`
+  - Deleted.
+  - Reason: its orchestration planner, tier policy, report rendering, and
+    ledger-style trace/audit execution coverage is now covered directly in
+    `bigclaw-go/internal/orchestrationcompat/orchestration_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `13`
-- Net `tests/*.py` reduction: `25`
+- `tests/*.py` files after: `12`
+- Net `tests/*.py` reduction: `26`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `83`
-- Net repo `*.py` reduction: `25`
+- Repo `*.py` files after: `82`
+- Net repo `*.py` reduction: `26`
 - Repo `*.go` files before: `267`
-- Repo `*.go` files after: `281`
-- Net repo `*.go` increase: `14`
+- Repo `*.go` files after: `283`
+- Net repo `*.go` increase: `16`
 - Root `pyproject.toml`: absent before, absent after
 - Root `setup.py`: absent before, absent after
 
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `13`
+  - Result: `12`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `83`
+  - Result: `82`
 - `find . -name '*.go' | sort | wc -l`
-  - Result: `281`
+  - Result: `283`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
   - Result: `ok  	bigclaw-go/internal/product	2.711s`
 - `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths'`
@@ -347,8 +358,9 @@ Repository inventory at start of lane:
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result: `.symphony/workpad.md` modified and
-    `tests/test_live_shadow_bundle.py` deleted
+  - Result: `.symphony/workpad.md` modified,
+    `tests/test_orchestration.py` deleted, and
+    `bigclaw-go/internal/orchestrationcompat/` added
 - `cd bigclaw-go && go test ./internal/validationpolicy`
   - Result: `ok  	bigclaw-go/internal/validationpolicy	1.154s`
 - `cd bigclaw-go && go test ./internal/taskmemory`
@@ -373,3 +385,5 @@ Repository inventory at start of lane:
   - Result: `ok  	bigclaw-go/cmd/bigclawctl	1.775s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned'`
   - Result: `ok  	bigclaw-go/internal/regression	1.641s`
+- `cd bigclaw-go && go test ./internal/orchestrationcompat`
+  - Result: `ok  	bigclaw-go/internal/orchestrationcompat	1.071s`
