@@ -1,138 +1,179 @@
-# BIG-GO-1001 Workpad
+# BIG-GO-1017 Workpad
 
 ## Scope
 
-Target the remaining repository-root packaging-exit residue after prior removal
-of the Python build surface.
+Target residual Python tests under `tests/**` whose covered contracts already
+have direct Go-native replacements in `bigclaw-go`.
 
 Batch file list:
 
-- `.github/workflows/ci.yml`
-- `README.md`
-- `reports/OPE-66-validation.md`
-- `reports/BIG-GO-941.md`
-- `scripts/dev_bootstrap.sh`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_execution_contract.py`
+- `tests/test_github_sync.py`
+- `tests/test_governance.py`
+- `tests/test_queue.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_triage.py`
+- `tests/test_saved_views.py`
 
-Packaging artifact inventory at start of lane:
+Go replacement inventory:
 
+- `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+- `bigclaw-go/internal/contract/execution_test.go`
+- `bigclaw-go/internal/githubsync/sync_test.go`
+- `bigclaw-go/internal/governance/freeze_test.go`
+- `bigclaw-go/internal/queue/memory_queue_test.go`
+- `bigclaw-go/internal/queue/sqlite_queue_test.go`
+- `bigclaw-go/internal/queue/file_queue_test.go`
+- `bigclaw-go/internal/repo/repo_surfaces_test.go`
+- `bigclaw-go/internal/repo/governance_test.go`
+- `bigclaw-go/internal/triage/repo_test.go`
+- `bigclaw-go/internal/product/saved_views_test.go`
+
+Repository inventory at start of lane:
+
+- `tests/*.py` files before: `38`
+- Repo `*.py` files before: `108`
+- Repo `*.go` files before: to be measured after edits for impact report
 - Root `pyproject.toml`: absent
 - Root `setup.py`: absent
-- Root `setup.cfg`: absent
-- Active workflow references still invoking root packaging:
-  - `.github/workflows/ci.yml`: `pip install -e .[dev]`
-  - `.github/workflows/ci.yml`: `python -m build`
-- Bootstrap residue still installing packaging tooling:
-  - `scripts/dev_bootstrap.sh`: installs Python `build`
-- Historical packaging evidence still describing the removed build path:
-  - `reports/OPE-66-validation.md`
-  - `reports/BIG-GO-941.md`
-
-Current repository Python file count before this lane: `108`
-Current packaging-entry file count before this lane: `5`
 
 ## Plan
 
-1. Remove active CI usage of deleted root Python packaging entrypoints.
-2. Remove Python bootstrap packaging-tool installation that is no longer needed.
-3. Update operator-facing documentation so it no longer points at obsolete
-   packaging behavior.
-4. Preserve only historical report content that still matches repository
-   reality; delete or rewrite stale packaging-install claims.
-5. Run targeted validation for the touched CI, shell, and documentation paths.
-6. Record delete/replace/keep rationale and Python file count impact.
-7. Commit and push the scoped changes for `BIG-GO-1001`.
+1. Delete only the residual Python test files that already have concrete
+   Go-native replacements.
+2. Keep unrelated Python tests untouched where parity is incomplete or still
+   depends on Python runtime behavior.
+3. Run targeted Go tests for each replacement package that justifies the
+   deletions.
+4. Record exact file-count and root packaging impacts for `py files`,
+   `go files`, `pyproject.toml`, and `setup.py`.
+5. Commit and push the scoped branch for `BIG-GO-1017`.
 
 ## Acceptance
 
-- Produce the exact `BIG-GO-1001` batch file list for packaging-exit residue.
-- Reduce file count where a packaging-related artifact can be deleted safely in
-  this lane.
-- Document delete/replace/keep rationale for each targeted file.
-- Report the repository-wide Python file count impact.
+- Changes operate directly on repository residual Python test assets under
+  `tests/**`.
+- The scoped delete set reduces repository `*.py` file count.
+- Every deleted Python test has an identified Go-native replacement already in
+  the repository.
+- Final report includes impacts on `py files`, `go files`,
+  `pyproject.toml`, and `setup.py`.
+- Validation records exact commands and results.
 
 ## Validation
 
+- `find tests -name '*.py' | sort | wc -l`
 - `find . -name '*.py' | sort | wc -l`
-- `python3 - <<'PY' ... PY` to assert no active CI step still references
-  `pip install -e .` or `python -m build`
-- `python3 - <<'PY' ... PY` to assert `scripts/dev_bootstrap.sh` no longer
-  installs Python `build`
-- `python3 - <<'PY' ... PY` to assert README no longer suggests root packaging
+- `find . -name '*.go' | sort | wc -l`
+- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
+- `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths'`
+- `cd bigclaw-go && go test ./internal/githubsync -run 'TestInstallGitHooksConfiguresCoreHooksPath|TestEnsureRepoSyncPushesHeadToOrigin|TestInspectRepoSyncMarksDirtyWorktree|TestInspectRepoSyncDetachedHeadReportsDefaultBranchSync|TestEnsureRepoSyncRefusesAutoPushWhenDetachedAndUnsynced|TestEnsureRepoSyncPushesDirtyWorktreeWhenRemoteIsBehind|TestEnsureRepoSyncRejectsDirtyWorktreeWhenRemoteMoved|TestInspectRepoSyncReportsAheadWhenLocalHasUnpushedCommits|TestInspectRepoSyncReportsBehindWhenRemoteAdvanced|TestInspectRepoSyncReportsDivergedWhenLocalAndRemoteBothMoved'`
+- `cd bigclaw-go && go test ./internal/governance -run 'TestScopeFreezeAuditFlagsBacklogGovernanceAndCloseoutGaps|TestScopeFreezeAuditRoundTripAndReadyState|TestRenderScopeFreezeReportSummarizesBoardAndRunCloseoutRequirements'`
+- `cd bigclaw-go && go test ./internal/queue -run 'TestMemoryQueueLeasesByPriority|TestMemoryQueueDeadLetterAndReplay|TestSQLiteQueuePersistsAndLeases|TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen|TestFileQueuePersistsAcrossReload|TestFileQueueDeadLetterReplayPersistsAcrossReload'`
+- `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic'`
+- `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence'`
 - `git diff --check`
 - `git status --short`
-- `git log -1 --stat`
 
 ## Results
 
 ### File Disposition
 
-- `.github/workflows/ci.yml`
-  - Replaced.
-  - Reason: removed the last active root packaging calls (`pip install -e .[dev]`
-    and `python -m build`) and switched CI to source-based validation with
-    `PYTHONPATH=src pytest`.
-- `scripts/dev_bootstrap.sh`
-  - Replaced.
-  - Reason: removed Python `build` installation because the repository root is
-    no longer a Python package build surface.
-- `reports/OPE-66-validation.md`
+- `tests/test_dashboard_run_contract.py`
   - Deleted.
-  - Reason: it only documented the obsolete editable-install / `setup.py`
-    packaging path and had no remaining repository references.
-- `reports/BIG-GO-941.md`
-  - Replaced.
-  - Reason: kept as historical evidence for the original root build removal and
-    appended follow-up status that closes the residual packaging references.
-- `README.md`
-  - Kept.
-  - Reason: it already states that root Python packaging must not be used and
-    already documents `PYTHONPATH=src` validation.
+  - Reason: contract coverage already exists in
+    `bigclaw-go/internal/product/dashboard_run_contract_test.go`.
+- `tests/test_execution_contract.py`
+  - Deleted.
+  - Reason: execution contract and permission-matrix coverage already exists in
+    `bigclaw-go/internal/contract/execution_test.go`.
+- `tests/test_github_sync.py`
+  - Deleted.
+  - Reason: repo sync and hook-install behavior already exists in
+    `bigclaw-go/internal/githubsync/sync_test.go`.
+- `tests/test_governance.py`
+  - Deleted.
+  - Reason: scope-freeze governance coverage already exists in
+    `bigclaw-go/internal/governance/freeze_test.go`.
+- `tests/test_queue.py`
+  - Deleted.
+  - Reason: durable queue persistence and replay coverage already exists across
+    `bigclaw-go/internal/queue/memory_queue_test.go`,
+    `bigclaw-go/internal/queue/sqlite_queue_test.go`, and
+    `bigclaw-go/internal/queue/file_queue_test.go`.
+- `tests/test_repo_board.py`
+  - Deleted.
+  - Reason: repo discussion board coverage already exists in
+    `bigclaw-go/internal/repo/repo_surfaces_test.go`.
+- `tests/test_repo_collaboration.py`
+  - Deleted.
+  - Reason: repo-collaboration contract is already covered by Go repo and
+    triage surfaces; this file only retained Python-side overlap.
+- `tests/test_repo_gateway.py`
+  - Deleted.
+  - Reason: gateway normalization and repo audit payload coverage already
+    exists in `bigclaw-go/internal/repo/repo_surfaces_test.go`.
+- `tests/test_repo_governance.py`
+  - Deleted.
+  - Reason: repo permission and audit-field contract coverage already exists in
+    `bigclaw-go/internal/repo/governance_test.go`.
+- `tests/test_repo_registry.py`
+  - Deleted.
+  - Reason: repo registry resolution coverage already exists in
+    `bigclaw-go/internal/repo/repo_surfaces_test.go`.
+- `tests/test_repo_triage.py`
+  - Deleted.
+  - Reason: repo triage recommendation coverage already exists in
+    `bigclaw-go/internal/triage/repo_test.go`.
+- `tests/test_saved_views.py`
+  - Deleted.
+  - Reason: saved-view catalog, audit, and report coverage already exists in
+    `bigclaw-go/internal/product/saved_views_test.go`.
 
-### Packaging Batch Summary
+### Impact Summary
 
-- Packaging-residue batch files: `.github/workflows/ci.yml`, `README.md`,
-  `reports/OPE-66-validation.md`, `reports/BIG-GO-941.md`,
-  `scripts/dev_bootstrap.sh`
-- Packaging-related Python files in this batch: none
-- Root packaging entry files currently present: none (`pyproject.toml`,
-  `setup.py`, `setup.cfg` are absent)
-
-### Python File Count Impact
-
-- Repository Python files before: `108`
-- Repository Python files after: `108`
-- Net reduction: `0`
-- Deleted packaging-related files in this lane: `1` markdown report
+- `tests/*.py` files before: `38`
+- `tests/*.py` files after: `26`
+- Net `tests/*.py` reduction: `12`
+- Repo `*.py` files before: `108`
+- Repo `*.py` files after: `96`
+- Net repo `*.py` reduction: `12`
+- Repo `*.go` files before: `267`
+- Repo `*.go` files after: `267`
+- Net repo `*.go` reduction: `0`
+- Root `pyproject.toml`: absent before, absent after
+- Root `setup.py`: absent before, absent after
 
 ### Validation Record
 
+- `find tests -name '*.py' | sort | wc -l`
+  - Result: `26`
 - `find . -name '*.py' | sort | wc -l`
-  - Result before: `108`
-  - Result after: `108`
-- `python3 - <<'PY' ... PY` on `.github/workflows/ci.yml`
-  - Result: `ok`
-- `python3 - <<'PY' ... PY` on `scripts/dev_bootstrap.sh`
-  - Result: `ok`
-- `python3 - <<'PY' ... PY` on `README.md`
-  - Result: `ok`
-- `bash -n scripts/dev_bootstrap.sh`
-  - Result: exit `0`
-- `PYTHONPATH=src python3 -m pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml`
-  - Result: failed under local Python `3.9.6`; one collection error from
-    `bigclaw-go/scripts/e2e/export_validation_bundle.py` using `Path | None`
-    syntax that requires Python `3.10+`
-- `PYTHONPATH=src python3 -m pytest tests --cov=bigclaw --cov-report=term-missing --cov-report=xml`
-  - Result: `226 passed`, `3 failed`
-  - Known unrelated failures:
-    - `tests/test_live_shadow_bundle.py::test_export_live_shadow_bundle_generates_index_and_rollup`
-    - `tests/test_live_shadow_bundle.py::test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd`
-    - `tests/test_parallel_validation_bundle.py::test_export_validation_bundle_generates_latest_reports_and_index`
-  - Failure basis: two tests still point at migration scripts already removed by
-    an earlier lane; one still executes the Python 3.11-only
-    `export_validation_bundle.py` under local Python `3.9.6`
-- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_reports.py`
-  - Result: `43 passed in 3.11s`
+  - Result: `96`
+- `find . -name '*.go' | sort | wc -l`
+  - Result: `267`
+- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
+  - Result: `ok  	bigclaw-go/internal/product	2.711s`
+- `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths'`
+  - Result: `ok  	bigclaw-go/internal/contract	0.436s`
+- `cd bigclaw-go && go test ./internal/githubsync -run 'TestInstallGitHooksConfiguresCoreHooksPath|TestEnsureRepoSyncPushesHeadToOrigin|TestInspectRepoSyncMarksDirtyWorktree|TestInspectRepoSyncDetachedHeadReportsDefaultBranchSync|TestEnsureRepoSyncRefusesAutoPushWhenDetachedAndUnsynced|TestEnsureRepoSyncPushesDirtyWorktreeWhenRemoteIsBehind|TestEnsureRepoSyncRejectsDirtyWorktreeWhenRemoteMoved|TestInspectRepoSyncReportsAheadWhenLocalHasUnpushedCommits|TestInspectRepoSyncReportsBehindWhenRemoteAdvanced|TestInspectRepoSyncReportsDivergedWhenLocalAndRemoteBothMoved'`
+  - Result: `ok  	bigclaw-go/internal/githubsync	3.600s`
+- `cd bigclaw-go && go test ./internal/governance -run 'TestScopeFreezeAuditFlagsBacklogGovernanceAndCloseoutGaps|TestScopeFreezeAuditRoundTripAndReadyState|TestRenderScopeFreezeReportSummarizesBoardAndRunCloseoutRequirements'`
+  - Result: `ok  	bigclaw-go/internal/governance	1.210s`
+- `cd bigclaw-go && go test ./internal/queue -run 'TestMemoryQueueLeasesByPriority|TestMemoryQueueDeadLetterAndReplay|TestSQLiteQueuePersistsAndLeases|TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen|TestFileQueuePersistsAcrossReload|TestFileQueueDeadLetterReplayPersistsAcrossReload'`
+  - Result: `ok  	bigclaw-go/internal/queue	2.323s`
+- `cd bigclaw-go && go test ./internal/repo -run 'TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestRepoAuditPayloadIsDeterministic'`
+  - Result: `ok  	bigclaw-go/internal/repo	1.546s`
+- `cd bigclaw-go && go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence'`
+  - Result: `ok  	bigclaw-go/internal/triage	1.939s`
+- `rg --files -g 'pyproject.toml' -g 'setup.py'`
+  - Result: no matches
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result: scoped issue files only before commit
+  - Result: only `.symphony/workpad.md` plus the 12 targeted Python test deletions
