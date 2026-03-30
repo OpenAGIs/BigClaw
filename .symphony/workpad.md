@@ -1,11 +1,11 @@
 # BIG-GO-1018
 
 ## Plan
-- Migrate the next scoped residual `tests/**` tranche for the task-run observability surface.
-- Port the small Python observability/report helpers into a dedicated Go package that covers task runs, ledger round-trip, repo-sync audit rendering, detail-page rendering, and collaboration extraction.
-- Remove `tests/test_observability.py` after validating the new Go coverage.
-- Keep scope limited to the repository-facing observability slice and avoid broad report-suite or UI-review migration.
-- Run targeted Go tests for `bigclaw-go/internal/observabilitysurface`, capture exact commands and results, then commit and push the branch.
+- Migrate the next scoped residual `tests/**` tranche for planning and entry-gate coverage.
+- Port the narrow Python planning surface into a dedicated Go package that covers candidate backlogs, gate evaluation, canned backlog/plan builders, and the two planning reports.
+- Remove `tests/test_planning.py` after validating the new Go coverage.
+- Keep scope limited to structured planning models and reports; do not open the broader report-suite, console IA, design-system, or UI-review surfaces.
+- Run targeted Go tests for `bigclaw-go/internal/planningsurface`, capture exact commands and results, then commit and push the branch.
 
 ## Acceptance
 - Changes stay scoped to this issue's residual `tests/**` tranche.
@@ -14,12 +14,19 @@
 - Final report includes impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
 
 ## Validation
-- `go test ./internal/observabilitysurface`
+- `go test ./internal/planningsurface`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
 - `git status --short`
 
 ## Results
+- Current tranche: `cd bigclaw-go && go test ./internal/planningsurface` -> `FAIL bigclaw-go/internal/planningsurface [build failed]` before cleanup because duplicated `planning*.go` and `planningsurface*.go` files redeclared the same symbols
+- Current tranche: `cd bigclaw-go && go test ./internal/planningsurface` -> `ok  	bigclaw-go/internal/planningsurface	0.537s`
+- Current tranche: `find . -name '*.py' | wc -l` -> `74`
+- Current tranche: `find . -name '*.go' | wc -l` -> `283`
+- Current tranche: `git status --short` -> `M .symphony/workpad.md`; `D tests/test_planning.py`; `?? bigclaw-go/internal/planningsurface/`
+- Current tranche impact: `py files` decreased from `75` to `74`; `go files` increased from `281` to `283`; `pyproject.toml` absent and unchanged; `setup.py` absent and unchanged
+- Current tranche status: `.symphony/workpad.md` modified; `bigclaw-go/internal/planningsurface/planningsurface.go` and `bigclaw-go/internal/planningsurface/planningsurface_test.go` added; duplicate `bigclaw-go/internal/planningsurface/planning.go` and `bigclaw-go/internal/planningsurface/planning_test.go` removed before validation; `tests/test_planning.py` deleted
 - Current tranche: `cd bigclaw-go && go test ./internal/observabilitysurface` -> `ok  	bigclaw-go/internal/observabilitysurface	0.952s`
 - Current tranche: `find . -name '*.py' | wc -l` -> `75`
 - Current tranche: `find . -name '*.go' | wc -l` -> `281`
