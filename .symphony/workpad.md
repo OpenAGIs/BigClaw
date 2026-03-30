@@ -1313,3 +1313,74 @@ Follow-on refactor now queued:
   - Result: `absent`
 - `git diff --check`
   - Result: success
+
+### Follow-on tranche 28 queued
+
+- Target `src/bigclaw/runtime.py` next.
+- Reason: after the reports merge, the remaining runtime/worker surface still
+  depends one-way on `observability.py`, while `operations.py` already consumes
+  observability without any reverse edge, so the runtime layer can be absorbed
+  into `src/bigclaw/observability.py` and preserved through a
+  package-installed `bigclaw.runtime` compatibility shim.
+- Planned edits:
+  - Move the legacy runtime, queue, orchestration, scheduler, workflow,
+    service, and governance helpers from `src/bigclaw/runtime.py` into
+    `src/bigclaw/observability.py`.
+  - Repoint package exports so `bigclaw.runtime` resolves to the
+    observability-owned surface.
+  - Delete `src/bigclaw/runtime.py`.
+
+### Follow-on tranche 28
+
+- `src/bigclaw/runtime.py`
+  - Deleted.
+  - Reason: the remaining legacy runtime/worker surface only depended on the
+    observability layer, so it could be absorbed into
+    `src/bigclaw/observability.py` while preserving `bigclaw.runtime` through a
+    package-installed compatibility shim.
+- `src/bigclaw/observability.py`
+  - Updated.
+  - Reason: now owns the former runtime, queue, orchestration, scheduler,
+    workflow, service, and repo-governance helpers in addition to the existing
+    models, event bus, ledger, and audit surface.
+- `src/bigclaw/__init__.py`
+  - Updated.
+  - Reason: package imports now source runtime symbols from observability and
+    install a `bigclaw.runtime` compatibility module backed by that surface.
+
+### Follow-on tranche 28 inventory
+
+- `src/bigclaw` Python files after tranche 28: `3`
+- Repository-wide Python files after tranche 28: `51`
+- Net repository-wide Python reduction: `57`
+- `bigclaw-go` Go files after tranche 28: `267`
+- Root `pyproject.toml`: absent
+- Root `setup.py`: absent
+
+### Follow-on tranche 28 validation
+
+- `python3 -m py_compile src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/__init__.py`
+  - Result: success
+- `PYTHONPATH=src python3 - <<'PY'` with `import bigclaw`, `import bigclaw.runtime`, and `import bigclaw.observability`
+  - Result: `import ok`; `bigclaw.runtime.ClawWorkerRuntime.__module__ == "bigclaw.observability"`; `bigclaw.observability.ClawWorkerRuntime.__module__ == "bigclaw.observability"`; `hasattr(bigclaw.runtime, "LEGACY_MAINLINE_STATUS") == True`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_risk.py tests/test_event_bus.py tests/test_observability.py`
+  - Result: `16 passed in 0.06s`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_operations.py tests/test_control_center.py tests/test_repo_rollout.py`
+  - Result: `59 passed in 0.09s`
+- `PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_scheduler.py tests/test_audit_events.py tests/test_planning.py tests/test_governance.py`
+  - Result: `32 passed in 0.07s`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+  - Result: `3`
+- `find . -type f -name '*.py' | wc -l`
+  - Result: `51`
+- `find bigclaw-go -type f -name '*.go' | wc -l`
+  - Result: `267`
+- `test -f pyproject.toml && echo present || echo absent`
+  - Result: `absent`
+- `test -f setup.py && echo present || echo absent`
+  - Result: `absent`
+- `git diff --check`
+  - Result: success
+- Known unrelated blocker retained from prior tranche:
+  - `PYTHONPATH=src python3 -m pytest tests/test_parallel_validation_bundle.py`
+  - Result: failed in `bigclaw-go/scripts/e2e/export_validation_bundle.py` on Python 3.9 because of `Path | None`

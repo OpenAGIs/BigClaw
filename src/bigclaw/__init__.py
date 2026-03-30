@@ -24,7 +24,7 @@ from .observability import (
     TriageStatus,
     UsageRecord,
 )
-from . import runtime as _legacy_runtime_surface
+_legacy_runtime_surface = _legacy_observability_surface
 
 
 def _install_legacy_surface_module(
@@ -71,6 +71,50 @@ _install_legacy_surface_module(
         "bigclaw-go is the sole implementation mainline for active development; "
         "models.py remains migration-only compatibility scaffolding."
     ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
+_install_legacy_surface_module(
+    "runtime",
+    [
+        "AcceptanceDecision",
+        "AcceptanceGate",
+        "ClawWorkerRuntime",
+        "CrossDepartmentOrchestrator",
+        "DeadLetterEntry",
+        "DepartmentHandoff",
+        "ExecutionRecord",
+        "HandoffRequest",
+        "JournalEntry",
+        "OrchestrationPlan",
+        "OrchestrationPolicyDecision",
+        "PersistentTaskQueue",
+        "PremiumOrchestrationPolicy",
+        "RepoGovernanceEnforcer",
+        "RepoGovernancePolicy",
+        "RepoGovernanceResult",
+        "RiskFactor",
+        "RiskScore",
+        "RiskScorer",
+        "SandboxProfile",
+        "SandboxRouter",
+        "Scheduler",
+        "SchedulerDecision",
+        "ServerMonitoring",
+        "ToolCallResult",
+        "ToolPolicy",
+        "ToolRuntime",
+        "WorkerExecutionResult",
+        "WorkflowEngine",
+        "WorkflowRunResult",
+        "WorkpadJournal",
+        "create_server",
+        "legacy_runtime_message",
+        "render_orchestration_plan",
+        "run_server",
+        "warn_legacy_runtime_surface",
+        "warn_legacy_service_surface",
+    ],
+    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
 _install_legacy_surface_module(
@@ -220,7 +264,7 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
-from .runtime import (
+from .observability import (
     AcceptanceDecision,
     AcceptanceGate,
     ClawWorkerRuntime,
