@@ -286,9 +286,7 @@ Historical initial state:
 Python source:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
-- `src/bigclaw/parallel_refill.py`
 - `scripts/ops/bigclaw_github_sync.py`
 - `scripts/ops/symphony_workspace_bootstrap.py`
 - `scripts/ops/bigclaw_refill_queue.py`
@@ -311,6 +309,7 @@ Current repo progress:
 - `bigclaw-go/internal/bootstrap/*` now owns shared-mirror bootstrap, cleanup, and validation logic with Go tests
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic with tracker-neutral `TrackedIssue` records, while `cmd/bigclawctl refill` handles backend-specific polling and promotion
+- `src/bigclaw/parallel_refill.py` and `src/bigclaw/workspace_bootstrap_cli.py` have been retired because the Go toolchain now owns those operator paths outright
 - `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` now invoke the Go-first toolchain by default while legacy Python wrappers remain as compatibility shims
 - at the time this slice was defined, the remaining Python wrappers still existed as migration shims and `BIG-GOM-308` was the planned follow-on slice to remove Python from the default operator path
 
@@ -493,9 +492,7 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/github_sync.py`
-- `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/workspace_bootstrap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/service.py`
 - `src/bigclaw/__main__.py`
