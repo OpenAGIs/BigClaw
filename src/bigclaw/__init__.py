@@ -23,16 +23,26 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
+from . import repository as _repository_surface
 from . import runtime as _legacy_runtime_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_surface_module(
+    name: str,
+    source_module: types.ModuleType,
+    export_names: list[str],
+    **extra_attrs: object,
+) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
+
+
+def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+    _install_surface_module(name, _legacy_runtime_surface, export_names, **extra_attrs)
 
 
 _install_legacy_surface_module(
@@ -83,6 +93,55 @@ _install_legacy_surface_module(
         "service.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+)
+_install_surface_module("repo_board", _repository_surface, ["RepoDiscussionBoard", "RepoPost"])
+_install_surface_module(
+    "repo_gateway",
+    _repository_surface,
+    [
+        "RepoGatewayClient",
+        "RepoGatewayError",
+        "normalize_commit",
+        "normalize_diff",
+        "normalize_gateway_error",
+        "normalize_lineage",
+        "repo_audit_payload",
+    ],
+)
+_install_surface_module(
+    "repo_governance",
+    _repository_surface,
+    [
+        "REPO_ACTION_PERMISSIONS",
+        "REPO_ROLE_POLICIES",
+        "RepoPermissionContract",
+        "missing_repo_audit_fields",
+        "repo_required_audit_fields",
+    ],
+)
+_install_surface_module(
+    "repo_links",
+    _repository_surface,
+    ["RunCommitBinding", "VALID_ROLES", "bind_run_commits", "validate_roles"],
+)
+_install_surface_module("repo_plane", _repository_surface, ["RepoAgent", "RepoSpace", "RunCommitLink"])
+_install_surface_module("repo_registry", _repository_surface, ["RepoRegistry"])
+_install_surface_module(
+    "repo_triage",
+    _repository_surface,
+    ["LineageEvidence", "TriageRecommendation", "approval_evidence_packet", "recommend_triage_action"],
+)
+_install_surface_module(
+    "github_sync",
+    _repository_surface,
+    [
+        "CommandResult",
+        "GitSyncError",
+        "RepoSyncStatus",
+        "ensure_repo_sync",
+        "inspect_repo_sync",
+        "install_git_hooks",
+    ],
 )
 
 from .runtime import (
@@ -192,13 +251,6 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .issue_archive import (
-    ArchivedIssue,
-    IssuePriorityArchive,
-    IssuePriorityArchiveAudit,
-    IssuePriorityArchivist,
-    render_issue_priority_archive_report,
-)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
@@ -247,12 +299,17 @@ from .dashboard_run_contract import (
     render_dashboard_run_contract_report,
 )
 from .reports import (
+    ArchivedIssue,
     AutoTriageCenter,
     ConsoleAction,
     BillingEntitlementsPage,
     BillingRunCharge,
     DocumentationArtifact,
     FinalDeliveryChecklist,
+    IssuePriorityArchive,
+    IssuePriorityArchiveAudit,
+    IssuePriorityArchivist,
+    render_issue_priority_archive_report,
     LaunchChecklist,
     LaunchChecklistItem,
     NarrativeSection,
@@ -307,6 +364,17 @@ from .reports import (
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
+)
+_install_surface_module(
+    "issue_archive",
+    sys.modules[f"{__name__}.reports"],
+    [
+        "ArchivedIssue",
+        "IssuePriorityArchive",
+        "IssuePriorityArchiveAudit",
+        "IssuePriorityArchivist",
+        "render_issue_priority_archive_report",
+    ],
 )
 from .operations import (
     DashboardBuilder,

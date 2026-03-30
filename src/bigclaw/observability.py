@@ -8,8 +8,7 @@ from typing import Any, Dict, List, Optional
 from .audit_events import missing_required_fields
 from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
-from .repo_links import bind_run_commits
-from .repo_plane import RunCommitLink
+from .repository import RunCommitLink, bind_run_commits
 
 
 def utc_now() -> str:
