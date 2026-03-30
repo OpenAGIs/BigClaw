@@ -18,6 +18,7 @@ Batch file list:
 - `src/bigclaw/issue_archive.py`
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/saved_views.py`
+- `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/legacy_shim.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
@@ -119,6 +120,9 @@ Selected tranche rationale:
 - `saved_views.py` is a report/UI catalog and audit surface that fits
   naturally into `reports.py`, which already owns adjacent report rendering and
   operator-facing closeout/dashboard structures.
+- `dashboard_run_contract.py` is an execution API/schema contract surface and
+  fits naturally into `execution_contract.py`, which already owns adjacent API
+  models, permissions, and contract reporting logic.
 
 ## Plan
 
@@ -209,6 +213,10 @@ Selected tranche rationale:
     `bigclaw.saved_views` compatibility via `__init__.py`.
 46. Run targeted saved-view/report validation for the fifteenth consolidation
     batch and push a follow-up commit.
+47. Fold `dashboard_run_contract.py` into `execution_contract.py` and preserve
+    `bigclaw.dashboard_run_contract` compatibility via `__init__.py`.
+48. Run targeted dashboard-contract validation for the sixteenth consolidation
+    batch and push a follow-up commit.
 
 ## Acceptance
 
@@ -257,6 +265,11 @@ Selected tranche rationale:
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_saved_views.py tests/test_reports.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_dashboard_run_contract.py tests/test_execution_contract.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.dashboard_run_contract import DashboardRunContractLibrary`
+  `print(DashboardRunContractLibrary.__name__)`
+  `PY`
 - `PYTHONPATH=src python3 - <<'PY'`
   `from bigclaw.saved_views import SavedViewLibrary, SavedViewCatalog`
   `print(SavedViewLibrary.__name__, SavedViewCatalog.__name__)`
@@ -530,6 +543,19 @@ Selected tranche rationale:
 - `src/bigclaw/saved_views.py`
   - Deleted.
   - Reason: its contents moved into `reports.py`.
+- `src/bigclaw/execution_contract.py`
+  - Replaced again.
+  - Reason: absorbed dashboard/run schema contract models, audit logic, and
+    report rendering so execution API contracts and dashboard contract surfaces
+    live in one module.
+- `src/bigclaw/__init__.py`
+  - Replaced again.
+  - Reason: installs a `bigclaw.dashboard_run_contract` compatibility submodule
+    and re-exports the moved dashboard-contract surface from
+    `execution_contract.py`.
+- `src/bigclaw/dashboard_run_contract.py`
+  - Deleted.
+  - Reason: its contents moved into `execution_contract.py`.
 
 ### Inventory Impact
 
@@ -549,7 +575,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 13: `23`
 - `src/bigclaw/**/*.py` after batch 14: `22`
 - `src/bigclaw/**/*.py` after batch 15: `21`
-- Net Python module reduction in tranche so far: `24`
+- `src/bigclaw/**/*.py` after batch 16: `20`
+- Net Python module reduction in tranche so far: `25`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -669,3 +696,9 @@ Selected tranche rationale:
   - Result: `SavedViewLibrary SavedViewCatalog`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 15: `21`
+- `PYTHONPATH=src python3 -m pytest tests/test_dashboard_run_contract.py tests/test_execution_contract.py`
+  - Result: `10 passed in 0.07s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY` on `bigclaw.dashboard_run_contract`
+  - Result: `DashboardRunContractLibrary`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 16: `20`

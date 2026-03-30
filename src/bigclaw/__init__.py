@@ -328,6 +328,9 @@ _install_compat_surface_module(
     ["PULL_REQUEST_COMMENT_EVENT", "CI_COMPLETED_EVENT", "TASK_FAILED_EVENT", "BusEvent", "EventBus"],
 )
 from .execution_contract import (
+    DashboardRunContract,
+    DashboardRunContractAudit,
+    DashboardRunContractLibrary,
     AuditPolicy,
     build_operations_api_contract,
     ExecutionApiSpec,
@@ -344,8 +347,11 @@ from .execution_contract import (
     REPO_ACTION_PERMISSIONS,
     REPO_ROLE_POLICIES,
     RepoPermissionContract,
+    SchemaField,
+    SurfaceSchema,
     missing_repo_audit_fields,
     repo_required_audit_fields,
+    render_dashboard_run_contract_report,
     render_execution_contract_report,
 )
 _install_compat_surface_module(
@@ -359,15 +365,19 @@ _install_compat_surface_module(
         "missing_repo_audit_fields",
     ],
 )
-_install_compat_surface_module("risk", _legacy_runtime_surface, ["RiskFactor", "RiskScore", "RiskScorer"])
-from .dashboard_run_contract import (
-    DashboardRunContract,
-    DashboardRunContractAudit,
-    DashboardRunContractLibrary,
-    SchemaField,
-    SurfaceSchema,
-    render_dashboard_run_contract_report,
+_install_compat_surface_module(
+    "dashboard_run_contract",
+    sys.modules[f"{__name__}.execution_contract"],
+    [
+        "SchemaField",
+        "SurfaceSchema",
+        "DashboardRunContract",
+        "DashboardRunContractAudit",
+        "DashboardRunContractLibrary",
+        "render_dashboard_run_contract_report",
+    ],
 )
+_install_compat_surface_module("risk", _legacy_runtime_surface, ["RiskFactor", "RiskScore", "RiskScorer"])
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
