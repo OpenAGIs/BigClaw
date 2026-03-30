@@ -47,10 +47,23 @@ class RunAllTest(unittest.TestCase):
             if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (
                 len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'
             ):
-                report_path = pathlib.Path(args[args.index('--report-path') + 1])
-                report_path.parent.mkdir(parents=True, exist_ok=True)
-                report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
-                sys.exit(0)
+                subcommand = args[4]
+                if subcommand == 'run-task-smoke':
+                    report_path = pathlib.Path(args[args.index('--report-path') + 1])
+                    report_path.parent.mkdir(parents=True, exist_ok=True)
+                    report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+                    sys.exit(0)
+                if subcommand == 'validation-bundle-continuation-scorecard':
+                    output = pathlib.Path(args[args.index('--output') + 1])
+                    output.parent.mkdir(parents=True, exist_ok=True)
+                    output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+                    sys.exit(0)
+                if subcommand == 'validation-bundle-continuation-policy-gate':
+                    mode = args[args.index('--enforcement-mode') + 1]
+                    output = pathlib.Path(args[args.index('--output') + 1])
+                    output.parent.mkdir(parents=True, exist_ok=True)
+                    output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
+                    sys.exit(0)
             if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (
                 len(args) >= 2 and args[0] == 'run' and args[1].endswith('/scripts/e2e/broker_bootstrap_summary.go')
             ):
@@ -85,37 +98,6 @@ class RunAllTest(unittest.TestCase):
             }
             with calls_path.open('a', encoding='utf-8') as handle:
                 handle.write(json.dumps(payload) + '\\n')
-            """,
-            executable=True,
-        )
-        self.write_file(
-            'scripts/e2e/validation_bundle_continuation_scorecard.py',
-            """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
-
-            args = sys.argv[1:]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
-            """,
-            executable=True,
-        )
-        self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
-            """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
-
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
             """,
             executable=True,
         )
@@ -160,23 +142,6 @@ class RunAllTest(unittest.TestCase):
 
     def test_run_all_defaults_to_hold_mode(self) -> None:
         self.install_stubs()
-        self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
-            """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
-
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
-            """,
-            executable=True,
-        )
-
         env = os.environ.copy()
         env.update(
             {
@@ -204,23 +169,6 @@ class RunAllTest(unittest.TestCase):
 
     def test_legacy_enforce_alias_still_maps_to_fail_mode(self) -> None:
         self.install_stubs()
-        self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
-            """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
-
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
-            """,
-            executable=True,
-        )
-
         env = os.environ.copy()
         env.update(
             {

@@ -16,8 +16,6 @@ Issue: `BIG-GO-902`
 ## Remaining Python Script Backlog
 
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
@@ -26,6 +24,13 @@ Issue: `BIG-GO-902`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
 - `bigclaw-go/scripts/benchmark/capacity_certification.py`
 - `bigclaw-go/scripts/benchmark/run_matrix.py`
+
+## Newly Removed In BIG-GO-990
+
+| Legacy script | Go CLI replacement | Status |
+| --- | --- | --- |
+| `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-scorecard ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-continuation-policy-gate ...` | migrated and Python shim removed |
 
 ## Validation Commands
 
