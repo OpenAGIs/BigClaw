@@ -104,10 +104,15 @@ Repository inventory at start of lane:
   - `src/bigclaw/governance.py`
   - `src/bigclaw/cost_control.py`
   - `src/bigclaw/event_bus.py`
+  - `src/bigclaw/mapping.py`
+  - `src/bigclaw/roadmap.py`
+  - `src/bigclaw/pilot.py`
 - `src/bigclaw/planning.py`
   - Replaced.
   - Reason: absorbed `governance.py` and now also serves the compatibility
     `bigclaw.governance` module surface.
+  - Reason: also absorbed `roadmap.py` and now also serves the compatibility
+    `bigclaw.roadmap` module surface.
 - `src/bigclaw/risk.py`
   - Replaced.
   - Reason: absorbed `cost_control.py` and now also serves the compatibility
@@ -116,6 +121,14 @@ Repository inventory at start of lane:
   - Replaced again.
   - Reason: absorbed `event_bus.py` and now also serves the compatibility
     `bigclaw.event_bus` module surface.
+- `src/bigclaw/connectors.py`
+  - Replaced.
+  - Reason: absorbed `mapping.py` and now also serves the compatibility
+    `bigclaw.mapping` module surface.
+- `src/bigclaw/reports.py`
+  - Replaced again.
+  - Reason: absorbed `pilot.py` and now also serves the compatibility
+    `bigclaw.pilot` module surface.
 
 ### Inventory Impact
 
@@ -123,7 +136,8 @@ Repository inventory at start of lane:
 - `src/bigclaw` Python files after first pass: `37`
 - `src/bigclaw` Python files after continuation pass: `35`
 - `src/bigclaw` Python files after continuation pass 2: `33`
-- Net Python file reduction: `12`
+- `src/bigclaw` Python files after continuation pass 3: `30`
+- Net Python file reduction: `15`
 - `src/bigclaw` Go files before: `0`
 - `src/bigclaw` Go files after: `0`
 - Root `pyproject.toml` before/after: absent
@@ -137,6 +151,7 @@ Repository inventory at start of lane:
   - Result after first pass: `37`
   - Result after continuation pass: `35`
   - Result after continuation pass 2: `33`
+  - Result after continuation pass 3: `30`
 - `find src/bigclaw -type f -name '*.go' | sort | wc -l`
   - Result after: `0`
 - `printf 'pyproject='; test -f pyproject.toml; echo $?; printf 'setup='; test -f setup.py; echo $?`
@@ -149,6 +164,12 @@ Repository inventory at start of lane:
   - Result: `75 passed in 1.15s`
 - `PYTHONPATH=src python3 -m pytest tests/test_event_bus.py tests/test_risk.py tests/test_runtime_matrix.py tests/test_observability.py tests/test_reports.py`
   - Result: `50 passed in 0.11s`
+- `PYTHONPATH=src python3 - <<'PY' ... PY`
+  - Result: compatibility imports for `bigclaw.mapping`, `bigclaw.roadmap`,
+    and `bigclaw.pilot` executed successfully; printed `X-1`, `5`, and
+    `# Pilot Implementation Report`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py`
+  - Result: `48 passed in 0.09s`
 - `cd bigclaw-go && go test ./internal/repo ./internal/governance`
   - Result: `ok   bigclaw-go/internal/repo (cached)`, `ok   bigclaw-go/internal/governance (cached)`
 - `git diff --check`

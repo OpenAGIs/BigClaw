@@ -179,7 +179,8 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+from .connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue, map_source_issue_to_task
+_install_surface_module("mapping", sys.modules[f"{__name__}.connectors"], ["map_priority", "map_state", "map_source_issue_to_task"])
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -247,8 +248,6 @@ from .saved_views import (
 from .risk import BudgetDecision, CostController, RiskFactor, RiskScore, RiskScorer
 _install_surface_module("cost_control", sys.modules[f"{__name__}.risk"], ["BudgetDecision", "CostController"])
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
-from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -313,7 +312,10 @@ from .reports import (
     IssuePriorityArchive,
     IssuePriorityArchiveAudit,
     IssuePriorityArchivist,
+    PilotImplementationResult,
+    PilotKPI,
     render_issue_priority_archive_report,
+    render_pilot_implementation_report,
     LaunchChecklist,
     LaunchChecklistItem,
     NarrativeSection,
@@ -380,6 +382,11 @@ _install_surface_module(
         "render_issue_priority_archive_report",
     ],
 )
+_install_surface_module(
+    "pilot",
+    sys.modules[f"{__name__}.reports"],
+    ["PilotImplementationResult", "PilotKPI", "render_pilot_implementation_report"],
+)
 from .operations import (
     DashboardBuilder,
     DashboardBuilderAudit,
@@ -437,9 +444,11 @@ from .planning import (
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
+    EpicMilestone,
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    ExecutionPackRoadmap,
     FreezeException,
     GovernanceBacklogItem,
     ScopeFreezeAudit,
@@ -448,11 +457,17 @@ from .planning import (
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
+    build_execution_pack_roadmap,
     build_v3_candidate_backlog,
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
     render_scope_freeze_report,
+)
+_install_surface_module(
+    "roadmap",
+    sys.modules[f"{__name__}.planning"],
+    ["EpicMilestone", "ExecutionPackRoadmap", "build_execution_pack_roadmap"],
 )
 _install_surface_module(
     "governance",
