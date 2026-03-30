@@ -24,6 +24,8 @@ Batch file list:
 - `src/bigclaw/cost_control.py`
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
+- `src/bigclaw/parallel_refill.py`
+- `docs/go-mainline-cutover-issue-pack.md`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_triage.py`
 - `src/bigclaw/mapping.py`
@@ -83,6 +85,9 @@ Selected tranche rationale:
 - `workspace_bootstrap_cli.py` and `workspace_bootstrap_validation.py` are thin
   wrappers around `workspace_bootstrap.py` and can be folded into that owning
   module without widening scope.
+- `parallel_refill.py` appears to be dead Python residue with no remaining code
+  imports, so it can be deleted once the remaining repo docs stop pointing at
+  the removed file path.
 
 ## Plan
 
@@ -135,6 +140,12 @@ Selected tranche rationale:
     `__init__.py`.
 27. Run targeted workspace bootstrap validation for the seventh consolidation
     batch and push a follow-up commit.
+28. Delete `parallel_refill.py` after confirming it has no remaining code-path
+    imports.
+29. Refresh the remaining in-repo docs that still point at
+    `src/bigclaw/parallel_refill.py`.
+30. Run targeted refill validation for the eighth consolidation batch and push a
+    follow-up commit.
 
 ## Acceptance
 
@@ -174,6 +185,8 @@ Selected tranche rationale:
   `from bigclaw.workspace_bootstrap_validation import build_validation_report`
   `print("ok")`
   `PY`
+- `python3 -m py_compile scripts/ops/bigclaw_refill_queue.py`
+- `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
 - `PYTHONPATH=src python3 - <<'PY'`
@@ -323,6 +336,14 @@ Selected tranche rationale:
 - `src/bigclaw/workspace_bootstrap_validation.py`
   - Deleted.
   - Reason: its contents moved into `workspace_bootstrap.py`.
+- `src/bigclaw/parallel_refill.py`
+  - Deleted.
+  - Reason: no remaining code-path imports referenced it; the surviving refill
+    implementation mainline is already the Go `internal/refill` surface.
+- `docs/go-mainline-cutover-issue-pack.md`
+  - Replaced.
+  - Reason: removed stale references to the deleted Python refill module from
+    the cutover issue pack.
 
 ### Inventory Impact
 
@@ -334,7 +355,8 @@ Selected tranche rationale:
 - `src/bigclaw/**/*.py` after batch 5: `34`
 - `src/bigclaw/**/*.py` after batch 6: `33`
 - `src/bigclaw/**/*.py` after batch 7: `31`
-- Net Python module reduction in tranche so far: `14`
+- `src/bigclaw/**/*.py` after batch 8: `30`
+- Net Python module reduction in tranche so far: `15`
 - `src/**/*.go` before: `0`
 - `src/**/*.go` after: `0`
 - Root `pyproject.toml`: absent before and after
@@ -406,3 +428,9 @@ Selected tranche rationale:
   - Result: exit `0`
 - `find src/bigclaw -type f -name '*.py' | sort | wc -l`
   - Result after batch 7: `31`
+- `python3 -m py_compile scripts/ops/bigclaw_refill_queue.py`
+  - Result: exit `0`
+- `cd bigclaw-go && go test ./internal/refill -run TestParallelIssueQueueRepoFixtureSelectionStaysAligned`
+  - Result: `ok bigclaw-go/internal/refill 2.238s`
+- `find src/bigclaw -type f -name '*.py' | sort | wc -l`
+  - Result after batch 8: `30`
