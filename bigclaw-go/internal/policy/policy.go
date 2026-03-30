@@ -35,6 +35,47 @@ type Summary struct {
 	Quota                Quota  `json:"quota"`
 }
 
+type ValidationReportDecision struct {
+	AllowedToClose bool     `json:"allowed_to_close"`
+	Status         string   `json:"status"`
+	Summary        string   `json:"summary"`
+	MissingReports []string `json:"missing_reports,omitempty"`
+}
+
+var requiredValidationReportArtifacts = []string{
+	"task-run",
+	"replay",
+	"benchmark-suite",
+}
+
+func EnforceValidationReportPolicy(artifacts []string) ValidationReportDecision {
+	existing := make(map[string]struct{}, len(artifacts))
+	for _, artifact := range artifacts {
+		existing[strings.TrimSpace(artifact)] = struct{}{}
+	}
+
+	missing := make([]string, 0, len(requiredValidationReportArtifacts))
+	for _, artifact := range requiredValidationReportArtifacts {
+		if _, ok := existing[artifact]; !ok {
+			missing = append(missing, artifact)
+		}
+	}
+	if len(missing) > 0 {
+		return ValidationReportDecision{
+			AllowedToClose: false,
+			Status:         "blocked",
+			Summary:        "validation report policy not satisfied",
+			MissingReports: missing,
+		}
+	}
+
+	return ValidationReportDecision{
+		AllowedToClose: true,
+		Status:         "ready",
+		Summary:        "validation report policy satisfied",
+	}
+}
+
 func Resolve(task domain.Task) Summary {
 	riskScore := risk.ScoreTask(task, nil)
 	premium := false

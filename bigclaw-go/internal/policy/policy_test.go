@@ -1,10 +1,33 @@
 package policy
 
 import (
+	"reflect"
 	"testing"
 
 	"bigclaw-go/internal/domain"
 )
+
+func TestEnforceValidationReportPolicyBlocksIssueCloseWithoutRequiredReports(t *testing.T) {
+	decision := EnforceValidationReportPolicy([]string{"task-run", "replay"})
+
+	if decision.AllowedToClose || decision.Status != "blocked" {
+		t.Fatalf("expected blocked decision, got %+v", decision)
+	}
+	if !reflect.DeepEqual(decision.MissingReports, []string{"benchmark-suite"}) {
+		t.Fatalf("expected benchmark-suite missing, got %+v", decision.MissingReports)
+	}
+}
+
+func TestEnforceValidationReportPolicyAllowsIssueCloseWhenReportsComplete(t *testing.T) {
+	decision := EnforceValidationReportPolicy([]string{"task-run", "replay", "benchmark-suite"})
+
+	if !decision.AllowedToClose || decision.Status != "ready" {
+		t.Fatalf("expected ready decision, got %+v", decision)
+	}
+	if len(decision.MissingReports) != 0 {
+		t.Fatalf("expected no missing reports, got %+v", decision.MissingReports)
+	}
+}
 
 func TestResolvePremiumPolicyFromMetadata(t *testing.T) {
 	summary := Resolve(domain.Task{
