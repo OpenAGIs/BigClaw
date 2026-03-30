@@ -15,6 +15,7 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` | `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` | `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/e2e/external_store_validation.py` | `go run ./cmd/bigclawctl automation e2e external-store-validation ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` | `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/run_matrix.py` | `go run ./cmd/bigclawctl automation benchmark run-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/capacity_certification.py` | `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` | migrated and Python shim removed |
@@ -23,9 +24,6 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle` | migrated and Python shim removed |
 
-## Remaining Python Script Backlog
-
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 ## Validation Commands
 
 ```bash
@@ -41,6 +39,7 @@ go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help
 go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help
 go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix --help
 go run ./cmd/bigclawctl automation e2e external-store-validation --help
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation benchmark run-matrix --help
 go run ./cmd/bigclawctl automation benchmark capacity-certification --help

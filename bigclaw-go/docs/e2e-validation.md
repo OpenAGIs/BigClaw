@@ -116,7 +116,7 @@ The checked-in output lives at `docs/reports/external-store-validation-report.js
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue \
   --count 200 \
   --submit-workers 8 \
   --report-path docs/reports/multi-node-shared-queue-report.json
@@ -161,7 +161,7 @@ For the live proof path, run the shared-queue harness:
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue \
   --count 200 \
   --submit-workers 8 \
   --report-path docs/reports/multi-node-shared-queue-report.json \

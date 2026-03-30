@@ -219,7 +219,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate|broker-failover-stub-matrix|mixed-workload-matrix|cross-process-coordination-surface|subscriber-takeover-fault-matrix|external-store-validation> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate|broker-failover-stub-matrix|mixed-workload-matrix|cross-process-coordination-surface|subscriber-takeover-fault-matrix|external-store-validation|multi-node-shared-queue> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -241,6 +241,8 @@ func runAutomationE2E(args []string) error {
 		return runAutomationSubscriberTakeoverFaultMatrixCommand(args[1:])
 	case "external-store-validation":
 		return runAutomationExternalStoreValidationCommand(args[1:])
+	case "multi-node-shared-queue":
+		return runAutomationMultiNodeSharedQueueCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation e2e subcommand: %s", args[0])
 	}

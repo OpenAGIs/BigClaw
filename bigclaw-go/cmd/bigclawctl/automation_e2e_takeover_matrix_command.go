@@ -587,11 +587,11 @@ func takeoverBuildReport(generatedAt time.Time) map[string]any {
 				"docs/reports/event-bus-reliability-report.md",
 			},
 			"shared_queue_evidence": []any{
-				"scripts/e2e/multi_node_shared_queue.py",
+				"cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go",
 				"docs/reports/multi-node-shared-queue-report.json",
 			},
 			"takeover_harness": []any{
-				"go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...",
+				"cmd/bigclawctl/automation_e2e_takeover_matrix_command.go",
 				"docs/reports/multi-subscriber-takeover-validation-report.json",
 			},
 		},

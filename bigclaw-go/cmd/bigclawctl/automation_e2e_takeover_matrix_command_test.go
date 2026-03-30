@@ -26,7 +26,7 @@ func TestAutomationSubscriberTakeoverFaultMatrixBuildsReport(t *testing.T) {
 	}
 	currentPrimitives, _ := report["current_primitives"].(map[string]any)
 	takeoverHarness, _ := currentPrimitives["takeover_harness"].([]any)
-	if len(takeoverHarness) != 2 || asString(takeoverHarness[0]) != "go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ..." {
+	if len(takeoverHarness) != 2 || asString(takeoverHarness[0]) != "cmd/bigclawctl/automation_e2e_takeover_matrix_command.go" {
 		t.Fatalf("unexpected takeover harness ref: %+v", takeoverHarness)
 	}
 	if _, err := os.Stat(filepath.Join(root, "tmp/takeover-report.json")); err != nil {
