@@ -328,3 +328,47 @@ Repository inventory at start of lane:
     - Result: `ok   bigclaw-go/cmd/bigclawctl 2.029s`
   - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
     - Result: `PY 79`, `GO 267`, `SRC 16`
+
+## BIG-GO-1014 Refill Sweep D Continuation 4
+
+### Plan
+
+- Fold the low-coupling connector stub surface from `src/bigclaw/connectors.py`
+  into `src/bigclaw/models.py`.
+- Install compatibility submodules from `src/bigclaw/__init__.py` so
+  `bigclaw.connectors` and `bigclaw.mapping` still resolve after file removal.
+- Validate via direct module loading and syntax checks, avoiding unrelated
+  package-import failures from other dirty files in the shared worktree.
+
+### Acceptance
+
+- Reduce `src/bigclaw/*.py` by one more file.
+- Preserve exported connector and mapping symbols after the merge.
+- Record exact validation commands and results.
+
+### Validation
+
+- `python3 -m compileall src/bigclaw/models.py src/bigclaw/__init__.py`
+- `python3 - <<'PY' ... PY` direct-load `src/bigclaw/models.py` and assert connector symbols work
+- `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+
+### Results
+
+- Deleted `src/bigclaw/connectors.py`.
+- Merged connector stub types and mapping helpers into
+  `src/bigclaw/models.py`.
+- Updated `src/bigclaw/__init__.py` to expose compatibility `connectors` and
+  `mapping` submodules from the merged `models` surface.
+- Repository counts after continuation:
+  - total `py` files: `78`
+  - total `go` files: `267`
+  - `src/bigclaw/*.py` files: `15`
+- Validation outcomes:
+  - `python3 -m compileall src/bigclaw/models.py src/bigclaw/__init__.py`
+    - Result: success
+  - `python3 - <<'PY' ... PY`
+    - Result: direct-loaded `models.py`, built a `SourceIssue`, mapped it to a
+      `Task`, and exercised `GitHubConnector.fetch_issues()` successfully;
+      printed `demo#1`, `demo#1`, `Priority.P0`, `In Progress`, `github`
+  - `printf 'PY '; rg --files -g '*.py' | wc -l; printf 'GO '; rg --files -g '*.go' | wc -l; printf 'SRC '; rg --files src/bigclaw -g '*.py' | wc -l`
+    - Result: `PY 78`, `GO 267`, `SRC 15`

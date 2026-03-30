@@ -12,6 +12,10 @@ from .models import (
     FlowTemplate,
     FlowTemplateStep,
     FlowTrigger,
+    GitHubConnector,
+    JiraConnector,
+    LinearConnector,
+    SourceIssue,
     Priority,
     RiskAssessment,
     RiskLevel,
@@ -22,6 +26,9 @@ from .models import (
     TriageRecord,
     TriageStatus,
     UsageRecord,
+    map_priority,
+    map_source_issue_to_task,
+    map_state,
 )
 from . import repository as _repository_surface
 from . import runtime as _legacy_runtime_surface
@@ -187,8 +194,12 @@ _install_surface_module(
     sys.modules[f"{__name__}.runtime"],
     ["LEGACY_RUNTIME_GUIDANCE", "legacy_runtime_message", "warn_legacy_runtime_surface"],
 )
-from .connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue, map_source_issue_to_task
-_install_surface_module("mapping", sys.modules[f"{__name__}.connectors"], ["map_priority", "map_state", "map_source_issue_to_task"])
+_install_surface_module(
+    "connectors",
+    sys.modules[f"{__name__}.models"],
+    ["Connector", "GitHubConnector", "JiraConnector", "LinearConnector", "SourceIssue", "map_priority", "map_state", "map_source_issue_to_task"],
+)
+_install_surface_module("mapping", sys.modules[f"{__name__}.models"], ["map_priority", "map_state", "map_source_issue_to_task"])
 from .design_system import (
     AlertDigestSubscription,
     AuditRequirement,
