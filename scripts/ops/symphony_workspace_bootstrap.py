@@ -3,17 +3,14 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
-repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(repo_root / "src"))
-
-from bigclaw.legacy_shim import run_bigclawctl_shim
-
-
 def main() -> int:
-    return run_bigclawctl_shim(__file__, ["workspace"], sys.argv[1:])
+    repo_root = Path(__file__).resolve().parents[2]
+    command = ["bash", str(repo_root / "scripts/ops/bigclawctl"), "workspace", *sys.argv[1:]]
+    return subprocess.call(command, cwd=repo_root)
 
 
 if __name__ == "__main__":

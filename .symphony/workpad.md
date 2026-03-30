@@ -212,3 +212,27 @@ Repository inventory at start of lane:
   - Result: `ok   bigclaw-go/internal/repo (cached)`, `ok   bigclaw-go/internal/governance (cached)`
 - `git diff --check`
   - Result: clean
+
+## BIG-GO-1014 Refill Sweep D
+
+### Plan
+
+- Inspect residual Python modules under `src/bigclaw` that are not already
+  modified in the current worktree.
+- Retire low-coupling Python residuals that are only thin wrappers around the
+  Go mainline.
+- Update the remaining wrapper scripts and Go compile-check coverage so the
+  deleted modules are no longer referenced.
+
+### Acceptance
+
+- Directly reduce residual Python assets under `src/bigclaw/**`.
+- Keep changes scoped to this issue and avoid unrelated dirty files already in
+  the worktree.
+- Report impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+
+### Validation
+
+- `rg -n "legacy_shim|workspace_bootstrap_cli" src scripts tests bigclaw-go -g '*.py' -g '*.go' -g '*.md' -g '*.sh'`
+- `python3 -m compileall scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py src/bigclaw/__main__.py`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
