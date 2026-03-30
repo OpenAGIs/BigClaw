@@ -2,7 +2,9 @@ package queue
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -62,8 +64,14 @@ func TestFileQueueDeadLetterReplayPersistsAcrossReload(t *testing.T) {
 	if len(deadLetters) != 1 || deadLetters[0].ID != "task-dead" {
 		t.Fatalf("unexpected dead letters: %+v", deadLetters)
 	}
+	if got := deadLetters[0].Metadata["dead_letter_reason"]; got != "boom" {
+		t.Fatalf("expected dead letter reason boom, got %+v", deadLetters[0].Metadata)
+	}
 	if err := reloaded.ReplayDeadLetter(ctx, "task-dead"); err != nil {
 		t.Fatalf("replay dead letter: %v", err)
+	}
+	if err := reloaded.ReplayDeadLetter(ctx, "missing"); !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("expected missing replay to return ErrTaskNotFound, got %v", err)
 	}
 	replayed, replayLease, err := reloaded.LeaseNext(ctx, "worker-b", time.Minute)
 	if err != nil || replayed == nil || replayLease == nil {
@@ -179,5 +187,44 @@ func TestFileQueueListTasksReturnsPriorityOrder(t *testing.T) {
 	}
 	if !reflect.DeepEqual(ids, []string{"p0", "p1", "p2"}) {
 		t.Fatalf("expected priority-ordered tasks, got %+v", ids)
+	}
+}
+
+func TestFileQueueLoadsLegacyListStorage(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	payload, err := json.Marshal([]map[string]any{
+		{
+			"priority": 0,
+			"task_id":  "legacy",
+			"task": map[string]any{
+				"task_id":     "legacy",
+				"source":      "linear",
+				"title":       "legacy",
+				"description": "legacy payload",
+				"priority":    0,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal legacy payload: %v", err)
+	}
+	if err := os.WriteFile(path, payload, 0o644); err != nil {
+		t.Fatalf("write legacy queue file: %v", err)
+	}
+
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue from legacy payload: %v", err)
+	}
+	if got := q.Size(ctx); got != 1 {
+		t.Fatalf("expected size 1 from legacy payload, got %d", got)
+	}
+	task, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || task == nil || lease == nil {
+		t.Fatalf("lease legacy task: %v task=%v lease=%v", err, task, lease)
+	}
+	if task.ID != "legacy" {
+		t.Fatalf("expected legacy task ID, got %+v", task)
 	}
 }

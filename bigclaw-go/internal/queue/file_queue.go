@@ -19,6 +19,12 @@ type FileQueue struct {
 	items map[string]*item
 }
 
+type legacyFileQueueItem struct {
+	TaskID   string      `json:"task_id"`
+	Priority int         `json:"priority"`
+	Task     domain.Task `json:"task"`
+}
+
 func NewFileQueue(path string) (*FileQueue, error) {
 	q := &FileQueue{path: path, items: make(map[string]*item)}
 	if err := q.load(); err != nil {
@@ -309,7 +315,31 @@ func (q *FileQueue) load() error {
 	if len(contents) == 0 {
 		return nil
 	}
-	return json.Unmarshal(contents, &q.items)
+	if err := json.Unmarshal(contents, &q.items); err == nil {
+		return nil
+	}
+
+	var legacy []legacyFileQueueItem
+	if err := json.Unmarshal(contents, &legacy); err != nil {
+		return err
+	}
+	for _, entry := range legacy {
+		task := entry.Task
+		if task.ID == "" {
+			task.ID = entry.TaskID
+		}
+		if task.Priority == 0 && entry.Priority != 0 {
+			task.Priority = entry.Priority
+		}
+		if task.State == "" {
+			task.State = domain.TaskQueued
+		}
+		q.items[task.ID] = &item{
+			Task:        task,
+			AvailableAt: time.Now(),
+		}
+	}
+	return nil
 }
 
 func (q *FileQueue) save() error {
