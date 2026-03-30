@@ -6,9 +6,9 @@ Issue: `BIG-GO-902`
 
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
-| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
-| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed |
 
 ## Remaining Python Script Backlog
 
@@ -48,13 +48,13 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 
 ## Compatibility Layer Plan
 
-- Keep the migrated Python entrypoints as thin shims that only forward to `bigclawctl`.
-- Do not add new behavior to the Python copies; all new logic belongs in Go.
+- Remove each Python entrypoint once shell wrappers, docs, and tests call `bigclawctl` directly.
+- Keep new behavior in Go-native entrypoints and reserve Python only for batches that are not yet migrated.
 - Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
   - validation bundle generators
   - benchmark matrices
   - migration scorecards/bundle exporters
-- Remove each Python shim only after the corresponding Go command is referenced by docs, CI, and operators for one full rollout cycle.
+- Remaining Python generators still need native replacements before they can be removed.
 
 ## Branch And PR Suggestion
 

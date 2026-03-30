@@ -31,9 +31,12 @@ class RunAllTest(unittest.TestCase):
         if executable:
             path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
+    def continuation_gate_path(self) -> Path:
+        return self.root / 'bigclaw-go' / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json'
+
     def install_stubs(self) -> None:
         self.write_file(
-            'scripts/e2e/run_task_smoke.py',
+            'bin/go',
             """\
             #!/usr/bin/env python3
             import json
@@ -41,30 +44,23 @@ class RunAllTest(unittest.TestCase):
             import sys
 
             args = sys.argv[1:]
-            report_path = pathlib.Path(args[args.index('--report-path') + 1])
-            report_path.parent.mkdir(parents=True, exist_ok=True)
-            report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+            if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (
+                len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'
+            ):
+                report_path = pathlib.Path(args[args.index('--report-path') + 1])
+                report_path.parent.mkdir(parents=True, exist_ok=True)
+                report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+                sys.exit(0)
+            if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (
+                len(args) >= 2 and args[0] == 'run' and args[1].endswith('/scripts/e2e/broker_bootstrap_summary.go')
+            ):
+                output = pathlib.Path(args[args.index('--output') + 1])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text('{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\\n', encoding='utf-8')
+                sys.exit(0)
+            raise SystemExit(f'unexpected go args: {args}')
             """,
             executable=True,
-        )
-        self.write_file(
-            'scripts/e2e/broker_bootstrap_summary.go',
-            """\
-            package main
-
-            import (
-                "flag"
-                "os"
-            )
-
-            func main() {
-                output := flag.String("output", "", "output")
-                flag.Parse()
-                if err := os.WriteFile(*output, []byte("{\\"ready\\":false,\\"runtime_posture\\":\\"contract_only\\",\\"live_adapter_implemented\\":false}\\n"), 0o644); err != nil {
-                    panic(err)
-                }
-            }
-            """,
         )
         self.write_file(
             'scripts/e2e/export_validation_bundle.py',
@@ -79,7 +75,7 @@ class RunAllTest(unittest.TestCase):
             bundle_dir = root / args[args.index('--bundle-dir') + 1]
             bundle_dir.mkdir(parents=True, exist_ok=True)
             calls_path = root / 'calls.jsonl'
-            gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
+            gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
             payload = {
                 'gate_exists': gate_path.exists(),
                 'run_broker': args[args.index('--run-broker') + 1],
@@ -135,6 +131,7 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_BROKER': '1',
                 'BIGCLAW_E2E_BROKER_BACKEND': 'stub',
                 'BIGCLAW_E2E_BROKER_REPORT_PATH': 'docs/reports/broker-failover-stub-report.json',
+                'PATH': f"{self.root / 'bin'}:{env['PATH']}",
             }
         )
 
@@ -186,6 +183,7 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_KUBERNETES': '0',
                 'BIGCLAW_E2E_RUN_RAY': '0',
                 'BIGCLAW_E2E_RUN_LOCAL': '1',
+                'PATH': f"{self.root / 'bin'}:{env['PATH']}",
             }
         )
 
@@ -200,9 +198,7 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
-                encoding='utf-8'
-            )
+            self.continuation_gate_path().read_text(encoding='utf-8')
         )
         self.assertEqual(gate['enforcement']['mode'], 'hold')
 
@@ -232,6 +228,7 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_RAY': '0',
                 'BIGCLAW_E2E_RUN_LOCAL': '1',
                 'BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE': '1',
+                'PATH': f"{self.root / 'bin'}:{env['PATH']}",
             }
         )
 
@@ -246,9 +243,7 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
-                encoding='utf-8'
-            )
+            self.continuation_gate_path().read_text(encoding='utf-8')
         )
         self.assertEqual(gate['enforcement']['mode'], 'fail')
 

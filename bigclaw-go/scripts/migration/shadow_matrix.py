@@ -2,10 +2,10 @@
 import argparse
 import json
 import pathlib
+import subprocess
 import sys
+import tempfile
 from collections import defaultdict
-
-import shadow_compare
 
 
 def load_json(path):
@@ -227,6 +227,55 @@ def build_report(results, fixture_entries, corpus_slices=None, manifest_meta=Non
     return report
 
 
+def compare_task(primary, shadow, task, timeout_seconds, health_timeout_seconds):
+    go_root = pathlib.Path(__file__).resolve().parents[2]
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as handle:
+        json.dump(task, handle, ensure_ascii=False, indent=2)
+        handle.write('\n')
+        task_file = pathlib.Path(handle.name)
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as handle:
+        report_file = pathlib.Path(handle.name)
+    try:
+        command = [
+            'go',
+            'run',
+            './cmd/bigclawctl',
+            'automation',
+            'migration',
+            'shadow-compare',
+            '--primary',
+            primary,
+            '--shadow',
+            shadow,
+            '--task-file',
+            str(task_file),
+            '--timeout-seconds',
+            str(timeout_seconds),
+            '--health-timeout-seconds',
+            str(health_timeout_seconds),
+            '--report-path',
+            str(report_file),
+        ]
+        completed = subprocess.run(
+            command,
+            cwd=go_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if completed.returncode not in (0, 1):
+            raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or 'shadow compare failed')
+        report_payload = report_file.read_text(encoding='utf-8').strip()
+        if report_payload:
+            return json.loads(report_payload)
+        if completed.stdout.strip():
+            return json.loads(completed.stdout)
+        raise RuntimeError('shadow compare produced no JSON report output')
+    finally:
+        task_file.unlink(missing_ok=True)
+        report_file.unlink(missing_ok=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Run a shadow-comparison matrix across multiple task files')
     parser.add_argument('--primary', required=True)
@@ -258,7 +307,7 @@ def main():
         task = dict(entry['task'])
         base_id = task.get('id', f'matrix-task-{index}')
         task['id'] = f'{base_id}-m{index}'
-        result = shadow_compare.compare_task(
+        result = compare_task(
             args.primary,
             args.shadow,
             task,
