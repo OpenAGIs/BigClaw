@@ -1,11 +1,11 @@
 # BIG-GO-1018
 
 ## Plan
-- Migrate the next scoped residual `tests/**` tranche for canonical audit-event coverage.
-- Port the small Python audit-event surface into a dedicated Go package or narrow existing-package tests without broad product/reporting migration.
-- Remove `tests/test_audit_events.py` after validating the new Go coverage.
-- Keep scope limited to audit specs, required-field validation, P0 scheduler/workflow audit emission, and minimal ledger-derived handoff/takeover helpers.
-- Run targeted Go tests for the selected audit tranche, capture exact commands and results, then commit and push the branch.
+- Migrate the next scoped residual `tests/**` tranche for the task-run observability surface.
+- Port the small Python observability/report helpers into a dedicated Go package that covers task runs, ledger round-trip, repo-sync audit rendering, detail-page rendering, and collaboration extraction.
+- Remove `tests/test_observability.py` after validating the new Go coverage.
+- Keep scope limited to the repository-facing observability slice and avoid broad report-suite or UI-review migration.
+- Run targeted Go tests for `bigclaw-go/internal/observabilitysurface`, capture exact commands and results, then commit and push the branch.
 
 ## Acceptance
 - Changes stay scoped to this issue's residual `tests/**` tranche.
@@ -14,12 +14,18 @@
 - Final report includes impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
 
 ## Validation
-- `go test ./internal/auditsurface`
+- `go test ./internal/observabilitysurface`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
 - `git status --short`
 
 ## Results
+- Current tranche: `cd bigclaw-go && go test ./internal/observabilitysurface` -> `ok  	bigclaw-go/internal/observabilitysurface	0.952s`
+- Current tranche: `find . -name '*.py' | wc -l` -> `75`
+- Current tranche: `find . -name '*.go' | wc -l` -> `281`
+- Current tranche: `git status --short` -> `M .symphony/workpad.md`; `D tests/test_observability.py`; `?? bigclaw-go/internal/observabilitysurface/`
+- Current tranche impact: `py files` decreased from `76` to `75`; `go files` increased from `279` to `281`; `pyproject.toml` absent and unchanged; `setup.py` absent and unchanged
+- Current tranche status: `.symphony/workpad.md` modified; `bigclaw-go/internal/observabilitysurface/observabilitysurface.go` and `bigclaw-go/internal/observabilitysurface/observabilitysurface_test.go` added; `tests/test_observability.py` deleted
 - Current tranche: `cd bigclaw-go && go test ./internal/auditsurface` -> `ok  	bigclaw-go/internal/auditsurface	0.792s`
 - Current tranche: `find . -name '*.py' | wc -l` -> `76`
 - Current tranche: `find . -name '*.go' | wc -l` -> `279`
