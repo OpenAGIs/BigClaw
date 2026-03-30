@@ -11,6 +11,7 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py` | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...` | migrated and Python shim removed |
+| `bigclaw-go/scripts/e2e/mixed_workload_matrix.py` | `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/run_matrix.py` | `go run ./cmd/bigclawctl automation benchmark run-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/benchmark/capacity_certification.py` | `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` | migrated and Python shim removed |
@@ -22,7 +23,6 @@ Issue: `BIG-GO-902`
 ## Remaining Python Script Backlog
 
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
@@ -37,6 +37,7 @@ go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
 go run ./cmd/bigclawctl automation e2e continuation-scorecard --help
 go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help
 go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help
+go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation benchmark run-matrix --help
 go run ./cmd/bigclawctl automation benchmark capacity-certification --help
