@@ -728,3 +728,149 @@ func TestRenderSavedViewReportGapSectionsStaySorted(t *testing.T) {
 		t.Fatalf("expected gap list rendering to preserve provided ordering, got %s", report)
 	}
 }
+
+func TestSavedViewCatalogJSONRoundTripPreservesCatalogAndAudit(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "BigClaw Views",
+		Version: "v3",
+		Views: []SavedView{
+			{
+				ViewID:     "view-ops-needs-approval",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "team",
+				Filters: []SavedViewFilter{
+					{Field: "status", Operator: "=", Value: "needs-approval"},
+					{Field: "priority", Operator: "in", Value: "p0,p1"},
+				},
+				SortBy:    "-updated_at",
+				Pinned:    true,
+				IsDefault: true,
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "digest-ops-daily",
+				SavedViewID:    "view-ops-needs-approval",
+				Channel:        "email",
+				Cadence:        "daily",
+				Recipients:     []string{"ops@bigclaw.dev"},
+			},
+		},
+	}
+
+	encodedCatalog, err := json.Marshal(catalog)
+	if err != nil {
+		t.Fatalf("marshal catalog: %v", err)
+	}
+	var restoredCatalog SavedViewCatalog
+	if err := json.Unmarshal(encodedCatalog, &restoredCatalog); err != nil {
+		t.Fatalf("unmarshal catalog: %v", err)
+	}
+	if !jsonEqual(t, restoredCatalog, catalog) {
+		t.Fatalf("expected saved view catalog round trip to preserve shape: got=%+v want=%+v", restoredCatalog, catalog)
+	}
+
+	audit := SavedViewCatalogAudit{
+		CatalogName:                     "BigClaw Views",
+		Version:                         "v3",
+		ViewCount:                       2,
+		SubscriptionCount:               1,
+		DuplicateViewNames:              map[string][]string{"/operations/overview:ops": {"Needs Approval"}},
+		InvalidVisibilityViews:          []string{"Needs Approval"},
+		ViewsMissingFilters:             []string{"Needs Approval"},
+		DuplicateDefaultViews:           map[string][]string{"/operations/overview:ops": {"Needs Approval", "Needs Approval"}},
+		OrphanSubscriptions:             []string{"digest-missing-view"},
+		SubscriptionsMissingRecipients:  []string{"digest-missing-view"},
+		SubscriptionsWithInvalidChannel: []string{"digest-missing-view"},
+		SubscriptionsWithInvalidCadence: []string{"digest-missing-view"},
+	}
+	encodedAudit, err := json.Marshal(audit)
+	if err != nil {
+		t.Fatalf("marshal audit: %v", err)
+	}
+	var restoredAudit SavedViewCatalogAudit
+	if err := json.Unmarshal(encodedAudit, &restoredAudit); err != nil {
+		t.Fatalf("unmarshal audit: %v", err)
+	}
+	if !jsonEqual(t, restoredAudit, audit) {
+		t.Fatalf("expected saved view audit round trip to preserve findings: got=%+v want=%+v", restoredAudit, audit)
+	}
+}
+
+func TestAuditSavedViewCatalogMatchesResidualPythonScenario(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "BigClaw Views",
+		Version: "v3",
+		Views: []SavedView{
+			{
+				ViewID:     "view-a",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "team",
+				Filters:    []SavedViewFilter{{Field: "status", Operator: "=", Value: "needs-approval"}},
+				IsDefault:  true,
+			},
+			{
+				ViewID:     "view-b",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "company",
+				IsDefault:  true,
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "digest-missing-view",
+				SavedViewID:    "view-z",
+				Channel:        "pagerduty",
+				Cadence:        "monthly",
+			},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if got, want := audit.DuplicateViewNames["/operations/overview:ops"], []string{"Needs Approval"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected duplicate view names: got=%v want=%v", got, want)
+	}
+	if got, want := audit.InvalidVisibilityViews, []string{"Needs Approval"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected invalid visibility findings: got=%v want=%v", got, want)
+	}
+	if got, want := audit.ViewsMissingFilters, []string{"Needs Approval"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected missing filter findings: got=%v want=%v", got, want)
+	}
+	if got, want := audit.DuplicateDefaultViews["/operations/overview:ops"], []string{"Needs Approval", "Needs Approval"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected duplicate default views: got=%v want=%v", got, want)
+	}
+	if got, want := audit.OrphanSubscriptions, []string{"digest-missing-view"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected orphan subscriptions: got=%v want=%v", got, want)
+	}
+	if got, want := audit.SubscriptionsMissingRecipients, []string{"digest-missing-view"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected recipient findings: got=%v want=%v", got, want)
+	}
+	if got, want := audit.SubscriptionsWithInvalidChannel, []string{"digest-missing-view"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected invalid channel findings: got=%v want=%v", got, want)
+	}
+	if got, want := audit.SubscriptionsWithInvalidCadence, []string{"digest-missing-view"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("unexpected invalid cadence findings: got=%v want=%v", got, want)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected zero readiness score, got %+v", audit)
+	}
+}
+
+func jsonEqual[T any](t *testing.T, left, right T) bool {
+	t.Helper()
+	leftJSON, err := json.Marshal(left)
+	if err != nil {
+		t.Fatalf("marshal left: %v", err)
+	}
+	rightJSON, err := json.Marshal(right)
+	if err != nil {
+		t.Fatalf("marshal right: %v", err)
+	}
+	return string(leftJSON) == string(rightJSON)
+}
