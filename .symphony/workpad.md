@@ -26,6 +26,7 @@ Batch file list:
 - `tests/test_repo_links.py`
 - `tests/test_validation_policy.py`
 - `tests/test_memory.py`
+- `tests/test_runtime_matrix.py`
 
 Go replacement inventory:
 
@@ -39,6 +40,7 @@ Go replacement inventory:
 - `bigclaw-go/internal/repo/repo_surfaces_test.go`
 - `bigclaw-go/internal/validationpolicy/policy_test.go`
 - `bigclaw-go/internal/taskmemory/store_test.go`
+- `bigclaw-go/internal/runtimecompat/runtime_test.go`
 - `bigclaw-go/internal/repo/governance_test.go`
 - `bigclaw-go/internal/triage/repo_test.go`
 - `bigclaw-go/internal/product/saved_views_test.go`
@@ -77,6 +79,8 @@ Repository inventory at start of lane:
    policy contract, then delete the root Python test once parity is covered.
 7. Add a minimal Go-native replacement for the residual task-memory reuse
    contract, then delete the root Python test once parity is covered.
+8. Add a minimal Go-native replacement for the residual runtime-matrix
+   contract, then delete the root Python test once parity is covered.
 
 ## Acceptance
 
@@ -111,6 +115,7 @@ Repository inventory at start of lane:
 - `git status --short`
 - `cd bigclaw-go && go test ./internal/validationpolicy`
 - `cd bigclaw-go && go test ./internal/taskmemory`
+- `cd bigclaw-go && go test ./internal/runtimecompat`
 
 ## Results
 
@@ -194,29 +199,33 @@ Repository inventory at start of lane:
   - Deleted.
   - Reason: its task-pattern reuse contract is now covered directly in
     `bigclaw-go/internal/taskmemory/store_test.go`.
+- `tests/test_runtime_matrix.py`
+  - Deleted.
+  - Reason: its legacy runtime matrix contract is now covered directly in
+    `bigclaw-go/internal/runtimecompat/runtime_test.go`.
 
 ### Impact Summary
 
 - `tests/*.py` files before: `38`
-- `tests/*.py` files after: `21`
-- Net `tests/*.py` reduction: `17`
+- `tests/*.py` files after: `20`
+- Net `tests/*.py` reduction: `18`
 - Repo `*.py` files before: `108`
-- Repo `*.py` files after: `91`
-- Net repo `*.py` reduction: `17`
+- Repo `*.py` files after: `90`
+- Net repo `*.py` reduction: `18`
 - Repo `*.go` files before: `267`
-- Repo `*.go` files after: `271`
-- Net repo `*.go` increase: `4`
+- Repo `*.go` files after: `273`
+- Net repo `*.go` increase: `6`
 - Root `pyproject.toml`: absent before, absent after
 - Root `setup.py`: absent before, absent after
 
 ### Validation Record
 
 - `find tests -name '*.py' | sort | wc -l`
-  - Result: `21`
+  - Result: `20`
 - `find . -name '*.py' | sort | wc -l`
-  - Result: `91`
+  - Result: `90`
 - `find . -name '*.go' | sort | wc -l`
-  - Result: `271`
+  - Result: `273`
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport|TestBuildSavedViewCatalog|TestAuditSavedViewCatalogAndRenderReport|TestRenderSavedViewReport'`
   - Result: `ok  	bigclaw-go/internal/product	2.711s`
 - `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths'`
@@ -250,9 +259,11 @@ Repository inventory at start of lane:
 - `git diff --check`
   - Result: clean
 - `git status --short`
-  - Result: `.symphony/workpad.md`, `tests/test_memory.py` deleted,
-    and `bigclaw-go/internal/taskmemory/` added
+  - Result: `.symphony/workpad.md`, `tests/test_runtime_matrix.py` deleted,
+    and `bigclaw-go/internal/runtimecompat/` added
 - `cd bigclaw-go && go test ./internal/validationpolicy`
   - Result: `ok  	bigclaw-go/internal/validationpolicy	1.154s`
 - `cd bigclaw-go && go test ./internal/taskmemory`
   - Result: `ok  	bigclaw-go/internal/taskmemory	1.240s`
+- `cd bigclaw-go && go test ./internal/runtimecompat`
+  - Result: `ok  	bigclaw-go/internal/runtimecompat	1.103s`
