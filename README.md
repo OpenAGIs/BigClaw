@@ -64,8 +64,6 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/create_issues.py` and `python3 scripts/dev_smoke.py` are now
-  compatibility shims that dispatch into `bigclawctl` Go subcommands.
 - `python3 scripts/ops/bigclaw_github_sync.py ...`,
   `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
   `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
@@ -85,15 +83,20 @@ Do not use Python packaging from the repository root. When a migration-only
 Python surface must be exercised, validate it directly from source:
 
 ```bash
-PYTHONPATH=src python3 -m pytest
+PYTHONPATH=src python3 -m pytest tests
 ```
 
 Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface without editable install:
+Python migration surface from the active environment without editable install
+or repo-root packaging bootstrap:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
+
+That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level smoke
+suite in `tests/test_workspace_bootstrap.py` and `tests/test_planning.py` when
+`pytest` is available.
 
 ## Go smoke verify
 
@@ -111,7 +114,6 @@ Use this only when validating a frozen migration-reference path:
 
 ```bash
 bash scripts/ops/bigclawctl dev-smoke
-python3 scripts/dev_smoke.py
 ```
 
 ## Quality gates
@@ -133,7 +135,7 @@ Legacy Python migration surface:
 
 ```bash
 ruff check src tests scripts
-PYTHONPATH=src python3 -m pytest
+PYTHONPATH=src python3 -m pytest tests
 pre-commit run --all-files
 ```
 
@@ -153,7 +155,7 @@ Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-ma
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
-bootstrap wrappers remain only as compatibility shims during migration.
+ops wrappers remain only as compatibility shims during migration.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,

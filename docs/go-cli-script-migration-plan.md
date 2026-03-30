@@ -12,8 +12,8 @@ The implemented migration batches in this issue move these entrypoints behind th
 
 ### Repo-root entrypoints
 
-- `scripts/create_issues.py` -> `bigclawctl create-issues`
-- `scripts/dev_smoke.py` -> `bigclawctl dev-smoke`
+- retired `scripts/create_issues.py`; use `bigclawctl create-issues`
+- retired `scripts/dev_smoke.py`; use `bigclawctl dev-smoke`
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
@@ -29,9 +29,8 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
 
-The compatibility layer is intentionally thin:
+The remaining compatibility layer is intentionally thin:
 
-- Python root shims only proxy into `scripts/ops/bigclawctl`.
 - Python `scripts/ops/*_*.py` shims only translate legacy flags/defaults before dispatching into `scripts/ops/bigclawctl`.
 - Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
@@ -57,8 +56,6 @@ The compatibility layer is intentionally thin:
 
 ### Compatibility shims kept in place
 
-- `scripts/create_issues.py`
-- `scripts/dev_smoke.py`
 - `scripts/ops/bigclaw_github_sync.py`
 - `scripts/ops/bigclaw_refill_queue.py`
 - `scripts/ops/bigclaw_workspace_bootstrap.py`
@@ -69,12 +66,13 @@ The compatibility layer is intentionally thin:
 - `scripts/ops/bigclaw-panel`
 
 These shims should remain until operator docs and external automation references are updated to
-invoke `bash scripts/ops/bigclawctl ...` directly.
+invoke `bash scripts/ops/bigclawctl ...` directly. The two repo-root Python shims were removed
+because the root no longer carries Python packaging/bootstrap ownership.
 
 ## Remaining Backlog
 
-- Evaluate whether `scripts/dev_bootstrap.sh` should become a Go-owned bootstrap command or remain
-  a shell-only environment bootstrapper.
+- Continue shrinking `scripts/dev_bootstrap.sh` so it stays a validation-only shell helper and
+  does not reintroduce Python environment management at the repository root.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
 - Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
@@ -87,11 +85,11 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
 - `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
-- `python3 scripts/dev_smoke.py`
-- `python3 scripts/create_issues.py --help`
 - `python3 scripts/ops/bigclaw_github_sync.py status --json`
 - `python3 scripts/ops/bigclaw_refill_queue.py --help`
 - `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `bash scripts/dev_bootstrap.sh`
+- `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `bash scripts/ops/bigclawctl issue --help`
 - `bash scripts/ops/bigclawctl panel --help`
 - `bash scripts/ops/bigclawctl symphony --help`
@@ -110,9 +108,9 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 - Legacy workspace wrappers:
   `--issues`, `--report-file`, and `--no-cleanup` still need to translate to the Go workspace
   validation flags without changing existing automation call sites.
-- Direct shim execution:
-  Python compatibility entrypoints should stay runnable without requiring explicit `PYTHONPATH`
-  bootstrapping from operators or CI jobs.
+- Root compatibility retirement:
+  repo operators must stop invoking removed repo-root Python shims and switch to
+  `bash scripts/ops/bigclawctl ...` entrypoints.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
   for the migrated `bigclaw-go/scripts/*` automation callers.
