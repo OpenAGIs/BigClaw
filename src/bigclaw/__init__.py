@@ -9,6 +9,7 @@ import warnings
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
+from html import escape
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Protocol, Sequence, Set, Tuple
 from urllib.parse import urlparse
@@ -2206,6 +2207,1168 @@ class RiskScorer:
         return RiskLevel.LOW
 
 
+@dataclass
+class EvaluationCriterion:
+    name: str
+    weight: int
+    passed: bool
+    detail: str
+
+
+@dataclass
+class BenchmarkCase:
+    case_id: str
+    task: Task
+    expected_medium: Optional[str] = None
+    expected_approved: Optional[bool] = None
+    expected_status: Optional[str] = None
+    require_report: bool = False
+
+
+@dataclass
+class ReplayRecord:
+    task: Task
+    run_id: str
+    medium: str
+    approved: bool
+    status: str
+
+    @classmethod
+    def from_execution(cls, task: Task, run_id: str, record: Any) -> "ReplayRecord":
+        return cls(
+            task=task,
+            run_id=run_id,
+            medium=record.decision.medium,
+            approved=record.decision.approved,
+            status=record.run.status,
+        )
+
+
+@dataclass
+class ReplayOutcome:
+    matched: bool
+    replay_record: ReplayRecord
+    mismatches: List[str] = field(default_factory=list)
+    report_path: Optional[str] = None
+
+
+@dataclass
+class BenchmarkResult:
+    case_id: str
+    score: int
+    passed: bool
+    criteria: List[EvaluationCriterion]
+    record: Any
+    replay: ReplayOutcome
+    detail_page_path: Optional[str] = None
+
+
+@dataclass
+class BenchmarkComparison:
+    case_id: str
+    baseline_score: int
+    current_score: int
+    delta: int
+    changed: bool
+
+
+@dataclass
+class BenchmarkSuiteResult:
+    results: List[BenchmarkResult]
+    version: str = "current"
+
+    @property
+    def score(self) -> int:
+        if not self.results:
+            return 0
+        return round(sum(result.score for result in self.results) / len(self.results))
+
+    @property
+    def passed(self) -> bool:
+        return all(result.passed for result in self.results)
+
+    def compare(self, baseline: "BenchmarkSuiteResult") -> List[BenchmarkComparison]:
+        baseline_by_case = {result.case_id: result for result in baseline.results}
+        comparisons = []
+        for result in self.results:
+            baseline_result = baseline_by_case.get(result.case_id)
+            baseline_score = baseline_result.score if baseline_result else 0
+            delta = result.score - baseline_score
+            comparisons.append(
+                BenchmarkComparison(
+                    case_id=result.case_id,
+                    baseline_score=baseline_score,
+                    current_score=result.score,
+                    delta=delta,
+                    changed=delta != 0,
+                )
+            )
+        return comparisons
+
+
+class BenchmarkRunner:
+    def __init__(self, scheduler: Optional[Any] = None, storage_dir: Optional[str] = None):
+        self.scheduler = scheduler or Scheduler()
+        self.storage_dir = Path(storage_dir) if storage_dir else None
+
+    def run_case(self, case: BenchmarkCase) -> BenchmarkResult:
+        ledger = ObservabilityLedger(str(self._case_path(case.case_id, "ledger.json")))
+        report_path = None
+        if case.require_report:
+            report_path = str(self._case_path(case.case_id, "task-run.md"))
+        run_id = f"benchmark-{case.case_id}"
+        record = self.scheduler.execute(
+            case.task,
+            run_id=run_id,
+            ledger=ledger,
+            report_path=report_path,
+            actor="benchmark-runner",
+        )
+        criteria = self._evaluate(case, record)
+        replay = self.replay(ReplayRecord.from_execution(case.task, run_id, record))
+        total_weight = sum(item.weight for item in criteria)
+        earned_weight = sum(item.weight for item in criteria if item.passed)
+        score = round((earned_weight / total_weight) * 100) if total_weight else 0
+        passed = all(item.passed for item in criteria) and replay.matched
+        detail_page_path = None
+        if self.storage_dir is not None:
+            detail_page_path = str(self._case_path(case.case_id, "run-detail.html"))
+            write_report(detail_page_path, render_run_replay_index_page(case.case_id, record, replay, criteria))
+        return BenchmarkResult(
+            case_id=case.case_id,
+            score=score,
+            passed=passed,
+            criteria=criteria,
+            record=record,
+            replay=replay,
+            detail_page_path=detail_page_path,
+        )
+
+    def run_suite(self, cases: List[BenchmarkCase], version: str = "current") -> BenchmarkSuiteResult:
+        return BenchmarkSuiteResult(results=[self.run_case(case) for case in cases], version=version)
+
+    def replay(self, replay_record: ReplayRecord) -> ReplayOutcome:
+        ledger = ObservabilityLedger(str(self._case_path(replay_record.run_id, "replay-ledger.json")))
+        replayed = self.scheduler.execute(
+            replay_record.task,
+            run_id=f"{replay_record.run_id}-replay",
+            ledger=ledger,
+            actor="benchmark-replay",
+        )
+        observed = ReplayRecord.from_execution(replay_record.task, replay_record.run_id, replayed)
+        mismatches = []
+        if observed.medium != replay_record.medium:
+            mismatches.append(f"medium expected {replay_record.medium} got {observed.medium}")
+        if observed.approved != replay_record.approved:
+            mismatches.append(f"approved expected {replay_record.approved} got {observed.approved}")
+        if observed.status != replay_record.status:
+            mismatches.append(f"status expected {replay_record.status} got {observed.status}")
+        report_path = None
+        if self.storage_dir is not None:
+            report_path = str(self._case_path(replay_record.run_id, "replay.html"))
+            write_report(report_path, render_replay_detail_page(replay_record, observed, mismatches))
+        return ReplayOutcome(
+            matched=not mismatches,
+            replay_record=observed,
+            mismatches=mismatches,
+            report_path=report_path,
+        )
+
+    def _evaluate(self, case: BenchmarkCase, record: Any) -> List[EvaluationCriterion]:
+        return [
+            self._criterion("decision-medium", 40, case.expected_medium, record.decision.medium),
+            self._criterion("approval-gate", 30, case.expected_approved, record.decision.approved),
+            self._criterion("final-status", 20, case.expected_status, record.run.status),
+            EvaluationCriterion(
+                name="report-artifact",
+                weight=10,
+                passed=(not case.require_report) or bool(record.report_path),
+                detail="report emitted" if (not case.require_report) or bool(record.report_path) else "report missing",
+            ),
+        ]
+
+    def _criterion(self, name: str, weight: int, expected: Optional[object], actual: object) -> EvaluationCriterion:
+        if expected is None:
+            return EvaluationCriterion(name=name, weight=weight, passed=True, detail="not asserted")
+        passed = expected == actual
+        return EvaluationCriterion(name=name, weight=weight, passed=passed, detail=f"expected {expected} got {actual}")
+
+    def _case_path(self, case_id: str, file_name: str) -> Path:
+        if self.storage_dir is None:
+            return Path(file_name)
+        return self.storage_dir / case_id / file_name
+
+
+def render_benchmark_suite_report(
+    suite: BenchmarkSuiteResult,
+    baseline: Optional[BenchmarkSuiteResult] = None,
+) -> str:
+    lines = [
+        "# Benchmark Suite Report",
+        "",
+        f"- Version: {suite.version}",
+        f"- Cases: {len(suite.results)}",
+        f"- Passed: {suite.passed}",
+        f"- Score: {suite.score}",
+        "",
+        "## Cases",
+        "",
+    ]
+    if suite.results:
+        lines.extend(
+            f"- {result.case_id}: score={result.score} passed={result.passed} replay={result.replay.matched}"
+            for result in suite.results
+        )
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Comparison", ""])
+    if baseline is None:
+        lines.append("- No baseline provided")
+    else:
+        lines.append(f"- Baseline Version: {baseline.version}")
+        lines.append(f"- Score Delta: {suite.score - baseline.score}")
+        comparisons = suite.compare(baseline)
+        if comparisons:
+            lines.extend(
+                f"- {comparison.case_id}: baseline={comparison.baseline_score} current={comparison.current_score} delta={comparison.delta}"
+                for comparison in comparisons
+            )
+        else:
+            lines.append("- No comparable cases")
+    return "\n".join(lines) + "\n"
+
+
+def render_replay_detail_page(expected: ReplayRecord, observed: ReplayRecord, mismatches: List[str]) -> str:
+    tone = "accent" if not mismatches else "danger"
+    timeline_events = [
+        RunDetailEvent(
+            event_id="compare-medium",
+            lane="comparison",
+            title="Medium",
+            timestamp="compare-1",
+            status="matched" if expected.medium == observed.medium else "mismatch",
+            summary=f"expected {expected.medium} | observed {observed.medium}",
+            details=[f"expected={expected.medium}", f"observed={observed.medium}"],
+        ),
+        RunDetailEvent(
+            event_id="compare-approved",
+            lane="comparison",
+            title="Approval",
+            timestamp="compare-2",
+            status="matched" if expected.approved == observed.approved else "mismatch",
+            summary=f"expected {expected.approved} | observed {observed.approved}",
+            details=[f"expected={expected.approved}", f"observed={observed.approved}"],
+        ),
+        RunDetailEvent(
+            event_id="compare-status",
+            lane="comparison",
+            title="Status",
+            timestamp="compare-3",
+            status="matched" if expected.status == observed.status else "mismatch",
+            summary=f"expected {expected.status} | observed {observed.status}",
+            details=[f"expected={expected.status}", f"observed={observed.status}"],
+        ),
+        *[
+            RunDetailEvent(
+                event_id=f"mismatch-{index}",
+                lane="replay",
+                title=f"Mismatch {index + 1}",
+                timestamp=f"compare-{index + 4}",
+                status="mismatch",
+                summary=item,
+                details=[item],
+            )
+            for index, item in enumerate(mismatches)
+        ],
+    ]
+    comparison_html = f"""
+    <section class="surface">
+      <h2>Split Comparison</h2>
+      <p>Side-by-side replay comparison for task <strong>{escape(expected.task.task_id)}</strong> against baseline run <code>{escape(expected.run_id)}</code>.</p>
+      <div class="resource-grid">
+        <article class="resource-card">
+          <span class="kicker">Baseline</span>
+          <h3>Expected</h3>
+          <p><code>medium={escape(expected.medium)}</code></p>
+          <span class="resource-meta">approved={escape(str(expected.approved))} | status={escape(expected.status)}</span>
+        </article>
+        <article class="resource-card">
+          <span class="kicker">Replay</span>
+          <h3>Observed</h3>
+          <p><code>medium={escape(observed.medium)}</code></p>
+          <span class="resource-meta">approved={escape(str(observed.approved))} | status={escape(observed.status)}</span>
+        </article>
+      </div>
+    </section>
+    """
+    mismatch_html = f"""
+    <section class="surface">
+      <h2>Replay Mismatches</h2>
+      <p>Detailed mismatch list for the replay execution.</p>
+      <ul>{''.join(f'<li>{escape(item)}</li>' for item in mismatches) or '<li>None</li>'}</ul>
+    </section>
+    """
+    return render_run_detail_console(
+        page_title=f"Replay Detail · {expected.run_id}",
+        eyebrow="Replay Detail",
+        hero_title=f"Replay Detail · {expected.task.task_id}",
+        hero_summary="High-fidelity replay inspection with synced comparison timeline and split-view baseline versus observed execution state.",
+        stats=[
+            RunDetailStat("Run ID", expected.run_id),
+            RunDetailStat("Task ID", expected.task.task_id),
+            RunDetailStat("Expected Medium", expected.medium),
+            RunDetailStat("Observed Medium", observed.medium, tone=tone),
+            RunDetailStat("Replay", "matched" if not mismatches else "mismatch", tone=tone),
+            RunDetailStat("Mismatches", str(len(mismatches)), tone=tone),
+        ],
+        tabs=[
+            RunDetailTab("overview", "Overview", comparison_html),
+            RunDetailTab("timeline", "Timeline / Log Sync", render_timeline_panel("Timeline / Log Sync", "Field-by-field replay comparison with a synced inspector for each expectation and mismatch.", timeline_events)),
+            RunDetailTab("comparison", "Split View", comparison_html),
+            RunDetailTab("replay", "Replay", mismatch_html),
+            RunDetailTab("reports", "Reports", render_resource_grid("Reports", "Replay detail pages do not emit standalone report files beyond the generated HTML page unless the caller persists additional artifacts.", [])),
+        ],
+        timeline_events=timeline_events,
+    )
+
+
+def render_run_replay_index_page(
+    case_id: str,
+    record: Any,
+    replay: ReplayOutcome,
+    criteria: List[EvaluationCriterion],
+) -> str:
+    status_tone = "accent" if record.run.status == "approved" else "warning"
+    if replay.mismatches:
+        status_tone = "danger"
+    report_path = record.report_path or "n/a"
+    detail_path = str(Path(record.report_path).with_suffix(".html")) if record.report_path else "n/a"
+    replay_path = replay.report_path or "n/a"
+    criteria_events = [
+        RunDetailEvent(
+            event_id=f"criterion-{index}",
+            lane="acceptance",
+            title=item.name,
+            timestamp=f"step-{index + 1}",
+            status="passed" if item.passed else "failed",
+            summary=item.detail,
+            details=[f"weight={item.weight}", f"passed={item.passed}"],
+        )
+        for index, item in enumerate(criteria)
+    ]
+    mismatch_events = [
+        RunDetailEvent(
+            event_id=f"mismatch-{index}",
+            lane="replay",
+            title=f"Replay mismatch {index + 1}",
+            timestamp=f"replay-{index + 1}",
+            status="mismatch",
+            summary=item,
+            details=[item],
+        )
+        for index, item in enumerate(replay.mismatches)
+    ]
+    run_events = sorted(
+        [
+            *[
+                RunDetailEvent(
+                    event_id=f"log-{index}",
+                    lane="log",
+                    title=entry.message,
+                    timestamp=entry.timestamp,
+                    status=entry.level,
+                    summary=f"log entry at {entry.timestamp}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.context.items())] or ["No structured context recorded."],
+                )
+                for index, entry in enumerate(record.run.logs)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"trace-{index}",
+                    lane="trace",
+                    title=entry.span,
+                    timestamp=entry.timestamp,
+                    status=entry.status,
+                    summary=f"trace span {entry.span}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.attributes.items())] or ["No trace attributes recorded."],
+                )
+                for index, entry in enumerate(record.run.traces)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"audit-{index}",
+                    lane="audit",
+                    title=entry.action,
+                    timestamp=entry.timestamp,
+                    status=entry.outcome,
+                    summary=f"audit by {entry.actor}",
+                    details=[f"actor={entry.actor}", *[f"{key}={value}" for key, value in sorted(entry.details.items())]] or ["No audit details recorded."],
+                )
+                for index, entry in enumerate(record.run.audits)
+            ],
+            *criteria_events,
+            *mismatch_events,
+        ],
+        key=lambda event: event.timestamp,
+    )
+    execution_resources = [
+        RunDetailResource(name="Markdown report", kind="report", path=report_path, meta=["execution report"], tone="report"),
+        RunDetailResource(name="Run detail page", kind="page", path=detail_path, meta=["task run detail"], tone="page"),
+        RunDetailResource(name="Replay page", kind="page", path=replay_path, meta=[f"matched={replay.matched}"], tone="page"),
+    ]
+    overview_html = f"""
+    <section class="surface">
+      <h2>Overview</h2>
+      <p>Benchmark case <strong>{escape(case_id)}</strong> executed task <strong>{escape(record.run.task_id)}</strong> with scheduler medium <strong>{escape(record.decision.medium)}</strong>.</p>
+      <p class="meta">Replay matched={escape(str(replay.matched))} | mismatches={escape(str(len(replay.mismatches)))}</p>
+    </section>
+    """
+    acceptance_html = f"""
+    <section class="surface">
+      <h2>Acceptance Criteria</h2>
+      <p>Scored checks used to grade the run detail and replay execution path.</p>
+      <ul>
+        {''.join(f'<li><strong>{escape(item.name)}</strong>: {escape(item.detail)} | weight={item.weight} | passed={item.passed}</li>' for item in criteria) or '<li>None</li>'}
+      </ul>
+    </section>
+    """
+    replay_html = f"""
+    <section class="surface">
+      <h2>Replay</h2>
+      <p>Replay status <strong>{escape('matched' if replay.matched else 'mismatch')}</strong> for baseline run <code>{escape(replay.replay_record.run_id)}</code>.</p>
+      <ul>
+        {''.join(f'<li>{escape(item)}</li>' for item in replay.mismatches) or '<li>None</li>'}
+      </ul>
+    </section>
+    """
+    return render_run_detail_console(
+        page_title=f"Run Detail Index · {case_id}",
+        eyebrow="Replay Console",
+        hero_title=f"Run Detail Index · {case_id}",
+        hero_summary="Benchmark execution, replay evidence, and acceptance criteria in a single operator-facing run console.",
+        stats=[
+            RunDetailStat("Task ID", record.run.task_id),
+            RunDetailStat("Status", record.run.status, tone=status_tone),
+            RunDetailStat("Medium", record.decision.medium, tone="accent" if record.decision.medium == "browser" else "default"),
+            RunDetailStat("Replay", "matched" if replay.matched else "mismatch", tone="accent" if replay.matched else "danger"),
+            RunDetailStat("Criteria", str(len(criteria))),
+            RunDetailStat("Mismatches", str(len(replay.mismatches)), tone="danger" if replay.mismatches else "default"),
+        ],
+        tabs=[
+            RunDetailTab("overview", "Overview", overview_html),
+            RunDetailTab("timeline", "Timeline / Log Sync", render_timeline_panel("Timeline / Log Sync", "Run logs, trace spans, audits, acceptance checks, and replay mismatches are merged into one synced timeline inspector.", run_events)),
+            RunDetailTab("acceptance", "Acceptance", acceptance_html),
+            RunDetailTab("artifacts", "Artifacts", render_resource_grid("Artifacts", "Generated reports and pages emitted for benchmark review and replay inspection.", execution_resources)),
+            RunDetailTab("reports", "Reports", render_resource_grid("Reports", "Report-first view for markdown output and linked run/replay pages.", [resource for resource in execution_resources if resource.kind == "report" or resource.name.endswith("page")])),
+            RunDetailTab("replay", "Replay", replay_html),
+        ],
+        timeline_events=run_events,
+    )
+
+
+PRIORITY_WEIGHTS = {"P0": 4, "P1": 3, "P2": 2, "P3": 1}
+GOAL_STATUS_ORDER = {
+    "done": 4,
+    "on-track": 3,
+    "at-risk": 2,
+    "blocked": 1,
+    "not-started": 0,
+}
+
+
+@dataclass(frozen=True)
+class EvidenceLink:
+    label: str
+    target: str
+    capability: str = ""
+    note: str = ""
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "label": self.label,
+            "target": self.target,
+            "capability": self.capability,
+            "note": self.note,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "EvidenceLink":
+        return cls(
+            label=str(data["label"]),
+            target=str(data["target"]),
+            capability=str(data.get("capability", "")),
+            note=str(data.get("note", "")),
+        )
+
+
+@dataclass(frozen=True)
+class CandidateEntry:
+    candidate_id: str
+    title: str
+    theme: str
+    priority: str
+    owner: str
+    outcome: str
+    validation_command: str
+    capabilities: List[str] = field(default_factory=list)
+    evidence: List[str] = field(default_factory=list)
+    evidence_links: List[EvidenceLink] = field(default_factory=list)
+    dependencies: List[str] = field(default_factory=list)
+    blockers: List[str] = field(default_factory=list)
+
+    @property
+    def readiness_score(self) -> int:
+        base = PRIORITY_WEIGHTS.get(self.priority.upper(), 0) * 25
+        dependency_penalty = len(self.dependencies) * 10
+        blocker_penalty = len(self.blockers) * 20
+        evidence_bonus = min(len(self.evidence), 3) * 5
+        return max(0, min(100, base + evidence_bonus - dependency_penalty - blocker_penalty))
+
+    @property
+    def ready(self) -> bool:
+        return bool(self.capabilities) and bool(self.evidence) and not self.blockers
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "candidate_id": self.candidate_id,
+            "title": self.title,
+            "theme": self.theme,
+            "priority": self.priority,
+            "owner": self.owner,
+            "outcome": self.outcome,
+            "validation_command": self.validation_command,
+            "capabilities": list(self.capabilities),
+            "evidence": list(self.evidence),
+            "evidence_links": [link.to_dict() for link in self.evidence_links],
+            "dependencies": list(self.dependencies),
+            "blockers": list(self.blockers),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "CandidateEntry":
+        return cls(
+            candidate_id=str(data["candidate_id"]),
+            title=str(data["title"]),
+            theme=str(data["theme"]),
+            priority=str(data["priority"]),
+            owner=str(data["owner"]),
+            outcome=str(data["outcome"]),
+            validation_command=str(data["validation_command"]),
+            capabilities=[str(item) for item in data.get("capabilities", [])],
+            evidence=[str(item) for item in data.get("evidence", [])],
+            evidence_links=[EvidenceLink.from_dict(item) for item in data.get("evidence_links", [])],
+            dependencies=[str(item) for item in data.get("dependencies", [])],
+            blockers=[str(item) for item in data.get("blockers", [])],
+        )
+
+
+@dataclass
+class CandidateBacklog:
+    epic_id: str
+    title: str
+    version: str
+    candidates: List[CandidateEntry] = field(default_factory=list)
+
+    @property
+    def ranked_candidates(self) -> List[CandidateEntry]:
+        return sorted(self.candidates, key=lambda candidate: (-candidate.readiness_score, candidate.candidate_id))
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "epic_id": self.epic_id,
+            "title": self.title,
+            "version": self.version,
+            "candidates": [candidate.to_dict() for candidate in self.candidates],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "CandidateBacklog":
+        return cls(
+            epic_id=str(data["epic_id"]),
+            title=str(data["title"]),
+            version=str(data["version"]),
+            candidates=[CandidateEntry.from_dict(item) for item in data.get("candidates", [])],
+        )
+
+
+@dataclass(frozen=True)
+class EntryGate:
+    gate_id: str
+    name: str
+    min_ready_candidates: int
+    required_capabilities: List[str] = field(default_factory=list)
+    required_evidence: List[str] = field(default_factory=list)
+    required_baseline_version: str = ""
+    max_blockers: int = 0
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "gate_id": self.gate_id,
+            "name": self.name,
+            "min_ready_candidates": self.min_ready_candidates,
+            "required_capabilities": list(self.required_capabilities),
+            "required_evidence": list(self.required_evidence),
+            "required_baseline_version": self.required_baseline_version,
+            "max_blockers": self.max_blockers,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "EntryGate":
+        return cls(
+            gate_id=str(data["gate_id"]),
+            name=str(data["name"]),
+            min_ready_candidates=int(data["min_ready_candidates"]),
+            required_capabilities=[str(item) for item in data.get("required_capabilities", [])],
+            required_evidence=[str(item) for item in data.get("required_evidence", [])],
+            required_baseline_version=str(data.get("required_baseline_version", "")),
+            max_blockers=int(data.get("max_blockers", 0)),
+        )
+
+
+@dataclass
+class EntryGateDecision:
+    gate_id: str
+    passed: bool
+    ready_candidate_ids: List[str] = field(default_factory=list)
+    blocked_candidate_ids: List[str] = field(default_factory=list)
+    missing_capabilities: List[str] = field(default_factory=list)
+    missing_evidence: List[str] = field(default_factory=list)
+    baseline_ready: bool = True
+    baseline_findings: List[str] = field(default_factory=list)
+    blocker_count: int = 0
+
+    @property
+    def summary(self) -> str:
+        status = "PASS" if self.passed else "HOLD"
+        return (
+            f"{status}: ready={len(self.ready_candidate_ids)} "
+            f"blocked={self.blocker_count} "
+            f"missing_capabilities={len(self.missing_capabilities)} "
+            f"missing_evidence={len(self.missing_evidence)} "
+            f"baseline_findings={len(self.baseline_findings)}"
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "gate_id": self.gate_id,
+            "passed": self.passed,
+            "ready_candidate_ids": list(self.ready_candidate_ids),
+            "blocked_candidate_ids": list(self.blocked_candidate_ids),
+            "missing_capabilities": list(self.missing_capabilities),
+            "missing_evidence": list(self.missing_evidence),
+            "baseline_ready": self.baseline_ready,
+            "baseline_findings": list(self.baseline_findings),
+            "blocker_count": self.blocker_count,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "EntryGateDecision":
+        return cls(
+            gate_id=str(data["gate_id"]),
+            passed=bool(data["passed"]),
+            ready_candidate_ids=[str(item) for item in data.get("ready_candidate_ids", [])],
+            blocked_candidate_ids=[str(item) for item in data.get("blocked_candidate_ids", [])],
+            missing_capabilities=[str(item) for item in data.get("missing_capabilities", [])],
+            missing_evidence=[str(item) for item in data.get("missing_evidence", [])],
+            baseline_ready=bool(data.get("baseline_ready", True)),
+            baseline_findings=[str(item) for item in data.get("baseline_findings", [])],
+            blocker_count=int(data.get("blocker_count", 0)),
+        )
+
+
+class CandidatePlanner:
+    def evaluate_gate(
+        self,
+        backlog: CandidateBacklog,
+        gate: EntryGate,
+        baseline_audit: Optional[ScopeFreezeAudit] = None,
+    ) -> EntryGateDecision:
+        ready_candidates = [candidate for candidate in backlog.ranked_candidates if candidate.ready]
+        blocked_candidates = [candidate for candidate in backlog.candidates if candidate.blockers]
+        provided_capabilities = {capability for candidate in ready_candidates for capability in candidate.capabilities}
+        provided_evidence = {item for candidate in ready_candidates for item in candidate.evidence}
+        missing_capabilities = [capability for capability in gate.required_capabilities if capability not in provided_capabilities]
+        missing_evidence = [item for item in gate.required_evidence if item not in provided_evidence]
+        baseline_findings = self._baseline_findings(gate, baseline_audit)
+        baseline_ready = not baseline_findings
+        passed = (
+            len(ready_candidates) >= gate.min_ready_candidates
+            and len(blocked_candidates) <= gate.max_blockers
+            and not missing_capabilities
+            and not missing_evidence
+            and baseline_ready
+        )
+        return EntryGateDecision(
+            gate_id=gate.gate_id,
+            passed=passed,
+            ready_candidate_ids=[candidate.candidate_id for candidate in ready_candidates],
+            blocked_candidate_ids=[candidate.candidate_id for candidate in blocked_candidates],
+            missing_capabilities=missing_capabilities,
+            missing_evidence=missing_evidence,
+            baseline_ready=baseline_ready,
+            baseline_findings=baseline_findings,
+            blocker_count=len(blocked_candidates),
+        )
+
+    def _baseline_findings(self, gate: EntryGate, baseline_audit: Optional[ScopeFreezeAudit]) -> List[str]:
+        if not gate.required_baseline_version:
+            return []
+        if baseline_audit is None:
+            return [f"missing baseline audit for {gate.required_baseline_version}"]
+        findings: List[str] = []
+        if baseline_audit.version != gate.required_baseline_version:
+            findings.append(f"baseline version mismatch: expected {gate.required_baseline_version}, got {baseline_audit.version}")
+        if not baseline_audit.release_ready:
+            findings.append(f"baseline {baseline_audit.version} is not release ready ({baseline_audit.readiness_score:.1f})")
+        return findings
+
+
+def render_candidate_backlog_report(backlog: CandidateBacklog, gate: EntryGate, decision: EntryGateDecision) -> str:
+    lines = [
+        "# V3 Candidate Backlog Report",
+        "",
+        f"- Epic: {backlog.epic_id} {backlog.title}",
+        f"- Version: {backlog.version}",
+        f"- Gate: {gate.name}",
+        f"- Decision: {decision.summary}",
+        "",
+        "## Candidates",
+    ]
+    for candidate in backlog.ranked_candidates:
+        lines.append(
+            "- "
+            f"{candidate.candidate_id}: {candidate.title} "
+            f"priority={candidate.priority} owner={candidate.owner} "
+            f"score={candidate.readiness_score} ready={candidate.ready}"
+        )
+        lines.append(
+            "  "
+            f"theme={candidate.theme} outcome={candidate.outcome} "
+            f"capabilities={','.join(candidate.capabilities) or 'none'} "
+            f"evidence={','.join(candidate.evidence) or 'none'} "
+            f"blockers={','.join(candidate.blockers) or 'none'}"
+        )
+        lines.append(f"  validation={candidate.validation_command}")
+        if candidate.dependencies:
+            lines.append(f"  dependencies={','.join(candidate.dependencies)}")
+        if candidate.evidence_links:
+            lines.append("  evidence-links:")
+            for link in candidate.evidence_links:
+                qualifier = f" capability={link.capability}" if link.capability else ""
+                note = f" note={link.note}" if link.note else ""
+                lines.append(f"  - {link.label} -> {link.target}{qualifier}{note}")
+    lines.extend(
+        [
+            "",
+            "## Gate Findings",
+            f"- Ready candidates: {', '.join(decision.ready_candidate_ids) or 'none'}",
+            f"- Blocked candidates: {', '.join(decision.blocked_candidate_ids) or 'none'}",
+            f"- Missing capabilities: {', '.join(decision.missing_capabilities) or 'none'}",
+            f"- Missing evidence: {', '.join(decision.missing_evidence) or 'none'}",
+            f"- Baseline ready: {decision.baseline_ready}",
+            f"- Baseline findings: {', '.join(decision.baseline_findings) or 'none'}",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def build_v3_candidate_backlog() -> CandidateBacklog:
+    return CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Console release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="product-experience",
+                outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
+                validation_command="PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_console_ia.py tests/test_ui_review.py -q",
+                capabilities=["release-gate", "console-shell", "reporting"],
+                evidence=["acceptance-suite", "validation-report"],
+                evidence_links=[
+                    EvidenceLink("design-system-audit", "src/bigclaw/design_system.py", "release-gate", "component inventory, accessibility, and UI acceptance coverage"),
+                    EvidenceLink("console-ia-contract", "src/bigclaw/console_ia.py", "release-gate", "global navigation, top bar, filters, and state contracts"),
+                    EvidenceLink("ui-review-pack", "src/bigclaw/ui_review.py", "release-gate", "review objectives, wireframes, interaction coverage, and open questions"),
+                    EvidenceLink("ui-acceptance-tests", "tests/test_design_system.py", "release-gate", "role-permission, data accuracy, and performance audits"),
+                    EvidenceLink("console-shell-tests", "tests/test_console_ia.py", "release-gate", "console shell and interaction draft release readiness"),
+                    EvidenceLink("review-pack-tests", "tests/test_ui_review.py", "release-gate", "deterministic review packet validation"),
+                ],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-ops-hardening",
+                title="Operations command-center hardening",
+                theme="ops-command-center",
+                priority="P0",
+                owner="engineering-operations",
+                outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
+                validation_command="PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py tests/test_saved_views.py tests/test_evaluation.py -q && (cd bigclaw-go && go test ./internal/worker ./internal/workflow ./internal/scheduler)",
+                capabilities=["ops-control", "saved-views", "rollback-simulation"],
+                evidence=["weekly-review", "validation-report"],
+                evidence_links=[
+                    EvidenceLink("command-center-src", "src/bigclaw/operations.py", "ops-control", "queue control center, dashboard builder, weekly review, and regression surfaces"),
+                    EvidenceLink("command-center-tests", "tests/test_control_center.py", "ops-control", "queue control center validation"),
+                    EvidenceLink("operations-tests", "tests/test_operations.py", "ops-control", "dashboard, weekly report, regression, and version-center coverage"),
+                    EvidenceLink("approval-contract", "src/bigclaw/execution_contract.py", "ops-control", "approval permission and API role coverage contract"),
+                    EvidenceLink("approval-workflow", "src/bigclaw/workflow.py", "ops-control", "approval workflow and closeout flow wiring"),
+                    EvidenceLink("workflow-tests", "bigclaw-go/internal/workflow/engine_test.go", "ops-control", "acceptance gate and workpad journal validation"),
+                    EvidenceLink("execution-flow-tests", "bigclaw-go/internal/worker/runtime_test.go", "ops-control", "execution handoff, closeout, and routed runtime evidence"),
+                    EvidenceLink("saved-views-src", "src/bigclaw/saved_views.py", "saved-views", "saved views, digest subscriptions, and governed filters"),
+                    EvidenceLink("saved-views-tests", "tests/test_saved_views.py", "saved-views", "saved-view audit coverage"),
+                    EvidenceLink("simulation-src", "src/bigclaw/evaluation.py", "rollback-simulation", "simulation, replay, and comparison evidence"),
+                    EvidenceLink("simulation-tests", "tests/test_evaluation.py", "rollback-simulation", "replay and benchmark validation"),
+                ],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-orchestration-rollout",
+                title="Agent orchestration rollout",
+                theme="agent-orchestration",
+                priority="P0",
+                owner="orchestration-office",
+                outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
+                validation_command="PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_reports.py -q",
+                capabilities=["commercialization", "handoff", "pilot-rollout"],
+                evidence=["pilot-evidence", "validation-report"],
+                evidence_links=[
+                    EvidenceLink("orchestration-plan-src", "src/bigclaw/orchestration.py", "commercialization", "cross-team orchestration, entitlement-aware policy, and handoff decisions"),
+                    EvidenceLink("orchestration-report-src", "src/bigclaw/reports.py", "commercialization", "orchestration canvas, portfolio rollups, and narrative exports"),
+                    EvidenceLink("orchestration-tests", "tests/test_orchestration.py", "commercialization", "handoff and policy decision validation"),
+                    EvidenceLink("report-studio-tests", "tests/test_reports.py", "commercialization", "report exports and downstream evidence sharing"),
+                ],
+            ),
+        ],
+    )
+
+
+def build_v3_entry_gate() -> EntryGate:
+    return EntryGate(
+        gate_id="gate-v3-entry",
+        name="V3 Entry Gate",
+        min_ready_candidates=3,
+        required_capabilities=["release-gate", "ops-control", "commercialization"],
+        required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
+        required_baseline_version="v2.0",
+        max_blockers=0,
+    )
+
+
+@dataclass(frozen=True)
+class WeeklyGoal:
+    goal_id: str
+    title: str
+    owner: str
+    status: str
+    success_metric: str
+    target_value: str
+    current_value: str = ""
+    dependencies: List[str] = field(default_factory=list)
+    risks: List[str] = field(default_factory=list)
+
+    @property
+    def status_rank(self) -> int:
+        return GOAL_STATUS_ORDER.get(self.status.strip().lower(), -1)
+
+    @property
+    def is_complete(self) -> bool:
+        return self.status.strip().lower() == "done"
+
+    @property
+    def is_at_risk(self) -> bool:
+        return self.status.strip().lower() in {"at-risk", "blocked"}
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "goal_id": self.goal_id,
+            "title": self.title,
+            "owner": self.owner,
+            "status": self.status,
+            "success_metric": self.success_metric,
+            "target_value": self.target_value,
+            "current_value": self.current_value,
+            "dependencies": list(self.dependencies),
+            "risks": list(self.risks),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "WeeklyGoal":
+        return cls(
+            goal_id=str(data["goal_id"]),
+            title=str(data["title"]),
+            owner=str(data["owner"]),
+            status=str(data["status"]),
+            success_metric=str(data["success_metric"]),
+            target_value=str(data["target_value"]),
+            current_value=str(data.get("current_value", "")),
+            dependencies=[str(item) for item in data.get("dependencies", [])],
+            risks=[str(item) for item in data.get("risks", [])],
+        )
+
+
+@dataclass(frozen=True)
+class WeeklyExecutionPlan:
+    week_number: int
+    theme: str
+    objective: str
+    exit_criteria: List[str] = field(default_factory=list)
+    deliverables: List[str] = field(default_factory=list)
+    goals: List[WeeklyGoal] = field(default_factory=list)
+
+    @property
+    def completed_goals(self) -> int:
+        return sum(goal.is_complete for goal in self.goals)
+
+    @property
+    def total_goals(self) -> int:
+        return len(self.goals)
+
+    @property
+    def progress_percent(self) -> int:
+        if not self.goals:
+            return 0
+        return int((self.completed_goals / len(self.goals)) * 100)
+
+    @property
+    def at_risk_goal_ids(self) -> List[str]:
+        return [goal.goal_id for goal in self.goals if goal.is_at_risk]
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "week_number": self.week_number,
+            "theme": self.theme,
+            "objective": self.objective,
+            "exit_criteria": list(self.exit_criteria),
+            "deliverables": list(self.deliverables),
+            "goals": [goal.to_dict() for goal in self.goals],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "WeeklyExecutionPlan":
+        return cls(
+            week_number=int(data["week_number"]),
+            theme=str(data["theme"]),
+            objective=str(data["objective"]),
+            exit_criteria=[str(item) for item in data.get("exit_criteria", [])],
+            deliverables=[str(item) for item in data.get("deliverables", [])],
+            goals=[WeeklyGoal.from_dict(item) for item in data.get("goals", [])],
+        )
+
+
+@dataclass
+class FourWeekExecutionPlan:
+    plan_id: str
+    title: str
+    owner: str
+    start_date: str
+    weeks: List[WeeklyExecutionPlan] = field(default_factory=list)
+
+    @property
+    def total_goals(self) -> int:
+        return sum(week.total_goals for week in self.weeks)
+
+    @property
+    def completed_goals(self) -> int:
+        return sum(week.completed_goals for week in self.weeks)
+
+    @property
+    def overall_progress_percent(self) -> int:
+        if self.total_goals == 0:
+            return 0
+        return int((self.completed_goals / self.total_goals) * 100)
+
+    @property
+    def at_risk_weeks(self) -> List[int]:
+        return [week.week_number for week in self.weeks if week.at_risk_goal_ids]
+
+    def goal_status_counts(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for week in self.weeks:
+            for goal in week.goals:
+                counts[goal.status] = counts.get(goal.status, 0) + 1
+        return counts
+
+    def validate(self) -> None:
+        week_numbers = [week.week_number for week in self.weeks]
+        if week_numbers != [1, 2, 3, 4]:
+            raise ValueError("Four-week execution plans must include weeks 1 through 4 in order")
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "plan_id": self.plan_id,
+            "title": self.title,
+            "owner": self.owner,
+            "start_date": self.start_date,
+            "weeks": [week.to_dict() for week in self.weeks],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "FourWeekExecutionPlan":
+        return cls(
+            plan_id=str(data["plan_id"]),
+            title=str(data["title"]),
+            owner=str(data["owner"]),
+            start_date=str(data["start_date"]),
+            weeks=[WeeklyExecutionPlan.from_dict(item) for item in data.get("weeks", [])],
+        )
+
+
+def build_big_4701_execution_plan() -> FourWeekExecutionPlan:
+    plan = FourWeekExecutionPlan(
+        plan_id="BIG-4701",
+        title="4周执行计划与周目标",
+        owner="execution-office",
+        start_date="2026-03-11",
+        weeks=[
+            WeeklyExecutionPlan(
+                week_number=1,
+                theme="Scope freeze and operating baseline",
+                objective="Freeze scope, align owners, and establish validation and reporting cadence.",
+                exit_criteria=["Scope freeze board published", "Owners and validation commands assigned for all streams"],
+                deliverables=["Execution baseline report", "Scope freeze audit snapshot"],
+                goals=[
+                    WeeklyGoal("w1-scope-freeze", "Lock the v4.0 scope and escalation path", "program-office", "done", "frozen backlog items", "5 epics aligned", "5 epics aligned"),
+                    WeeklyGoal("w1-validation-matrix", "Assign validation commands and evidence owners", "engineering-ops", "done", "streams with validation owners", "5/5 streams", "5/5 streams"),
+                ],
+            ),
+            WeeklyExecutionPlan(
+                week_number=2,
+                theme="Build and integration",
+                objective="Land the highest-risk implementation slices and wire cross-team dependencies.",
+                exit_criteria=["P0 build items merged", "Cross-team dependency review completed"],
+                deliverables=["Integrated build checkpoint", "Dependency burn-down"],
+                goals=[
+                    WeeklyGoal("w2-p0-burndown", "Close the top P0 implementation gaps", "engineering-platform", "on-track", "P0 items merged", ">=3 merged", "2 merged"),
+                    WeeklyGoal("w2-handoff-sync", "Resolve orchestration and console handoff dependencies", "orchestration-office", "at-risk", "open handoff blockers", "0 blockers", "1 blocker", ["w2-p0-burndown"], ["console entitlement contract is pending"]),
+                ],
+            ),
+            WeeklyExecutionPlan(
+                week_number=3,
+                theme="Stabilization and validation",
+                objective="Drive regression triage, benchmark replay, and release-readiness evidence.",
+                exit_criteria=["Regression backlog under control threshold", "Benchmark comparison published"],
+                deliverables=["Stabilization report", "Benchmark replay pack"],
+                goals=[
+                    WeeklyGoal("w3-regression-triage", "Reduce critical regressions before release gate", "quality-ops", "not-started", "critical regressions", "<=2 open"),
+                    WeeklyGoal("w3-benchmark-pack", "Publish replay and weighted benchmark evidence", "evaluation-lab", "not-started", "benchmark evidence bundle", "1 bundle published"),
+                ],
+            ),
+            WeeklyExecutionPlan(
+                week_number=4,
+                theme="Launch decision and weekly operating rhythm",
+                objective="Convert validation evidence into launch readiness and the post-launch weekly review cadence.",
+                exit_criteria=["Launch decision signed off", "Weekly operating review template adopted"],
+                deliverables=["Launch readiness packet", "Weekly review operating template"],
+                goals=[
+                    WeeklyGoal("w4-launch-decision", "Complete launch readiness review", "release-governance", "not-started", "required sign-offs", "all sign-offs complete"),
+                    WeeklyGoal("w4-weekly-rhythm", "Roll out the weekly KPI and issue review cadence", "engineering-operations", "not-started", "weekly review adoption", "1 recurring cadence active"),
+                ],
+            ),
+        ],
+    )
+    plan.validate()
+    return plan
+
+
+def build_pilot_rollout_scorecard(
+    *,
+    adoption: float,
+    convergence_improvement: float,
+    review_efficiency: float,
+    governance_incidents: int,
+    evidence_completeness: float,
+) -> Dict[str, object]:
+    score = (
+        adoption * 0.25
+        + convergence_improvement * 0.25
+        + review_efficiency * 0.2
+        + evidence_completeness * 0.2
+        + max(0.0, 100.0 - (governance_incidents * 20.0)) * 0.1
+    )
+    passed = score >= 75 and governance_incidents <= 2 and evidence_completeness >= 70
+    return {
+        "adoption": round(adoption, 1),
+        "convergence_improvement": round(convergence_improvement, 1),
+        "review_efficiency": round(review_efficiency, 1),
+        "governance_incidents": int(governance_incidents),
+        "evidence_completeness": round(evidence_completeness, 1),
+        "rollout_score": round(score, 1),
+        "recommendation": "go" if passed else "hold",
+    }
+
+
+def evaluate_candidate_gate(*, gate_decision: EntryGateDecision, rollout_scorecard: Dict[str, object]) -> Dict[str, object]:
+    readiness = bool(gate_decision.passed)
+    rollout_ready = rollout_scorecard.get("recommendation") == "go"
+    recommendation = "enable-by-default" if readiness and rollout_ready else "pilot-only"
+    findings: List[str] = []
+    if not readiness:
+        findings.append(gate_decision.summary)
+    if not rollout_ready:
+        findings.append("rollout score below threshold" f" ({rollout_scorecard.get('rollout_score', 'n/a')})")
+    return {
+        "gate_passed": readiness,
+        "rollout_recommendation": str(rollout_scorecard.get("recommendation", "hold")),
+        "candidate_gate": recommendation,
+        "findings": findings,
+    }
+
+
+def render_pilot_rollout_gate_report(result: Dict[str, object]) -> str:
+    findings = result.get("findings") or []
+    lines = [
+        "# Pilot Rollout Candidate Gate",
+        "",
+        f"- Gate passed: {result.get('gate_passed')}",
+        f"- Rollout recommendation: {result.get('rollout_recommendation')}",
+        f"- Candidate gate: {result.get('candidate_gate')}",
+    ]
+    lines.append(f"- Findings: {', '.join(findings) if findings else 'none'}")
+    return "\n".join(lines)
+
+
+def render_four_week_execution_report(plan: FourWeekExecutionPlan) -> str:
+    plan.validate()
+    status_counts = plan.goal_status_counts()
+    lines = [
+        "# Four-Week Execution Plan",
+        "",
+        f"- Plan: {plan.plan_id} {plan.title}",
+        f"- Owner: {plan.owner}",
+        f"- Start date: {plan.start_date}",
+        f"- Overall progress: {plan.completed_goals}/{plan.total_goals} goals complete ({plan.overall_progress_percent}%)",
+        f"- At-risk weeks: {', '.join(str(week_number) for week_number in plan.at_risk_weeks) or 'none'}",
+        (
+            "- Goal status counts: "
+            f"done={status_counts.get('done', 0)} "
+            f"on-track={status_counts.get('on-track', 0)} "
+            f"at-risk={status_counts.get('at-risk', 0)} "
+            f"blocked={status_counts.get('blocked', 0)} "
+            f"not-started={status_counts.get('not-started', 0)}"
+        ),
+        "",
+        "## Weekly Plans",
+    ]
+    for week in plan.weeks:
+        lines.extend(
+            [
+                f"- Week {week.week_number}: {week.theme} progress={week.completed_goals}/{week.total_goals} ({week.progress_percent}%)",
+                f"  objective={week.objective}",
+                f"  exit_criteria={', '.join(week.exit_criteria) or 'none'}",
+                f"  deliverables={', '.join(week.deliverables) or 'none'}",
+            ]
+        )
+        for goal in week.goals:
+            lines.append(
+                "  "
+                f"- {goal.goal_id}: {goal.title} owner={goal.owner} status={goal.status} "
+                f"metric={goal.success_metric} current={goal.current_value or 'n/a'} "
+                f"target={goal.target_value}"
+            )
+            lines.append("    " f"dependencies={','.join(goal.dependencies) or 'none'} " f"risks={','.join(goal.risks) or 'none'}")
+    return "\n".join(lines)
+
+
 _compat_source = sys.modules[__name__]
 
 _install_compat_module(
@@ -2909,6 +4072,50 @@ from .reports import (
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
+)
+_install_compat_module(
+    _compat_source,
+    "evaluation",
+    [
+        "EvaluationCriterion",
+        "BenchmarkCase",
+        "ReplayRecord",
+        "ReplayOutcome",
+        "BenchmarkResult",
+        "BenchmarkComparison",
+        "BenchmarkSuiteResult",
+        "BenchmarkRunner",
+        "render_benchmark_suite_report",
+        "render_replay_detail_page",
+        "render_run_replay_index_page",
+    ],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
+)
+_install_compat_module(
+    _compat_source,
+    "planning",
+    [
+        "PRIORITY_WEIGHTS",
+        "GOAL_STATUS_ORDER",
+        "EvidenceLink",
+        "CandidateEntry",
+        "CandidateBacklog",
+        "EntryGate",
+        "EntryGateDecision",
+        "CandidatePlanner",
+        "render_candidate_backlog_report",
+        "build_v3_candidate_backlog",
+        "build_v3_entry_gate",
+        "WeeklyGoal",
+        "WeeklyExecutionPlan",
+        "FourWeekExecutionPlan",
+        "build_big_4701_execution_plan",
+        "build_pilot_rollout_scorecard",
+        "evaluate_candidate_gate",
+        "render_pilot_rollout_gate_report",
+        "render_four_week_execution_report",
+    ],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
 )
 from .operations import (
     DashboardBuilder,
