@@ -10,6 +10,7 @@
 - Merge `tests/test_planning.py` into `tests/test_operations.py` and retarget the legacy bootstrap path.
 - Merge `tests/test_ui_review.py` into `tests/test_reports.py` and retarget release-control planning validation.
 - Merge `tests/test_design_system.py` and `tests/test_reports.py` into `tests/test_operations.py`, leaving one repo-level Python test file.
+- Remove stale `test_workspace_bootstrap.py` references from the active bootstrap path and README.
 - Validate the migrated coverage with targeted `go test` runs in the corresponding Go packages.
 - Validate the remaining Python test suite directly after deleting the shared bootstrap helper.
 - Record repo impact, including `.py`/`.go` file counts and whether any `pyproject`/`setup` files changed.
@@ -37,6 +38,9 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "tests/test_ui_review\.py" src tests README.md scripts`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && python3 -m pytest tests/test_operations.py -q`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "tests/test_reports\.py|tests/test_design_system\.py" src tests README.md scripts docs`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && bash scripts/dev_bootstrap.sh`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "test_workspace_bootstrap\.py|test_workspace_bootstrap" README.md scripts docs src tests`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027/bigclaw-go && go test ./internal/workflow`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "tests/test_orchestration\.py|tests/test_observability\.py|tests/test_audit_events\.py|tests/conftest\.py" src tests`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && find . -type f \( -name '*.py' -o -name '*.go' \) | sed 's#^\./##' | awk 'BEGIN{py=0;go=0} /\.py$/{py++} /\.go$/{go++} END{printf("py=%d\ngo=%d\n",py,go)}'`
