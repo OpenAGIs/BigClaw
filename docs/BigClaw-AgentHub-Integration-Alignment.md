@@ -50,9 +50,9 @@ Supporting integration:
 ## Validation command baseline
 
 - Incremental:
-  - `PYTHONPATH=src python3 -m pytest tests/test_operations.py`
+  - `bash scripts/ops/legacy_python_smoke.sh`
 - Full:
-  - `PYTHONPATH=src python3 -m pytest -q`
+  - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 
 ## Final execution note
 This alignment file is now the single source of truth for PRD-to-issue traceability and release acceptance in the AgentHub integration stream.

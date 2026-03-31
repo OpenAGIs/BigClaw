@@ -345,7 +345,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py -q"
+                    "bash scripts/ops/legacy_python_smoke.sh"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
@@ -370,19 +370,19 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="ui-acceptance-tests",
-                        target="tests/test_operations.py",
+                        target="scripts/ops/legacy_python_smoke.sh",
                         capability="release-gate",
                         note="role-permission, data accuracy, and performance audits",
                     ),
                     EvidenceLink(
                         label="console-shell-tests",
-                        target="tests/test_operations.py",
+                        target="scripts/ops/legacy_python_smoke.sh",
                         capability="release-gate",
                         note="console shell and interaction draft release readiness",
                     ),
                     EvidenceLink(
                         label="review-pack-tests",
-                        target="tests/test_operations.py",
+                        target="scripts/ops/legacy_python_smoke.sh",
                         capability="release-gate",
                         note="deterministic review packet validation",
                     ),
@@ -396,7 +396,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py -q && "
+                    "bash scripts/ops/legacy_python_smoke.sh && "
                     "(cd bigclaw-go && go test ./internal/product -run "
                     "'Test(BuildSavedViewCatalog|AuditSavedViewCatalogAndRenderReport|SavedViewCatalogJSONRoundTrip)' -count=1) && "
                     "(cd bigclaw-go && go test ./internal/worker ./internal/workflow ./internal/scheduler)"
@@ -412,13 +412,13 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="command-center-tests",
-                        target="tests/test_operations.py",
+                        target="scripts/ops/legacy_python_smoke.sh",
                         capability="ops-control",
                         note="queue control center and operator surface validation",
                     ),
                     EvidenceLink(
                         label="operations-tests",
-                        target="tests/test_operations.py",
+                        target="scripts/ops/legacy_python_smoke.sh",
                         capability="ops-control",
                         note="dashboard, weekly report, regression, and version-center coverage",
                     ),
@@ -466,7 +466,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-tests",
-                        target="tests/test_operations.py",
+                        target="scripts/ops/legacy_python_smoke.sh",
                         capability="rollback-simulation",
                         note="operations, replay, and benchmark validation",
                     ),
@@ -481,7 +481,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
                 validation_command=(
                     "(cd bigclaw-go && go test ./internal/workflow) && "
-                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py -q"
+                    "bash scripts/ops/legacy_python_smoke.sh"
                 ),
                 capabilities=["commercialization", "handoff", "pilot-rollout"],
                 evidence=["pilot-evidence", "validation-report"],
@@ -506,7 +506,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="report-studio-tests",
-                        target="tests/test_operations.py",
+                        target="scripts/ops/legacy_python_smoke.sh",
                         capability="commercialization",
                         note="report exports and downstream evidence sharing",
                     ),

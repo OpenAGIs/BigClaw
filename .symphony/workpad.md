@@ -12,6 +12,7 @@
 - Merge `tests/test_design_system.py` and `tests/test_reports.py` into `tests/test_operations.py`, leaving one repo-level Python test file.
 - Remove stale `test_workspace_bootstrap.py` references from the active bootstrap path and README.
 - Replace remaining live references to deleted `tests/test_*.py` files across source/tests/docs with the surviving smoke lane or Go-native validation paths.
+- Replace the last repo-level Python test file with `scripts/ops/legacy_python_smoke.sh`, preserving a validated legacy smoke lane without a `.py` test asset.
 - Validate the migrated coverage with targeted `go test` runs in the corresponding Go packages.
 - Validate the remaining Python test suite directly after deleting the shared bootstrap helper.
 - Record repo impact, including `.py`/`.go` file counts and whether any `pyproject`/`setup` files changed.
@@ -43,6 +44,7 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "test_workspace_bootstrap\.py|test_workspace_bootstrap" README.md scripts docs src tests`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && python3 - <<'PY' ... scan for missing tests/test_*.py refs across src README scripts docs tests ... PY`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && bash scripts/ops/legacy_python_smoke.sh`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027/bigclaw-go && go test ./internal/workflow`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "tests/test_orchestration\.py|tests/test_observability\.py|tests/test_audit_events\.py|tests/conftest\.py" src tests`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && find . -type f \( -name '*.py' -o -name '*.go' \) | sed 's#^\./##' | awk 'BEGIN{py=0;go=0} /\.py$/{py++} /\.go$/{go++} END{printf("py=%d\ngo=%d\n",py,go)}'`

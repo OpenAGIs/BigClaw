@@ -340,8 +340,8 @@ class DashboardRunContractLibrary:
                     ],
                     "closeout": {
                         "validation_evidence": [
-                            "python3 -m pytest tests/test_operations.py -> 125 passed",
-                            "python3 -m pytest tests/test_operations.py -q -> 125 passed",
+                            "bash scripts/ops/legacy_python_smoke.sh -> legacy_python_smoke_ok",
+                            "BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh -> legacy Python migration smoke suite validated from source",
                         ],
                         "git_push_succeeded": True,
                         "git_push_output": "To github.com:OpenAGIs/BigClaw.git\\n   abc123..def456  main -> main",

@@ -95,7 +95,7 @@ BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
 That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level smoke
-suite in `tests/test_operations.py` when
+script `scripts/ops/legacy_python_smoke.sh` when
 `pytest` is available.
 
 ## Go smoke verify
