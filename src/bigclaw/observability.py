@@ -3,13 +3,39 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from .audit_events import missing_required_fields
 from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
-from .repo_links import bind_run_commits
 from .repo_plane import RunCommitLink
+
+
+VALID_RUN_COMMIT_ROLES = {"source", "candidate", "closeout", "accepted"}
+
+
+@dataclass
+class RunCommitBinding:
+    links: List[RunCommitLink]
+
+    @property
+    def accepted_commit_hash(self) -> str:
+        for link in self.links:
+            if link.role == "accepted":
+                return link.commit_hash
+        return ""
+
+
+def validate_run_commit_roles(links: Iterable[RunCommitLink]) -> None:
+    invalid = [link.role for link in links if link.role not in VALID_RUN_COMMIT_ROLES]
+    if invalid:
+        invalid_text = ", ".join(sorted(set(invalid)))
+        raise ValueError(f"unsupported run commit roles: {invalid_text}")
+
+
+def bind_run_commits(links: List[RunCommitLink]) -> RunCommitBinding:
+    validate_run_commit_roles(links)
+    return RunCommitBinding(links=list(links))
 
 
 def utc_now() -> str:

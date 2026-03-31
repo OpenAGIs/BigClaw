@@ -249,7 +249,7 @@ Historical initial state:
 ### BIG-GOM-306 Repo collaboration and lineage surface migration
 
 Python source:
-- `src/bigclaw/repo_links.py`
+- retired standalone Python repo links helper
 - `src/bigclaw/repo_commits.py`
 - retired standalone Python repo gateway helper
 - `src/bigclaw/repo_plane.py`
@@ -452,7 +452,7 @@ Python source:
 - `src/bigclaw/repo_commits.py`
 - retired standalone Python repo gateway helper
 - retired standalone Python repo governance helper
-- `src/bigclaw/repo_links.py`
+- retired standalone Python repo links helper
 - `src/bigclaw/repo_plane.py`
 - retired standalone Python repo registry helper
 - retired standalone Python repo triage helper
