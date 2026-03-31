@@ -31,6 +31,9 @@
 ## Scoped Tranche 5
 - `tests/test_execution_contract.py`
 
+## Scoped Tranche 6
+- `tests/test_validation_policy.py`
+
 ## Acceptance
 - Python test file count decreases by deleting the scoped files above.
 - Go test coverage increases via new parity assertions under existing Go test files.
@@ -39,6 +42,7 @@
 - Tranche 3 replacement coverage remains in Go under `bigclaw-go/internal/queue`.
 - Tranche 4 replacement coverage remains in Go under `bigclaw-go/internal/product`.
 - Tranche 5 replacement coverage remains in Go under `bigclaw-go/internal/contract`.
+- Tranche 6 replacement coverage remains in Go under `bigclaw-go/internal/validationpolicy`.
 - Changes stay scoped to this tranche only.
 
 ## Validation
@@ -102,3 +106,19 @@
   - Passed
   - Exact result:
     - `ok  	bigclaw-go/internal/contract	0.993s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && gofmt -w bigclaw-go/internal/validationpolicy/policy.go bigclaw-go/internal/validationpolicy/policy_test.go`
+  - Passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/validationpolicy`
+  - Passed before Python deletion
+  - Exact result:
+    - `ok  	bigclaw-go/internal/validationpolicy	0.460s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && git status --short`
+  - Passed for tranche 6
+  - Output summary:
+    - `M .symphony/workpad.md`
+    - `D tests/test_validation_policy.py`
+    - `?? bigclaw-go/internal/validationpolicy/`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/validationpolicy`
+  - Passed after Python deletion
+  - Exact result:
+    - `ok  	bigclaw-go/internal/validationpolicy	(cached)`
