@@ -28,6 +28,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/repo_governance.py",
 		"src/bigclaw/repo_registry.py",
 		"src/bigclaw/repo_triage.py",
+		"src/bigclaw/roadmap.py",
 		"src/bigclaw/saved_views.py",
 		"src/bigclaw/validation_policy.py",
 	}
@@ -58,6 +59,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"bigclaw-go/internal/repo/governance.go",
 		"bigclaw-go/internal/repo/registry.go",
 		"bigclaw-go/internal/repo/triage.go",
+		"bigclaw-go/internal/roadmap/roadmap.go",
 		"bigclaw-go/internal/workflow/definition.go",
 	}
 	for _, relativePath := range goOwners {

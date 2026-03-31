@@ -135,7 +135,6 @@ from .governance import (
     render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -386,9 +385,6 @@ __all__ = [
     "DecisionNote",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
-    "EpicMilestone",
-    "ExecutionPackRoadmap",
-    "build_execution_pack_roadmap",
     "APPROVAL_RECORDED_EVENT",
     "BUDGET_OVERRIDE_EVENT",
     "FLOW_HANDOFF_EVENT",

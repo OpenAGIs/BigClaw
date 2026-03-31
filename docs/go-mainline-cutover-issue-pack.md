@@ -442,11 +442,11 @@ Python source:
 - `src/bigclaw/collaboration.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/roadmap.py`
 
 Go ownership:
 - `bigclaw-go/internal/flow/flow.go`
 - `bigclaw-go/internal/githubsync/*`
+- `bigclaw-go/internal/roadmap/*`
 - `bigclaw-go/internal/triage/*`
 - optional new `bigclaw-go/internal/repo/*`
 - `bigclaw-go/internal/product/console.go`
