@@ -36,3 +36,6 @@
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `78` after retiring `src/bigclaw/parallel_refill.py`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_gateway.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `77` after retiring `src/bigclaw/issue_archive.py`
+- `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.782s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_commits.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `75` after retiring `src/bigclaw/repo_gateway.py` and `tests/test_repo_gateway.py`
