@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+translated=()
+args=("$@")
+i=0
+while [ "$i" -lt "${#args[@]}" ]; do
+  arg="${args[$i]}"
+  case "$arg" in
+    --report-file)
+      i=$((i + 1))
+      if [ "$i" -lt "${#args[@]}" ]; then
+        translated+=(--report "${args[$i]}")
+      fi
+      ;;
+    --report-file=*)
+      translated+=(--report="${arg#--report-file=}")
+      ;;
+    --no-cleanup)
+      translated+=(--cleanup=false)
+      ;;
+    --issues)
+      i=$((i + 1))
+      issues=()
+      while [ "$i" -lt "${#args[@]}" ]; do
+        next="${args[$i]}"
+        case "$next" in
+          -*)
+            i=$((i - 1))
+            break
+            ;;
+          *)
+            issues+=("$next")
+            ;;
+        esac
+        i=$((i + 1))
+      done
+      if [ "${#issues[@]}" -gt 0 ]; then
+        joined="${issues[0]}"
+        for issue in "${issues[@]:1}"; do
+          joined+=",${issue}"
+        done
+        translated+=(--issues "$joined")
+      else
+        translated+=(--issues)
+      fi
+      ;;
+    *)
+      translated+=("$arg")
+      ;;
+  esac
+  i=$((i + 1))
+done
+
+exec bash "$script_dir/bigclawctl" workspace validate "${translated[@]}"

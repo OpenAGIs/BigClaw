@@ -77,7 +77,7 @@ func TestWorkspaceRuntimeWrapperTargetsGoShim(t *testing.T) {
 }
 
 func TestRepoRootFromScriptClimbsToRepositoryRoot(t *testing.T) {
-	if got := RepoRootFromScript("/repo/scripts/ops/bigclaw_refill_queue.py"); got != "/repo" {
+	if got := RepoRootFromScript("/repo/scripts/ops/bigclaw-refill-queue"); got != "/repo" {
 		t.Fatalf("unexpected repo root: %s", got)
 	}
 }

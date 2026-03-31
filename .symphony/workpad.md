@@ -1,23 +1,24 @@
-Issue: BIG-GO-1019
+Issue: BIG-GO-1029
 
 Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+- Remove the remaining Python operator wrapper scripts in `scripts/ops` that still act as residual migration shims over the Go CLI.
+- Replace them with shell-native wrappers that preserve the same command behavior through `scripts/ops/bigclawctl`, including legacy workspace flag/default translation where needed.
+- Update directly coupled docs and tests so the repo no longer advertises or validates the deleted `.py` entrypoints.
+- Run targeted validation for the wrapper and documentation surface, then capture the file-count and packaging impact before commit/push.
 
 Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- Changes stay scoped to the remaining repo-level residual Python assets that still back the Go script/operator surface plus directly coupled tests/docs.
+- The repository `.py` file count decreases from this change.
+- The operator wrapper surface remains executable through non-Python scripts with equivalent behavior for `github-sync`, `refill`, and workspace bootstrap/validate entrypoints.
+- Final report states the impact on `py`/`go` file counts and on `pyproject.toml`/`setup.py` or `setup.cfg`.
 
 Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+- `find scripts/ops -maxdepth 1 -type f | sort`
+- `find . -type f \( -name '*.py' -o -name '*.go' \) | sed 's#^./##' | awk 'BEGIN{py=0;go=0} /\\.py$/{py++} /\\.go$/{go++} END{print "py="py" go="go}'`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+- `bash scripts/ops/bigclaw-github-sync --help`
+- `bash scripts/ops/bigclaw-refill-queue --help`
+- `bash scripts/ops/bigclaw-workspace-bootstrap --help`
+- `bash scripts/ops/symphony-workspace-bootstrap --help`
+- `bash scripts/ops/symphony-workspace-validate --help`
+- `git status --short`
