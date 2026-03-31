@@ -8,6 +8,7 @@ Plan
 - Remove additional orphan Python modules that have no package exports, tests, or repo consumers.
 - Remove dead Python mirrors whose active ownership already lives in Go and whose repo references are documentation-only.
 - Remove the dead standalone workspace bootstrap CLI module now that active bootstrap behavior lives in `workspace_bootstrap.py` and `scripts/ops/bigclawctl`.
+- Remove the dead workspace bootstrap validation helper module that is only referenced by its own Python regression.
 - Update directly coupled Go tests and legacy compile-check fixtures so they only cover the remaining Python compatibility files that still exist.
 - Refresh repo docs that still present the deleted Python wrappers as valid entrypoints.
 - Run targeted validation around the Go legacy-shim package and the `bigclawctl` workspace/github-sync/refill entrypoints, then capture exact commands and results.
@@ -22,6 +23,7 @@ Acceptance
 - Orphan Python source files with no repo references are retired to keep the physical tree aligned with active ownership.
 - Python mirrors that only duplicate Go-owned queue/tooling behavior are removed when they no longer serve tests or imports.
 - Standalone Python CLI leaf modules with no imports or tests are retired instead of being kept as unused repo assets.
+- Python validation/helper modules that only exist to support isolated legacy tests are retired with those test slices.
 - Supported operator paths point to `scripts/ops/bigclawctl` instead of deleted Python wrappers.
 - Final report states the impact on `.py` count, `.go` count, and `pyproject.toml` / `setup.py` presence.
 

@@ -287,7 +287,7 @@ Python source:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - retired standalone Python workspace bootstrap CLI module
-- `src/bigclaw/workspace_bootstrap_validation.py`
+- retired standalone Python workspace bootstrap validation helper
 - `src/bigclaw/parallel_refill.py`
 - retired repo-root Python ops wrappers for GitHub sync, workspace bootstrap, and refill
 
@@ -494,7 +494,7 @@ Python source:
 - `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - retired standalone Python workspace bootstrap CLI module
-- `src/bigclaw/workspace_bootstrap_validation.py`
+- retired standalone Python workspace bootstrap validation helper
 - `src/bigclaw/service.py`
 - retired `python -m bigclaw` package entrypoint
 
