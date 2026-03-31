@@ -68,10 +68,10 @@ Notes:
   `bash scripts/ops/bigclawctl github-sync ...`,
   `bash scripts/ops/bigclawctl refill ...`, and
   `bash scripts/ops/bigclawctl workspace ...` directly.
-- `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
-  `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
-  `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
-  `bigclawctl automation ...`; the migration matrix lives in
+- The retired Python automation script entrypoints under `bigclaw-go/scripts`
+  have been replaced by `bigclawctl automation e2e run-task-smoke`,
+  `bigclawctl automation benchmark soak-local`, and
+  `bigclawctl automation migration shadow-compare`; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
