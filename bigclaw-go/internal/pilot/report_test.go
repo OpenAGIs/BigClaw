@@ -47,3 +47,23 @@ func TestRenderPilotImplementationReportContainsReadinessFields(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildRolloutScorecardAndCandidateGate(t *testing.T) {
+	scorecard := BuildRolloutScorecard(84, 78, 82, 1, 88)
+	if scorecard.Recommendation != "go" {
+		t.Fatalf("expected recommendation go, got %+v", scorecard)
+	}
+
+	result := EvaluateCandidateGate(CandidateGateDecision{
+		GateID: "gate-v3",
+		Passed: true,
+	}, scorecard)
+	if result.CandidateGate != "enable-by-default" {
+		t.Fatalf("expected enable-by-default gate, got %+v", result)
+	}
+
+	report := RenderCandidateGateReport(result)
+	if !strings.Contains(report, "Candidate gate") {
+		t.Fatalf("expected candidate gate in report, got %q", report)
+	}
+}

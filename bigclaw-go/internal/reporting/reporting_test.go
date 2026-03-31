@@ -263,6 +263,24 @@ func TestAuditDashboardBuilderFlagsGovernanceGaps(t *testing.T) {
 	}
 }
 
+func TestRepoWeeklyNarrativeExportsRemainConsistent(t *testing.T) {
+	section := RenderWeeklyRepoEvidenceSection(14, 9, 7, []string{"repo/ope-168", "repo/ope-170"})
+	exports := RenderRepoNarrativeExports(14, 9, 7, []string{"repo/ope-168", "repo/ope-170"})
+
+	if !strings.Contains(section, "Accepted Commits: 7") {
+		t.Fatalf("expected accepted commits in section, got %q", section)
+	}
+	if !strings.Contains(exports.Markdown, "Repo Evidence Summary") {
+		t.Fatalf("expected repo evidence summary in markdown, got %+v", exports)
+	}
+	if !strings.Contains(exports.Text, "Accepted Commits: 7") {
+		t.Fatalf("expected accepted commits in text, got %+v", exports)
+	}
+	if !strings.Contains(exports.HTML, "<section><h2>Repo Evidence Summary</h2>") {
+		t.Fatalf("expected html section heading, got %+v", exports)
+	}
+}
+
 func TestRenderAndWriteDashboardBuilderBundle(t *testing.T) {
 	dashboard := DashboardBuilder{
 		Name:   "Ops Console",

@@ -2,6 +2,7 @@ package reporting
 
 import (
 	"fmt"
+	"html"
 	"math"
 	"os"
 	"path/filepath"
@@ -86,6 +87,12 @@ type WeeklyArtifacts struct {
 	VersionCenterPath    string `json:"version_center_path,omitempty"`
 }
 
+type RepoNarrativeExports struct {
+	Markdown string `json:"markdown"`
+	Text     string `json:"text"`
+	HTML     string `json:"html"`
+}
+
 type ConsoleAction struct {
 	ActionID string `json:"action_id"`
 	Label    string `json:"label"`
@@ -99,6 +106,31 @@ func (a ConsoleAction) State() string {
 		return "enabled"
 	}
 	return "disabled"
+}
+
+func RenderWeeklyRepoEvidenceSection(experimentVolume, convergedTasks, acceptedCommits int, hottestThreads []string) string {
+	lines := []string{
+		"## Repo Evidence Summary",
+		fmt.Sprintf("- Experiment Volume: %d", experimentVolume),
+		fmt.Sprintf("- Converged Tasks: %d", convergedTasks),
+		fmt.Sprintf("- Accepted Commits: %d", acceptedCommits),
+		fmt.Sprintf("- Hottest Threads: %s", joinOrNone(hottestThreads)),
+	}
+	return strings.Join(lines, "\n")
+}
+
+func RenderRepoNarrativeExports(experimentVolume, convergedTasks, acceptedCommits int, hottestThreads []string) RepoNarrativeExports {
+	markdown := RenderWeeklyRepoEvidenceSection(experimentVolume, convergedTasks, acceptedCommits, hottestThreads)
+	return RepoNarrativeExports{
+		Markdown: markdown,
+		Text:     strings.Replace(markdown, "## ", "", 1),
+		HTML: "<section><h2>Repo Evidence Summary</h2>" +
+			fmt.Sprintf("<p>Experiment Volume: %d</p>", experimentVolume) +
+			fmt.Sprintf("<p>Converged Tasks: %d</p>", convergedTasks) +
+			fmt.Sprintf("<p>Accepted Commits: %d</p>", acceptedCommits) +
+			fmt.Sprintf("<p>Hottest Threads: %s</p>", html.EscapeString(joinOrNone(hottestThreads))) +
+			"</section>",
+	}
 }
 
 type QueueControlCenter struct {

@@ -6,6 +6,7 @@
 - Current scoped tranche:
   governance: `tests/test_governance.py`
   repo governance/surfaces: `tests/test_repo_governance.py`, `tests/test_repo_board.py`, `tests/test_repo_gateway.py`, `tests/test_repo_links.py`, `tests/test_repo_registry.py`, `tests/test_repo_triage.py`, `tests/test_repo_collaboration.py`
+  repo rollout: `tests/test_repo_rollout.py`
 - Add any missing Go assertions only if required to preserve parity for the removed Python coverage.
 - Run targeted Go tests for the affected packages and capture exact commands and results.
 - Commit the scoped migration changes and push the branch to the remote.
