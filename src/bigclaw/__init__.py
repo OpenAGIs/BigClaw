@@ -146,6 +146,16 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
 )
+_install_legacy_surface_module(
+    "repo_plane",
+    ["RepoAgent", "RepoSpace", "RunCommitLink"],
+    source_module=sys.modules[f"{__name__}.observability"],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "repo_plane.py has been folded into observability.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/plane.go",
+)
 
 from .runtime import (
     AcceptanceDecision,

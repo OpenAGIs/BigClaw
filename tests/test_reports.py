@@ -40,11 +40,13 @@ from bigclaw.reports import (
     render_launch_checklist_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
+    render_repo_narrative_exports,
     render_report_studio_html,
     render_report_studio_plain_text,
     render_report_studio_report,
     render_shared_view_context,
     render_takeover_queue_report,
+    render_weekly_repo_evidence_section,
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
@@ -1303,3 +1305,23 @@ def test_issue_validation_report_uses_timezone_aware_utc_timestamp():
     parsed = __import__("datetime").datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
     assert parsed.tzinfo is not None
     assert parsed.utcoffset().total_seconds() == 0
+
+
+def test_repo_weekly_narrative_exports_remain_consistent() -> None:
+    section = render_weekly_repo_evidence_section(
+        experiment_volume=14,
+        converged_tasks=9,
+        accepted_commits=7,
+        hottest_threads=["repo/ope-168", "repo/ope-170"],
+    )
+    exports = render_repo_narrative_exports(
+        experiment_volume=14,
+        converged_tasks=9,
+        accepted_commits=7,
+        hottest_threads=["repo/ope-168", "repo/ope-170"],
+    )
+
+    assert "Accepted Commits: 7" in section
+    assert "Repo Evidence Summary" in exports["markdown"]
+    assert "Accepted Commits: 7" in exports["text"]
+    assert "<section><h2>Repo Evidence Summary</h2>" in exports["html"]

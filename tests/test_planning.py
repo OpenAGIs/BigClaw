@@ -11,10 +11,13 @@ from bigclaw.planning import (
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
+    build_pilot_rollout_scorecard,
     build_v3_candidate_backlog,
     build_v3_entry_gate,
+    evaluate_candidate_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+    render_pilot_rollout_gate_report,
 )
 from bigclaw.governance import ScopeFreezeAudit
 
@@ -226,6 +229,24 @@ def test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready() -> None:
     assert failed_baseline.passed is False
     assert failed_baseline.baseline_ready is False
     assert failed_baseline.baseline_findings == ["baseline v2.0 is not release ready (87.5)"]
+
+
+def test_pilot_rollout_scorecard_and_candidate_gate() -> None:
+    scorecard = build_pilot_rollout_scorecard(
+        adoption=84,
+        convergence_improvement=78,
+        review_efficiency=82,
+        governance_incidents=1,
+        evidence_completeness=88,
+    )
+    assert scorecard["recommendation"] == "go"
+
+    gate_decision = EntryGateDecision(gate_id="gate-v3", passed=True)
+    result = evaluate_candidate_gate(gate_decision=gate_decision, rollout_scorecard=scorecard)
+
+    assert result["candidate_gate"] == "enable-by-default"
+    report = render_pilot_rollout_gate_report(result)
+    assert "Candidate gate" in report
 
 
 def test_entry_gate_decision_round_trip_preserves_findings() -> None:

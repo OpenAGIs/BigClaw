@@ -252,7 +252,7 @@ Python source:
 - retired standalone Python repo links helper
 - retired standalone Python repo commit helper
 - retired standalone Python repo gateway helper
-- `src/bigclaw/repo_plane.py`
+- folded `repo_plane` compatibility surface in `src/bigclaw/observability.py`
 - retired standalone Python repo discussion board helper
 - retired standalone Python repo registry helper
 - retired standalone Python repo governance helper
@@ -453,7 +453,7 @@ Python source:
 - retired standalone Python repo gateway helper
 - retired standalone Python repo governance helper
 - retired standalone Python repo links helper
-- `src/bigclaw/repo_plane.py`
+- folded `repo_plane` compatibility surface in `src/bigclaw/observability.py`
 - retired standalone Python repo registry helper
 - retired standalone Python repo triage helper
 - retired standalone Python issue archive module
