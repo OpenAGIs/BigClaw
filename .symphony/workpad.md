@@ -25,3 +25,6 @@
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l` -> `88`; `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `82`
 - `git ls-tree -r --name-only HEAD | rg '\.go$' | wc -l` -> `282`; `find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `282`
 - `git ls-tree -r --name-only HEAD | rg '(^|/)(pyproject\.toml|setup\.py|setup\.cfg|[^/]+\.egg-info|PKG-INFO)$' | wc -l` -> `0`; `find . -path './.git' -prune -o \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `0`
+- `cd bigclaw-go && go test ./internal/regression -run TestLegacyMainlineCompatibilityManifestStaysAligned -count=1` -> `ok  	bigclaw-go/internal/regression	1.218s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `81`
