@@ -17,6 +17,6 @@ Delivered a dedicated dashboard/run contract module for `BIG-4301` that defines 
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_dashboard_run_contract.py` and `(cd bigclaw-go && go test ./internal/contract)` -> dashboard contract coverage remains in Python; execution contract coverage lives in Go
+- `(cd bigclaw-go && go test ./internal/product ./internal/contract)` -> dashboard/run contract coverage and execution contract coverage live in Go
 - `python3 -m pytest` -> `143 passed in 0.14s`
-- `git status --short` before staging captured `M README.md`, `M src/bigclaw/__init__.py`, `?? src/bigclaw/dashboard_run_contract.py`, and `?? tests/test_dashboard_run_contract.py`
+- `git status --short` before staging captured `M README.md`, `M src/bigclaw/__init__.py`, `?? src/bigclaw/dashboard_run_contract.py`, and the initial dashboard contract regression asset that now lives in `bigclaw-go/internal/product/dashboard_run_contract_test.go`
