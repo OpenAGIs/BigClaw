@@ -74,10 +74,16 @@
   `bigclaw-go/internal/workflow`, and `bigclaw-go/internal/billing` suites
   while the residual Python `models.py` module remains in use by compatibility
   surfaces.
+- Deleted the redundant Python
+  [test_repo_links.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_repo_links.py)
+  after confirming its run-commit role binding and accepted-hash assertions are
+  already covered by the Go-owned `bigclaw-go/internal/repo/repo_surfaces_test.go`
+  while Python repo-evidence closeout rendering remains exercised through
+  `tests/test_observability.py`.
 
 ## File-count impact
 
-- `.py`: `50 -> 35`
+- `.py`: `50 -> 34`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -110,7 +116,9 @@
 - `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S`
 - `cd bigclaw-go && go test ./internal/governance -count=1`
 - `cd bigclaw-go && go test ./internal/risk ./internal/triage ./internal/workflow ./internal/billing -count=1`
+- `cd bigclaw-go && go test ./internal/repo -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -119,8 +127,10 @@
 - `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S` -> before deletion, only `tests/test_planning.py` and `tests/test_governance.py` referenced the residual Python governance surface directly.
 - `cd bigclaw-go && go test ./internal/governance -count=1` -> `ok  	bigclaw-go/internal/governance	0.753s`
 - `cd bigclaw-go && go test ./internal/risk ./internal/triage ./internal/workflow ./internal/billing -count=1` -> `ok  	bigclaw-go/internal/risk	1.602s`; `ok  	bigclaw-go/internal/triage	1.173s`; `ok  	bigclaw-go/internal/workflow	1.979s`; `ok  	bigclaw-go/internal/billing	2.325s`
+- `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.826s`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q` -> `14 passed in 0.06s`
-- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 35`; `go 286`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q` -> `7 passed in 0.06s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 34`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk

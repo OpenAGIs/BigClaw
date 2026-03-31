@@ -119,6 +119,8 @@
 - `cd bigclaw-go && go test ./internal/governance -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
 - `cd bigclaw-go && go test ./internal/risk ./internal/triage ./internal/workflow ./internal/billing -count=1`
+- `cd bigclaw-go && go test ./internal/repo -count=1`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q`
 
 ### Results
 - `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S` -> `tests/test_planning.py:19:from bigclaw.governance import ScopeFreezeAudit` and `tests/test_governance.py:1:from bigclaw.governance import (` before retiring the redundant Python governance test.
@@ -131,4 +133,9 @@
 - `cd bigclaw-go && go test ./internal/risk ./internal/triage ./internal/workflow ./internal/billing -count=1` -> `ok  	bigclaw-go/internal/risk	1.602s`; `ok  	bigclaw-go/internal/triage	1.173s`; `ok  	bigclaw-go/internal/workflow	1.979s`; `ok  	bigclaw-go/internal/billing	2.325s`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q` -> `14 passed in 0.06s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 35`; `go 286`
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
+- Deleted `tests/test_repo_links.py` after confirming its run-commit role binding and accepted-hash closeout behavior are already covered by Go-owned `bigclaw-go/internal/repo/repo_surfaces_test.go` while the residual Python repo-evidence rendering path remains exercised by `tests/test_observability.py`.
+- `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.826s`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q` -> `7 passed in 0.06s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 34`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
