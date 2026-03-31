@@ -18,6 +18,7 @@
 - `go test ./internal/queue ./internal/reporting`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_observability.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_orchestration.py -q`
 - `rg -n "test_live_shadow_bundle\\.py|test_parallel_validation_bundle\\.py|test_control_center\\.py" .`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`

@@ -112,7 +112,7 @@ This lane removes redundant Python-only coverage without expanding into unrelate
   - Plan: split into smaller report/contract slices and migrate only the parts that already have checked-in Go report surfaces.
 - `tests/test_design_system.py`
   - Plan: migrate only after a Go-owned static report/contract exists; otherwise leave until the Python design-system generator is retired.
-- `tests/test_dsl.py`
+- `tests/test_dsl.py` (removed later by `BIG-GO-1026`)
   - Plan: requires a Go-native DSL parser/validator or an explicit decision to retire the Python DSL surface.
 - `tests/test_evaluation.py`
   - Plan: requires a Go-native evaluation/report builder or a narrow checked-in report contract that can be asserted in Go.
