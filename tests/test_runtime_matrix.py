@@ -222,3 +222,48 @@ def test_scheduler_uses_risk_score_to_require_approval(tmp_path: Path) -> None:
     assert record.decision.approved is False
     assert any(trace["span"] == "risk.score" for trace in entry["traces"])
     assert any(audit["action"] == "risk.score" for audit in entry["audits"])
+
+
+def test_scheduler_high_risk_requires_approval() -> None:
+    decision = Scheduler().decide(
+        Task(task_id="x", source="jira", title="prod op", description="", risk_level=RiskLevel.HIGH)
+    )
+
+    assert decision.medium == "vm"
+    assert decision.approved is False
+
+
+def test_scheduler_browser_task_routes_browser() -> None:
+    decision = Scheduler().decide(
+        Task(task_id="y", source="github", title="ui test", description="", required_tools=["browser"])
+    )
+
+    assert decision.medium == "browser"
+    assert decision.approved is True
+
+
+def test_scheduler_over_budget_degrades_browser_task_to_docker() -> None:
+    decision = Scheduler().decide(
+        Task(
+            task_id="z",
+            source="github",
+            title="budgeted ui test",
+            description="",
+            required_tools=["browser"],
+            budget=15.0,
+        )
+    )
+
+    assert decision.medium == "docker"
+    assert decision.approved is True
+    assert "budget degraded browser route to docker" in decision.reason
+
+
+def test_scheduler_over_budget_pauses_task() -> None:
+    decision = Scheduler().decide(
+        Task(task_id="b", source="linear", title="tiny budget", description="", budget=5.0)
+    )
+
+    assert decision.medium == "none"
+    assert decision.approved is False
+    assert decision.reason == "paused: budget 5.0 below required docker budget 10.0"

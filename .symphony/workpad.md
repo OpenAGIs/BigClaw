@@ -1,21 +1,19 @@
 Issue: BIG-GO-1030
 
 Plan
-- Fold the residual Python `repo_plane` compatibility surface into `src/bigclaw/observability.py`, which already owns run-commit evidence handling.
-- Update package exports and install a compatibility shim so `bigclaw.repo_plane` still resolves after the standalone file is removed.
-- Merge `tests/test_repo_rollout.py` into existing planning/report test modules, then delete the dedicated file.
-- Refresh directly coupled docs that still point at `src/bigclaw/repo_plane.py` as a standalone Python source asset.
-- Re-run targeted observability/planning/report pytest slices, recalculate repository `.py` / `.go` / `pyproject` / `setup` counts, then commit and push.
+- Merge the thin scheduler regression file into `tests/test_runtime_matrix.py` and delete `tests/test_scheduler.py`.
+- Merge the queue control-center regression file into `tests/test_operations.py` and delete `tests/test_control_center.py`.
+- Update directly coupled planning evidence/validation references so they point at the surviving merged test files instead of deleted paths.
+- Re-run targeted pytest slices for runtime and operations/reporting coverage, recalculate repository `.py` / `.go` / `pyproject` / `setup` counts, then commit and push.
 
 Acceptance
 - The repository physical `.py` file count decreases again.
-- `src/bigclaw/repo_plane.py` and `tests/test_repo_rollout.py` are removed from the tree.
-- `bigclaw.repo_plane` imports still resolve through package compatibility shims.
-- Repo-space and run-commit evidence structures still work from the migrated owner module.
+- `tests/test_scheduler.py` and `tests/test_control_center.py` are removed from the tree.
+- Merged scheduler and control-center coverage still passes from the surviving test files.
+- Planning references no longer point at deleted test files.
 - Final report includes the exact impact on `.py` count, `.go` count, and `pyproject.toml` / `setup.py` / `setup.cfg` presence.
 
 Validation
-- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_planning.py tests/test_reports.py -q`
-- `PYTHONPATH=src python3 - <<'PY'\nimport bigclaw.repo_plane\nprint(bigclaw.repo_plane.RunCommitLink.__name__)\nprint(bigclaw.repo_plane.RepoSpace(space_id=\"s\", project_key=\"BIG\", repo=\"OpenAGIs/BigClaw\").default_channel_for_task(\"BIG-1\"))\nPY`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_operations.py -q`
 - `find . -type f \\( -name '*.py' -o -name '*.go' -o -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' \\) | sed 's#^./##' | awk 'BEGIN{py=0;go=0;pp=0;setup=0} /\\.py$/{py++} /\\.go$/{go++} /pyproject\\.toml$/{pp++} /(setup\\.py|setup\\.cfg)$/{setup++} END{printf("py=%d\\ngo=%d\\npyproject=%d\\nsetup=%d\\n",py,go,pp,setup)}'`
 - `git diff --stat && git status --short`
