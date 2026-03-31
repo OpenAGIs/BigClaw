@@ -223,7 +223,7 @@ Historical initial state:
 Python source:
 - `src/bigclaw/repo_triage.py`
 - `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
+- retired standalone Python dashboard run contract module
 - `src/bigclaw/operations.py`
 - `src/bigclaw/saved_views.py`
 
@@ -430,7 +430,7 @@ Python source:
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
+- retired standalone Python dashboard run contract module
 - `src/bigclaw/planning.py`
 
 Go ownership:
