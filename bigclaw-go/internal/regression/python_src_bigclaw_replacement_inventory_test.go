@@ -20,6 +20,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/event_bus.py",
 		"src/bigclaw/issue_archive.py",
 		"src/bigclaw/mapping.py",
+		"src/bigclaw/memory.py",
 		"src/bigclaw/pilot.py",
 		"src/bigclaw/repo_board.py",
 		"src/bigclaw/repo_commits.py",
@@ -28,6 +29,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/repo_registry.py",
 		"src/bigclaw/repo_triage.py",
 		"src/bigclaw/saved_views.py",
+		"src/bigclaw/validation_policy.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
 		path := filepath.Join(repoRoot, relativePath)
@@ -43,11 +45,13 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"bigclaw-go/internal/intake/connector.go",
 		"bigclaw-go/internal/intake/mapping.go",
 		"bigclaw-go/internal/issuearchive/archive.go",
+		"bigclaw-go/internal/memory/store.go",
 		"bigclaw-go/internal/pilot/report.go",
 		"bigclaw-go/internal/product/console.go",
 		"bigclaw-go/internal/product/console_test.go",
 		"bigclaw-go/internal/product/dashboard_run_contract.go",
 		"bigclaw-go/internal/product/saved_views.go",
+		"bigclaw-go/internal/reporting/validation_policy.go",
 		"bigclaw-go/internal/repo/board.go",
 		"bigclaw-go/internal/repo/commits.go",
 		"bigclaw-go/internal/repo/gateway.go",
