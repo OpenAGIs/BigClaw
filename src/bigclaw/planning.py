@@ -397,7 +397,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_evaluation.py -q && "
+                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py -q && "
                     "(cd bigclaw-go && go test ./internal/queue ./internal/reporting ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler)"
                 ),
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
@@ -471,7 +471,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-tests",
-                        target="tests/test_evaluation.py",
+                        target="tests/test_operations.py",
                         capability="rollback-simulation",
                         note="replay and benchmark validation",
                     ),

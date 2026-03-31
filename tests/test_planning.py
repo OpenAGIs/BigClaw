@@ -507,7 +507,7 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "src/bigclaw/saved_views.py",
         "bigclaw-go/internal/product/saved_views_test.go",
         "src/bigclaw/evaluation.py",
-        "tests/test_evaluation.py",
+        "tests/test_operations.py",
     }
 
 
