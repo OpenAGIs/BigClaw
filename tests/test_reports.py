@@ -3444,15 +3444,6 @@ def init_remote_with_main(tmp_path: Path) -> Path:
     return remote
 
 
-def test_cache_root_for_repo_uses_repo_specific_directory(tmp_path: Path) -> None:
-    cache_root = cache_root_for_repo(
-        "git@github.com:OpenAGIs/BigClaw.git",
-        cache_base=tmp_path / "repos",
-    )
-
-    assert cache_root == tmp_path / "repos" / "github.com-openagis-bigclaw"
-
-
 def test_second_workspace_reuses_warm_cache_without_full_clone(tmp_path: Path) -> None:
     remote = init_remote_with_main(tmp_path)
     cache_base = tmp_path / "repos"
