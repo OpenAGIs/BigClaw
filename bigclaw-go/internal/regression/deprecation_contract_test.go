@@ -39,7 +39,7 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 
 	if manifest.RuntimeWarning.Surface != "python -m bigclaw" ||
 		manifest.RuntimeWarning.Replacement != "bash scripts/ops/bigclawctl" ||
-		!strings.Contains(manifest.RuntimeWarning.Message, "frozen for migration-only use") ||
+		!strings.Contains(manifest.RuntimeWarning.Message, "has been retired") ||
 		!strings.Contains(manifest.RuntimeWarning.Message, "Use bash scripts/ops/bigclawctl instead.") {
 		t.Fatalf("unexpected runtime warning payload: %+v", manifest.RuntimeWarning)
 	}

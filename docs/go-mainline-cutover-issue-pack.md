@@ -323,7 +323,6 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
 - any remaining active Python entrypoints not covered by earlier slices
 
 Go ownership:
@@ -496,7 +495,6 @@ Python source:
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
 
 Go ownership:
 - `bigclaw-go/cmd/bigclawctl`
