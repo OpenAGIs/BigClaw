@@ -455,7 +455,6 @@ Python source:
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_registry.py`
 - `src/bigclaw/repo_triage.py`
-- `src/bigclaw/issue_archive.py`
 - `src/bigclaw/roadmap.py`
 
 Go ownership:

@@ -34,3 +34,5 @@
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `79` after retiring `src/bigclaw/cost_control.py`
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `78` after retiring `src/bigclaw/parallel_refill.py`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_gateway.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `77` after retiring `src/bigclaw/issue_archive.py`
