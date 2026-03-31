@@ -87,10 +87,19 @@
   updated the runtime/report/package/test imports to the consolidated helper
   surface, and deleted the extra module without changing the residual Python
   audit-event compatibility behavior.
+- Folded the standalone
+  [run_detail.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/run_detail.py)
+  helper into
+  [reports.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/reports.py),
+  updated
+  [evaluation.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/evaluation.py)
+  to consume the shared detail-rendering helpers from `reports.py`, and
+  deleted the extra module without changing the shared Python run-detail
+  behavior.
 
 ## File-count impact
 
-- `.py`: `50 -> 33`
+- `.py`: `50 -> 32`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -128,6 +137,9 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q`
 - `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S`
 - `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q`
+- `rg -n "from \\.run_detail|from bigclaw\\.run_detail" src tests -S`
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py -q`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -141,7 +153,10 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q` -> `7 passed in 0.06s`
 - `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S` -> no matches
 - `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q` -> `46 passed in 0.10s`
-- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 33`; `go 286`
+- `rg -n "from \\.run_detail|from bigclaw\\.run_detail" src tests -S` -> no matches
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py -q` -> `48 passed in 0.09s`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 32`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk

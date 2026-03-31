@@ -123,6 +123,9 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q`
 - `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S`
 - `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q`
+- `rg -n "from \\.run_detail|from bigclaw\\.run_detail" src tests -S`
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py -q`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py`
 
 ### Results
 - `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S` -> `tests/test_planning.py:19:from bigclaw.governance import ScopeFreezeAudit` and `tests/test_governance.py:1:from bigclaw.governance import (` before retiring the redundant Python governance test.
@@ -145,4 +148,10 @@
 - `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S` -> no matches
 - `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q` -> `46 passed in 0.10s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 33`; `go 286`
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
+- Folded `src/bigclaw/run_detail.py` into `src/bigclaw/reports.py`, updated `src/bigclaw/evaluation.py` to consume the shared run-detail helpers from `reports.py`, and deleted the standalone run-detail module to reduce repository `.py` count while keeping the shared detail-rendering surface intact.
+- `rg -n "from \\.run_detail|from bigclaw\\.run_detail" src tests -S` -> no matches
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py -q` -> `48 passed in 0.09s`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 32`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output

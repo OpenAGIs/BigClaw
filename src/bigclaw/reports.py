@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
@@ -16,19 +17,361 @@ from .observability import (
     render_collaboration_panel_html,
 )
 from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
-from .run_detail import (
-    RunDetailEvent,
-    RunDetailResource,
-    RunDetailStat,
-    RunDetailTab,
-    render_resource_grid,
-    render_run_detail_console,
-    render_timeline_panel,
-)
 
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+@dataclass
+class RunDetailStat:
+    label: str
+    value: str
+    tone: str = "default"
+
+
+@dataclass
+class RunDetailResource:
+    name: str
+    kind: str
+    path: str
+    meta: List[str] = field(default_factory=list)
+    tone: str = "default"
+
+
+@dataclass
+class RunDetailEvent:
+    event_id: str
+    lane: str
+    title: str
+    timestamp: str
+    status: str
+    summary: str
+    details: List[str] = field(default_factory=list)
+
+
+@dataclass
+class RunDetailTab:
+    tab_id: str
+    label: str
+    body_html: str
+
+
+def render_run_detail_console(
+    *,
+    page_title: str,
+    eyebrow: str,
+    hero_title: str,
+    hero_summary: str,
+    stats: List[RunDetailStat],
+    tabs: List[RunDetailTab],
+    timeline_events: List[RunDetailEvent],
+) -> str:
+    stat_cards = "".join(
+        f"""
+        <article class="stat-card" data-tone="{escape(stat.tone)}">
+          <span>{escape(stat.label)}</span>
+          <strong>{escape(stat.value)}</strong>
+        </article>
+        """
+        for stat in stats
+    )
+    tab_buttons = "".join(
+        f'<button class="tab-button" type="button" data-tab="{escape(tab.tab_id)}">{escape(tab.label)}</button>'
+        for tab in tabs
+    )
+    tab_panels = "".join(
+        f'<section class="tab-panel" data-panel="{escape(tab.tab_id)}">{tab.body_html}</section>'
+        for tab in tabs
+    )
+    event_payload = [
+        {
+            "id": event.event_id,
+            "lane": event.lane,
+            "title": event.title,
+            "timestamp": event.timestamp,
+            "status": event.status,
+            "summary": event.summary,
+            "details": event.details,
+        }
+        for event in timeline_events
+    ]
+    timeline_json = json.dumps(event_payload).replace("</", "<\\/")
+    page = f"""
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{escape(page_title)}</title>
+    <style>
+      :root {{
+        color-scheme: dark;
+        --bg: #08111f;
+        --panel: rgba(17, 29, 51, 0.92);
+        --line: rgba(255, 255, 255, 0.14);
+        --text: #f4f7fb;
+        --muted: #9cb0c7;
+        --accent: #6ee7d8;
+        --warning: #f5c56c;
+        --danger: #ff8f8f;
+      }}
+      * {{ box-sizing: border-box; }}
+      body {{
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(110, 231, 216, 0.12), transparent 35%),
+          linear-gradient(180deg, #091425 0%, #050a14 100%);
+        color: var(--text);
+      }}
+      main {{
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px 72px;
+      }}
+      .hero {{
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: var(--panel);
+      }}
+      .eyebrow {{
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }}
+      .hero h1 {{
+        margin: 10px 0 12px;
+        font-size: clamp(2rem, 5vw, 3.2rem);
+      }}
+      .hero p {{
+        margin: 0;
+        max-width: 720px;
+        color: var(--muted);
+        line-height: 1.6;
+      }}
+      .stats {{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+        gap: 12px;
+        margin: 22px 0 26px;
+      }}
+      .stat-card {{
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: rgba(9, 18, 33, 0.82);
+      }}
+      .stat-card span {{
+        display: block;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }}
+      .stat-card strong {{
+        display: block;
+        margin-top: 8px;
+        font-size: 1.2rem;
+      }}
+      .stat-card[data-tone="accent"] strong {{ color: var(--accent); }}
+      .stat-card[data-tone="warning"] strong {{ color: var(--warning); }}
+      .stat-card[data-tone="danger"] strong {{ color: var(--danger); }}
+      .layout {{
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 18px;
+      }}
+      .panel {{
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }}
+      .tabs {{
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 20px 20px 0;
+      }}
+      .tab-button {{
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }}
+      .tab-button.active {{
+        border-color: var(--accent);
+        color: var(--accent);
+      }}
+      .tab-panel {{
+        display: none;
+        padding: 20px;
+      }}
+      .tab-panel.active {{
+        display: block;
+      }}
+      .tab-panel h2 {{
+        margin-top: 0;
+      }}
+      .side-panel {{
+        padding: 20px;
+        position: sticky;
+        top: 20px;
+      }}
+      .timeline-list {{
+        list-style: none;
+        padding: 0;
+        margin: 16px 0 0;
+        display: grid;
+        gap: 14px;
+      }}
+      .timeline-entry {{
+        border-left: 3px solid rgba(110, 231, 216, 0.55);
+        padding-left: 12px;
+      }}
+      .timeline-entry strong {{
+        display: block;
+      }}
+      .timeline-entry small {{
+        color: var(--muted);
+      }}
+      .timeline-entry ul {{
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+      }}
+      .resource-grid {{
+        display: grid;
+        gap: 12px;
+      }}
+      .resource-card {{
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }}
+      .resource-card[data-tone="accent"] strong {{ color: var(--accent); }}
+      .resource-card[data-tone="warning"] strong {{ color: var(--warning); }}
+      .resource-card[data-tone="danger"] strong {{ color: var(--danger); }}
+      .resource-meta {{
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+      }}
+      code {{
+        font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+        color: var(--accent);
+      }}
+      @media (max-width: 900px) {{
+        .layout {{
+          grid-template-columns: 1fr;
+        }}
+        .side-panel {{
+          position: static;
+        }}
+      }}
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <span class="eyebrow">{escape(eyebrow)}</span>
+        <h1 data-detail="title">{escape(hero_title)}</h1>
+        <p>{hero_summary}</p>
+      </section>
+      <section class="stats">{stat_cards}</section>
+      <section class="layout">
+        <section class="panel">
+          <div class="tabs">{tab_buttons}</div>
+          {tab_panels}
+        </section>
+        <aside class="panel side-panel">
+          <h2>Timeline / Log Sync</h2>
+          <p class="eyebrow">lane-aware event timeline</p>
+          <ul class="timeline-list" id="timeline-list"></ul>
+        </aside>
+      </section>
+    </main>
+    <script type="application/json" id="timeline-data">{timeline_json}</script>
+    <script>
+      const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+      const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+      const activateTab = (target) => {{
+        tabButtons.forEach((button) => button.classList.toggle("active", button.dataset.tab === target));
+        tabPanels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === target));
+      }};
+      if (tabButtons.length > 0) {{
+        activateTab(tabButtons[0].dataset.tab);
+      }}
+      tabButtons.forEach((button) => button.addEventListener("click", () => activateTab(button.dataset.tab)));
+
+      const timelineEl = document.getElementById("timeline-list");
+      const timelineData = JSON.parse(document.getElementById("timeline-data").textContent || "[]");
+      for (const item of timelineData) {{
+        const entry = document.createElement("li");
+        entry.className = "timeline-entry";
+        const details = Array.isArray(item.details) && item.details.length
+          ? `<ul>${{item.details.map((detail) => `<li>${{detail}}</li>`).join("")}}</ul>`
+          : "";
+        entry.innerHTML = `<small>${{item.timestamp}} · ${{item.lane}} · ${{item.status}}</small><strong>${{item.title}}</strong><p>${{item.summary}}</p>${{details}}`;
+        timelineEl.appendChild(entry);
+      }}
+    </script>
+  </body>
+</html>
+"""
+    return page.strip() + "\n"
+
+
+def render_resource_grid(title: str, description: str, resources: List[RunDetailResource]) -> str:
+    cards = []
+    for resource in resources:
+        meta_html = ""
+        if resource.meta:
+            meta_items = "".join(f"<li>{escape(item)}</li>" for item in resource.meta)
+            meta_html = f'<ul class="resource-meta">{meta_items}</ul>'
+        cards.append(
+            f"""
+        <article class="resource-card" data-tone="{escape(resource.tone)}">
+          <small>{escape(resource.kind)}</small>
+          <strong>{escape(resource.name)}</strong>
+          <p><code>{escape(resource.path)}</code></p>
+          {meta_html}
+        </article>
+        """
+        )
+    cards_html = "".join(cards)
+    return (
+        f"<section><h2>{escape(title)}</h2><p>{escape(description)}</p>"
+        f"<div class=\"resource-grid\">{cards_html if cards_html else '<p>No resources captured.</p>'}</div></section>"
+    )
+
+
+def render_timeline_panel(title: str, description: str, timeline_events: List[RunDetailEvent]) -> str:
+    items = []
+    for event in timeline_events:
+        details_html = ""
+        if event.details:
+            detail_items = "".join(f"<li>{escape(detail)}</li>" for detail in event.details)
+            details_html = f"<ul>{detail_items}</ul>"
+        items.append(
+            f"""
+        <li class="timeline-entry">
+          <small>{escape(event.timestamp)} · {escape(event.lane)} · {escape(event.status)}</small>
+          <strong>{escape(event.title)}</strong>
+          <p>{escape(event.summary)}</p>
+          {details_html}
+        </li>
+        """
+        )
+    items_html = "".join(items)
+    empty_item_html = '<li class="timeline-entry"><p>No events captured.</p></li>'
+    return (
+        f"<section><h2>{escape(title)}</h2><p>{escape(description)}</p>"
+        f'<ul class="timeline-list">{items_html if items_html else empty_item_html}</ul></section>'
+    )
 
 
 @dataclass
