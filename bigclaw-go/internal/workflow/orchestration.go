@@ -194,6 +194,28 @@ func BuildHandoffRequest(accepted bool, plan OrchestrationPlan, policyDecision O
 	}
 }
 
+func RenderOrchestrationPlan(plan OrchestrationPlan, policy OrchestrationPolicyDecision) string {
+	lines := []string{
+		"# Cross-Department Orchestration Plan",
+		"",
+		fmt.Sprintf("- Task ID: %s", plan.TaskID),
+		fmt.Sprintf("- Collaboration Mode: %s", fallbackString(plan.CollaborationMode, "single-team")),
+		fmt.Sprintf("- Departments: %s", fallbackJoined(plan.Departments())),
+		fmt.Sprintf("- Required Approvals: %s", fallbackJoined(plan.RequiredApprovals())),
+		fmt.Sprintf("- Tier: %s", fallbackString(policy.Tier, "standard")),
+		fmt.Sprintf("- Entitlement Status: %s", fallbackString(policy.EntitlementStatus, "included")),
+		fmt.Sprintf("- Billing Model: %s", fallbackString(policy.BillingModel, "standard-included")),
+		fmt.Sprintf("- Estimated Cost (USD): %.2f", policy.EstimatedCostUSD),
+		fmt.Sprintf("- Blocked Departments: %s", fallbackJoined(policy.BlockedDepartments)),
+	}
+	if request := BuildHandoffRequest(false, plan, policy); request != nil && !policy.UpgradeRequired {
+		lines = append(lines, fmt.Sprintf("- Human Handoff Team: %s", request.TargetTeam))
+		lines = append(lines, fmt.Sprintf("- Handoff Status: %s", request.Status))
+		lines = append(lines, fmt.Sprintf("- Handoff Reason: %s", request.Reason))
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func operationsReason(task domain.Task, labels []string, text string) string {
 	if hasAny(labels, "program", "ops", "release") || strings.Contains(text, "rollout") || matchesAny(strings.ToLower(task.Source), "linear", "jira") {
 		return "coordinates issue intake, handoffs, and completion tracking"
@@ -216,6 +238,21 @@ func appendUniqueHandoff(handoffs *[]DepartmentHandoff, department, reason strin
 		RequiredTools: uniqueAppend(nil, requiredTools),
 		Approvals:     uniqueAppend(nil, approvals),
 	})
+}
+
+func fallbackJoined(values []string) string {
+	if len(values) == 0 {
+		return "none"
+	}
+	return strings.Join(values, ", ")
+}
+
+func fallbackString(value, fallback string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return fallback
+	}
+	return value
 }
 
 func uniqueAppend(existing []string, extra []string) []string {

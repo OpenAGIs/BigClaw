@@ -26,5 +26,18 @@ Validation
 - `go test ./internal/workflow -run 'TestDefinitionParsesAndRendersTemplates|TestDefinitionEngineRunsDefinitionEndToEnd|TestDefinitionEngineRejectsUnknownStepKind|TestDefinitionEngineManualApprovalClosesHighRiskTask'`
 - `go test ./cmd/bigclawctl -run 'TestAutomationContinuationPolicyGateReturnsPolicyGoWhenInputsPass|TestAutomationContinuationPolicyGateReturnsPolicyHoldWithFailures'`
 - `go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata'`
+- `gofmt -w bigclaw-go/internal/workflow/orchestration.go bigclaw-go/internal/workflow/orchestration_test.go`
+- `go test ./internal/workflow -run 'TestCrossDepartmentOrchestratorPlansHandoffs|TestPremiumOrchestrationPolicyConstrainsStandardTier|TestBuildHandoffRequest|TestRenderOrchestrationPlanListsHandoffsAndPolicy'`
+- `go test ./internal/scheduler -run 'TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier|TestSchedulerAssessmentOmitsHandoffWhenStandardPlanFits|TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision'`
+- `go test ./internal/worker -run 'TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent|TestRuntimePublishesRejectedDecisionHandoffBeforeRetry'`
 - `git diff --stat`
 - `git status --short`
+
+Latest tranche results
+- Removed `tests/test_orchestration.py` after adding Go-native orchestration plan rendering coverage in `bigclaw-go/internal/workflow`.
+- `find tests -maxdepth 1 -name 'test_*.py' | sort | wc -l` -> `18`
+- `find . -path './.git' -prune -o -name '*.py' -print | sort | wc -l` -> `69`
+- `find . -path './.git' -prune -o -name '*.go' -print | sort | wc -l` -> `289`
+- `go test ./internal/workflow -run 'TestCrossDepartmentOrchestratorPlansHandoffs|TestPremiumOrchestrationPolicyConstrainsStandardTier|TestBuildHandoffRequest|TestRenderOrchestrationPlanListsHandoffsAndPolicy'` -> `ok   bigclaw-go/internal/workflow`
+- `go test ./internal/scheduler -run 'TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier|TestSchedulerAssessmentOmitsHandoffWhenStandardPlanFits|TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision'` -> `ok   bigclaw-go/internal/scheduler`
+- `go test ./internal/worker -run 'TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent|TestRuntimePublishesRejectedDecisionHandoffBeforeRetry'` -> `ok   bigclaw-go/internal/worker`
