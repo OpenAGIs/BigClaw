@@ -28,6 +28,9 @@
 ## Scoped Tranche 4
 - `tests/test_saved_views.py`
 
+## Scoped Tranche 5
+- `tests/test_execution_contract.py`
+
 ## Acceptance
 - Python test file count decreases by deleting the scoped files above.
 - Go test coverage increases via new parity assertions under existing Go test files.
@@ -35,6 +38,7 @@
 - Tranche 2 replacement coverage remains in Go under `bigclaw-go/internal/governance`, `bigclaw-go/internal/risk`, `bigclaw-go/internal/triage`, `bigclaw-go/internal/workflow`, `bigclaw-go/internal/billing`, and `bigclaw-go/internal/domain`.
 - Tranche 3 replacement coverage remains in Go under `bigclaw-go/internal/queue`.
 - Tranche 4 replacement coverage remains in Go under `bigclaw-go/internal/product`.
+- Tranche 5 replacement coverage remains in Go under `bigclaw-go/internal/contract`.
 - Changes stay scoped to this tranche only.
 
 ## Validation
@@ -91,3 +95,10 @@
   - Passed after Python deletion
   - Exact result:
     - `ok  	bigclaw-go/internal/product	(cached)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && git diff --stat`
+  - Passed for tranche 5
+  - Output summary: `2 files changed, 4 insertions(+), 300 deletions(-)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/contract`
+  - Passed
+  - Exact result:
+    - `ok  	bigclaw-go/internal/contract	0.993s`
