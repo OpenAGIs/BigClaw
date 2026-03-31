@@ -1,14 +1,14 @@
 # BIG-GO-1026 Workpad
 
 ## Plan
-- Identify the next bounded slice inside `tests/test_reports.py` with direct Go-native bootstrap helper coverage.
-- Remove the Python `cache_root_for_repo` helper test whose behavior is already covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go`.
+- Add Go-native coverage for the workspace validation summary slice in `bigclaw-go/internal/bootstrap/bootstrap_test.go`.
+- Remove the Python `build_validation_report` summary test from `tests/test_reports.py` once the equivalent Go test exists.
 - Re-run the consolidated reports suite and repo-level inventory checks so the branch captures the reduced Python test footprint.
 - Commit the scoped semantic reduction and push the branch to the remote.
 
 ## Acceptance
-- Scope stays limited to the `cache_root_for_repo` helper slice removed from `tests/test_reports.py`.
-- Python test coverage for that slice is carried by existing Go-native bootstrap tests in `bigclaw-go/internal/bootstrap/bootstrap_test.go`.
+- Scope stays limited to the workspace validation summary slice removed from `tests/test_reports.py`.
+- Python test coverage for that slice is carried by new Go-native bootstrap coverage in `bigclaw-go/internal/bootstrap/bootstrap_test.go`.
 - `tests/test_reports.py` shrinks while the consolidated suite still passes.
 - Report includes `.py` / `.go` file-count impact and confirms whether `pyproject.toml` / `setup.py` / `setup.cfg` changed.
 

@@ -157,6 +157,38 @@ func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	}
 }
 
+func TestBuildValidationReportCoversThreeWorkspacesWithOneCache(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+
+	report, err := BuildValidationReport(
+		remote,
+		filepath.Join(root, "validation-workspaces"),
+		[]string{"OPE-272", "OPE-273", "OPE-274"},
+		"main",
+		"",
+		filepath.Join(root, "repos"),
+		"",
+		true,
+	)
+	if err != nil {
+		t.Fatalf("build validation report: %v", err)
+	}
+
+	if report.Summary.WorkspaceCount != 3 {
+		t.Fatalf("expected workspace count 3, got %+v", report.Summary)
+	}
+	if !report.Summary.SingleCacheRootReused || !report.Summary.SingleMirrorReused || !report.Summary.SingleSeedReused {
+		t.Fatalf("expected shared cache/mirror/seed reuse, got %+v", report.Summary)
+	}
+	if report.Summary.MirrorCreations != 1 || report.Summary.SeedCreations != 1 {
+		t.Fatalf("expected one mirror and seed creation, got %+v", report.Summary)
+	}
+	if !report.Summary.CloneSuppressedAfterFirst || !report.Summary.CacheReusedAfterFirst || !report.Summary.CleanupPreservedCache {
+		t.Fatalf("expected cache reuse/cleanup summary to stay true, got %+v", report.Summary)
+	}
+}
+
 func TestWithCacheLockSerializesAcrossProcesses(t *testing.T) {
 	if os.Getenv("BOOTSTRAP_LOCK_HELPER") == "1" {
 		lockRoot := os.Getenv("BOOTSTRAP_LOCK_ROOT")

@@ -3518,26 +3518,6 @@ def test_bootstrap_recovers_from_stale_seed_directory_without_remote_reclone(tmp
     assert (cache_root / "seed" / ".git").exists()
 
 
-def test_validation_report_covers_three_workspaces_with_one_cache(tmp_path: Path) -> None:
-    remote = init_remote_with_main(tmp_path)
-    report = build_validation_report(
-        repo_url=str(remote),
-        workspace_root=tmp_path / "validation-workspaces",
-        issue_identifiers=["OPE-272", "OPE-273", "OPE-274"],
-        cache_base=tmp_path / "repos",
-        cleanup=True,
-    )
-
-    assert report["summary"]["workspace_count"] == 3
-    assert report["summary"]["single_cache_root_reused"] is True
-    assert report["summary"]["single_mirror_reused"] is True
-    assert report["summary"]["single_seed_reused"] is True
-    assert report["summary"]["mirror_creations"] == 1
-    assert report["summary"]["seed_creations"] == 1
-    assert report["summary"]["clone_suppressed_after_first"] is True
-    assert report["summary"]["cache_reused_after_first"] is True
-    assert report["summary"]["cleanup_preserved_cache"] is True
-
 def test_component_release_ready_requires_docs_accessibility_and_states():
     component = ComponentSpec(
         name="Button",
