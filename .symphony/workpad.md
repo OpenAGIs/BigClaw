@@ -1,22 +1,20 @@
-Issue: BIG-GO-1027
+# BIG-GO-1027 Workpad
 
-Plan
-- Finish a narrow residual tranche by replacing `tests/test_event_bus.py` with Go-native event-bus compatibility coverage.
-- Add a small `internal/eventbuscompat` package with a minimal run record, JSON ledger, and event bus that preserves the frozen Python transition/comment behavior for pull-request comments, CI completion, and task failure events.
-- Delete `tests/test_event_bus.py` once equivalent Go-native transition, summary, subscriber callback, comment, and ledger-persistence behaviors are covered.
-- Run targeted Go validation plus file-count/package-surface checks, then commit and push the branch.
+## Plan
+- Inspect remaining Python tests and identify a narrow tranche with existing Go coverage.
+- Remove only the selected residual Python test files from `tests/`.
+- Validate the migrated coverage with targeted `go test` runs in the corresponding Go packages.
+- Record repo impact, including `.py`/`.go` file counts and whether any `pyproject`/`setup` files changed.
+- Commit and push the scoped change set to `origin/big-go-1027`.
 
-Acceptance
-- Changes remain scoped to the event-bus residual Python test tranche and corresponding Go compatibility coverage.
-- Repository `.py` file count decreases after removing `tests/test_event_bus.py`.
-- Targeted Go tests cover PR-comment approval transition, CI completion transition, task-failed transition, subscriber callback behavior, collaboration comment recording, and ledger persistence.
-- Final report includes the exact impact on `.py` count, `.go` count, and confirms whether `pyproject.toml` / `setup.py` changed.
+## Acceptance
+- Changes are limited to the remaining repository-level Python test assets for this tranche.
+- `.py` file count decreases.
+- Go coverage remains in place for the removed Python test behaviors.
+- Final report includes `.py`/`.go` count impact and `pyproject`/`setup` impact.
+- Tracker state is not used as a substitute for repository changes.
 
-Validation
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- `find . -name '*.py' | wc -l`
-- `find . -name '*.go' | wc -l`
-- `gofmt -w bigclaw-go/internal/eventbuscompat/eventbus.go bigclaw-go/internal/eventbuscompat/eventbus_test.go`
-- `cd bigclaw-go && go test ./internal/eventbuscompat -run 'Test(EventBusPRCommentApprovesWaitingRunAndPersistsLedger|EventBusCICompletedMarksRunCompleted|EventBusTaskFailedMarksRunFailed)' -count=1`
-- `git diff --stat`
-- `git status --short`
+## Validation
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027/bigclaw-go && go test ./internal/workflow ./internal/observability`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027/bigclaw-go && go test ./internal/scheduler ./internal/product ./internal/regression`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && find . -type f \( -name '*.py' -o -name '*.go' \) | sed 's#^\./##' | awk 'BEGIN{py=0;go=0} /\.py$/{py++} /\.go$/{go++} END{printf("py=%d\ngo=%d\n",py,go)}'`
