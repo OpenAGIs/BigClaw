@@ -2,10 +2,20 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
+	"sort"
 	"strings"
 
 	"bigclaw-go/internal/domain"
 )
+
+var validStepKinds = map[string]struct{}{
+	"scheduler":     {},
+	"approval":      {},
+	"orchestration": {},
+	"report":        {},
+	"closeout":      {},
+}
 
 type Step struct {
 	Name     string         `json:"name"`
@@ -95,6 +105,27 @@ func ParseDefinition(text string) (Definition, error) {
 	var definition Definition
 	err := json.Unmarshal([]byte(text), &definition)
 	return definition, err
+}
+
+func (d Definition) Validate() error {
+	invalid := make([]string, 0)
+	seen := make(map[string]struct{})
+	for _, step := range d.Steps {
+		kind := strings.TrimSpace(step.Kind)
+		if _, ok := validStepKinds[kind]; ok {
+			continue
+		}
+		if _, ok := seen[kind]; ok {
+			continue
+		}
+		seen[kind] = struct{}{}
+		invalid = append(invalid, kind)
+	}
+	if len(invalid) == 0 {
+		return nil
+	}
+	sort.Strings(invalid)
+	return fmt.Errorf("invalid workflow step kind(s): %s", strings.Join(invalid, ", "))
 }
 
 func (d Definition) RenderPath(template string, task domain.Task, runID string) string {
