@@ -1,5 +1,11 @@
+import sys
 from pathlib import Path
 from typing import List, Optional
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
 from bigclaw.collaboration import CollaborationComment, DecisionNote, build_collaboration_thread
 from bigclaw.reports import (
