@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
 
+from bigclaw.audit_events import MANUAL_TAKEOVER_EVENT
 from bigclaw.collaboration import (
     CollaborationComment,
     DecisionNote,
@@ -1535,3 +1536,43 @@ def test_billing_summary_round_trip_preserves_rates_and_usage() -> None:
     assert payload["rates"][0]["interval"] == "monthly"
     assert restored == summary
     assert restored.usage[0].metadata["source"] == "workflow-engine"
+
+
+def test_reports_accept_canonical_handoff_and_takeover_events() -> None:
+    entry = {
+        "run_id": "run-ope-134-canvas",
+        "task_id": "OPE-134-canvas",
+        "source": "linear",
+        "summary": "handoff requested",
+        "audits": [
+            {
+                "action": "orchestration.plan",
+                "actor": "scheduler",
+                "outcome": "ready",
+                "details": {
+                    "collaboration_mode": "cross-functional",
+                    "departments": ["operations", "engineering"],
+                    "approvals": ["security-review"],
+                },
+            },
+            {
+                "action": MANUAL_TAKEOVER_EVENT,
+                "actor": "scheduler",
+                "outcome": "pending",
+                "details": {
+                    "task_id": "OPE-134-canvas",
+                    "run_id": "run-ope-134-canvas",
+                    "target_team": "security",
+                    "reason": "manual review required",
+                    "requested_by": "scheduler",
+                    "required_approvals": ["security-review"],
+                },
+            },
+        ],
+    }
+
+    canvas = build_orchestration_canvas_from_ledger_entry(entry)
+    queue = build_takeover_queue_from_ledger([entry], period="2026-03-11")
+
+    assert canvas.handoff_team == "security"
+    assert queue.requests[0].required_approvals == ["security-review"]

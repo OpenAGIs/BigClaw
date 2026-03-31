@@ -19,5 +19,5 @@ Delivered the `BIG-4306` operational audit event specification for the BigClaw e
 ## Validation Evidence
 
 - `python3 -m pytest` -> `145 passed in 0.17s`
-- `rg -n "OPE-134|BIG-4306|validation report" reports/OPE-134-validation.md tests/test_audit_events.py src/bigclaw/audit_events.py` -> issue ID, ticket title, canonical audit event coverage, and validation report traceability present
+- `rg -n "OPE-134|BIG-4306|validation report" reports/OPE-134-validation.md tests/test_audit_events.py src/bigclaw/audit_events.py` -> issue ID, ticket title, canonical audit event coverage, and validation report traceability present (`tests/test_audit_events.py` was later merged into adjacent suites by `BIG-GO-1026`)
 - `git push origin main` for commit `d74b4bfcaf5c6c5fe471d8be643f03bf02f8cd97` succeeded before this validation report was added

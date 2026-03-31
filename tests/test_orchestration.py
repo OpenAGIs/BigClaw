@@ -1,5 +1,12 @@
 from pathlib import Path
 
+from bigclaw.audit_events import (
+    APPROVAL_RECORDED_EVENT,
+    BUDGET_OVERRIDE_EVENT,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
+    SCHEDULER_DECISION_EVENT,
+)
 from bigclaw.dsl import WorkflowDefinition
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger
@@ -234,3 +241,66 @@ def test_workflow_definition_manual_approval_closes_high_risk_task(tmp_path: Pat
     assert result.execution.run.status == "needs-approval"
     assert result.acceptance.status == "accepted"
     assert result.acceptance.approvals == ["release-manager"]
+
+
+def test_scheduler_emits_p0_operational_audit_events(tmp_path: Path) -> None:
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-134-scheduler",
+        source="linear",
+        title="Route cross-team rollout",
+        description="Needs coordinated release handling",
+        labels=["customer", "data"],
+        priority=Priority.P0,
+        required_tools=["browser", "sql"],
+        budget=120.0,
+        budget_override_actor="finance-controller",
+        budget_override_reason="approved additional analytics validation spend",
+        budget_override_amount=30.0,
+    )
+
+    record = Scheduler().execute(task, run_id="run-ope-134-scheduler", ledger=ledger)
+    audits = {entry["action"]: entry for entry in ledger.load()[0]["audits"]}
+
+    assert record.handoff_request is not None
+    assert audits[SCHEDULER_DECISION_EVENT]["details"]["risk_score"] >= 0
+    assert audits[BUDGET_OVERRIDE_EVENT]["details"] == {
+        "task_id": "OPE-134-scheduler",
+        "run_id": "run-ope-134-scheduler",
+        "requested_budget": 120.0,
+        "approved_budget": 150.0,
+        "override_actor": "finance-controller",
+        "reason": "approved additional analytics validation spend",
+    }
+    assert audits[MANUAL_TAKEOVER_EVENT]["details"]["target_team"] == "operations"
+    assert audits[FLOW_HANDOFF_EVENT]["details"]["source_stage"] == "scheduler"
+
+
+def test_workflow_records_canonical_approval_event(tmp_path: Path) -> None:
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-134-approval",
+        source="linear",
+        title="Approve production rollout",
+        description="Manual gate",
+        risk_level=RiskLevel.HIGH,
+        acceptance_criteria=["rollback-plan"],
+        validation_plan=["integration-test"],
+    )
+
+    WorkflowEngine().run(
+        task,
+        run_id="run-ope-134-approval",
+        ledger=ledger,
+        approvals=["security-review"],
+        validation_evidence=["rollback-plan", "integration-test"],
+    )
+
+    audits = {entry["action"]: entry for entry in ledger.load()[0]["audits"]}
+    assert audits[APPROVAL_RECORDED_EVENT]["details"] == {
+        "task_id": "OPE-134-approval",
+        "run_id": "run-ope-134-approval",
+        "approvals": ["security-review"],
+        "approval_count": 1,
+        "acceptance_status": "accepted",
+    }

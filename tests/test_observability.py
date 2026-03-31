@@ -1,6 +1,17 @@
 import hashlib
 from pathlib import Path
 
+import pytest
+
+from bigclaw.audit_events import (
+    APPROVAL_RECORDED_EVENT,
+    BUDGET_OVERRIDE_EVENT,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
+    P0_AUDIT_EVENT_SPECS,
+    SCHEDULER_DECISION_EVENT,
+    missing_required_fields,
+)
 from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.event_bus import (
     CI_COMPLETED_EVENT,
@@ -365,3 +376,41 @@ def test_event_bus_task_failed_marks_run_failed(tmp_path: Path) -> None:
         audit["action"] == "event_bus.transition" and audit["details"]["status"] == "failed"
         for audit in persisted["audits"]
     )
+
+
+def test_p0_audit_event_specs_define_required_operational_events() -> None:
+    event_types = {spec.event_type for spec in P0_AUDIT_EVENT_SPECS}
+
+    assert event_types == {
+        SCHEDULER_DECISION_EVENT,
+        MANUAL_TAKEOVER_EVENT,
+        APPROVAL_RECORDED_EVENT,
+        BUDGET_OVERRIDE_EVENT,
+        FLOW_HANDOFF_EVENT,
+    }
+    assert missing_required_fields(
+        SCHEDULER_DECISION_EVENT,
+        {
+            "task_id": "OPE-134",
+            "run_id": "run-ope-134",
+            "medium": "docker",
+        },
+    ) == ["approved", "reason", "risk_level", "risk_score"]
+
+
+def test_task_run_audit_spec_event_requires_required_fields() -> None:
+    run = TaskRun.from_task(
+        Task(task_id="OPE-134-spec", source="linear", title="Validate audit fields", description=""),
+        run_id="run-ope-134-spec",
+        medium="docker",
+    )
+
+    with pytest.raises(ValueError, match="missing required fields"):
+        run.audit_spec_event(
+            MANUAL_TAKEOVER_EVENT,
+            "scheduler",
+            "pending",
+            task_id="OPE-134-spec",
+            run_id="run-ope-134-spec",
+            target_team="security",
+        )
