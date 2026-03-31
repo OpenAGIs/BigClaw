@@ -42,6 +42,13 @@
   and [test_event_bus.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_event_bus.py),
   and trimmed the package-root exports in
   [__init__.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/__init__.py).
+- Retired the Python execution-contract surface after confirming the active
+  contract implementation and regression coverage already live in
+  `bigclaw-go/internal/contract`; deleted
+  [execution_contract.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/execution_contract.py)
+  and [test_execution_contract.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_execution_contract.py),
+  and trimmed the stale package-root exports in
+  [__init__.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/__init__.py).
 - Split CI into a Go-mainline job and a legacy-Python migration job, and moved
   the legacy test invocation to `python3 -m pytest`, so the root workflow no
   longer reads as a Python-first repository entrypoint.
@@ -52,7 +59,7 @@
 
 ## File-count impact
 
-- `.py`: `50 -> 40`
+- `.py`: `50 -> 38`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -78,6 +85,8 @@
 - `rg -n "from bigclaw\\.saved_views|bigclaw\\.saved_views|SavedViewLibrary|render_saved_view_report" src tests README.md docs reports scripts -S`
 - `cd bigclaw-go && go test ./internal/eventbus -run 'TestEventBusPRCommentApprovesWaitingRunAndPersistsLedger|TestEventBusCICompletedMarksRunCompleted|TestEventBusTaskFailedMarksRunFailed'`
 - `rg -n "from bigclaw\\.event_bus|bigclaw\\.event_bus|EventBus|BusEvent|PULL_REQUEST_COMMENT_EVENT|CI_COMPLETED_EVENT|TASK_FAILED_EVENT" src tests README.md docs reports scripts -S`
+- `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths|TestExecutionContractAuditRequiresPersonaScopeAndEscalationMetadata'`
+- `rg -n "from bigclaw\\.execution_contract|bigclaw\\.execution_contract|ExecutionContractLibrary|render_execution_contract_report|build_operations_api_contract|ExecutionPermissionMatrix|ExecutionRole" src tests README.md docs reports scripts -S`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
