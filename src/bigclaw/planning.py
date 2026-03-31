@@ -345,7 +345,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_ui_review.py -q"
+                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_reports.py -q"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
@@ -382,7 +382,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="review-pack-tests",
-                        target="tests/test_ui_review.py",
+                        target="tests/test_reports.py",
                         capability="release-gate",
                         note="deterministic review packet validation",
                     ),
