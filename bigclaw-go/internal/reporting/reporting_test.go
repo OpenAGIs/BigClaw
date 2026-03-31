@@ -827,3 +827,26 @@ func TestRenderAndWriteRegressionCenterBundle(t *testing.T) {
 		t.Fatalf("unexpected regression center bundle content: %s", string(body))
 	}
 }
+
+func TestRenderQueueControlCenterWithSharedViewEmptyState(t *testing.T) {
+	center := BuildQueueControlCenter(nil)
+
+	rendered := RenderQueueControlCenterWithView(center, &SharedView{
+		Filters: []SharedViewFilter{
+			{Label: "Team", Value: "operations"},
+		},
+		ResultCount:  0,
+		EmptyMessage: "No queued work for the selected team.",
+	})
+
+	for _, fragment := range []string{
+		"## View State",
+		"- State: empty",
+		"- Summary: No queued work for the selected team.",
+		"- Team: operations",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered queue center, got %s", fragment, rendered)
+		}
+	}
+}

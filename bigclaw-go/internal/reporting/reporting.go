@@ -112,6 +112,35 @@ type QueueControlCenter struct {
 	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
+type SharedViewFilter struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type SharedView struct {
+	Filters      []SharedViewFilter `json:"filters,omitempty"`
+	ResultCount  int                `json:"result_count"`
+	Loading      bool               `json:"loading,omitempty"`
+	Errors       []string           `json:"errors,omitempty"`
+	PartialData  []string           `json:"partial_data,omitempty"`
+	EmptyMessage string             `json:"empty_message,omitempty"`
+}
+
+func (v SharedView) State() string {
+	switch {
+	case v.Loading:
+		return "loading"
+	case len(v.Errors) > 0:
+		return "error"
+	case v.ResultCount == 0:
+		return "empty"
+	case len(v.PartialData) > 0:
+		return "partial"
+	default:
+		return "ready"
+	}
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -898,11 +927,35 @@ func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 }
 
 func RenderQueueControlCenter(center QueueControlCenter) string {
+	return RenderQueueControlCenterWithView(center, nil)
+}
+
+func RenderQueueControlCenterWithView(center QueueControlCenter, view *SharedView) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Queue Control Center\n\n")
 	builder.WriteString(fmt.Sprintf("- Queue Depth: %d\n", center.QueueDepth))
 	builder.WriteString(fmt.Sprintf("- Waiting Approval Runs: %d\n", center.WaitingApprovalRuns))
 	builder.WriteString(fmt.Sprintf("- Queued Tasks: %s\n\n", joinOrNone(center.QueuedTasks)))
+	if view != nil {
+		builder.WriteString("## View State\n\n")
+		builder.WriteString(fmt.Sprintf("- State: %s\n", view.State()))
+		summary := ""
+		if view.State() == "empty" {
+			summary = firstNonEmpty(view.EmptyMessage, "No results available.")
+		}
+		if summary == "" {
+			summary = fmt.Sprintf("%d results in scope.", view.ResultCount)
+		}
+		builder.WriteString(fmt.Sprintf("- Summary: %s\n", summary))
+		if len(view.Filters) == 0 {
+			builder.WriteString("- Filters: none\n\n")
+		} else {
+			for _, filter := range view.Filters {
+				builder.WriteString(fmt.Sprintf("- %s: %s\n", filter.Label, filter.Value))
+			}
+			builder.WriteString("\n")
+		}
+	}
 	builder.WriteString("## Queue By Priority\n\n")
 	for _, priority := range []string{"P0", "P1", "P2"} {
 		builder.WriteString(fmt.Sprintf("- %s: %d\n", priority, center.QueuedByPriority[priority]))
