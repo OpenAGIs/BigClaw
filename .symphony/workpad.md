@@ -34,6 +34,11 @@
 ## Scoped Tranche 6
 - `tests/test_validation_policy.py`
 
+## Scoped Tranche 7
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_live_shadow_bundle.py`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
+
 ## Acceptance
 - Python test file count decreases by deleting the scoped files above.
 - Go test coverage increases via new parity assertions under existing Go test files.
@@ -43,6 +48,7 @@
 - Tranche 4 replacement coverage remains in Go under `bigclaw-go/internal/product`.
 - Tranche 5 replacement coverage remains in Go under `bigclaw-go/internal/contract`.
 - Tranche 6 replacement coverage remains in Go under `bigclaw-go/internal/validationpolicy`.
+- Tranche 7 replacement coverage remains in Go under `bigclaw-go/cmd/bigclawctl` and `bigclaw-go/internal/regression`.
 - Changes stay scoped to this tranche only.
 
 ## Validation
@@ -122,3 +128,16 @@
   - Passed after Python deletion
   - Exact result:
     - `ok  	bigclaw-go/internal/validationpolicy	(cached)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./cmd/bigclawctl ./internal/regression -run 'TestAutomationContinuationPolicyGateReturnsPolicyGoWhenInputsPass|TestAutomationContinuationPolicyGateReturnsPolicyHoldWithFailures|TestAutomationExportLiveShadowBundleBuildsManifest|TestAutomationExportValidationBundleRenderIndexShowsContinuationGate|TestLiveShadowRuntimeDocsStayAligned|TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndex|TestLiveValidationSummary'`
+  - Passed before Python deletion
+  - Exact result:
+    - `ok  	bigclaw-go/cmd/bigclawctl	2.056s`
+    - `ok  	bigclaw-go/internal/regression	1.409s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && git diff --stat`
+  - Passed for tranche 7
+  - Output summary: `4 files changed, 6 insertions(+), 491 deletions(-)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./cmd/bigclawctl ./internal/regression -run 'TestAutomationContinuationPolicyGateReturnsPolicyGoWhenInputsPass|TestAutomationContinuationPolicyGateReturnsPolicyHoldWithFailures|TestAutomationExportLiveShadowBundleBuildsManifest|TestAutomationExportValidationBundleRenderIndexShowsContinuationGate|TestLiveShadowRuntimeDocsStayAligned|TestContinuationPolicyGateReviewerMetadata|TestLiveValidationIndex|TestLiveValidationSummary'`
+  - Passed after Python deletion
+  - Exact result:
+    - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+    - `ok  	bigclaw-go/internal/regression	(cached)`
