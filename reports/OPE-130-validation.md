@@ -14,10 +14,10 @@ Delivered the `BIG-4302` schema layer for risk assessment, triage tracking, flow
 
 - Extended `bigclaw.models` with enums and entities for `RiskAssessment`, `TriageRecord`, `FlowTemplate` and `FlowRun`, plus billing and usage summaries.
 - Exported the new schema types from `bigclaw.__init__` so downstream modules can import them from the package root.
-- Added `tests/test_models.py` to verify round-trip serialization and defaults across all four schema groups.
+- Added `tests/test_models.py` to verify round-trip serialization and defaults across all four schema groups. That standalone file was later merged into `tests/test_reports.py`.
 
 ## Validation Evidence
 
 - `python3 -m pytest` -> `........................................................................ [ 51%]` / `....................................................................     [100%]`
-- `git log -1 --stat` for the schema commit captured `630 insertions(+), 2 deletions(-)` across `src/bigclaw/models.py`, `src/bigclaw/__init__.py`, and `tests/test_models.py`
+- `git log -1 --stat` for the schema commit captured `630 insertions(+), 2 deletions(-)` across `src/bigclaw/models.py`, `src/bigclaw/__init__.py`, and `tests/test_models.py` before that test file was later merged into `tests/test_reports.py`
 - `git push origin main` for commit `ac2f80a746489e903f523a3f83f7fcb0d3b5f618` succeeded before this validation report was added
