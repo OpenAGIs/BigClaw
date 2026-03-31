@@ -103,5 +103,7 @@
 - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
 - `rg -n "TaskMemoryStore|MemoryPattern|from bigclaw\\.memory|bigclaw\\.memory" src tests README.md docs reports scripts bigclaw-go -S`
 - `cd bigclaw-go && go test ./internal/memory -run TestTaskStoreReusesHistoryAndInjectsRules`
+- `cd bigclaw-go && go test ./internal/bootstrap -run 'TestCacheRootForRepoUsesRepoSpecificDirectory|TestSecondWorkspaceReusesWarmCacheWithoutFullClone|TestBootstrapWorkspaceReusesExistingIssueWorktree|TestCleanupWorkspacePreservesSharedCacheForFutureReuse|TestBootstrapRecoversFromStaleSeedDirectoryWithoutRemoteReclone'`
+- `rg -n "from bigclaw\\.workspace_bootstrap|bigclaw\\.workspace_bootstrap|workspace_bootstrap import" src tests README.md docs reports scripts -S`
 - `python3 - <<'PY' ... assert 'PYTHONPATH=src python3 -m pytest' in .github/workflows/ci.yml ... PY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
