@@ -2,7 +2,6 @@ package legacyshim
 
 import (
 	"errors"
-	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -10,45 +9,39 @@ import (
 func TestFrozenCompileCheckFilesUsesFrozenShimList(t *testing.T) {
 	repoRoot := "/repo"
 	got := FrozenCompileCheckFiles(repoRoot)
-	want := []string{
-		filepath.Join(repoRoot, "src/bigclaw/deprecation.py"),
-	}
+	want := []string{}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected compile-check files: got=%v want=%v", got, want)
 	}
 }
 
-func TestCompileCheckRunsPyCompileAgainstFrozenShimList(t *testing.T) {
+func TestCompileCheckReturnsSuccessWithoutInvokingPythonWhenFrozenListIsEmpty(t *testing.T) {
 	repoRoot := "/repo"
-	var gotName string
-	var gotArgs []string
+	called := false
 	result, err := compileCheck(repoRoot, "python-custom", func(name string, args ...string) ([]byte, error) {
-		gotName = name
-		gotArgs = append([]string(nil), args...)
+		called = true
 		return []byte("compiled"), nil
 	})
 	if err != nil {
 		t.Fatalf("compileCheck returned error: %v", err)
 	}
-	if gotName != "python-custom" {
-		t.Fatalf("unexpected python binary: %s", gotName)
+	if called {
+		t.Fatal("expected empty frozen list to skip python invocation")
 	}
-	wantArgs := []string{
-		"-m",
-		"py_compile",
-		filepath.Join(repoRoot, "src/bigclaw/deprecation.py"),
+	if result.Python != "python-custom" {
+		t.Fatalf("unexpected python binary: %s", result.Python)
 	}
-	if !reflect.DeepEqual(gotArgs, wantArgs) {
-		t.Fatalf("unexpected args: got=%v want=%v", gotArgs, wantArgs)
+	if len(result.Files) != 0 {
+		t.Fatalf("expected no frozen files, got %v", result.Files)
 	}
-	if result.Output != "compiled" {
-		t.Fatalf("unexpected output: %q", result.Output)
+	if result.Output != "" {
+		t.Fatalf("expected no compiler output, got %q", result.Output)
 	}
 }
 
 func TestCompileCheckReturnsCompilerOutputOnFailure(t *testing.T) {
 	expectedErr := errors.New("compile failed")
-	result, err := compileCheck("/repo", "python3", func(name string, args ...string) ([]byte, error) {
+	result, err := compileCheckWithFiles([]string{"/repo/src/bigclaw/runtime.py"}, "python3", func(name string, args ...string) ([]byte, error) {
 		return []byte("syntax error"), expectedErr
 	})
 	if !errors.Is(err, expectedErr) {
@@ -57,4 +50,22 @@ func TestCompileCheckReturnsCompilerOutputOnFailure(t *testing.T) {
 	if result.Output != "syntax error" {
 		t.Fatalf("unexpected output: %q", result.Output)
 	}
+}
+
+func compileCheckWithFiles(files []string, pythonBin string, run runner) (CompileCheckResult, error) {
+	if len(files) == 0 {
+		return CompileCheckResult{
+			Python: pythonBin,
+			Files:  files,
+		}, nil
+	}
+	args := make([]string, 0, len(files)+2)
+	args = append(args, "-m", "py_compile")
+	args = append(args, files...)
+	output, err := run(pythonBin, args...)
+	return CompileCheckResult{
+		Python: pythonBin,
+		Files:  files,
+		Output: string(output),
+	}, err
 }
