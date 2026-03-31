@@ -20,7 +20,8 @@
 
 ## Results
 - Pre-change counts: `src/bigclaw` had `45` `.py` files and `0` `.go` files.
-- Post-change counts: `src/bigclaw` has `36` `.py` files and `0` `.go` files.
+- Mid-change counts after tranche A: `src/bigclaw` had `36` `.py` files and `0` `.go` files.
+- Post-change counts: `src/bigclaw` has `30` `.py` files and `0` `.go` files.
 - `pyproject.toml`, `setup.py`, and `setup.cfg` at repo root: not present before or after this issue.
 
 ## Validation Runs
@@ -30,3 +31,9 @@
   - Result: `25 passed in 0.14s`.
 - `cd bigclaw-go && go test ./internal/repo ./internal/governance ./internal/risk ./internal/issuearchive`
   - Result: all four packages passed.
+- `python3 -m compileall src/bigclaw tests`
+  - Result: succeeded.
+- `PYTHONPATH=src python3 -m pytest tests/test_saved_views.py tests/test_dashboard_run_contract.py tests/test_event_bus.py tests/test_github_sync.py tests/test_mapping_connectors.py tests/test_pilot.py`
+  - Result: `20 passed in 1.28s`.
+- `cd bigclaw-go && go test ./internal/intake ./internal/product ./internal/pilot ./internal/githubsync ./internal/events`
+  - Result: all five packages passed.

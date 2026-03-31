@@ -3,6 +3,7 @@ import types
 
 from . import control_surfaces as _control_surfaces
 from . import repo_surfaces as _repo_surfaces
+from . import support_surfaces as _support_surfaces
 from .models import (
     BillingInterval,
     BillingRate,
@@ -36,6 +37,69 @@ def _install_compat_module(source_module: types.ModuleType, name: str, export_na
     globals()[name] = module
 
 
+_install_compat_module(
+    _support_surfaces,
+    "connectors",
+    ["Connector", "GitHubConnector", "JiraConnector", "LinearConnector", "SourceIssue"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/connector.go",
+)
+_install_compat_module(
+    _support_surfaces,
+    "mapping",
+    ["map_priority", "map_source_issue_to_task", "map_state"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/mapping.go",
+)
+_install_compat_module(
+    _support_surfaces,
+    "saved_views",
+    [
+        "AlertDigestSubscription",
+        "SavedView",
+        "SavedViewCatalog",
+        "SavedViewCatalogAudit",
+        "SavedViewFilter",
+        "SavedViewLibrary",
+        "render_saved_view_report",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/saved_views.go",
+)
+_install_compat_module(
+    _support_surfaces,
+    "pilot",
+    ["PilotImplementationResult", "PilotKPI", "render_pilot_implementation_report"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/pilot/report.go",
+)
+_install_compat_module(
+    _support_surfaces,
+    "github_sync",
+    ["CommandResult", "GitSyncError", "RepoSyncStatus", "ensure_repo_sync", "inspect_repo_sync", "install_git_hooks"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/githubsync/sync.go",
+)
+_install_compat_module(
+    _support_surfaces,
+    "event_bus",
+    [
+        "CI_COMPLETED_EVENT",
+        "PULL_REQUEST_COMMENT_EVENT",
+        "TASK_FAILED_EVENT",
+        "BusEvent",
+        "EventBus",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/events/bus.go",
+)
+_install_compat_module(
+    _support_surfaces,
+    "dashboard_run_contract",
+    [
+        "DashboardRunContract",
+        "DashboardRunContractAudit",
+        "DashboardRunContractLibrary",
+        "SchemaField",
+        "SurfaceSchema",
+        "render_dashboard_run_contract_report",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/dashboard_run_contract.go",
+)
 _install_compat_module(
     _repo_surfaces,
     "repo_board",
@@ -226,7 +290,7 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+from .support_surfaces import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -282,7 +346,7 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .saved_views import (
+from .support_surfaces import (
     AlertDigestSubscription,
     SavedView,
     SavedViewCatalog,
@@ -308,7 +372,7 @@ from .control_surfaces import (
     render_issue_priority_archive_report,
 )
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
+from .support_surfaces import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -321,7 +385,7 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .event_bus import (
+from .support_surfaces import (
     CI_COMPLETED_EVENT,
     PULL_REQUEST_COMMENT_EVENT,
     TASK_FAILED_EVENT,
@@ -345,7 +409,7 @@ from .execution_contract import (
     PermissionCheckResult,
     render_execution_contract_report,
 )
-from .dashboard_run_contract import (
+from .support_surfaces import (
     DashboardRunContract,
     DashboardRunContractAudit,
     DashboardRunContractLibrary,
