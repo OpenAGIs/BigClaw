@@ -2,6 +2,7 @@ Issue: BIG-GO-1034
 
 Scope
 - Remove migrated Python governance/reporting/observability/memory/cost-control modules from `src/bigclaw`.
+- Remove repo governance Python surface once the Go `internal/repo` replacement is confirmed equivalent and no Python consumers remain.
 - Remove the dependent legacy Python runtime/reporting cluster required to complete that deletion cleanly:
   `__main__.py`, `event_bus.py`, `evaluation.py`, `operations.py`, `runtime.py`.
 - Remove direct Python tests that only validate the deleted cluster.
@@ -17,8 +18,9 @@ Acceptance
 - Commit explains which Python files were deleted and which Go files validate the replacement surface.
 
 Validation
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034/bigclaw-go && go test ./internal/governance ./internal/reporting ./internal/observability ./internal/costcontrol ./internal/memory`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034 && PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_design_system.py tests/test_saved_views.py tests/test_validation_policy.py tests/test_models.py -q`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034/bigclaw-go && go test ./internal/repo ./internal/governance ./internal/reporting ./internal/observability ./internal/costcontrol ./internal/memory`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034 && PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_design_system.py tests/test_saved_views.py tests/test_validation_policy.py tests/test_models.py tests/test_execution_contract.py tests/test_repo_board.py tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_repo_triage.py tests/test_repo_collaboration.py tests/test_workspace_bootstrap.py tests/test_dashboard_run_contract.py tests/test_console_ia.py tests/test_ui_review.py tests/test_github_sync.py -q`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034 && rg -n "from \\.repo_governance|import bigclaw\\.repo_governance|from bigclaw\\.repo_governance|RepoPermissionContract|missing_repo_audit_fields" src tests`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034 && rg -n "from \\.observability|from \\.reports|from \\.event_bus|from \\.evaluation|from \\.operations|from \\.runtime|import bigclaw\\.(observability|reports|event_bus|evaluation|operations|runtime)|from bigclaw\\.(observability|reports|event_bus|evaluation|operations|runtime)" src tests`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034 && git diff --stat`
 
