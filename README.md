@@ -30,7 +30,7 @@ remain migration-only source assets and are not packaged from the root.
   - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
   - narrative report studio with section composing plus markdown, HTML, and plain-text export
   - v2 design-system token/component inventory with release-readiness audit reporting
-- `tests/`: unit tests
+- `scripts/ops/legacy_python_smoke.sh`: legacy Python migration smoke path
 
 ## Root Go quick start (recommended)
 
@@ -95,8 +95,7 @@ BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
 That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level smoke
-script `scripts/ops/legacy_python_smoke.sh` when
-`pytest` is available.
+script `scripts/ops/legacy_python_smoke.sh`.
 
 ## Go smoke verify
 
