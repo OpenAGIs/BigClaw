@@ -250,10 +250,10 @@ Historical initial state:
 
 Python source:
 - retired standalone Python repo links helper
-- `src/bigclaw/repo_commits.py`
+- retired standalone Python repo commit helper
 - retired standalone Python repo gateway helper
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_board.py`
+- retired standalone Python repo discussion board helper
 - retired standalone Python repo registry helper
 - retired standalone Python repo governance helper
 
@@ -448,8 +448,8 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
+- retired standalone Python repo discussion board helper
+- retired standalone Python repo commit helper
 - retired standalone Python repo gateway helper
 - retired standalone Python repo governance helper
 - retired standalone Python repo links helper

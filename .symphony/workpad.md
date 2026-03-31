@@ -17,6 +17,8 @@ Plan
 - Inline the last tiny repo-link helper into its only Python consumer and retire the standalone helper module/test pair.
 - Remove the stale Python intake mapping export now that Go owns the active mapping contract and no Python consumers remain.
 - Retire the isolated Python event-bus helper lane that now only survives through package exports and a dedicated test file.
+- Retire the isolated Python repo discussion board helper lane now that only dedicated Python tests and stale docs still reference it and the Go repo surface already carries equivalent coverage.
+- Retire the isolated Python repo commit helper module when it has no in-repo imports, no tests, and only historical docs still mention it.
 - Update directly coupled Go tests and legacy compile-check fixtures so they only cover the remaining Python compatibility files that still exist.
 - Refresh repo docs that still present the deleted Python wrappers as valid entrypoints.
 - Run targeted validation around the Go legacy-shim package and the `bigclawctl` workspace/github-sync/refill entrypoints, then capture exact commands and results.
@@ -40,6 +42,8 @@ Acceptance
 - Tiny Python helper modules with one runtime consumer are inlined and retired when that is cheaper than carrying another standalone `.py` file.
 - Python export-only compatibility modules are retired once their last in-repo consumers disappear.
 - Python event/helper lanes with no runtime consumers are retired together with their package-export surface and dedicated tests.
+- Python repo discussion board helpers that are not exported and only survive via dedicated Python tests are retired together with those tests once Go-owned repo surface coverage already exists.
+- Python repo commit helper modules with no package exports, runtime imports, or tests are removed instead of being kept as dead physical assets.
 - Supported operator paths point to `scripts/ops/bigclawctl` instead of deleted Python wrappers.
 - Final report states the impact on `.py` count, `.go` count, and `pyproject.toml` / `setup.py` presence.
 
@@ -51,4 +55,5 @@ Validation
 - `bash scripts/ops/bigclawctl refill --local-issues local-issues.json`
 - `bash scripts/ops/bigclawctl workspace validate --help`
 - `cd bigclaw-go && go test ./internal/regression -run TestLegacyMainlineCompatibilityManifestStaysAligned`
+- `python3 -m pytest tests/test_reports.py tests/test_observability.py -q`
 - `git diff --stat && git status --short`
