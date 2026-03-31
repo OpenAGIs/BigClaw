@@ -21,6 +21,10 @@
   residual after confirming it had no remaining in-repo consumers and that the
   active pilot implementation/report surface already lives in Go under
   `bigclaw-go/internal/pilot`.
+- Migrated the single-consumer task memory store from Python into
+  `bigclaw-go/internal/memory`, then deleted
+  [memory.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/memory.py)
+  and [test_memory.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_memory.py).
 - Split CI into a Go-mainline job and a legacy-Python migration job, and moved
   the legacy test invocation to `python3 -m pytest`, so the root workflow no
   longer reads as a Python-first repository entrypoint.
@@ -31,7 +35,7 @@
 
 ## File-count impact
 
-- `.py`: `50 -> 48`
+- `.py`: `50 -> 46`
 - `.go`: `282 -> 282`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -49,6 +53,8 @@
 - `rg -n "bigclaw-go/scripts/.+\\.py" README.md docs/go-cli-script-migration-plan.md -S`
 - `rg -n "PilotKPI|PilotImplementationResult|render_pilot_implementation_report|from bigclaw\\.pilot|bigclaw\\.pilot" src tests README.md docs reports scripts -S`
 - `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
+- `rg -n "TaskMemoryStore|MemoryPattern|from bigclaw\\.memory|bigclaw\\.memory" src tests README.md docs reports scripts bigclaw-go -S`
+- `cd bigclaw-go && go test ./internal/memory -run TestTaskStoreReusesHistoryAndInjectsRules`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
