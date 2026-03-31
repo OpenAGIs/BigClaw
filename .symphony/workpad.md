@@ -42,3 +42,6 @@
 - `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultDashboardRunContractIsReleaseReady|TestDashboardRunContractAuditDetectsMissingPaths|TestRenderDashboardRunContractReport' -count=1` -> `ok  	bigclaw-go/internal/product	0.446s`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/reports.py src/bigclaw/operations.py src/bigclaw/run_detail.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `71` after retiring `src/bigclaw/dashboard_run_contract.py`, `src/bigclaw/validation_policy.py`, `tests/test_dashboard_run_contract.py`, and `tests/test_validation_policy.py`
+- `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	1.149s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_plane.py src/bigclaw/repo_commits.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `67` after retiring `src/bigclaw/repo_governance.py`, `src/bigclaw/repo_registry.py`, `tests/test_repo_governance.py`, and `tests/test_repo_registry.py`
