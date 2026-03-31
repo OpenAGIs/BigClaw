@@ -309,7 +309,20 @@ func (q *FileQueue) load() error {
 	if len(contents) == 0 {
 		return nil
 	}
-	return json.Unmarshal(contents, &q.items)
+	if err := json.Unmarshal(contents, &q.items); err == nil {
+		return nil
+	}
+
+	var legacy []item
+	if err := json.Unmarshal(contents, &legacy); err != nil {
+		return err
+	}
+	q.items = make(map[string]*item, len(legacy))
+	for index := range legacy {
+		current := legacy[index]
+		q.items[current.Task.ID] = &current
+	}
+	return nil
 }
 
 func (q *FileQueue) save() error {
