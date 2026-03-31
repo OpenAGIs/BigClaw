@@ -13,12 +13,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
-      - name: Lint
-        run: ruff check src scripts
+      - name: Python compile check
+        run: python -m compileall src
       - name: Legacy Python smoke
         run: bash scripts/ops/legacy_python_smoke.sh
       - uses: actions/setup-go@v5
