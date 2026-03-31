@@ -5,9 +5,10 @@ from html import escape
 from pathlib import Path
 from typing import List, Optional
 
-from .audit_events import FLOW_HANDOFF_EVENT, MANUAL_TAKEOVER_EVENT
 from .observability import (
     CollaborationThread,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
     RepoSyncAudit,
     TaskRun,
     build_collaboration_thread_from_audits,

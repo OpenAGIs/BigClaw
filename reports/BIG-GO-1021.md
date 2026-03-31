@@ -80,10 +80,17 @@
   already covered by the Go-owned `bigclaw-go/internal/repo/repo_surfaces_test.go`
   while Python repo-evidence closeout rendering remains exercised through
   `tests/test_observability.py`.
+- Folded the standalone
+  [audit_events.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/audit_events.py)
+  helper into
+  [observability.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/observability.py),
+  updated the runtime/report/package/test imports to the consolidated helper
+  surface, and deleted the extra module without changing the residual Python
+  audit-event compatibility behavior.
 
 ## File-count impact
 
-- `.py`: `50 -> 34`
+- `.py`: `50 -> 33`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -119,6 +126,8 @@
 - `cd bigclaw-go && go test ./internal/repo -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q`
+- `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S`
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -130,7 +139,9 @@
 - `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.826s`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q` -> `14 passed in 0.06s`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q` -> `7 passed in 0.06s`
-- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 34`; `go 286`
+- `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S` -> no matches
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q` -> `46 passed in 0.10s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 33`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk

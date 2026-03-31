@@ -121,6 +121,8 @@
 - `cd bigclaw-go && go test ./internal/risk ./internal/triage ./internal/workflow ./internal/billing -count=1`
 - `cd bigclaw-go && go test ./internal/repo -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q`
+- `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S`
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q`
 
 ### Results
 - `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S` -> `tests/test_planning.py:19:from bigclaw.governance import ScopeFreezeAudit` and `tests/test_governance.py:1:from bigclaw.governance import (` before retiring the redundant Python governance test.
@@ -138,4 +140,9 @@
 - `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.826s`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py -q` -> `7 passed in 0.06s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 34`; `go 286`
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
+- Folded `src/bigclaw/audit_events.py` into `src/bigclaw/observability.py`, updated package/runtime/report/test imports to the consolidated helper surface, and deleted the standalone module to reduce repository `.py` count without changing the residual compatibility contract.
+- `rg -n "from \\.audit_events|from bigclaw\\.audit_events" src tests -S` -> no matches
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py tests/test_observability.py tests/test_reports.py -q` -> `46 passed in 0.10s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 33`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
