@@ -41,3 +41,10 @@ Latest tranche results
 - `go test ./internal/workflow -run 'TestCrossDepartmentOrchestratorPlansHandoffs|TestPremiumOrchestrationPolicyConstrainsStandardTier|TestBuildHandoffRequest|TestRenderOrchestrationPlanListsHandoffsAndPolicy'` -> `ok   bigclaw-go/internal/workflow`
 - `go test ./internal/scheduler -run 'TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier|TestSchedulerAssessmentOmitsHandoffWhenStandardPlanFits|TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision'` -> `ok   bigclaw-go/internal/scheduler`
 - `go test ./internal/worker -run 'TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent|TestRuntimePublishesRejectedDecisionHandoffBeforeRetry'` -> `ok   bigclaw-go/internal/worker`
+
+- Removed `tests/test_workspace_bootstrap.py` after porting the remaining workspace cache/bootstrap lifecycle coverage into `bigclaw-go/internal/bootstrap/bootstrap_test.go`.
+- `find tests -maxdepth 1 -name 'test_*.py' | sort | wc -l` -> `17`
+- `find . -path './.git' -prune -o -name '*.py' -print | sort | wc -l` -> `68`
+- `find . -path './.git' -prune -o -name '*.go' -print | sort | wc -l` -> `289`
+- `gofmt -w bigclaw-go/internal/bootstrap/bootstrap_test.go` -> `ok`
+- `go test ./internal/bootstrap -run 'TestRepoCacheKeyDerivesFromRepoLocator|TestCacheRootForRepoUsesRepoSpecificDirectory|TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed|TestSecondWorkspaceReusesWarmCacheWithoutFullClone|TestBootstrapWorkspaceReusesExistingIssueWorktree|TestCleanupWorkspacePreservesSharedCacheForFutureReuse|TestBootstrapRecoversFromStaleSeedDirectoryWithoutRemoteReclone|TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch|TestValidationReportCoversThreeWorkspacesWithOneCache'` -> `ok   bigclaw-go/internal/bootstrap`
