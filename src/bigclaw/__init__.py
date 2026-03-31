@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import sys
 import types
+import shutil
 import json
 import subprocess
 import warnings
+import argparse
 from pathlib import Path
 from datetime import datetime, timezone
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Protocol, Sequence, Set, Tuple
+from urllib.parse import urlparse
 
 from .execution_contract import ExecutionPermission, ExecutionPermissionMatrix, ExecutionRole
 from .models import (
@@ -1111,6 +1116,1096 @@ def _slug(value: str) -> str:
     return "-".join(part for part in cleaned.split("-") if part) or "agent"
 
 
+class WorkspaceBootstrapError(RuntimeError):
+    """Raised when the shared-worktree bootstrap flow cannot complete."""
+
+
+@dataclass
+class CacheBootstrapState:
+    cache_root: str
+    cache_key: str
+    mirror_path: str
+    seed_path: str
+    mirror_created: bool
+    seed_created: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class WorkspaceBootstrapStatus:
+    workspace: str
+    branch: str
+    cache_root: str
+    cache_key: str
+    mirror_path: str
+    seed_path: str
+    reused: bool
+    cache_reused: bool
+    clone_suppressed: bool
+    mirror_created: bool = False
+    seed_created: bool = False
+    workspace_mode: str = "worktree_created"
+    removed: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class CommandResult:
+    stdout: str
+    stderr: str
+    returncode: int
+
+
+CACHE_REMOTE = "cache"
+BOOTSTRAP_BRANCH_PREFIX = "symphony"
+DEFAULT_CACHE_BASE = Path("~/.cache/symphony/repos")
+WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE = "~/.cache/symphony/repos"
+
+
+def _run(command: Sequence[str], cwd: Path) -> CommandResult:
+    completed = subprocess.run(
+        list(command),
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return CommandResult(
+        stdout=completed.stdout.strip(),
+        stderr=completed.stderr.strip(),
+        returncode=completed.returncode,
+    )
+
+
+def _git(repo: Path, *args: str) -> CommandResult:
+    return _run(["git", *args], repo)
+
+
+def _require_git(repo: Path, *args: str) -> str:
+    result = _git(repo, *args)
+    if result.returncode != 0:
+        detail = result.stderr or result.stdout or f"git {' '.join(args)} failed"
+        raise WorkspaceBootstrapError(detail)
+    return result.stdout
+
+
+def sanitize_issue_identifier(identifier: Optional[str]) -> str:
+    raw = (identifier or "issue").strip() or "issue"
+    return "".join(character if character.isalnum() or character in ".-_" else "_" for character in raw)
+
+
+def bootstrap_branch_name(identifier: Optional[str]) -> str:
+    return f"{BOOTSTRAP_BRANCH_PREFIX}/{sanitize_issue_identifier(identifier)}"
+
+
+def default_cache_base(path: Optional[Path | str] = None) -> Path:
+    if path is None:
+        return DEFAULT_CACHE_BASE.expanduser().resolve()
+    return Path(path).expanduser().resolve()
+
+
+def normalize_repo_locator(repo_url: str) -> str:
+    raw = repo_url.strip()
+    if "://" in raw:
+        parsed = urlparse(raw)
+        locator = f"{parsed.netloc}{parsed.path}"
+    elif ":" in raw and "@" in raw.split(":", 1)[0]:
+        user_host, repo_path = raw.split(":", 1)
+        host = user_host.split("@", 1)[-1]
+        locator = f"{host}/{repo_path}"
+    else:
+        locator = raw
+    return locator.strip().rstrip("/").removesuffix(".git")
+
+
+def repo_cache_key(repo_url: str, cache_key: Optional[str] = None) -> str:
+    raw = (cache_key or normalize_repo_locator(repo_url)).strip().lower()
+    sanitized = "".join(character if character.isalnum() or character in ".-_" else "-" for character in raw)
+    compact = "-".join(segment for segment in sanitized.split("-") if segment)
+    return compact or "repo"
+
+
+def cache_root_for_repo(
+    repo_url: str,
+    cache_base: Optional[Path | str] = None,
+    cache_key: Optional[str] = None,
+) -> Path:
+    return default_cache_base(cache_base) / repo_cache_key(repo_url, cache_key)
+
+
+def resolve_cache_root(
+    repo_url: str,
+    cache_root: Optional[Path | str] = None,
+    cache_base: Optional[Path | str] = None,
+    cache_key: Optional[str] = None,
+) -> Path:
+    if cache_root is not None:
+        return Path(cache_root).expanduser().resolve()
+    return cache_root_for_repo(repo_url, cache_base=cache_base, cache_key=cache_key)
+
+
+def default_cache_root(path: Optional[Path | str] = None) -> Path:
+    return default_cache_base(path)
+
+
+def _remove_path(path: Path) -> None:
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    elif path.exists() or path.is_symlink():
+        path.unlink()
+
+
+def _cache_state(
+    repo_url: str,
+    repo_cache_root: Path,
+    cache_key: Optional[str] = None,
+    *,
+    mirror_created: bool = False,
+    seed_created: bool = False,
+) -> CacheBootstrapState:
+    return CacheBootstrapState(
+        cache_root=str(repo_cache_root),
+        cache_key=repo_cache_key(repo_url, cache_key),
+        mirror_path=str(repo_cache_root / "mirror.git"),
+        seed_path=str(repo_cache_root / "seed"),
+        mirror_created=mirror_created,
+        seed_created=seed_created,
+    )
+
+
+def ensure_mirror(
+    repo_url: str,
+    cache_root: Optional[Path | str] = None,
+    cache_base: Optional[Path | str] = None,
+    cache_key: Optional[str] = None,
+) -> CacheBootstrapState:
+    repo_cache_root = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
+    mirror_path = repo_cache_root / "mirror.git"
+    mirror_path.parent.mkdir(parents=True, exist_ok=True)
+    mirror_created = False
+    if not (mirror_path / "HEAD").exists():
+        if mirror_path.exists():
+            _remove_path(mirror_path)
+        result = subprocess.run(
+            ["git", "clone", "--mirror", repo_url, str(mirror_path)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            detail = result.stderr.strip() or result.stdout.strip() or "git clone --mirror failed"
+            raise WorkspaceBootstrapError(detail)
+        mirror_created = True
+    else:
+        _require_git(mirror_path, "remote", "set-url", "origin", repo_url)
+        _require_git(mirror_path, "fetch", "--prune", "origin")
+    return _cache_state(repo_url, repo_cache_root, cache_key, mirror_created=mirror_created)
+
+
+def ensure_seed(
+    repo_url: str,
+    default_branch: str,
+    cache_root: Optional[Path | str] = None,
+    cache_base: Optional[Path | str] = None,
+    cache_key: Optional[str] = None,
+) -> CacheBootstrapState:
+    cache_state = ensure_mirror(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
+    seed_path = Path(cache_state.seed_path)
+    seed_created = False
+    if not (seed_path / ".git").exists():
+        if seed_path.exists():
+            _remove_path(seed_path)
+        result = subprocess.run(
+            ["git", "clone", cache_state.mirror_path, str(seed_path)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            detail = result.stderr.strip() or result.stdout.strip() or "git clone seed failed"
+            raise WorkspaceBootstrapError(detail)
+        seed_created = True
+    configure_seed_remotes(seed_path, repo_url, Path(cache_state.mirror_path))
+    _require_git(seed_path, "fetch", "--prune", CACHE_REMOTE)
+    _require_git(seed_path, "worktree", "prune")
+    _require_git(seed_path, "checkout", "-B", default_branch, f"{CACHE_REMOTE}/{default_branch}")
+    return _cache_state(
+        repo_url,
+        Path(cache_state.cache_root),
+        cache_key,
+        mirror_created=cache_state.mirror_created,
+        seed_created=seed_created,
+    )
+
+
+def configure_seed_remotes(seed_path: Path, repo_url: str, mirror_path: Path) -> None:
+    remotes = set(_require_git(seed_path, "remote").splitlines())
+    if CACHE_REMOTE not in remotes and "origin" in remotes:
+        current_origin = _require_git(seed_path, "remote", "get-url", "origin")
+        if Path(current_origin).expanduser().resolve() == mirror_path.resolve():
+            _require_git(seed_path, "remote", "rename", "origin", CACHE_REMOTE)
+            remotes = set(_require_git(seed_path, "remote").splitlines())
+    if CACHE_REMOTE not in remotes:
+        _require_git(seed_path, "remote", "add", CACHE_REMOTE, str(mirror_path))
+    else:
+        _require_git(seed_path, "remote", "set-url", CACHE_REMOTE, str(mirror_path))
+    remotes = set(_require_git(seed_path, "remote").splitlines())
+    if "origin" not in remotes:
+        _require_git(seed_path, "remote", "add", "origin", repo_url)
+    else:
+        _require_git(seed_path, "remote", "set-url", "origin", repo_url)
+    _require_git(seed_path, "config", "remote.pushDefault", "origin")
+
+
+def bootstrap_workspace(
+    workspace: Path | str,
+    issue_identifier: Optional[str],
+    repo_url: str,
+    default_branch: str = "main",
+    cache_root: Optional[Path | str] = None,
+    cache_base: Optional[Path | str] = None,
+    cache_key: Optional[str] = None,
+) -> WorkspaceBootstrapStatus:
+    workspace_path = Path(workspace).expanduser().resolve()
+    cache_state = ensure_seed(
+        repo_url,
+        default_branch,
+        cache_root=cache_root,
+        cache_base=cache_base,
+        cache_key=cache_key,
+    )
+    seed_path = Path(cache_state.seed_path)
+    branch = bootstrap_branch_name(issue_identifier or workspace_path.name)
+    cache_reused = not cache_state.mirror_created and not cache_state.seed_created
+    clone_suppressed = not cache_state.mirror_created
+    git_dir = workspace_path / ".git"
+    if git_dir.exists():
+        current_branch = _require_git(workspace_path, "branch", "--show-current")
+        return WorkspaceBootstrapStatus(
+            workspace=str(workspace_path),
+            branch=current_branch or branch,
+            cache_root=cache_state.cache_root,
+            cache_key=cache_state.cache_key,
+            mirror_path=cache_state.mirror_path,
+            seed_path=cache_state.seed_path,
+            reused=True,
+            cache_reused=cache_reused,
+            clone_suppressed=clone_suppressed,
+            mirror_created=cache_state.mirror_created,
+            seed_created=cache_state.seed_created,
+            workspace_mode="workspace_reused",
+        )
+    parent = workspace_path.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    if workspace_path.exists() and workspace_path.is_dir() and any(workspace_path.iterdir()):
+        raise WorkspaceBootstrapError(f"Workspace is not empty: {workspace_path}")
+    _require_git(seed_path, "worktree", "add", "--force", "-B", branch, str(workspace_path), f"{CACHE_REMOTE}/{default_branch}")
+    return WorkspaceBootstrapStatus(
+        workspace=str(workspace_path),
+        branch=branch,
+        cache_root=cache_state.cache_root,
+        cache_key=cache_state.cache_key,
+        mirror_path=cache_state.mirror_path,
+        seed_path=cache_state.seed_path,
+        reused=False,
+        cache_reused=cache_reused,
+        clone_suppressed=clone_suppressed,
+        mirror_created=cache_state.mirror_created,
+        seed_created=cache_state.seed_created,
+        workspace_mode="worktree_created",
+    )
+
+
+def cleanup_workspace(
+    workspace: Path | str,
+    issue_identifier: Optional[str],
+    repo_url: str,
+    default_branch: str = "main",
+    cache_root: Optional[Path | str] = None,
+    cache_base: Optional[Path | str] = None,
+    cache_key: Optional[str] = None,
+) -> WorkspaceBootstrapStatus:
+    workspace_path = Path(workspace).expanduser().resolve()
+    repo_cache_root = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
+    cache_state = _cache_state(repo_url, repo_cache_root, cache_key)
+    seed_path = Path(cache_state.seed_path)
+    mirror_path = Path(cache_state.mirror_path)
+    branch = bootstrap_branch_name(issue_identifier or workspace_path.name)
+    if not (seed_path / ".git").exists() or not workspace_path.exists():
+        return WorkspaceBootstrapStatus(
+            workspace=str(workspace_path),
+            branch=branch,
+            cache_root=cache_state.cache_root,
+            cache_key=cache_state.cache_key,
+            mirror_path=cache_state.mirror_path,
+            seed_path=cache_state.seed_path,
+            reused=False,
+            cache_reused=seed_path.exists() or mirror_path.exists(),
+            clone_suppressed=True,
+            workspace_mode="cleanup",
+            removed=False,
+        )
+    configure_seed_remotes(seed_path, repo_url, mirror_path)
+    if _git(workspace_path, "rev-parse", "--git-dir").returncode == 0:
+        current_branch = _require_git(workspace_path, "branch", "--show-current")
+        branch = current_branch or branch
+    worktree_list = _require_git(seed_path, "worktree", "list", "--porcelain")
+    registered = f"worktree {workspace_path}" in worktree_list
+    if registered:
+        _require_git(seed_path, "worktree", "remove", "--force", str(workspace_path))
+        _require_git(seed_path, "worktree", "prune")
+    local_branches = set(_require_git(seed_path, "branch", "--format", "%(refname:short)").splitlines())
+    if branch.startswith(f"{BOOTSTRAP_BRANCH_PREFIX}/") and branch in local_branches:
+        _require_git(seed_path, "branch", "-D", branch)
+    _require_git(seed_path, "checkout", "-B", default_branch, f"{CACHE_REMOTE}/{default_branch}")
+    return WorkspaceBootstrapStatus(
+        workspace=str(workspace_path),
+        branch=branch,
+        cache_root=cache_state.cache_root,
+        cache_key=cache_state.cache_key,
+        mirror_path=cache_state.mirror_path,
+        seed_path=cache_state.seed_path,
+        reused=False,
+        cache_reused=True,
+        clone_suppressed=True,
+        workspace_mode="cleanup",
+        removed=registered,
+    )
+
+
+def status_as_json(status: WorkspaceBootstrapStatus) -> str:
+    return json.dumps(status.to_dict(), ensure_ascii=False, indent=2)
+
+
+def build_parser(
+    description: str,
+    default_repo_url: str,
+    default_branch: str,
+    default_cache_root: Optional[str],
+    default_cache_base: str,
+    default_cache_key: Optional[str],
+) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("command", choices=["bootstrap", "cleanup"])
+    parser.add_argument("--workspace", default=".", help="Workspace path managed by Symphony.")
+    parser.add_argument("--issue", default="", help="Linear issue identifier used for the bootstrap branch.")
+    parser.add_argument("--repo-url", default=default_repo_url, help="Canonical remote repository URL.")
+    parser.add_argument("--default-branch", default=default_branch, help="Default branch used as the bootstrap base.")
+    parser.add_argument("--cache-root", default=default_cache_root, help="Full cache root that contains mirror.git and seed. Overrides --cache-base/--cache-key.")
+    parser.add_argument("--cache-base", default=default_cache_base, help="Base directory that stores per-repo cache roots.")
+    parser.add_argument("--cache-key", default=default_cache_key, help="Optional stable key for the per-repo cache directory.")
+    parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON output.")
+    return parser
+
+
+def emit(payload: Dict[str, Any], as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    for key, value in payload.items():
+        print(f"{key}={value}")
+
+
+def main(
+    argv: Optional[Sequence[str]] = None,
+    *,
+    description: str = "Bootstrap Symphony workspaces from a shared local mirror.",
+    default_repo_url: str = "",
+    default_branch: str = "main",
+    default_cache_root: Optional[str] = None,
+    default_cache_base: str = WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE,
+    default_cache_key: Optional[str] = None,
+) -> int:
+    parser = build_parser(
+        description=description,
+        default_repo_url=default_repo_url,
+        default_branch=default_branch,
+        default_cache_root=default_cache_root,
+        default_cache_base=default_cache_base,
+        default_cache_key=default_cache_key,
+    )
+    args = parser.parse_args(argv)
+    workspace = Path(args.workspace).expanduser().resolve()
+    try:
+        payload = dict(
+            workspace=workspace,
+            issue_identifier=args.issue,
+            repo_url=args.repo_url,
+            default_branch=args.default_branch,
+            cache_root=args.cache_root,
+            cache_base=args.cache_base,
+            cache_key=args.cache_key,
+        )
+        if args.command == "bootstrap":
+            status = bootstrap_workspace(**payload)
+        else:
+            status = cleanup_workspace(**payload)
+        emit({"status": "ok", **status.to_dict()}, args.json)
+        return 0
+    except WorkspaceBootstrapError as exc:
+        emit({"status": "error", "workspace": str(workspace), "error": str(exc)}, args.json)
+        return 1
+
+
+def build_validation_report(
+    *,
+    repo_url: str,
+    workspace_root: Path | str,
+    issue_identifiers: Sequence[str],
+    default_branch: str = "main",
+    cache_root: Optional[Path | str] = None,
+    cache_base: Optional[Path | str] = None,
+    cache_key: Optional[str] = None,
+    cleanup: bool = True,
+) -> Dict[str, Any]:
+    workspace_root_path = Path(workspace_root).expanduser().resolve()
+    workspace_root_path.mkdir(parents=True, exist_ok=True)
+    bootstrap_results = []
+    for issue_identifier in issue_identifiers:
+        workspace_path = workspace_root_path / issue_identifier
+        status = bootstrap_workspace(
+            workspace=workspace_path,
+            issue_identifier=issue_identifier,
+            repo_url=repo_url,
+            default_branch=default_branch,
+            cache_root=cache_root,
+            cache_base=cache_base,
+            cache_key=cache_key,
+        )
+        bootstrap_results.append(status.to_dict())
+    cache_roots = sorted({result["cache_root"] for result in bootstrap_results})
+    mirror_paths = sorted({result["mirror_path"] for result in bootstrap_results})
+    seed_paths = sorted({result["seed_path"] for result in bootstrap_results})
+    cleanup_results = []
+    if cleanup:
+        for issue_identifier in issue_identifiers:
+            workspace_path = workspace_root_path / issue_identifier
+            status = cleanup_workspace(
+                workspace=workspace_path,
+                issue_identifier=issue_identifier,
+                repo_url=repo_url,
+                default_branch=default_branch,
+                cache_root=cache_root,
+                cache_base=cache_base,
+                cache_key=cache_key,
+            )
+            cleanup_results.append(status.to_dict())
+    return {
+        "repo_url": repo_url,
+        "default_branch": default_branch,
+        "workspace_root": str(workspace_root_path),
+        "issue_identifiers": list(issue_identifiers),
+        "bootstrap_results": bootstrap_results,
+        "cleanup_results": cleanup_results,
+        "summary": {
+            "workspace_count": len(bootstrap_results),
+            "unique_cache_roots": cache_roots,
+            "unique_mirror_paths": mirror_paths,
+            "unique_seed_paths": seed_paths,
+            "single_cache_root_reused": len(cache_roots) == 1,
+            "single_mirror_reused": len(mirror_paths) == 1,
+            "single_seed_reused": len(seed_paths) == 1,
+            "mirror_creations": sum(1 for result in bootstrap_results if result["mirror_created"]),
+            "seed_creations": sum(1 for result in bootstrap_results if result["seed_created"]),
+            "clone_suppressed_after_first": all(result["clone_suppressed"] for result in bootstrap_results[1:]),
+            "cache_reused_after_first": all(result["cache_reused"] for result in bootstrap_results[1:]),
+            "all_workspaces_created_via_worktree": all(
+                result["workspace_mode"] in {"worktree_created", "workspace_reused"} for result in bootstrap_results
+            ),
+            "cleanup_preserved_cache": bool(bootstrap_results)
+            and Path(bootstrap_results[0]["mirror_path"]).exists()
+            and Path(bootstrap_results[0]["seed_path"]).joinpath(".git").exists(),
+        },
+    }
+
+
+def render_validation_markdown(report: Dict[str, Any]) -> str:
+    summary = report["summary"]
+    lines = [
+        "# Symphony bootstrap cache validation",
+        "",
+        f"- Repo: `{report['repo_url']}`",
+        f"- Workspace root: `{report['workspace_root']}`",
+        f"- Workspaces: `{summary['workspace_count']}`",
+        f"- Single cache root reused: `{summary['single_cache_root_reused']}`",
+        f"- Mirror creations: `{summary['mirror_creations']}`",
+        f"- Seed creations: `{summary['seed_creations']}`",
+        f"- Clone suppressed after first workspace: `{summary['clone_suppressed_after_first']}`",
+        f"- Cleanup preserved cache: `{summary['cleanup_preserved_cache']}`",
+        "",
+        "## Bootstrap Results",
+        "",
+    ]
+    for result in report["bootstrap_results"]:
+        lines.extend(
+            [
+                f"- `{result['workspace']}`",
+                f"  - `cache_root={result['cache_root']}`",
+                f"  - `cache_key={result['cache_key']}`",
+                f"  - `workspace_mode={result['workspace_mode']}`",
+                f"  - `cache_reused={result['cache_reused']}`",
+                f"  - `clone_suppressed={result['clone_suppressed']}`",
+                f"  - `mirror_created={result['mirror_created']}`",
+                f"  - `seed_created={result['seed_created']}`",
+            ]
+        )
+    return "\n".join(lines) + "\n"
+
+
+def write_validation_report(report: Dict[str, Any], path: Path | str) -> Path:
+    target = Path(path).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.suffix.lower() == ".md":
+        target.write_text(render_validation_markdown(report))
+    else:
+        target.write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    return target
+
+
+REQUIRED_RUN_CLOSEOUTS = ("validation-evidence", "git-push", "git-log-stat")
+ALLOWED_SCOPE_STATUSES = {"frozen", "approved-exception", "proposed"}
+
+
+@dataclass(frozen=True)
+class FreezeException:
+    issue_id: str
+    reason: str
+    approved_by: str = ""
+    decision_note: str = ""
+
+    @property
+    def approved(self) -> bool:
+        return bool(self.approved_by.strip())
+
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "issue_id": self.issue_id,
+            "reason": self.reason,
+            "approved_by": self.approved_by,
+            "decision_note": self.decision_note,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, str]) -> "FreezeException":
+        return cls(
+            issue_id=data["issue_id"],
+            reason=data.get("reason", ""),
+            approved_by=data.get("approved_by", ""),
+            decision_note=data.get("decision_note", ""),
+        )
+
+
+@dataclass
+class GovernanceBacklogItem:
+    issue_id: str
+    title: str
+    phase: str
+    owner: str = ""
+    status: str = "planned"
+    scope_status: str = "frozen"
+    acceptance_criteria: List[str] = field(default_factory=list)
+    validation_plan: List[str] = field(default_factory=list)
+    required_closeout: List[str] = field(default_factory=lambda: list(REQUIRED_RUN_CLOSEOUTS))
+    linked_epics: List[str] = field(default_factory=list)
+    notes: str = ""
+
+    @property
+    def missing_closeout_requirements(self) -> List[str]:
+        present = {item.strip().lower() for item in self.required_closeout if item.strip()}
+        return [item for item in REQUIRED_RUN_CLOSEOUTS if item not in present]
+
+    @property
+    def governance_ready(self) -> bool:
+        return (
+            bool(self.owner.strip())
+            and self.scope_status in ALLOWED_SCOPE_STATUSES
+            and bool(self.acceptance_criteria)
+            and bool(self.validation_plan)
+            and not self.missing_closeout_requirements
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "issue_id": self.issue_id,
+            "title": self.title,
+            "phase": self.phase,
+            "owner": self.owner,
+            "status": self.status,
+            "scope_status": self.scope_status,
+            "acceptance_criteria": list(self.acceptance_criteria),
+            "validation_plan": list(self.validation_plan),
+            "required_closeout": list(self.required_closeout),
+            "linked_epics": list(self.linked_epics),
+            "notes": self.notes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "GovernanceBacklogItem":
+        return cls(
+            issue_id=str(data["issue_id"]),
+            title=str(data["title"]),
+            phase=str(data.get("phase", "")),
+            owner=str(data.get("owner", "")),
+            status=str(data.get("status", "planned")),
+            scope_status=str(data.get("scope_status", "frozen")),
+            acceptance_criteria=[str(item) for item in data.get("acceptance_criteria", [])],
+            validation_plan=[str(item) for item in data.get("validation_plan", [])],
+            required_closeout=[str(item) for item in data.get("required_closeout", [])],
+            linked_epics=[str(item) for item in data.get("linked_epics", [])],
+            notes=str(data.get("notes", "")),
+        )
+
+
+@dataclass
+class ScopeFreezeBoard:
+    name: str
+    version: str
+    freeze_date: str
+    freeze_owner: str
+    backlog_items: List[GovernanceBacklogItem] = field(default_factory=list)
+    exceptions: List[FreezeException] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "freeze_date": self.freeze_date,
+            "freeze_owner": self.freeze_owner,
+            "backlog_items": [item.to_dict() for item in self.backlog_items],
+            "exceptions": [exception.to_dict() for exception in self.exceptions],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ScopeFreezeBoard":
+        return cls(
+            name=str(data["name"]),
+            version=str(data["version"]),
+            freeze_date=str(data.get("freeze_date", "")),
+            freeze_owner=str(data.get("freeze_owner", "")),
+            backlog_items=[GovernanceBacklogItem.from_dict(item) for item in data.get("backlog_items", [])],
+            exceptions=[FreezeException.from_dict(item) for item in data.get("exceptions", [])],
+        )
+
+
+@dataclass
+class ScopeFreezeAudit:
+    board_name: str
+    version: str
+    total_items: int
+    duplicate_issue_ids: List[str] = field(default_factory=list)
+    missing_owners: List[str] = field(default_factory=list)
+    missing_acceptance: List[str] = field(default_factory=list)
+    missing_validation: List[str] = field(default_factory=list)
+    missing_closeout_requirements: Dict[str, List[str]] = field(default_factory=dict)
+    unauthorized_scope_changes: List[str] = field(default_factory=list)
+    invalid_scope_statuses: List[str] = field(default_factory=list)
+    unapproved_exceptions: List[str] = field(default_factory=list)
+
+    @property
+    def release_ready(self) -> bool:
+        return not (
+            self.duplicate_issue_ids
+            or self.missing_owners
+            or self.missing_acceptance
+            or self.missing_validation
+            or self.missing_closeout_requirements
+            or self.unauthorized_scope_changes
+            or self.invalid_scope_statuses
+            or self.unapproved_exceptions
+        )
+
+    @property
+    def readiness_score(self) -> float:
+        checks = [
+            not self.duplicate_issue_ids,
+            not self.missing_owners,
+            not self.missing_acceptance,
+            not self.missing_validation,
+            not self.missing_closeout_requirements,
+            not self.unauthorized_scope_changes,
+            not self.invalid_scope_statuses,
+            not self.unapproved_exceptions,
+        ]
+        passed = sum(1 for item in checks if item)
+        return round((passed / len(checks)) * 100, 1)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "board_name": self.board_name,
+            "version": self.version,
+            "total_items": self.total_items,
+            "duplicate_issue_ids": list(self.duplicate_issue_ids),
+            "missing_owners": list(self.missing_owners),
+            "missing_acceptance": list(self.missing_acceptance),
+            "missing_validation": list(self.missing_validation),
+            "missing_closeout_requirements": {issue_id: list(requirements) for issue_id, requirements in self.missing_closeout_requirements.items()},
+            "unauthorized_scope_changes": list(self.unauthorized_scope_changes),
+            "invalid_scope_statuses": list(self.invalid_scope_statuses),
+            "unapproved_exceptions": list(self.unapproved_exceptions),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ScopeFreezeAudit":
+        return cls(
+            board_name=str(data["board_name"]),
+            version=str(data["version"]),
+            total_items=int(data.get("total_items", 0)),
+            duplicate_issue_ids=[str(item) for item in data.get("duplicate_issue_ids", [])],
+            missing_owners=[str(item) for item in data.get("missing_owners", [])],
+            missing_acceptance=[str(item) for item in data.get("missing_acceptance", [])],
+            missing_validation=[str(item) for item in data.get("missing_validation", [])],
+            missing_closeout_requirements={str(issue_id): [str(requirement) for requirement in requirements] for issue_id, requirements in dict(data.get("missing_closeout_requirements", {})).items()},
+            unauthorized_scope_changes=[str(item) for item in data.get("unauthorized_scope_changes", [])],
+            invalid_scope_statuses=[str(item) for item in data.get("invalid_scope_statuses", [])],
+            unapproved_exceptions=[str(item) for item in data.get("unapproved_exceptions", [])],
+        )
+
+
+class ScopeFreezeGovernance:
+    def audit(self, board: ScopeFreezeBoard) -> ScopeFreezeAudit:
+        counts: Dict[str, int] = {}
+        exception_index = {exception.issue_id: exception for exception in board.exceptions}
+        for item in board.backlog_items:
+            counts[item.issue_id] = counts.get(item.issue_id, 0) + 1
+        duplicate_issue_ids = sorted(issue_id for issue_id, count in counts.items() if count > 1)
+        missing_owners = sorted(item.issue_id for item in board.backlog_items if not item.owner.strip())
+        missing_acceptance = sorted(item.issue_id for item in board.backlog_items if not item.acceptance_criteria)
+        missing_validation = sorted(item.issue_id for item in board.backlog_items if not item.validation_plan)
+        missing_closeout_requirements = {item.issue_id: item.missing_closeout_requirements for item in board.backlog_items if item.missing_closeout_requirements}
+        invalid_scope_statuses = sorted(item.issue_id for item in board.backlog_items if item.scope_status not in ALLOWED_SCOPE_STATUSES)
+        unauthorized_scope_changes: List[str] = []
+        for item in board.backlog_items:
+            if item.scope_status != "proposed":
+                continue
+            exception = exception_index.get(item.issue_id)
+            if exception is None or not exception.approved:
+                unauthorized_scope_changes.append(item.issue_id)
+        unapproved_exceptions = sorted(exception.issue_id for exception in board.exceptions if not exception.approved)
+        return ScopeFreezeAudit(
+            board_name=board.name,
+            version=board.version,
+            total_items=len(board.backlog_items),
+            duplicate_issue_ids=duplicate_issue_ids,
+            missing_owners=missing_owners,
+            missing_acceptance=missing_acceptance,
+            missing_validation=missing_validation,
+            missing_closeout_requirements=missing_closeout_requirements,
+            unauthorized_scope_changes=sorted(unauthorized_scope_changes),
+            invalid_scope_statuses=invalid_scope_statuses,
+            unapproved_exceptions=unapproved_exceptions,
+        )
+
+
+def render_scope_freeze_report(board: ScopeFreezeBoard, audit: ScopeFreezeAudit) -> str:
+    lines = [
+        "# Scope Freeze Governance Report",
+        "",
+        f"- Name: {board.name}",
+        f"- Version: {board.version}",
+        f"- Freeze Date: {board.freeze_date}",
+        f"- Freeze Owner: {board.freeze_owner}",
+        f"- Backlog Items: {len(board.backlog_items)}",
+        f"- Exceptions: {len(board.exceptions)}",
+        f"- Readiness Score: {audit.readiness_score:.1f}",
+        f"- Release Ready: {audit.release_ready}",
+        "",
+        "## Backlog",
+        "",
+    ]
+    if board.backlog_items:
+        for item in board.backlog_items:
+            closeout = ", ".join(item.required_closeout) or "none"
+            lines.append(f"- {item.issue_id}: phase={item.phase} owner={item.owner or 'none'} status={item.status} scope={item.scope_status} closeout={closeout}")
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Freeze Exceptions", ""])
+    if board.exceptions:
+        for exception in board.exceptions:
+            lines.append(f"- {exception.issue_id}: approved_by={exception.approved_by or 'pending'} reason={exception.reason or 'none'}")
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Audit", ""])
+    lines.append(f"- Duplicate issues: {', '.join(audit.duplicate_issue_ids) if audit.duplicate_issue_ids else 'none'}")
+    lines.append(f"- Missing owners: {', '.join(audit.missing_owners) if audit.missing_owners else 'none'}")
+    lines.append(f"- Missing acceptance: {', '.join(audit.missing_acceptance) if audit.missing_acceptance else 'none'}")
+    lines.append(f"- Missing validation: {', '.join(audit.missing_validation) if audit.missing_validation else 'none'}")
+    if audit.missing_closeout_requirements:
+        missing_closeout = "; ".join(f"{issue_id}={', '.join(requirements)}" for issue_id, requirements in sorted(audit.missing_closeout_requirements.items()))
+    else:
+        missing_closeout = "none"
+    lines.append(f"- Missing closeout requirements: {missing_closeout}")
+    lines.append(f"- Unauthorized scope changes: {', '.join(audit.unauthorized_scope_changes) if audit.unauthorized_scope_changes else 'none'}")
+    lines.append(f"- Invalid scope statuses: {', '.join(audit.invalid_scope_statuses) if audit.invalid_scope_statuses else 'none'}")
+    lines.append(f"- Unapproved exceptions: {', '.join(audit.unapproved_exceptions) if audit.unapproved_exceptions else 'none'}")
+    return "\n".join(lines) + "\n"
+
+
+ALLOWED_ISSUE_CATEGORIES = {"ui", "ia", "permission", "metric"}
+ALLOWED_ISSUE_PRIORITIES = {"P0", "P1", "P2"}
+
+
+@dataclass(frozen=True)
+class ArchivedIssue:
+    finding_id: str
+    summary: str
+    category: str
+    priority: str
+    owner: str
+    surface: str = ""
+    impact: str = ""
+    status: str = "open"
+    evidence: List[str] = field(default_factory=list)
+
+    @property
+    def normalized_category(self) -> str:
+        return self.category.strip().lower()
+
+    @property
+    def normalized_priority(self) -> str:
+        return self.priority.strip().upper()
+
+    @property
+    def resolved(self) -> bool:
+        return self.status.strip().lower() == "resolved"
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "finding_id": self.finding_id,
+            "summary": self.summary,
+            "category": self.category,
+            "priority": self.priority,
+            "owner": self.owner,
+            "surface": self.surface,
+            "impact": self.impact,
+            "status": self.status,
+            "evidence": list(self.evidence),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ArchivedIssue":
+        return cls(
+            finding_id=str(data["finding_id"]),
+            summary=str(data["summary"]),
+            category=str(data["category"]),
+            priority=str(data["priority"]),
+            owner=str(data.get("owner", "")),
+            surface=str(data.get("surface", "")),
+            impact=str(data.get("impact", "")),
+            status=str(data.get("status", "open")),
+            evidence=[str(item) for item in data.get("evidence", [])],
+        )
+
+
+@dataclass
+class IssuePriorityArchive:
+    issue_id: str
+    title: str
+    version: str
+    findings: List[ArchivedIssue] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "issue_id": self.issue_id,
+            "title": self.title,
+            "version": self.version,
+            "findings": [finding.to_dict() for finding in self.findings],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "IssuePriorityArchive":
+        return cls(
+            issue_id=str(data["issue_id"]),
+            title=str(data["title"]),
+            version=str(data["version"]),
+            findings=[ArchivedIssue.from_dict(item) for item in data.get("findings", [])],
+        )
+
+
+@dataclass(frozen=True)
+class IssuePriorityArchiveAudit:
+    ready: bool
+    finding_count: int
+    priority_counts: Dict[str, int] = field(default_factory=dict)
+    category_counts: Dict[str, int] = field(default_factory=dict)
+    missing_owners: List[str] = field(default_factory=list)
+    invalid_priorities: List[str] = field(default_factory=list)
+    invalid_categories: List[str] = field(default_factory=list)
+    unresolved_p0_findings: List[str] = field(default_factory=list)
+
+    @property
+    def summary(self) -> str:
+        status = "READY" if self.ready else "HOLD"
+        return f"{status}: findings={self.finding_count} missing_owners={len(self.missing_owners)} invalid_priorities={len(self.invalid_priorities)} invalid_categories={len(self.invalid_categories)} unresolved_p0={len(self.unresolved_p0_findings)}"
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "ready": self.ready,
+            "finding_count": self.finding_count,
+            "priority_counts": dict(self.priority_counts),
+            "category_counts": dict(self.category_counts),
+            "missing_owners": list(self.missing_owners),
+            "invalid_priorities": list(self.invalid_priorities),
+            "invalid_categories": list(self.invalid_categories),
+            "unresolved_p0_findings": list(self.unresolved_p0_findings),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "IssuePriorityArchiveAudit":
+        return cls(
+            ready=bool(data["ready"]),
+            finding_count=int(data.get("finding_count", 0)),
+            priority_counts={str(priority): int(count) for priority, count in dict(data.get("priority_counts", {})).items()},
+            category_counts={str(category): int(count) for category, count in dict(data.get("category_counts", {})).items()},
+            missing_owners=[str(item) for item in data.get("missing_owners", [])],
+            invalid_priorities=[str(item) for item in data.get("invalid_priorities", [])],
+            invalid_categories=[str(item) for item in data.get("invalid_categories", [])],
+            unresolved_p0_findings=[str(item) for item in data.get("unresolved_p0_findings", [])],
+        )
+
+
+class IssuePriorityArchivist:
+    def audit(self, archive: IssuePriorityArchive) -> IssuePriorityArchiveAudit:
+        priority_counts = {priority: 0 for priority in sorted(ALLOWED_ISSUE_PRIORITIES)}
+        category_counts = {category: 0 for category in sorted(ALLOWED_ISSUE_CATEGORIES)}
+        missing_owners: List[str] = []
+        invalid_priorities: List[str] = []
+        invalid_categories: List[str] = []
+        unresolved_p0_findings: List[str] = []
+        for finding in archive.findings:
+            if not finding.owner.strip():
+                missing_owners.append(finding.finding_id)
+            if finding.normalized_priority in ALLOWED_ISSUE_PRIORITIES:
+                priority_counts[finding.normalized_priority] += 1
+            else:
+                invalid_priorities.append(finding.finding_id)
+            if finding.normalized_category in ALLOWED_ISSUE_CATEGORIES:
+                category_counts[finding.normalized_category] += 1
+            else:
+                invalid_categories.append(finding.finding_id)
+            if finding.normalized_priority == "P0" and not finding.resolved:
+                unresolved_p0_findings.append(finding.finding_id)
+        ready = bool(archive.findings) and not (missing_owners or invalid_priorities or invalid_categories or unresolved_p0_findings)
+        return IssuePriorityArchiveAudit(
+            ready=ready,
+            finding_count=len(archive.findings),
+            priority_counts=priority_counts,
+            category_counts=category_counts,
+            missing_owners=sorted(missing_owners),
+            invalid_priorities=sorted(invalid_priorities),
+            invalid_categories=sorted(invalid_categories),
+            unresolved_p0_findings=sorted(unresolved_p0_findings),
+        )
+
+
+def render_issue_priority_archive_report(archive: IssuePriorityArchive, audit: IssuePriorityArchiveAudit) -> str:
+    lines = [
+        "# Issue Priority Archive",
+        "",
+        f"- Issue: {archive.issue_id} {archive.title}",
+        f"- Version: {archive.version}",
+        f"- Audit: {audit.summary}",
+        f"- Priority Counts: P0={audit.priority_counts.get('P0', 0)} P1={audit.priority_counts.get('P1', 0)} P2={audit.priority_counts.get('P2', 0)}",
+        f"- Category Counts: ui={audit.category_counts.get('ui', 0)} ia={audit.category_counts.get('ia', 0)} permission={audit.category_counts.get('permission', 0)} metric={audit.category_counts.get('metric', 0)}",
+        "",
+        "## Findings",
+    ]
+    for finding in archive.findings:
+        lines.append(f"- {finding.finding_id}: {finding.summary} category={finding.normalized_category} priority={finding.normalized_priority} owner={finding.owner or 'none'} status={finding.status}")
+        lines.append(f"  surface={finding.surface or 'none'} impact={finding.impact or 'none'} evidence={','.join(finding.evidence) or 'none'}")
+    lines.extend(
+        [
+            "",
+            "## Audit Findings",
+            f"- Missing owners: {', '.join(audit.missing_owners) or 'none'}",
+            f"- Invalid priorities: {', '.join(audit.invalid_priorities) or 'none'}",
+            f"- Invalid categories: {', '.join(audit.invalid_categories) or 'none'}",
+            f"- Unresolved P0 findings: {', '.join(audit.unresolved_p0_findings) or 'none'}",
+        ]
+    )
+    return "\n".join(lines)
+
+
+@dataclass
+class RiskFactor:
+    name: str
+    points: int
+    reason: str
+
+
+@dataclass
+class RiskScore:
+    level: RiskLevel
+    total: int
+    requires_approval: bool
+    factors: List[RiskFactor] = field(default_factory=list)
+
+    @property
+    def summary(self) -> str:
+        return ", ".join(f"{factor.name}={factor.points}" for factor in self.factors) or "baseline=0"
+
+
+class RiskScorer:
+    TOOL_POINTS = {
+        "browser": 10,
+        "terminal": 15,
+        "github": 10,
+        "deploy": 20,
+        "sql": 15,
+        "warehouse": 15,
+        "bi": 10,
+    }
+    LABEL_POINTS = {
+        "security": 20,
+        "compliance": 20,
+        "prod": 20,
+        "release": 15,
+        "ops": 10,
+    }
+
+    def score_task(self, task: Task) -> RiskScore:
+        factors: List[RiskFactor] = []
+        total = 0
+        risk_points = {
+            RiskLevel.LOW: 0,
+            RiskLevel.MEDIUM: 30,
+            RiskLevel.HIGH: 60,
+        }[task.risk_level]
+        total += risk_points
+        if risk_points:
+            factors.append(RiskFactor("risk-level", risk_points, f"declared risk level {task.risk_level.value}"))
+        if task.priority == Priority.P0:
+            total += 10
+            factors.append(RiskFactor("priority", 10, "p0 task needs tighter controls"))
+        labels = {label.lower() for label in task.labels}
+        for label in sorted(labels):
+            points = self.LABEL_POINTS.get(label)
+            if points:
+                total += points
+                factors.append(RiskFactor(f"label:{label}", points, f"label {label} increases operational risk"))
+        tools = {tool.lower() for tool in task.required_tools}
+        for tool in sorted(tools):
+            points = self.TOOL_POINTS.get(tool)
+            if points:
+                total += points
+                factors.append(RiskFactor(f"tool:{tool}", points, f"tool {tool} expands execution surface"))
+        if task.budget < 0:
+            total += 20
+            factors.append(RiskFactor("budget", 20, "invalid budget requires manual review"))
+        level = self._level_for_total(total)
+        return RiskScore(level=level, total=total, requires_approval=(level == RiskLevel.HIGH), factors=factors)
+
+    def _level_for_total(self, total: int) -> RiskLevel:
+        if total >= 60:
+            return RiskLevel.HIGH
+        if total >= 25:
+            return RiskLevel.MEDIUM
+        return RiskLevel.LOW
+
+
 _compat_source = sys.modules[__name__]
 
 _install_compat_module(
@@ -1142,9 +2237,7 @@ _install_compat_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
 )
 
-from . import control_surfaces as _control_surfaces
 from . import support_surfaces as _support_surfaces
-from . import workspace_bootstrap as _workspace_bootstrap
 
 _install_compat_module(
     _compat_source,
@@ -1288,7 +2381,42 @@ _install_compat_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/dashboard_run_contract.go",
 )
 _install_compat_module(
-    _workspace_bootstrap,
+    _compat_source,
+    "workspace_bootstrap",
+    [
+        "WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE",
+        "WorkspaceBootstrapError",
+        "CacheBootstrapState",
+        "WorkspaceBootstrapStatus",
+        "CommandResult",
+        "CACHE_REMOTE",
+        "BOOTSTRAP_BRANCH_PREFIX",
+        "DEFAULT_CACHE_BASE",
+        "sanitize_issue_identifier",
+        "bootstrap_branch_name",
+        "default_cache_base",
+        "normalize_repo_locator",
+        "repo_cache_key",
+        "cache_root_for_repo",
+        "resolve_cache_root",
+        "default_cache_root",
+        "ensure_mirror",
+        "ensure_seed",
+        "configure_seed_remotes",
+        "bootstrap_workspace",
+        "cleanup_workspace",
+        "status_as_json",
+        "build_parser",
+        "emit",
+        "main",
+        "build_validation_report",
+        "render_validation_markdown",
+        "write_validation_report",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/bootstrap/bootstrap.go",
+)
+_install_compat_module(
+    _compat_source,
     "workspace_bootstrap_cli",
     [
         "WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE",
@@ -1299,11 +2427,11 @@ _install_compat_module(
         "emit",
         "main",
     ],
-    DEFAULT_CACHE_BASE=_workspace_bootstrap.WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE,
+    DEFAULT_CACHE_BASE=WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE,
     GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
 )
 _install_compat_module(
-    _workspace_bootstrap,
+    _compat_source,
     "workspace_bootstrap_validation",
     [
         "bootstrap_workspace",
@@ -1443,7 +2571,32 @@ _install_compat_module(
 )
 
 _install_compat_module(
-    _control_surfaces,
+    _compat_source,
+    "control_surfaces",
+    [
+        "REQUIRED_RUN_CLOSEOUTS",
+        "ALLOWED_SCOPE_STATUSES",
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeBoard",
+        "ScopeFreezeAudit",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+        "ALLOWED_ISSUE_CATEGORIES",
+        "ALLOWED_ISSUE_PRIORITIES",
+        "ArchivedIssue",
+        "IssuePriorityArchive",
+        "IssuePriorityArchiveAudit",
+        "IssuePriorityArchivist",
+        "render_issue_priority_archive_report",
+        "RiskFactor",
+        "RiskScore",
+        "RiskScorer",
+    ],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
+)
+_install_compat_module(
+    _compat_source,
     "governance",
     [
         "FreezeException",
@@ -1456,7 +2609,7 @@ _install_compat_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
 )
 _install_compat_module(
-    _control_surfaces,
+    _compat_source,
     "issue_archive",
     [
         "ArchivedIssue",
@@ -1468,7 +2621,7 @@ _install_compat_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/issuearchive/archive.go",
 )
 _install_compat_module(
-    _control_surfaces,
+    _compat_source,
     "risk",
     ["RiskFactor", "RiskScore", "RiskScorer"],
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
