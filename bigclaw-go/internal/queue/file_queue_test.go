@@ -34,6 +34,36 @@ func TestFileQueuePersistsAcrossReload(t *testing.T) {
 	}
 }
 
+func TestFileQueueLeasesByPriority(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	now := time.Now()
+	if err := q.Enqueue(ctx, domain.Task{ID: "p2", Priority: 2, CreatedAt: now}); err != nil {
+		t.Fatalf("enqueue p2: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "p0", Priority: 0, CreatedAt: now.Add(time.Second)}); err != nil {
+		t.Fatalf("enqueue p0: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "p1", Priority: 1, CreatedAt: now.Add(2 * time.Second)}); err != nil {
+		t.Fatalf("enqueue p1: %v", err)
+	}
+
+	task, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil {
+		t.Fatalf("lease next: %v", err)
+	}
+	if task == nil || lease == nil {
+		t.Fatalf("expected leased task and lease, got task=%v lease=%v", task, lease)
+	}
+	if task.ID != "p0" {
+		t.Fatalf("expected p0 first, got %s", task.ID)
+	}
+}
+
 func TestFileQueueCreatesParentDirectoryAndPreservesTaskPayload(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "state", "queue.json")

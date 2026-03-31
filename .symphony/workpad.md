@@ -48,3 +48,10 @@ Latest tranche results
 - `find . -path './.git' -prune -o -name '*.go' -print | sort | wc -l` -> `289`
 - `gofmt -w bigclaw-go/internal/bootstrap/bootstrap_test.go` -> `ok`
 - `go test ./internal/bootstrap -run 'TestRepoCacheKeyDerivesFromRepoLocator|TestCacheRootForRepoUsesRepoSpecificDirectory|TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed|TestSecondWorkspaceReusesWarmCacheWithoutFullClone|TestBootstrapWorkspaceReusesExistingIssueWorktree|TestCleanupWorkspacePreservesSharedCacheForFutureReuse|TestBootstrapRecoversFromStaleSeedDirectoryWithoutRemoteReclone|TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch|TestValidationReportCoversThreeWorkspacesWithOneCache'` -> `ok   bigclaw-go/internal/bootstrap`
+- Removed `tests/test_control_center.py` after porting queue-control shared view, reassign action, run-aware execution media, and persistent queue priority coverage into `bigclaw-go/internal/reporting` and `bigclaw-go/internal/queue`.
+- `find tests -maxdepth 1 -name 'test_*.py' | sort | wc -l` -> `16`
+- `find . -path './.git' -prune -o -name '*.py' -print | sort | wc -l` -> `67`
+- `find . -path './.git' -prune -o -name '*.go' -print | sort | wc -l` -> `289`
+- `gofmt -w bigclaw-go/internal/reporting/reporting.go bigclaw-go/internal/reporting/reporting_test.go bigclaw-go/internal/queue/file_queue_test.go` -> `ok`
+- `go test ./internal/reporting -run 'TestBuildRenderAndWriteQueueControlCenterBundle|TestBuildQueueControlCenterWithRunsSummarizesQueueAndExecutionMedia|TestRenderQueueControlCenterWithSharedViewEmptyState'` -> `ok   bigclaw-go/internal/reporting`
+- `go test ./internal/queue -run 'TestFileQueueLeasesByPriority|TestFileQueuePersistsAcrossReload|TestFileQueueCreatesParentDirectoryAndPreservesTaskPayload|TestFileQueueDeadLetterReplayPersistsAcrossReload|TestFileQueueLoadsLegacyListStorage'` -> `ok   bigclaw-go/internal/queue`

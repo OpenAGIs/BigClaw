@@ -112,6 +112,61 @@ type QueueControlCenter struct {
 	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
+type QueueRun struct {
+	TaskID string `json:"task_id"`
+	Status string `json:"status"`
+	Medium string `json:"medium"`
+}
+
+type SharedViewFilter struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type SharedViewContext struct {
+	Filters      []SharedViewFilter `json:"filters,omitempty"`
+	ResultCount  *int               `json:"result_count,omitempty"`
+	Loading      bool               `json:"loading,omitempty"`
+	Errors       []string           `json:"errors,omitempty"`
+	PartialData  []string           `json:"partial_data,omitempty"`
+	EmptyMessage string             `json:"empty_message,omitempty"`
+	LastUpdated  string             `json:"last_updated,omitempty"`
+}
+
+func (v SharedViewContext) State() string {
+	if v.Loading {
+		return "loading"
+	}
+	if len(v.Errors) > 0 && (v.ResultCount == nil || *v.ResultCount == 0) {
+		return "error"
+	}
+	if v.ResultCount != nil && *v.ResultCount == 0 && len(v.PartialData) == 0 {
+		return "empty"
+	}
+	if len(v.Errors) > 0 || len(v.PartialData) > 0 {
+		return "partial-data"
+	}
+	return "ready"
+}
+
+func (v SharedViewContext) Summary() string {
+	switch v.State() {
+	case "loading":
+		return "Loading data for the current filters."
+	case "error":
+		return "Unable to load data for the current filters."
+	case "empty":
+		if strings.TrimSpace(v.EmptyMessage) != "" {
+			return v.EmptyMessage
+		}
+		return "No records match the current filters."
+	case "partial-data":
+		return "Showing partial data while one or more sources are unavailable."
+	default:
+		return "Data is current for the selected filters."
+	}
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -869,40 +924,70 @@ func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview
 }
 
 func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
+	return BuildQueueControlCenterWithRuns(tasks, nil)
+}
+
+func BuildQueueControlCenterWithRuns(tasks []domain.Task, runs []QueueRun) QueueControlCenter {
 	center := QueueControlCenter{
 		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
 		QueuedByRisk:     map[string]int{"low": 0, "medium": 0, "high": 0},
 		ExecutionMedia:   make(map[string]int),
 		Actions:          make(map[string][]ConsoleAction),
 	}
+	blockedTasks := make(map[string]struct{})
+	for _, run := range runs {
+		medium := strings.TrimSpace(run.Medium)
+		if medium == "" {
+			medium = "unknown"
+		}
+		center.ExecutionMedia[medium]++
+		if strings.EqualFold(run.Status, "needs-approval") {
+			center.WaitingApprovalRuns++
+			taskID := strings.TrimSpace(run.TaskID)
+			if taskID != "" {
+				blockedTasks[taskID] = struct{}{}
+			}
+		}
+	}
 	for _, task := range tasks {
 		if domain.IsActiveTaskState(task.State) {
 			center.QueueDepth++
 		}
 		if task.State == domain.TaskBlocked || strings.EqualFold(task.Metadata["approval_status"], "needs-approval") {
-			center.WaitingApprovalRuns++
-			center.BlockedTasks = append(center.BlockedTasks, task.ID)
+			blockedTasks[task.ID] = struct{}{}
 		}
 		if task.State == domain.TaskQueued || task.State == domain.TaskLeased || task.State == domain.TaskRetrying {
 			center.QueuedTasks = append(center.QueuedTasks, task.ID)
 			center.QueuedByPriority[priorityBucket(task.Priority)]++
 			center.QueuedByRisk[riskBucket(task.RiskLevel)]++
-			medium := firstNonEmpty(string(task.RequiredExecutor), task.Metadata["medium"], "unknown")
-			center.ExecutionMedia[medium]++
-			center.Actions[task.ID] = buildConsoleActions(task.ID, task.State == domain.TaskBlocked, task.State != domain.TaskBlocked, task.State == domain.TaskBlocked)
+			if len(runs) == 0 {
+				medium := firstNonEmpty(string(task.RequiredExecutor), task.Metadata["medium"], "unknown")
+				center.ExecutionMedia[medium]++
+			}
+			_, blocked := blockedTasks[task.ID]
+			center.Actions[task.ID] = buildConsoleActions(task.ID, blocked, !blocked, blocked)
 		}
 	}
+	for taskID := range blockedTasks {
+		center.BlockedTasks = append(center.BlockedTasks, taskID)
+	}
+	center.WaitingApprovalRuns = len(blockedTasks)
 	sort.Strings(center.BlockedTasks)
 	sort.Strings(center.QueuedTasks)
 	return center
 }
 
 func RenderQueueControlCenter(center QueueControlCenter) string {
+	return RenderQueueControlCenterWithView(center, nil)
+}
+
+func RenderQueueControlCenterWithView(center QueueControlCenter, view *SharedViewContext) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Queue Control Center\n\n")
 	builder.WriteString(fmt.Sprintf("- Queue Depth: %d\n", center.QueueDepth))
 	builder.WriteString(fmt.Sprintf("- Waiting Approval Runs: %d\n", center.WaitingApprovalRuns))
 	builder.WriteString(fmt.Sprintf("- Queued Tasks: %s\n\n", joinOrNone(center.QueuedTasks)))
+	builder.WriteString(renderSharedViewContext(view))
 	builder.WriteString("## Queue By Priority\n\n")
 	for _, priority := range []string{"P0", "P1", "P2"} {
 		builder.WriteString(fmt.Sprintf("- %s: %d\n", priority, center.QueuedByPriority[priority]))
@@ -1220,6 +1305,7 @@ func buildConsoleActions(target string, allowRetry, allowPause, allowEscalate bo
 		{ActionID: "escalate", Label: "Escalate", Target: target, Enabled: allowEscalate, Reason: disabledReason(allowEscalate, "escalate is reserved for blocked queue items")},
 		{ActionID: "retry", Label: "Retry", Target: target, Enabled: allowRetry, Reason: disabledReason(allowRetry, "retry is reserved for blocked queue items")},
 		{ActionID: "pause", Label: "Pause", Target: target, Enabled: allowPause, Reason: disabledReason(allowPause, "approval-blocked tasks should be escalated instead of paused")},
+		{ActionID: "reassign", Label: "Reassign", Target: target, Enabled: true},
 		{ActionID: "audit", Label: "Audit Trail", Target: target, Enabled: true},
 	}
 }
@@ -1244,6 +1330,32 @@ func disabledReason(enabled bool, reason string) string {
 		return ""
 	}
 	return reason
+}
+
+func renderSharedViewContext(view *SharedViewContext) string {
+	if view == nil {
+		return ""
+	}
+	builder := strings.Builder{}
+	builder.WriteString("## View State\n\n")
+	builder.WriteString(fmt.Sprintf("- State: %s\n", view.State()))
+	builder.WriteString(fmt.Sprintf("- Summary: %s\n", view.Summary()))
+	if view.ResultCount != nil {
+		builder.WriteString(fmt.Sprintf("- Result Count: %d\n", *view.ResultCount))
+	}
+	if strings.TrimSpace(view.LastUpdated) != "" {
+		builder.WriteString(fmt.Sprintf("- Last Updated: %s\n", view.LastUpdated))
+	}
+	builder.WriteString("\n## Filters\n\n")
+	if len(view.Filters) == 0 {
+		builder.WriteString("- None\n\n")
+		return builder.String()
+	}
+	for _, filter := range view.Filters {
+		builder.WriteString(fmt.Sprintf("- %s: %s\n", filter.Label, filter.Value))
+	}
+	builder.WriteString("\n")
+	return builder.String()
 }
 
 func priorityBucket(priority int) string {
