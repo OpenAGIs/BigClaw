@@ -24,5 +24,7 @@ Validation
 - `go test ./internal/validationpolicy -run 'TestValidationPolicyBlocksIssueCloseWithoutRequiredReports|TestValidationPolicyAllowsIssueCloseWhenReportsComplete'`
 - `go test ./internal/memory -run 'TestStoreReusesHistoryAndInjectsRules'`
 - `go test ./internal/workflow -run 'TestDefinitionParsesAndRendersTemplates|TestDefinitionEngineRunsDefinitionEndToEnd|TestDefinitionEngineRejectsUnknownStepKind|TestDefinitionEngineManualApprovalClosesHighRiskTask'`
+- `go test ./cmd/bigclawctl -run 'TestAutomationContinuationPolicyGateReturnsPolicyGoWhenInputsPass|TestAutomationContinuationPolicyGateReturnsPolicyHoldWithFailures'`
+- `go test ./internal/regression -run 'TestContinuationPolicyGateReviewerMetadata'`
 - `git diff --stat`
 - `git status --short`
