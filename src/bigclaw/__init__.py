@@ -1,11 +1,10 @@
 import sys
 import types
+import json
+import warnings
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
-from . import control_surfaces as _control_surfaces
-from . import repo_surfaces as _repo_surfaces
-from . import support_surfaces as _support_surfaces
-from . import utility_surfaces as _utility_surfaces
-from . import workspace_bootstrap as _workspace_bootstrap
 from .models import (
     BillingInterval,
     BillingRate,
@@ -37,6 +36,238 @@ def _install_compat_module(source_module: types.ModuleType, name: str, export_na
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
+
+
+LEGACY_RUNTIME_GUIDANCE = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "the legacy Python runtime surface remains migration-only."
+)
+
+
+def legacy_runtime_message(surface: str, replacement: str) -> str:
+    return f"{surface} is frozen for migration-only use. {LEGACY_RUNTIME_GUIDANCE} Use {replacement} instead."
+
+
+def warn_legacy_runtime_surface(surface: str, replacement: str) -> str:
+    message = legacy_runtime_message(surface, replacement)
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return message
+
+
+SCHEDULER_DECISION_EVENT = "execution.scheduler_decision"
+MANUAL_TAKEOVER_EVENT = "execution.manual_takeover"
+APPROVAL_RECORDED_EVENT = "execution.approval_recorded"
+BUDGET_OVERRIDE_EVENT = "execution.budget_override"
+FLOW_HANDOFF_EVENT = "execution.flow_handoff"
+
+
+@dataclass(frozen=True)
+class AuditEventSpec:
+    event_type: str
+    description: str
+    severity: str
+    retention_days: int
+    required_fields: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "event_type": self.event_type,
+            "description": self.description,
+            "severity": self.severity,
+            "retention_days": self.retention_days,
+            "required_fields": list(self.required_fields),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "AuditEventSpec":
+        return cls(
+            event_type=str(data["event_type"]),
+            description=str(data["description"]),
+            severity=str(data["severity"]),
+            retention_days=int(data["retention_days"]),
+            required_fields=[str(value) for value in data.get("required_fields", [])],
+        )
+
+
+P0_AUDIT_EVENT_SPECS: List[AuditEventSpec] = [
+    AuditEventSpec(
+        event_type=SCHEDULER_DECISION_EVENT,
+        description="Records the scheduler routing decision and risk context for a run.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "medium", "approved", "reason", "risk_level", "risk_score"],
+    ),
+    AuditEventSpec(
+        event_type=MANUAL_TAKEOVER_EVENT,
+        description="Captures escalation into a human takeover queue.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "target_team", "reason", "requested_by", "required_approvals"],
+    ),
+    AuditEventSpec(
+        event_type=APPROVAL_RECORDED_EVENT,
+        description="Records explicit human approvals attached to a run or acceptance decision.",
+        severity="info",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "approvals", "approval_count", "acceptance_status"],
+    ),
+    AuditEventSpec(
+        event_type=BUDGET_OVERRIDE_EVENT,
+        description="Captures a manual override to the run budget envelope.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "requested_budget", "approved_budget", "override_actor", "reason"],
+    ),
+    AuditEventSpec(
+        event_type=FLOW_HANDOFF_EVENT,
+        description="Captures ownership transfer between automated flow stages and teams.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "source_stage", "target_team", "reason", "collaboration_mode"],
+    ),
+]
+
+_SPEC_BY_EVENT = {spec.event_type: spec for spec in P0_AUDIT_EVENT_SPECS}
+
+
+def get_audit_event_spec(event_type: str) -> Optional[AuditEventSpec]:
+    return _SPEC_BY_EVENT.get(event_type)
+
+
+def missing_required_fields(event_type: str, details: Dict[str, object]) -> List[str]:
+    spec = get_audit_event_spec(event_type)
+    if spec is None:
+        return []
+    return [name for name in spec.required_fields if name not in details]
+
+
+_VALID_WORKFLOW_STEP_KINDS = {
+    "scheduler",
+    "approval",
+    "orchestration",
+    "report",
+    "closeout",
+}
+
+
+@dataclass
+class WorkflowStep:
+    name: str
+    kind: str
+    required: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "kind": self.kind,
+            "required": self.required,
+            "metadata": self.metadata,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowStep":
+        return cls(
+            name=data["name"],
+            kind=data["kind"],
+            required=data.get("required", True),
+            metadata=data.get("metadata", {}),
+        )
+
+
+@dataclass
+class WorkflowDefinition:
+    name: str
+    steps: List[WorkflowStep] = field(default_factory=list)
+    report_path_template: Optional[str] = None
+    journal_path_template: Optional[str] = None
+    validation_evidence: List[str] = field(default_factory=list)
+    approvals: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "steps": [step.to_dict() for step in self.steps],
+            "report_path_template": self.report_path_template,
+            "journal_path_template": self.journal_path_template,
+            "validation_evidence": self.validation_evidence,
+            "approvals": self.approvals,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowDefinition":
+        return cls(
+            name=data["name"],
+            steps=[WorkflowStep.from_dict(item) for item in data.get("steps", [])],
+            report_path_template=data.get("report_path_template"),
+            journal_path_template=data.get("journal_path_template"),
+            validation_evidence=data.get("validation_evidence", []),
+            approvals=data.get("approvals", []),
+        )
+
+    @classmethod
+    def from_json(cls, text: str) -> "WorkflowDefinition":
+        return cls.from_dict(json.loads(text))
+
+    def render_path(self, template: Optional[str], task: Task, run_id: str) -> Optional[str]:
+        if template is None:
+            return None
+        return template.format(
+            workflow=self.name,
+            task_id=task.task_id,
+            source=task.source,
+            run_id=run_id,
+        )
+
+    def render_report_path(self, task: Task, run_id: str) -> Optional[str]:
+        return self.render_path(self.report_path_template, task, run_id)
+
+    def render_journal_path(self, task: Task, run_id: str) -> Optional[str]:
+        return self.render_path(self.journal_path_template, task, run_id)
+
+    def validate(self) -> None:
+        invalid_steps = [step.kind for step in self.steps if step.kind not in _VALID_WORKFLOW_STEP_KINDS]
+        if invalid_steps:
+            joined = ", ".join(sorted(set(invalid_steps)))
+            raise ValueError(f"invalid workflow step kind(s): {joined}")
+
+
+_compat_source = sys.modules[__name__]
+
+_install_compat_module(
+    _compat_source,
+    "deprecation",
+    ["LEGACY_RUNTIME_GUIDANCE", "legacy_runtime_message", "warn_legacy_runtime_surface"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/regression/deprecation_contract_test.go",
+)
+_install_compat_module(
+    _compat_source,
+    "audit_events",
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "BUDGET_OVERRIDE_EVENT",
+        "FLOW_HANDOFF_EVENT",
+        "MANUAL_TAKEOVER_EVENT",
+        "P0_AUDIT_EVENT_SPECS",
+        "SCHEDULER_DECISION_EVENT",
+        "AuditEventSpec",
+        "get_audit_event_spec",
+        "missing_required_fields",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
+)
+_install_compat_module(
+    _compat_source,
+    "dsl",
+    ["WorkflowDefinition", "WorkflowStep"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
+)
+
+from . import control_surfaces as _control_surfaces
+from . import repo_surfaces as _repo_surfaces
+from . import support_surfaces as _support_surfaces
+from . import utility_surfaces as _utility_surfaces
+from . import workspace_bootstrap as _workspace_bootstrap
 
 
 _install_compat_module(
@@ -489,20 +720,8 @@ from .control_surfaces import (
     RiskScorer,
     render_issue_priority_archive_report,
 )
-from .dsl import WorkflowDefinition, WorkflowStep
 from .support_surfaces import map_source_issue_to_task
 from .utility_surfaces import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
-from .audit_events import (
-    APPROVAL_RECORDED_EVENT,
-    BUDGET_OVERRIDE_EVENT,
-    FLOW_HANDOFF_EVENT,
-    MANUAL_TAKEOVER_EVENT,
-    P0_AUDIT_EVENT_SPECS,
-    SCHEDULER_DECISION_EVENT,
-    AuditEventSpec,
-    get_audit_event_spec,
-    missing_required_fields,
-)
 from .support_surfaces import (
     CI_COMPLETED_EVENT,
     PULL_REQUEST_COMMENT_EVENT,
