@@ -1,25 +1,25 @@
 Issue: BIG-GO-1024
 
 Plan
-- Fold `operations.py` into `src/bigclaw/__init__.py` as a dynamic compatibility submodule while preserving `bigclaw.operations` imports.
+- Fold `reports.py` into `src/bigclaw/__init__.py` as a dynamic compatibility submodule while preserving `bigclaw.reports` imports.
 - Store the compatibility module source in a non-`.py` asset so the physical Python count still drops.
-- Delete that standalone Python file from `src/bigclaw`, run targeted operations validation plus file-count checks, then commit and push the issue branch.
+- Delete that standalone Python file from `src/bigclaw`, run targeted reports validation plus file-count checks, then commit and push the issue branch.
 
 Acceptance
-- `src/bigclaw/operations.py` is removed, reducing physical Python file count in `src/bigclaw`.
-- `bigclaw.operations` remains importable and preserves the tested operations analytics, queue control center, dashboard builder, regression center, and bundle/report behavior.
+- `src/bigclaw/reports.py` is removed, reducing physical Python file count in `src/bigclaw`.
+- `bigclaw.reports` remains importable and preserves the tested shared-view, orchestration/reporting, observability rendering, and repo-rollout narrative behavior.
 - No `pyproject.toml`, `setup.py`, or `setup.cfg` changes are introduced unless directly required by this tranche.
 
 Validation
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
-- `python3 -m py_compile src/bigclaw/__init__.py tests/test_operations.py tests/test_control_center.py`
-- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_control_center.py -q`
+- `python3 -m py_compile src/bigclaw/__init__.py tests/test_reports.py tests/test_observability.py tests/test_repo_rollout.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_observability.py tests/test_repo_rollout.py -q`
 - `PYTHONPATH=src python3 - <<'PY'`
-- `import bigclaw.operations`
-- `from bigclaw.operations import OperationsAnalytics`
-- `print("module smoke checks passed", bool(OperationsAnalytics))`
+- `import bigclaw.reports`
+- `from bigclaw.reports import SharedViewContext`
+- `print("module smoke checks passed", bool(SharedViewContext))`
 - `PY`
 - `git status --short`
 - `git diff --stat`
