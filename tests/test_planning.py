@@ -1,6 +1,7 @@
 import pytest
 
 from bigclaw.planning import (
+    BaselineAuditSnapshot,
     FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
@@ -16,7 +17,6 @@ from bigclaw.planning import (
     render_candidate_backlog_report,
     render_four_week_execution_report,
 )
-from bigclaw.governance import ScopeFreezeAudit
 
 
 def test_candidate_backlog_round_trip_preserves_manifest_shape() -> None:
@@ -138,11 +138,7 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
         required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
         required_baseline_version="v2.0",
     )
-    baseline_audit = ScopeFreezeAudit(
-        board_name="BigClaw v2.0 Freeze",
-        version="v2.0",
-        total_items=5,
-    )
+    baseline_audit = BaselineAuditSnapshot(version="v2.0")
 
     decision = CandidatePlanner().evaluate_gate(backlog, gate, baseline_audit=baseline_audit)
 
@@ -212,11 +208,10 @@ def test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready() -> None:
     failed_baseline = CandidatePlanner().evaluate_gate(
         backlog,
         gate,
-        baseline_audit=ScopeFreezeAudit(
-            board_name="BigClaw v2.0 Freeze",
+        baseline_audit=BaselineAuditSnapshot(
             version="v2.0",
-            total_items=5,
-            missing_validation=["OPE-116"],
+            release_ready=False,
+            readiness_score=87.5,
         ),
     )
 
@@ -283,11 +278,7 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
     decision = CandidatePlanner().evaluate_gate(
         backlog,
         gate,
-        baseline_audit=ScopeFreezeAudit(
-            board_name="BigClaw v2.0 Freeze",
-            version="v2.0",
-            total_items=5,
-        ),
+        baseline_audit=BaselineAuditSnapshot(version="v2.0"),
     )
 
     report = render_candidate_backlog_report(backlog, gate, decision)
@@ -460,11 +451,7 @@ def test_build_v3_entry_gate_passes_built_candidate_backlog_against_v2_baseline(
     decision = CandidatePlanner().evaluate_gate(
         backlog,
         gate,
-        baseline_audit=ScopeFreezeAudit(
-            board_name="BigClaw v2.0 Freeze",
-            version="v2.0",
-            total_items=25,
-        ),
+        baseline_audit=BaselineAuditSnapshot(version="v2.0"),
     )
     report = render_candidate_backlog_report(backlog, gate, decision)
 

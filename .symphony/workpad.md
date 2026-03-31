@@ -1,23 +1,23 @@
-Issue: BIG-GO-1019
+Issue: BIG-GO-1034
 
-Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+Scope
+- Remove migrated Python governance/reporting/observability/memory/cost-control modules from `src/bigclaw`.
+- Remove direct Python tests that only validate those deleted modules.
+- Clean Python package references that would otherwise point at removed modules.
+- Use existing Go implementations in `bigclaw-go/internal/governance`, `bigclaw-go/internal/reporting`, `bigclaw-go/internal/observability`, and `bigclaw-go/internal/costcontrol` as the replacement surface.
+- Add or adjust Go validation only if needed to cover deleted Python behavior gaps inside this slice.
 
 Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- Python file count in the targeted migration slice decreases.
+- Go implementation remains present for governance/reporting/observability/cost-control, with Go tests covering the retained replacement surface.
+- No `pyproject.toml` or `setup.py` remains at repo root.
+- Commit explains which Python files were deleted and which Go files validate the replacement surface.
 
 Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034/bigclaw-go && go test ./internal/governance ./internal/reporting ./internal/observability ./internal/costcontrol`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034 && git diff --stat`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1034 && rg --files src/bigclaw tests | rg 'governance|reports|observability|memory|cost_control'`
+
+Notes
+- Keep changes scoped to the migrated module slice; do not rewrite unrelated Python subsystems in this issue.
+- Python modules that still depend on observability/reporting outside this slice are not being ported here; only direct references to deleted modules will be cleaned.
