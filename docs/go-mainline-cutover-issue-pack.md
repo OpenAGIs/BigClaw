@@ -221,9 +221,7 @@ Historical initial state:
 ### BIG-GOM-305 Control center, triage, and operations view migration
 
 Python source:
-- `src/bigclaw/repo_triage.py`
 - `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/saved_views.py`
 
@@ -273,7 +271,7 @@ Dependencies:
 
 Current repo progress:
 - `bigclaw-go/internal/repo/governance.go` now ports `src/bigclaw/repo_governance.py` into a Go-owned repo permission matrix and audit-field contract
-- the remaining repo-collaboration Python surfaces still need Go owners across repo board, registry, gateway, plane, links, commits, and triage packages
+- the remaining repo-collaboration Python residuals are narrowed to collaboration, registry, plane, links, issue archive, roadmap, and observability-adjacent helpers
 
 Milestone:
 - `Governance/Reporting Surface Migration`
@@ -450,14 +448,10 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_triage.py`
 - `src/bigclaw/issue_archive.py`
 - `src/bigclaw/roadmap.py`
 
