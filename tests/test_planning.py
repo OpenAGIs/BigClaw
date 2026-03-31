@@ -128,7 +128,7 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
                 priority="P0",
                 owner="ops-platform",
                 outcome="Package the command-center rollout with weekly review evidence.",
-                validation_command="python3 -m pytest tests/test_operations.py -q",
+                validation_command="python3 -m pytest tests/test_reports.py -q",
                 capabilities=["ops-control"],
                 evidence=["weekly-review"],
             ),
@@ -197,7 +197,7 @@ def test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready() -> None:
                 priority="P0",
                 owner="ops-platform",
                 outcome="Package the command-center rollout with weekly review evidence.",
-                validation_command="python3 -m pytest tests/test_operations.py -q",
+                validation_command="python3 -m pytest tests/test_reports.py -q",
                 capabilities=["ops-control"],
                 evidence=["weekly-review"],
             ),
@@ -329,7 +329,7 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
         priority="P0",
         owner="ops-platform",
         outcome="Package command-center and approval surfaces with linked evidence.",
-        validation_command="python3 -m pytest tests/test_operations.py -q && (cd bigclaw-go && go test ./internal/product)",
+        validation_command="python3 -m pytest tests/test_reports.py -q && (cd bigclaw-go && go test ./internal/product)",
         capabilities=["ops-control", "saved-views"],
         evidence=["weekly-review", "validation-report"],
         evidence_links=[
@@ -509,7 +509,7 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "src/bigclaw/operations.py",
         "bigclaw-go/internal/reporting/reporting_test.go",
         "bigclaw-go/internal/queue/memory_queue_test.go",
-        "tests/test_operations.py",
+        "tests/test_reports.py",
         "src/bigclaw/execution_contract.py",
         "src/bigclaw/workflow.py",
         "bigclaw-go/internal/workflow/engine_test.go",
@@ -517,7 +517,7 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "src/bigclaw/saved_views.py",
         "bigclaw-go/internal/product/saved_views_test.go",
         "src/bigclaw/evaluation.py",
-        "tests/test_operations.py",
+        "tests/test_reports.py",
     }
 
 
