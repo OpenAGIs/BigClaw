@@ -2,10 +2,23 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"slices"
 	"strings"
+	"time"
 
 	"bigclaw-go/internal/domain"
 )
+
+var validDefinitionStepKinds = []string{
+	"scheduler",
+	"approval",
+	"orchestration",
+	"report",
+	"closeout",
+}
 
 type Step struct {
 	Name     string         `json:"name"`
@@ -97,6 +110,23 @@ func ParseDefinition(text string) (Definition, error) {
 	return definition, err
 }
 
+func (d Definition) Validate() error {
+	invalid := make([]string, 0)
+	for _, step := range d.Steps {
+		kind := strings.TrimSpace(step.Kind)
+		if kind == "" || slices.Contains(validDefinitionStepKinds, kind) {
+			continue
+		}
+		if !slices.Contains(invalid, kind) {
+			invalid = append(invalid, kind)
+		}
+	}
+	if len(invalid) == 0 {
+		return nil
+	}
+	return fmt.Errorf("invalid workflow step kind(s): %s", strings.Join(invalid, ", "))
+}
+
 func (d Definition) RenderPath(template string, task domain.Task, runID string) string {
 	template = strings.TrimSpace(template)
 	if template == "" {
@@ -117,6 +147,98 @@ func (d Definition) RenderReportPath(task domain.Task, runID string) string {
 
 func (d Definition) RenderJournalPath(task domain.Task, runID string) string {
 	return d.RenderPath(d.JournalPathTemplate, task, runID)
+}
+
+type DefinitionExecution struct {
+	Run WorkflowRun `json:"run"`
+}
+
+type DefinitionRunResult struct {
+	Execution   DefinitionExecution `json:"execution"`
+	Acceptance  AcceptanceDecision  `json:"acceptance"`
+	Journal     WorkpadJournal      `json:"journal"`
+	JournalPath string              `json:"journal_path,omitempty"`
+	ReportPath  string              `json:"report_path,omitempty"`
+}
+
+type DefinitionEngine struct {
+	Gate AcceptanceGate
+	Now  func() time.Time
+}
+
+func (e DefinitionEngine) RunDefinition(task domain.Task, definition Definition, runID string) (DefinitionRunResult, error) {
+	if err := definition.Validate(); err != nil {
+		return DefinitionRunResult{}, err
+	}
+	now := time.Now()
+	if e.Now != nil {
+		now = e.Now()
+	}
+	reportPath := definition.RenderReportPath(task, runID)
+	if reportPath != "" {
+		if err := os.MkdirAll(filepath.Dir(reportPath), 0o755); err != nil {
+			return DefinitionRunResult{}, err
+		}
+		if err := os.WriteFile(reportPath, []byte("# Workflow Definition Report\n"), 0o644); err != nil {
+			return DefinitionRunResult{}, err
+		}
+	}
+
+	outcome := ExecutionOutcome{Approved: true, Status: "completed"}
+	runStatus := WorkflowRunSucceeded
+	if task.RiskLevel == domain.RiskHigh || definitionRequiresApproval(definition) {
+		outcome = ExecutionOutcome{Approved: false, Status: "needs-approval"}
+		runStatus = WorkflowRunQueued
+	}
+	acceptance := e.Gate.Evaluate(task, outcome, definition.ValidationEvidence, definition.Approvals, "")
+	closeout := BuildCloseout(CloseoutInput{
+		Task:        taskWithDefinition(task, definition),
+		RunID:       runID,
+		Status:      runStatus,
+		StartedAt:   now,
+		CompletedAt: now,
+	})
+
+	journal := WorkpadJournal{TaskID: task.ID, RunID: runID, Now: e.Now}
+	journal.Record("definition", "validated", map[string]any{"workflow": definition.Name})
+	journal.Record("acceptance", acceptance.Status, map[string]any{"passed": acceptance.Passed})
+	journalPath := definition.RenderJournalPath(task, runID)
+	resolvedJournalPath := ""
+	if journalPath != "" {
+		written, err := journal.Write(journalPath)
+		if err != nil {
+			return DefinitionRunResult{}, err
+		}
+		resolvedJournalPath = written
+	}
+
+	return DefinitionRunResult{
+		Execution:   DefinitionExecution{Run: closeout.Run},
+		Acceptance:  acceptance,
+		Journal:     journal,
+		JournalPath: resolvedJournalPath,
+		ReportPath:  reportPath,
+	}, nil
+}
+
+func definitionRequiresApproval(definition Definition) bool {
+	for _, step := range definition.Steps {
+		if strings.TrimSpace(step.Kind) == "approval" {
+			return true
+		}
+	}
+	return false
+}
+
+func taskWithDefinition(task domain.Task, definition Definition) domain.Task {
+	copy := task
+	if copy.Metadata == nil {
+		copy.Metadata = map[string]string{}
+	}
+	if raw, err := json.Marshal(definition); err == nil {
+		copy.Metadata["workflow_definition"] = string(raw)
+	}
+	return copy
 }
 
 func cloneMetadata(metadata map[string]any) map[string]any {
