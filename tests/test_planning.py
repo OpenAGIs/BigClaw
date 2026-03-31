@@ -491,3 +491,4 @@ def test_build_v3_entry_gate_passes_built_candidate_backlog_against_v2_baseline(
     assert "candidate-ops-hardening: Operations command-center hardening" in report
     assert "- command-center-src -> src/bigclaw/operations.py capability=ops-control" in report
     assert "- report-studio-tests -> tests/test_reports.py capability=commercialization" in report
+    assert "- console-shell-tests -> tests/test_design_system.py capability=release-gate" in report
