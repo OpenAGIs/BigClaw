@@ -22,3 +22,24 @@
 - Targeted `go test` commands for each touched Go package
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
+
+## Validation Results
+
+- `cd bigclaw-go && go test ./internal/bootstrap`
+  - `ok  	bigclaw-go/internal/bootstrap	4.862s`
+- `cd bigclaw-go && go test ./internal/product`
+  - `ok  	bigclaw-go/internal/product	2.728s`
+- `cd bigclaw-go && go test ./internal/contract`
+  - `ok  	bigclaw-go/internal/contract	1.370s`
+- `cd bigclaw-go && go test ./internal/githubsync`
+  - `ok  	bigclaw-go/internal/githubsync	3.702s`
+- `cd bigclaw-go && go test ./internal/governance`
+  - `ok  	bigclaw-go/internal/governance	0.534s`
+- `cd bigclaw-go && go test ./internal/observability`
+  - `ok  	bigclaw-go/internal/observability	1.891s`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+  - `14 passed in 0.18s`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `31`
+- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+  - no output
