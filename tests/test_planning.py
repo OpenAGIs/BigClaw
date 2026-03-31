@@ -10,11 +10,14 @@ from bigclaw.planning import (
     EntryGateDecision,
     WeeklyExecutionPlan,
     WeeklyGoal,
+    build_pilot_rollout_scorecard,
     build_big_4701_execution_plan,
     build_v3_candidate_backlog,
     build_v3_entry_gate,
+    evaluate_candidate_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+    render_pilot_rollout_gate_report,
 )
 from bigclaw.governance import ScopeFreezeAudit
 
@@ -421,6 +424,24 @@ def test_weekly_execution_plan_flags_at_risk_goal_ids() -> None:
     )
 
     assert week.at_risk_goal_ids == ["w2-blocked"]
+
+
+def test_pilot_rollout_scorecard_and_candidate_gate() -> None:
+    scorecard = build_pilot_rollout_scorecard(
+        adoption=84,
+        convergence_improvement=78,
+        review_efficiency=82,
+        governance_incidents=1,
+        evidence_completeness=88,
+    )
+    assert scorecard["recommendation"] == "go"
+
+    gate_decision = EntryGateDecision(gate_id="gate-v3", passed=True)
+    result = evaluate_candidate_gate(gate_decision=gate_decision, rollout_scorecard=scorecard)
+
+    assert result["candidate_gate"] == "enable-by-default"
+    report = render_pilot_rollout_gate_report(result)
+    assert "Candidate gate" in report
 
 
 def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:

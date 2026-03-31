@@ -51,8 +51,8 @@ Supporting integration:
 
 - Incremental:
   - `(cd bigclaw-go && go test ./internal/repo)`
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_observability.py tests/test_reports.py`
-  - `PYTHONPATH=src python3 -m pytest tests/test_service.py tests/test_operations.py tests/test_repo_rollout.py`
+  - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_reports.py`
+  - `PYTHONPATH=src python3 -m pytest tests/test_service.py tests/test_operations.py tests/test_planning.py`
 - Full:
   - `PYTHONPATH=src python3 -m pytest -q`
 
