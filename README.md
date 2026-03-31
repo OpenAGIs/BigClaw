@@ -64,9 +64,6 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/ops/bigclaw_github_sync.py ...`,
-  `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
-  `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
 - `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
@@ -79,8 +76,10 @@ Notes:
 
 ## Legacy Python migration note
 
-Do not use Python packaging from the repository root. When a migration-only
-Python surface must be exercised, validate it directly from source:
+Do not use Python packaging or Python operator wrappers from the repository
+root. Root build and operator entrypoints are Go-only via `make ...` and
+`bash scripts/ops/bigclawctl ...`. When a migration-only Python module must be
+exercised, validate it directly from source:
 
 ```bash
 PYTHONPATH=src python3 -m pytest tests

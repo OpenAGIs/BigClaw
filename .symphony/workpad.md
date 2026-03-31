@@ -1,23 +1,26 @@
-Issue: BIG-GO-1019
+Issue: BIG-GO-1031
 
 Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+- Remove the remaining root-level Python operator shim entrypoints in `scripts/ops/*.py` that keep the repo presenting Python-first execution surfaces.
+- Delete `src/bigclaw/legacy_shim.py` once the shim wrappers are gone, and update directly coupled Go tests that still freeze the removed Python shim file list.
+- Tighten root documentation so the repository advertises Go-only build entrypoints and no longer recommends Python wrapper commands from the root.
+- Run scoped validation for file-count deltas, Go tests, and operator entrypoint help/status checks; record exact commands and results.
+- Commit the scoped change set and push it to the remote branch for `BIG-GO-1031`.
 
 Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- `pyproject.toml` and `setup.py` remain absent from the repository tree.
+- Python file count decreases within the scope of this issue by deleting the root operator shim `.py` files and their shared shim helper.
+- Root build/operator documentation points to Go-only build entrypoints and `scripts/ops/bigclawctl` instead of Python packaging or Python shim commands.
+- Directly coupled Go tests continue to pass after removing the deleted Python shim surface.
 
 Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
+- `test ! -e pyproject.toml && test ! -e setup.py`
+- `find scripts/ops -maxdepth 1 -name '*.py' | sort`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+- `find . -name '*.py' | sort | wc -l`
+- `find . -name '*.go' | sort | wc -l`
+- `gofmt -w bigclaw-go/internal/legacyshim/compilecheck.go bigclaw-go/internal/legacyshim/compilecheck_test.go bigclaw-go/cmd/bigclawctl/main_test.go bigclaw-go/internal/regression/go_only_build_surface_test.go`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl ./internal/regression -run 'Test(FrozenCompileCheckFilesUsesFrozenShimList|CompileCheckRunsPyCompileAgainstFrozenShimList|RunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens|RootGoOnlyBuildSurfaceStaysAligned)'`
+- `bash scripts/ops/bigclawctl github-sync status --json`
+- `bash scripts/ops/bigclawctl --help`
 - `git diff --stat && git status --short`
