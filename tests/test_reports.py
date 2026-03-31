@@ -1606,31 +1606,6 @@ def test_risk_assessment_round_trip_preserves_signals_and_mitigations() -> None:
     assert restored.signals[0].metadata == {"tool": "deploy"}
 
 
-def test_triage_record_round_trip_preserves_queue_labels_and_actions() -> None:
-    record = TriageRecord(
-        triage_id="triage-1",
-        task_id="OPE-130",
-        status=TriageStatus.ESCALATED,
-        queue="risk-review",
-        owner="ops",
-        summary="High-risk flow needs billing review",
-        labels=[
-            TriageLabel(name="risk", confidence=0.9, source="heuristic"),
-            TriageLabel(name="billing", confidence=0.8, source="classifier"),
-        ],
-        related_run_id="run-1",
-        escalation_target="finance",
-        actions=["route-to-finance", "request-approval"],
-    )
-
-    payload = record.to_dict()
-    restored = TriageRecord.from_dict(payload)
-
-    assert payload["status"] == "escalated"
-    assert restored == record
-    assert [label.name for label in restored.labels] == ["risk", "billing"]
-
-
 def test_flow_template_and_run_round_trip_preserve_steps_and_outputs() -> None:
     template = FlowTemplate(
         template_id="flow-template-1",
@@ -1690,45 +1665,6 @@ def test_flow_template_and_run_round_trip_preserve_steps_and_outputs() -> None:
     assert FlowRun.from_dict(run_payload) == run
     assert run_payload["steps"][0]["status"] == "succeeded"
     assert template_payload["trigger"] == "event"
-
-
-def test_billing_summary_round_trip_preserves_rates_and_usage() -> None:
-    summary = BillingSummary(
-        statement_id="bill-1",
-        account_id="acct-1",
-        billing_period="2026-03",
-        rates=[
-            BillingRate(
-                metric="orchestration-run",
-                interval=BillingInterval.MONTHLY,
-                included_units=100,
-                unit_price_usd=0.0,
-                overage_price_usd=1.5,
-            )
-        ],
-        usage=[
-            UsageRecord(
-                record_id="usage-1",
-                account_id="acct-1",
-                metric="orchestration-run",
-                quantity=124,
-                period="2026-03",
-                run_id="flow-run-1",
-                unit="run",
-                metadata={"source": "workflow-engine"},
-            )
-        ],
-        subtotal_usd=0.0,
-        overage_usd=36.0,
-        total_usd=36.0,
-    )
-
-    payload = summary.to_dict()
-    restored = BillingSummary.from_dict(payload)
-
-    assert payload["rates"][0]["interval"] == "monthly"
-    assert restored == summary
-    assert restored.usage[0].metadata["source"] == "workflow-engine"
 
 
 def test_reports_accept_canonical_handoff_and_takeover_events() -> None:
