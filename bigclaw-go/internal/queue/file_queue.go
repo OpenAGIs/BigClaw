@@ -309,7 +309,35 @@ func (q *FileQueue) load() error {
 	if len(contents) == 0 {
 		return nil
 	}
-	return json.Unmarshal(contents, &q.items)
+	if err := json.Unmarshal(contents, &q.items); err == nil {
+		return nil
+	}
+
+	var legacyItems []struct {
+		Task domain.Task `json:"task"`
+	}
+	if err := json.Unmarshal(contents, &legacyItems); err != nil {
+		return err
+	}
+
+	now := time.Now()
+	for _, legacy := range legacyItems {
+		if legacy.Task.ID == "" {
+			continue
+		}
+		task := legacy.Task
+		if task.State == "" {
+			task.State = domain.TaskQueued
+		}
+		if task.UpdatedAt.IsZero() {
+			task.UpdatedAt = now
+		}
+		q.items[task.ID] = &item{
+			Task:        task,
+			AvailableAt: now,
+		}
+	}
+	return nil
 }
 
 func (q *FileQueue) save() error {
