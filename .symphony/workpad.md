@@ -21,6 +21,7 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_orchestration.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q`
 - `rg -n "test_live_shadow_bundle\\.py|test_parallel_validation_bundle\\.py|test_control_center\\.py" .`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
