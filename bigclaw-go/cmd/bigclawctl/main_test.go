@@ -317,7 +317,6 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "repo->")
 	for _, relativePath := range []string{
-		"src/bigclaw/__main__.py",
 		"src/bigclaw/deprecation.py",
 	} {
 		path := filepath.Join(repoRoot, relativePath)
