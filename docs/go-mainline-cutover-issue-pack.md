@@ -289,9 +289,7 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/parallel_refill.py`
-- `scripts/ops/bigclaw_github_sync.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `scripts/ops/bigclaw_refill_queue.py`
+- retired repo-root Python ops wrappers for GitHub sync, workspace bootstrap, and refill
 
 Go ownership:
 - new `cmd/bigclawctl`
