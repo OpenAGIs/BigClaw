@@ -345,7 +345,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_reports.py -q"
+                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py -q"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
@@ -370,19 +370,19 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="ui-acceptance-tests",
-                        target="tests/test_design_system.py",
+                        target="tests/test_operations.py",
                         capability="release-gate",
                         note="role-permission, data accuracy, and performance audits",
                     ),
                     EvidenceLink(
                         label="console-shell-tests",
-                        target="tests/test_design_system.py",
+                        target="tests/test_operations.py",
                         capability="release-gate",
                         note="console shell and interaction draft release readiness",
                     ),
                     EvidenceLink(
                         label="review-pack-tests",
-                        target="tests/test_reports.py",
+                        target="tests/test_operations.py",
                         capability="release-gate",
                         note="deterministic review packet validation",
                     ),
@@ -481,7 +481,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
                 validation_command=(
                     "(cd bigclaw-go && go test ./internal/workflow) && "
-                    "PYTHONPATH=src python3 -m pytest tests/test_reports.py -q"
+                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py -q"
                 ),
                 capabilities=["commercialization", "handoff", "pilot-rollout"],
                 evidence=["pilot-evidence", "validation-report"],
@@ -506,7 +506,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="report-studio-tests",
-                        target="tests/test_reports.py",
+                        target="tests/test_operations.py",
                         capability="commercialization",
                         note="report exports and downstream evidence sharing",
                     ),
