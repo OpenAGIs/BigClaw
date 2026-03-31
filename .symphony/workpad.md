@@ -17,10 +17,11 @@ Validation
 - `find tests -maxdepth 1 -name 'test_*.py' | sort | wc -l`
 - `find . -path './.git' -prune -o -name '*.py' -print | sort | wc -l`
 - `find . -path './.git' -prune -o -name '*.go' -print | sort | wc -l`
-- `gofmt -w bigclaw-go/internal/repo/board.go bigclaw-go/internal/repo/collaboration.go bigclaw-go/internal/repo/collaboration_test.go bigclaw-go/internal/repo/repo_surfaces_test.go bigclaw-go/internal/queue/file_queue.go bigclaw-go/internal/queue/file_queue_test.go bigclaw-go/internal/validationpolicy/policy.go bigclaw-go/internal/validationpolicy/policy_test.go`
+- `gofmt -w bigclaw-go/internal/repo/board.go bigclaw-go/internal/repo/collaboration.go bigclaw-go/internal/repo/collaboration_test.go bigclaw-go/internal/repo/repo_surfaces_test.go bigclaw-go/internal/queue/file_queue.go bigclaw-go/internal/queue/file_queue_test.go bigclaw-go/internal/validationpolicy/policy.go bigclaw-go/internal/validationpolicy/policy_test.go bigclaw-go/internal/memory/store.go bigclaw-go/internal/memory/store_test.go`
 - `go test ./internal/repo -run 'TestPermissionMatrixResolvesRoles|TestAuditFieldContractIsDeterministic|TestRepoRegistryResolvesSpaceChannelAndAgent|TestRepoRegistryJSONRoundTripPreservesSpacesAndAgents|TestRepoPostToCollaborationCommentPreservesAnchorAndResolvedState|TestMergeCollaborationThreadsCombinesNativeAndRepoSurfaces|TestRepoDiscussionBoardCreateReplyAndFilter|TestNormalizeGatewayPayloadsAndErrors|TestNormalizeGatewayPayloadsReturnDecodeErrors|TestBindRunCommitsAndAcceptedHash|TestBuildApprovalEvidencePacket'`
 - `go test ./internal/triage -run 'TestRecommendRepoActionFollowsLineageAndDiscussionEvidence|TestApprovalEvidencePacketCapturesAcceptedAndCandidateLinks'`
 - `go test ./internal/queue -run 'TestFileQueuePersistsAcrossReload|TestFileQueueCreatesParentDirectoryAndPreservesTaskPayload|TestFileQueueDeadLetterReplayPersistsAcrossReload|TestFileQueueLoadsLegacyListStorage'`
 - `go test ./internal/validationpolicy -run 'TestValidationPolicyBlocksIssueCloseWithoutRequiredReports|TestValidationPolicyAllowsIssueCloseWhenReportsComplete'`
+- `go test ./internal/memory -run 'TestStoreReusesHistoryAndInjectsRules'`
 - `git diff --stat`
 - `git status --short`
