@@ -309,7 +309,23 @@ func (q *FileQueue) load() error {
 	if len(contents) == 0 {
 		return nil
 	}
-	return json.Unmarshal(contents, &q.items)
+	if err := json.Unmarshal(contents, &q.items); err == nil {
+		return nil
+	}
+
+	var legacyItems []item
+	if err := json.Unmarshal(contents, &legacyItems); err != nil {
+		return err
+	}
+	for index := range legacyItems {
+		current := legacyItems[index]
+		if current.Task.ID == "" {
+			continue
+		}
+		copy := current
+		q.items[current.Task.ID] = &copy
+	}
+	return nil
 }
 
 func (q *FileQueue) save() error {
