@@ -31,7 +31,7 @@ jobs:
       - name: Lint legacy source surface
         run: ruff check src tests scripts
       - name: Test legacy source surface
-        run: PYTHONPATH=src pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml
+        run: PYTHONPATH=src python3 -m pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
