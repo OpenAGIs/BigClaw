@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -6,7 +8,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .audit_events import missing_required_fields
-from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
 from .repo_surfaces import RunCommitLink, bind_run_commits
 
@@ -398,6 +399,8 @@ class TaskRun:
         comment_id: str = "",
         surface: str = "run",
     ) -> CollaborationComment:
+        from .support_surfaces import CollaborationComment
+
         resolved_id = comment_id or f"{self.run_id}-comment-{len([audit for audit in self.audits if audit.action == 'collaboration.comment']) + 1}"
         comment = CollaborationComment(
             comment_id=resolved_id,
@@ -432,6 +435,8 @@ class TaskRun:
         decision_id: str = "",
         surface: str = "run",
     ) -> DecisionNote:
+        from .support_surfaces import DecisionNote
+
         resolved_id = decision_id or f"{self.run_id}-decision-{len([audit for audit in self.audits if audit.action == 'collaboration.decision']) + 1}"
         decision = DecisionNote(
             decision_id=resolved_id,

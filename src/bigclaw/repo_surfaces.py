@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Protocol
-
-from .collaboration import CollaborationComment
 from .execution_contract import ExecutionPermission, ExecutionPermissionMatrix, ExecutionRole
 from .models import Task
 
@@ -53,6 +51,8 @@ class RepoPost:
         )
 
     def to_collaboration_comment(self) -> CollaborationComment:
+        from .support_surfaces import CollaborationComment
+
         return CollaborationComment(
             comment_id=f"repo-{self.post_id}",
             author=self.author,

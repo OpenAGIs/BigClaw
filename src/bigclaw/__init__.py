@@ -150,6 +150,36 @@ _install_compat_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/dashboard_run_contract.go",
 )
 _install_compat_module(
+    _support_surfaces,
+    "collaboration",
+    [
+        "CollaborationComment",
+        "CollaborationThread",
+        "DecisionNote",
+        "build_collaboration_thread",
+        "merge_collaboration_threads",
+        "build_collaboration_thread_from_audits",
+        "render_collaboration_lines",
+        "render_collaboration_panel_html",
+        "collaboration_now",
+    ],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
+)
+_install_compat_module(
+    _support_surfaces,
+    "run_detail",
+    [
+        "RunDetailEvent",
+        "RunDetailResource",
+        "RunDetailStat",
+        "RunDetailTab",
+        "render_resource_grid",
+        "render_run_detail_console",
+        "render_timeline_panel",
+    ],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
+)
+_install_compat_module(
     _repo_surfaces,
     "repo_board",
     ["RepoDiscussionBoard", "RepoPost"],
@@ -388,21 +418,32 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .collaboration import (
+from .support_surfaces import (
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
+    render_collaboration_lines,
+    render_collaboration_panel_html,
 )
 from .support_surfaces import (
     AlertDigestSubscription,
+    collaboration_now,
+    merge_collaboration_threads,
+    RunDetailEvent,
+    RunDetailResource,
+    RunDetailStat,
+    RunDetailTab,
     SavedView,
     SavedViewCatalog,
     SavedViewCatalogAudit,
     SavedViewFilter,
     SavedViewLibrary,
+    render_resource_grid,
+    render_run_detail_console,
     render_saved_view_report,
+    render_timeline_panel,
 )
 from .control_surfaces import (
     FreezeException,
