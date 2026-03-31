@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import argparse
 import json
 import subprocess
 import sys
@@ -142,6 +145,200 @@ _install_support_module(
     GitHubConnector=GitHubConnector,
     LinearConnector=LinearConnector,
     JiraConnector=JiraConnector,
+)
+
+
+@dataclass
+class BudgetDecision:
+    status: str
+    estimated_cost: float
+    remaining_budget: float
+    reason: str
+
+
+class CostController:
+    def __init__(self, medium_hourly_costs: Optional[Dict[str, float]] = None):
+        self.medium_hourly_costs = medium_hourly_costs or {
+            "docker": 2.0,
+            "browser": 4.0,
+            "vm": 8.0,
+            "none": 0.0,
+        }
+
+    def estimate_cost(self, medium: str, duration_minutes: int) -> float:
+        hourly = self.medium_hourly_costs.get(medium, 0.0)
+        return round(hourly * (max(0, duration_minutes) / 60.0), 2)
+
+    def evaluate(self, task: Task, medium: str, duration_minutes: int, spent_so_far: float = 0.0) -> BudgetDecision:
+        estimated = self.estimate_cost(medium, duration_minutes)
+        effective_budget = float(task.budget + task.budget_override_amount)
+        remaining = round(effective_budget - spent_so_far - estimated, 2)
+
+        if effective_budget <= 0:
+            return BudgetDecision("allow", estimated, remaining, "budget not set")
+        if remaining >= 0:
+            return BudgetDecision("allow", estimated, remaining, "within budget")
+
+        downgraded_medium = "docker" if medium in {"browser", "vm"} else "none"
+        if downgraded_medium != medium:
+            downgraded_estimated = self.estimate_cost(downgraded_medium, duration_minutes)
+            downgraded_remaining = round(effective_budget - spent_so_far - downgraded_estimated, 2)
+            if downgraded_remaining >= 0:
+                return BudgetDecision(
+                    "degrade",
+                    downgraded_estimated,
+                    downgraded_remaining,
+                    f"degrade to {downgraded_medium} to stay within budget",
+                )
+
+        return BudgetDecision("pause", estimated, remaining, "budget exceeded")
+
+
+_install_support_module(
+    "cost_control",
+    BudgetDecision=BudgetDecision,
+    CostController=CostController,
+)
+
+
+LEGACY_PYTHON_WRAPPER_NOTICE = (
+    "Legacy Python operator wrapper: use scripts/ops/bigclawctl for the Go mainline. "
+    "This Python path remains only as a compatibility shim during migration."
+)
+
+
+def append_missing_flag(args: Sequence[str], flag: str, value: str) -> List[str]:
+    flag_prefix = flag + "="
+    if any(arg == flag or arg.startswith(flag_prefix) for arg in args):
+        return list(args)
+    return [*args, flag, value]
+
+
+def build_bigclawctl_exec_args(repo_root: Path, command: Iterable[str], forwarded: Sequence[str]) -> List[str]:
+    return ["bash", str(repo_root / "scripts/ops/bigclawctl"), *command, *forwarded]
+
+
+def repo_root_from_script(script_path: str) -> Path:
+    return Path(script_path).resolve().parents[2]
+
+
+def run_bigclawctl_shim(script_path: str, command: Iterable[str], forwarded: Sequence[str]) -> int:
+    repo_root = repo_root_from_script(script_path)
+    argv = build_bigclawctl_exec_args(repo_root, command, forwarded)
+    return subprocess.call(argv, cwd=repo_root)
+
+
+def build_workspace_bootstrap_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    args = list(forwarded)
+    args = append_missing_flag(args, "--repo-url", "git@github.com:OpenAGIs/BigClaw.git")
+    args = append_missing_flag(args, "--cache-key", "openagis-bigclaw")
+    return build_bigclawctl_exec_args(repo_root, ["workspace", "bootstrap"], args)
+
+
+def translate_workspace_validate_args(forwarded: Sequence[str]) -> List[str]:
+    translated: List[str] = []
+    i = 0
+    while i < len(forwarded):
+        arg = forwarded[i]
+        if arg == "--report-file":
+            translated.extend(["--report", forwarded[i + 1]])
+            i += 2
+            continue
+        if arg.startswith("--report-file="):
+            translated.append("--report=" + arg.split("=", 1)[1])
+            i += 1
+            continue
+        if arg == "--no-cleanup":
+            translated.append("--cleanup=false")
+            i += 1
+            continue
+        if arg == "--issues":
+            issues: List[str] = []
+            i += 1
+            while i < len(forwarded) and not forwarded[i].startswith("-"):
+                issues.append(forwarded[i])
+                i += 1
+            translated.extend(["--issues", ",".join(issues)])
+            continue
+        translated.append(arg)
+        i += 1
+    return translated
+
+
+def build_workspace_validate_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return build_bigclawctl_exec_args(repo_root, ["workspace", "validate"], translate_workspace_validate_args(forwarded))
+
+
+def build_github_sync_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return build_bigclawctl_exec_args(repo_root, ["github-sync"], list(forwarded))
+
+
+def build_refill_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return build_bigclawctl_exec_args(repo_root, ["refill"], list(forwarded))
+
+
+def build_workspace_runtime_bootstrap_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return build_bigclawctl_exec_args(repo_root, ["workspace"], list(forwarded))
+
+
+_install_support_module(
+    "legacy_shim",
+    LEGACY_PYTHON_WRAPPER_NOTICE=LEGACY_PYTHON_WRAPPER_NOTICE,
+    append_missing_flag=append_missing_flag,
+    build_bigclawctl_exec_args=build_bigclawctl_exec_args,
+    repo_root_from_script=repo_root_from_script,
+    run_bigclawctl_shim=run_bigclawctl_shim,
+    build_workspace_bootstrap_args=build_workspace_bootstrap_args,
+    translate_workspace_validate_args=translate_workspace_validate_args,
+    build_workspace_validate_args=build_workspace_validate_args,
+    build_github_sync_args=build_github_sync_args,
+    build_refill_args=build_refill_args,
+    build_workspace_runtime_bootstrap_args=build_workspace_runtime_bootstrap_args,
+)
+
+
+def map_priority(p: str) -> Priority:
+    p = (p or "").upper()
+    if p == "P0":
+        return Priority.P0
+    if p == "P1":
+        return Priority.P1
+    return Priority.P2
+
+
+def map_state(s: str) -> TaskState:
+    normalized = (s or "").lower()
+    if "progress" in normalized:
+        return TaskState.IN_PROGRESS
+    if "done" in normalized or "closed" in normalized:
+        return TaskState.DONE
+    if "block" in normalized:
+        return TaskState.BLOCKED
+    return TaskState.TODO
+
+
+def map_source_issue_to_task(issue: SourceIssue) -> Task:
+    risk = RiskLevel.HIGH if "prod" in issue.title.lower() else RiskLevel.LOW
+    return Task(
+        task_id=issue.source_id,
+        source=issue.source,
+        title=issue.title,
+        description=issue.description,
+        labels=issue.labels,
+        priority=map_priority(issue.priority),
+        state=map_state(issue.state),
+        risk_level=risk,
+        required_tools=["github" if issue.source == "github" else "connector"],
+        acceptance_criteria=["Synced from source issue"],
+        validation_plan=["mapping-test"],
+    )
+
+
+_install_support_module(
+    "mapping",
+    map_priority=map_priority,
+    map_state=map_state,
+    map_source_issue_to_task=map_source_issue_to_task,
 )
 
 
@@ -556,6 +753,104 @@ _install_support_module(
 )
 
 
+WORKSPACE_BOOTSTRAP_CLI_DEFAULT_CACHE_BASE = "~/.cache/symphony/repos"
+
+
+def build_workspace_bootstrap_parser(
+    description: str,
+    default_repo_url: str,
+    default_branch: str,
+    default_cache_root: str | None,
+    default_cache_base: str,
+    default_cache_key: str | None,
+) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("command", choices=["bootstrap", "cleanup"])
+    parser.add_argument("--workspace", default=".", help="Workspace path managed by Symphony.")
+    parser.add_argument("--issue", default="", help="Linear issue identifier used for the bootstrap branch.")
+    parser.add_argument("--repo-url", default=default_repo_url, help="Canonical remote repository URL.")
+    parser.add_argument("--default-branch", default=default_branch, help="Default branch used as the bootstrap base.")
+    parser.add_argument(
+        "--cache-root",
+        default=default_cache_root,
+        help="Full cache root that contains mirror.git and seed. Overrides --cache-base/--cache-key.",
+    )
+    parser.add_argument(
+        "--cache-base",
+        default=default_cache_base,
+        help="Base directory that stores per-repo cache roots.",
+    )
+    parser.add_argument(
+        "--cache-key",
+        default=default_cache_key,
+        help="Optional stable key for the per-repo cache directory.",
+    )
+    parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON output.")
+    return parser
+
+
+def emit_workspace_bootstrap_payload(payload: dict, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    for key, value in payload.items():
+        print(f"{key}={value}")
+
+
+def run_workspace_bootstrap_cli(
+    argv: Sequence[str] | None = None,
+    *,
+    description: str = "Bootstrap Symphony workspaces from a shared local mirror.",
+    default_repo_url: str = "",
+    default_branch: str = "main",
+    default_cache_root: str | None = None,
+    default_cache_base: str = WORKSPACE_BOOTSTRAP_CLI_DEFAULT_CACHE_BASE,
+    default_cache_key: str | None = None,
+) -> int:
+    parser = build_workspace_bootstrap_parser(
+        description=description,
+        default_repo_url=default_repo_url,
+        default_branch=default_branch,
+        default_cache_root=default_cache_root,
+        default_cache_base=default_cache_base,
+        default_cache_key=default_cache_key,
+    )
+    args = parser.parse_args(argv)
+    workspace = Path(args.workspace).expanduser().resolve()
+
+    try:
+        payload = dict(
+            workspace=workspace,
+            issue_identifier=args.issue,
+            repo_url=args.repo_url,
+            default_branch=args.default_branch,
+            cache_root=args.cache_root,
+            cache_base=args.cache_base,
+            cache_key=args.cache_key,
+        )
+        if args.command == "bootstrap":
+            status = bootstrap_workspace(**payload)
+        else:
+            status = cleanup_workspace(**payload)
+        emit_workspace_bootstrap_payload({"status": "ok", **status.to_dict()}, args.json)
+        return 0
+    except WorkspaceBootstrapError as exc:
+        emit_workspace_bootstrap_payload(
+            {"status": "error", "workspace": str(workspace), "error": str(exc)},
+            args.json,
+        )
+        return 1
+
+
+_install_support_module(
+    "workspace_bootstrap_cli",
+    DEFAULT_CACHE_BASE=WORKSPACE_BOOTSTRAP_CLI_DEFAULT_CACHE_BASE,
+    build_parser=build_workspace_bootstrap_parser,
+    emit=emit_workspace_bootstrap_payload,
+    main=run_workspace_bootstrap_cli,
+)
+
+
 from . import runtime as _legacy_runtime_surface
 
 
@@ -726,7 +1021,7 @@ from .governance import (
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
+from .workspace_bootstrap import WorkspaceBootstrapError, bootstrap_workspace, cleanup_workspace
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,

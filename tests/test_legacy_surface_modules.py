@@ -16,6 +16,36 @@ def test_legacy_connectors_submodule_stays_importable() -> None:
     assert bigclaw.SourceIssue is connectors.SourceIssue
 
 
+def test_legacy_cost_control_mapping_and_shim_surfaces_behave() -> None:
+    cost_control = importlib.import_module("bigclaw.cost_control")
+    mapping = importlib.import_module("bigclaw.mapping")
+    legacy_shim = importlib.import_module("bigclaw.legacy_shim")
+
+    task = mapping.map_source_issue_to_task(
+        bigclaw.SourceIssue(
+            source="github",
+            source_id="OpenAGIs/BigClaw#42",
+            title="prod incident",
+            description="desc",
+            labels=["bug"],
+            priority="P1",
+            state="In Progress",
+            links={"issue": "https://github.com/OpenAGIs/BigClaw/issues/42"},
+        )
+    )
+    task.budget = 7
+    controller = cost_control.CostController({"browser": 6.0, "docker": 2.0, "none": 0.0})
+    decision = controller.evaluate(task, "browser", 60, spent_so_far=4)
+
+    assert task.risk_level is bigclaw.RiskLevel.HIGH
+    assert task.state is bigclaw.TaskState.IN_PROGRESS
+    assert decision.status == "degrade"
+    assert legacy_shim.append_missing_flag(["--foo"], "--bar", "baz") == ["--foo", "--bar", "baz"]
+    assert legacy_shim.translate_workspace_validate_args(
+        ["--report-file", "out.json", "--no-cleanup", "--issues", "BIG-1", "BIG-2"]
+    ) == ["--report", "out.json", "--cleanup=false", "--issues", "BIG-1,BIG-2"]
+
+
 def test_legacy_deprecation_submodule_warns() -> None:
     deprecation = importlib.import_module("bigclaw.deprecation")
 
@@ -92,3 +122,23 @@ def test_legacy_roadmap_and_parallel_refill_surfaces_behave(tmp_path: Path) -> N
         "BIG-2": "Backlog",
         "BIG-3": "Done",
     }
+
+
+def test_legacy_workspace_bootstrap_cli_submodule_stays_importable(capsys: pytest.CaptureFixture[str]) -> None:
+    workspace_bootstrap_cli = importlib.import_module("bigclaw.workspace_bootstrap_cli")
+
+    parser = workspace_bootstrap_cli.build_parser(
+        description="desc",
+        default_repo_url="git@example.com:repo.git",
+        default_branch="main",
+        default_cache_root=None,
+        default_cache_base="~/.cache/symphony/repos",
+        default_cache_key=None,
+    )
+    args = parser.parse_args(["cleanup", "--workspace", ".", "--json"])
+    workspace_bootstrap_cli.emit({"status": "ok", "workspace": "x"}, as_json=False)
+
+    captured = capsys.readouterr()
+
+    assert args.command == "cleanup"
+    assert "status=ok" in captured.out
