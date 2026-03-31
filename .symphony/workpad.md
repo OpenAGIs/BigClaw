@@ -6,6 +6,7 @@
 - Keep behavior aligned with existing `bigclaw-go` implementations where those already exist.
 - Continue the tranche by folding `bigclaw.utility_surfaces` into package-level compatibility exports and deleting the standalone module.
 - Continue the tranche by folding `bigclaw.repo_surfaces`, `bigclaw.workspace_bootstrap`, `bigclaw.control_surfaces`, `bigclaw.evaluation`, `bigclaw.planning`, and `bigclaw.execution_contract` into package-level compatibility exports and deleting the standalone modules.
+- Continue the tranche by folding `bigclaw.ui_review` into package-level compatibility exports and deleting the standalone module.
 
 ### Acceptance
 - Changes stay scoped to remaining `src/bigclaw` Python assets for this tranche.
@@ -17,6 +18,7 @@
 - Legacy Python imports and existing tests for benchmark/replay evaluation and operations analytics still pass after `evaluation.py` deletion.
 - Legacy Python imports and existing tests for planning, candidate gates, four-week execution plans, and repo rollout still pass after `planning.py` deletion.
 - Legacy Python imports and existing tests for execution contract, repo governance, and operations API contract still pass after `execution_contract.py` deletion.
+- Legacy Python imports and existing tests for UI review pack generation and bundle export still pass after `ui_review.py` deletion.
 - Report the impact on Python/Go file counts and note any `pyproject`/`setup` impact.
 
 ### Validation
@@ -29,6 +31,7 @@
 - `python3 -m pytest tests/test_evaluation.py tests/test_operations.py`
 - `python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py`
 - `python3 -m pytest tests/test_execution_contract.py tests/test_repo_governance.py`
+- `python3 -m pytest tests/test_ui_review.py`
 - `cd bigclaw-go && go test ./internal/bootstrap ./internal/repo ./internal/regression`
 - `cd bigclaw-go && go test ./internal/observability ./internal/workflow ./internal/regression`
 - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
