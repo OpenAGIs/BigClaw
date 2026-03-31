@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
@@ -40,8 +42,25 @@ from bigclaw.operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
+from bigclaw.planning import (
+    FourWeekExecutionPlan,
+    CandidateBacklog,
+    CandidateEntry,
+    CandidatePlanner,
+    EvidenceLink,
+    EntryGate,
+    EntryGateDecision,
+    WeeklyExecutionPlan,
+    WeeklyGoal,
+    build_big_4701_execution_plan,
+    build_v3_candidate_backlog,
+    build_v3_entry_gate,
+    render_candidate_backlog_report,
+    render_four_week_execution_report,
+)
 from bigclaw.reports import SharedViewContext, SharedViewFilter
 from bigclaw.scheduler import ExecutionRecord, Scheduler, SchedulerDecision
+from bigclaw.governance import ScopeFreezeAudit
 
 
 
@@ -1030,3 +1049,423 @@ def test_render_run_replay_index_page_without_report_path(tmp_path: Path) -> Non
 
     assert "n/a" in page
     assert "Replay" in page
+
+
+def test_candidate_backlog_round_trip_preserves_manifest_shape() -> None:
+    backlog = CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="platform-ui",
+                outcome="Unify console release gates and promotion evidence.",
+                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                capabilities=["release-gate", "reporting"],
+                evidence=["acceptance-suite", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="ui-acceptance",
+                        target="tests/test_design_system.py",
+                        capability="release-gate",
+                        note="role-permission and audit readiness coverage",
+                    )
+                ],
+            )
+        ],
+    )
+
+    restored = CandidateBacklog.from_dict(backlog.to_dict())
+
+    assert restored == backlog
+
+
+def test_candidate_backlog_ranks_ready_items_ahead_of_blocked_work() -> None:
+    backlog = CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-risky",
+                title="Risky migration",
+                theme="runtime",
+                priority="P0",
+                owner="runtime",
+                outcome="Move execution runtime to the next rollout ring.",
+                validation_command="cd bigclaw-go && go test ./internal/worker ./internal/scheduler",
+                capabilities=["runtime-hardening"],
+                evidence=["benchmark"],
+                blockers=["missing rollback plan"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-ready",
+                title="Release control center",
+                theme="console-governance",
+                priority="P1",
+                owner="platform-ui",
+                outcome="Unify console release gates and promotion evidence.",
+                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                capabilities=["release-gate", "reporting"],
+                evidence=["acceptance-suite", "validation-report"],
+            ),
+        ],
+    )
+
+    ranked_ids = [candidate.candidate_id for candidate in backlog.ranked_candidates]
+
+    assert ranked_ids == ["candidate-ready", "candidate-risky"]
+
+
+def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_evidence() -> None:
+    backlog = CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="platform-ui",
+                outcome="Unify console release gates and promotion evidence.",
+                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                capabilities=["release-gate", "reporting"],
+                evidence=["acceptance-suite", "validation-report"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-ops-hardening",
+                title="Ops hardening",
+                theme="ops-command-center",
+                priority="P0",
+                owner="ops-platform",
+                outcome="Package the command-center rollout with weekly review evidence.",
+                validation_command="python3 -m pytest tests/test_operations.py -q",
+                capabilities=["ops-control"],
+                evidence=["weekly-review"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-orchestration",
+                title="Orchestration rollout",
+                theme="agent-orchestration",
+                priority="P1",
+                owner="orchestration",
+                outcome="Promote cross-team orchestration with commercialization visibility.",
+                validation_command="cd bigclaw-go && go test ./internal/workflow",
+                capabilities=["commercialization", "handoff"],
+                evidence=["pilot-evidence"],
+            ),
+        ],
+    )
+    gate = EntryGate(
+        gate_id="gate-v3-entry",
+        name="V3 Entry Gate",
+        min_ready_candidates=3,
+        required_capabilities=["release-gate", "ops-control", "commercialization"],
+        required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
+        required_baseline_version="v2.0",
+    )
+    baseline_audit = ScopeFreezeAudit(
+        board_name="BigClaw v2.0 Freeze",
+        version="v2.0",
+        total_items=5,
+    )
+
+    decision = CandidatePlanner().evaluate_gate(backlog, gate, baseline_audit=baseline_audit)
+
+    assert decision.passed is True
+    assert set(decision.ready_candidate_ids) == {
+        "candidate-release-control",
+        "candidate-ops-hardening",
+        "candidate-orchestration",
+    }
+    assert decision.missing_capabilities == []
+    assert decision.missing_evidence == []
+    assert decision.baseline_ready is True
+    assert decision.baseline_findings == []
+
+
+def test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready() -> None:
+    backlog = CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="platform-ui",
+                outcome="Unify console release gates and promotion evidence.",
+                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                capabilities=["release-gate"],
+                evidence=["acceptance-suite", "validation-report"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-ops-hardening",
+                title="Ops hardening",
+                theme="ops-command-center",
+                priority="P0",
+                owner="ops-platform",
+                outcome="Package the command-center rollout with weekly review evidence.",
+                validation_command="python3 -m pytest tests/test_operations.py -q",
+                capabilities=["ops-control"],
+                evidence=["weekly-review"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-orchestration",
+                title="Orchestration rollout",
+                theme="agent-orchestration",
+                priority="P1",
+                owner="orchestration",
+                outcome="Promote cross-team orchestration with commercialization visibility.",
+                validation_command="cd bigclaw-go && go test ./internal/workflow",
+                capabilities=["commercialization"],
+                evidence=["pilot-evidence"],
+            ),
+        ],
+    )
+    gate = EntryGate(
+        gate_id="gate-v3-entry",
+        name="V3 Entry Gate",
+        min_ready_candidates=3,
+        required_capabilities=["release-gate", "ops-control", "commercialization"],
+        required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
+        required_baseline_version="v2.0",
+    )
+
+    missing_baseline = CandidatePlanner().evaluate_gate(backlog, gate)
+    failed_baseline = CandidatePlanner().evaluate_gate(
+        backlog,
+        gate,
+        baseline_audit=ScopeFreezeAudit(
+            board_name="BigClaw v2.0 Freeze",
+            version="v2.0",
+            total_items=5,
+            missing_validation=["OPE-116"],
+        ),
+    )
+
+    assert missing_baseline.passed is False
+    assert missing_baseline.baseline_ready is False
+    assert missing_baseline.baseline_findings == ["missing baseline audit for v2.0"]
+    assert failed_baseline.passed is False
+    assert failed_baseline.baseline_ready is False
+    assert failed_baseline.baseline_findings == ["baseline v2.0 is not release ready (87.5)"]
+
+
+def test_entry_gate_decision_round_trip_preserves_findings() -> None:
+    decision = EntryGateDecision(
+        gate_id="gate-v3-entry",
+        passed=False,
+        ready_candidate_ids=["candidate-release-control"],
+        blocked_candidate_ids=["candidate-runtime"],
+        missing_capabilities=["commercialization"],
+        missing_evidence=["pilot-evidence"],
+        baseline_ready=False,
+        baseline_findings=["baseline v2.0 is not release ready (87.5)"],
+        blocker_count=1,
+    )
+
+    restored = EntryGateDecision.from_dict(decision.to_dict())
+
+    assert restored == decision
+
+
+def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() -> None:
+    backlog = CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="platform-ui",
+                outcome="Unify console release gates and promotion evidence.",
+                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                capabilities=["release-gate", "reporting"],
+                evidence=["acceptance-suite", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="ui-acceptance",
+                        target="tests/test_design_system.py",
+                        capability="release-gate",
+                        note="role-permission and audit readiness coverage",
+                    )
+                ],
+            )
+        ],
+    )
+    gate = EntryGate(
+        gate_id="gate-v3-entry",
+        name="V3 Entry Gate",
+        min_ready_candidates=2,
+        required_capabilities=["release-gate", "ops-control"],
+        required_evidence=["acceptance-suite", "validation-report"],
+        required_baseline_version="v2.0",
+    )
+    decision = CandidatePlanner().evaluate_gate(
+        backlog,
+        gate,
+        baseline_audit=ScopeFreezeAudit(
+            board_name="BigClaw v2.0 Freeze",
+            version="v2.0",
+            total_items=5,
+        ),
+    )
+
+    report = render_candidate_backlog_report(backlog, gate, decision)
+
+    assert "# V3 Candidate Backlog Report" in report
+    assert "- Decision: HOLD: ready=1 blocked=0 missing_capabilities=1 missing_evidence=0 baseline_findings=0" in report
+    assert "- candidate-release-control: Release control center priority=P0 owner=platform-ui score=100 ready=True" in report
+    assert "- ui-acceptance -> tests/test_design_system.py capability=release-gate" in report
+
+
+def test_build_big_4701_execution_plan_contains_expected_goals() -> None:
+    plan = build_big_4701_execution_plan()
+
+    assert plan.plan_id == "BIG-4701"
+    assert len(plan.weeks) == 4
+    assert plan.weeks[0].goals[0].goal_id == "w1-scope-freeze"
+    assert plan.weeks[3].goals[-1].status == "not-started"
+
+
+def test_four_week_execution_report_summarizes_at_risk_goals() -> None:
+    plan = FourWeekExecutionPlan(
+        plan_id="BIG-4701",
+        title="v4.0 execution plan",
+        owner="execution-office",
+        start_date="2026-03-11",
+        weeks=[
+            WeeklyExecutionPlan(week_number=1, theme="Week 1", objective="Prep"),
+            WeeklyExecutionPlan(
+                week_number=2,
+                theme="Execution lane",
+                objective="Keep delivery moving",
+                goals=[
+                    WeeklyGoal(
+                        goal_id="w2-green",
+                        title="Green goal",
+                        owner="eng",
+                        status="on-track",
+                        success_metric="merged PRs",
+                        target_value="2",
+                    ),
+                    WeeklyGoal(
+                        goal_id="w2-blocked",
+                        title="Blocked goal",
+                        owner="eng",
+                        status="blocked",
+                        success_metric="open blockers",
+                        target_value="0",
+                    ),
+                ],
+            )
+            ,
+            WeeklyExecutionPlan(week_number=3, theme="Week 3", objective="Follow through"),
+            WeeklyExecutionPlan(week_number=4, theme="Week 4", objective="Close out"),
+        ],
+    )
+
+    report = render_four_week_execution_report(plan)
+
+    assert "# Four-Week Execution Plan" in report
+    assert "- Plan: BIG-4701 v4.0 execution plan" in report
+    assert "- At-risk weeks: 2" in report
+
+
+def test_weekly_execution_plan_tracks_at_risk_goal_ids() -> None:
+    week = WeeklyExecutionPlan(
+        week_number=2,
+        theme="Execution lane",
+        objective="Keep delivery moving",
+        goals=[
+            WeeklyGoal(
+                goal_id="w2-green",
+                title="Green goal",
+                owner="eng",
+                status="on-track",
+                success_metric="merged PRs",
+                target_value="2",
+            ),
+            WeeklyGoal(
+                goal_id="w2-blocked",
+                title="Blocked goal",
+                owner="eng",
+                status="blocked",
+                success_metric="open blockers",
+                target_value="0",
+            ),
+        ],
+    )
+
+    assert week.at_risk_goal_ids == ["w2-blocked"]
+
+
+def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
+    backlog = build_v3_candidate_backlog()
+
+    assert backlog.epic_id == "BIG-EPIC-20"
+    assert backlog.title == "v4.0 v3候选与进入条件"
+    assert [candidate.candidate_id for candidate in backlog.ranked_candidates] == [
+        "candidate-ops-hardening",
+        "candidate-orchestration-rollout",
+        "candidate-release-control",
+    ]
+    assert all(candidate.ready for candidate in backlog.candidates)
+
+    ops_candidate = next(
+        candidate for candidate in backlog.candidates if candidate.candidate_id == "candidate-ops-hardening"
+    )
+    assert {link.target for link in ops_candidate.evidence_links} >= {
+        "src/bigclaw/operations.py",
+        "tests/test_control_center.py",
+        "tests/test_operations.py",
+        "src/bigclaw/execution_contract.py",
+        "src/bigclaw/workflow.py",
+        "bigclaw-go/internal/workflow/engine_test.go",
+        "bigclaw-go/internal/worker/runtime_test.go",
+        "src/bigclaw/saved_views.py",
+        "bigclaw-go/internal/product/saved_views_test.go",
+        "src/bigclaw/evaluation.py",
+        "tests/test_operations.py",
+    }
+
+
+def test_build_v3_entry_gate_passes_built_candidate_backlog_against_v2_baseline() -> None:
+    backlog = build_v3_candidate_backlog()
+    gate = build_v3_entry_gate()
+
+    decision = CandidatePlanner().evaluate_gate(
+        backlog,
+        gate,
+        baseline_audit=ScopeFreezeAudit(
+            board_name="BigClaw v2.0 Freeze",
+            version="v2.0",
+            total_items=25,
+        ),
+    )
+    report = render_candidate_backlog_report(backlog, gate, decision)
+
+    assert decision.passed is True
+    assert decision.ready_candidate_ids == [
+        "candidate-ops-hardening",
+        "candidate-orchestration-rollout",
+        "candidate-release-control",
+    ]
+    assert decision.missing_capabilities == []
+    assert decision.missing_evidence == []
+    assert "candidate-ops-hardening: Operations command-center hardening" in report
+    assert "- command-center-src -> src/bigclaw/operations.py capability=ops-control" in report
+    assert "- report-studio-tests -> tests/test_reports.py capability=commercialization" in report
+    assert "- console-shell-tests -> tests/test_design_system.py capability=release-gate" in report
