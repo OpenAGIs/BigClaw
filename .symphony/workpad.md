@@ -56,3 +56,6 @@
 - `cd bigclaw-go && go test ./internal/repo ./internal/triage -count=1` -> `ok  	bigclaw-go/internal/repo	0.620s` and `ok  	bigclaw-go/internal/triage	1.032s`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_plane.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py tests/test_workspace_bootstrap.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `60` after retiring `src/bigclaw/repo_triage.py` and `tests/test_repo_triage.py`
+- `cd bigclaw-go && go test ./internal/intake ./internal/workflow -count=1` -> `ok  	bigclaw-go/internal/intake	0.850s` and `ok  	bigclaw-go/internal/workflow	1.304s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_plane.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py tests/test_workspace_bootstrap.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `56` after retiring `src/bigclaw/connectors.py`, `src/bigclaw/dsl.py`, `src/bigclaw/mapping.py`, and `tests/test_dsl.py`

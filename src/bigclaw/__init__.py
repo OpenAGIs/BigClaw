@@ -119,7 +119,6 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -193,8 +192,6 @@ from .governance import (
     render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -438,10 +435,6 @@ __all__ = [
     "Scheduler",
     "SchedulerDecision",
     "ExecutionRecord",
-    "SourceIssue",
-    "GitHubConnector",
-    "LinearConnector",
-    "JiraConnector",
     "CommandAction",
     "AuditRequirement",
     "ComponentLibrary",
@@ -507,9 +500,6 @@ __all__ = [
     "DecisionNote",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
-    "WorkflowDefinition",
-    "WorkflowStep",
-    "map_source_issue_to_task",
     "APPROVAL_RECORDED_EVENT",
     "BUDGET_OVERRIDE_EVENT",
     "FLOW_HANDOFF_EVENT",

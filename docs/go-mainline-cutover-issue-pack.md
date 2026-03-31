@@ -95,9 +95,6 @@ current runnable work.
 
 Python source:
 - `src/bigclaw/models.py`
-- `src/bigclaw/connectors.py`
-- `src/bigclaw/mapping.py`
-- `src/bigclaw/dsl.py`
 
 Go ownership:
 - `bigclaw-go/internal/domain/task.go`
