@@ -157,6 +157,126 @@ func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	}
 }
 
+func TestCacheRootForRepoUsesCustomBaseAndKey(t *testing.T) {
+	base := t.TempDir()
+	got := CacheRootForRepo("git@github.com:OpenAGIs/BigClaw.git", base, "Team/BigClaw")
+	want := filepath.Join(filepath.Clean(base), "team-bigclaw")
+	if got != want {
+		t.Fatalf("expected cache root %s, got %s", want, got)
+	}
+}
+
+func TestBootstrapWorkspaceReusesCacheForSecondWorkspace(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	first := filepath.Join(root, "workspaces", "issue-one")
+	second := filepath.Join(root, "workspaces", "issue-two")
+
+	status1, err := BootstrapWorkspace(first, "issue-one", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatalf("bootstrap first workspace: %v", err)
+	}
+	status2, err := BootstrapWorkspace(second, "issue-two", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatalf("bootstrap second workspace: %v", err)
+	}
+	if status2.CacheRoot != status1.CacheRoot {
+		t.Fatalf("expected reused cache root, got first=%s second=%s", status1.CacheRoot, status2.CacheRoot)
+	}
+	if !status2.CacheReused {
+		t.Fatalf("expected cache to be reused")
+	}
+	if !status2.CloneSuppressed {
+		t.Fatalf("expected clone suppressed for second workspace")
+	}
+	if status2.SeedCreated {
+		t.Fatalf("did not expect seed to be re-created for second workspace")
+	}
+}
+
+func TestBootstrapWorkspaceReusesExistingWorktree(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	workspace := filepath.Join(root, "workspaces", "existing")
+
+	first, err := BootstrapWorkspace(workspace, "existing", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatalf("bootstrap workspace: %v", err)
+	}
+	second, err := BootstrapWorkspace(workspace, "existing", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatalf("re-bootstrap workspace: %v", err)
+	}
+	if !second.Reused {
+		t.Fatalf("expected existing workspace to be reused")
+	}
+	if second.WorkspaceMode != "workspace_reused" {
+		t.Fatalf("unexpected workspace mode %s", second.WorkspaceMode)
+	}
+	if second.CacheRoot != first.CacheRoot {
+		t.Fatalf("expected cache root to remain %s, got %s", first.CacheRoot, second.CacheRoot)
+	}
+}
+
+func TestBootstrapWorkspaceRecoversFromStaleSeed(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	firstWorkspace := filepath.Join(root, "workspaces", "stale-one")
+	secondWorkspace := filepath.Join(root, "workspaces", "stale-two")
+
+	first, err := BootstrapWorkspace(firstWorkspace, "stale-one", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatalf("bootstrap initial workspace: %v", err)
+	}
+	if err := os.RemoveAll(filepath.Join(first.SeedPath, ".git")); err != nil {
+		t.Fatalf("remove seed git dir: %v", err)
+	}
+
+	second, err := BootstrapWorkspace(secondWorkspace, "stale-two", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatalf("bootstrap after stale seed: %v", err)
+	}
+	if second.MirrorCreated {
+		t.Fatalf("expected mirror reuse, got mirror created")
+	}
+	if !second.SeedCreated {
+		t.Fatalf("expected seed recreated after stale state")
+	}
+}
+
+func TestBuildValidationReportSummaries(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	workspaceRoot := filepath.Join(root, "validation")
+
+	report, err := BuildValidationReport(remote, workspaceRoot, []string{"OPE-101", "OPE-102"}, "main", "", cacheBase, "", true)
+	if err != nil {
+		t.Fatalf("build validation report: %v", err)
+	}
+	if report.Summary.WorkspaceCount != 2 {
+		t.Fatalf("expected 2 workspaces, got %d", report.Summary.WorkspaceCount)
+	}
+	if len(report.Summary.UniqueCacheRoots) != 1 {
+		t.Fatalf("expected single unique cache root, got %d", len(report.Summary.UniqueCacheRoots))
+	}
+	if !report.Summary.SingleCacheRootReused {
+		t.Fatalf("expected cache root reused flag")
+	}
+	if !report.Summary.CloneSuppressedAfterFirst {
+		t.Fatalf("expected clone suppressed after first workspace")
+	}
+	if !report.Summary.CleanupPreservedCache {
+		t.Fatalf("expected cleanup to preserve cache")
+	}
+	if len(report.CleanupResults) != 2 {
+		t.Fatalf("expected cleanup results for both issues, got %d", len(report.CleanupResults))
+	}
+}
+
 func TestWithCacheLockSerializesAcrossProcesses(t *testing.T) {
 	if os.Getenv("BOOTSTRAP_LOCK_HELPER") == "1" {
 		lockRoot := os.Getenv("BOOTSTRAP_LOCK_ROOT")
