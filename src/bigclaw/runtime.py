@@ -24,7 +24,7 @@ from .audit_events import (
 from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, RepoSyncAudit, TaskRun, utc_now
-from .risk import RiskScore, RiskScorer
+from .control_surfaces import RiskScore, RiskScorer
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE

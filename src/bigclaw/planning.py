@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from .governance import ScopeFreezeAudit
+from .control_surfaces import ScopeFreezeAudit
 
 
 PRIORITY_WEIGHTS = {"P0": 4, "P1": 3, "P2": 2, "P3": 1}

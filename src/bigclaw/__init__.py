@@ -1,6 +1,8 @@
 import sys
 import types
 
+from . import control_surfaces as _control_surfaces
+from . import repo_surfaces as _repo_surfaces
 from .models import (
     BillingInterval,
     BillingRate,
@@ -23,6 +25,111 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
+
+
+def _install_compat_module(source_module: types.ModuleType, name: str, export_names: list[str], **extra_attrs: object) -> None:
+    module = types.ModuleType(f"{__name__}.{name}")
+    for export_name in export_names:
+        module.__dict__[export_name] = getattr(source_module, export_name)
+    module.__dict__.update(extra_attrs)
+    sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
+_install_compat_module(
+    _repo_surfaces,
+    "repo_board",
+    ["RepoDiscussionBoard", "RepoPost"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/board.go",
+)
+_install_compat_module(
+    _repo_surfaces,
+    "repo_commits",
+    ["CommitDiff", "CommitLineage", "RepoCommit"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/commits.go",
+)
+_install_compat_module(
+    _repo_surfaces,
+    "repo_gateway",
+    [
+        "RepoGatewayClient",
+        "RepoGatewayError",
+        "normalize_commit",
+        "normalize_diff",
+        "normalize_gateway_error",
+        "normalize_lineage",
+        "repo_audit_payload",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/gateway.go",
+)
+_install_compat_module(
+    _repo_surfaces,
+    "repo_governance",
+    [
+        "REPO_ACTION_PERMISSIONS",
+        "REPO_ROLE_POLICIES",
+        "RepoPermissionContract",
+        "missing_repo_audit_fields",
+        "repo_required_audit_fields",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/governance.go",
+)
+_install_compat_module(
+    _repo_surfaces,
+    "repo_links",
+    ["RunCommitBinding", "VALID_ROLES", "bind_run_commits", "validate_roles"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/links.go",
+)
+_install_compat_module(
+    _repo_surfaces,
+    "repo_plane",
+    ["RepoAgent", "RepoSpace", "RunCommitLink"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/plane.go",
+)
+_install_compat_module(
+    _repo_surfaces,
+    "repo_registry",
+    ["RepoRegistry"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/registry.go",
+)
+_install_compat_module(
+    _repo_surfaces,
+    "repo_triage",
+    ["LineageEvidence", "TriageRecommendation", "approval_evidence_packet", "recommend_triage_action"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/triage.go",
+)
+_install_compat_module(
+    _control_surfaces,
+    "governance",
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
+)
+_install_compat_module(
+    _control_surfaces,
+    "issue_archive",
+    [
+        "ArchivedIssue",
+        "IssuePriorityArchive",
+        "IssuePriorityArchiveAudit",
+        "IssuePriorityArchivist",
+        "render_issue_priority_archive_report",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/issuearchive/archive.go",
+)
+_install_compat_module(
+    _control_surfaces,
+    "risk",
+    ["RiskFactor", "RiskScore", "RiskScorer"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
+)
+
 from . import runtime as _legacy_runtime_surface
 
 
@@ -184,22 +291,22 @@ from .saved_views import (
     SavedViewLibrary,
     render_saved_view_report,
 )
-from .governance import (
+from .control_surfaces import (
     FreezeException,
     GovernanceBacklogItem,
     ScopeFreezeAudit,
     ScopeFreezeBoard,
     ScopeFreezeGovernance,
     render_scope_freeze_report,
-)
-from .issue_archive import (
     ArchivedIssue,
     IssuePriorityArchive,
     IssuePriorityArchiveAudit,
     IssuePriorityArchivist,
+    RiskFactor,
+    RiskScore,
+    RiskScorer,
     render_issue_priority_archive_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
