@@ -28,9 +28,9 @@ cutover set.
 
 ## Completed scope
 
-- Canonical Go owners now cover the `src/bigclaw/models.py`,
-  `src/bigclaw/connectors.py`, retired Python mapping surface, and `src/bigclaw/dsl.py`
-  contract surfaces required by the cutover plan.
+- Canonical Go owners now cover the `src/bigclaw/models.py` compatibility surface,
+  including the folded `connectors` and `dsl` Python contract shims plus the retired
+  standalone Python mapping surface required by the cutover plan.
 - Risk, policy, orchestration, reporting, control-center, repo collaboration,
   tooling, and Python-retirement slices are closed in the local tracker.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now

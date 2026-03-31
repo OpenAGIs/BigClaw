@@ -95,9 +95,9 @@ current runnable work.
 
 Python source:
 - `src/bigclaw/models.py`
-- `src/bigclaw/connectors.py`
+- folded `connectors` compatibility surface in `src/bigclaw/models.py`
 - retired standalone Python intake mapping helper
-- `src/bigclaw/dsl.py`
+- folded `dsl` compatibility surface in `src/bigclaw/models.py`
 
 Go ownership:
 - `bigclaw-go/internal/domain/task.go`

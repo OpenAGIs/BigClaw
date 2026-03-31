@@ -12,24 +12,37 @@ from .models import (
     FlowTemplate,
     FlowTemplateStep,
     FlowTrigger,
+    GitHubConnector,
+    JiraConnector,
+    LinearConnector,
     Priority,
     RiskAssessment,
     RiskLevel,
     RiskSignal,
+    SourceIssue,
     Task,
     TaskState,
     TriageLabel,
     TriageRecord,
     TriageStatus,
     UsageRecord,
+    WorkflowDefinition,
+    WorkflowStep,
 )
+from . import models as _legacy_model_surface
 from . import runtime as _legacy_runtime_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_legacy_surface_module(
+    name: str,
+    export_names: list[str],
+    *,
+    source_module: object = _legacy_runtime_surface,
+    **extra_attrs: object,
+) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
@@ -84,6 +97,26 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
+_install_legacy_surface_module(
+    "connectors",
+    ["SourceIssue", "GitHubConnector", "LinearConnector", "JiraConnector"],
+    source_module=_legacy_model_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "connectors.py has been folded into models.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/connector.go",
+)
+_install_legacy_surface_module(
+    "dsl",
+    ["WorkflowDefinition", "WorkflowStep"],
+    source_module=_legacy_model_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "dsl.py has been folded into models.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -119,7 +152,6 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -184,7 +216,6 @@ from .governance import (
     render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,

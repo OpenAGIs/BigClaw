@@ -33,7 +33,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
   - workflow JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for steps, tags, outputs, approvals, and step metadata
   - workflow JSON output now preserves the Python `to_dict()` field set for templates and runs, including default trigger/status values and empty collection fields
 
-### `src/bigclaw/connectors.py`
+### folded `connectors` surface in `src/bigclaw/models.py`
 
 - `SourceIssue` -> `bigclaw-go/internal/intake/types.go`
 - `Connector` protocol -> `bigclaw-go/internal/intake/connector.go`
@@ -45,7 +45,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `map_state` -> `bigclaw-go/internal/intake/mapping.go`
 - `map_source_issue_to_task` -> `bigclaw-go/internal/intake/mapping.go`
 
-### `src/bigclaw/dsl.py`
+### folded `dsl` surface in `src/bigclaw/models.py`
 
 - `WorkflowStep` -> `bigclaw-go/internal/workflow/definition.go`
 - `WorkflowDefinition` -> `bigclaw-go/internal/workflow/definition.go`

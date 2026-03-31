@@ -1,6 +1,15 @@
+import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Protocol
+
+_VALID_WORKFLOW_STEP_KINDS = {
+    "scheduler",
+    "approval",
+    "orchestration",
+    "report",
+    "closeout",
+}
 
 
 class TaskState(str, Enum):
@@ -59,6 +68,79 @@ class BillingInterval(str, Enum):
 
 
 @dataclass
+class SourceIssue:
+    source: str
+    source_id: str
+    title: str
+    description: str
+    labels: List[str]
+    priority: str
+    state: str
+    links: Dict[str, str]
+
+
+class Connector(Protocol):
+    name: str
+
+    def fetch_issues(self, project: str, states: List[str]) -> List["SourceIssue"]:
+        ...
+
+
+class GitHubConnector:
+    name = "github"
+
+    def fetch_issues(self, project: str, states: List[str]) -> List[SourceIssue]:
+        return [
+            SourceIssue(
+                source="github",
+                source_id=f"{project}#1",
+                title="Fix flaky test",
+                description="CI flaky on macOS",
+                labels=["bug", "ci"],
+                priority="P1",
+                state=states[0] if states else "Todo",
+                links={"issue": f"https://github.com/{project}/issues/1"},
+            )
+        ]
+
+
+class LinearConnector:
+    name = "linear"
+
+    def fetch_issues(self, project: str, states: List[str]) -> List[SourceIssue]:
+        return [
+            SourceIssue(
+                source="linear",
+                source_id=f"{project}-101",
+                title="Implement queue persistence",
+                description="Need restart-safe queue",
+                labels=["platform"],
+                priority="P0",
+                state=states[0] if states else "Todo",
+                links={"issue": f"https://linear.app/{project}/issue/{project}-101"},
+            )
+        ]
+
+
+class JiraConnector:
+    name = "jira"
+
+    def fetch_issues(self, project: str, states: List[str]) -> List[SourceIssue]:
+        return [
+            SourceIssue(
+                source="jira",
+                source_id=f"{project}-23",
+                title="Runbook automation",
+                description="Automate oncall runbook",
+                labels=["ops"],
+                priority="P2",
+                state=states[0] if states else "Todo",
+                links={"issue": f"https://jira.example.com/browse/{project}-23"},
+            )
+        ]
+
+
+@dataclass
 class Task:
     task_id: str
     source: str
@@ -114,6 +196,88 @@ class Task:
             acceptance_criteria=data.get("acceptance_criteria", []),
             validation_plan=data.get("validation_plan", []),
         )
+
+
+@dataclass
+class WorkflowStep:
+    name: str
+    kind: str
+    required: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "kind": self.kind,
+            "required": self.required,
+            "metadata": self.metadata,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowStep":
+        return cls(
+            name=data["name"],
+            kind=data["kind"],
+            required=data.get("required", True),
+            metadata=data.get("metadata", {}),
+        )
+
+
+@dataclass
+class WorkflowDefinition:
+    name: str
+    steps: List[WorkflowStep] = field(default_factory=list)
+    report_path_template: Optional[str] = None
+    journal_path_template: Optional[str] = None
+    validation_evidence: List[str] = field(default_factory=list)
+    approvals: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "steps": [step.to_dict() for step in self.steps],
+            "report_path_template": self.report_path_template,
+            "journal_path_template": self.journal_path_template,
+            "validation_evidence": self.validation_evidence,
+            "approvals": self.approvals,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowDefinition":
+        return cls(
+            name=data["name"],
+            steps=[WorkflowStep.from_dict(item) for item in data.get("steps", [])],
+            report_path_template=data.get("report_path_template"),
+            journal_path_template=data.get("journal_path_template"),
+            validation_evidence=data.get("validation_evidence", []),
+            approvals=data.get("approvals", []),
+        )
+
+    @classmethod
+    def from_json(cls, text: str) -> "WorkflowDefinition":
+        return cls.from_dict(json.loads(text))
+
+    def render_path(self, template: Optional[str], task: Task, run_id: str) -> Optional[str]:
+        if template is None:
+            return None
+        return template.format(
+            workflow=self.name,
+            task_id=task.task_id,
+            source=task.source,
+            run_id=run_id,
+        )
+
+    def render_report_path(self, task: Task, run_id: str) -> Optional[str]:
+        return self.render_path(self.report_path_template, task, run_id)
+
+    def render_journal_path(self, task: Task, run_id: str) -> Optional[str]:
+        return self.render_path(self.journal_path_template, task, run_id)
+
+    def validate(self) -> None:
+        invalid_steps = [step.kind for step in self.steps if step.kind not in _VALID_WORKFLOW_STEP_KINDS]
+        if invalid_steps:
+            joined = ", ".join(sorted(set(invalid_steps)))
+            raise ValueError(f"invalid workflow step kind(s): {joined}")
 
 
 @dataclass(frozen=True)
