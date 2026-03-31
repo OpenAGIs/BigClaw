@@ -15,6 +15,8 @@
 - Removed stale README references to deleted `bigclaw-go/scripts/.../*.py`
   automation entrypoints and replaced them with the current `bigclawctl
   automation ...` commands.
+- Updated the live migration plan doc to mark the deleted `bigclaw-go/scripts`
+  Python files as retired paths rather than current batch entrypoints.
 - Split CI into a Go-mainline job and a legacy-Python migration job, and moved
   the legacy test invocation to `python3 -m pytest`, so the root workflow no
   longer reads as a Python-first repository entrypoint.
@@ -40,6 +42,7 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_planning.py -q`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./cmd/bigclawd`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation --help`
+- `rg -n "bigclaw-go/scripts/.+\\.py" README.md docs/go-cli-script-migration-plan.md -S`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
