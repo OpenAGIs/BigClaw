@@ -98,13 +98,13 @@ This lane removes redundant Python-only coverage without expanding into unrelate
 
 - This lane intentionally leaves other remaining `tests/*.py` files untouched when they do not yet have a tight Go regression home or require broader production code migration.
 - `tests/test_parallel_validation_bundle.py` was retained in `BIG-GO-948`, but this repo no longer needs it after the later Go regression bundle surfaces took ownership of the checked-in validation artifacts.
-- `tests/test_control_center.py`, `tests/test_operations.py`, and `tests/test_ui_review.py` still need broader Go-native implementation or contract surfaces before their Python tests can be removed safely.
+- `tests/test_control_center.py` was still pending in `BIG-GO-948`, but later Go queue/reporting coverage made it removable; `tests/test_operations.py` and `tests/test_ui_review.py` still need broader Go-native implementation or contract surfaces before their Python tests can be removed safely.
 
 ## Remaining Python Test Plan
 
 - `tests/test_parallel_validation_bundle.py` (removed later by `BIG-GO-1026`)
   - Plan: replace with a Go test once the validation bundle export path moves from Python script orchestration to a Go-native exporter or a stable CLI/API wrapper.
-- `tests/test_control_center.py`
+- `tests/test_control_center.py` (removed later by `BIG-GO-1026`)
   - Plan: attach to an existing Go API/export surface only after the control-center payload contract is fully represented in `bigclaw-go/internal/api`.
 - `tests/test_operations.py`
   - Plan: split by feature and migrate only after the operations report and control-center contracts are each represented in Go.

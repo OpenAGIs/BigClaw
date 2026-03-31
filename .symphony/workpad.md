@@ -1,7 +1,7 @@
 # BIG-GO-1026 Workpad
 
 ## Plan
-- Remove the live-shadow and parallel-validation bundle Python tests now covered by Go regression surfaces in `bigclaw-go/internal/regression`.
+- Remove Python tests whose surfaces now have direct Go coverage in `bigclaw-go/internal/*`, starting with bundle/report fixtures and queue control-center coverage.
 - Update in-repo references that still point to removed Python test files so validation guidance stays accurate.
 - Run targeted Go tests for the replacement coverage and repo-level grep/count checks, then record exact commands and results.
 - Commit the scoped changes and push the branch to the remote.
@@ -15,7 +15,8 @@
 
 ## Validation
 - `go test ./internal/regression -run 'TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestLiveValidationSummaryStaysAligned|TestLiveValidationIndexStaysAligned|TestSharedQueueCompanionSummaryStaysAligned|TestLane8ValidationBundleContinuationScorecardStaysAligned|TestLane8LiveShadowScorecardStaysAligned|TestLane8ShadowMatrixCorpusCoverageStaysAligned'`
-- `rg -n "test_live_shadow_bundle\\.py|test_parallel_validation_bundle\\.py" .`
+- `go test ./internal/queue ./internal/reporting`
+- `rg -n "test_live_shadow_bundle\\.py|test_parallel_validation_bundle\\.py|test_control_center\\.py" .`
 - `find . -name '*.py' | wc -l`
 - `find . -name '*.go' | wc -l`
 - `find . -name pyproject.toml -o -name setup.py -o -name setup.cfg`
