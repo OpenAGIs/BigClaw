@@ -17,7 +17,7 @@ func TestTaskMemoryStoreReusesHistoryAndInjectsRules(t *testing.T) {
 		Labels:             []string{"queue", "platform"},
 		RequiredTools:      []string{"github", "browser"},
 		AcceptanceCriteria: []string{"report-shared"},
-		ValidationPlan:     []string{"pytest", "smoke-test"},
+		ValidationPlan:     []string{"legacy-python-smoke", "smoke-test"},
 	}
 	if err := store.RememberSuccess(previous, "queue migration done"); err != nil {
 		t.Fatalf("remember success: %v", err)
@@ -30,7 +30,7 @@ func TestTaskMemoryStoreReusesHistoryAndInjectsRules(t *testing.T) {
 		Labels:             []string{"queue"},
 		RequiredTools:      []string{"github"},
 		AcceptanceCriteria: []string{"unit-tests"},
-		ValidationPlan:     []string{"pytest"},
+		ValidationPlan:     []string{"legacy-python-smoke"},
 	}
 
 	suggestion, err := store.SuggestRules(current, 3)
@@ -44,7 +44,7 @@ func TestTaskMemoryStoreReusesHistoryAndInjectsRules(t *testing.T) {
 	if !containsString(suggestion.AcceptanceCriteria, "report-shared") || !containsString(suggestion.AcceptanceCriteria, "unit-tests") {
 		t.Fatalf("unexpected acceptance criteria suggestion: %+v", suggestion.AcceptanceCriteria)
 	}
-	if !containsString(suggestion.ValidationPlan, "smoke-test") || !containsString(suggestion.ValidationPlan, "pytest") {
+	if !containsString(suggestion.ValidationPlan, "smoke-test") || !containsString(suggestion.ValidationPlan, "legacy-python-smoke") {
 		t.Fatalf("unexpected validation plan suggestion: %+v", suggestion.ValidationPlan)
 	}
 }

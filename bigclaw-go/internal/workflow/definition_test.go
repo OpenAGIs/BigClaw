@@ -9,7 +9,7 @@ import (
 
 func TestDefinitionParsesAndRendersTemplates(t *testing.T) {
 	definition, err := ParseDefinition(
-		`{"name":"release-closeout","steps":[{"name":"execute","kind":"scheduler"}],"report_path_template":"reports/{task_id}/{run_id}.md","journal_path_template":"journals/{workflow}/{run_id}.json","validation_evidence":["pytest"],"approvals":["ops-review"]}`,
+		`{"name":"release-closeout","steps":[{"name":"execute","kind":"scheduler"}],"report_path_template":"reports/{task_id}/{run_id}.md","journal_path_template":"journals/{workflow}/{run_id}.json","validation_evidence":["legacy-python-smoke"],"approvals":["ops-review"]}`,
 	)
 	if err != nil {
 		t.Fatalf("parse definition: %v", err)

@@ -20,7 +20,7 @@ func TestBuildCloseoutRendersWorkflowDefinitionArtifacts(t *testing.T) {
 				"name":"release-closeout",
 				"report_path_template":"reports/{task_id}/{run_id}.md",
 				"journal_path_template":"journals/{workflow}/{run_id}.json",
-				"validation_evidence":["pytest","smoke"],
+				"validation_evidence":["legacy-python-smoke","smoke"],
 				"approvals":["ops-review","security-review"]
 			}`,
 		},
@@ -43,7 +43,7 @@ func TestBuildCloseoutRendersWorkflowDefinitionArtifacts(t *testing.T) {
 	if closeout.JournalPath != "journals/release-closeout/run-123.json" {
 		t.Fatalf("expected rendered journal path, got %+v", closeout)
 	}
-	if len(closeout.ValidationEvidence) != 2 || closeout.ValidationEvidence[0] != "pytest" || closeout.ValidationEvidence[1] != "smoke" {
+	if len(closeout.ValidationEvidence) != 2 || closeout.ValidationEvidence[0] != "legacy-python-smoke" || closeout.ValidationEvidence[1] != "smoke" {
 		t.Fatalf("expected validation evidence from workflow definition, got %+v", closeout.ValidationEvidence)
 	}
 	if len(closeout.RequiredApprovals) != 2 || closeout.RequiredApprovals[0] != "ops-review" || closeout.RequiredApprovals[1] != "security-review" {

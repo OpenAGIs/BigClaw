@@ -18,14 +18,14 @@ func TestRunDefinitionWritesArtifactsAndAcceptsCompleteEvidence(t *testing.T) {
 		},
 		ReportPathTemplate:  filepath.Join(dir, "reports", "{task_id}", "{run_id}.md"),
 		JournalPathTemplate: filepath.Join(dir, "journals", "{workflow}", "{run_id}.json"),
-		ValidationEvidence:  []string{"pytest", "report-shared"},
+		ValidationEvidence:  []string{"legacy-python-smoke", "report-shared"},
 	}
 	task := domain.Task{
 		ID:                 "BIG-401-flow",
 		Source:             "linear",
 		Title:              "Run workflow definition",
 		AcceptanceCriteria: []string{"report-shared"},
-		ValidationPlan:     []string{"pytest"},
+		ValidationPlan:     []string{"legacy-python-smoke"},
 	}
 
 	result, err := RunDefinition(task, definition, "run-dsl-1")

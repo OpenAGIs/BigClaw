@@ -56,13 +56,13 @@ func TestEventBusCICompletedMarksRunCompleted(t *testing.T) {
 
 	bus := NewEventBus(ledger)
 	updated, err := bus.Publish(NewBusEvent(CICompletedEvent, run.RunID, "github-actions", map[string]any{
-		"workflow":   "pytest",
+		"workflow":   "legacy-python-smoke",
 		"conclusion": "success",
 	}))
 	if err != nil {
 		t.Fatalf("publish ci event: %v", err)
 	}
-	if updated.Status != "completed" || updated.Summary != "CI workflow pytest completed with success" {
+	if updated.Status != "completed" || updated.Summary != "CI workflow legacy-python-smoke completed with success" {
 		t.Fatalf("unexpected updated run: %+v", updated)
 	}
 
