@@ -4,6 +4,7 @@ import types
 from . import control_surfaces as _control_surfaces
 from . import repo_surfaces as _repo_surfaces
 from . import support_surfaces as _support_surfaces
+from . import utility_surfaces as _utility_surfaces
 from .models import (
     BillingInterval,
     BillingRate,
@@ -37,6 +38,54 @@ def _install_compat_module(source_module: types.ModuleType, name: str, export_na
     globals()[name] = module
 
 
+_install_compat_module(
+    _utility_surfaces,
+    "cost_control",
+    ["BudgetDecision", "CostController"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/costcontrol/controller.go",
+)
+_install_compat_module(
+    _utility_surfaces,
+    "roadmap",
+    ["EpicMilestone", "ExecutionPackRoadmap", "build_execution_pack_roadmap"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/regression/roadmap_contract_test.go",
+)
+_install_compat_module(
+    _utility_surfaces,
+    "memory",
+    ["MemoryPattern", "TaskMemoryStore"],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
+)
+_install_compat_module(
+    _utility_surfaces,
+    "validation_policy",
+    ["REQUIRED_REPORT_ARTIFACTS", "ValidationReportDecision", "enforce_validation_report_policy"],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
+)
+_install_compat_module(
+    _utility_surfaces,
+    "parallel_refill",
+    ["ParallelIssueQueue", "issue_state_map"],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/refill/queue.go",
+)
+_install_compat_module(
+    _utility_surfaces,
+    "legacy_shim",
+    [
+        "LEGACY_PYTHON_WRAPPER_NOTICE",
+        "append_missing_flag",
+        "build_bigclawctl_exec_args",
+        "repo_root_from_script",
+        "run_bigclawctl_shim",
+        "build_workspace_bootstrap_args",
+        "translate_workspace_validate_args",
+        "build_workspace_validate_args",
+        "build_github_sync_args",
+        "build_refill_args",
+        "build_workspace_runtime_bootstrap_args",
+    ],
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/legacyshim/wrappers.go",
+)
 _install_compat_module(
     _support_surfaces,
     "connectors",
@@ -373,7 +422,7 @@ from .control_surfaces import (
 )
 from .dsl import WorkflowDefinition, WorkflowStep
 from .support_surfaces import map_source_issue_to_task
-from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
+from .utility_surfaces import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
