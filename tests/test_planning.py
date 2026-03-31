@@ -32,13 +32,13 @@ def test_candidate_backlog_round_trip_preserves_manifest_shape() -> None:
                 priority="P0",
                 owner="platform-ui",
                 outcome="Unify console release gates and promotion evidence.",
-                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                validation_command="cd bigclaw-go && go test ./internal/product",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
                 evidence_links=[
                     EvidenceLink(
                         label="ui-acceptance",
-                        target="tests/test_design_system.py",
+                        target="bigclaw-go/internal/product/console_test.go",
                         capability="release-gate",
                         note="role-permission and audit readiness coverage",
                     )
@@ -77,7 +77,7 @@ def test_candidate_backlog_ranks_ready_items_ahead_of_blocked_work() -> None:
                 priority="P1",
                 owner="platform-ui",
                 outcome="Unify console release gates and promotion evidence.",
-                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                validation_command="cd bigclaw-go && go test ./internal/product",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
             ),
@@ -102,7 +102,7 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
                 priority="P0",
                 owner="platform-ui",
                 outcome="Unify console release gates and promotion evidence.",
-                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                validation_command="cd bigclaw-go && go test ./internal/product",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
             ),
@@ -171,7 +171,7 @@ def test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready() -> None:
                 priority="P0",
                 owner="platform-ui",
                 outcome="Unify console release gates and promotion evidence.",
-                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                validation_command="cd bigclaw-go && go test ./internal/product",
                 capabilities=["release-gate"],
                 evidence=["acceptance-suite", "validation-report"],
             ),
@@ -259,13 +259,13 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
                 priority="P0",
                 owner="platform-ui",
                 outcome="Unify console release gates and promotion evidence.",
-                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                validation_command="cd bigclaw-go && go test ./internal/product",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
                 evidence_links=[
                     EvidenceLink(
                         label="ui-acceptance",
-                        target="tests/test_design_system.py",
+                        target="bigclaw-go/internal/product/console_test.go",
                         capability="release-gate",
                     )
                 ],
@@ -299,8 +299,8 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
         "- candidate-release-control: Release control center "
         "priority=P0 owner=platform-ui score=100 ready=True"
     ) in report
-    assert "validation=python3 -m pytest tests/test_design_system.py -q" in report
-    assert "- ui-acceptance -> tests/test_design_system.py capability=release-gate" in report
+    assert "validation=cd bigclaw-go && go test ./internal/product" in report
+    assert "- ui-acceptance -> bigclaw-go/internal/product/console_test.go capability=release-gate" in report
     assert "- Missing evidence: none" in report
     assert "- Baseline ready: True" in report
     assert "- Baseline findings: none" in report
@@ -314,7 +314,7 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
         priority="P0",
         owner="ops-platform",
         outcome="Package command-center and approval surfaces with linked evidence.",
-        validation_command="python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
+        validation_command="cd bigclaw-go && go test ./internal/product ./internal/api",
         capabilities=["ops-control", "saved-views"],
         evidence=["weekly-review", "validation-report"],
         evidence_links=[
@@ -326,7 +326,7 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
             ),
             EvidenceLink(
                 label="saved-view-report",
-                target="src/bigclaw/saved_views.py",
+                target="bigclaw-go/internal/product/saved_views.go",
                 capability="saved-views",
                 note="team saved views and digest evidence",
             ),
@@ -446,8 +446,8 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "src/bigclaw/workflow.py",
         "bigclaw-go/internal/workflow/engine_test.go",
         "bigclaw-go/internal/worker/runtime_test.go",
-        "src/bigclaw/saved_views.py",
-        "tests/test_saved_views.py",
+        "bigclaw-go/internal/product/saved_views.go",
+        "bigclaw-go/internal/product/saved_views_test.go",
         "src/bigclaw/evaluation.py",
         "tests/test_evaluation.py",
     }

@@ -345,23 +345,23 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py "
-                    "tests/test_console_ia.py tests/test_ui_review.py -q"
+                    "PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q && "
+                    "(cd bigclaw-go && go test ./internal/product ./internal/api)"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
                 evidence_links=[
                     EvidenceLink(
                         label="design-system-audit",
-                        target="src/bigclaw/design_system.py",
+                        target="bigclaw-go/internal/product/console.go",
                         capability="release-gate",
-                        note="component inventory, accessibility, and UI acceptance coverage",
+                        note="Go-owned navigation, home cards, and console design system defaults",
                     ),
                     EvidenceLink(
                         label="console-ia-contract",
-                        target="src/bigclaw/console_ia.py",
+                        target="bigclaw-go/internal/api/v2.go",
                         capability="release-gate",
-                        note="global navigation, top bar, filters, and state contracts",
+                        note="Go-owned console navigation, saved-view, and operator API contract surfaces",
                     ),
                     EvidenceLink(
                         label="ui-review-pack",
@@ -371,15 +371,15 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="ui-acceptance-tests",
-                        target="tests/test_design_system.py",
+                        target="bigclaw-go/internal/product/console_test.go",
                         capability="release-gate",
-                        note="role-permission, data accuracy, and performance audits",
+                        note="Go console design-system and navigation coverage",
                     ),
                     EvidenceLink(
                         label="console-shell-tests",
-                        target="tests/test_console_ia.py",
+                        target="bigclaw-go/internal/api/expansion_test.go",
                         capability="release-gate",
-                        note="console shell and interaction draft release readiness",
+                        note="Go console shell, saved-view, and operator endpoint coverage",
                     ),
                     EvidenceLink(
                         label="review-pack-tests",
@@ -398,8 +398,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
                     "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
-                    "tests/test_saved_views.py tests/test_evaluation.py -q && "
-                    "(cd bigclaw-go && go test ./internal/worker ./internal/workflow ./internal/scheduler)"
+                    "tests/test_evaluation.py -q && "
+                    "(cd bigclaw-go && go test ./internal/product ./internal/api ./internal/worker ./internal/workflow ./internal/scheduler)"
                 ),
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
                 evidence=["weekly-review", "validation-report"],
@@ -448,15 +448,15 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="saved-views-src",
-                        target="src/bigclaw/saved_views.py",
+                        target="bigclaw-go/internal/product/saved_views.go",
                         capability="saved-views",
-                        note="saved views, digest subscriptions, and governed filters",
+                        note="Go-owned saved views, digest subscriptions, and governed filters",
                     ),
                     EvidenceLink(
                         label="saved-views-tests",
-                        target="tests/test_saved_views.py",
+                        target="bigclaw-go/internal/product/saved_views_test.go",
                         capability="saved-views",
-                        note="saved-view audit coverage",
+                        note="Go saved-view audit coverage",
                     ),
                     EvidenceLink(
                         label="simulation-src",
