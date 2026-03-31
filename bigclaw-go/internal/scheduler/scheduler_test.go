@@ -89,6 +89,33 @@ func TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision(t *testing.
 	}
 }
 
+func TestSchedulerAssessmentComputedHighRiskRequiresApprovalAndSecurityHandoff(t *testing.T) {
+	s := New()
+	assessment := s.Assess(domain.Task{
+		ID:            "risk-score-1",
+		Source:        "linear",
+		Title:         "security deploy",
+		Description:   "prod deploy",
+		Labels:        []string{"security", "prod"},
+		Priority:      1,
+		RequiredTools: []string{"deploy"},
+		BudgetCents:   500,
+	}, QuotaSnapshot{BudgetRemaining: 100})
+
+	if assessment.Decision.Accepted {
+		t.Fatalf("expected rejected decision for budget-blocked computed high-risk assessment, got %+v", assessment.Decision)
+	}
+	if assessment.Risk.Total != 70 || assessment.Risk.Level != domain.RiskHigh || !assessment.Risk.RequiresApproval {
+		t.Fatalf("expected computed high-risk score to require approval, got %+v", assessment.Risk)
+	}
+	if assessment.HandoffRequest == nil || assessment.HandoffRequest.TargetTeam != "security" {
+		t.Fatalf("expected security handoff request, got %+v", assessment.HandoffRequest)
+	}
+	if len(assessment.HandoffRequest.RequiredApprovals) != 1 || assessment.HandoffRequest.RequiredApprovals[0] != "security-review" {
+		t.Fatalf("expected security-review approval requirement, got %+v", assessment.HandoffRequest)
+	}
+}
+
 func TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier(t *testing.T) {
 	s := New()
 	assessment := s.Assess(domain.Task{
