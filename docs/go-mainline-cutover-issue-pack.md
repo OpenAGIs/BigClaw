@@ -247,7 +247,6 @@ Python source:
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_board.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/v2.go`
@@ -436,7 +435,6 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_board.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
 
