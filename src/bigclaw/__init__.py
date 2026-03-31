@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import stat
 import subprocess
@@ -35,9 +36,6 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-from .observability import ObservabilityLedger, RepoSyncAudit, TaskRun, utc_now
-
-
 def _install_support_module(name: str, **attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     module.__dict__.update(attrs)
@@ -1242,7 +1240,12 @@ PULL_REQUEST_COMMENT_EVENT = "pull_request.comment"
 CI_COMPLETED_EVENT = "ci.completed"
 TASK_FAILED_EVENT = "task.failed"
 
-EventSubscriber = Callable[["BusEvent", TaskRun], None]
+
+def _event_bus_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+EventSubscriber = Callable[["BusEvent", "TaskRun"], None]
 
 
 @dataclass(frozen=True)
@@ -1251,7 +1254,7 @@ class BusEvent:
     run_id: str
     actor: str
     details: Dict[str, Any] = field(default_factory=dict)
-    timestamp: str = field(default_factory=utc_now)
+    timestamp: str = field(default_factory=_event_bus_now)
 
 
 class EventBus:
@@ -2978,6 +2981,329 @@ _install_support_module(
 )
 
 
+def collaboration_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+@dataclass
+class CollaborationComment:
+    comment_id: str
+    author: str
+    body: str
+    created_at: str = field(default_factory=collaboration_now)
+    mentions: List[str] = field(default_factory=list)
+    anchor: str = ""
+    status: str = "open"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "comment_id": self.comment_id,
+            "author": self.author,
+            "body": self.body,
+            "created_at": self.created_at,
+            "mentions": self.mentions,
+            "anchor": self.anchor,
+            "status": self.status,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CollaborationComment":
+        return cls(
+            comment_id=str(data.get("comment_id", "")),
+            author=str(data.get("author", "")),
+            body=str(data.get("body", "")),
+            created_at=str(data.get("created_at", collaboration_now())),
+            mentions=[str(value) for value in data.get("mentions", [])],
+            anchor=str(data.get("anchor", "")),
+            status=str(data.get("status", "open")),
+        )
+
+
+@dataclass
+class DecisionNote:
+    decision_id: str
+    author: str
+    outcome: str
+    summary: str
+    recorded_at: str = field(default_factory=collaboration_now)
+    mentions: List[str] = field(default_factory=list)
+    related_comment_ids: List[str] = field(default_factory=list)
+    follow_up: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "decision_id": self.decision_id,
+            "author": self.author,
+            "outcome": self.outcome,
+            "summary": self.summary,
+            "recorded_at": self.recorded_at,
+            "mentions": self.mentions,
+            "related_comment_ids": self.related_comment_ids,
+            "follow_up": self.follow_up,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DecisionNote":
+        return cls(
+            decision_id=str(data.get("decision_id", "")),
+            author=str(data.get("author", "")),
+            outcome=str(data.get("outcome", "")),
+            summary=str(data.get("summary", "")),
+            recorded_at=str(data.get("recorded_at", collaboration_now())),
+            mentions=[str(value) for value in data.get("mentions", [])],
+            related_comment_ids=[str(value) for value in data.get("related_comment_ids", [])],
+            follow_up=str(data.get("follow_up", "")),
+        )
+
+
+@dataclass
+class CollaborationThread:
+    surface: str
+    target_id: str
+    comments: List[CollaborationComment] = field(default_factory=list)
+    decisions: List[DecisionNote] = field(default_factory=list)
+
+    @property
+    def participant_count(self) -> int:
+        participants = {comment.author for comment in self.comments} | {
+            decision.author for decision in self.decisions
+        }
+        return len({value for value in participants if value})
+
+    @property
+    def mention_count(self) -> int:
+        return sum(len(comment.mentions) for comment in self.comments) + sum(
+            len(decision.mentions) for decision in self.decisions
+        )
+
+    @property
+    def open_comment_count(self) -> int:
+        return sum(1 for comment in self.comments if comment.status != "resolved")
+
+    @property
+    def recommendation(self) -> str:
+        if self.decisions:
+            return "share-latest-decision"
+        if self.open_comment_count:
+            return "resolve-open-comments"
+        if self.comments:
+            return "monitor-collaboration"
+        return "no-collaboration-recorded"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "surface": self.surface,
+            "target_id": self.target_id,
+            "comments": [comment.to_dict() for comment in self.comments],
+            "decisions": [decision.to_dict() for decision in self.decisions],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CollaborationThread":
+        return cls(
+            surface=str(data.get("surface", "")),
+            target_id=str(data.get("target_id", "")),
+            comments=[CollaborationComment.from_dict(value) for value in data.get("comments", [])],
+            decisions=[DecisionNote.from_dict(value) for value in data.get("decisions", [])],
+        )
+
+
+def build_collaboration_thread(
+    surface: str,
+    target_id: str,
+    *,
+    comments: Optional[Sequence[CollaborationComment]] = None,
+    decisions: Optional[Sequence[DecisionNote]] = None,
+) -> CollaborationThread:
+    return CollaborationThread(
+        surface=surface,
+        target_id=target_id,
+        comments=list(comments or []),
+        decisions=list(decisions or []),
+    )
+
+
+def merge_collaboration_threads(
+    *,
+    target_id: str,
+    native_thread: Optional[CollaborationThread],
+    repo_thread: Optional[CollaborationThread],
+) -> Optional[CollaborationThread]:
+    if native_thread is None and repo_thread is None:
+        return None
+
+    merged_comments: List[CollaborationComment] = []
+    merged_decisions: List[DecisionNote] = []
+    for thread in [native_thread, repo_thread]:
+        if thread is None:
+            continue
+        merged_comments.extend(thread.comments)
+        merged_decisions.extend(thread.decisions)
+
+    merged_comments.sort(key=lambda item: item.created_at)
+    merged_decisions.sort(key=lambda item: item.recorded_at)
+    return CollaborationThread(
+        surface="merged",
+        target_id=target_id,
+        comments=merged_comments,
+        decisions=merged_decisions,
+    )
+
+
+def build_collaboration_thread_from_audits(
+    audits: Sequence[Dict[str, Any]],
+    *,
+    surface: str,
+    target_id: str,
+) -> Optional[CollaborationThread]:
+    comments: List[CollaborationComment] = []
+    decisions: List[DecisionNote] = []
+
+    for audit in audits:
+        details = audit.get("details", {})
+        audit_surface = str(details.get("surface", "run"))
+        if audit_surface != surface:
+            continue
+
+        action = audit.get("action")
+        if action == "collaboration.comment":
+            comments.append(
+                CollaborationComment(
+                    comment_id=str(details.get("comment_id", "")),
+                    author=str(audit.get("actor", "")),
+                    body=str(details.get("body", "")),
+                    created_at=str(audit.get("timestamp", collaboration_now())),
+                    mentions=[str(value) for value in details.get("mentions", [])],
+                    anchor=str(details.get("anchor", "")),
+                    status=str(details.get("status", "open")),
+                )
+            )
+        if action == "collaboration.decision":
+            decisions.append(
+                DecisionNote(
+                    decision_id=str(details.get("decision_id", "")),
+                    author=str(audit.get("actor", "")),
+                    outcome=str(audit.get("outcome", "")),
+                    summary=str(details.get("summary", "")),
+                    recorded_at=str(audit.get("timestamp", collaboration_now())),
+                    mentions=[str(value) for value in details.get("mentions", [])],
+                    related_comment_ids=[str(value) for value in details.get("related_comment_ids", [])],
+                    follow_up=str(details.get("follow_up", "")),
+                )
+            )
+
+    if not comments and not decisions:
+        return None
+    return CollaborationThread(surface=surface, target_id=target_id, comments=comments, decisions=decisions)
+
+
+def render_collaboration_lines(thread: Optional[CollaborationThread]) -> List[str]:
+    if thread is None:
+        return []
+
+    lines = [
+        "## Collaboration",
+        "",
+        f"- Surface: {thread.surface}",
+        f"- Target: {thread.target_id}",
+        f"- Participants: {thread.participant_count}",
+        f"- Comments: {len(thread.comments)}",
+        f"- Open Comments: {thread.open_comment_count}",
+        f"- Mentions: {thread.mention_count}",
+        f"- Decision Notes: {len(thread.decisions)}",
+        f"- Recommendation: {thread.recommendation}",
+    ]
+    lines.extend(["", "## Comments", ""])
+    if thread.comments:
+        for comment in thread.comments:
+            mentions = ", ".join(comment.mentions) if comment.mentions else "none"
+            lines.append(
+                f"- {comment.comment_id}: author={comment.author} status={comment.status} "
+                f"anchor={comment.anchor or 'none'} mentions={mentions} body={comment.body}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Decision Notes", ""])
+    if thread.decisions:
+        for decision in thread.decisions:
+            mentions = ", ".join(decision.mentions) if decision.mentions else "none"
+            related = ", ".join(decision.related_comment_ids) if decision.related_comment_ids else "none"
+            lines.append(
+                f"- {decision.decision_id}: outcome={decision.outcome} author={decision.author} "
+                f"mentions={mentions} related={related} summary={decision.summary} follow_up={decision.follow_up or 'none'}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.append("")
+    return lines
+
+
+def render_collaboration_panel_html(title: str, description: str, thread: Optional[CollaborationThread]) -> str:
+    if thread is None:
+        return f"""
+        <section class="surface">
+          <h2>{escape(title)}</h2>
+          <p>{escape(description)}</p>
+          <div class="empty">No collaboration recorded for this surface.</div>
+        </section>
+        """
+
+    comment_items = "".join(
+        f"""
+        <article class="resource-card">
+          <span class="kicker">{escape(comment.comment_id)}</span>
+          <strong>{escape(comment.author)}</strong>
+          <p>{escape(comment.body)}</p>
+          <span class="resource-meta">status={escape(comment.status)} | anchor={escape(comment.anchor or 'none')} | mentions={escape(', '.join(comment.mentions) if comment.mentions else 'none')}</span>
+        </article>
+        """
+        for comment in thread.comments
+    ) or '<div class="empty">No comments recorded.</div>'
+    decision_items = "".join(
+        f"""
+        <article class="resource-card" data-tone="report">
+          <span class="kicker">{escape(decision.decision_id)}</span>
+          <strong>{escape(decision.outcome)}</strong>
+          <p>{escape(decision.summary)}</p>
+          <span class="resource-meta">author={escape(decision.author)} | mentions={escape(', '.join(decision.mentions) if decision.mentions else 'none')} | related={escape(', '.join(decision.related_comment_ids) if decision.related_comment_ids else 'none')} | follow_up={escape(decision.follow_up or 'none')}</span>
+        </article>
+        """
+        for decision in thread.decisions
+    ) or '<div class="empty">No decision notes recorded.</div>'
+
+    return f"""
+    <section class="surface">
+      <h2>{escape(title)}</h2>
+      <p>{escape(description)}</p>
+      <p class="meta">participants={thread.participant_count} | comments={len(thread.comments)} | open={thread.open_comment_count} | mentions={thread.mention_count} | decisions={len(thread.decisions)}</p>
+    </section>
+    <section class="surface">
+      <h3>Comments</h3>
+      <div class="resource-grid">{comment_items}</div>
+    </section>
+    <section class="surface">
+      <h3>Decision Notes</h3>
+      <div class="resource-grid">{decision_items}</div>
+    </section>
+    """
+
+
+_install_support_module(
+    "collaboration",
+    collaboration_now=collaboration_now,
+    CollaborationComment=CollaborationComment,
+    DecisionNote=DecisionNote,
+    CollaborationThread=CollaborationThread,
+    build_collaboration_thread=build_collaboration_thread,
+    merge_collaboration_threads=merge_collaboration_threads,
+    build_collaboration_thread_from_audits=build_collaboration_thread_from_audits,
+    render_collaboration_lines=render_collaboration_lines,
+    render_collaboration_panel_html=render_collaboration_panel_html,
+)
+
+
 def _repo_board_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -3148,14 +3474,21 @@ _install_support_module(
 )
 
 
-from . import runtime as _legacy_runtime_surface
-
-
 def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
-    for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
     module.__dict__.update(extra_attrs)
+
+    def __getattr__(attr_name: str) -> object:
+        if attr_name in extra_attrs:
+            return extra_attrs[attr_name]
+        if attr_name not in export_names:
+            raise AttributeError(f"module {module.__name__!r} has no attribute {attr_name!r}")
+        runtime_module = importlib.import_module(f"{__name__}.runtime")
+        value = getattr(runtime_module, attr_name)
+        module.__dict__[attr_name] = value
+        return value
+
+    module.__dict__["__getattr__"] = __getattr__
     sys.modules[module.__name__] = module
     globals()[name] = module
 
@@ -3163,7 +3496,7 @@ def _install_legacy_surface_module(name: str, export_names: list[str], **extra_a
 _install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    LEGACY_MAINLINE_STATUS="bigclaw-go is the sole implementation mainline for active development.",
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/queue/queue.go",
 )
 _install_legacy_surface_module(
@@ -3177,19 +3510,19 @@ _install_legacy_surface_module(
         "PremiumOrchestrationPolicy",
         "render_orchestration_plan",
     ],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    LEGACY_MAINLINE_STATUS="bigclaw-go is the sole implementation mainline for active development.",
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
 )
 _install_legacy_surface_module(
     "scheduler",
     ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    LEGACY_MAINLINE_STATUS="bigclaw-go is the sole implementation mainline for active development.",
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/scheduler/scheduler.go",
 )
 _install_legacy_surface_module(
     "workflow",
     ["AcceptanceDecision", "AcceptanceGate", "JournalEntry", "WorkflowEngine", "WorkflowRunResult", "WorkpadJournal"],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    LEGACY_MAINLINE_STATUS="bigclaw-go is the sole implementation mainline for active development.",
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
 )
 _install_legacy_surface_module(
@@ -3210,40 +3543,6 @@ _install_legacy_surface_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
 
-from .runtime import (
-    AcceptanceDecision,
-    AcceptanceGate,
-    ClawWorkerRuntime,
-    CrossDepartmentOrchestrator,
-    DeadLetterEntry,
-    DepartmentHandoff,
-    ExecutionRecord,
-    HandoffRequest,
-    JournalEntry,
-    OrchestrationPlan,
-    OrchestrationPolicyDecision,
-    PersistentTaskQueue,
-    PremiumOrchestrationPolicy,
-    RepoGovernanceEnforcer,
-    RepoGovernancePolicy,
-    RepoGovernanceResult,
-    SandboxProfile,
-    SandboxRouter,
-    Scheduler,
-    SchedulerDecision,
-    ServerMonitoring,
-    ToolCallResult,
-    ToolPolicy,
-    ToolRuntime,
-    WorkerExecutionResult,
-    WorkflowEngine,
-    WorkflowRunResult,
-    WorkpadJournal,
-    create_server,
-    render_orchestration_plan,
-    run_server,
-    warn_legacy_service_surface,
-)
 from .repo_plane import RepoAgent, RepoSpace, RunCommitLink
 from .design_system import (
     AuditRequirement,
@@ -3293,35 +3592,7 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
-from .saved_views import (
-    AlertDigestSubscription,
-    SavedView,
-    SavedViewCatalog,
-    SavedViewCatalogAudit,
-    SavedViewFilter,
-    SavedViewLibrary,
-    render_saved_view_report,
-)
 from .workspace_bootstrap import WorkspaceBootstrapError, bootstrap_workspace, cleanup_workspace
-from .audit_events import (
-    APPROVAL_RECORDED_EVENT,
-    BUDGET_OVERRIDE_EVENT,
-    FLOW_HANDOFF_EVENT,
-    MANUAL_TAKEOVER_EVENT,
-    P0_AUDIT_EVENT_SPECS,
-    SCHEDULER_DECISION_EVENT,
-    AuditEventSpec,
-    get_audit_event_spec,
-    missing_required_fields,
-)
-from .observability import GitSyncTelemetry, PullRequestFreshness, RunCloseout
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
@@ -3415,6 +3686,461 @@ _install_support_module(
     RepoPermissionContract=RepoPermissionContract,
     repo_required_audit_fields=repo_required_audit_fields,
     missing_repo_audit_fields=missing_repo_audit_fields,
+)
+
+VALID_VIEW_VISIBILITY = {"private", "team", "organization"}
+VALID_DIGEST_CHANNELS = {"email", "slack", "webhook"}
+VALID_DIGEST_CADENCES = {"hourly", "daily", "weekly"}
+
+
+@dataclass(frozen=True)
+class SavedViewFilter:
+    field: str
+    operator: str
+    value: str
+
+    def to_dict(self) -> Dict[str, str]:
+        return {"field": self.field, "operator": self.operator, "value": self.value}
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "SavedViewFilter":
+        return cls(field=str(data["field"]), operator=str(data["operator"]), value=str(data["value"]))
+
+
+@dataclass
+class SavedView:
+    view_id: str
+    name: str
+    route: str
+    owner: str
+    visibility: str = "private"
+    filters: List[SavedViewFilter] = field(default_factory=list)
+    sort_by: str = ""
+    pinned: bool = False
+    is_default: bool = False
+
+    @property
+    def filter_count(self) -> int:
+        return len(self.filters)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "view_id": self.view_id,
+            "name": self.name,
+            "route": self.route,
+            "owner": self.owner,
+            "visibility": self.visibility,
+            "filters": [view_filter.to_dict() for view_filter in self.filters],
+            "sort_by": self.sort_by,
+            "pinned": self.pinned,
+            "is_default": self.is_default,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "SavedView":
+        return cls(
+            view_id=str(data["view_id"]),
+            name=str(data["name"]),
+            route=str(data["route"]),
+            owner=str(data["owner"]),
+            visibility=str(data.get("visibility", "private")),
+            filters=[SavedViewFilter.from_dict(item) for item in data.get("filters", [])],
+            sort_by=str(data.get("sort_by", "")),
+            pinned=bool(data.get("pinned", False)),
+            is_default=bool(data.get("is_default", False)),
+        )
+
+
+@dataclass
+class AlertDigestSubscription:
+    subscription_id: str
+    saved_view_id: str
+    channel: str
+    cadence: str
+    recipients: List[str] = field(default_factory=list)
+    include_empty_results: bool = False
+    muted: bool = False
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "subscription_id": self.subscription_id,
+            "saved_view_id": self.saved_view_id,
+            "channel": self.channel,
+            "cadence": self.cadence,
+            "recipients": list(self.recipients),
+            "include_empty_results": self.include_empty_results,
+            "muted": self.muted,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "AlertDigestSubscription":
+        return cls(
+            subscription_id=str(data["subscription_id"]),
+            saved_view_id=str(data["saved_view_id"]),
+            channel=str(data["channel"]),
+            cadence=str(data["cadence"]),
+            recipients=[str(recipient) for recipient in data.get("recipients", [])],
+            include_empty_results=bool(data.get("include_empty_results", False)),
+            muted=bool(data.get("muted", False)),
+        )
+
+
+@dataclass
+class SavedViewCatalog:
+    name: str
+    version: str
+    views: List[SavedView] = field(default_factory=list)
+    subscriptions: List[AlertDigestSubscription] = field(default_factory=list)
+
+    @property
+    def view_index(self) -> Dict[str, SavedView]:
+        return {view.view_id: view for view in self.views}
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "views": [view.to_dict() for view in self.views],
+            "subscriptions": [subscription.to_dict() for subscription in self.subscriptions],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "SavedViewCatalog":
+        return cls(
+            name=str(data["name"]),
+            version=str(data["version"]),
+            views=[SavedView.from_dict(item) for item in data.get("views", [])],
+            subscriptions=[AlertDigestSubscription.from_dict(item) for item in data.get("subscriptions", [])],
+        )
+
+
+@dataclass
+class SavedViewCatalogAudit:
+    catalog_name: str
+    version: str
+    view_count: int
+    subscription_count: int
+    duplicate_view_names: Dict[str, List[str]] = field(default_factory=dict)
+    invalid_visibility_views: List[str] = field(default_factory=list)
+    views_missing_filters: List[str] = field(default_factory=list)
+    duplicate_default_views: Dict[str, List[str]] = field(default_factory=dict)
+    orphan_subscriptions: List[str] = field(default_factory=list)
+    subscriptions_missing_recipients: List[str] = field(default_factory=list)
+    subscriptions_with_invalid_channel: List[str] = field(default_factory=list)
+    subscriptions_with_invalid_cadence: List[str] = field(default_factory=list)
+
+    @property
+    def readiness_score(self) -> float:
+        if self.view_count == 0:
+            return 0.0
+        penalties = (
+            len(self.duplicate_view_names)
+            + len(self.invalid_visibility_views)
+            + len(self.views_missing_filters)
+            + len(self.duplicate_default_views)
+            + len(self.orphan_subscriptions)
+            + len(self.subscriptions_missing_recipients)
+            + len(self.subscriptions_with_invalid_channel)
+            + len(self.subscriptions_with_invalid_cadence)
+        )
+        return round(max(0.0, 100 - ((penalties * 100) / self.view_count)), 1)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "catalog_name": self.catalog_name,
+            "version": self.version,
+            "view_count": self.view_count,
+            "subscription_count": self.subscription_count,
+            "duplicate_view_names": {
+                key: list(values) for key, values in self.duplicate_view_names.items()
+            },
+            "invalid_visibility_views": list(self.invalid_visibility_views),
+            "views_missing_filters": list(self.views_missing_filters),
+            "duplicate_default_views": {
+                key: list(values) for key, values in self.duplicate_default_views.items()
+            },
+            "orphan_subscriptions": list(self.orphan_subscriptions),
+            "subscriptions_missing_recipients": list(self.subscriptions_missing_recipients),
+            "subscriptions_with_invalid_channel": list(self.subscriptions_with_invalid_channel),
+            "subscriptions_with_invalid_cadence": list(self.subscriptions_with_invalid_cadence),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "SavedViewCatalogAudit":
+        return cls(
+            catalog_name=str(data["catalog_name"]),
+            version=str(data["version"]),
+            view_count=int(data.get("view_count", 0)),
+            subscription_count=int(data.get("subscription_count", 0)),
+            duplicate_view_names={
+                str(key): [str(value) for value in values]
+                for key, values in dict(data.get("duplicate_view_names", {})).items()
+            },
+            invalid_visibility_views=[str(name) for name in data.get("invalid_visibility_views", [])],
+            views_missing_filters=[str(name) for name in data.get("views_missing_filters", [])],
+            duplicate_default_views={
+                str(key): [str(value) for value in values]
+                for key, values in dict(data.get("duplicate_default_views", {})).items()
+            },
+            orphan_subscriptions=[str(name) for name in data.get("orphan_subscriptions", [])],
+            subscriptions_missing_recipients=[
+                str(name) for name in data.get("subscriptions_missing_recipients", [])
+            ],
+            subscriptions_with_invalid_channel=[
+                str(name) for name in data.get("subscriptions_with_invalid_channel", [])
+            ],
+            subscriptions_with_invalid_cadence=[
+                str(name) for name in data.get("subscriptions_with_invalid_cadence", [])
+            ],
+        )
+
+
+class SavedViewLibrary:
+    def audit(self, catalog: SavedViewCatalog) -> SavedViewCatalogAudit:
+        duplicate_view_names: Dict[str, List[str]] = {}
+        invalid_visibility_views: List[str] = []
+        views_missing_filters: List[str] = []
+        duplicate_default_views: Dict[str, List[str]] = {}
+        orphan_subscriptions: List[str] = []
+        subscriptions_missing_recipients: List[str] = []
+        subscriptions_with_invalid_channel: List[str] = []
+        subscriptions_with_invalid_cadence: List[str] = []
+        names_by_scope: Dict[str, List[str]] = {}
+        defaults_by_scope: Dict[str, List[str]] = {}
+
+        for view in catalog.views:
+            scope = f"{view.route}:{view.owner}"
+            names_by_scope.setdefault(scope, []).append(view.name)
+            if view.is_default:
+                defaults_by_scope.setdefault(scope, []).append(view.name)
+            if view.visibility not in VALID_VIEW_VISIBILITY:
+                invalid_visibility_views.append(view.name)
+            if not view.filters:
+                views_missing_filters.append(view.name)
+
+        for scope, names in sorted(names_by_scope.items()):
+            unique_names = sorted({name for name in names if names.count(name) > 1})
+            if unique_names:
+                duplicate_view_names[scope] = unique_names
+
+        for scope, names in sorted(defaults_by_scope.items()):
+            if len(names) > 1:
+                duplicate_default_views[scope] = sorted(names)
+
+        view_index = catalog.view_index
+        for subscription in catalog.subscriptions:
+            if subscription.saved_view_id not in view_index:
+                orphan_subscriptions.append(subscription.subscription_id)
+            if not subscription.recipients:
+                subscriptions_missing_recipients.append(subscription.subscription_id)
+            if subscription.channel not in VALID_DIGEST_CHANNELS:
+                subscriptions_with_invalid_channel.append(subscription.subscription_id)
+            if subscription.cadence not in VALID_DIGEST_CADENCES:
+                subscriptions_with_invalid_cadence.append(subscription.subscription_id)
+
+        return SavedViewCatalogAudit(
+            catalog_name=catalog.name,
+            version=catalog.version,
+            view_count=len(catalog.views),
+            subscription_count=len(catalog.subscriptions),
+            duplicate_view_names=duplicate_view_names,
+            invalid_visibility_views=sorted(invalid_visibility_views),
+            views_missing_filters=sorted(views_missing_filters),
+            duplicate_default_views=duplicate_default_views,
+            orphan_subscriptions=sorted(orphan_subscriptions),
+            subscriptions_missing_recipients=sorted(subscriptions_missing_recipients),
+            subscriptions_with_invalid_channel=sorted(subscriptions_with_invalid_channel),
+            subscriptions_with_invalid_cadence=sorted(subscriptions_with_invalid_cadence),
+        )
+
+
+def render_saved_view_report(catalog: SavedViewCatalog, audit: SavedViewCatalogAudit) -> str:
+    lines = [
+        "# Saved Views & Alert Digests Report",
+        "",
+        f"- Name: {catalog.name}",
+        f"- Version: {catalog.version}",
+        f"- Saved Views: {audit.view_count}",
+        f"- Alert Subscriptions: {audit.subscription_count}",
+        f"- Readiness Score: {audit.readiness_score:.1f}",
+        "",
+        "## Saved Views",
+        "",
+    ]
+    if catalog.views:
+        for view in catalog.views:
+            filters = ", ".join(
+                f"{view_filter.field}{view_filter.operator}{view_filter.value}"
+                for view_filter in view.filters
+            ) or "none"
+            lines.append(
+                f"- {view.name}: route={view.route} owner={view.owner} visibility={view.visibility} "
+                f"filters={filters} sort={view.sort_by or 'none'} pinned={view.pinned} default={view.is_default}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Alert Digests", ""])
+    if catalog.subscriptions:
+        for subscription in catalog.subscriptions:
+            recipients = ", ".join(subscription.recipients) or "none"
+            lines.append(
+                f"- {subscription.subscription_id}: view={subscription.saved_view_id} channel={subscription.channel} "
+                f"cadence={subscription.cadence} recipients={recipients} "
+                f"include_empty={subscription.include_empty_results} muted={subscription.muted}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Gaps", ""])
+    duplicate_names = (
+        "; ".join(f"{scope}={', '.join(names)}" for scope, names in audit.duplicate_view_names.items())
+        if audit.duplicate_view_names
+        else "none"
+    )
+    duplicate_defaults = (
+        "; ".join(f"{scope}={', '.join(names)}" for scope, names in audit.duplicate_default_views.items())
+        if audit.duplicate_default_views
+        else "none"
+    )
+    lines.append(f"- Duplicate view names: {duplicate_names}")
+    lines.append(
+        f"- Invalid view visibility: {', '.join(audit.invalid_visibility_views) if audit.invalid_visibility_views else 'none'}"
+    )
+    lines.append(
+        f"- Views missing filters: {', '.join(audit.views_missing_filters) if audit.views_missing_filters else 'none'}"
+    )
+    lines.append(f"- Duplicate default views: {duplicate_defaults}")
+    lines.append(
+        f"- Orphan subscriptions: {', '.join(audit.orphan_subscriptions) if audit.orphan_subscriptions else 'none'}"
+    )
+    lines.append(
+        "- Subscriptions missing recipients: "
+        f"{', '.join(audit.subscriptions_missing_recipients) if audit.subscriptions_missing_recipients else 'none'}"
+    )
+    lines.append(
+        "- Subscriptions with invalid channel: "
+        f"{', '.join(audit.subscriptions_with_invalid_channel) if audit.subscriptions_with_invalid_channel else 'none'}"
+    )
+    lines.append(
+        "- Subscriptions with invalid cadence: "
+        f"{', '.join(audit.subscriptions_with_invalid_cadence) if audit.subscriptions_with_invalid_cadence else 'none'}"
+    )
+    return "\n".join(lines) + "\n"
+
+
+_install_support_module(
+    "saved_views",
+    VALID_VIEW_VISIBILITY=VALID_VIEW_VISIBILITY,
+    VALID_DIGEST_CHANNELS=VALID_DIGEST_CHANNELS,
+    VALID_DIGEST_CADENCES=VALID_DIGEST_CADENCES,
+    SavedViewFilter=SavedViewFilter,
+    SavedView=SavedView,
+    AlertDigestSubscription=AlertDigestSubscription,
+    SavedViewCatalog=SavedViewCatalog,
+    SavedViewCatalogAudit=SavedViewCatalogAudit,
+    SavedViewLibrary=SavedViewLibrary,
+    render_saved_view_report=render_saved_view_report,
+)
+
+SCHEDULER_DECISION_EVENT = "execution.scheduler_decision"
+MANUAL_TAKEOVER_EVENT = "execution.manual_takeover"
+APPROVAL_RECORDED_EVENT = "execution.approval_recorded"
+BUDGET_OVERRIDE_EVENT = "execution.budget_override"
+FLOW_HANDOFF_EVENT = "execution.flow_handoff"
+
+
+@dataclass(frozen=True)
+class AuditEventSpec:
+    event_type: str
+    description: str
+    severity: str
+    retention_days: int
+    required_fields: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "event_type": self.event_type,
+            "description": self.description,
+            "severity": self.severity,
+            "retention_days": self.retention_days,
+            "required_fields": list(self.required_fields),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "AuditEventSpec":
+        return cls(
+            event_type=str(data["event_type"]),
+            description=str(data["description"]),
+            severity=str(data["severity"]),
+            retention_days=int(data["retention_days"]),
+            required_fields=[str(value) for value in data.get("required_fields", [])],
+        )
+
+
+P0_AUDIT_EVENT_SPECS: List[AuditEventSpec] = [
+    AuditEventSpec(
+        event_type=SCHEDULER_DECISION_EVENT,
+        description="Records the scheduler routing decision and risk context for a run.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "medium", "approved", "reason", "risk_level", "risk_score"],
+    ),
+    AuditEventSpec(
+        event_type=MANUAL_TAKEOVER_EVENT,
+        description="Captures escalation into a human takeover queue.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "target_team", "reason", "requested_by", "required_approvals"],
+    ),
+    AuditEventSpec(
+        event_type=APPROVAL_RECORDED_EVENT,
+        description="Records explicit human approvals attached to a run or acceptance decision.",
+        severity="info",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "approvals", "approval_count", "acceptance_status"],
+    ),
+    AuditEventSpec(
+        event_type=BUDGET_OVERRIDE_EVENT,
+        description="Captures a manual override to the run budget envelope.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "requested_budget", "approved_budget", "override_actor", "reason"],
+    ),
+    AuditEventSpec(
+        event_type=FLOW_HANDOFF_EVENT,
+        description="Captures ownership transfer between automated flow stages and teams.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "source_stage", "target_team", "reason", "collaboration_mode"],
+    ),
+]
+
+_SPEC_BY_EVENT = {spec.event_type: spec for spec in P0_AUDIT_EVENT_SPECS}
+
+
+def get_audit_event_spec(event_type: str) -> Optional[AuditEventSpec]:
+    return _SPEC_BY_EVENT.get(event_type)
+
+
+def missing_required_fields(event_type: str, details: Dict[str, object]) -> List[str]:
+    spec = get_audit_event_spec(event_type)
+    if spec is None:
+        return []
+    return [field_name for field_name in spec.required_fields if field_name not in details]
+
+
+_install_support_module(
+    "audit_events",
+    SCHEDULER_DECISION_EVENT=SCHEDULER_DECISION_EVENT,
+    MANUAL_TAKEOVER_EVENT=MANUAL_TAKEOVER_EVENT,
+    APPROVAL_RECORDED_EVENT=APPROVAL_RECORDED_EVENT,
+    BUDGET_OVERRIDE_EVENT=BUDGET_OVERRIDE_EVENT,
+    FLOW_HANDOFF_EVENT=FLOW_HANDOFF_EVENT,
+    AuditEventSpec=AuditEventSpec,
+    P0_AUDIT_EVENT_SPECS=P0_AUDIT_EVENT_SPECS,
+    get_audit_event_spec=get_audit_event_spec,
+    missing_required_fields=missing_required_fields,
 )
 
 from .reports import (
@@ -3598,6 +4324,49 @@ from .ui_review import (
     render_ui_review_signoff_log,
     render_ui_review_pack_report,
     write_ui_review_pack_bundle,
+)
+from .runtime import (
+    AcceptanceDecision,
+    AcceptanceGate,
+    ClawWorkerRuntime,
+    CrossDepartmentOrchestrator,
+    DeadLetterEntry,
+    DepartmentHandoff,
+    ExecutionRecord,
+    HandoffRequest,
+    JournalEntry,
+    OrchestrationPlan,
+    OrchestrationPolicyDecision,
+    PersistentTaskQueue,
+    PremiumOrchestrationPolicy,
+    RepoGovernanceEnforcer,
+    RepoGovernancePolicy,
+    RepoGovernanceResult,
+    SandboxProfile,
+    SandboxRouter,
+    Scheduler,
+    SchedulerDecision,
+    ServerMonitoring,
+    ToolCallResult,
+    ToolPolicy,
+    ToolRuntime,
+    WorkerExecutionResult,
+    WorkflowEngine,
+    WorkflowRunResult,
+    WorkpadJournal,
+    create_server,
+    render_orchestration_plan,
+    run_server,
+    warn_legacy_service_surface,
+)
+from .observability import (
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    TaskRun,
+    utc_now,
 )
 
 __all__ = [

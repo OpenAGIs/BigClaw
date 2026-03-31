@@ -326,9 +326,9 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
             ),
             EvidenceLink(
                 label="saved-view-report",
-                target="src/bigclaw/saved_views.py",
+                target="src/bigclaw/__init__.py",
                 capability="saved-views",
-                note="team saved views and digest evidence",
+                note="team saved views, digest evidence, and compatibility submodule",
             ),
         ],
     )
@@ -446,7 +446,7 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "src/bigclaw/workflow.py",
         "bigclaw-go/internal/workflow/engine_test.go",
         "bigclaw-go/internal/worker/runtime_test.go",
-        "src/bigclaw/saved_views.py",
+        "src/bigclaw/__init__.py",
         "tests/test_saved_views.py",
         "src/bigclaw/evaluation.py",
         "tests/test_evaluation.py",

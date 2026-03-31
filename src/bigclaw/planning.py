@@ -448,9 +448,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="saved-views-src",
-                        target="src/bigclaw/saved_views.py",
+                        target="src/bigclaw/__init__.py",
                         capability="saved-views",
-                        note="saved views, digest subscriptions, and governed filters",
+                        note="saved views, digest subscriptions, governed filters, and compatibility submodule",
                     ),
                     EvidenceLink(
                         label="saved-views-tests",
