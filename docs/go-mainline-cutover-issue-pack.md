@@ -221,7 +221,6 @@ Historical initial state:
 ### BIG-GOM-305 Control center, triage, and operations view migration
 
 Python source:
-- `src/bigclaw/repo_triage.py`
 - `src/bigclaw/run_detail.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/saved_views.py`
@@ -443,7 +442,6 @@ Python source:
 - `src/bigclaw/repo_board.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_triage.py`
 
 Go ownership:
 - `bigclaw-go/internal/flow/flow.go`
