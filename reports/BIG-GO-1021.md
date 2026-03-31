@@ -36,6 +36,12 @@
   and [test_saved_views.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_saved_views.py),
   and trimmed the stale exports from
   [__init__.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/__init__.py).
+- Replaced the tiny Python event-bus compatibility surface with a Go-owned
+  package under `bigclaw-go/internal/eventbus`, then deleted
+  [event_bus.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/event_bus.py)
+  and [test_event_bus.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_event_bus.py),
+  and trimmed the package-root exports in
+  [__init__.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/__init__.py).
 - Split CI into a Go-mainline job and a legacy-Python migration job, and moved
   the legacy test invocation to `python3 -m pytest`, so the root workflow no
   longer reads as a Python-first repository entrypoint.
@@ -46,8 +52,8 @@
 
 ## File-count impact
 
-- `.py`: `50 -> 42`
-- `.go`: `282 -> 284`
+- `.py`: `50 -> 40`
+- `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
 - `setup.cfg`: absent before, absent after
@@ -70,6 +76,8 @@
 - `rg -n "from bigclaw\\.workspace_bootstrap|bigclaw\\.workspace_bootstrap|workspace_bootstrap import" src tests README.md docs reports scripts -S`
 - `cd bigclaw-go && go test ./internal/product -run 'TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip|TestRenderSavedViewReportEmptyState|TestRenderSavedViewReportPopulatedRowsUseFallbacks'`
 - `rg -n "from bigclaw\\.saved_views|bigclaw\\.saved_views|SavedViewLibrary|render_saved_view_report" src tests README.md docs reports scripts -S`
+- `cd bigclaw-go && go test ./internal/eventbus -run 'TestEventBusPRCommentApprovesWaitingRunAndPersistsLedger|TestEventBusCICompletedMarksRunCompleted|TestEventBusTaskFailedMarksRunFailed'`
+- `rg -n "from bigclaw\\.event_bus|bigclaw\\.event_bus|EventBus|BusEvent|PULL_REQUEST_COMMENT_EVENT|CI_COMPLETED_EVENT|TASK_FAILED_EVENT" src tests README.md docs reports scripts -S`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
