@@ -5,6 +5,7 @@ from . import control_surfaces as _control_surfaces
 from . import repo_surfaces as _repo_surfaces
 from . import support_surfaces as _support_surfaces
 from . import utility_surfaces as _utility_surfaces
+from . import workspace_bootstrap as _workspace_bootstrap
 from .models import (
     BillingInterval,
     BillingRate,
@@ -148,6 +149,33 @@ _install_compat_module(
         "render_dashboard_run_contract_report",
     ],
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/dashboard_run_contract.go",
+)
+_install_compat_module(
+    _workspace_bootstrap,
+    "workspace_bootstrap_cli",
+    [
+        "WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE",
+        "WorkspaceBootstrapError",
+        "bootstrap_workspace",
+        "build_parser",
+        "cleanup_workspace",
+        "emit",
+        "main",
+    ],
+    DEFAULT_CACHE_BASE=_workspace_bootstrap.WORKSPACE_BOOTSTRAP_DEFAULT_CACHE_BASE,
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
+)
+_install_compat_module(
+    _workspace_bootstrap,
+    "workspace_bootstrap_validation",
+    [
+        "bootstrap_workspace",
+        "build_validation_report",
+        "cleanup_workspace",
+        "render_validation_markdown",
+        "write_validation_report",
+    ],
+    GO_MAINLINE_REPLACEMENT="repo-native compatibility surface",
 )
 _install_compat_module(
     _support_surfaces,

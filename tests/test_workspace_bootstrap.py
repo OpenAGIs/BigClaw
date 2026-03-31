@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 
+from bigclaw import workspace_bootstrap_cli, workspace_bootstrap_validation
 from bigclaw.workspace_bootstrap import (
     bootstrap_workspace,
     cache_root_for_repo,
@@ -202,3 +203,32 @@ def test_validation_report_covers_three_workspaces_with_one_cache(tmp_path: Path
     assert report["summary"]["clone_suppressed_after_first"] is True
     assert report["summary"]["cache_reused_after_first"] is True
     assert report["summary"]["cleanup_preserved_cache"] is True
+
+
+def test_compat_modules_expose_bootstrap_cli_and_validation_helpers() -> None:
+    parser = workspace_bootstrap_cli.build_parser(
+        description="bootstrap",
+        default_repo_url="https://example.com/repo.git",
+        default_branch="main",
+        default_cache_root=None,
+        default_cache_base=workspace_bootstrap_cli.DEFAULT_CACHE_BASE,
+        default_cache_key=None,
+    )
+
+    assert parser.prog
+    assert workspace_bootstrap_cli.DEFAULT_CACHE_BASE == "~/.cache/symphony/repos"
+    assert workspace_bootstrap_validation.render_validation_markdown(
+        {
+            "repo_url": "https://example.com/repo.git",
+            "workspace_root": "/tmp/workspaces",
+            "summary": {
+                "workspace_count": 1,
+                "single_cache_root_reused": True,
+                "mirror_creations": 1,
+                "seed_creations": 1,
+                "clone_suppressed_after_first": True,
+                "cleanup_preserved_cache": True,
+            },
+            "bootstrap_results": [],
+        }
+    ).startswith("# Symphony bootstrap cache validation")
