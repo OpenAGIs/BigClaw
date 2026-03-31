@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import stat
 import subprocess
 import sys
 import types
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Protocol, Sequence
+from typing import Any, Callable, Dict, Iterable, List, Optional, Protocol, Sequence
 
 from .models import (
     BillingInterval,
@@ -32,6 +33,7 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
+from .observability import ObservabilityLedger, RepoSyncAudit, TaskRun, utc_now
 
 
 def _install_support_module(name: str, **attrs: object) -> None:
@@ -851,6 +853,734 @@ _install_support_module(
 )
 
 
+class ValidationReportDecision:
+    def __init__(
+        self,
+        allowed_to_close: bool,
+        status: str,
+        summary: str,
+        missing_reports: Optional[List[str]] = None,
+    ) -> None:
+        self.allowed_to_close = allowed_to_close
+        self.status = status
+        self.summary = summary
+        self.missing_reports = list(missing_reports or [])
+
+
+REQUIRED_REPORT_ARTIFACTS = [
+    "task-run",
+    "replay",
+    "benchmark-suite",
+]
+
+
+def enforce_validation_report_policy(artifacts: List[str]) -> ValidationReportDecision:
+    existing = set(artifacts)
+    missing = [name for name in REQUIRED_REPORT_ARTIFACTS if name not in existing]
+    if missing:
+        return ValidationReportDecision(
+            allowed_to_close=False,
+            status="blocked",
+            summary="validation report policy not satisfied",
+            missing_reports=missing,
+        )
+    return ValidationReportDecision(
+        allowed_to_close=True,
+        status="ready",
+        summary="validation report policy satisfied",
+    )
+
+
+_install_support_module(
+    "validation_policy",
+    ValidationReportDecision=ValidationReportDecision,
+    REQUIRED_REPORT_ARTIFACTS=REQUIRED_REPORT_ARTIFACTS,
+    enforce_validation_report_policy=enforce_validation_report_policy,
+)
+
+
+def build_workspace_validation_report(
+    *,
+    repo_url: str,
+    workspace_root: str | Path,
+    issue_identifiers: Sequence[str],
+    default_branch: str = "main",
+    cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
+    cleanup: bool = True,
+) -> dict[str, Any]:
+    workspace_root_path = Path(workspace_root).expanduser().resolve()
+    workspace_root_path.mkdir(parents=True, exist_ok=True)
+
+    bootstrap_results = []
+    for issue_identifier in issue_identifiers:
+        workspace_path = workspace_root_path / issue_identifier
+        status = bootstrap_workspace(
+            workspace=workspace_path,
+            issue_identifier=issue_identifier,
+            repo_url=repo_url,
+            default_branch=default_branch,
+            cache_root=cache_root,
+            cache_base=cache_base,
+            cache_key=cache_key,
+        )
+        bootstrap_results.append(status.to_dict())
+
+    cache_roots = sorted({result["cache_root"] for result in bootstrap_results})
+    mirror_paths = sorted({result["mirror_path"] for result in bootstrap_results})
+    seed_paths = sorted({result["seed_path"] for result in bootstrap_results})
+    cleanup_results = []
+
+    if cleanup:
+        for issue_identifier in issue_identifiers:
+            workspace_path = workspace_root_path / issue_identifier
+            status = cleanup_workspace(
+                workspace=workspace_path,
+                issue_identifier=issue_identifier,
+                repo_url=repo_url,
+                default_branch=default_branch,
+                cache_root=cache_root,
+                cache_base=cache_base,
+                cache_key=cache_key,
+            )
+            cleanup_results.append(status.to_dict())
+
+    return {
+        "repo_url": repo_url,
+        "default_branch": default_branch,
+        "workspace_root": str(workspace_root_path),
+        "issue_identifiers": list(issue_identifiers),
+        "bootstrap_results": bootstrap_results,
+        "cleanup_results": cleanup_results,
+        "summary": {
+            "workspace_count": len(bootstrap_results),
+            "unique_cache_roots": cache_roots,
+            "unique_mirror_paths": mirror_paths,
+            "unique_seed_paths": seed_paths,
+            "single_cache_root_reused": len(cache_roots) == 1,
+            "single_mirror_reused": len(mirror_paths) == 1,
+            "single_seed_reused": len(seed_paths) == 1,
+            "mirror_creations": sum(1 for result in bootstrap_results if result["mirror_created"]),
+            "seed_creations": sum(1 for result in bootstrap_results if result["seed_created"]),
+            "clone_suppressed_after_first": all(result["clone_suppressed"] for result in bootstrap_results[1:]),
+            "cache_reused_after_first": all(result["cache_reused"] for result in bootstrap_results[1:]),
+            "all_workspaces_created_via_worktree": all(
+                result["workspace_mode"] in {"worktree_created", "workspace_reused"}
+                for result in bootstrap_results
+            ),
+            "cleanup_preserved_cache": bool(bootstrap_results)
+            and Path(bootstrap_results[0]["mirror_path"]).exists()
+            and Path(bootstrap_results[0]["seed_path"]).joinpath(".git").exists(),
+        },
+    }
+
+
+def render_workspace_validation_markdown(report: dict[str, Any]) -> str:
+    summary = report["summary"]
+    lines = [
+        "# Symphony bootstrap cache validation",
+        "",
+        f"- Repo: `{report['repo_url']}`",
+        f"- Workspace root: `{report['workspace_root']}`",
+        f"- Workspaces: `{summary['workspace_count']}`",
+        f"- Single cache root reused: `{summary['single_cache_root_reused']}`",
+        f"- Mirror creations: `{summary['mirror_creations']}`",
+        f"- Seed creations: `{summary['seed_creations']}`",
+        f"- Clone suppressed after first workspace: `{summary['clone_suppressed_after_first']}`",
+        f"- Cleanup preserved cache: `{summary['cleanup_preserved_cache']}`",
+        "",
+        "## Bootstrap Results",
+        "",
+    ]
+
+    for result in report["bootstrap_results"]:
+        lines.extend(
+            [
+                f"- `{result['workspace']}`",
+                f"  - `cache_root={result['cache_root']}`",
+                f"  - `cache_key={result['cache_key']}`",
+                f"  - `workspace_mode={result['workspace_mode']}`",
+                f"  - `cache_reused={result['cache_reused']}`",
+                f"  - `clone_suppressed={result['clone_suppressed']}`",
+                f"  - `mirror_created={result['mirror_created']}`",
+                f"  - `seed_created={result['seed_created']}`",
+            ]
+        )
+
+    return "\n".join(lines) + "\n"
+
+
+def write_workspace_validation_report(report: dict[str, Any], path: str | Path) -> Path:
+    target = Path(path).expanduser().resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    if target.suffix.lower() == ".md":
+        target.write_text(render_workspace_validation_markdown(report))
+    else:
+        target.write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    return target
+
+
+_install_support_module(
+    "workspace_bootstrap_validation",
+    build_validation_report=build_workspace_validation_report,
+    render_validation_markdown=render_workspace_validation_markdown,
+    write_validation_report=write_workspace_validation_report,
+)
+
+
+class GitSyncError(RuntimeError):
+    """Raised when repository sync automation cannot complete safely."""
+
+
+@dataclass
+class RepoSyncStatus:
+    branch: str
+    local_sha: str
+    remote_sha: str
+    dirty: bool
+    remote_exists: bool
+    synced: bool
+    pushed: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class GitSyncCommandResult:
+    stdout: str
+    stderr: str
+    returncode: int
+
+
+EXECUTABLE_BITS = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+
+
+def _run_git_sync_command(command: Sequence[str], repo: Path) -> GitSyncCommandResult:
+    completed = subprocess.run(
+        list(command),
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return GitSyncCommandResult(
+        stdout=completed.stdout.strip(),
+        stderr=completed.stderr.strip(),
+        returncode=completed.returncode,
+    )
+
+
+def _git_sync_git(repo: Path, *args: str) -> GitSyncCommandResult:
+    return _run_git_sync_command(["git", *args], repo)
+
+
+def _require_git_sync(repo: Path, *args: str) -> str:
+    result = _git_sync_git(repo, *args)
+    if result.returncode != 0:
+        detail = result.stderr or result.stdout or f"git {' '.join(args)} failed"
+        raise GitSyncError(detail)
+    return result.stdout
+
+
+def _git_sync_dirty(repo: Path) -> bool:
+    return bool(_require_git_sync(repo, "status", "--porcelain"))
+
+
+def _git_sync_remote_default_branch(repo: Path, remote: str) -> str:
+    symbolic_ref = _git_sync_git(repo, "symbolic-ref", "--quiet", f"refs/remotes/{remote}/HEAD")
+    if symbolic_ref.returncode == 0 and symbolic_ref.stdout:
+        prefix = f"refs/remotes/{remote}/"
+        if symbolic_ref.stdout.startswith(prefix):
+            return symbolic_ref.stdout[len(prefix) :]
+
+    symref_result = _git_sync_git(repo, "ls-remote", "--symref", remote, "HEAD")
+    if symref_result.returncode != 0:
+        detail = symref_result.stderr or symref_result.stdout or f"git ls-remote --symref failed for {remote}/HEAD"
+        raise GitSyncError(detail)
+
+    for line in symref_result.stdout.splitlines():
+        if line.startswith("ref: ") and line.endswith("\tHEAD"):
+            ref = line.split()[1]
+            prefix = "refs/heads/"
+            if ref.startswith(prefix):
+                return ref[len(prefix) :]
+
+    raise GitSyncError(f"Could not determine default branch for remote {remote}")
+
+
+def _git_sync_remote_branch_sha(repo: Path, remote: str, branch: str) -> str:
+    local_ref = _git_sync_git(repo, "rev-parse", f"refs/remotes/{remote}/{branch}")
+    if local_ref.returncode == 0 and local_ref.stdout:
+        return local_ref.stdout
+
+    remote_result = _git_sync_git(repo, "ls-remote", "--heads", remote, branch)
+    if remote_result.returncode != 0:
+        detail = remote_result.stderr or remote_result.stdout or f"git ls-remote failed for {remote}/{branch}"
+        raise GitSyncError(detail)
+
+    return remote_result.stdout.split()[0] if remote_result.stdout else ""
+
+
+def _git_sync_matches_remote_default_branch(repo: Path, remote: str, local_sha: str) -> bool:
+    try:
+        default_branch = _git_sync_remote_default_branch(repo, remote)
+        default_sha = _git_sync_remote_branch_sha(repo, remote, default_branch)
+    except GitSyncError:
+        return False
+
+    return bool(default_sha) and local_sha == default_sha
+
+
+def inspect_repo_sync(repo: Path | str, remote: str = "origin") -> RepoSyncStatus:
+    repo_path = Path(repo).resolve()
+    branch = _require_git_sync(repo_path, "branch", "--show-current")
+    if not branch:
+        raise GitSyncError("Detached HEAD does not support issue branch sync automation")
+
+    local_sha = _require_git_sync(repo_path, "rev-parse", "HEAD")
+    remote_result = _git_sync_git(repo_path, "ls-remote", "--heads", remote, branch)
+    if remote_result.returncode != 0:
+        detail = remote_result.stderr or remote_result.stdout or f"git ls-remote failed for {remote}/{branch}"
+        raise GitSyncError(detail)
+
+    remote_sha = remote_result.stdout.split()[0] if remote_result.stdout else ""
+    dirty = _git_sync_dirty(repo_path)
+    remote_exists = bool(remote_sha)
+    synced = remote_exists and local_sha == remote_sha
+
+    if not remote_exists and _git_sync_matches_remote_default_branch(repo_path, remote, local_sha):
+        synced = True
+
+    return RepoSyncStatus(
+        branch=branch,
+        local_sha=local_sha,
+        remote_sha=remote_sha,
+        dirty=dirty,
+        remote_exists=remote_exists,
+        synced=synced,
+    )
+
+
+def install_git_hooks(repo: Path | str, hooks_path: str = ".githooks") -> Path:
+    repo_path = Path(repo).resolve()
+    hooks_dir = repo_path / hooks_path
+    if not hooks_dir.is_dir():
+        raise GitSyncError(f"Missing hooks directory: {hooks_dir}")
+
+    _require_git_sync(repo_path, "config", "core.hooksPath", hooks_path)
+    for hook in hooks_dir.iterdir():
+        if hook.is_file():
+            hook.chmod(hook.stat().st_mode | EXECUTABLE_BITS)
+    return hooks_dir
+
+
+def ensure_repo_sync(
+    repo: Path | str,
+    remote: str = "origin",
+    auto_push: bool = True,
+    allow_dirty: bool = False,
+) -> RepoSyncStatus:
+    repo_path = Path(repo).resolve()
+    status = inspect_repo_sync(repo_path, remote=remote)
+
+    if status.dirty:
+        if allow_dirty:
+            return status
+        raise GitSyncError("Working tree is dirty; commit or stash changes before syncing")
+
+    if status.remote_exists and not status.synced:
+        fetch_result = _git_sync_git(repo_path, "fetch", remote, status.branch)
+        if fetch_result.returncode != 0:
+            detail = fetch_result.stderr or fetch_result.stdout or f"git fetch {remote} {status.branch} failed"
+            raise GitSyncError(detail)
+
+        ff_result = _git_sync_git(repo_path, "pull", "--ff-only", remote, status.branch)
+        if ff_result.returncode != 0:
+            detail = ff_result.stderr or ff_result.stdout or f"git pull --ff-only {remote} {status.branch} failed"
+            raise GitSyncError(detail)
+        status = inspect_repo_sync(repo_path, remote=remote)
+
+    if not auto_push or status.synced:
+        return status
+
+    push_args = ["push", remote, "HEAD"]
+    if not status.remote_exists:
+        push_args = ["push", "-u", remote, "HEAD"]
+
+    push_result = _git_sync_git(repo_path, *push_args)
+    if push_result.returncode != 0:
+        detail = push_result.stderr or push_result.stdout or f"git {' '.join(push_args)} failed"
+        raise GitSyncError(detail)
+
+    refreshed = inspect_repo_sync(repo_path, remote=remote)
+    refreshed.pushed = True
+    if not refreshed.synced:
+        raise GitSyncError(
+            f"Remote SHA mismatch after push: local={refreshed.local_sha} remote={refreshed.remote_sha or 'missing'}"
+        )
+    return refreshed
+
+
+_install_support_module(
+    "github_sync",
+    GitSyncError=GitSyncError,
+    RepoSyncStatus=RepoSyncStatus,
+    CommandResult=GitSyncCommandResult,
+    EXECUTABLE_BITS=EXECUTABLE_BITS,
+    inspect_repo_sync=inspect_repo_sync,
+    install_git_hooks=install_git_hooks,
+    ensure_repo_sync=ensure_repo_sync,
+)
+
+
+PULL_REQUEST_COMMENT_EVENT = "pull_request.comment"
+CI_COMPLETED_EVENT = "ci.completed"
+TASK_FAILED_EVENT = "task.failed"
+
+EventSubscriber = Callable[["BusEvent", TaskRun], None]
+
+
+@dataclass(frozen=True)
+class BusEvent:
+    event_type: str
+    run_id: str
+    actor: str
+    details: Dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=utc_now)
+
+
+class EventBus:
+    def __init__(self, ledger: Optional[ObservabilityLedger] = None):
+        self.ledger = ledger
+        self._runs: Dict[str, TaskRun] = {}
+        self._subscribers: dict[str, List[EventSubscriber]] = {}
+
+    def register_run(self, run: TaskRun) -> None:
+        self._runs[run.run_id] = run
+
+    def subscribe(self, event_type: str, handler: EventSubscriber) -> None:
+        self._subscribers.setdefault(event_type, []).append(handler)
+
+    def publish(self, event: BusEvent) -> TaskRun:
+        run = self._resolve_run(event.run_id)
+        previous_status = run.status
+        self._record_event(run, event)
+
+        next_status, summary = self._resolve_transition(run, event)
+        if next_status:
+            run.finalize(next_status, summary)
+            run.audit(
+                "event_bus.transition",
+                "event-bus",
+                next_status,
+                event_type=event.event_type,
+                previous_status=previous_status,
+                status=next_status,
+                summary=summary,
+                event_timestamp=event.timestamp,
+            )
+
+        for handler in self._subscribers.get(event.event_type, []):
+            handler(event, run)
+
+        if self.ledger is not None:
+            self.ledger.upsert(run)
+        return run
+
+    def _resolve_run(self, run_id: str) -> TaskRun:
+        registered = self._runs.get(run_id)
+        if registered is not None:
+            return registered
+        if self.ledger is not None:
+            for run in self.ledger.load_runs():
+                if run.run_id == run_id:
+                    self._runs[run_id] = run
+                    return run
+        raise KeyError(f"run {run_id!r} is not registered with the event bus")
+
+    def _record_event(self, run: TaskRun, event: BusEvent) -> None:
+        run.audit(
+            "event_bus.event",
+            event.actor,
+            "received",
+            event_type=event.event_type,
+            event_timestamp=event.timestamp,
+            **event.details,
+        )
+        if event.event_type != PULL_REQUEST_COMMENT_EVENT:
+            return
+        body = str(event.details.get("body", "")).strip()
+        if not body:
+            return
+        mentions = [str(item) for item in event.details.get("mentions", [])]
+        run.add_comment(
+            author=event.actor,
+            body=body,
+            mentions=mentions,
+            anchor="pull-request",
+            surface="pull-request",
+        )
+
+    def _resolve_transition(self, run: TaskRun, event: BusEvent) -> tuple[str, str]:
+        explicit_status = str(event.details.get("target_status", "")).strip()
+        if explicit_status:
+            return explicit_status, self._build_summary(event, explicit_status)
+
+        if event.event_type == PULL_REQUEST_COMMENT_EVENT:
+            decision = str(event.details.get("decision", "")).strip().lower()
+            if decision in {"approved", "accept", "accepted", "lgtm"}:
+                return "approved", self._build_summary(event, "approved")
+            if decision in {"blocked", "changes-requested", "rejected"}:
+                return "needs-approval", self._build_summary(event, "needs-approval")
+        elif event.event_type == CI_COMPLETED_EVENT:
+            conclusion = str(event.details.get("conclusion", "")).strip().lower()
+            if conclusion in {"success", "passed", "green"}:
+                return "completed", self._build_summary(event, "completed")
+            if conclusion in {"cancelled", "canceled", "error", "failed", "failure", "timed_out"}:
+                return "failed", self._build_summary(event, "failed")
+        elif event.event_type == TASK_FAILED_EVENT:
+            return "failed", self._build_summary(event, "failed")
+
+        return "", run.summary
+
+    def _build_summary(self, event: BusEvent, status: str) -> str:
+        summary = str(event.details.get("summary", "")).strip()
+        if summary:
+            return summary
+        if event.event_type == PULL_REQUEST_COMMENT_EVENT:
+            body = str(event.details.get("body", "")).strip()
+            if body:
+                return body
+            return f"pull request comment set run to {status}"
+        if event.event_type == CI_COMPLETED_EVENT:
+            workflow = str(event.details.get("workflow", "")).strip()
+            conclusion = str(event.details.get("conclusion", "")).strip() or status
+            if workflow:
+                return f"CI workflow {workflow} completed with {conclusion}"
+            return f"CI completed with {conclusion}"
+        if event.event_type == TASK_FAILED_EVENT:
+            reason = str(event.details.get("error", "")).strip() or str(event.details.get("reason", "")).strip()
+            if reason:
+                return reason
+            return "task failed"
+        return status
+
+
+_install_support_module(
+    "event_bus",
+    PULL_REQUEST_COMMENT_EVENT=PULL_REQUEST_COMMENT_EVENT,
+    CI_COMPLETED_EVENT=CI_COMPLETED_EVENT,
+    TASK_FAILED_EVENT=TASK_FAILED_EVENT,
+    BusEvent=BusEvent,
+    EventBus=EventBus,
+)
+
+
+@dataclass
+class MemoryPattern:
+    task_id: str
+    title: str
+    labels: List[str] = field(default_factory=list)
+    required_tools: List[str] = field(default_factory=list)
+    acceptance_criteria: List[str] = field(default_factory=list)
+    validation_plan: List[str] = field(default_factory=list)
+    summary: str = ""
+
+    def to_dict(self) -> Dict:
+        return {
+            "task_id": self.task_id,
+            "title": self.title,
+            "labels": list(self.labels),
+            "required_tools": list(self.required_tools),
+            "acceptance_criteria": list(self.acceptance_criteria),
+            "validation_plan": list(self.validation_plan),
+            "summary": self.summary,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "MemoryPattern":
+        return cls(
+            task_id=str(data.get("task_id", "")),
+            title=str(data.get("title", "")),
+            labels=[str(item) for item in data.get("labels", [])],
+            required_tools=[str(item) for item in data.get("required_tools", [])],
+            acceptance_criteria=[str(item) for item in data.get("acceptance_criteria", [])],
+            validation_plan=[str(item) for item in data.get("validation_plan", [])],
+            summary=str(data.get("summary", "")),
+        )
+
+
+class TaskMemoryStore:
+    def __init__(self, storage_path: str):
+        self.storage_path = Path(storage_path)
+
+    def _load_patterns(self) -> List[MemoryPattern]:
+        if not self.storage_path.exists():
+            return []
+        payload = json.loads(self.storage_path.read_text())
+        return [MemoryPattern.from_dict(item) for item in payload]
+
+    def _write_patterns(self, patterns: List[MemoryPattern]) -> None:
+        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
+        self.storage_path.write_text(json.dumps([item.to_dict() for item in patterns], ensure_ascii=False, indent=2))
+
+    def remember_success(self, task: Task, summary: str = "") -> None:
+        patterns = [item for item in self._load_patterns() if item.task_id != task.task_id]
+        patterns.append(
+            MemoryPattern(
+                task_id=task.task_id,
+                title=task.title,
+                labels=list(task.labels),
+                required_tools=list(task.required_tools),
+                acceptance_criteria=list(task.acceptance_criteria),
+                validation_plan=list(task.validation_plan),
+                summary=summary,
+            )
+        )
+        self._write_patterns(patterns)
+
+    def suggest_rules(self, task: Task, limit: int = 3) -> Dict[str, List[str]]:
+        ranked: List[tuple[float, MemoryPattern]] = []
+        for pattern in self._load_patterns():
+            score = self._score(task, pattern)
+            if score <= 0:
+                continue
+            ranked.append((score, pattern))
+
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        selected = [item[1] for item in ranked[: max(1, limit)]]
+
+        acceptance = list(task.acceptance_criteria)
+        validation = list(task.validation_plan)
+        for pattern in selected:
+            for item in pattern.acceptance_criteria:
+                if item not in acceptance:
+                    acceptance.append(item)
+            for item in pattern.validation_plan:
+                if item not in validation:
+                    validation.append(item)
+
+        return {
+            "acceptance_criteria": acceptance,
+            "validation_plan": validation,
+            "matched_task_ids": [item.task_id for item in selected],
+        }
+
+    @staticmethod
+    def _score(task: Task, pattern: MemoryPattern) -> float:
+        label_overlap = len(set(task.labels) & set(pattern.labels))
+        tool_overlap = len(set(task.required_tools) & set(pattern.required_tools))
+        return float(label_overlap * 2 + tool_overlap)
+
+
+_install_support_module(
+    "memory",
+    MemoryPattern=MemoryPattern,
+    TaskMemoryStore=TaskMemoryStore,
+)
+
+
+VALID_WORKFLOW_STEP_KINDS = {
+    "scheduler",
+    "approval",
+    "orchestration",
+    "report",
+    "closeout",
+}
+
+
+@dataclass
+class WorkflowStep:
+    name: str
+    kind: str
+    required: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "kind": self.kind,
+            "required": self.required,
+            "metadata": self.metadata,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowStep":
+        return cls(
+            name=data["name"],
+            kind=data["kind"],
+            required=data.get("required", True),
+            metadata=data.get("metadata", {}),
+        )
+
+
+@dataclass
+class WorkflowDefinition:
+    name: str
+    steps: List[WorkflowStep] = field(default_factory=list)
+    report_path_template: Optional[str] = None
+    journal_path_template: Optional[str] = None
+    validation_evidence: List[str] = field(default_factory=list)
+    approvals: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "steps": [step.to_dict() for step in self.steps],
+            "report_path_template": self.report_path_template,
+            "journal_path_template": self.journal_path_template,
+            "validation_evidence": self.validation_evidence,
+            "approvals": self.approvals,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowDefinition":
+        return cls(
+            name=data["name"],
+            steps=[WorkflowStep.from_dict(item) for item in data.get("steps", [])],
+            report_path_template=data.get("report_path_template"),
+            journal_path_template=data.get("journal_path_template"),
+            validation_evidence=data.get("validation_evidence", []),
+            approvals=data.get("approvals", []),
+        )
+
+    @classmethod
+    def from_json(cls, text: str) -> "WorkflowDefinition":
+        return cls.from_dict(json.loads(text))
+
+    def render_path(self, template: Optional[str], task: Task, run_id: str) -> Optional[str]:
+        if template is None:
+            return None
+        return template.format(
+            workflow=self.name,
+            task_id=task.task_id,
+            source=task.source,
+            run_id=run_id,
+        )
+
+    def render_report_path(self, task: Task, run_id: str) -> Optional[str]:
+        return self.render_path(self.report_path_template, task, run_id)
+
+    def render_journal_path(self, task: Task, run_id: str) -> Optional[str]:
+        return self.render_path(self.journal_path_template, task, run_id)
+
+    def validate(self) -> None:
+        invalid_steps = [step.kind for step in self.steps if step.kind not in VALID_WORKFLOW_STEP_KINDS]
+        if invalid_steps:
+            joined = ", ".join(sorted(set(invalid_steps)))
+            raise ValueError(f"invalid workflow step kind(s): {joined}")
+
+
+_install_support_module(
+    "dsl",
+    WorkflowStep=WorkflowStep,
+    WorkflowDefinition=WorkflowDefinition,
+)
+
+
 from . import runtime as _legacy_runtime_surface
 
 
@@ -1020,7 +1750,6 @@ from .governance import (
     render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
 from .workspace_bootstrap import WorkspaceBootstrapError, bootstrap_workspace, cleanup_workspace
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -1033,14 +1762,7 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .event_bus import (
-    CI_COMPLETED_EVENT,
-    PULL_REQUEST_COMMENT_EVENT,
-    TASK_FAILED_EVENT,
-    BusEvent,
-    EventBus,
-)
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
+from .observability import GitSyncTelemetry, PullRequestFreshness, RunCloseout
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
