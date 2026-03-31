@@ -80,24 +80,26 @@ Notes:
 
 ## Legacy Python migration note
 
-Do not use Python packaging from the repository root. When a migration-only
-Python surface must be exercised, validate it directly from source:
+Do not use Python packaging from the repository root. `pyproject.toml`,
+`setup.py`, `setup.cfg`, and `*.egg-info` are intentionally absent from the
+root. When a migration-only Python surface must be exercised, validate it
+directly from source with an explicit `PYTHONPATH`:
 
 ```bash
 PYTHONPATH=src python3 -m pytest tests
 ```
 
 Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface from the active environment without editable install
-or repo-root packaging bootstrap:
+Python migration surface from the active environment without editable install,
+implicit test path injection, or repo-root packaging bootstrap:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
-That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level smoke
-suite in `tests/test_workspace_bootstrap.py` and `tests/test_planning.py` when
-`pytest` is available.
+That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level
+smoke suite in `tests/test_workspace_bootstrap.py` and `tests/test_planning.py`
+when `pytest` is available.
 
 ## Go smoke verify
 
@@ -139,6 +141,9 @@ ruff check src tests scripts
 PYTHONPATH=src python3 -m pytest tests
 pre-commit run --all-files
 ```
+
+Bare `pytest` from the repository root is no longer supported as a primary
+entrypoint; keep legacy validation source-rooted with `PYTHONPATH=src`.
 
 ## Quick verify
 

@@ -77,3 +77,24 @@
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `50` after retiring `src/bigclaw/collaboration.py`
 - `find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `282`
 - `find . -path './.git' -prune -o \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `0`
+
+## 2026-03-31 Sweep A Addendum
+
+### Plan
+- Inspect repository-root and config-layer Python residuals, with emphasis on packaging entrypoints and root-level workflow/docs references.
+- Remove or rewrite root/config references that still imply `pyproject.toml`, `setup.py`, editable installs, or Python-first execution where the Go surface should be primary.
+- Record repository file-count impact for `.py` and `.go`, then run targeted validation for the touched surfaces.
+- Commit scoped changes and push the issue branch.
+
+### Acceptance
+- Repository-root/config residuals for Python packaging are reduced without widening scope beyond this issue.
+- Root and config surfaces no longer present stale `pyproject/setup/egg-info` style entrypoint guidance.
+- Report includes `.py`/`.go` counts and the effect on `pyproject/setup` presence.
+- Validation is executed with exact commands and results captured.
+
+### Validation
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l`
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' \) -print`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_planning.py -q`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./cmd/bigclawd`
+- `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
