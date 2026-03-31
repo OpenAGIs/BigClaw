@@ -96,7 +96,6 @@ current runnable work.
 Python source:
 - `src/bigclaw/models.py`
 - `src/bigclaw/connectors.py`
-- `src/bigclaw/mapping.py`
 - `src/bigclaw/dsl.py`
 
 Go ownership:
@@ -149,7 +148,7 @@ Current repo progress:
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
-- Python source files remain in place as migration references; BigClaw is still not 100% Go
+- several migrated Python source files have now been deleted; the remaining cutover backlog is limited to Python modules that still sit on active compatibility paths
 
 Dependencies:
 - depends on `BIG-GOM-301`
@@ -221,11 +220,8 @@ Historical initial state:
 ### BIG-GOM-305 Control center, triage, and operations view migration
 
 Python source:
-- `src/bigclaw/repo_triage.py`
 - `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
-- `src/bigclaw/saved_views.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/server.go`
@@ -250,12 +246,7 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_governance.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/v2.go`
@@ -273,7 +264,7 @@ Dependencies:
 
 Current repo progress:
 - `bigclaw-go/internal/repo/governance.go` now ports `src/bigclaw/repo_governance.py` into a Go-owned repo permission matrix and audit-field contract
-- the remaining repo-collaboration Python surfaces still need Go owners across repo board, registry, gateway, plane, links, commits, and triage packages
+- deleted Python repo surfaces now stay covered by `bigclaw-go/internal/repo/*`; the remaining active Python repo-collaboration compatibility surface is concentrated in `repo_links.py`, `repo_plane.py`, and adjacent collaboration/reporting consumers
 
 Milestone:
 - `Governance/Reporting Surface Migration`
@@ -450,15 +441,8 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_triage.py`
-- `src/bigclaw/issue_archive.py`
 - `src/bigclaw/roadmap.py`
 
 Go ownership:
@@ -474,9 +458,7 @@ Historical planned state:
 ### 5. Port operator console and saved-view surfaces to Go
 
 Python source:
-- `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
-- `src/bigclaw/saved_views.py`
 - `src/bigclaw/ui_review.py`
 - remaining operator-facing parts of `src/bigclaw/service.py`
 

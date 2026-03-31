@@ -28,7 +28,7 @@ cutover set.
 
 ## Completed scope
 
-- Canonical Go owners now cover the `src/bigclaw/models.py`,
+- Canonical Go owners now cover the former `src/bigclaw/models.py`,
   `src/bigclaw/connectors.py`, `src/bigclaw/mapping.py`, and `src/bigclaw/dsl.py`
   contract surfaces required by the cutover plan.
 - Risk, policy, orchestration, reporting, control-center, repo collaboration,

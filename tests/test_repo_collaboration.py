@@ -4,7 +4,6 @@ from bigclaw.collaboration import (
     build_collaboration_thread,
     merge_collaboration_threads,
 )
-from bigclaw.repo_board import RepoDiscussionBoard
 
 
 def test_merge_collaboration_threads_combines_native_and_repo_surfaces():
@@ -15,18 +14,18 @@ def test_merge_collaboration_threads_combines_native_and_repo_surfaces():
         decisions=[DecisionNote(decision_id="d1", author="lead", outcome="approved", summary="native decision", recorded_at="2026-03-12T10:05:00Z")],
     )
 
-    board = RepoDiscussionBoard()
-    repo_post = board.create_post(
-        channel="bigclaw-ope-165",
-        author="repo-agent",
-        body="repo board context",
-        target_surface="run",
-        target_id="run-165",
-    )
     repo_thread = build_collaboration_thread(
         "repo-board",
         "run-165",
-        comments=[repo_post.to_collaboration_comment()],
+        comments=[
+            CollaborationComment(
+                comment_id="repo-post-1",
+                author="repo-agent",
+                body="repo board context",
+                created_at="2026-03-12T10:01:00Z",
+                anchor="run:run-165",
+            )
+        ],
     )
 
     merged = merge_collaboration_threads(target_id="run-165", native_thread=native, repo_thread=repo_thread)

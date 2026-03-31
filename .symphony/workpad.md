@@ -1,23 +1,25 @@
-Issue: BIG-GO-1019
+Issue: BIG-GO-1035
 
 Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+- Remove a safe tranche of `src/bigclaw/**` Python modules that already have Go-native owners and are not on surviving Python runtime paths.
+- Delete the directly coupled Python tests for those removed modules, while preserving adjacent coverage by rewriting any remaining test that only used the deleted helpers incidentally.
+- Trim `src/bigclaw/__init__.py` exports so the package no longer imports deleted modules.
+- Add a Go regression test that asserts the deleted Python files stay gone and their canonical Go replacements remain present.
+- Refresh migration docs that still list the deleted modules as remaining Python inventory.
+- Run targeted tests and inventory checks, then commit and push the scoped branch.
 
 Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- `.py` file count under `src/bigclaw` decreases for this issue.
+- Deleted Python modules are ones with existing Go-native replacements under `bigclaw-go/internal/**`.
+- A new Go regression test is added to lock in the deletion set.
+- `pyproject.toml` and `setup.py` remain absent from the repository root.
+- Final report can name which Python files were deleted and which Go files/tests now cover them.
 
 Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go`
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory`
+- `python3 -m pytest tests/test_repo_collaboration.py -q`
+- `find . -maxdepth 2 \\( -name 'pyproject.toml' -o -name 'setup.py' \\) | sort`
+- `git status --short`
