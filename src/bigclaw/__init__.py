@@ -117,6 +117,26 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
 )
+_install_legacy_surface_module(
+    "audit_events",
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "AuditEventSpec",
+        "BUDGET_OVERRIDE_EVENT",
+        "FLOW_HANDOFF_EVENT",
+        "MANUAL_TAKEOVER_EVENT",
+        "P0_AUDIT_EVENT_SPECS",
+        "SCHEDULER_DECISION_EVENT",
+        "get_audit_event_spec",
+        "missing_required_fields",
+    ],
+    source_module=sys.modules[f"{__name__}.observability"],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "audit_events.py has been folded into observability.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -216,18 +236,23 @@ from .governance import (
     render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .audit_events import (
+from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
+    GitSyncTelemetry,
     MANUAL_TAKEOVER_EVENT,
+    ObservabilityLedger,
     P0_AUDIT_EVENT_SPECS,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
     SCHEDULER_DECISION_EVENT,
+    TaskRun,
     AuditEventSpec,
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,

@@ -1,22 +1,22 @@
 Issue: BIG-GO-1030
 
 Plan
-- Fold the residual Python `connectors` compatibility structs/stubs into `src/bigclaw/models.py` and retire `src/bigclaw/connectors.py`.
-- Fold the residual Python `dsl` workflow-definition structs into `src/bigclaw/models.py` and retire `src/bigclaw/dsl.py`.
-- Keep `bigclaw.connectors` and `bigclaw.dsl` import paths working by installing legacy surface modules from `src/bigclaw/__init__.py` instead of keeping standalone files.
-- Merge the dedicated DSL regression coverage into an existing workflow/runtime-oriented pytest file, then delete `tests/test_dsl.py` to reduce physical `.py` count without dropping assertions.
-- Update any directly coupled documentation references that still claim `src/bigclaw/connectors.py` or `src/bigclaw/dsl.py` are standalone residual assets.
-- Measure `.py` / `.go` / `pyproject` / `setup` counts before and after, run targeted pytest coverage for the migrated surfaces, then commit and push.
+- Fold the residual Python `audit_events` compatibility surface into `src/bigclaw/observability.py` and retire `src/bigclaw/audit_events.py`.
+- Update internal imports to use the new owner module so package initialization does not depend on a deleted physical `audit_events.py` file.
+- Keep `bigclaw.audit_events` import compatibility by installing a package-level legacy surface module from `src/bigclaw/__init__.py`.
+- Merge the dedicated audit-event regression coverage into `tests/test_observability.py`, then delete `tests/test_audit_events.py`.
+- Refresh directly coupled docs that still point at `src/bigclaw/audit_events.py` as a standalone residual Python asset.
+- Re-run targeted observability/runtime/report validation, recalculate repository `.py` / `.go` / `pyproject` / `setup` counts, then commit and push.
 
 Acceptance
-- The repository physical `.py` file count decreases.
-- `src/bigclaw/connectors.py`, `src/bigclaw/dsl.py`, and `tests/test_dsl.py` are removed from the tree.
-- `bigclaw.connectors` and `bigclaw.dsl` imports still resolve through package-level compatibility shims.
-- Workflow-definition and connector data structures continue to work from their migrated owner module.
+- The repository physical `.py` file count decreases again.
+- `src/bigclaw/audit_events.py` and `tests/test_audit_events.py` are removed from the tree.
+- `bigclaw.audit_events` imports still resolve through package compatibility shims.
+- Canonical audit-event constants/specs and required-field validation still work from the migrated owner module.
 - Final report includes the exact impact on `.py` count, `.go` count, and `pyproject.toml` / `setup.py` / `setup.cfg` presence.
 
 Validation
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_runtime_matrix.py -q`
+- `PYTHONPATH=src python3 - <<'PY'\nimport bigclaw.audit_events\nfrom bigclaw.observability import missing_required_fields\nprint(bigclaw.audit_events.AuditEventSpec.__name__)\nprint(missing_required_fields(\"execution.scheduler_decision\", {\"task_id\": \"t\", \"run_id\": \"r\", \"medium\": \"docker\"}))\nPY`
 - `find . -type f \\( -name '*.py' -o -name '*.go' -o -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' \\) | sed 's#^./##' | awk 'BEGIN{py=0;go=0;pp=0;setup=0} /\\.py$/{py++} /\\.go$/{go++} /pyproject\\.toml$/{pp++} /(setup\\.py|setup\\.cfg)$/{setup++} END{printf("py=%d\\ngo=%d\\npyproject=%d\\nsetup=%d\\n",py,go,pp,setup)}'`
-- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_workspace_bootstrap.py -q`
-- `git status --short`
-- `git diff --stat`
+- `git diff --stat && git status --short`
