@@ -1,23 +1,23 @@
-Issue: BIG-GO-1019
+Issue: BIG-GO-1027
 
 Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+- Audit remaining repo-root Python tests and choose a small tranche whose behavior is already implemented in `bigclaw-go` so the migration stays scoped and lowers `.py` count immediately.
+- Patch Go-native tests only where the Python suite still asserts behavior that is not yet pinned in Go.
+- Delete the migrated Python test files from `tests/` once equivalent Go coverage exists.
+- Run targeted Go validation plus file-count/package-surface checks, then commit and push the branch.
 
 Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- Changes remain scoped to the selected residual Python tests tranche and directly corresponding Go test coverage.
+- Repository `.py` file count decreases after removing migrated Python tests.
+- Targeted Go tests cover the migrated dashboard run contract, saved views, and execution contract behaviors.
+- Final report includes the exact impact on `.py` count, `.go` count, and confirms whether `pyproject.toml` / `setup.py` changed.
 
 Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+- `find . -name '*.py' | wc -l`
+- `find . -name '*.go' | wc -l`
+- `gofmt -w bigclaw-go/internal/product/dashboard_run_contract_test.go bigclaw-go/internal/product/saved_views_test.go bigclaw-go/internal/contract/execution_test.go`
+- `cd bigclaw-go && go test ./internal/product -run 'Test(BuildDefaultDashboardRunContractIsReleaseReady|DashboardRunContractAuditDetectsMissingPaths|RenderDashboardRunContractReport|BuildSavedViewCatalog|RenderSavedViewReport|AuditSavedViewCatalog)' -count=1`
+- `cd bigclaw-go && go test ./internal/contract -run 'Test(ExecutionContractAuditAcceptsWellFormedContract|ExecutionContractAuditSurfacesContractGaps|ExecutionContractRoundTripAndPermissionMatrix|RenderExecutionContractReportIncludesRoleMatrix|OperationsAPIContract)' -count=1`
+- `git diff --stat`
+- `git status --short`

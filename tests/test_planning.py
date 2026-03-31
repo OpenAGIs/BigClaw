@@ -314,7 +314,11 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
         priority="P0",
         owner="ops-platform",
         outcome="Package command-center and approval surfaces with linked evidence.",
-        validation_command="python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
+        validation_command=(
+            "python3 -m pytest tests/test_operations.py -q && "
+            "(cd bigclaw-go && go test ./internal/product -run "
+            "'Test(BuildSavedViewCatalog|AuditSavedViewCatalogAndRenderReport|SavedViewCatalogJSONRoundTrip)' -count=1)"
+        ),
         capabilities=["ops-control", "saved-views"],
         evidence=["weekly-review", "validation-report"],
         evidence_links=[
@@ -447,7 +451,7 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "bigclaw-go/internal/workflow/engine_test.go",
         "bigclaw-go/internal/worker/runtime_test.go",
         "src/bigclaw/saved_views.py",
-        "tests/test_saved_views.py",
+        "bigclaw-go/internal/product/saved_views_test.go",
         "src/bigclaw/evaluation.py",
         "tests/test_evaluation.py",
     }
