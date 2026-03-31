@@ -1429,7 +1429,6 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
     )
     assert {link.target for link in ops_candidate.evidence_links} >= {
         "src/bigclaw/operations.py",
-        "tests/test_control_center.py",
         "tests/test_operations.py",
         "src/bigclaw/execution_contract.py",
         "src/bigclaw/workflow.py",

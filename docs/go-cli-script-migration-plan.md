@@ -83,7 +83,7 @@ because the root no longer carries Python packaging/bootstrap ownership.
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+- `python3 -m pytest tests/test_operations.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `python3 scripts/ops/bigclaw_github_sync.py status --json`
 - `python3 scripts/ops/bigclaw_refill_queue.py --help`
