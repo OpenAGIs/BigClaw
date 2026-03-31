@@ -25,12 +25,16 @@
 ## Scoped Tranche 3
 - `tests/test_queue.py`
 
+## Scoped Tranche 4
+- `tests/test_saved_views.py`
+
 ## Acceptance
 - Python test file count decreases by deleting the scoped files above.
 - Go test coverage increases via new parity assertions under existing Go test files.
 - Replacement coverage remains in Go under `bigclaw-go/internal/product`, `bigclaw-go/internal/githubsync`, and `bigclaw-go/internal/repo`.
 - Tranche 2 replacement coverage remains in Go under `bigclaw-go/internal/governance`, `bigclaw-go/internal/risk`, `bigclaw-go/internal/triage`, `bigclaw-go/internal/workflow`, `bigclaw-go/internal/billing`, and `bigclaw-go/internal/domain`.
 - Tranche 3 replacement coverage remains in Go under `bigclaw-go/internal/queue`.
+- Tranche 4 replacement coverage remains in Go under `bigclaw-go/internal/product`.
 - Changes stay scoped to this tranche only.
 
 ## Validation
@@ -74,3 +78,16 @@
   - Passed after Python deletion
   - Exact result:
     - `ok  	bigclaw-go/internal/queue	(cached)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && gofmt -w bigclaw-go/internal/product/saved_views_test.go`
+  - Passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/product`
+  - Passed before Python deletion
+  - Exact result:
+    - `ok  	bigclaw-go/internal/product	0.463s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && git diff --stat`
+  - Passed for tranche 4
+  - Output summary: `3 files changed, 161 insertions(+), 159 deletions(-)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/product`
+  - Passed after Python deletion
+  - Exact result:
+    - `ok  	bigclaw-go/internal/product	(cached)`
