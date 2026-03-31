@@ -16,13 +16,14 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov ruff
+          pip install ruff
       - name: Lint
-        run: ruff check src tests scripts
-      - name: Test
-        run: PYTHONPATH=src pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        run: ruff check src scripts
+      - name: Legacy Python smoke
+        run: bash scripts/ops/legacy_python_smoke.sh
+      - uses: actions/setup-go@v5
         with:
-          name: coverage-xml
-          path: coverage.xml
+          go-version-file: bigclaw-go/go.mod
+      - name: Go CLI test
+        working-directory: bigclaw-go
+        run: go test ./cmd/bigclawctl

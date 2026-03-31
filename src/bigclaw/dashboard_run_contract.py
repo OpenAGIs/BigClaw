@@ -325,7 +325,7 @@ class DashboardRunContractLibrary:
                             "status": "completed",
                             "title": "Validated fix",
                             "summary": "Executed targeted tests and recorded the validation report.",
-                            "details": ["pytest passed", "report stored under reports/OPE-127-validation.md"],
+                            "details": ["legacy python smoke passed", "report stored under reports/OPE-127-validation.md"],
                         },
                     ],
                     "artifacts": [

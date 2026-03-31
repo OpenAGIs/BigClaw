@@ -3,6 +3,7 @@
 ## Plan
 - Reduce repo-level residual Python test assets to zero while preserving a legacy migration smoke lane.
 - Retarget active source, script, and doc references from deleted `tests/test_*.py` paths to the surviving smoke script or Go-native validation commands.
+- Retarget active CI workflow steps away from deleted `tests/` and `pytest` usage to the surviving smoke script and Go-native validation commands.
 - Validate the replacement smoke path and bootstrap flows end to end.
 - Record the repository impact on `.py`/`.go` counts and packaging files.
 
@@ -18,6 +19,7 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && bash scripts/dev_bootstrap.sh`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027/bigclaw-go && go test ./cmd/bigclawctl`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "tests/test_[A-Za-z0-9_]+\\.py|pytest tests|tests/\\b" README.md docs scripts src`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && python -m compileall src scripts/ops/legacy_python_smoke.sh`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && rg -n "pytest|tests/test_[A-Za-z0-9_]+\\.py|tests/\\b" README.md docs scripts src .github`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && test -d tests && echo present || echo absent`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1027 && find . -type f \\( -name '*.py' -o -name '*.go' \\) | sed 's#^\\./##' | awk 'BEGIN{py=0;go=0} /\\.py$/{py++} /\\.go$/{go++} END{printf("py=%d\\ngo=%d\\n",py,go)}'`
