@@ -51,6 +51,7 @@ Supporting integration:
 
 - Incremental:
   - `PYTHONPATH=src python3 -m pytest tests/test_repo_links.py`
+    validates the run-commit compatibility surface now hosted by `bigclaw.observability`
   - `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_observability.py tests/test_reports.py`
   - `PYTHONPATH=src python3 -m pytest tests/test_service.py tests/test_operations.py tests/test_repo_rollout.py`
 - Full:

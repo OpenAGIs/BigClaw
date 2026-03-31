@@ -244,9 +244,8 @@ Historical initial state:
 ### BIG-GOM-306 Repo collaboration and lineage surface migration
 
 Python source:
-- `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_plane.py`
+- `src/bigclaw/observability.py` (residual run-commit link compatibility surface)
 
 Go ownership:
 - `bigclaw-go/internal/api/v2.go`
@@ -264,7 +263,8 @@ Dependencies:
 
 Current repo progress:
 - `bigclaw-go/internal/repo/governance.go` now ports `src/bigclaw/repo_governance.py` into a Go-owned repo permission matrix and audit-field contract
-- the remaining repo-collaboration Python surfaces still need Go owners across repo board, registry, gateway, plane, links, commits, and triage packages
+- run-commit link compatibility types were folded into `src/bigclaw/observability.py`, retiring the standalone `repo_plane.py` and `repo_links.py` Python surfaces
+- the remaining repo-collaboration Python surfaces still need Go owners across repo gateway and collaboration-adjacent reporting packages
 
 Milestone:
 - `Governance/Reporting Surface Migration`
@@ -435,8 +435,7 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_plane.py`
+- `src/bigclaw/observability.py` (embedded run-commit link compatibility types)
 
 Go ownership:
 - `bigclaw-go/internal/flow/flow.go`

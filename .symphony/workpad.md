@@ -64,3 +64,10 @@
 - `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.882s`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/collaboration.py src/bigclaw/repo_plane.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py tests/test_repo_collaboration.py tests/test_workspace_bootstrap.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `53` after retiring `src/bigclaw/repo_board.py` and `tests/test_repo_board.py`
+- `rg -n "repo_plane|repo_links|RunCommitLink|bind_run_commits" -S src tests docs` -> only `src/bigclaw/observability.py`, affected tests, and migration docs still referenced the run-commit compatibility surface before this slice
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_links.py tests/test_observability.py tests/test_reports.py -q` -> `42 passed in 0.18s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/workspace_bootstrap.py tests/test_repo_links.py tests/test_observability.py` -> success
+- `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.464s`
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `51` after retiring `src/bigclaw/repo_plane.py` and `src/bigclaw/repo_links.py`
+- `find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `282`
+- `find . -path './.git' -prune -o \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `0`
