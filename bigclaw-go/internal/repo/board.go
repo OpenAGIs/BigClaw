@@ -3,6 +3,8 @@ package repo
 import (
 	"fmt"
 	"time"
+
+	"bigclaw-go/internal/collaboration"
 )
 
 type RepoPost struct {
@@ -91,4 +93,19 @@ func copyMap(input map[string]any) map[string]any {
 		out[key] = value
 	}
 	return out
+}
+
+func (p RepoPost) ToCollaborationComment() collaboration.Comment {
+	status := "open"
+	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
+		status = "resolved"
+	}
+	return collaboration.Comment{
+		CommentID: p.PostID,
+		Author:    p.Author,
+		Body:      p.Body,
+		CreatedAt: p.CreatedAt,
+		Anchor:    fmt.Sprintf("%s:%s", p.TargetSurface, p.TargetID),
+		Status:    status,
+	}
 }
