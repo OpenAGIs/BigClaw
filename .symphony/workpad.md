@@ -99,5 +99,7 @@
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./cmd/bigclawd`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation --help`
 - `rg -n "bigclaw-go/scripts/.+\\.py" README.md docs/go-cli-script-migration-plan.md -S`
+- `rg -n "PilotKPI|PilotImplementationResult|render_pilot_implementation_report|from bigclaw\\.pilot|bigclaw\\.pilot" src tests README.md docs reports scripts -S`
+- `cd bigclaw-go && go test ./internal/pilot -run 'TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestRenderPilotImplementationReportContainsReadinessFields'`
 - `python3 - <<'PY' ... assert 'PYTHONPATH=src python3 -m pytest' in .github/workflows/ci.yml ... PY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
