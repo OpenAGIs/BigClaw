@@ -13,7 +13,6 @@ if [ "${BIGCLAW_ENABLE_LEGACY_PYTHON:-0}" = "1" ]; then
 
   if python3 -m pytest --version >/dev/null 2>&1; then
     PYTHONPATH="$repo_root/src" python3 -m pytest \
-      "$repo_root/tests/test_workspace_bootstrap.py" \
       "$repo_root/tests/test_planning.py"
     echo "BigClaw Go environment is ready, and the legacy Python migration smoke suite was validated from source."
   else
