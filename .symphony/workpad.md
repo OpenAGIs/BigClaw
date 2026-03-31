@@ -1,23 +1,36 @@
-Issue: BIG-GO-1019
+Issue: BIG-GO-1022
 
 Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+- Replace the remaining `scripts/ops/*.py` operator entrypoints with non-Python wrappers that execute `scripts/ops/bigclawctl` directly.
+- Keep legacy command behavior for `github-sync`, `refill`, `workspace`, `workspace bootstrap`, and `workspace validate`, including default bootstrap flags and validate-argument translation.
+- Update directly coupled docs/tests to reference the non-Python entrypoints and keep the migration inventory aligned with the repo state.
+- Run targeted validation, capture exact commands/results, summarize `py`/`go` file-count impact plus `pyproject.toml`/`setup.py` impact, then commit and push.
 
 Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+- Changes stay scoped to the remaining root-level `scripts/ops` residual Python operator entrypoints and directly coupled documentation/tests.
+- Repository `.py` file count decreases by removing the five `scripts/ops/*.py` wrappers from the physical tree.
+- Replacement wrappers still allow the same operator flows to run through `scripts/ops/bigclawctl`.
+- Final report includes the impact on `.py` count, `.go` count, and confirms whether `pyproject.toml` / `setup.py` changed.
 
 Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+- `find scripts/ops -maxdepth 1 \\( -name '*.py' -o -type f \\) | sort`
+- `find . -path '*/.git' -prune -o -name '*.py' -print | sort | wc -l`
+- `find . -path '*/.git' -prune -o -name '*.go' -print | sort | wc -l`
+- `cd bigclaw-go && go test ./internal/legacyshim`
+- `bash scripts/ops/bigclaw_github_sync --help`
+- `bash scripts/ops/bigclaw_refill_queue --help`
+- `bash scripts/ops/bigclaw_workspace_bootstrap --help`
+- `bash scripts/ops/symphony_workspace_bootstrap --help`
+- `bash scripts/ops/symphony_workspace_validate --help`
+- `bash scripts/ops/bigclaw_github_sync status --json`
+- `repo_url="$(pwd)"; tmp_root=$(mktemp -d); tmp_cache=$(mktemp -d); tmp_ws="$tmp_root/ws"; BIGCLAW_BOOTSTRAP_REPO_URL="$repo_url" BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap bootstrap --workspace-root "$tmp_root" --workspace "$tmp_ws" --cache-root "$tmp_cache" --default-branch main; bash scripts/ops/bigclaw_workspace_bootstrap cleanup --workspace-root "$tmp_root" --workspace "$tmp_ws" --cache-root "$tmp_cache"`
+- `repo_url="$(pwd)"; tmp_root=$(mktemp -d); tmp_report=$(mktemp); bash scripts/ops/symphony_workspace_validate --repo-url "$repo_url" --workspace-root "$tmp_root" --issues BIG-GO-1022-A BIG-GO-1022-B --report-file "$tmp_report" --json; test -s "$tmp_report"`
+- `git status --short && git diff --stat`
+
+Status
+- Implemented and validated.
+- Branch pushed: `symphony/BIG-GO-1022`
+- Commit: `dfe57729914ff96c38b12fc2eb0364118960c399`
+- File-count impact: `.py` `88 -> 83`, `.go` `282 -> 282`, `pyproject.toml` absent, `setup.py` absent.
+- PR: `https://github.com/OpenAGIs/BigClaw/pull/216`
+- Compare: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1022?expand=1`

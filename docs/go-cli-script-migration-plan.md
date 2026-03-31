@@ -17,11 +17,11 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
-- `scripts/ops/bigclaw_github_sync.py` -> `bigclawctl github-sync`
-- `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
-- `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
+- `scripts/ops/bigclaw_github_sync` -> `bigclawctl github-sync`
+- `scripts/ops/bigclaw_refill_queue` -> `bigclawctl refill`
+- `scripts/ops/bigclaw_workspace_bootstrap` -> `bigclawctl workspace ...`
+- `scripts/ops/symphony_workspace_bootstrap` -> `bigclawctl workspace ...`
+- `scripts/ops/symphony_workspace_validate` -> `bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
 
@@ -31,7 +31,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 
 The remaining compatibility layer is intentionally thin:
 
-- Python `scripts/ops/*_*.py` shims only translate legacy flags/defaults before dispatching into `scripts/ops/bigclawctl`.
+- Shell `scripts/ops/*` wrappers only translate legacy flags/defaults before dispatching into `scripts/ops/bigclawctl`.
 - Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
 
@@ -56,11 +56,11 @@ The remaining compatibility layer is intentionally thin:
 
 ### Compatibility shims kept in place
 
-- `scripts/ops/bigclaw_github_sync.py`
-- `scripts/ops/bigclaw_refill_queue.py`
-- `scripts/ops/bigclaw_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_validate.py`
+- `scripts/ops/bigclaw_github_sync`
+- `scripts/ops/bigclaw_refill_queue`
+- `scripts/ops/bigclaw_workspace_bootstrap`
+- `scripts/ops/symphony_workspace_bootstrap`
+- `scripts/ops/symphony_workspace_validate`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
@@ -83,11 +83,11 @@ because the root no longer carries Python packaging/bootstrap ownership.
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+- `cd bigclaw-go && go test ./internal/legacyshim`
 - `bash scripts/ops/bigclawctl dev-smoke`
-- `python3 scripts/ops/bigclaw_github_sync.py status --json`
-- `python3 scripts/ops/bigclaw_refill_queue.py --help`
-- `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `bash scripts/ops/bigclaw_github_sync status --json`
+- `bash scripts/ops/bigclaw_refill_queue --help`
+- `bash scripts/ops/symphony_workspace_validate --help`
 - `bash scripts/dev_bootstrap.sh`
 - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `bash scripts/ops/bigclawctl issue --help`

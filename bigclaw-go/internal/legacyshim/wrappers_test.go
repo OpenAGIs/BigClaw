@@ -63,8 +63,8 @@ func TestGitHubSyncAndRefillWrappersTargetGoShim(t *testing.T) {
 	if got := BuildRefillArgs("/repo", []string{"--apply"}); !reflect.DeepEqual(got, []string{"bash", "/repo/scripts/ops/bigclawctl", "refill", "--apply"}) {
 		t.Fatalf("unexpected refill args: %+v", got)
 	}
-	if !stringsContain(LegacyPythonWrapperNotice, "compatibility shim during migration") {
-		t.Fatalf("expected wrapper notice to mention compatibility shim, got %q", LegacyPythonWrapperNotice)
+	if !stringsContain(LegacyPythonWrapperNotice, "compatibility path remains only during migration") {
+		t.Fatalf("expected wrapper notice to mention migration-only compatibility path, got %q", LegacyPythonWrapperNotice)
 	}
 }
 
@@ -77,7 +77,7 @@ func TestWorkspaceRuntimeWrapperTargetsGoShim(t *testing.T) {
 }
 
 func TestRepoRootFromScriptClimbsToRepositoryRoot(t *testing.T) {
-	if got := RepoRootFromScript("/repo/scripts/ops/bigclaw_refill_queue.py"); got != "/repo" {
+	if got := RepoRootFromScript("/repo/scripts/ops/bigclaw_refill_queue"); got != "/repo" {
 		t.Fatalf("unexpected repo root: %s", got)
 	}
 }
