@@ -10,6 +10,7 @@
 - Continue the tranche by folding `bigclaw.models` into package-level compatibility exports and deleting the standalone module.
 - Continue the tranche by folding `bigclaw.observability` into package-level compatibility exports and deleting the standalone module.
 - Continue the tranche by folding `bigclaw.operations` into package-level compatibility exports and deleting the standalone module.
+- Continue the tranche by folding `bigclaw.design_system` into package-level compatibility exports and deleting the standalone module.
 
 ### Acceptance
 - Changes stay scoped to remaining `src/bigclaw` Python assets for this tranche.
@@ -25,6 +26,7 @@
 - Legacy Python imports and existing tests for task/risk/triage/workflow/billing model round trips still pass after `models.py` deletion.
 - Legacy Python imports and existing tests for observability ledger, repo sync audit, and downstream report/runtime consumers still pass after `observability.py` deletion.
 - Legacy Python imports and existing tests for operations analytics, queue control, dashboard rendering, and weekly bundle export still pass after `operations.py` deletion.
+- Legacy Python imports and existing tests for design system, information architecture, UI acceptance, and console top bar surfaces still pass after `design_system.py` deletion.
 - Report the impact on Python/Go file counts and note any `pyproject`/`setup` impact.
 
 ### Validation
@@ -44,6 +46,8 @@
 - `PYTHONPATH=src python3 - <<'PY' ... import smoke for bigclaw.observability ... PY`
 - `python3 -m pytest tests/test_operations.py tests/test_control_center.py`
 - `PYTHONPATH=src python3 - <<'PY' ... import smoke for bigclaw.operations ... PY`
+- `python3 -m pytest tests/test_design_system.py tests/test_console_ia.py`
+- `PYTHONPATH=src python3 - <<'PY' ... import smoke for bigclaw.design_system ... PY`
 - `cd bigclaw-go && go test ./internal/bootstrap ./internal/repo ./internal/regression`
 - `cd bigclaw-go && go test ./internal/observability ./internal/workflow ./internal/regression`
 - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
