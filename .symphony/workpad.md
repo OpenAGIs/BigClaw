@@ -31,3 +31,6 @@
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens|TestFrozenCompileCheckFilesUsesFrozenShimList|TestCompileCheckRunsPyCompileAgainstFrozenShimList|TestCompileCheckReturnsCompilerOutputOnFailure' -count=1` -> `ok  	bigclaw-go/internal/legacyshim	1.087s`, `ok  	bigclaw-go/cmd/bigclawctl	2.237s`, `ok  	bigclaw-go/internal/regression	1.489s`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> `status: ok` for `src/bigclaw/__init__.py`
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `80`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `79` after retiring `src/bigclaw/cost_control.py`
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `78` after retiring `src/bigclaw/parallel_refill.py`

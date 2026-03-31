@@ -287,7 +287,6 @@ Python source:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
-- `src/bigclaw/parallel_refill.py`
 - `scripts/ops/bigclaw_github_sync.py`
 - `scripts/ops/symphony_workspace_bootstrap.py`
 - `scripts/ops/bigclaw_refill_queue.py`
@@ -491,7 +490,6 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/github_sync.py`
-- `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/service.py`
