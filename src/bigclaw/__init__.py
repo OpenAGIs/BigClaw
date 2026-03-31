@@ -195,7 +195,6 @@ from .governance import (
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
-from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -511,9 +510,6 @@ __all__ = [
     "WorkflowDefinition",
     "WorkflowStep",
     "map_source_issue_to_task",
-    "EpicMilestone",
-    "ExecutionPackRoadmap",
-    "build_execution_pack_roadmap",
     "APPROVAL_RECORDED_EVENT",
     "BUDGET_OVERRIDE_EVENT",
     "FLOW_HANDOFF_EVENT",

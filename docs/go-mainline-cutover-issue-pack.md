@@ -448,7 +448,6 @@ Python source:
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_triage.py`
-- `src/bigclaw/roadmap.py`
 
 Go ownership:
 - `bigclaw-go/internal/flow/flow.go`
