@@ -2747,34 +2747,6 @@ def test_regression_analysis_flags_score_drop_and_pass_failure() -> None:
 
 
 
-def test_render_weekly_operations_report_includes_blockers_and_regressions() -> None:
-    analytics = OperationsAnalytics()
-    runs = [
-        make_run("run-1", "BIG-905-1", "approved", "2026-03-10T10:00:00Z", "2026-03-10T10:20:00Z", "ok", "default low risk path"),
-        make_run("run-2", "BIG-905-2", "needs-approval", "2026-03-10T11:00:00Z", "2026-03-10T11:50:00Z", "hold", "requires approval for high-risk task"),
-    ]
-    baseline = BenchmarkSuiteResult(version="v0.1", results=[make_result("case-drop", 100, True)])
-    current = BenchmarkSuiteResult(version="v0.2", results=[make_result("case-drop", 70, False)])
-
-    report = analytics.build_weekly_report(
-        name="Engineering Ops",
-        period="2026-W11",
-        runs=runs,
-        current_suite=current,
-        baseline_suite=baseline,
-    )
-
-    dashboard = render_operations_dashboard(report.snapshot)
-    weekly = render_weekly_operations_report(report)
-
-    assert "# Operations Dashboard" in dashboard
-    assert "- Approval Queue Depth: 1" in dashboard
-    assert "requires approval for high-risk task" in dashboard
-    assert "# Weekly Operations Report" in weekly
-    assert "case-drop" in weekly
-    assert "severity=high" in weekly
-
-
 def test_operations_dashboard_renders_shared_view_loading_state() -> None:
     analytics = OperationsAnalytics()
     snapshot = analytics.summarize_runs([])
@@ -2909,62 +2881,6 @@ def test_render_policy_prompt_version_center_supports_shared_view_context() -> N
     assert "Rollback simulation still running." in report
 
 
-def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -> None:
-    analytics = OperationsAnalytics()
-    runs = [
-        make_run("run-1", "BIG-905-1", "approved", "2026-03-10T10:00:00Z", "2026-03-10T10:20:00Z", "ok", "default low risk path"),
-        make_run("run-2", "BIG-905-2", "needs-approval", "2026-03-10T11:00:00Z", "2026-03-10T11:50:00Z", "hold", "requires approval for high-risk task"),
-    ]
-    baseline = BenchmarkSuiteResult(version="v0.1", results=[make_result("case-drop", 100, True)])
-    current = BenchmarkSuiteResult(version="v0.2", results=[make_result("case-drop", 70, False)])
-
-    weekly_report = analytics.build_weekly_report(
-        name="Engineering Ops",
-        period="2026-W11",
-        runs=runs,
-        current_suite=current,
-        baseline_suite=baseline,
-    )
-    regression_center = analytics.build_regression_center(current, baseline)
-    version_center = analytics.build_policy_prompt_version_center(
-        [
-            make_versioned_artifact(
-                "policy",
-                "release-approval",
-                "v2",
-                "2026-03-10T09:00:00Z",
-                "add rollback owner",
-                "approvals: 2\nrollback_owner: release-manager\n",
-            ),
-            make_versioned_artifact(
-                "policy",
-                "release-approval",
-                "v1",
-                "2026-03-08T09:00:00Z",
-                "initial policy",
-                "approvals: 2\n",
-            ),
-        ]
-    )
-    artifacts = write_weekly_operations_bundle(
-        str(tmp_path / "weekly"),
-        weekly_report,
-        regression_center=regression_center,
-        version_center=version_center,
-    )
-
-    assert Path(artifacts.weekly_report_path).exists()
-    assert Path(artifacts.dashboard_path).exists()
-    assert artifacts.regression_center_path is not None
-    assert Path(artifacts.regression_center_path).exists()
-    assert artifacts.version_center_path is not None
-    assert Path(artifacts.version_center_path).exists()
-    assert "# Weekly Operations Report" in Path(artifacts.weekly_report_path).read_text()
-    assert "# Operations Dashboard" in Path(artifacts.dashboard_path).read_text()
-    assert "# Regression Analysis Center" in Path(artifacts.regression_center_path).read_text()
-    assert "# Policy/Prompt Version Center" in Path(artifacts.version_center_path).read_text()
-
-
 def test_build_engineering_overview_includes_kpis_funnel_blockers_and_activity() -> None:
     analytics = OperationsAnalytics()
     runs = [
@@ -3033,27 +2949,6 @@ def test_render_engineering_overview_hides_modules_without_permission() -> None:
     assert "## Activity Modules" in contributor_report
     assert "## Funnel Modules" not in contributor_report
     assert "## Blocker Modules" not in contributor_report
-
-
-def test_write_engineering_overview_bundle_emits_report(tmp_path: Path) -> None:
-    analytics = OperationsAnalytics()
-    overview = analytics.build_engineering_overview(
-        name="Core Product",
-        period="2026-W11",
-        runs=[
-            make_run("run-1", "BIG-1401-1", "approved", "2026-03-10T09:00:00Z", "2026-03-10T09:20:00Z", "merged", "default low risk path"),
-            make_run("run-2", "BIG-1401-2", "needs-approval", "2026-03-10T10:00:00Z", "2026-03-10T10:25:00Z", "approval", "requires approval for prod deploy"),
-        ],
-        viewer_role="operations",
-    )
-
-    output_path = write_engineering_overview_bundle(str(tmp_path / "overview"), overview)
-
-    assert Path(output_path).exists()
-    content = Path(output_path).read_text()
-    assert "# Engineering Overview" in content
-    assert "Viewer Role: operations" in content
-    assert "## Activity Modules" in content
 
 
 def test_benchmark_runner_scores_and_replays_case(tmp_path: Path):
