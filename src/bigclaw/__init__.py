@@ -36,6 +36,11 @@ def _install_exec_support_module(name: str, source: str, export_names: List[str]
         globals()[export_name] = module.__dict__[export_name]
 
 
+def _install_exec_support_module_from_asset(name: str, asset_name: str, export_names: List[str]) -> None:
+    source = Path(__file__).with_name(asset_name).read_text(encoding="utf-8")
+    _install_exec_support_module(name, source, export_names)
+
+
 class TaskState(str, Enum):
     TODO = "Todo"
     IN_PROGRESS = "In Progress"
@@ -10128,44 +10133,51 @@ _install_support_module(
     render_four_week_execution_report=render_four_week_execution_report,
 )
 
-from .operations import (
-    DashboardBuilder,
-    DashboardBuilderAudit,
-    DashboardLayout,
-    DashboardWidgetPlacement,
-    DashboardWidgetSpec,
-    EngineeringActivity,
-    EngineeringFunnelStage,
-    EngineeringOverview,
-    EngineeringOverviewBlocker,
-    EngineeringOverviewKPI,
-    EngineeringOverviewPermission,
-    OperationsAnalytics,
-    OperationsMetricDefinition,
-    OperationsMetricSpec,
-    OperationsMetricValue,
-    OperationsSnapshot,
-    PolicyPromptVersionCenter,
-    RegressionFinding,
-    RegressionCenter,
-    TriageCluster,
-    QueueControlCenter,
-    VersionChangeSummary,
-    VersionedArtifact,
-    VersionedArtifactHistory,
-    WeeklyOperationsArtifacts,
-    WeeklyOperationsReport,
-    render_dashboard_builder_report,
-    render_engineering_overview,
-    render_operations_metric_spec,
-    render_operations_dashboard,
-    render_policy_prompt_version_center,
-    render_queue_control_center,
-    render_regression_center,
-    render_weekly_operations_report,
-    write_dashboard_builder_bundle,
-    write_engineering_overview_bundle,
-    write_weekly_operations_bundle,
+_install_exec_support_module_from_asset(
+    "operations",
+    "_operations_support.txt",
+    [
+        "STATUS_COMPLETE",
+        "STATUS_ACTIONABLE",
+        "TriageCluster",
+        "RegressionFinding",
+        "OperationsSnapshot",
+        "WeeklyOperationsReport",
+        "RegressionCenter",
+        "VersionedArtifact",
+        "VersionChangeSummary",
+        "VersionedArtifactHistory",
+        "PolicyPromptVersionCenter",
+        "WeeklyOperationsArtifacts",
+        "QueueControlCenter",
+        "EngineeringOverviewKPI",
+        "EngineeringFunnelStage",
+        "EngineeringOverviewBlocker",
+        "EngineeringActivity",
+        "EngineeringOverviewPermission",
+        "EngineeringOverview",
+        "OperationsMetricDefinition",
+        "OperationsMetricValue",
+        "OperationsMetricSpec",
+        "DashboardWidgetSpec",
+        "DashboardWidgetPlacement",
+        "DashboardLayout",
+        "DashboardBuilder",
+        "DashboardBuilderAudit",
+        "OperationsAnalytics",
+        "render_operations_dashboard",
+        "render_weekly_operations_report",
+        "render_operations_metric_spec",
+        "render_queue_control_center",
+        "render_policy_prompt_version_center",
+        "render_engineering_overview",
+        "render_dashboard_builder_report",
+        "write_engineering_overview_bundle",
+        "write_dashboard_builder_bundle",
+        "build_repo_collaboration_metrics",
+        "write_weekly_operations_bundle",
+        "render_regression_center",
+    ],
 )
 from .ui_review import (
     InteractionFlow,
