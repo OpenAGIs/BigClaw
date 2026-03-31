@@ -482,7 +482,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="orchestration-office",
                 outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_reports.py -q"
+                    "(cd bigclaw-go && go test ./internal/workflow) && "
+                    "PYTHONPATH=src python3 -m pytest tests/test_reports.py -q"
                 ),
                 capabilities=["commercialization", "handoff", "pilot-rollout"],
                 evidence=["pilot-evidence", "validation-report"],
@@ -501,9 +502,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="orchestration-tests",
-                        target="tests/test_orchestration.py",
+                        target="bigclaw-go/internal/workflow/orchestration_test.go",
                         capability="commercialization",
-                        note="handoff and policy decision validation",
+                        note="go-native handoff and policy decision validation",
                     ),
                     EvidenceLink(
                         label="report-studio-tests",
