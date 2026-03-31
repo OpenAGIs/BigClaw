@@ -1,22 +1,21 @@
 # BIG-GO-1026 Workpad
 
 ## Plan
-- Inline the remaining `tests/conftest.py` path bootstrap into the surviving reports suite so the test layer keeps the same behavior with one fewer Python file.
-- Remove `tests/conftest.py` after confirming direct `pytest` and `PYTHONPATH` invocations still collect the consolidated suite cleanly.
-- Run targeted Python validation for the consolidated reports suite plus repo-level grep/count checks, then record exact commands and results.
-- Commit the scoped changes and push the branch to the remote.
+- Verify whether any additional safe Python test-file reductions remain after consolidating the tranche into `tests/test_reports.py`.
+- Record the remaining-scope blocker if the only surviving Python test asset is the monolithic consolidated reports suite.
+- Re-run repo-level inventory checks so the branch captures the current `.py` / `.go` / packaging-file state.
+- Commit the blocker/workpad update and push the branch to the remote.
 
 ## Acceptance
-- Scope stays limited to the `tests/conftest.py` consolidation tranche for this issue.
-- `.py` file count decreases from the current baseline.
-- Coverage formerly provided by `tests/conftest.py` now lives in `tests/test_reports.py`.
-- Any references to `tests/conftest.py` are updated or eliminated.
+- Scope stays limited to documenting the remaining blocker after the `tests` consolidation tranche.
+- Repo state reflects that `tests/test_reports.py` is the only remaining Python test asset under `tests/`.
+- Blocker states that further `.py` count reduction now requires semantic rewrite or Go-native replacement rather than another safe file merge.
 - Report includes `.py` / `.go` file-count impact and confirms whether `pyproject.toml` / `setup.py` / `setup.cfg` changed.
 
 ## Validation
-- `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
-- `python3 -m pytest tests/test_reports.py -q`
-- `rg -n "conftest\\.py|tests/conftest\\.py" README.md scripts tests src .symphony`
+- `wc -l tests/*.py`
+- `rg --files tests`
+- `rg --files | rg '\\.py$' | sed -n '1,200p'`
 - `rg --files | rg '\\.py$' | wc -l`
 - `rg --files | rg '\\.go$' | wc -l`
 - `rg --files | rg '(^|/)(pyproject\\.toml|setup\\.py|setup\\.cfg)$'`
