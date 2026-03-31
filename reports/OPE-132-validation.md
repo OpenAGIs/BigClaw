@@ -19,5 +19,5 @@ Delivered an auditable execution role matrix for `BIG-4304` inside the existing 
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_execution_contract.py` -> `6 passed in 0.02s`
+- `(cd bigclaw-go && go test ./internal/contract)` -> execution contract coverage lives in Go
 - `python3 -m pytest` -> `151 passed in 0.18s`

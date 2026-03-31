@@ -18,7 +18,7 @@ Delivered a repo-native execution contract draft for the key operations APIs, co
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_execution_contract.py` -> `5 passed in 0.07s`
+- `(cd bigclaw-go && go test ./internal/contract)` -> execution contract coverage lives in Go
 - `python3 -m pytest` -> `129 passed in 0.25s`
 
 ## Contract Audit

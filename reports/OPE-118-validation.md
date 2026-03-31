@@ -11,6 +11,6 @@ Delivered the BIG-EPIC-18 v4.0 execution-layer technical contract as a dedicated
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_execution_contract.py -q` → `...                                                                      [100%]`
+- `(cd bigclaw-go && go test ./internal/contract)` -> execution contract coverage lives in Go
 - `python3 -m pytest -q` → `........................................................................ [ 62%]` / `............................................                             [100%]`
-- `git diff -- src/bigclaw/__init__.py src/bigclaw/execution_contract.py tests/test_execution_contract.py` captured the added execution-contract module, package exports, and OPE-118 regression tests before this report was written
+- `git diff -- src/bigclaw/__init__.py src/bigclaw/execution_contract.py bigclaw-go/internal/contract/execution_test.go` captured the execution-contract module, package exports, and Go regression coverage before this report was written
