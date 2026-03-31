@@ -1,23 +1,21 @@
-Issue: BIG-GO-1019
+# BIG-GO-1026 Workpad
 
-Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+## Plan
+- Remove redundant Python tests already covered by Go tests in the migrated `bigclaw-go` tree.
+- Update in-repo references that still point to removed Python test files so validation guidance stays accurate.
+- Run targeted Go tests for the replacement coverage and repo-level grep/count checks, then record exact commands and results.
+- Commit the scoped changes and push the branch to the remote.
 
-Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+## Acceptance
+- Scope stays limited to the remaining Python test tranche for this issue.
+- `.py` file count decreases from the current baseline.
+- Go coverage exists for each removed Python test surface.
+- Any references to removed Python tests are updated or eliminated.
+- Report includes `.py` / `.go` file-count impact and confirms whether `pyproject.toml` / `setup.py` / `setup.cfg` changed.
 
-Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+## Validation
+- `go test ./internal/repo ./internal/product`
+- `rg -n "test_repo_gateway\\.py|test_repo_registry\\.py|test_repo_links\\.py|test_saved_views\\.py" .`
+- `find . -name '*.py' | wc -l`
+- `find . -name '*.go' | wc -l`
+- `find . -name pyproject.toml -o -name setup.py -o -name setup.cfg`

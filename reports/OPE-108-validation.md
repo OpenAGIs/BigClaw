@@ -11,5 +11,5 @@ Delivered the `BIG-1603` saved views and alert digests slice as a governed conso
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_saved_views.py tests/test_console_ia.py tests/test_design_system.py` -> `..................... [100%]`
+- `(cd bigclaw-go && go test ./internal/product)` plus `python3 -m pytest tests/test_console_ia.py tests/test_design_system.py` -> saved-view coverage lives in Go; console/design-system coverage remains in Python
 - `python3 -m pytest` -> `........................................................................ [ 75%]` and `........................ [100%]`
