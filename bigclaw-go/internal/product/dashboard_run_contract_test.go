@@ -1,6 +1,7 @@
 package product
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -97,5 +98,52 @@ func TestDashboardContractFormattingHelpers(t *testing.T) {
 	}
 	if got := boolText(false); got != "false" {
 		t.Fatalf("boolText(false) = %q, want %q", got, "false")
+	}
+}
+
+func TestDashboardRunContractRoundTripPreservesSamplesAndAudit(t *testing.T) {
+	contract := BuildDefaultDashboardRunContract()
+
+	payload, err := json.Marshal(contract)
+	if err != nil {
+		t.Fatalf("marshal contract: %v", err)
+	}
+
+	var restored DashboardRunContract
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal contract: %v", err)
+	}
+	restoredPayload, err := json.Marshal(restored)
+	if err != nil {
+		t.Fatalf("marshal restored contract: %v", err)
+	}
+	if string(restoredPayload) != string(payload) {
+		t.Fatalf("expected round-trip contract JSON equality, got restored=%s original=%s", string(restoredPayload), string(payload))
+	}
+
+	audit := AuditDashboardRunContract(contract)
+	auditPayload, err := json.Marshal(audit)
+	if err != nil {
+		t.Fatalf("marshal audit: %v", err)
+	}
+
+	var restoredAudit DashboardRunContractAudit
+	if err := json.Unmarshal(auditPayload, &restoredAudit); err != nil {
+		t.Fatalf("unmarshal audit: %v", err)
+	}
+	if !restoredAudit.ReleaseReady {
+		t.Fatalf("expected round-tripped audit to remain release ready, got %+v", restoredAudit)
+	}
+
+	wantField := ContractField{Name: "dashboard_id", FieldType: "string", Required: true, Description: "Stable dashboard identifier."}
+	found := false
+	for _, field := range restored.DashboardSchema.Fields {
+		if field == wantField {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected restored contract to retain canonical dashboard_id field, got %+v", restored.DashboardSchema.Fields)
 	}
 }

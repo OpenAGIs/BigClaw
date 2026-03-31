@@ -1,23 +1,41 @@
-Issue: BIG-GO-1019
+# BIG-GO-1036 Workpad
 
-Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+## Plan
+- Replace a scoped tranche of Python tests that already have functional Go coverage.
+- Add small Go parity tests so Go test coverage explicitly increases in this change.
+- Delete only the matching `tests/*.py` files for this tranche.
+- Run targeted Go tests and record exact commands and outcomes.
+- Commit and push the branch.
 
-Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+## Scoped Tranche
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_github_sync.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_links.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_triage.py`
 
-Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+## Acceptance
+- Python test file count decreases by deleting the scoped files above.
+- Go test coverage increases via new parity assertions under existing Go test files.
+- Replacement coverage remains in Go under `bigclaw-go/internal/product`, `bigclaw-go/internal/githubsync`, and `bigclaw-go/internal/repo`.
+- Changes stay scoped to this tranche only.
+
+## Validation
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && gofmt -w bigclaw-go/internal/product/dashboard_run_contract_test.go bigclaw-go/internal/githubsync/sync_test.go`
+  - Passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && git diff --stat`
+  - Passed
+  - Output summary: `11 files changed, 136 insertions(+), 425 deletions(-)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/product ./internal/repo ./internal/githubsync`
+  - First run failed in `internal/product` because a new round-trip assertion compared decoded `map[string]any` structures too strictly.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && gofmt -w bigclaw-go/internal/product/dashboard_run_contract_test.go`
+  - Passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/product ./internal/repo ./internal/githubsync`
+  - Passed
+  - Exact result:
+    - `ok  	bigclaw-go/internal/product	0.470s`
+    - `ok  	bigclaw-go/internal/repo	(cached)`
+    - `ok  	bigclaw-go/internal/githubsync	(cached)`
