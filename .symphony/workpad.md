@@ -47,3 +47,6 @@
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `67` after retiring `src/bigclaw/repo_governance.py`, `src/bigclaw/repo_registry.py`, `tests/test_repo_governance.py`, and `tests/test_repo_registry.py`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_plane.py src/bigclaw/repo_commits.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_validation.py src/bigclaw/github_sync.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `66` after retiring `src/bigclaw/roadmap.py`
+- `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.727s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_plane.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py src/bigclaw/github_sync.py tests/test_workspace_bootstrap.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `64` after retiring `src/bigclaw/repo_commits.py` and `src/bigclaw/workspace_bootstrap_validation.py`

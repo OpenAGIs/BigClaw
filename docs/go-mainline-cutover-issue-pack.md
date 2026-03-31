@@ -249,7 +249,6 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_commits.py`
 - `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_board.py`
@@ -283,7 +282,6 @@ Historical initial state:
 Python source:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap.py`
-- `src/bigclaw/workspace_bootstrap_validation.py`
 - `scripts/ops/bigclaw_github_sync.py`
 - `scripts/ops/symphony_workspace_bootstrap.py`
 - `scripts/ops/bigclaw_refill_queue.py`
@@ -444,7 +442,6 @@ Historical planned state:
 Python source:
 - `src/bigclaw/collaboration.py`
 - `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_triage.py`
@@ -482,7 +479,6 @@ Historical planned state:
 Python source:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap.py`
-- `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/service.py`
 
 Go ownership:
