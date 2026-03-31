@@ -46,6 +46,59 @@ func TestMissingRequiredFieldsForEventUsesTopLevelAuditIdentifiers(t *testing.T)
 	}
 }
 
+func TestMissingRequiredFieldsForManualTakeoverEventUsesTopLevelAuditIdentifiers(t *testing.T) {
+	missing := MissingRequiredFieldsForEvent(domain.Event{
+		ID:     "evt-takeover-1",
+		Type:   domain.EventType(ManualTakeoverEvent),
+		TaskID: "task-takeover-1",
+		RunID:  "run-takeover-1",
+		Payload: map[string]any{
+			"target_team":        "security",
+			"reason":             "manual review required",
+			"requested_by":       "scheduler",
+			"required_approvals": []string{"security-review"},
+		},
+	})
+	if len(missing) != 0 {
+		t.Fatalf("expected manual takeover event to satisfy audit spec, got %+v", missing)
+	}
+}
+
+func TestMissingRequiredFieldsForBudgetOverrideAndFlowHandoffEvents(t *testing.T) {
+	cases := []domain.Event{
+		{
+			ID:     "evt-budget-1",
+			Type:   domain.EventType(BudgetOverrideEvent),
+			TaskID: "task-budget-1",
+			RunID:  "run-budget-1",
+			Payload: map[string]any{
+				"requested_budget": 120.0,
+				"approved_budget":  150.0,
+				"override_actor":   "finance-controller",
+				"reason":           "approved additional analytics validation spend",
+			},
+		},
+		{
+			ID:     "evt-handoff-1",
+			Type:   domain.EventType(FlowHandoffEvent),
+			TaskID: "task-handoff-1",
+			RunID:  "run-handoff-1",
+			Payload: map[string]any{
+				"source_stage":       "scheduler",
+				"target_team":        "operations",
+				"reason":             "premium tier required",
+				"collaboration_mode": "tier-limited",
+			},
+		},
+	}
+
+	for _, event := range cases {
+		if missing := MissingRequiredFieldsForEvent(event); len(missing) != 0 {
+			t.Fatalf("expected %s to satisfy audit spec, got %+v", event.Type, missing)
+		}
+	}
+}
+
 func TestMissingRequiredFieldsForEventReturnsSpecGaps(t *testing.T) {
 	missing := MissingRequiredFieldsForEvent(domain.Event{
 		ID:     "evt-approval-2",
