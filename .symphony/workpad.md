@@ -115,3 +115,14 @@
 - `rg -n "from bigclaw\\.risk|RiskScorer|Scheduler\\(\\)\\.execute|test_risk\\.py" src tests README.md docs reports scripts -S`
 - `python3 - <<'PY' ... assert 'PYTHONPATH=src python3 -m pytest' in .github/workflows/ci.yml ... PY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
+- `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S`
+- `cd bigclaw-go && go test ./internal/governance -count=1`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+
+### Results
+- `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S` -> `tests/test_planning.py:19:from bigclaw.governance import ScopeFreezeAudit` and `tests/test_governance.py:1:from bigclaw.governance import (` before retiring the redundant Python governance test.
+- Deleted `tests/test_governance.py` after confirming `bigclaw-go/internal/governance/freeze_test.go` covers the same board round-trip, governance audit gaps, ready-state audit round-trip, and report rendering scenarios.
+- `cd bigclaw-go && go test ./internal/governance -count=1` -> `ok  	bigclaw-go/internal/governance	0.753s`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q` -> `14 passed in 0.06s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 36`; `go 286`
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output

@@ -60,10 +60,16 @@
   usage for any migration-only Python validation.
 - Deleted `tests/conftest.py`, removing implicit `src` path injection and
   reducing repository `.py` file count by one.
+- Deleted the redundant Python
+  [test_governance.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_governance.py)
+  after confirming its board round-trip, governance audit, ready-state, and
+  report rendering assertions are already covered by the Go-owned
+  `bigclaw-go/internal/governance/freeze_test.go` while the residual Python
+  `governance.py` module remains in use by planning compatibility code.
 
 ## File-count impact
 
-- `.py`: `50 -> 37`
+- `.py`: `50 -> 36`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -93,11 +99,22 @@
 - `rg -n "from bigclaw\\.execution_contract|bigclaw\\.execution_contract|ExecutionContractLibrary|render_execution_contract_report|build_operations_api_contract|ExecutionPermissionMatrix|ExecutionRole" src tests README.md docs reports scripts -S`
 - `cd bigclaw-go && go test ./internal/risk ./internal/scheduler`
 - `rg -n "from bigclaw\\.risk|RiskScorer|Scheduler\\(\\)\\.execute|test_risk\\.py" src tests README.md docs reports scripts -S`
+- `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S`
+- `cd bigclaw-go && go test ./internal/governance -count=1`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
+
+## Validation results
+
+- `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S` -> before deletion, only `tests/test_planning.py` and `tests/test_governance.py` referenced the residual Python governance surface directly.
+- `cd bigclaw-go && go test ./internal/governance -count=1` -> `ok  	bigclaw-go/internal/governance	0.753s`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q` -> `14 passed in 0.06s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 36`; `go 286`
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk
 
 - The repository still contains legacy Python source and tests under `src/` and
   `tests/`; this lane only removes remaining root/config entrypoint residue and
-  one implicit Python test bootstrap file.
+  redundant Python compatibility tests where Go-owned coverage already exists.
