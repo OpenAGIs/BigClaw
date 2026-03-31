@@ -111,5 +111,7 @@
 - `rg -n "from bigclaw\\.event_bus|bigclaw\\.event_bus|EventBus|BusEvent|PULL_REQUEST_COMMENT_EVENT|CI_COMPLETED_EVENT|TASK_FAILED_EVENT" src tests README.md docs reports scripts -S`
 - `cd bigclaw-go && go test ./internal/contract -run 'TestExecutionContractAuditAcceptsWellFormedContract|TestExecutionContractAuditSurfacesContractGaps|TestExecutionContractRoundTripAndPermissionMatrix|TestRenderExecutionContractReportIncludesRoleMatrix|TestOperationsAPIContractDraftIsReleaseReady|TestOperationsAPIContractPermissionsCoverReadAndActionPaths|TestExecutionContractAuditRequiresPersonaScopeAndEscalationMetadata'`
 - `rg -n "from bigclaw\\.execution_contract|bigclaw\\.execution_contract|ExecutionContractLibrary|render_execution_contract_report|build_operations_api_contract|ExecutionPermissionMatrix|ExecutionRole" src tests README.md docs reports scripts -S`
+- `cd bigclaw-go && go test ./internal/risk ./internal/scheduler`
+- `rg -n "from bigclaw\\.risk|RiskScorer|Scheduler\\(\\)\\.execute|test_risk\\.py" src tests README.md docs reports scripts -S`
 - `python3 - <<'PY' ... assert 'PYTHONPATH=src python3 -m pytest' in .github/workflows/ci.yml ... PY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
