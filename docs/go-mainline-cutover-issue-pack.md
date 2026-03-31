@@ -129,7 +129,7 @@ Historical initial state:
 ### BIG-GOM-302 Risk, policy, and approval semantics migration
 
 Python source:
-- `src/bigclaw/risk.py`
+- folded `risk` compatibility surface in `src/bigclaw/runtime.py`
 - `src/bigclaw/governance.py`
 - `src/bigclaw/execution_contract.py`
 - folded `audit_events` compatibility surface in `src/bigclaw/observability.py`
@@ -389,7 +389,7 @@ tracker work.
 ### 1. Close risk and policy parity on the Go mainline
 
 Python source:
-- `src/bigclaw/risk.py`
+- remaining active consumers of the folded risk compatibility surface in `src/bigclaw/runtime.py`
 - remaining active consumers of `src/bigclaw/governance.py`
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of the folded audit-event compatibility surface in `src/bigclaw/observability.py`

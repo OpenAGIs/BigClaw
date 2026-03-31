@@ -137,6 +137,15 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
 )
+_install_legacy_surface_module(
+    "risk",
+    ["RiskFactor", "RiskScore", "RiskScorer"],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "risk.py has been folded into runtime.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -155,6 +164,9 @@ from .runtime import (
     RepoGovernanceEnforcer,
     RepoGovernancePolicy,
     RepoGovernanceResult,
+    RiskFactor,
+    RiskScore,
+    RiskScorer,
     SandboxProfile,
     SandboxRouter,
     Scheduler,
@@ -235,7 +247,6 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
