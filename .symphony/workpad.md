@@ -20,7 +20,9 @@ Plan
 - Retire the isolated Python repo discussion board helper lane now that only dedicated Python tests and stale docs still reference it and the Go repo surface already carries equivalent coverage.
 - Retire the isolated Python repo commit helper module when it has no in-repo imports, no tests, and only historical docs still mention it.
 - Retire the isolated Python saved-view helper lane once the only remaining usage is package exports, dedicated tests, and planning/docs references that can point at the Go-owned saved-view surface instead.
+- Retire the isolated Python intake connector and workflow-definition helpers once they only remain through package exports, dedicated tests, and documentation that already points to Go-owned parity surfaces.
 - Collapse the shared Python run-detail renderer into `reports.py` so the repo no longer carries a standalone helper module for that HTML surface.
+- Retire the standalone Python saved-views model/audit helper lane once planning evidence and validation point at the Go-owned product surface.
 - Update directly coupled Go tests and legacy compile-check fixtures so they only cover the remaining Python compatibility files that still exist.
 - Refresh repo docs that still present the deleted Python wrappers as valid entrypoints.
 - Run targeted validation around the Go legacy-shim package and the `bigclawctl` workspace/github-sync/refill entrypoints, then capture exact commands and results.
@@ -47,7 +49,9 @@ Acceptance
 - Python repo discussion board helpers that are not exported and only survive via dedicated Python tests are retired together with those tests once Go-owned repo surface coverage already exists.
 - Python repo commit helper modules with no package exports, runtime imports, or tests are removed instead of being kept as dead physical assets.
 - Python saved-view helpers that are no longer imported by runtime code are removed together with their dedicated tests and stale Python evidence links, while planning/docs are repointed to Go ownership.
+- Python intake connector and workflow-definition helpers with no live runtime consumers are removed together with stale exports/tests, while cutover docs continue to point to Go ownership.
 - Shared Python helper modules that only exist to serve one remaining ownership cluster are inlined into that owner module and then deleted.
+- Python product/helper lanes are retired when Go already owns the active implementation and the remaining Python references are only planning or regression scaffolding.
 - Supported operator paths point to `scripts/ops/bigclawctl` instead of deleted Python wrappers.
 - Final report states the impact on `.py` count, `.go` count, and `pyproject.toml` / `setup.py` presence.
 
