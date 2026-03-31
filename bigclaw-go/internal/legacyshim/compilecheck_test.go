@@ -11,9 +11,8 @@ func TestFrozenCompileCheckFilesUsesFrozenShimList(t *testing.T) {
 	repoRoot := "/repo"
 	got := FrozenCompileCheckFiles(repoRoot)
 	want := []string{
-		filepath.Join(repoRoot, "src/bigclaw/service.py"),
 		filepath.Join(repoRoot, "src/bigclaw/__main__.py"),
-		filepath.Join(repoRoot, "src/bigclaw/legacy_shim.py"),
+		filepath.Join(repoRoot, "src/bigclaw/__init__.py"),
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected compile-check files: got=%v want=%v", got, want)
@@ -38,9 +37,8 @@ func TestCompileCheckRunsPyCompileAgainstFrozenShimList(t *testing.T) {
 	wantArgs := []string{
 		"-m",
 		"py_compile",
-		filepath.Join(repoRoot, "src/bigclaw/service.py"),
 		filepath.Join(repoRoot, "src/bigclaw/__main__.py"),
-		filepath.Join(repoRoot, "src/bigclaw/legacy_shim.py"),
+		filepath.Join(repoRoot, "src/bigclaw/__init__.py"),
 	}
 	if !reflect.DeepEqual(gotArgs, wantArgs) {
 		t.Fatalf("unexpected args: got=%v want=%v", gotArgs, wantArgs)
