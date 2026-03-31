@@ -12,8 +12,10 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 
 	deletedPythonFiles := []string{
 		"src/bigclaw/console_ia.py",
+		"src/bigclaw/connectors.py",
 		"src/bigclaw/cost_control.py",
 		"src/bigclaw/dashboard_run_contract.py",
+		"src/bigclaw/dsl.py",
 		"src/bigclaw/issue_archive.py",
 		"src/bigclaw/mapping.py",
 		"src/bigclaw/pilot.py",
@@ -35,6 +37,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 	goOwners := []string{
 		"bigclaw-go/internal/costcontrol/controller.go",
 		"bigclaw-go/internal/governance/freeze.go",
+		"bigclaw-go/internal/intake/connector.go",
 		"bigclaw-go/internal/intake/mapping.go",
 		"bigclaw-go/internal/issuearchive/archive.go",
 		"bigclaw-go/internal/pilot/report.go",
@@ -47,6 +50,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"bigclaw-go/internal/repo/governance.go",
 		"bigclaw-go/internal/repo/registry.go",
 		"bigclaw-go/internal/repo/triage.go",
+		"bigclaw-go/internal/workflow/definition.go",
 	}
 	for _, relativePath := range goOwners {
 		path := filepath.Join(repoRoot, relativePath)

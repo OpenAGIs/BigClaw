@@ -95,8 +95,6 @@ current runnable work.
 
 Python source:
 - `src/bigclaw/models.py`
-- `src/bigclaw/connectors.py`
-- `src/bigclaw/dsl.py`
 
 Go ownership:
 - `bigclaw-go/internal/domain/task.go`
@@ -118,6 +116,7 @@ Current repo progress:
 - `bigclaw-go/internal/billing/statement.go` remains the canonical Go billing contract, with parity coverage expanded to preserve Python usage metadata during round trips
 - `/v2/intake/connectors/...`, `/v2/intake/issues/map`, and `/v2/workflows/definitions/render` now expose Go-owned intake / mapping / workflow-definition endpoints for downstream tooling
 - remaining `models.py` contract structs still need to be folded into the existing Go runtime / orchestration packages instead of copied into one compatibility file
+- `connectors.py`, `mapping.py`, and `dsl.py` have now been deleted from `src/bigclaw` after their Go owners became canonical
 
 Milestone:
 - `Control/Workflow Surface Migration`

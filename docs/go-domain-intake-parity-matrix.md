@@ -33,19 +33,19 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
   - workflow JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for steps, tags, outputs, approvals, and step metadata
   - workflow JSON output now preserves the Python `to_dict()` field set for templates and runs, including default trigger/status values and empty collection fields
 
-### `src/bigclaw/connectors.py`
+### Former `src/bigclaw/connectors.py`
 
 - `SourceIssue` -> `bigclaw-go/internal/intake/types.go`
 - `Connector` protocol -> `bigclaw-go/internal/intake/connector.go`
 - `GitHubConnector`, `LinearConnector`, `JiraConnector` -> `bigclaw-go/internal/intake/connector.go`
 
-### `src/bigclaw/mapping.py`
+### Former `src/bigclaw/mapping.py`
 
 - `map_priority` -> `bigclaw-go/internal/intake/mapping.go`
 - `map_state` -> `bigclaw-go/internal/intake/mapping.go`
 - `map_source_issue_to_task` -> `bigclaw-go/internal/intake/mapping.go`
 
-### `src/bigclaw/dsl.py`
+### Former `src/bigclaw/dsl.py`
 
 - `WorkflowStep` -> `bigclaw-go/internal/workflow/definition.go`
 - `WorkflowDefinition` -> `bigclaw-go/internal/workflow/definition.go`
@@ -68,7 +68,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 
 ## Remaining gaps
 
-- Legacy Python modules under `src/bigclaw` still exist and are not yet fully retired.
+- Some legacy Python modules under `src/bigclaw` still exist and are not yet fully retired, but the intake connector / mapping / DSL slice has been deleted after Go takeover.
 - Python tests under `BigClaw/tests` still remain as migration references.
 - Follow-on `BIG-GOM-302` migration work has started in Go with:
   - `bigclaw-go/internal/governance/freeze.go`

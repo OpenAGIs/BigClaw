@@ -119,7 +119,6 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -166,7 +165,6 @@ from .governance import (
     render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -411,10 +409,6 @@ __all__ = [
     "Scheduler",
     "SchedulerDecision",
     "ExecutionRecord",
-    "SourceIssue",
-    "GitHubConnector",
-    "LinearConnector",
-    "JiraConnector",
     "CommandAction",
     "AuditRequirement",
     "ComponentLibrary",
@@ -457,8 +451,6 @@ __all__ = [
     "DecisionNote",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
-    "WorkflowDefinition",
-    "WorkflowStep",
     "EpicMilestone",
     "ExecutionPackRoadmap",
     "build_execution_pack_roadmap",

@@ -2,6 +2,7 @@ Issue: BIG-GO-1035
 
 Plan
 - Remove a safe tranche of `src/bigclaw/**` Python modules that already have Go-native owners and are not on surviving Python runtime paths.
+- Continue with a second safe tranche for `connectors.py` and `dsl.py`, which now only serve Python package exports/tests while their Go owners are already canonical.
 - Delete the directly coupled Python tests for those removed modules, while preserving adjacent coverage by rewriting any remaining test that only used the deleted helpers incidentally.
 - Trim `src/bigclaw/__init__.py` exports so the package no longer imports deleted modules.
 - Add a Go regression test that asserts the deleted Python files stay gone and their canonical Go replacements remain present.
@@ -20,6 +21,7 @@ Validation
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort`
 - `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go`
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory`
+- `PYTHONPATH=src python3 -c "import bigclaw; import bigclaw.collaboration; print('ok')"`
 - `python3 -m pytest tests/test_repo_collaboration.py -q`
 - `find . -maxdepth 2 \\( -name 'pyproject.toml' -o -name 'setup.py' \\) | sort`
 - `git status --short`
