@@ -485,7 +485,6 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "bigclaw-go/internal/workflow/engine_test.go",
         "bigclaw-go/internal/worker/runtime_test.go",
         "src/bigclaw/evaluation.py",
-        "tests/test_evaluation.py",
     }
 
 
