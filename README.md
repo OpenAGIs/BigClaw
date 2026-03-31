@@ -157,10 +157,8 @@ The root Go-only build entrypoints are `make test`, `make build`, and `make run`
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
 ops wrappers remain only as compatibility shims during migration.
 
-The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
-`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+The legacy Python execution-kernel implementation file `src/bigclaw/runtime.py`
+has been removed. The remaining `bigclaw.{queue,scheduler,workflow,orchestration,service}`
+Python imports are compatibility-only shims that point operators to the Go
+mainline under `bigclaw-go/internal/*` and `go run ./bigclaw-go/cmd/bigclawd`.
+Active runtime development belongs in `bigclaw-go/internal/*`.

@@ -1,6 +1,7 @@
 import sys
 import types
 
+from .deprecation import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message
 from .models import (
     BillingInterval,
     BillingRate,
@@ -23,101 +24,140 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-from . import runtime as _legacy_runtime_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+
+
+def _legacy_runtime_error(surface: str, replacement: str) -> NotImplementedError:
+    return NotImplementedError(legacy_runtime_message(surface, replacement))
+
+
+def _make_legacy_runtime_type(name: str, replacement: str) -> type:
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        raise _legacy_runtime_error(name, replacement)
+
+    legacy_type = type(name, (), {"__init__": __init__, "__module__": __name__})
+    legacy_type.__doc__ = legacy_runtime_message(name, replacement)
+    return legacy_type
+
+
+def _make_legacy_runtime_function(name: str, replacement: str):
+    def _missing(*args: object, **kwargs: object) -> None:
+        raise _legacy_runtime_error(name, replacement)
+
+    _missing.__name__ = name
+    _missing.__module__ = __name__
+    _missing.__doc__ = legacy_runtime_message(name, replacement)
+    return _missing
+
+
+def _install_legacy_surface_module(name: str, exports: dict[str, object], **extra_attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
-    for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+    module.__dict__.update(exports)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
 
 
+DeadLetterEntry = _make_legacy_runtime_type("DeadLetterEntry", "bigclaw-go/internal/queue/queue.go")
+PersistentTaskQueue = _make_legacy_runtime_type("PersistentTaskQueue", "bigclaw-go/internal/queue/queue.go")
+CrossDepartmentOrchestrator = _make_legacy_runtime_type(
+    "CrossDepartmentOrchestrator", "bigclaw-go/internal/workflow/orchestration.go"
+)
+DepartmentHandoff = _make_legacy_runtime_type("DepartmentHandoff", "bigclaw-go/internal/workflow/orchestration.go")
+HandoffRequest = _make_legacy_runtime_type("HandoffRequest", "bigclaw-go/internal/workflow/orchestration.go")
+OrchestrationPlan = _make_legacy_runtime_type("OrchestrationPlan", "bigclaw-go/internal/workflow/orchestration.go")
+OrchestrationPolicyDecision = _make_legacy_runtime_type(
+    "OrchestrationPolicyDecision", "bigclaw-go/internal/workflow/orchestration.go"
+)
+PremiumOrchestrationPolicy = _make_legacy_runtime_type(
+    "PremiumOrchestrationPolicy", "bigclaw-go/internal/workflow/orchestration.go"
+)
+render_orchestration_plan = _make_legacy_runtime_function(
+    "render_orchestration_plan", "bigclaw-go/internal/workflow/orchestration.go"
+)
+ExecutionRecord = _make_legacy_runtime_type("ExecutionRecord", "bigclaw-go/internal/scheduler/scheduler.go")
+Scheduler = _make_legacy_runtime_type("Scheduler", "bigclaw-go/internal/scheduler/scheduler.go")
+SchedulerDecision = _make_legacy_runtime_type("SchedulerDecision", "bigclaw-go/internal/scheduler/scheduler.go")
+AcceptanceDecision = _make_legacy_runtime_type("AcceptanceDecision", "bigclaw-go/internal/workflow/engine.go")
+AcceptanceGate = _make_legacy_runtime_type("AcceptanceGate", "bigclaw-go/internal/workflow/engine.go")
+ClawWorkerRuntime = _make_legacy_runtime_type("ClawWorkerRuntime", "bigclaw-go/internal/worker/runtime.go")
+JournalEntry = _make_legacy_runtime_type("JournalEntry", "bigclaw-go/internal/workflow/engine.go")
+SandboxProfile = _make_legacy_runtime_type("SandboxProfile", "bigclaw-go/internal/worker/runtime.go")
+SandboxRouter = _make_legacy_runtime_type("SandboxRouter", "bigclaw-go/internal/worker/runtime.go")
+ToolCallResult = _make_legacy_runtime_type("ToolCallResult", "bigclaw-go/internal/worker/runtime.go")
+ToolPolicy = _make_legacy_runtime_type("ToolPolicy", "bigclaw-go/internal/worker/runtime.go")
+ToolRuntime = _make_legacy_runtime_type("ToolRuntime", "bigclaw-go/internal/worker/runtime.go")
+WorkerExecutionResult = _make_legacy_runtime_type("WorkerExecutionResult", "bigclaw-go/internal/worker/runtime.go")
+WorkflowEngine = _make_legacy_runtime_type("WorkflowEngine", "bigclaw-go/internal/workflow/engine.go")
+WorkflowRunResult = _make_legacy_runtime_type("WorkflowRunResult", "bigclaw-go/internal/workflow/engine.go")
+WorkpadJournal = _make_legacy_runtime_type("WorkpadJournal", "bigclaw-go/internal/workflow/engine.go")
+RepoGovernanceEnforcer = _make_legacy_runtime_type("RepoGovernanceEnforcer", "bigclaw-go/cmd/bigclawd/main.go")
+RepoGovernancePolicy = _make_legacy_runtime_type("RepoGovernancePolicy", "bigclaw-go/cmd/bigclawd/main.go")
+RepoGovernanceResult = _make_legacy_runtime_type("RepoGovernanceResult", "bigclaw-go/cmd/bigclawd/main.go")
+ServerMonitoring = _make_legacy_runtime_type("ServerMonitoring", "bigclaw-go/cmd/bigclawd/main.go")
+create_server = _make_legacy_runtime_function("create_server", "go run ./bigclaw-go/cmd/bigclawd")
+run_server = _make_legacy_runtime_function("run_server", "go run ./bigclaw-go/cmd/bigclawd")
+warn_legacy_service_surface = _make_legacy_runtime_function(
+    "warn_legacy_service_surface", "go run ./bigclaw-go/cmd/bigclawd"
+)
+
 _install_legacy_surface_module(
     "queue",
-    ["DeadLetterEntry", "PersistentTaskQueue"],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    {"DeadLetterEntry": DeadLetterEntry, "PersistentTaskQueue": PersistentTaskQueue},
+    LEGACY_MAINLINE_STATUS=LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/queue/queue.go",
 )
 _install_legacy_surface_module(
     "orchestration",
-    [
-        "CrossDepartmentOrchestrator",
-        "DepartmentHandoff",
-        "HandoffRequest",
-        "OrchestrationPlan",
-        "OrchestrationPolicyDecision",
-        "PremiumOrchestrationPolicy",
-        "render_orchestration_plan",
-    ],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    {
+        "CrossDepartmentOrchestrator": CrossDepartmentOrchestrator,
+        "DepartmentHandoff": DepartmentHandoff,
+        "HandoffRequest": HandoffRequest,
+        "OrchestrationPlan": OrchestrationPlan,
+        "OrchestrationPolicyDecision": OrchestrationPolicyDecision,
+        "PremiumOrchestrationPolicy": PremiumOrchestrationPolicy,
+        "render_orchestration_plan": render_orchestration_plan,
+    },
+    LEGACY_MAINLINE_STATUS=LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
 )
 _install_legacy_surface_module(
     "scheduler",
-    ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    {"ExecutionRecord": ExecutionRecord, "Scheduler": Scheduler, "SchedulerDecision": SchedulerDecision},
+    LEGACY_MAINLINE_STATUS=LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/scheduler/scheduler.go",
 )
 _install_legacy_surface_module(
     "workflow",
-    ["AcceptanceDecision", "AcceptanceGate", "JournalEntry", "WorkflowEngine", "WorkflowRunResult", "WorkpadJournal"],
-    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    {
+        "AcceptanceDecision": AcceptanceDecision,
+        "AcceptanceGate": AcceptanceGate,
+        "JournalEntry": JournalEntry,
+        "WorkflowEngine": WorkflowEngine,
+        "WorkflowRunResult": WorkflowRunResult,
+        "WorkpadJournal": WorkpadJournal,
+    },
+    LEGACY_MAINLINE_STATUS=LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
 )
 _install_legacy_surface_module(
     "service",
-    [
-        "RepoGovernanceEnforcer",
-        "RepoGovernancePolicy",
-        "RepoGovernanceResult",
-        "ServerMonitoring",
-        "create_server",
-        "run_server",
-        "warn_legacy_service_surface",
-    ],
+    {
+        "RepoGovernanceEnforcer": RepoGovernanceEnforcer,
+        "RepoGovernancePolicy": RepoGovernancePolicy,
+        "RepoGovernanceResult": RepoGovernanceResult,
+        "ServerMonitoring": ServerMonitoring,
+        "create_server": create_server,
+        "run_server": run_server,
+        "warn_legacy_service_surface": warn_legacy_service_surface,
+    },
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
         "service.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
-)
-
-from .runtime import (
-    AcceptanceDecision,
-    AcceptanceGate,
-    ClawWorkerRuntime,
-    CrossDepartmentOrchestrator,
-    DeadLetterEntry,
-    DepartmentHandoff,
-    ExecutionRecord,
-    HandoffRequest,
-    JournalEntry,
-    OrchestrationPlan,
-    OrchestrationPolicyDecision,
-    PersistentTaskQueue,
-    PremiumOrchestrationPolicy,
-    RepoGovernanceEnforcer,
-    RepoGovernancePolicy,
-    RepoGovernanceResult,
-    SandboxProfile,
-    SandboxRouter,
-    Scheduler,
-    SchedulerDecision,
-    ServerMonitoring,
-    ToolCallResult,
-    ToolPolicy,
-    ToolRuntime,
-    WorkerExecutionResult,
-    WorkflowEngine,
-    WorkflowRunResult,
-    WorkpadJournal,
-    create_server,
-    render_orchestration_plan,
-    run_server,
-    warn_legacy_service_surface,
 )
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (

@@ -163,11 +163,11 @@ Historical initial state:
 ### BIG-GOM-303 Workflow orchestration and scheduler loop migration
 
 Python source:
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- `src/bigclaw/runtime.py` removed in favor of Go mainline ownership
+- `src/bigclaw/scheduler.py` removed in favor of Go mainline ownership
+- `src/bigclaw/orchestration.py` removed in favor of Go mainline ownership
+- `src/bigclaw/workflow.py` removed in favor of Go mainline ownership
+- `src/bigclaw/queue.py` removed in favor of Go mainline ownership
 
 Go ownership:
 - `bigclaw-go/internal/scheduler/scheduler.go`
@@ -408,11 +408,11 @@ Historical planned state:
 ### 2. Port the workflow, scheduler, runtime, and orchestration loop to Go
 
 Python source:
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- `src/bigclaw/runtime.py` removed in favor of Go mainline ownership
+- `src/bigclaw/scheduler.py` removed in favor of Go mainline ownership
+- `src/bigclaw/orchestration.py` removed in favor of Go mainline ownership
+- `src/bigclaw/workflow.py` removed in favor of Go mainline ownership
+- `src/bigclaw/queue.py` removed in favor of Go mainline ownership
 
 Go ownership:
 - `bigclaw-go/internal/worker/runtime.go`

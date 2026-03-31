@@ -703,54 +703,6 @@ def test_takeover_queue_report_renders_shared_view_error_state():
     assert "Takeover approvals service timed out." in report
 
 
-def test_orchestration_canvas_summarizes_policy_and_handoff():
-    task = Task(task_id="OPE-66-canvas", source="linear", title="Canvas run", description="")
-    run = TaskRun.from_task(task, run_id="run-canvas", medium="browser")
-    run.audit("tool.invoke", "worker", "success", tool="browser")
-
-    from bigclaw.orchestration import DepartmentHandoff, HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
-
-    plan = OrchestrationPlan(
-        task_id="OPE-66-canvas",
-        collaboration_mode="tier-limited",
-        handoffs=[
-            DepartmentHandoff("operations", "coordinate"),
-            DepartmentHandoff("engineering", "execute", required_tools=["browser"]),
-        ],
-    )
-    policy = OrchestrationPolicyDecision(
-        tier="standard",
-        upgrade_required=True,
-        reason="premium tier required for advanced cross-department orchestration",
-        blocked_departments=["customer-success"],
-        entitlement_status="upgrade-required",
-        billing_model="standard-blocked",
-        estimated_cost_usd=7.0,
-        included_usage_units=2,
-        overage_usage_units=1,
-        overage_cost_usd=4.0,
-    )
-    handoff = HandoffRequest(target_team="operations", reason=policy.reason, required_approvals=["ops-manager"])
-
-    canvas = build_orchestration_canvas(run, plan, policy, handoff)
-    report = render_orchestration_canvas(canvas)
-
-    assert isinstance(canvas, OrchestrationCanvas)
-    assert canvas.recommendation == "resolve-entitlement-gap"
-    assert canvas.active_tools == ["browser"]
-    assert canvas.actions[3].enabled is True
-    assert canvas.actions[4].enabled is False
-    assert "# Orchestration Canvas" in report
-    assert "- Tier: standard" in report
-    assert "- Entitlement Status: upgrade-required" in report
-    assert "- Billing Model: standard-blocked" in report
-    assert "- Estimated Cost (USD): 7.00" in report
-    assert "- Handoff Team: operations" in report
-    assert "- Recommendation: resolve-entitlement-gap" in report
-    assert "## Actions" in report
-    assert "Escalate [escalate] state=enabled target=run-canvas" in report
-
-
 def test_orchestration_canvas_reconstructs_flow_collaboration_from_ledger():
     entry = {
         "run_id": "run-flow-1",
