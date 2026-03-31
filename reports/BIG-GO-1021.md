@@ -29,6 +29,13 @@
   `bigclaw-go/internal/bootstrap/bootstrap_test.go`, then deleted
   [workspace_bootstrap.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/workspace_bootstrap.py)
   and [test_workspace_bootstrap.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_workspace_bootstrap.py).
+- Removed the Python saved-views surface after confirming the active behavior is
+  already covered in `bigclaw-go/internal/product/saved_views.go` and
+  `saved_views_test.go`; deleted
+  [saved_views.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/saved_views.py)
+  and [test_saved_views.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_saved_views.py),
+  and trimmed the stale exports from
+  [__init__.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/__init__.py).
 - Split CI into a Go-mainline job and a legacy-Python migration job, and moved
   the legacy test invocation to `python3 -m pytest`, so the root workflow no
   longer reads as a Python-first repository entrypoint.
@@ -39,7 +46,7 @@
 
 ## File-count impact
 
-- `.py`: `50 -> 44`
+- `.py`: `50 -> 42`
 - `.go`: `282 -> 284`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -61,6 +68,8 @@
 - `cd bigclaw-go && go test ./internal/memory -run TestTaskStoreReusesHistoryAndInjectsRules`
 - `cd bigclaw-go && go test ./internal/bootstrap -run 'TestCacheRootForRepoUsesRepoSpecificDirectory|TestSecondWorkspaceReusesWarmCacheWithoutFullClone|TestBootstrapWorkspaceReusesExistingIssueWorktree|TestCleanupWorkspacePreservesSharedCacheForFutureReuse|TestBootstrapRecoversFromStaleSeedDirectoryWithoutRemoteReclone'`
 - `rg -n "from bigclaw\\.workspace_bootstrap|bigclaw\\.workspace_bootstrap|workspace_bootstrap import" src tests README.md docs reports scripts -S`
+- `cd bigclaw-go && go test ./internal/product -run 'TestAuditSavedViewCatalogAndRenderReport|TestSavedViewCatalogJSONRoundTrip|TestRenderSavedViewReportEmptyState|TestRenderSavedViewReportPopulatedRowsUseFallbacks'`
+- `rg -n "from bigclaw\\.saved_views|bigclaw\\.saved_views|SavedViewLibrary|render_saved_view_report" src tests README.md docs reports scripts -S`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
