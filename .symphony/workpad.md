@@ -6,6 +6,7 @@ Plan
 - Inline the last deprecation helper into `src/bigclaw/runtime.py`, retire `src/bigclaw/deprecation.py`, and keep `bigclawctl legacy-python compile-check` valid when no frozen Python files remain.
 - Remove dead Python-only validation-policy code that is no longer referenced anywhere in the repo.
 - Remove additional orphan Python modules that have no package exports, tests, or repo consumers.
+- Remove dead Python mirrors whose active ownership already lives in Go and whose repo references are documentation-only.
 - Update directly coupled Go tests and legacy compile-check fixtures so they only cover the remaining Python compatibility files that still exist.
 - Refresh repo docs that still present the deleted Python wrappers as valid entrypoints.
 - Run targeted validation around the Go legacy-shim package and the `bigclawctl` workspace/github-sync/refill entrypoints, then capture exact commands and results.
@@ -18,6 +19,7 @@ Acceptance
 - The repo no longer carries standalone Python deprecation/helper shim files for the retired package entrypoints.
 - Dead isolated Python-only modules without runtime consumers are removed instead of being left as orphan assets.
 - Orphan Python source files with no repo references are retired to keep the physical tree aligned with active ownership.
+- Python mirrors that only duplicate Go-owned queue/tooling behavior are removed when they no longer serve tests or imports.
 - Supported operator paths point to `scripts/ops/bigclawctl` instead of deleted Python wrappers.
 - Final report states the impact on `.py` count, `.go` count, and `pyproject.toml` / `setup.py` presence.
 
