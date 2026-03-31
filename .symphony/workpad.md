@@ -12,6 +12,7 @@ Plan
 - Remove orphan Python model/report modules that survive only through unused package exports.
 - Remove isolated Python persistence helpers that only remain to support their own legacy tests.
 - Remove isolated Python contract modules that only remain through stale package exports and dedicated test files.
+- Remove isolated Python Git automation helpers that are fully superseded by the Go CLI path and only remain through dedicated legacy tests.
 - Update directly coupled Go tests and legacy compile-check fixtures so they only cover the remaining Python compatibility files that still exist.
 - Refresh repo docs that still present the deleted Python wrappers as valid entrypoints.
 - Run targeted validation around the Go legacy-shim package and the `bigclawctl` workspace/github-sync/refill entrypoints, then capture exact commands and results.
@@ -30,6 +31,7 @@ Acceptance
 - Python modules that are only reachable via stale `__init__` exports are removed together with those exports.
 - Python modules with no imports or exports and only one dedicated test slice are retired with that test slice.
 - Python contract/report surfaces with no runtime consumers are retired together with their export and regression-only test coverage.
+- Python Git/ops helpers with no package exports and only dedicated legacy tests are retired with those tests once the Go CLI path is already validated.
 - Supported operator paths point to `scripts/ops/bigclawctl` instead of deleted Python wrappers.
 - Final report states the impact on `.py` count, `.go` count, and `pyproject.toml` / `setup.py` presence.
 
