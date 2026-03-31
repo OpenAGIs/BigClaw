@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-const LegacyPythonWrapperNotice = "Legacy Python operator wrapper: use scripts/ops/bigclawctl for the Go mainline. This Python path remains only as a compatibility shim during migration."
+const LegacyOperatorWrapperNotice = "Legacy operator wrapper: use scripts/ops/bigclawctl for the Go mainline. Thin shell entrypoints remain only for compatibility during migration."
 
 func AppendMissingFlag(args []string, flag string, value string) []string {
 	flagPrefix := flag + "="

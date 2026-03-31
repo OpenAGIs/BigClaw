@@ -1,23 +1,32 @@
-Issue: BIG-GO-1019
+# BIG-GO-1032 Workpad
 
-Plan
-- Port `multi_node_shared_queue.py` into a Go-native `bigclawctl automation e2e multi-node-shared-queue` command.
-- Preserve the live two-node shared-queue proof plus the companion live takeover report and per-scenario audit artifact exports.
-- Update directly coupled docs, generated report references, and migration inventory to replace the final Python entrypoint.
-- Run targeted validation for the shared-queue tranche, capture exact commands and results, then commit and push the scoped change set.
+## Plan
+1. Inspect the existing `scripts/ops/*.py` scripts and the current Go CLI layout to determine whether each Python entrypoint already has a Go equivalent or needs a new one.
+2. Implement missing Go CLI replacements in the existing Go module, keeping behavior scoped to the script responsibilities needed by the repository.
+3. Update repository entrypoints or wrappers as needed so the replaced workflows invoke Go binaries instead of Python scripts.
+4. Delete the migrated Python files in `scripts/ops/`.
+5. Run targeted validation for the new Go commands and any impacted tests, then record exact commands and outcomes.
+6. Commit the changes with an issue-scoped message and push the branch to `origin`.
 
-Acceptance
-- Changes stay scoped to `bigclaw-go/scripts/**` residual Python assets plus directly coupled tests/docs.
-- `.py` file count under `bigclaw-go/scripts/e2e/**` is reduced for this tranche.
-- Shared-queue validation remains invokable through a Go-native CLI path that writes the same canonical shared-queue and live takeover report surfaces.
-- Final report states the impact on `py files`, `go files`, `pyproject.toml`, and `setup.py`.
+## Acceptance
+- The count of Python files in `scripts/ops/*.py` decreases from the current baseline of 5.
+- Replacement implementations are present as `.go` files and/or Go tests inside `bigclaw-go`.
+- Any affected repository wrappers or docs point at the Go replacements instead of the deleted Python scripts.
+- No new Python implementation is added for this migration.
+- The final change can explicitly list deleted Python files and added Go files.
 
-Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 \( -name '*.py' -o -name '*.go' -o -name '*.sh' \) | sort`
-- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go bigclaw-go/cmd/bigclawctl/automation_commands.go`
-- `go test ./cmd/bigclawctl -run 'TestAutomationMultiNodeSharedQueueBuildLiveTakeoverReport|TestAutomationMultiNodeSharedQueueSummarize'`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
-- `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --report-path /tmp/bigclaw-multi-node-shared-queue-report.json --takeover-report-path /tmp/bigclaw-live-multi-node-subscriber-takeover-report.json --takeover-artifact-dir /tmp/bigclaw-live-multi-node-subscriber-takeover-artifacts`
-- `go test ./internal/regression -run 'TestSharedQueueReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestLiveMultiNodeSubscriberTakeoverProofReport'`
-- `find bigclaw-go/scripts -name '*.py' | sort | wc -l`
-- `git diff --stat && git status --short`
+## Validation
+- `go test ./...` from `bigclaw-go` if the impacted packages allow it; otherwise run targeted package tests covering the touched commands.
+- Execute each migrated CLI with `--help` or equivalent non-destructive validation command.
+- Recount Python files in `scripts/ops/*.py` after the migration to confirm the decrease.
+- Capture exact commands and exit results in the final summary.
+
+## Validation Results
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> passed
+- `bash scripts/ops/bigclaw-github-sync status --json` -> passed
+- `bash scripts/ops/bigclaw-refill-queue --help` -> passed
+- `bash scripts/ops/bigclaw-workspace-bootstrap --help` -> passed
+- `bash scripts/ops/symphony-workspace-bootstrap --help` -> passed
+- `bash scripts/ops/symphony-workspace-validate --issues BIG-GO-1032 BIG-GO-1033 --report-file /tmp/big-go-1032-report.json --no-cleanup --help` -> passed
+- `find scripts/ops -maxdepth 1 -name '*.py' | wc -l` -> `0`
+- `find . -name pyproject.toml -o -name setup.py | wc -l` -> `0`
