@@ -71,3 +71,9 @@
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `51` after retiring `src/bigclaw/repo_plane.py` and `src/bigclaw/repo_links.py`
 - `find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `282`
 - `find . -path './.git' -prune -o \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `0`
+- `rg -n "bigclaw\.collaboration|src/bigclaw/collaboration.py|from \.collaboration|from bigclaw\.collaboration" src tests docs -S` -> no matches after folding collaboration helpers into `src/bigclaw/observability.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_reports.py tests/test_observability.py tests/test_repo_links.py -q` -> `43 passed in 0.15s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/reports.py tests/test_repo_collaboration.py tests/test_reports.py tests/test_observability.py tests/test_repo_links.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `50` after retiring `src/bigclaw/collaboration.py`
+- `find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `282`
+- `find . -path './.git' -prune -o \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `0`

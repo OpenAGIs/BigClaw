@@ -434,8 +434,7 @@ Historical planned state:
 ### 4. Port repo collaboration and lineage surfaces to Go
 
 Python source:
-- `src/bigclaw/collaboration.py`
-- `src/bigclaw/observability.py` (embedded run-commit link compatibility types)
+- `src/bigclaw/observability.py` (embedded run-commit link and collaboration compatibility types)
 
 Go ownership:
 - `bigclaw-go/internal/flow/flow.go`

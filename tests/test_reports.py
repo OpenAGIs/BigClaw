@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
 
-from bigclaw.collaboration import CollaborationComment, DecisionNote, build_collaboration_thread
+from bigclaw.observability import CollaborationComment, DecisionNote, build_collaboration_thread
 from bigclaw.reports import (
     ConsoleAction,
     BillingEntitlementsPage,

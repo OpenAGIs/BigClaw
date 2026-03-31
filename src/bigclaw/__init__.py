@@ -167,13 +167,6 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
 from .saved_views import (
     AlertDigestSubscription,
     SavedView,
@@ -210,7 +203,19 @@ from .event_bus import (
     BusEvent,
     EventBus,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
+from .observability import (
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    TaskRun,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
+)
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,

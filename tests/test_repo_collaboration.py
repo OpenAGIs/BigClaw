@@ -1,4 +1,4 @@
-from bigclaw.collaboration import (
+from bigclaw.observability import (
     CollaborationComment,
     DecisionNote,
     build_collaboration_thread,
