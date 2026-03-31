@@ -82,6 +82,21 @@ func (b RepoDiscussionBoard) now() time.Time {
 	return time.Now()
 }
 
+func (p RepoPost) ToCollaborationComment() CollaborationComment {
+	status := "open"
+	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
+		status = "resolved"
+	}
+	return CollaborationComment{
+		CommentID: "repo-" + p.PostID,
+		Author:    p.Author,
+		Body:      p.Body,
+		CreatedAt: p.CreatedAt,
+		Anchor:    p.TargetSurface + ":" + p.TargetID,
+		Status:    status,
+	}
+}
+
 func copyMap(input map[string]any) map[string]any {
 	if len(input) == 0 {
 		return nil
