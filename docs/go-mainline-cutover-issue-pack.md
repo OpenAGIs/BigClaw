@@ -222,10 +222,10 @@ Historical initial state:
 
 Python source:
 - retired standalone Python repo triage helper
-- `src/bigclaw/run_detail.py`
+- retired standalone Python run-detail renderer helper
 - retired standalone Python dashboard run contract module
 - `src/bigclaw/operations.py`
-- `src/bigclaw/saved_views.py`
+- retired standalone Python saved-view helper
 
 Go ownership:
 - `bigclaw-go/internal/api/server.go`
@@ -429,7 +429,7 @@ Python source:
 - `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
-- `src/bigclaw/run_detail.py`
+- retired standalone Python run-detail renderer helper
 - retired standalone Python dashboard run contract module
 - `src/bigclaw/planning.py`
 
@@ -474,7 +474,7 @@ Historical planned state:
 Python source:
 - `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
-- `src/bigclaw/saved_views.py`
+- retired standalone Python saved-view helper
 - `src/bigclaw/ui_review.py`
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
