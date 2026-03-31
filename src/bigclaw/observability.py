@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from .audit_events import missing_required_fields
 from .models import Task
-from .repo_surfaces import RunCommitLink, bind_run_commits
+from . import RunCommitLink, bind_run_commits
 
 
 def utc_now() -> str:
