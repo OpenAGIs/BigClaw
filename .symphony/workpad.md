@@ -50,3 +50,6 @@
 - `cd bigclaw-go && go test ./internal/repo -count=1` -> `ok  	bigclaw-go/internal/repo	0.727s`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_plane.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py src/bigclaw/github_sync.py tests/test_workspace_bootstrap.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `64` after retiring `src/bigclaw/repo_commits.py` and `src/bigclaw/workspace_bootstrap_validation.py`
+- `cd bigclaw-go && go test ./internal/githubsync -count=1` -> `ok  	bigclaw-go/internal/githubsync	3.612s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/repo_plane.py src/bigclaw/repo_links.py src/bigclaw/workspace_bootstrap.py tests/test_workspace_bootstrap.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `62` after retiring `src/bigclaw/github_sync.py` and `tests/test_github_sync.py`

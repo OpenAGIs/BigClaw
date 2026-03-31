@@ -280,7 +280,6 @@ Historical initial state:
 ### BIG-GOM-307 Workflow, bootstrap, and GitHub sync toolchain migration
 
 Python source:
-- `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - `scripts/ops/bigclaw_github_sync.py`
 - `scripts/ops/symphony_workspace_bootstrap.py`
@@ -477,7 +476,6 @@ Historical planned state:
 ### 6. Replace Python bootstrap and sync entrypoints with Go-only tooling
 
 Python source:
-- `src/bigclaw/github_sync.py`
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/service.py`
 
