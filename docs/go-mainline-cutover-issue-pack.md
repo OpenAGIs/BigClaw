@@ -221,7 +221,7 @@ Historical initial state:
 ### BIG-GOM-305 Control center, triage, and operations view migration
 
 Python source:
-- `src/bigclaw/repo_triage.py`
+- retired standalone Python repo triage helper
 - `src/bigclaw/run_detail.py`
 - retired standalone Python dashboard run contract module
 - `src/bigclaw/operations.py`
@@ -251,11 +251,11 @@ Historical initial state:
 Python source:
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
+- retired standalone Python repo gateway helper
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_governance.py`
+- retired standalone Python repo registry helper
+- retired standalone Python repo governance helper
 
 Go ownership:
 - `bigclaw-go/internal/api/v2.go`
@@ -450,12 +450,12 @@ Python source:
 - `src/bigclaw/collaboration.py`
 - `src/bigclaw/repo_board.py`
 - `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_governance.py`
+- retired standalone Python repo gateway helper
+- retired standalone Python repo governance helper
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_triage.py`
+- retired standalone Python repo registry helper
+- retired standalone Python repo triage helper
 - retired standalone Python issue archive module
 - retired standalone Python roadmap module
 
