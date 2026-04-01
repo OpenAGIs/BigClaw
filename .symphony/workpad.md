@@ -25,6 +25,29 @@
 
 ## Validation Results
 
+- Tranche: delete orphaned Python operator glue modules
+  - Removed Python files:
+    - `src/bigclaw/github_sync.py`
+    - `src/bigclaw/parallel_refill.py`
+    - `src/bigclaw/workspace_bootstrap_cli.py`
+    - `src/bigclaw/workspace_bootstrap_validation.py`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill ./internal/githubsync`
+  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+  - `ok  	bigclaw-go/internal/refill	3.299s`
+  - `ok  	bigclaw-go/internal/githubsync	3.360s`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `27`
+- `find . -name '*.py' | sort | wc -l`
+  - `43`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `11`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `D src/bigclaw/github_sync.py`
+  - `D src/bigclaw/parallel_refill.py`
+  - `D src/bigclaw/workspace_bootstrap_cli.py`
+  - `D src/bigclaw/workspace_bootstrap_validation.py`
 - Tranche: delete orphaned Python repo integration modules
   - Removed Python files:
     - `src/bigclaw/repo_commits.py`
