@@ -31,4 +31,5 @@
 - Validation report added: `reports/BIG-GO-1052-validation.md`
 - Closeout note added: `reports/BIG-GO-1052-closeout.md`
 - Status artifact added: `reports/BIG-GO-1052-status.json`
+- PR draft added: `reports/BIG-GO-1052-pr.md`
 - `cd bigclaw-go && go test ./internal/regression ./cmd/bigclawctl` -> passed
