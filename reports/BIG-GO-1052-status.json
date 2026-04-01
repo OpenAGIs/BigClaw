@@ -18,6 +18,7 @@
     "commands": [
       "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go/scripts/e2e -name '*.py' | wc -l",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go test ./cmd/bigclawctl ./internal/regression",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go test ./internal/regression ./cmd/bigclawctl",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help",
@@ -27,6 +28,7 @@
       "e2e_python_file_count": 0,
       "repo_python_file_count": 50,
       "targeted_go_tests": "passed",
+      "doc_and_workflow_regression_tests": "passed",
       "entrypoint_help_checks": "passed",
       "diff_check": "passed"
     },

@@ -17,6 +17,7 @@ Date: 2026-04-01
 
 - locked `bigclaw-go/scripts/e2e/` to a Go-and-shell-only surface with executable regression coverage
 - added tranche coverage for the removed e2e Python helpers so the deleted paths fail closed if they reappear
+- added active-doc/workflow regression coverage so README, CI, and the e2e guide do not drift back to retired tranche-1 Python helper names
 - aligned Go-facing README and e2e migration docs with the active `bigclawctl automation e2e ...` entrypoints
 - added a repo-native validation report for this lane
 
@@ -29,6 +30,7 @@ Date: 2026-04-01
 
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go/scripts/e2e -name '*.py' | wc -l` -> `0`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go test ./cmd/bigclawctl ./internal/regression` -> passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go test ./internal/regression ./cmd/bigclawctl` -> passed
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help` -> passed
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help` -> passed
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help` -> passed

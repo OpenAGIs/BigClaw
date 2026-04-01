@@ -40,6 +40,9 @@ operator surface by:
     - `external_store_validation.py`
     - `multi_node_shared_queue.py`
   - asserts the Go replacements and retained shell wrapper exist
+- added `bigclaw-go/internal/regression/e2e_entrypoint_docs_test.go`, which
+  fails if active README/workflow/e2e validation surfaces drift back to retired
+  tranche-1 Python helper names
 - updated the operator-facing docs so `scripts/e2e/` is described as a
   Go-and-shell-only surface:
   - `bigclaw-go/README.md`
@@ -91,6 +94,19 @@ Result:
 ```text
 ok  	bigclaw-go/cmd/bigclawctl	3.577s
 ok  	bigclaw-go/internal/regression	0.492s
+```
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go test ./internal/regression ./cmd/bigclawctl
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.511s
+ok  	bigclaw-go/cmd/bigclawctl	(cached)
 ```
 
 ### Go entrypoint help checks

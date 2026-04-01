@@ -21,6 +21,7 @@
 ## Results
 - Audited `.github/workflows`, repo hooks, and checked-in docs for direct tranche-1 `bigclaw-go/scripts/e2e/*.py` entrypoint usage. No remaining workflow or hook invocations were present; the remaining drift was documentation language and missing regression coverage.
 - Added Go regression coverage to fail if tranche-1 e2e Python helpers reappear and to assert `scripts/e2e/run_all.sh` stays wired to Go entrypoints.
+- Added Go regression coverage to fail if active README/workflow/e2e guide surfaces drift back to the retired tranche-1 Python entrypoints.
 - Updated Go-facing README and e2e migration docs to describe `scripts/e2e/` as a Go-and-shell-only surface.
 
 ## Validation Results
@@ -30,3 +31,4 @@
 - Validation report added: `reports/BIG-GO-1052-validation.md`
 - Closeout note added: `reports/BIG-GO-1052-closeout.md`
 - Status artifact added: `reports/BIG-GO-1052-status.json`
+- `cd bigclaw-go && go test ./internal/regression ./cmd/bigclawctl` -> passed
