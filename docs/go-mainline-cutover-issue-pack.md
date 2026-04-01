@@ -473,6 +473,10 @@ Go ownership:
 
 Follow-up cleanup retired `src/bigclaw/roadmap.py`; the remaining roadmap
 contract is anchored by Go regression coverage and repo-native docs.
+Follow-up cleanup retired `src/bigclaw/repo_links.py` and
+`src/bigclaw/repo_plane.py`; the canonical repo-linkage surface now lives in
+`bigclaw-go/internal/repo/*`, while the remaining Python closeout serialization
+keeps only a local compatibility copy in `src/bigclaw/observability.py`.
 
 Historical planned state:
 - `Backlog`
