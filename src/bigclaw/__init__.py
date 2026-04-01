@@ -195,13 +195,6 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .event_bus import (
-    CI_COMPLETED_EVENT,
-    PULL_REQUEST_COMMENT_EVENT,
-    TASK_FAILED_EVENT,
-    BusEvent,
-    EventBus,
-)
 from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .reports import (
     AutoTriageCenter,
@@ -480,11 +473,6 @@ __all__ = [
     "AuditEventSpec",
     "get_audit_event_spec",
     "missing_required_fields",
-    "BusEvent",
-    "EventBus",
-    "PULL_REQUEST_COMMENT_EVENT",
-    "CI_COMPLETED_EVENT",
-    "TASK_FAILED_EVENT",
     "ObservabilityLedger",
     "GitSyncTelemetry",
     "PullRequestFreshness",
