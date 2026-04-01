@@ -8,6 +8,7 @@ Plan
 - Add a Go regression test that asserts the deleted Python files stay gone and their canonical Go replacements remain present.
 - Refresh migration docs that still list the deleted modules as remaining Python inventory.
 - Remove `src/bigclaw/repo_plane.py` and `src/bigclaw/repo_links.py` by keeping a minimal compatibility surface in `src/bigclaw/__init__.py` while pointing canonical ownership at `bigclaw-go/internal/repo/{plane,links}.go`.
+- Remove `src/bigclaw/github_sync.py` and `src/bigclaw/parallel_refill.py` while preserving legacy Python imports via synthetic package modules in `src/bigclaw/__init__.py`.
 - Run targeted tests and inventory checks, then commit and push the scoped branch.
 
 Acceptance
@@ -17,6 +18,7 @@ Acceptance
 - `pyproject.toml` and `setup.py` remain absent from the repository root.
 - Final report can name which Python files were deleted and which Go files/tests now cover them.
 - `src/bigclaw/observability.py` and repo link tests continue to import successfully after the physical repo Python modules are deleted.
+- `tests/test_github_sync.py` continues to pass after the physical `github_sync.py` file is deleted.
 
 Validation
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
@@ -28,5 +30,20 @@ Validation
 - `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py`
 - `PYTHONPATH=src python3 -c "import bigclaw.repo_plane, bigclaw.repo_links, bigclaw.observability; print('ok')"`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_links.py tests/test_observability.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py -q`
 - `find . -maxdepth 2 \\( -name 'pyproject.toml' -o -name 'setup.py' \\) | sort`
 - `git status --short`
+
+Results
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `21`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort` -> `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/deprecation.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/execution_contract.py`, `src/bigclaw/governance.py`, `src/bigclaw/legacy_shim.py`, `src/bigclaw/models.py`, `src/bigclaw/observability.py`, `src/bigclaw/operations.py`, `src/bigclaw/planning.py`, `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`, `src/bigclaw/runtime.py`, `src/bigclaw/ui_review.py`, `src/bigclaw/workspace_bootstrap.py`, `src/bigclaw/workspace_bootstrap_cli.py`, `src/bigclaw/workspace_bootstrap_validation.py`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` -> exit 0
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	3.175s`
+- `PYTHONPATH=src python3 -c "import bigclaw; import bigclaw.collaboration; print('ok')"` -> `ok`
+- `python3 -m pytest tests/test_repo_collaboration.py -q` -> `1 passed in 0.06s`
+- `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py` -> exit 0
+- `PYTHONPATH=src python3 -c "import bigclaw.repo_plane, bigclaw.repo_links, bigclaw.observability; print('ok')"` -> `ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_links.py tests/test_observability.py -q` -> `8 passed in 0.06s`
+- `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py -q` -> `5 passed in 1.15s`
+- `find . -maxdepth 2 \\( -name 'pyproject.toml' -o -name 'setup.py' \\) | sort` -> no output
+- `git status --short` before commit -> `M .symphony/workpad.md`, `M bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go`, `M src/bigclaw/__init__.py`, `D src/bigclaw/github_sync.py`, `D src/bigclaw/parallel_refill.py`

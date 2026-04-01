@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import stat
+import subprocess
 import sys
 import types
-from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
 from .models import (
     BillingInterval,
@@ -186,6 +192,280 @@ _repo_links_module.bind_run_commits = _bind_run_commits
 _repo_links_module.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/repo/links.go"
 sys.modules[_repo_links_module.__name__] = _repo_links_module
 globals()["repo_links"] = _repo_links_module
+
+
+class _GitSyncError(RuntimeError):
+    """Raised when repository sync automation cannot complete safely."""
+
+
+@dataclass
+class _RepoSyncStatus:
+    branch: str
+    local_sha: str
+    remote_sha: str
+    dirty: bool
+    remote_exists: bool
+    synced: bool
+    pushed: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class _GitCommandResult:
+    stdout: str
+    stderr: str
+    returncode: int
+
+
+_EXECUTABLE_BITS = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+
+
+def _run_git_sync_command(command: Sequence[str], repo: Path) -> _GitCommandResult:
+    completed = subprocess.run(
+        list(command),
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return _GitCommandResult(
+        stdout=completed.stdout.strip(),
+        stderr=completed.stderr.strip(),
+        returncode=completed.returncode,
+    )
+
+
+def _git_sync_git(repo: Path, *args: str) -> _GitCommandResult:
+    return _run_git_sync_command(["git", *args], repo)
+
+
+def _require_git_sync(repo: Path, *args: str) -> str:
+    result = _git_sync_git(repo, *args)
+    if result.returncode != 0:
+        detail = result.stderr or result.stdout or f"git {' '.join(args)} failed"
+        raise _GitSyncError(detail)
+    return result.stdout
+
+
+def _git_sync_dirty(repo: Path) -> bool:
+    return bool(_require_git_sync(repo, "status", "--porcelain"))
+
+
+def _git_sync_remote_default_branch(repo: Path, remote: str) -> str:
+    symbolic_ref = _git_sync_git(repo, "symbolic-ref", "--quiet", f"refs/remotes/{remote}/HEAD")
+    if symbolic_ref.returncode == 0 and symbolic_ref.stdout:
+        prefix = f"refs/remotes/{remote}/"
+        if symbolic_ref.stdout.startswith(prefix):
+            return symbolic_ref.stdout[len(prefix) :]
+
+    symref_result = _git_sync_git(repo, "ls-remote", "--symref", remote, "HEAD")
+    if symref_result.returncode != 0:
+        detail = symref_result.stderr or symref_result.stdout or f"git ls-remote --symref failed for {remote}/HEAD"
+        raise _GitSyncError(detail)
+
+    for line in symref_result.stdout.splitlines():
+        if line.startswith("ref: ") and line.endswith("\tHEAD"):
+            ref = line.split()[1]
+            prefix = "refs/heads/"
+            if ref.startswith(prefix):
+                return ref[len(prefix) :]
+
+    raise _GitSyncError(f"Could not determine default branch for remote {remote}")
+
+
+def _git_sync_remote_branch_sha(repo: Path, remote: str, branch: str) -> str:
+    local_ref = _git_sync_git(repo, "rev-parse", f"refs/remotes/{remote}/{branch}")
+    if local_ref.returncode == 0 and local_ref.stdout:
+        return local_ref.stdout
+
+    remote_result = _git_sync_git(repo, "ls-remote", "--heads", remote, branch)
+    if remote_result.returncode != 0:
+        detail = remote_result.stderr or remote_result.stdout or f"git ls-remote failed for {remote}/{branch}"
+        raise _GitSyncError(detail)
+
+    return remote_result.stdout.split()[0] if remote_result.stdout else ""
+
+
+def _git_sync_matches_remote_default_branch(repo: Path, remote: str, local_sha: str) -> bool:
+    try:
+        default_branch = _git_sync_remote_default_branch(repo, remote)
+        default_sha = _git_sync_remote_branch_sha(repo, remote, default_branch)
+    except _GitSyncError:
+        return False
+
+    return bool(default_sha) and local_sha == default_sha
+
+
+def _inspect_repo_sync(repo: Path | str, remote: str = "origin") -> _RepoSyncStatus:
+    repo_path = Path(repo).resolve()
+    branch = _require_git_sync(repo_path, "branch", "--show-current")
+    if not branch:
+        raise _GitSyncError("Detached HEAD does not support issue branch sync automation")
+
+    local_sha = _require_git_sync(repo_path, "rev-parse", "HEAD")
+    remote_result = _git_sync_git(repo_path, "ls-remote", "--heads", remote, branch)
+    if remote_result.returncode != 0:
+        detail = remote_result.stderr or remote_result.stdout or f"git ls-remote failed for {remote}/{branch}"
+        raise _GitSyncError(detail)
+
+    remote_sha = remote_result.stdout.split()[0] if remote_result.stdout else ""
+    dirty = _git_sync_dirty(repo_path)
+    remote_exists = bool(remote_sha)
+    synced = remote_exists and local_sha == remote_sha
+
+    if not remote_exists and _git_sync_matches_remote_default_branch(repo_path, remote, local_sha):
+        synced = True
+
+    return _RepoSyncStatus(
+        branch=branch,
+        local_sha=local_sha,
+        remote_sha=remote_sha,
+        dirty=dirty,
+        remote_exists=remote_exists,
+        synced=synced,
+    )
+
+
+def _install_git_hooks(repo: Path | str, hooks_path: str = ".githooks") -> Path:
+    repo_path = Path(repo).resolve()
+    hooks_dir = repo_path / hooks_path
+    if not hooks_dir.is_dir():
+        raise _GitSyncError(f"Missing hooks directory: {hooks_dir}")
+
+    _require_git_sync(repo_path, "config", "core.hooksPath", hooks_path)
+    for hook in hooks_dir.iterdir():
+        if hook.is_file():
+            hook.chmod(hook.stat().st_mode | _EXECUTABLE_BITS)
+    return hooks_dir
+
+
+def _ensure_repo_sync(
+    repo: Path | str,
+    remote: str = "origin",
+    auto_push: bool = True,
+    allow_dirty: bool = False,
+) -> _RepoSyncStatus:
+    repo_path = Path(repo).resolve()
+    status = _inspect_repo_sync(repo_path, remote=remote)
+
+    if status.dirty:
+        if allow_dirty:
+            return status
+        raise _GitSyncError("Working tree is dirty; commit or stash changes before syncing")
+
+    if status.remote_exists and not status.synced:
+        fetch_result = _git_sync_git(repo_path, "fetch", remote, status.branch)
+        if fetch_result.returncode != 0:
+            detail = fetch_result.stderr or fetch_result.stdout or f"git fetch {remote} {status.branch} failed"
+            raise _GitSyncError(detail)
+
+        ff_result = _git_sync_git(repo_path, "pull", "--ff-only", remote, status.branch)
+        if ff_result.returncode != 0:
+            detail = ff_result.stderr or ff_result.stdout or f"git pull --ff-only {remote} {status.branch} failed"
+            raise _GitSyncError(detail)
+        status = _inspect_repo_sync(repo_path, remote=remote)
+
+    if not auto_push or status.synced:
+        return status
+
+    push_args = ["push", remote, "HEAD"]
+    if not status.remote_exists:
+        push_args = ["push", "-u", remote, "HEAD"]
+
+    push_result = _git_sync_git(repo_path, *push_args)
+    if push_result.returncode != 0:
+        detail = push_result.stderr or push_result.stdout or f"git {' '.join(push_args)} failed"
+        raise _GitSyncError(detail)
+
+    refreshed = _inspect_repo_sync(repo_path, remote=remote)
+    refreshed.pushed = True
+    if not refreshed.synced:
+        raise _GitSyncError(
+            f"Remote SHA mismatch after push: local={refreshed.local_sha} remote={refreshed.remote_sha or 'missing'}"
+        )
+    return refreshed
+
+
+class _ParallelIssueQueue:
+    def __init__(self, queue_path: str):
+        self.queue_path = Path(queue_path)
+        self.payload = json.loads(self.queue_path.read_text())
+
+    def project_slug(self) -> str:
+        return str(self.payload["project"]["slug_id"])
+
+    def activate_state_id(self) -> str:
+        return str(self.payload["policy"]["activate_state_id"])
+
+    def target_in_progress(self) -> int:
+        return int(self.payload["policy"]["target_in_progress"])
+
+    def refill_states(self) -> Set[str]:
+        return {str(name) for name in self.payload["policy"].get("refill_states", [])}
+
+    def issue_order(self) -> List[str]:
+        return [str(identifier) for identifier in self.payload.get("issue_order", [])]
+
+    def issue_records(self) -> List[dict]:
+        return list(self.payload.get("issues", []))
+
+    def issue_identifiers(self) -> List[str]:
+        return [str(record["identifier"]) for record in self.issue_records()]
+
+    def select_candidates(
+        self,
+        active_identifiers: Set[str],
+        issue_states: Dict[str, str],
+        target_in_progress: Optional[int] = None,
+    ) -> List[str]:
+        target = self.target_in_progress() if target_in_progress is None else int(target_in_progress)
+        needed = max(target - len(active_identifiers), 0)
+        if needed == 0:
+            return []
+        candidates: List[str] = []
+        refill_states = self.refill_states()
+        for identifier in self.issue_order():
+            if needed == 0:
+                break
+            if identifier in active_identifiers:
+                continue
+            if issue_states.get(identifier) in refill_states:
+                candidates.append(identifier)
+                needed -= 1
+        return candidates
+
+
+def _issue_state_map(issues: Sequence[dict]) -> Dict[str, str]:
+    state_map: Dict[str, str] = {}
+    for issue in issues:
+        identifier = str(issue.get("identifier", "")).strip()
+        state = issue.get("state") or {}
+        state_name = str(state.get("name", issue.get("state_name", ""))).strip()
+        if identifier and state_name:
+            state_map[identifier] = state_name
+    return state_map
+
+
+_github_sync_module = types.ModuleType(f"{__name__}.github_sync")
+_github_sync_module.GitSyncError = _GitSyncError
+_github_sync_module.RepoSyncStatus = _RepoSyncStatus
+_github_sync_module.CommandResult = _GitCommandResult
+_github_sync_module.EXECUTABLE_BITS = _EXECUTABLE_BITS
+_github_sync_module.inspect_repo_sync = _inspect_repo_sync
+_github_sync_module.install_git_hooks = _install_git_hooks
+_github_sync_module.ensure_repo_sync = _ensure_repo_sync
+_github_sync_module.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/githubsync/sync.go"
+sys.modules[_github_sync_module.__name__] = _github_sync_module
+globals()["github_sync"] = _github_sync_module
+
+_parallel_refill_module = types.ModuleType(f"{__name__}.parallel_refill")
+_parallel_refill_module.ParallelIssueQueue = _ParallelIssueQueue
+_parallel_refill_module.issue_state_map = _issue_state_map
+_parallel_refill_module.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/refill/queue.go"
+sys.modules[_parallel_refill_module.__name__] = _parallel_refill_module
+globals()["parallel_refill"] = _parallel_refill_module
 
 from . import runtime as _legacy_runtime_surface
 
