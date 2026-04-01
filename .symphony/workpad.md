@@ -11,6 +11,7 @@ Plan
 - Remove `src/bigclaw/github_sync.py` and `src/bigclaw/parallel_refill.py` while preserving legacy Python imports via synthetic package modules in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/legacy_shim.py` and `src/bigclaw/risk.py` by moving their compatibility surfaces into synthetic package modules in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/governance.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
+- Remove `src/bigclaw/deprecation.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Update the Go legacy-shim compile-check so the frozen Python compatibility list follows the surviving package entrypoints after `legacy_shim.py` is deleted.
 - Run targeted tests and inventory checks, then commit and push the scoped branch.
 
@@ -42,6 +43,8 @@ Validation
 - `python3 scripts/ops/bigclaw_github_sync.py --help`
 - `python3 scripts/ops/symphony_workspace_validate.py --help`
 - `PYTHONPATH=src python3 -m pytest tests/test_governance.py tests/test_planning.py -q`
+- `PYTHONPATH=src python3 -c "import bigclaw.deprecation, bigclaw.runtime; print('ok')"`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/runtime.py`
 
 Results
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `21`
@@ -71,3 +74,11 @@ Results
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	0.822s`
 - `PYTHONPATH=src python3 -m pytest tests/test_governance.py tests/test_planning.py -q` -> `18 passed in 0.08s`
 - `PYTHONPATH=src python3 -c "import bigclaw.governance, bigclaw.planning; print('ok')"` -> `ok`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` after deleting `execution_contract.py` and `deprecation.py` -> `16`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort` after deleting `execution_contract.py` and `deprecation.py` -> `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/models.py`, `src/bigclaw/observability.py`, `src/bigclaw/operations.py`, `src/bigclaw/planning.py`, `src/bigclaw/reports.py`, `src/bigclaw/run_detail.py`, `src/bigclaw/runtime.py`, `src/bigclaw/ui_review.py`, `src/bigclaw/workspace_bootstrap.py`, `src/bigclaw/workspace_bootstrap_cli.py`, `src/bigclaw/workspace_bootstrap_validation.py`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` -> exit 0
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	0.831s`
+- `PYTHONPATH=src python3 -m pytest tests/test_execution_contract.py -q` -> `7 passed in 0.11s`
+- `PYTHONPATH=src python3 -c "import bigclaw.execution_contract; print('ok')"` -> `ok`
+- `PYTHONPATH=src python3 -c "import bigclaw.deprecation, bigclaw.runtime; print('ok')"` -> `ok`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/runtime.py` -> exit 0
