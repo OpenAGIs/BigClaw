@@ -2,12 +2,14 @@
 
 ## Plan
 
-1. Delete `tests/test_orchestration.py` after closing its remaining Go gap with a repo-native
-   orchestration plan renderer test in `bigclaw-go/internal/workflow`.
-2. Add a small Go-native validation policy package and tests that replace
-   `tests/test_validation_policy.py`, then delete that Python test.
-3. Run targeted Go validation for `./internal/workflow`, `./internal/scheduler`,
-   `./internal/worker`, and `./internal/validationpolicy`, plus repo-level file-count checks.
+1. Delete `tests/test_validation_bundle_continuation_policy_gate.py` because the Go-native
+   `bigclawctl automation e2e continuation-policy-gate` tests already cover the policy-go and
+   policy-hold paths for the same continuation bundle surface.
+2. Delete `tests/test_parallel_validation_bundle.py` because the Go-native automation bundle
+   command and regression tests already cover live validation bundle export, summary generation,
+   index generation, and shared-queue companion paths.
+3. Run targeted Go validation for `./cmd/bigclawctl` and `./internal/regression`, plus repo-level
+   file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
@@ -21,18 +23,16 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/workflow ./internal/scheduler ./internal/worker ./internal/validationpolicy`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
-- `cd bigclaw-go && go test ./internal/workflow ./internal/scheduler ./internal/worker ./internal/validationpolicy`
-  - `ok  	bigclaw-go/internal/workflow	0.488s`
-  - `ok  	bigclaw-go/internal/scheduler	1.885s`
-  - `ok  	bigclaw-go/internal/worker	1.161s`
-  - `ok  	bigclaw-go/internal/validationpolicy	1.099s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
+  - `ok  	bigclaw-go/cmd/bigclawctl	3.903s`
+  - `ok  	bigclaw-go/internal/regression	1.064s`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `18`
+  - `16`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - no output
