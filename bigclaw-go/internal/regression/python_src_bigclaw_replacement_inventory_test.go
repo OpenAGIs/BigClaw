@@ -11,6 +11,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 	repoRoot := filepath.Clean(filepath.Join(goRoot, ".."))
 
 	deletedPythonFiles := []string{
+		"src/bigclaw/__main__.py",
 		"src/bigclaw/console_ia.py",
 		"src/bigclaw/connectors.py",
 		"src/bigclaw/cost_control.py",
