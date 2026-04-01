@@ -1,24 +1,21 @@
-# BIG-GO-1057 Workpad
+## BIG-GO-1071
 
-## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+### Plan
+- Remove Python packaging residue that still exposes `bigclaw` as a package execution surface.
+- Delete `src/bigclaw/__main__.py` so `python -m bigclaw` is no longer a supported default path.
+- Delete `src/bigclaw/__init__.py` so the package bootstrap and legacy surface module installation logic are no longer shipped as packaging scaffolding.
+- Update Go-side legacy shim and regression tests to reflect the reduced frozen Python surface and point users at `bigclawctl` / `bigclawd`.
 
-## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+### Acceptance
+- `src/bigclaw/__main__.py` and `src/bigclaw/__init__.py` are removed.
+- No repo code or active test contract still treats `python -m bigclaw` as a maintained entrypoint.
+- Go-side validation covers the new reduced legacy Python file set.
+- Repository `.py` file count decreases from the pre-change baseline.
 
-## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
+### Validation
+- `rg -n "python -m bigclaw" README.md bigclaw-go docs src tests scripts .github`
+- `rg --files -g '*.py' . | wc -l`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
 
 ## Archived Closeout
 
