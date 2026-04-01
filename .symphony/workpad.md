@@ -25,6 +25,31 @@
 
 ## Validation Results
 
+- Tranche: delete Python pytest path shim and run the residual test slice with explicit PYTHONPATH
+  - Removed Python files:
+    - `tests/conftest.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_observability.py tests/test_operations.py tests/test_reports.py`
+  - `============================= test session starts ==============================`
+  - `platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0`
+  - `rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1040`
+  - `plugins: cov-7.1.0`
+  - `collected 68 items`
+  - `tests/test_evaluation.py .......                                         [ 10%]`
+  - `tests/test_observability.py .......                                      [ 20%]`
+  - `tests/test_operations.py ....................                            [ 50%]`
+  - `tests/test_reports.py ..................................                 [100%]`
+  - `============================== 68 passed in 0.12s ==============================`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `10`
+- `find . -name '*.py' | sort | wc -l`
+  - `19`
+- `git status --short`
+  - `D tests/conftest.py`
 - Tranche: retire the Python package entrypoint and align Go compatibility contracts
   - Removed Python files:
     - `src/bigclaw/__main__.py`
