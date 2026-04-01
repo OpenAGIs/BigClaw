@@ -1,21 +1,31 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1061 Workpad
+
+## Scope
+- Residual sweep for `src/bigclaw` Python assets in the issue's suggested tranche.
+- Current physical targets present in this checkout: `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/design_system.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/governance.py`.
+- Missing from the suggested list in the current checkout and therefore out of edit scope unless encountered indirectly: `connectors.py`, `cost_control.py`, `dashboard_run_contract.py`, `dsl.py`, `event_bus.py`, `execution_contract.py`, `github_sync.py`.
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+1. Audit residual module usage and existing Go replacement coverage.
+2. Collapse low-complexity Python modules into package-level compatibility shims where import paths can stay stable.
+3. Delete physical Python files that become redundant.
+4. Run targeted Python and Go regression checks for the affected surfaces.
+5. Measure Python file-count delta, then commit and push the issue branch.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- Identify the concrete Python asset list handled in this tranche.
+- Remove, replace, or downgrade as many residual Python files as is safe while preserving import compatibility.
+- Keep a verifiable Go replacement path or migration note for each removed surface.
+- Record exact validation commands and outcomes.
+- Report Python file-count impact and any residual risk.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
+- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q`
+- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)`
+- `find . -name '*.py' | wc -l`
+- `git status --short`
+
+## Validation Results
+- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q` -> `30 passed in 0.22s`
+- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	0.400s`, `ok  	bigclaw-go/internal/events	0.776s`, `ok  	bigclaw-go/internal/regression	1.037s`
+- `find . -name '*.py' | wc -l` -> `43` (pre-change baseline: `45`)
