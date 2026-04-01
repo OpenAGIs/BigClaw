@@ -209,6 +209,40 @@ func TestUIReviewPackAuditFlagsMissingRoleMatrixCoverage(t *testing.T) {
 	}
 }
 
+func TestBuildBig4204ReviewPackProducesGoNativeReviewPacketSurface(t *testing.T) {
+	pack := BuildBig4204ReviewPack()
+
+	audit := UIReviewPackAuditor{}.Audit(pack)
+	report := RenderUIReviewPackReport(pack, audit)
+
+	if !audit.Ready {
+		t.Fatalf("expected BIG-4204 review pack to be ready, got %+v", audit)
+	}
+	if len(pack.Objectives) != 4 || len(pack.Wireframes) != 4 || len(pack.Interactions) != 4 || len(pack.OpenQuestions) != 3 {
+		t.Fatalf("unexpected review pack shape: %+v", pack)
+	}
+	if len(pack.ReviewerChecklist) != 8 || len(pack.DecisionLog) != 4 || len(pack.RoleMatrix) != 8 || len(pack.SignoffLog) != 4 {
+		t.Fatalf("unexpected review pack supporting coverage counts: %+v", pack)
+	}
+	if len(pack.BlockerLog) != 1 || len(pack.BlockerTimeline) != 2 {
+		t.Fatalf("unexpected review pack blocker coverage: %+v", pack)
+	}
+	for _, want := range []string{
+		"- Issue: BIG-4204 UI评审包输出",
+		"- Version: v4.0-design-sprint",
+		"- Audit: READY: objectives=4 wireframes=4 interactions=4 open_questions=3 checklist=8 decisions=4 role_assignments=8 signoffs=4 blockers=1 timeline_events=2",
+		"- obj-queue-governance: Confirm queue control actions and approval posture persona=Platform Admin priority=P0",
+		"- wf-triage: Triage and handoff board device=desktop entry=/triage",
+		"- flow-run-replay: Run replay with evidence audit states=default, replay, compare, escalated",
+		"- oq-role-density: owner=product-experience theme=role-matrix status=open",
+		"- Unresolved questions: oq-alert-priority, oq-handoff-evidence, oq-role-density",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected report to contain %q, got:\n%s", want, report)
+		}
+	}
+}
+
 func buildReviewPack() UIReviewPack {
 	return UIReviewPack{
 		IssueID: "BIG-4204",

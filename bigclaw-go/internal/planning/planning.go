@@ -243,7 +243,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Priority:          "P0",
 				Owner:             "product-experience",
 				Outcome:           "Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
-				ValidationCommand: "PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_console_ia.py tests/test_ui_review.py -q",
+				ValidationCommand: "PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_console_ia.py -q && (cd bigclaw-go && go test ./internal/uireview)",
 				Capabilities:      []string{"release-gate", "console-shell", "reporting"},
 				Evidence:          []string{"acceptance-suite", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
@@ -252,7 +252,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 					{Label: "ui-review-pack", Target: "src/bigclaw/ui_review.py", Capability: "release-gate", Note: "review objectives, wireframes, interaction coverage, and open questions"},
 					{Label: "ui-acceptance-tests", Target: "tests/test_design_system.py", Capability: "release-gate", Note: "role-permission, data accuracy, and performance audits"},
 					{Label: "console-shell-tests", Target: "tests/test_console_ia.py", Capability: "release-gate", Note: "console shell and interaction draft release readiness"},
-					{Label: "review-pack-tests", Target: "tests/test_ui_review.py", Capability: "release-gate", Note: "deterministic review packet validation"},
+					{Label: "review-pack-tests", Target: "bigclaw-go/internal/uireview/uireview_test.go", Capability: "release-gate", Note: "Go-native deterministic review packet validation"},
 				},
 			},
 			{

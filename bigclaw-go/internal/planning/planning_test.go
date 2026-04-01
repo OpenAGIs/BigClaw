@@ -421,10 +421,13 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	}
 
 	var opsCandidate CandidateEntry
+	var releaseCandidate CandidateEntry
 	for _, candidate := range backlog.Candidates {
 		if candidate.CandidateID == "candidate-ops-hardening" {
 			opsCandidate = candidate
-			break
+		}
+		if candidate.CandidateID == "candidate-release-control" {
+			releaseCandidate = candidate
 		}
 	}
 	targets := map[string]struct{}{}
@@ -446,6 +449,20 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		if _, ok := targets[want]; !ok {
 			t.Fatalf("missing ops evidence target %q in %+v", want, targets)
 		}
+	}
+
+	if got, want := releaseCandidate.ValidationCommand, "PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_console_ia.py -q && (cd bigclaw-go && go test ./internal/uireview)"; got != want {
+		t.Fatalf("release-control validation command mismatch: got %q want %q", got, want)
+	}
+	releaseTargets := map[string]struct{}{}
+	for _, link := range releaseCandidate.EvidenceLinks {
+		releaseTargets[link.Target] = struct{}{}
+	}
+	if _, ok := releaseTargets["bigclaw-go/internal/uireview/uireview_test.go"]; !ok {
+		t.Fatalf("missing Go-native review pack evidence target in %+v", releaseTargets)
+	}
+	if _, ok := releaseTargets["tests/test_ui_review.py"]; ok {
+		t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
 	}
 }
 
