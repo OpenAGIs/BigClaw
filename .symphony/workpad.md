@@ -29,12 +29,15 @@
 9. Purge the next low-coupling top-level intake/roadmap surface:
    - `src/bigclaw/connectors.py`
    - `src/bigclaw/roadmap.py`
-10. Remove any package exports or Python tests that still point at deleted Python modules.
-11. Add focused Go regression tests that assert the migration contract for each tranche:
+10. Purge the next low-coupling top-level repo-link surface by collapsing the retained Python compatibility into `observability.py`:
+   - `src/bigclaw/repo_links.py`
+   - `src/bigclaw/repo_plane.py`
+11. Remove any package exports or Python tests that still point at deleted Python modules.
+12. Add focused Go regression tests that assert the migration contract for each tranche:
    - the deleted Python files are absent
    - the corresponding Go replacement files exist
-12. Run targeted validation for the touched Go packages and the new regression tests.
-13. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
+13. Run targeted validation for the touched Go packages and the new regression tests.
+14. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
 
 ## Acceptance
 
@@ -48,6 +51,7 @@
 - `src/bigclaw/workspace_bootstrap_cli.py` is deleted.
 - `src/bigclaw/workspace_bootstrap.py` is deleted.
 - `src/bigclaw/connectors.py` and `src/bigclaw/roadmap.py` are deleted.
+- `src/bigclaw/repo_links.py` and `src/bigclaw/repo_plane.py` are deleted.
 - `src/bigclaw/__init__.py` and retained Python tests no longer import deleted modules.
 - Go regression tests cover the tranche replacement contracts against the repository tree.
 - Targeted Go tests pass.
@@ -56,6 +60,8 @@
 ## Validation
 
 - `find . -name '*.py' | wc -l`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py -q`
+- `cd bigclaw-go && go test ./internal/repo ./internal/regression -run 'TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10)'`
 - `cd bigclaw-go && go test ./internal/intake ./internal/regression -run 'TestConnectorByNameReturnsKnownConnectors|TestConnectorStubsReturnSeededIssues|TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9)'`
 - `git status --short`
 - `git log -1 --stat`

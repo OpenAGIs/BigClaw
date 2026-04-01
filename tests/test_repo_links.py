@@ -1,7 +1,5 @@
 from bigclaw.models import Task
-from bigclaw.observability import TaskRun
-from bigclaw.repo_links import bind_run_commits
-from bigclaw.repo_plane import RunCommitLink
+from bigclaw.observability import RunCommitLink, TaskRun, bind_run_commits
 
 
 def test_run_closeout_supports_commit_roles_and_accepted_hash():
