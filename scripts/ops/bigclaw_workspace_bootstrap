@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+has_flag() {
+  local flag="$1"
+  shift
+  local arg
+  for arg in "$@"; do
+    if [[ "$arg" == "$flag" || "$arg" == "$flag="* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+args=("$@")
+repo_url=${BIGCLAW_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}
+cache_key=${BIGCLAW_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}
+
+if ! has_flag --repo-url "${args[@]}"; then
+  args+=(--repo-url "$repo_url")
+fi
+if ! has_flag --cache-key "${args[@]}"; then
+  args+=(--cache-key "$cache_key")
+fi
+
+exec bash "$script_dir/bigclawctl" workspace "${args[@]}"

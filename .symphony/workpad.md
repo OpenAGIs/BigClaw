@@ -1,47 +1,22 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1077 Workpad
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+- Confirm the live `scripts/ops/*.py` tranche and every non-historical repo reference that still points to those Python operator shims.
+- Delete tranche-1 residual Python wrappers in `scripts/ops` and replace any needed operator compatibility surface with shell or direct `bigclawctl` entrypoints.
+- Update targeted Go regression coverage and operator-facing docs so the default paths are Go/shell only.
+- Run focused validation for purge coverage and the replacement shell/Go entrypoints, then commit and push the branch.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py` are removed.
+- The repo exposes Go or shell replacements for any remaining operator workflows covered by those shims.
+- Non-historical default documentation no longer directs operators through those Python files.
+- Targeted regression coverage asserts the deleted tranche stays absent and the replacement path remains available.
+- Repo-wide `.py` file count decreases from the pre-change baseline.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
-
-## Archived Closeout
-
-### BIG-GO-1053
-
-- Baseline code migration landed on `main` at `004de016252d6ca168a45dccda48fc9fa69e27f1`.
-- Closeout artifacts for the lane are tracked in:
-  - `reports/BIG-GO-1053-validation.md`
-  - `reports/BIG-GO-1053-closeout.md`
-  - `reports/BIG-GO-1053-status.json`
-- Additional stale Python entrypoint tests removed after closeout verification:
-  - `tests/test_parallel_validation_bundle.py`
-  - `tests/test_validation_bundle_continuation_policy_gate.py`
-- Validation recorded for `BIG-GO-1053`:
-  - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
-  - `find . -name '*.py' | wc -l` -> `43`
-  - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
-- Historical branch handoff URL:
-  - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
-- Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
-  the closeout landed on `main`.
-- Remote closeout comment posted on merged PR `#217`:
-  - `https://github.com/OpenAGIs/BigClaw/pull/217#issuecomment-4167169146`
-- No writable local tracker entry exists for `BIG-GO-1053` in `local-issues.json` or the
-  Symphony local issue store, so any remaining active state is external to this workspace.
-- Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
+- `rg --files . | rg '\.py$' | wc -l`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
+- `bash scripts/ops/bigclaw_refill_queue --help`
+- `bash scripts/ops/bigclaw_workspace_bootstrap --help`
+- `bash scripts/ops/symphony_workspace_bootstrap --help`
+- `bash scripts/ops/symphony_workspace_validate --help`
