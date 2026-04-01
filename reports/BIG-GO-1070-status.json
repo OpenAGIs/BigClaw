@@ -7,7 +7,7 @@
   "branch": {
     "name": "symphony/BIG-GO-1070",
     "latest_code_migration_commit": "06789289080b536c02beb749882bbefa25fedec8",
-    "final_branch_head": "102585651d85481987cdb72ffd5ef5ef238fbac1"
+    "final_branch_head": "08ef2562d95dea2a50eabcd6fe6478d4fbc90f74"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-1070-closeout.md",

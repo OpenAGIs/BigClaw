@@ -71,6 +71,6 @@ historical traceability.
   closeout artifacts are committed.
 - The branch is pushed to `origin/symphony/BIG-GO-1070`.
 - Final branch head for the artifact set:
-  - `102585651d85481987cdb72ffd5ef5ef238fbac1`
+  - `08ef2562d95dea2a50eabcd6fe6478d4fbc90f74`
 - The local tracker entry `BIG-GO-1070` can be marked `Done` once this evidence
   commit is pushed.
