@@ -1,5 +1,8 @@
+import importlib.machinery
+import importlib.util
 import sys
 import types
+from pathlib import Path
 
 from .models import (
     BillingInterval,
@@ -27,6 +30,20 @@ from . import legacy_shim as _legacy_runtime_surface
 
 sys.modules[f"{__name__}.runtime"] = _legacy_runtime_surface
 globals()["runtime"] = _legacy_runtime_surface
+
+
+def _load_legacy_source_module(name: str, relative_path: str):
+    module_name = f"{__name__}.{name}"
+    module_path = Path(__file__).resolve().parent / relative_path
+    loader = importlib.machinery.SourceFileLoader(module_name, str(module_path))
+    spec = importlib.util.spec_from_loader(module_name, loader)
+    if spec is None:
+        raise ImportError(f"unable to create import spec for {module_name} from {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    loader.exec_module(module)
+    globals()[name] = module
+    return module
 
 
 def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
@@ -87,6 +104,8 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
+
+_load_legacy_source_module("reports", "_legacy/reports.legacy")
 
 from .legacy_shim import (
     AcceptanceDecision,

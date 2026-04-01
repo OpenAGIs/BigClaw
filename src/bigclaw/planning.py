@@ -481,7 +481,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="orchestration-report-src",
-                        target="src/bigclaw/reports.py",
+                        target="src/bigclaw/_legacy/reports.legacy",
                         capability="commercialization",
                         note="orchestration canvas, portfolio rollups, and narrative exports",
                     ),

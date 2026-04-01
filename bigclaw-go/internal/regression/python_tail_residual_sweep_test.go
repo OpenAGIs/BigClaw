@@ -10,6 +10,7 @@ func TestPythonResidualSweepRemovesRuntimeAndUIReview(t *testing.T) {
 	repoRoot := regressionRepoRoot(t)
 
 	deletedPythonFiles := []string{
+		"src/bigclaw/reports.py",
 		"src/bigclaw/runtime.py",
 		"src/bigclaw/ui_review.py",
 	}
@@ -31,6 +32,7 @@ func TestPythonResidualSweepRemovesRuntimeAndUIReview(t *testing.T) {
 
 	compatibilityShimFiles := []string{
 		"src/bigclaw/legacy_shim.py",
+		"src/bigclaw/_legacy/reports.legacy",
 	}
 	for _, relativePath := range compatibilityShimFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); err != nil {
