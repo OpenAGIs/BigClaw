@@ -25,6 +25,31 @@
 
 ## Validation Results
 
+- Tranche: fold the legacy run-detail surface into the reports compatibility module and delete the standalone file
+  - Removed Python files:
+    - `src/bigclaw/run_detail.py`
+  - Updated Python files:
+    - `src/bigclaw/reports.py`
+    - `src/bigclaw/evaluation.py`
+    - `src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 - <<'PY' ...`
+  - `bigclaw-go/internal/api/run_detail_report_contract_test.go`
+  - `RunDetailStat RunDetailTab True`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
+  - `============================= test session starts ==============================`
+  - `platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0`
+  - `rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1040`
+  - `plugins: cov-7.1.0`
+  - `collected 34 items`
+  - `tests/test_reports.py ..................................                 [100%]`
+  - `============================== 34 passed in 0.06s ==============================`
+- `find . -name '*.py' | sort | wc -l`
+  - `9`
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `M src/bigclaw/evaluation.py`
+  - `M src/bigclaw/reports.py`
+  - `D src/bigclaw/run_detail.py`
 - Tranche: inline the legacy Python risk surface into the runtime compatibility module and delete the standalone file
   - Removed Python files:
     - `src/bigclaw/risk.py`

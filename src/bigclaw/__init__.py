@@ -170,6 +170,10 @@ from .reports import (
     PilotScorecard,
     ReportStudio,
     ReportStudioArtifacts,
+    RunDetailEvent,
+    RunDetailResource,
+    RunDetailStat,
+    RunDetailTab,
     SharedViewContext,
     SharedViewFilter,
     TakeoverQueue,
@@ -208,12 +212,30 @@ from .reports import (
     render_pilot_portfolio_report,
     render_pilot_scorecard,
     render_repo_sync_audit_report,
+    render_resource_grid,
+    render_run_detail_console,
     render_task_run_detail_page,
     render_task_run_report,
+    render_timeline_panel,
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
 )
+_run_detail_module = types.ModuleType(f"{__name__}.run_detail")
+for _export_name in [
+    "RunDetailEvent",
+    "RunDetailResource",
+    "RunDetailStat",
+    "RunDetailTab",
+    "render_resource_grid",
+    "render_run_detail_console",
+    "render_timeline_panel",
+]:
+    _run_detail_module.__dict__[_export_name] = globals()[_export_name]
+_run_detail_module.__dict__["LEGACY_MAINLINE_STATUS"] = _legacy_runtime_surface.LEGACY_MAINLINE_STATUS
+_run_detail_module.__dict__["GO_MAINLINE_REPLACEMENT"] = "bigclaw-go/internal/api/run_detail_report_contract_test.go"
+sys.modules[_run_detail_module.__name__] = _run_detail_module
+globals()["run_detail"] = _run_detail_module
 from .operations import (
     DashboardBuilder,
     DashboardBuilderAudit,
