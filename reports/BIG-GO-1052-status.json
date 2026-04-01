@@ -1,0 +1,39 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1052",
+    "title": "Go-replacement V: remove bigclaw-go e2e Python helpers tranche 1",
+    "status": "implemented"
+  },
+  "branch": {
+    "name": "feat/BIG-GO-1052-go-e2e-tranche1-regression",
+    "head_sha": "038bb3c2c6c90b68dd74f271d376988d5f1d2298",
+    "implementation_sha": "ef82780f438b1c9bf6e7238c7ad92fe27f1b295c"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "validation_report": "reports/BIG-GO-1052-validation.md",
+    "closeout_note": "reports/BIG-GO-1052-closeout.md"
+  },
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go/scripts/e2e -name '*.py' | wc -l",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go test ./cmd/bigclawctl ./internal/regression",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052/bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1052 && git diff --check"
+    ],
+    "results": {
+      "e2e_python_file_count": 0,
+      "repo_python_file_count": 50,
+      "targeted_go_tests": "passed",
+      "entrypoint_help_checks": "passed",
+      "diff_check": "passed"
+    },
+    "note": "The tranche-1 bigclaw-go/scripts/e2e Python helpers were already absent in the starting checkout, so this lane enforces and documents the Go-only state rather than producing a fresh in-branch Python-file-count drop."
+  },
+  "reviewer_links": {
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-1052-go-e2e-tranche1-regression?expand=1",
+    "pr_seed_url": "https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-1052-go-e2e-tranche1-regression"
+  }
+}
