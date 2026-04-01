@@ -59,7 +59,7 @@ def test_task_run_closeout_serializes_repo_sync_audit(tmp_path: Path):
             summary="worktree has local changes",
             branch="feature/OPE-219",
             remote_ref="origin/feature/OPE-219",
-            dirty_paths=["src/bigclaw/workflow.py"],
+            dirty_paths=["bigclaw-go/internal/workflow/engine.go"],
         ),
         pull_request=PullRequestFreshness(
             pr_number=219,

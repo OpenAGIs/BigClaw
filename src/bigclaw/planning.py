@@ -397,9 +397,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
-                    "tests/test_evaluation.py -q && "
-                    "(cd bigclaw-go && go test ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler)"
+                    "PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_reports.py -q && "
+                    "(cd bigclaw-go && go test ./internal/product ./internal/refill ./internal/worker ./internal/workflow ./internal/scheduler)"
                 ),
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
                 evidence=["weekly-review", "validation-report"],
@@ -412,9 +411,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="command-center-tests",
-                        target="tests/test_control_center.py",
+                        target="tests/test_operations.py",
                         capability="ops-control",
-                        note="queue control center validation",
+                        note="queue control center and dashboard validation",
                     ),
                     EvidenceLink(
                         label="operations-tests",
@@ -430,9 +429,15 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="approval-workflow",
-                        target="src/bigclaw/workflow.py",
+                        target="bigclaw-go/internal/workflow/engine.go",
                         capability="ops-control",
-                        note="approval workflow and closeout flow wiring",
+                        note="approval workflow and closeout flow wiring now owned by Go mainline",
+                    ),
+                    EvidenceLink(
+                        label="queue-tests",
+                        target="bigclaw-go/internal/refill/queue_test.go",
+                        capability="ops-control",
+                        note="Go-native refill queue ordering and queue status coverage",
                     ),
                     EvidenceLink(
                         label="workflow-tests",
@@ -466,9 +471,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-tests",
-                        target="tests/test_evaluation.py",
+                        target="tests/test_reports.py",
                         capability="rollback-simulation",
-                        note="replay and benchmark validation",
+                        note="reporting, replay, and orchestration canvas validation",
                     ),
                 ],
             ),

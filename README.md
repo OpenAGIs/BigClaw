@@ -64,9 +64,9 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/ops/bigclaw_github_sync.py ...`,
-  `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
-  `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
+- `python3 scripts/ops/bigclaw_github_sync.py ...` and the legacy `scripts/ops/*workspace*.py`
+  helpers are compatibility shims over the same Go CLI.
+  The old refill wrapper has been removed; use `bash scripts/ops/bigclawctl refill ...`.
 - `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
@@ -157,10 +157,8 @@ The root Go-only build entrypoints are `make test`, `make build`, and `make run`
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
 ops wrappers remain only as compatibility shims during migration.
 
-The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
-`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+The legacy Python execution-kernel modules for runtime, scheduler, workflow,
+orchestration, queue, and refill have been removed from the active repo
+surface. The legacy `python -m bigclaw serve` / `src/bigclaw/service.py` path
+is also retired; use `go run ./bigclaw-go/cmd/bigclawd` for the active local
+server path. Active runtime development belongs in `bigclaw-go/internal/*`.
