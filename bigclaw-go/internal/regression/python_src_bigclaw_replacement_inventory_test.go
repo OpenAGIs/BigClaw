@@ -15,8 +15,10 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/connectors.py",
 		"src/bigclaw/cost_control.py",
 		"src/bigclaw/dashboard_run_contract.py",
+		"src/bigclaw/deprecation.py",
 		"src/bigclaw/design_system.py",
 		"src/bigclaw/dsl.py",
+		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/event_bus.py",
 		"src/bigclaw/issue_archive.py",
 		"src/bigclaw/legacy_shim.py",
@@ -48,6 +50,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 
 	goOwners := []string{
 		"bigclaw-go/internal/costcontrol/controller.go",
+		"bigclaw-go/internal/contract/execution.go",
 		"bigclaw-go/internal/events/bus.go",
 		"bigclaw-go/internal/governance/freeze.go",
 		"bigclaw-go/internal/githubsync/sync.go",
@@ -62,6 +65,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"bigclaw-go/internal/product/dashboard_run_contract.go",
 		"bigclaw-go/internal/product/saved_views.go",
 		"bigclaw-go/internal/refill/queue.go",
+		"bigclaw-go/internal/regression/deprecation_contract_test.go",
 		"bigclaw-go/internal/reporting/validation_policy.go",
 		"bigclaw-go/internal/risk/risk.go",
 		"bigclaw-go/internal/repo/board.go",
