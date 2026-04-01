@@ -119,7 +119,6 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .collaboration import (
     CollaborationComment,
     CollaborationThread,
@@ -279,10 +278,6 @@ __all__ = [
     "Scheduler",
     "SchedulerDecision",
     "ExecutionRecord",
-    "SourceIssue",
-    "GitHubConnector",
-    "LinearConnector",
-    "JiraConnector",
     "RiskFactor",
     "RiskScore",
     "RiskScorer",

@@ -25,6 +25,21 @@
 
 ## Validation Results
 
+- Tranche: delete orphaned Python connector surface
+  - Removed Python files:
+    - `src/bigclaw/connectors.py`
+  - Updated Python files:
+    - `src/bigclaw/__init__.py`
+- `cd bigclaw-go && go test ./internal/intake ./internal/api`
+  - `ok  	bigclaw-go/internal/intake	(cached)`
+  - `ok  	bigclaw-go/internal/api	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `16`
+- `find . -name '*.py' | sort | wc -l`
+  - `27`
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/connectors.py`
 - Tranche: delete orphaned Python planning and governance island
   - Removed Python files:
     - `src/bigclaw/governance.py`
