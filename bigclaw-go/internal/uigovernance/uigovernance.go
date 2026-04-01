@@ -931,6 +931,127 @@ type ConsoleInteractionAudit struct {
 	SurfacesMissingDecisionPrompts []string            `json:"surfaces_missing_decision_prompts,omitempty"`
 }
 
+type ReviewObjective struct {
+	ObjectiveID   string   `json:"objective_id"`
+	Title         string   `json:"title"`
+	Persona       string   `json:"persona"`
+	Outcome       string   `json:"outcome"`
+	SuccessSignal string   `json:"success_signal"`
+	Priority      string   `json:"priority,omitempty"`
+	Dependencies  []string `json:"dependencies,omitempty"`
+}
+
+func (o ReviewObjective) normalized() ReviewObjective {
+	if strings.TrimSpace(o.Priority) == "" {
+		o.Priority = "P1"
+	}
+	return o
+}
+
+type WireframeSurface struct {
+	SurfaceID     string   `json:"surface_id"`
+	Name          string   `json:"name"`
+	Device        string   `json:"device"`
+	EntryPoint    string   `json:"entry_point"`
+	PrimaryBlocks []string `json:"primary_blocks,omitempty"`
+	ReviewNotes   []string `json:"review_notes,omitempty"`
+}
+
+type InteractionFlow struct {
+	FlowID         string   `json:"flow_id"`
+	Name           string   `json:"name"`
+	Trigger        string   `json:"trigger"`
+	SystemResponse string   `json:"system_response"`
+	States         []string `json:"states,omitempty"`
+	Exceptions     []string `json:"exceptions,omitempty"`
+}
+
+type OpenQuestion struct {
+	QuestionID string `json:"question_id"`
+	Theme      string `json:"theme"`
+	Question   string `json:"question"`
+	Owner      string `json:"owner"`
+	Impact     string `json:"impact"`
+	Status     string `json:"status,omitempty"`
+}
+
+func (q OpenQuestion) normalized() OpenQuestion {
+	if strings.TrimSpace(q.Status) == "" {
+		q.Status = "open"
+	}
+	return q
+}
+
+type UIReviewPack struct {
+	IssueID                   string             `json:"issue_id"`
+	Title                     string             `json:"title"`
+	Version                   string             `json:"version"`
+	Objectives                []ReviewObjective  `json:"objectives,omitempty"`
+	Wireframes                []WireframeSurface `json:"wireframes,omitempty"`
+	Interactions              []InteractionFlow  `json:"interactions,omitempty"`
+	OpenQuestions             []OpenQuestion     `json:"open_questions,omitempty"`
+	ReviewerChecklist         []json.RawMessage  `json:"reviewer_checklist,omitempty"`
+	RequiresReviewerChecklist bool               `json:"requires_reviewer_checklist,omitempty"`
+	DecisionLog               []json.RawMessage  `json:"decision_log,omitempty"`
+	RequiresDecisionLog       bool               `json:"requires_decision_log,omitempty"`
+	RoleMatrix                []json.RawMessage  `json:"role_matrix,omitempty"`
+	RequiresRoleMatrix        bool               `json:"requires_role_matrix,omitempty"`
+	SignoffLog                []json.RawMessage  `json:"signoff_log,omitempty"`
+	RequiresSignoffLog        bool               `json:"requires_signoff_log,omitempty"`
+	BlockerLog                []json.RawMessage  `json:"blocker_log,omitempty"`
+	RequiresBlockerLog        bool               `json:"requires_blocker_log,omitempty"`
+	BlockerTimeline           []json.RawMessage  `json:"blocker_timeline,omitempty"`
+	RequiresBlockerTimeline   bool               `json:"requires_blocker_timeline,omitempty"`
+}
+
+func (p UIReviewPack) normalized() UIReviewPack {
+	out := p
+	for i, objective := range out.Objectives {
+		out.Objectives[i] = objective.normalized()
+	}
+	for i, question := range out.OpenQuestions {
+		out.OpenQuestions[i] = question.normalized()
+	}
+	return out
+}
+
+type UIReviewPackAudit struct {
+	Ready                     bool     `json:"ready"`
+	ObjectiveCount            int      `json:"objective_count"`
+	WireframeCount            int      `json:"wireframe_count"`
+	InteractionCount          int      `json:"interaction_count"`
+	OpenQuestionCount         int      `json:"open_question_count"`
+	ChecklistCount            int      `json:"checklist_count,omitempty"`
+	DecisionCount             int      `json:"decision_count,omitempty"`
+	RoleAssignmentCount       int      `json:"role_assignment_count,omitempty"`
+	SignoffCount              int      `json:"signoff_count,omitempty"`
+	BlockerCount              int      `json:"blocker_count,omitempty"`
+	BlockerTimelineCount      int      `json:"blocker_timeline_count,omitempty"`
+	MissingSections           []string `json:"missing_sections,omitempty"`
+	ObjectivesMissingSignals  []string `json:"objectives_missing_signals,omitempty"`
+	WireframesMissingBlocks   []string `json:"wireframes_missing_blocks,omitempty"`
+	InteractionsMissingStates []string `json:"interactions_missing_states,omitempty"`
+	UnresolvedQuestionIDs     []string `json:"unresolved_question_ids,omitempty"`
+}
+
+func (a UIReviewPackAudit) Summary() string {
+	status := "HOLD"
+	if a.Ready {
+		status = "READY"
+	}
+	return status +
+		": objectives=" + itoa(a.ObjectiveCount) +
+		" wireframes=" + itoa(a.WireframeCount) +
+		" interactions=" + itoa(a.InteractionCount) +
+		" open_questions=" + itoa(a.OpenQuestionCount) +
+		" checklist=" + itoa(a.ChecklistCount) +
+		" decisions=" + itoa(a.DecisionCount) +
+		" role_assignments=" + itoa(a.RoleAssignmentCount) +
+		" signoffs=" + itoa(a.SignoffCount) +
+		" blockers=" + itoa(a.BlockerCount) +
+		" timeline_events=" + itoa(a.BlockerTimelineCount)
+}
+
 func (a ConsoleInteractionAudit) ReadinessScore() float64 {
 	if a.ContractCount == 0 {
 		return 0
@@ -965,6 +1086,77 @@ func (a ConsoleInteractionAudit) ReleaseReady() bool {
 		len(a.SurfacesMissingWireframeLinks) == 0 &&
 		len(a.SurfacesMissingReviewFocus) == 0 &&
 		len(a.SurfacesMissingDecisionPrompts) == 0
+}
+
+type UIReviewPackAuditor struct{}
+
+func (UIReviewPackAuditor) Audit(pack UIReviewPack) UIReviewPackAudit {
+	var missingSections []string
+	if len(pack.Objectives) == 0 {
+		missingSections = append(missingSections, "objectives")
+	}
+	if len(pack.Wireframes) == 0 {
+		missingSections = append(missingSections, "wireframes")
+	}
+	if len(pack.Interactions) == 0 {
+		missingSections = append(missingSections, "interactions")
+	}
+	if len(pack.OpenQuestions) == 0 {
+		missingSections = append(missingSections, "open_questions")
+	}
+
+	var objectivesMissingSignals []string
+	for _, objective := range pack.Objectives {
+		if strings.TrimSpace(objective.SuccessSignal) == "" {
+			objectivesMissingSignals = append(objectivesMissingSignals, objective.ObjectiveID)
+		}
+	}
+
+	var wireframesMissingBlocks []string
+	for _, wireframe := range pack.Wireframes {
+		if len(wireframe.PrimaryBlocks) == 0 {
+			wireframesMissingBlocks = append(wireframesMissingBlocks, wireframe.SurfaceID)
+		}
+	}
+
+	var interactionsMissingStates []string
+	for _, interaction := range pack.Interactions {
+		if len(interaction.States) == 0 {
+			interactionsMissingStates = append(interactionsMissingStates, interaction.FlowID)
+		}
+	}
+
+	var unresolvedQuestionIDs []string
+	for _, question := range pack.OpenQuestions {
+		normalized := question.normalized()
+		if strings.ToLower(normalized.Status) != "resolved" {
+			unresolvedQuestionIDs = append(unresolvedQuestionIDs, normalized.QuestionID)
+		}
+	}
+
+	ready := len(missingSections) == 0 &&
+		len(objectivesMissingSignals) == 0 &&
+		len(wireframesMissingBlocks) == 0 &&
+		len(interactionsMissingStates) == 0
+
+	return UIReviewPackAudit{
+		Ready:                     ready,
+		ObjectiveCount:            len(pack.Objectives),
+		WireframeCount:            len(pack.Wireframes),
+		InteractionCount:          len(pack.Interactions),
+		OpenQuestionCount:         len(pack.OpenQuestions),
+		ChecklistCount:            len(pack.ReviewerChecklist),
+		DecisionCount:             len(pack.DecisionLog),
+		RoleAssignmentCount:       len(pack.RoleMatrix),
+		SignoffCount:              len(pack.SignoffLog),
+		BlockerCount:              len(pack.BlockerLog),
+		BlockerTimelineCount:      len(pack.BlockerTimeline),
+		MissingSections:           missingSections,
+		ObjectivesMissingSignals:  objectivesMissingSignals,
+		WireframesMissingBlocks:   wireframesMissingBlocks,
+		InteractionsMissingStates: interactionsMissingStates,
+		UnresolvedQuestionIDs:     unresolvedQuestionIDs,
+	}
 }
 
 type ConsoleInteractionAuditor struct{}
@@ -1562,6 +1754,38 @@ func RenderConsoleInteractionReport(draft ConsoleInteractionDraft, audit Console
 	lines = append(lines, "- Pages missing wireframe links: "+joinOrNone(audit.SurfacesMissingWireframeLinks))
 	lines = append(lines, "- Pages missing review focus: "+joinOrNone(audit.SurfacesMissingReviewFocus))
 	lines = append(lines, "- Pages missing decision prompts: "+joinOrNone(audit.SurfacesMissingDecisionPrompts))
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewPackReport(pack UIReviewPack, audit UIReviewPackAudit) string {
+	var lines []string
+	lines = append(lines,
+		"# UI Review Pack",
+		"",
+		"- Issue: "+pack.IssueID+" "+pack.Title,
+		"- Version: "+pack.Version,
+		"- Audit: "+audit.Summary(),
+		"",
+		"## Objectives",
+	)
+	if len(pack.Objectives) == 0 {
+		lines = append(lines, "- none")
+	} else {
+		for _, objective := range pack.Objectives {
+			normalized := objective.normalized()
+			lines = append(lines,
+				"- "+normalized.ObjectiveID+": "+normalized.Title+
+					" persona="+normalized.Persona+
+					" priority="+normalized.Priority)
+			lines = append(lines,
+				"  outcome="+normalized.Outcome+
+					" success_signal="+normalized.SuccessSignal+
+					" dependencies="+joinCSVOrNone(normalized.Dependencies))
+		}
+	}
+	lines = append(lines, "")
+	lines = append(lines, "## Open Questions")
+	lines = append(lines, "- Unresolved questions: "+joinOrNone(audit.UnresolvedQuestionIDs))
 	return strings.Join(lines, "\n") + "\n"
 }
 

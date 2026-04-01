@@ -295,6 +295,120 @@ func TestRenderConsoleTopBarReportSummarizesGlobalHeaderAndShell(t *testing.T) {
 	}
 }
 
+func buildReviewPack() UIReviewPack {
+	return UIReviewPack{
+		IssueID: "BIG-4204",
+		Title:   "UI评审包输出",
+		Version: "v4.0-review-pack",
+		Objectives: []ReviewObjective{{
+			ObjectiveID:   "obj-alignment",
+			Title:         "Align reviewers on the release-control story",
+			Persona:       "product-experience",
+			Outcome:       "Reviewers see the scope, stakes, and success criteria before page-level critique.",
+			SuccessSignal: "The kickoff frame is sufficient to decide whether the slice is review-ready.",
+			Priority:      "P0",
+			Dependencies:  []string{"BIG-1103", "BIG-1701"},
+		}},
+		Wireframes: []WireframeSurface{{
+			SurfaceID:     "wf-overview",
+			Name:          "Review overview board",
+			Device:        "desktop",
+			EntryPoint:    "Epic 11 review hub",
+			PrimaryBlocks: []string{"header", "objective strip", "wireframe rail", "decision log"},
+			ReviewNotes:   []string{"Highlight unresolved dependencies before approval."},
+		}},
+		Interactions: []InteractionFlow{{
+			FlowID:         "flow-frame-switch",
+			Name:           "Switch between wireframes and interaction notes",
+			Trigger:        "Reviewer selects a surface from the wireframe rail",
+			SystemResponse: "The board swaps the focus frame and preserves reviewer comments.",
+			States:         []string{"default", "focus", "with-comments"},
+			Exceptions:     []string{"Warn when leaving a frame with unsaved notes."},
+		}},
+		OpenQuestions: []OpenQuestion{{
+			QuestionID: "oq-mobile-depth",
+			Theme:      "scope",
+			Question:   "Should the first review pack cover mobile wireframes or desktop only?",
+			Owner:      "product-experience",
+			Impact:     "Changes review breadth and the number of required surfaces.",
+		}},
+	}
+}
+
+func TestUIReviewPackRoundTripPreservesManifestShape(t *testing.T) {
+	pack := buildReviewPack()
+
+	var restored UIReviewPack
+	roundTripJSON(t, pack, &restored)
+	if !reflect.DeepEqual(restored.normalized(), pack.normalized()) {
+		t.Fatalf("review pack round trip mismatch: got %+v want %+v", restored, pack)
+	}
+}
+
+func TestUIReviewPackAuditFlagsMissingSectionsAndCoverageGaps(t *testing.T) {
+	pack := UIReviewPack{
+		IssueID: "BIG-4204",
+		Title:   "UI评审包输出",
+		Version: "v4.0-review-pack",
+		Objectives: []ReviewObjective{{
+			ObjectiveID: "obj-incomplete",
+			Title:       "Incomplete objective",
+			Persona:     "product-experience",
+			Outcome:     "Create a frame for review.",
+		}},
+		Wireframes: []WireframeSurface{{
+			SurfaceID:  "wf-empty",
+			Name:       "Empty frame",
+			Device:     "desktop",
+			EntryPoint: "Review hub",
+		}},
+		Interactions: []InteractionFlow{{
+			FlowID:         "flow-empty",
+			Name:           "Unspecified interaction",
+			Trigger:        "Reviewer opens the page",
+			SystemResponse: "The system loads the frame.",
+		}},
+	}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.MissingSections, []string{"open_questions"}) ||
+		!reflect.DeepEqual(audit.ObjectivesMissingSignals, []string{"obj-incomplete"}) ||
+		!reflect.DeepEqual(audit.WireframesMissingBlocks, []string{"wf-empty"}) ||
+		!reflect.DeepEqual(audit.InteractionsMissingStates, []string{"flow-empty"}) {
+		t.Fatalf("unexpected review pack audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditAllowsOpenQuestionsWhileMarkingPackReady(t *testing.T) {
+	pack := buildReviewPack()
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if !audit.Ready ||
+		!reflect.DeepEqual(audit.UnresolvedQuestionIDs, []string{"oq-mobile-depth"}) ||
+		len(audit.MissingSections) != 0 {
+		t.Fatalf("unexpected ready review pack audit: %+v", audit)
+	}
+}
+
+func TestRenderUIReviewPackReportSummarizesReviewShapeAndFindings(t *testing.T) {
+	pack := buildReviewPack()
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+
+	report := RenderUIReviewPackReport(pack, audit)
+	for _, fragment := range []string{
+		"# UI Review Pack",
+		"- Issue: BIG-4204 UI评审包输出",
+		"- Audit: READY: objectives=1 wireframes=1 interactions=1 open_questions=1 checklist=0 decisions=0 role_assignments=0 signoffs=0 blockers=0 timeline_events=0",
+		"- obj-alignment: Align reviewers on the release-control story persona=product-experience priority=P0",
+		"- Unresolved questions: oq-mobile-depth",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in report, got %s", fragment, report)
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{
