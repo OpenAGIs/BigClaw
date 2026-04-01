@@ -487,6 +487,8 @@ Go ownership:
 
 - Follow-up cleanup retired `src/bigclaw/console_ia.py`; the active console
   surface now relies on Go-owned product contracts and tests.
+- Follow-up cleanup retired `src/bigclaw/design_system.py`; the active
+  design-system surface now relies on Go-owned product contracts and tests.
 - Follow-up cleanup retired `src/bigclaw/ui_review.py`; the active review-pack
   surface now relies on Go-owned product contracts and tests.
 - `bigclaw-go/internal/product/console.go`
