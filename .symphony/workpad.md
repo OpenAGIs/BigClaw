@@ -1,45 +1,63 @@
-# BIG-GO-1038 Workpad
+# BIG-GO-1040 Workpad
 
 ## Plan
 
-1. Inventory remaining `tests/*.py` files and identify the tranche with clear Go-native replacements already present in `bigclaw-go/`.
-2. Add or extend targeted Go tests where Python coverage still lacks a direct Go home but the production contract already exists in Go.
-3. Delete the replaced Python test files and remove `tests/conftest.py` if no remaining Python tests require it.
-4. Run targeted Go validation for the touched packages and record exact commands and results.
-5. Commit the scoped migration changes and push the branch to the remote.
+1. Inventory remaining repository Python files and select a scoped tranche whose behavior is already covered in `bigclaw-go/` or can be replaced with small Go tests in the same domain package.
+2. Delete the selected Python tests and add or extend Go tests so the replaced behavior still has checked-in coverage.
+3. Verify the repo state with targeted `go test` commands plus file-count checks for remaining `.py` files and absent Python packaging files.
+4. Commit the scoped migration change on an issue branch and push it to the remote.
 
 ## Acceptance
 
-- The number of Python files under `tests/` decreases in this issue scope.
-- Any deleted Python test has a checked-in Go replacement test in `bigclaw-go/`.
-- No new Python tests are introduced.
+- The number of repository `.py` files decreases within this issue scope.
+- No new Python files are introduced.
+- Every deleted Python test is covered by an existing or newly added Go test in `bigclaw-go/`.
 - `pyproject.toml` and `setup.py` remain absent.
-- The final change can name the deleted Python files and the added or expanded Go test files.
+- The final change can name which Python files were removed and which Go test files were added or expanded.
 
 ## Validation
 
+- `find . -name '*.py' | sort | wc -l`
 - `find tests -maxdepth 1 -name '*.py' | sort`
-- Targeted `go test` commands for each touched Go package
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+- Targeted `go test` commands for each touched Go package
 - `git status --short`
 
 ## Validation Results
 
-- `cd bigclaw-go && go test ./internal/bootstrap`
-  - `ok  	bigclaw-go/internal/bootstrap	4.862s`
-- `cd bigclaw-go && go test ./internal/product`
-  - `ok  	bigclaw-go/internal/product	2.728s`
-- `cd bigclaw-go && go test ./internal/contract`
-  - `ok  	bigclaw-go/internal/contract	1.370s`
-- `cd bigclaw-go && go test ./internal/githubsync`
-  - `ok  	bigclaw-go/internal/githubsync	3.702s`
-- `cd bigclaw-go && go test ./internal/governance`
-  - `ok  	bigclaw-go/internal/governance	0.534s`
-- `cd bigclaw-go && go test ./internal/observability`
-  - `ok  	bigclaw-go/internal/observability	1.891s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - `14 passed in 0.18s`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_console_ia.py`
+  - `tests/test_control_center.py`
+  - `tests/test_design_system.py`
+  - `tests/test_dsl.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_event_bus.py`
+  - `tests/test_live_shadow_bundle.py`
+  - `tests/test_memory.py`
+  - `tests/test_models.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_orchestration.py`
+  - `tests/test_parallel_validation_bundle.py`
+  - `tests/test_planning.py`
+  - `tests/test_queue.py`
+  - `tests/test_repo_collaboration.py`
+  - `tests/test_repo_links.py`
+  - `tests/test_repo_rollout.py`
+  - `tests/test_repo_triage.py`
+  - `tests/test_reports.py`
+  - `tests/test_risk.py`
+  - `tests/test_runtime_matrix.py`
+  - `tests/test_scheduler.py`
+  - `tests/test_ui_review.py`
+  - `tests/test_validation_bundle_continuation_policy_gate.py`
+  - `tests/test_validation_policy.py`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `31`
-- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+  - `27`
+- `find . -name '*.py' | sort | wc -l`
+  - `77`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
   - no output
+- `cd bigclaw-go && go test ./internal/repo`
+  - `ok  	bigclaw-go/internal/repo	0.432s`
