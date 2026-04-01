@@ -25,6 +25,71 @@
 
 ## Validation Results
 
+- Tranche: delete orphaned Python contract and roadmap modules with Go-owned replacements
+  - Removed Python files:
+    - `src/bigclaw/cost_control.py`
+    - `src/bigclaw/dashboard_run_contract.py`
+    - `src/bigclaw/dsl.py`
+    - `src/bigclaw/issue_archive.py`
+    - `src/bigclaw/roadmap.py`
+  - Updated Python files:
+    - `src/bigclaw/__init__.py`
+- `cd bigclaw-go && go test ./internal/costcontrol ./internal/product ./internal/issuearchive ./internal/workflow ./internal/regression`
+  - `ok  	bigclaw-go/internal/costcontrol	1.192s`
+  - `ok  	bigclaw-go/internal/product	1.526s`
+  - `ok  	bigclaw-go/internal/issuearchive	1.927s`
+  - `ok  	bigclaw-go/internal/workflow	(cached)`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort`
+  - `src/bigclaw/__init__.py`
+  - `src/bigclaw/__main__.py`
+  - `src/bigclaw/audit_events.py`
+  - `src/bigclaw/collaboration.py`
+  - `src/bigclaw/connectors.py`
+  - `src/bigclaw/console_ia.py`
+  - `src/bigclaw/deprecation.py`
+  - `src/bigclaw/design_system.py`
+  - `src/bigclaw/evaluation.py`
+  - `src/bigclaw/execution_contract.py`
+  - `src/bigclaw/github_sync.py`
+  - `src/bigclaw/governance.py`
+  - `src/bigclaw/legacy_shim.py`
+  - `src/bigclaw/mapping.py`
+  - `src/bigclaw/models.py`
+  - `src/bigclaw/observability.py`
+  - `src/bigclaw/operations.py`
+  - `src/bigclaw/parallel_refill.py`
+  - `src/bigclaw/pilot.py`
+  - `src/bigclaw/planning.py`
+  - `src/bigclaw/repo_commits.py`
+  - `src/bigclaw/repo_gateway.py`
+  - `src/bigclaw/repo_governance.py`
+  - `src/bigclaw/repo_links.py`
+  - `src/bigclaw/repo_plane.py`
+  - `src/bigclaw/repo_registry.py`
+  - `src/bigclaw/repo_triage.py`
+  - `src/bigclaw/reports.py`
+  - `src/bigclaw/risk.py`
+  - `src/bigclaw/run_detail.py`
+  - `src/bigclaw/runtime.py`
+  - `src/bigclaw/saved_views.py`
+  - `src/bigclaw/ui_review.py`
+  - `src/bigclaw/workspace_bootstrap.py`
+  - `src/bigclaw/workspace_bootstrap_cli.py`
+  - `src/bigclaw/workspace_bootstrap_validation.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `52`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `11`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/cost_control.py`
+  - `D src/bigclaw/dashboard_run_contract.py`
+  - `D src/bigclaw/dsl.py`
+  - `D src/bigclaw/issue_archive.py`
+  - `D src/bigclaw/roadmap.py`
 - Tranche: delete isolated Python repo board surface and Python collaboration test
   - Removed Python files:
     - `src/bigclaw/repo_board.py`
