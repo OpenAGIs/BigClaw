@@ -14,8 +14,6 @@ if [ -z "$branch" ]; then
   exit 0
 fi
 
-export PYTHONDONTWRITEBYTECODE=1
-
 if [ ! -f "scripts/ops/bigclawctl" ]; then
   exit 0
 fi

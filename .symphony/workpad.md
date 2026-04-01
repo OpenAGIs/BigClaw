@@ -1,39 +1,38 @@
-# BIG-GO-1053
+# BIG-GO-1055
 
 ## Plan
-- Inspect `bigclaw-go/scripts/e2e` and repo references to identify tranche-2 helper remnants and current Go entrypoints.
-- Remove stale Python-helper references and replace them with Go-native `bigclawctl automation e2e ...` commands or existing shell wrappers where appropriate.
-- Add/adjust regression coverage so `bigclaw-go/scripts/e2e` stays Python-free and closeout surfaces point at Go-only entrypoints.
-- Run targeted tests plus repository checks for `.py` count / reference removal, then commit and push.
+- Inspect the remaining root-level Python operator shims and every repo surface that still points at them.
+- Remove the Python shim entrypoints under `scripts/ops/` so the tracked `.py` count drops as part of this issue.
+- Rewrite root-facing documentation and CI/bootstrap surfaces to use the canonical Go-only path: `make ...` and `bash scripts/ops/bigclawctl ...`.
+- Add regression coverage that fails if the removed Python entrypoints or root packaging files reappear in root migration surfaces.
+- Run targeted repository checks and Go tests, then commit and push the branch.
 
 ## Acceptance
-- `bigclaw-go/scripts/e2e` contains no Python helper files for tranche 2.
-- README / docs / workflows / hooks / CI do not instruct users to invoke removed tranche-2 Python helpers.
-- Validation and regression tests pass for the updated entrypoints.
-- Repo evidence shows no remaining tracked `bigclaw-go/scripts/e2e/*.py` files and no stale references to the removed tranche-2 helper paths.
+- Root packaging entrypoints remain absent: `pyproject.toml` and `setup.py` do not exist at the repository root.
+- The Python shim entrypoints `scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py` are removed.
+- `README.md`, `.github/workflows/ci.yml`, and the root bootstrap path no longer instruct operators or CI to use Python packaging or Python shim entrypoints.
+- Validation evidence shows the tracked `.py` file count dropped and the remaining root entrypoint references are Go-only.
 
 ## Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 -type f | sort`
-- `rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/e2e/.*\.py" README.md bigclaw-go .github .husky .git/hooks`
-- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
+- `find . -name '*.py' -type f | wc -l`
+- `test ! -e pyproject.toml && test ! -e setup.py`
+- `test ! -e scripts/ops/bigclaw_github_sync.py && test ! -e scripts/ops/bigclaw_refill_queue.py && test ! -e scripts/ops/bigclaw_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_validate.py`
+- `rg -n "python3 scripts/ops/bigclaw_github_sync\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|scripts/ops/\\*workspace\\*\\.py|actions/setup-python|pip install pytest|pytest --cov|BIGCLAW_ENABLE_LEGACY_PYTHON|PYTHONDONTWRITEBYTECODE" README.md .github/workflows scripts/dev_bootstrap.sh .githooks`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
 
 ## Execution Result
-- Branch pushed: `symphony/BIG-GO-1053`
-- Code commit: `b9795a1c643708b7c20793f069039a42690f4d2e`
-- PR: `https://github.com/OpenAGIs/BigClaw/pull/217`
-- Scope completed:
-  - rewrote `bigclaw-go/docs/go-cli-script-migration.md` to describe only active Go/shell e2e entrypoints
-  - updated migration planning/follow-on docs to stop naming removed tranche-2 Python helpers as future/current entrypoints
-  - added `bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go` to keep `bigclaw-go/scripts/e2e` Python-free
+- Removed the five repo-root Python operator shim files under `scripts/ops/`.
+- Switched root README, CI, hooks, and bootstrap guidance to Go-only entrypoints.
+- Added `bigclaw-go/internal/regression/root_entrypoint_cutover_test.go` to keep the cutover surfaces aligned.
 
 ## Validation Result
-- `find bigclaw-go/scripts/e2e -maxdepth 1 -type f | sort`
-  - passed; only `broker_bootstrap_summary.go`, `kubernetes_smoke.sh`, `ray_smoke.sh`, and `run_all.sh` remain
-- `rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/e2e/.*\.py" README.md bigclaw-go/docs docs .github .husky .git/hooks 2>/dev/null`
-  - passed; no matches in README/docs/workflow/hooks/CI surfaces
-- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
+- `printf 'before='; git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l; printf 'after='; find . -name '*.py' -type f | wc -l; printf 'deleted_in_diff='; git diff --diff-filter=D --name-only | rg '\.py$' | wc -l`
+  - passed: `before=46`, `after=41`, `deleted_in_diff=5`
+- `test ! -e pyproject.toml && test ! -e setup.py && test ! -e scripts/ops/bigclaw_github_sync.py && test ! -e scripts/ops/bigclaw_refill_queue.py && test ! -e scripts/ops/bigclaw_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_validate.py && echo removed`
+  - passed: `removed`
+- `rg -n "python3 scripts/ops/bigclaw_github_sync\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|scripts/ops/\\*workspace\\*\\.py|actions/setup-python|pip install pytest|pytest --cov|BIGCLAW_ENABLE_LEGACY_PYTHON|PYTHONDONTWRITEBYTECODE" README.md .github/workflows scripts/dev_bootstrap.sh .githooks`
+  - passed with exit code `1` and no matches
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
   - passed
-
-## Remaining Blocker
-- No code blocker remains.
-- `gh` is still unauthenticated in this workspace, but Git credential helper access was sufficient to create PR `#217` via the GitHub REST API.
+- `bash scripts/dev_bootstrap.sh`
+  - passed
