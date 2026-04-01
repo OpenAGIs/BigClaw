@@ -1,8 +1,8 @@
-import sys
-import types
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from html import escape
+import sys
+import types
 from typing import Any, Dict, List, Optional, Sequence
 
 from .models import (
@@ -27,7 +27,9 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+
+
+def _install_runtime_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
         module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
@@ -123,7 +125,6 @@ P0_AUDIT_EVENT_SPECS: List[AuditEventSpec] = [
         required_fields=["task_id", "run_id", "source_stage", "target_team", "reason", "collaboration_mode"],
     ),
 ]
-
 _SPEC_BY_EVENT = {spec.event_type: spec for spec in P0_AUDIT_EVENT_SPECS}
 
 
@@ -654,7 +655,6 @@ class ScopeFreezeGovernance:
         for item in board.backlog_items:
             counts[item.issue_id] = counts.get(item.issue_id, 0) + 1
         duplicate_issue_ids = sorted(issue_id for issue_id, count in counts.items() if count > 1)
-
         missing_owners = sorted(item.issue_id for item in board.backlog_items if not item.owner.strip())
         missing_acceptance = sorted(item.issue_id for item in board.backlog_items if not item.acceptance_criteria)
         missing_validation = sorted(item.issue_id for item in board.backlog_items if not item.validation_plan)
@@ -676,7 +676,6 @@ class ScopeFreezeGovernance:
                 unauthorized_scope_changes.append(item.issue_id)
 
         unapproved_exceptions = sorted(exception.issue_id for exception in board.exceptions if not exception.approved)
-
         return ScopeFreezeAudit(
             board_name=board.name,
             version=board.version,
@@ -783,9 +782,8 @@ _install_package_surface_module(
         "CollaborationThread",
         "DecisionNote",
         "build_collaboration_thread",
-        "build_collaboration_thread_from_audits",
-        "collaboration_now",
         "merge_collaboration_threads",
+        "build_collaboration_thread_from_audits",
         "render_collaboration_lines",
         "render_collaboration_panel_html",
     ],
@@ -795,10 +793,8 @@ _install_package_surface_module(
 _install_package_surface_module(
     "governance",
     [
-        "ALLOWED_SCOPE_STATUSES",
         "FreezeException",
         "GovernanceBacklogItem",
-        "REQUIRED_RUN_CLOSEOUTS",
         "ScopeFreezeAudit",
         "ScopeFreezeBoard",
         "ScopeFreezeGovernance",
@@ -809,13 +805,14 @@ _install_package_surface_module(
 )
 
 from . import runtime as _legacy_runtime_surface
-_install_legacy_surface_module(
+
+_install_runtime_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/queue/queue.go",
 )
-_install_legacy_surface_module(
+_install_runtime_surface_module(
     "orchestration",
     [
         "CrossDepartmentOrchestrator",
@@ -829,19 +826,19 @@ _install_legacy_surface_module(
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
 )
-_install_legacy_surface_module(
+_install_runtime_surface_module(
     "scheduler",
     ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/scheduler/scheduler.go",
 )
-_install_legacy_surface_module(
+_install_runtime_surface_module(
     "workflow",
     ["AcceptanceDecision", "AcceptanceGate", "JournalEntry", "WorkflowEngine", "WorkflowRunResult", "WorkpadJournal"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
 )
-_install_legacy_surface_module(
+_install_runtime_surface_module(
     "service",
     [
         "RepoGovernanceEnforcer",
@@ -858,6 +855,7 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
+
 from .runtime import (
     AcceptanceDecision,
     AcceptanceGate,
@@ -944,15 +942,15 @@ from .risk import RiskFactor, RiskScore, RiskScorer
 from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .reports import (
     AutoTriageCenter,
-    ConsoleAction,
     BillingEntitlementsPage,
     BillingRunCharge,
+    ConsoleAction,
     DocumentationArtifact,
     FinalDeliveryChecklist,
+    IssueClosureDecision,
     LaunchChecklist,
     LaunchChecklistItem,
     NarrativeSection,
-    IssueClosureDecision,
     OrchestrationCanvas,
     OrchestrationPortfolio,
     PilotMetric,
@@ -970,9 +968,9 @@ from .reports import (
     TriageSimilarityEvidence,
     TriageSuggestion,
     build_auto_triage_center,
-    build_console_actions,
     build_billing_entitlements_page,
     build_billing_entitlements_page_from_ledger,
+    build_console_actions,
     build_final_delivery_checklist,
     build_launch_checklist,
     build_orchestration_canvas,
@@ -982,22 +980,22 @@ from .reports import (
     build_takeover_queue_from_ledger,
     evaluate_issue_closure,
     render_auto_triage_center_report,
-    render_console_actions,
     render_billing_entitlements_page,
     render_billing_entitlements_report,
+    render_console_actions,
     render_final_delivery_checklist_report,
+    render_issue_validation_report,
     render_launch_checklist_report,
     render_orchestration_canvas,
     render_orchestration_overview_page,
     render_orchestration_portfolio_report,
-    render_issue_validation_report,
+    render_pilot_portfolio_report,
+    render_pilot_scorecard,
+    render_repo_sync_audit_report,
     render_report_studio_html,
     render_report_studio_plain_text,
     render_report_studio_report,
     render_takeover_queue_report,
-    render_pilot_portfolio_report,
-    render_pilot_scorecard,
-    render_repo_sync_audit_report,
     render_task_run_detail_page,
     render_task_run_report,
     validation_report_exists,
@@ -1022,10 +1020,10 @@ from .operations import (
     OperationsMetricValue,
     OperationsSnapshot,
     PolicyPromptVersionCenter,
-    RegressionFinding,
-    RegressionCenter,
-    TriageCluster,
     QueueControlCenter,
+    RegressionCenter,
+    RegressionFinding,
+    TriageCluster,
     VersionChangeSummary,
     VersionedArtifact,
     VersionedArtifactHistory,
@@ -1033,8 +1031,8 @@ from .operations import (
     WeeklyOperationsReport,
     render_dashboard_builder_report,
     render_engineering_overview,
-    render_operations_metric_spec,
     render_operations_dashboard,
+    render_operations_metric_spec,
     render_policy_prompt_version_center,
     render_queue_control_center,
     render_regression_center,
@@ -1052,18 +1050,18 @@ from .evaluation import (
     EvaluationCriterion,
     ReplayOutcome,
     ReplayRecord,
-    render_run_replay_index_page,
-    render_replay_detail_page,
     render_benchmark_suite_report,
+    render_replay_detail_page,
+    render_run_replay_index_page,
 )
 from .planning import (
-    FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
-    EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    EvidenceLink,
+    FourWeekExecutionPlan,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -1088,9 +1086,13 @@ from .ui_review import (
     UIReviewPackAuditor,
     WireframeSurface,
     build_big_4204_review_pack,
+    render_ui_review_audit_density_board,
     render_ui_review_blocker_log,
     render_ui_review_blocker_timeline,
     render_ui_review_blocker_timeline_summary,
+    render_ui_review_checklist_traceability_board,
+    render_ui_review_decision_followup_tracker,
+    render_ui_review_decision_log,
     render_ui_review_escalation_dashboard,
     render_ui_review_escalation_handoff_ledger,
     render_ui_review_exception_log,
@@ -1103,25 +1105,21 @@ from .ui_review import (
     render_ui_review_objective_coverage_board,
     render_ui_review_open_question_tracker,
     render_ui_review_owner_escalation_digest,
-    render_ui_review_persona_readiness_board,
-    render_ui_review_review_summary_board,
     render_ui_review_owner_review_queue,
     render_ui_review_owner_workload_board,
-    render_ui_review_checklist_traceability_board,
-    render_ui_review_decision_followup_tracker,
-    render_ui_review_audit_density_board,
+    render_ui_review_pack_html,
+    render_ui_review_pack_report,
+    render_ui_review_persona_readiness_board,
     render_ui_review_reminder_cadence_board,
+    render_ui_review_review_summary_board,
     render_ui_review_role_coverage_board,
-    render_ui_review_wireframe_readiness_board,
+    render_ui_review_role_matrix,
     render_ui_review_signoff_breach_board,
     render_ui_review_signoff_dependency_board,
+    render_ui_review_signoff_log,
     render_ui_review_signoff_reminder_queue,
     render_ui_review_signoff_sla_dashboard,
-    render_ui_review_decision_log,
-    render_ui_review_pack_html,
-    render_ui_review_role_matrix,
-    render_ui_review_signoff_log,
-    render_ui_review_pack_report,
+    render_ui_review_wireframe_readiness_board,
     write_ui_review_pack_bundle,
 )
 

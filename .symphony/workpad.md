@@ -26,6 +26,6 @@
 - `git status --short`
 
 ## Validation Results
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q` -> `30 passed in 0.22s`
-- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	0.400s`, `ok  	bigclaw-go/internal/events	0.776s`, `ok  	bigclaw-go/internal/regression	1.037s`
-- `find . -name '*.py' | wc -l` -> `43` (pre-change baseline: `45`)
+- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q` -> `30 passed in 0.11s`
+- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	0.419s`, `ok  	bigclaw-go/internal/events	0.924s`, `ok  	bigclaw-go/internal/regression	1.126s`
+- `find . -name '*.py' | wc -l` -> `43` (pre-change baseline: `45`, net `-2`)
