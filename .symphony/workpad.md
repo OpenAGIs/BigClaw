@@ -36,5 +36,6 @@
   - passed; help output confirms the supported Go refill entrypoint and flags
 
 ## Remaining Blocker
-- PR creation is blocked in this workspace because `gh auth status` reports no logged-in GitHub host and no `GITHUB_TOKEN`/`GH_TOKEN` environment variable is present.
-- Branch `symphony/BIG-GO-1058` is pushed to origin and local/remote SHAs match at `1c4d9e531faaf7cf0e0a3641c46f3b941179c5d3`.
+- None.
+- Branch `symphony/BIG-GO-1058` is pushed to origin and local/remote SHAs match at `1a518f6bbd39b780b65771257bd613175f26d650`.
+- PR: `https://github.com/OpenAGIs/BigClaw/pull/218`
