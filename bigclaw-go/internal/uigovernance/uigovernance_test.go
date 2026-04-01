@@ -401,6 +401,190 @@ func TestInformationArchitectureAuditRoundTripAndReport(t *testing.T) {
 	}
 }
 
+func TestUIAcceptanceSuiteRoundTripPreservesAcceptanceManifest(t *testing.T) {
+	suite := UIAcceptanceSuite{
+		Name:    "BIG-1701 v3.0 UI Acceptance",
+		Version: "v3.0",
+		RolePermissions: []RolePermissionScenario{{
+			ScreenID:     "run-detail",
+			AllowedRoles: []string{"admin", "operator"},
+			DeniedRoles:  []string{"viewer"},
+			AuditEvent:   "ui.access.denied",
+		}},
+		DataAccuracyChecks: []DataAccuracyCheck{{
+			ScreenID:                 "sla-dashboard",
+			MetricID:                 "breach-count",
+			SourceOfTruth:            "warehouse.sla_daily",
+			RenderedValue:            "12",
+			Tolerance:                0,
+			ObservedDelta:            0,
+			FreshnessSLOSeconds:      300,
+			ObservedFreshnessSeconds: 120,
+		}},
+		PerformanceBudgets: []PerformanceBudget{{
+			SurfaceID:     "triage-center",
+			Interaction:   "initial-load",
+			TargetP95MS:   1200,
+			ObservedP95MS: 980,
+			TargetTTIMS:   1800,
+			ObservedTTIMS: 1400,
+		}},
+		UsabilityJourneys: []UsabilityJourney{{
+			JourneyID:          "approve-high-risk-run",
+			Personas:           []string{"operator"},
+			CriticalSteps:      []string{"open queue", "inspect run", "approve"},
+			ExpectedMaxSteps:   4,
+			ObservedSteps:      3,
+			KeyboardAccessible: true,
+			EmptyStateGuidance: true,
+			RecoverySupport:    true,
+		}},
+		AuditRequirements: []AuditRequirement{{
+			EventType:             "run.approval.changed",
+			RequiredFields:        []string{"run_id", "actor_role", "decision"},
+			EmittedFields:         []string{"run_id", "actor_role", "decision"},
+			RetentionDays:         90,
+			ObservedRetentionDays: 120,
+		}},
+		DocumentationComplete: true,
+	}
+
+	var restored UIAcceptanceSuite
+	roundTripJSON(t, suite, &restored)
+	if !reflect.DeepEqual(restored, suite) {
+		t.Fatalf("ui acceptance round trip mismatch: got %+v want %+v", restored, suite)
+	}
+}
+
+func TestUIAcceptanceAuditDetectsPermissionAccuracyPerfUsabilityAndAuditGaps(t *testing.T) {
+	suite := UIAcceptanceSuite{
+		Name:    "BIG-1701 v3.0 UI Acceptance",
+		Version: "v3.0",
+		RolePermissions: []RolePermissionScenario{{
+			ScreenID:     "operations-overview",
+			AllowedRoles: []string{"admin"},
+		}},
+		DataAccuracyChecks: []DataAccuracyCheck{{
+			ScreenID:                 "sla-dashboard",
+			MetricID:                 "breach-count",
+			SourceOfTruth:            "warehouse.sla_daily",
+			RenderedValue:            "12",
+			Tolerance:                0,
+			ObservedDelta:            2,
+			FreshnessSLOSeconds:      300,
+			ObservedFreshnessSeconds: 901,
+		}},
+		PerformanceBudgets: []PerformanceBudget{{
+			SurfaceID:     "triage-center",
+			Interaction:   "initial-load",
+			TargetP95MS:   1200,
+			ObservedP95MS: 1480,
+			TargetTTIMS:   1800,
+			ObservedTTIMS: 2400,
+		}},
+		UsabilityJourneys: []UsabilityJourney{{
+			JourneyID:          "reassign-alert",
+			Personas:           []string{"operator"},
+			CriticalSteps:      []string{"open alert", "assign owner", "save"},
+			ExpectedMaxSteps:   3,
+			ObservedSteps:      5,
+			KeyboardAccessible: false,
+			EmptyStateGuidance: true,
+			RecoverySupport:    false,
+		}},
+		AuditRequirements: []AuditRequirement{{
+			EventType:             "permission.override.used",
+			RequiredFields:        []string{"actor_role", "screen_id", "reason_code"},
+			EmittedFields:         []string{"actor_role", "screen_id"},
+			RetentionDays:         180,
+			ObservedRetentionDays: 30,
+		}},
+	}
+
+	audit := (UIAcceptanceLibrary{}).Audit(suite)
+	expected := UIAcceptanceAudit{
+		Name:                      "BIG-1701 v3.0 UI Acceptance",
+		Version:                   "v3.0",
+		PermissionGaps:            []string{"operations-overview: missing=denied-roles, audit-event"},
+		FailingDataChecks:         []string{"sla-dashboard.breach-count: delta=2.0 freshness=901s"},
+		FailingPerformanceBudgets: []string{"triage-center.initial-load: p95=1480ms tti=2400ms"},
+		FailingUsabilityJourneys:  []string{"reassign-alert: steps=5/3"},
+		IncompleteAuditTrails:     []string{"permission.override.used: missing_fields=reason_code retention=30/180d"},
+		DocumentationComplete:     false,
+	}
+	if !reflect.DeepEqual(audit, expected) {
+		t.Fatalf("unexpected ui acceptance audit: got %+v want %+v", audit, expected)
+	}
+	if audit.ReadinessScore() != 0 || audit.ReleaseReady() {
+		t.Fatalf("expected non-ready audit, got %+v", audit)
+	}
+}
+
+func TestRenderUIAcceptanceReportSummarizesReleaseReadiness(t *testing.T) {
+	suite := UIAcceptanceSuite{
+		Name:    "BIG-1701 v3.0 UI Acceptance",
+		Version: "v3.0",
+		RolePermissions: []RolePermissionScenario{{
+			ScreenID:     "run-detail",
+			AllowedRoles: []string{"admin", "operator"},
+			DeniedRoles:  []string{"viewer"},
+			AuditEvent:   "ui.access.denied",
+		}},
+		DataAccuracyChecks: []DataAccuracyCheck{{
+			ScreenID:                 "sla-dashboard",
+			MetricID:                 "breach-count",
+			SourceOfTruth:            "warehouse.sla_daily",
+			RenderedValue:            "12",
+			Tolerance:                0,
+			ObservedDelta:            0,
+			FreshnessSLOSeconds:      300,
+			ObservedFreshnessSeconds: 120,
+		}},
+		PerformanceBudgets: []PerformanceBudget{{
+			SurfaceID:     "triage-center",
+			Interaction:   "initial-load",
+			TargetP95MS:   1200,
+			ObservedP95MS: 980,
+			TargetTTIMS:   1800,
+			ObservedTTIMS: 1400,
+		}},
+		UsabilityJourneys: []UsabilityJourney{{
+			JourneyID:          "approve-high-risk-run",
+			Personas:           []string{"operator"},
+			CriticalSteps:      []string{"open queue", "inspect run", "approve"},
+			ExpectedMaxSteps:   4,
+			ObservedSteps:      3,
+			KeyboardAccessible: true,
+			EmptyStateGuidance: true,
+			RecoverySupport:    true,
+		}},
+		AuditRequirements: []AuditRequirement{{
+			EventType:             "run.approval.changed",
+			RequiredFields:        []string{"run_id", "actor_role", "decision"},
+			EmittedFields:         []string{"run_id", "actor_role", "decision"},
+			RetentionDays:         90,
+			ObservedRetentionDays: 120,
+		}},
+		DocumentationComplete: true,
+	}
+
+	report := RenderUIAcceptanceReport(suite, (UIAcceptanceLibrary{}).Audit(suite))
+	for _, fragment := range []string{
+		"# UI Acceptance Report",
+		"- Readiness Score: 100.0",
+		"- Release Ready: True",
+		"- Role/Permission run-detail: allow=admin, operator deny=viewer audit_event=ui.access.denied",
+		"- Data Accuracy sla-dashboard.breach-count: delta=0.0 tolerance=0.0 freshness=120/300s",
+		"- Performance triage-center.initial-load: p95=980/1200ms tti=1400/1800ms",
+		"- Usability approve-high-risk-run: steps=3/4 keyboard=True empty_state=True recovery=True",
+		"- Audit completeness gaps: none",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in report, got %s", fragment, report)
+		}
+	}
+}
+
 func roundTripJSON(t *testing.T, input any, target any) {
 	t.Helper()
 	body, err := json.Marshal(input)

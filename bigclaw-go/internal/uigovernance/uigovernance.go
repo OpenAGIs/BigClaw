@@ -485,6 +485,232 @@ func (a InformationArchitecture) Audit() InformationArchitectureAudit {
 	}
 }
 
+type RolePermissionScenario struct {
+	ScreenID     string   `json:"screen_id"`
+	AllowedRoles []string `json:"allowed_roles,omitempty"`
+	DeniedRoles  []string `json:"denied_roles,omitempty"`
+	AuditEvent   string   `json:"audit_event,omitempty"`
+}
+
+func (s RolePermissionScenario) MissingCoverage() []string {
+	var missing []string
+	if len(s.AllowedRoles) == 0 {
+		missing = append(missing, "allowed-roles")
+	}
+	if len(s.DeniedRoles) == 0 {
+		missing = append(missing, "denied-roles")
+	}
+	if strings.TrimSpace(s.AuditEvent) == "" {
+		missing = append(missing, "audit-event")
+	}
+	return missing
+}
+
+type DataAccuracyCheck struct {
+	ScreenID                 string  `json:"screen_id"`
+	MetricID                 string  `json:"metric_id"`
+	SourceOfTruth            string  `json:"source_of_truth"`
+	RenderedValue            string  `json:"rendered_value"`
+	Tolerance                float64 `json:"tolerance,omitempty"`
+	ObservedDelta            float64 `json:"observed_delta,omitempty"`
+	FreshnessSLOSeconds      int     `json:"freshness_slo_seconds,omitempty"`
+	ObservedFreshnessSeconds int     `json:"observed_freshness_seconds,omitempty"`
+}
+
+func (c DataAccuracyCheck) WithinTolerance() bool {
+	if c.ObservedDelta < 0 {
+		return -c.ObservedDelta <= c.Tolerance
+	}
+	return c.ObservedDelta <= c.Tolerance
+}
+
+func (c DataAccuracyCheck) WithinFreshnessSLO() bool {
+	if c.FreshnessSLOSeconds <= 0 {
+		return true
+	}
+	return c.ObservedFreshnessSeconds <= c.FreshnessSLOSeconds
+}
+
+func (c DataAccuracyCheck) Passes() bool {
+	return c.WithinTolerance() && c.WithinFreshnessSLO()
+}
+
+type PerformanceBudget struct {
+	SurfaceID     string `json:"surface_id"`
+	Interaction   string `json:"interaction"`
+	TargetP95MS   int    `json:"target_p95_ms"`
+	ObservedP95MS int    `json:"observed_p95_ms"`
+	TargetTTIMS   int    `json:"target_tti_ms,omitempty"`
+	ObservedTTIMS int    `json:"observed_tti_ms,omitempty"`
+}
+
+func (b PerformanceBudget) WithinBudget() bool {
+	p95OK := b.ObservedP95MS <= b.TargetP95MS
+	ttiOK := b.TargetTTIMS <= 0 || b.ObservedTTIMS <= b.TargetTTIMS
+	return p95OK && ttiOK
+}
+
+type UsabilityJourney struct {
+	JourneyID          string   `json:"journey_id"`
+	Personas           []string `json:"personas,omitempty"`
+	CriticalSteps      []string `json:"critical_steps,omitempty"`
+	ExpectedMaxSteps   int      `json:"expected_max_steps,omitempty"`
+	ObservedSteps      int      `json:"observed_steps,omitempty"`
+	KeyboardAccessible bool     `json:"keyboard_accessible,omitempty"`
+	EmptyStateGuidance bool     `json:"empty_state_guidance,omitempty"`
+	RecoverySupport    bool     `json:"recovery_support,omitempty"`
+}
+
+func (j UsabilityJourney) Passes() bool {
+	return len(j.Personas) > 0 &&
+		len(j.CriticalSteps) > 0 &&
+		j.ExpectedMaxSteps > 0 &&
+		j.ObservedSteps <= j.ExpectedMaxSteps &&
+		j.KeyboardAccessible &&
+		j.EmptyStateGuidance &&
+		j.RecoverySupport
+}
+
+type AuditRequirement struct {
+	EventType             string   `json:"event_type"`
+	RequiredFields        []string `json:"required_fields,omitempty"`
+	EmittedFields         []string `json:"emitted_fields,omitempty"`
+	RetentionDays         int      `json:"retention_days,omitempty"`
+	ObservedRetentionDays int      `json:"observed_retention_days,omitempty"`
+}
+
+func (r AuditRequirement) MissingFields() []string {
+	emitted := map[string]bool{}
+	for _, field := range r.EmittedFields {
+		emitted[field] = true
+	}
+	var missing []string
+	for _, field := range r.RequiredFields {
+		if !emitted[field] {
+			missing = append(missing, field)
+		}
+	}
+	sort.Strings(missing)
+	return missing
+}
+
+func (r AuditRequirement) RetentionMet() bool {
+	if r.RetentionDays <= 0 {
+		return true
+	}
+	return r.ObservedRetentionDays >= r.RetentionDays
+}
+
+func (r AuditRequirement) Complete() bool {
+	return len(r.MissingFields()) == 0 && r.RetentionMet()
+}
+
+type UIAcceptanceSuite struct {
+	Name                  string                   `json:"name"`
+	Version               string                   `json:"version"`
+	RolePermissions       []RolePermissionScenario `json:"role_permissions,omitempty"`
+	DataAccuracyChecks    []DataAccuracyCheck      `json:"data_accuracy_checks,omitempty"`
+	PerformanceBudgets    []PerformanceBudget      `json:"performance_budgets,omitempty"`
+	UsabilityJourneys     []UsabilityJourney       `json:"usability_journeys,omitempty"`
+	AuditRequirements     []AuditRequirement       `json:"audit_requirements,omitempty"`
+	DocumentationComplete bool                     `json:"documentation_complete,omitempty"`
+}
+
+type UIAcceptanceAudit struct {
+	Name                      string   `json:"name"`
+	Version                   string   `json:"version"`
+	PermissionGaps            []string `json:"permission_gaps,omitempty"`
+	FailingDataChecks         []string `json:"failing_data_checks,omitempty"`
+	FailingPerformanceBudgets []string `json:"failing_performance_budgets,omitempty"`
+	FailingUsabilityJourneys  []string `json:"failing_usability_journeys,omitempty"`
+	IncompleteAuditTrails     []string `json:"incomplete_audit_trails,omitempty"`
+	DocumentationComplete     bool     `json:"documentation_complete,omitempty"`
+}
+
+func (a UIAcceptanceAudit) ReleaseReady() bool {
+	return len(a.PermissionGaps) == 0 &&
+		len(a.FailingDataChecks) == 0 &&
+		len(a.FailingPerformanceBudgets) == 0 &&
+		len(a.FailingUsabilityJourneys) == 0 &&
+		len(a.IncompleteAuditTrails) == 0 &&
+		a.DocumentationComplete
+}
+
+func (a UIAcceptanceAudit) ReadinessScore() float64 {
+	checks := []bool{
+		len(a.PermissionGaps) == 0,
+		len(a.FailingDataChecks) == 0,
+		len(a.FailingPerformanceBudgets) == 0,
+		len(a.FailingUsabilityJourneys) == 0,
+		len(a.IncompleteAuditTrails) == 0,
+		a.DocumentationComplete,
+	}
+	passed := 0
+	for _, check := range checks {
+		if check {
+			passed++
+		}
+	}
+	return round1((float64(passed) / float64(len(checks))) * 100)
+}
+
+type UIAcceptanceLibrary struct{}
+
+func (UIAcceptanceLibrary) Audit(suite UIAcceptanceSuite) UIAcceptanceAudit {
+	var permissionGaps []string
+	for _, scenario := range suite.RolePermissions {
+		if missing := scenario.MissingCoverage(); len(missing) > 0 {
+			permissionGaps = append(permissionGaps, scenario.ScreenID+": missing="+strings.Join(missing, ", "))
+		}
+	}
+	var failingDataChecks []string
+	for _, check := range suite.DataAccuracyChecks {
+		if !check.Passes() {
+			failingDataChecks = append(failingDataChecks, check.ScreenID+"."+check.MetricID+": delta="+format1(check.ObservedDelta)+" freshness="+itoa(check.ObservedFreshnessSeconds)+"s")
+		}
+	}
+	var failingPerformance []string
+	for _, budget := range suite.PerformanceBudgets {
+		if !budget.WithinBudget() {
+			entry := budget.SurfaceID + "." + budget.Interaction + ": p95=" + itoa(budget.ObservedP95MS) + "ms"
+			if budget.TargetTTIMS > 0 {
+				entry += " tti=" + itoa(budget.ObservedTTIMS) + "ms"
+			}
+			failingPerformance = append(failingPerformance, entry)
+		}
+	}
+	var failingUsability []string
+	for _, journey := range suite.UsabilityJourneys {
+		if !journey.Passes() {
+			failingUsability = append(failingUsability, journey.JourneyID+": steps="+itoa(journey.ObservedSteps)+"/"+itoa(journey.ExpectedMaxSteps))
+		}
+	}
+	var incompleteAudit []string
+	for _, requirement := range suite.AuditRequirements {
+		if requirement.Complete() {
+			continue
+		}
+		var parts []string
+		if missingFields := requirement.MissingFields(); len(missingFields) > 0 {
+			parts = append(parts, "missing_fields="+strings.Join(missingFields, ", "))
+		}
+		if !requirement.RetentionMet() {
+			parts = append(parts, "retention="+itoa(requirement.ObservedRetentionDays)+"/"+itoa(requirement.RetentionDays)+"d")
+		}
+		incompleteAudit = append(incompleteAudit, requirement.EventType+": "+strings.Join(parts, " "))
+	}
+	return UIAcceptanceAudit{
+		Name:                      suite.Name,
+		Version:                   suite.Version,
+		PermissionGaps:            permissionGaps,
+		FailingDataChecks:         failingDataChecks,
+		FailingPerformanceBudgets: failingPerformance,
+		FailingUsabilityJourneys:  failingUsability,
+		IncompleteAuditTrails:     incompleteAudit,
+		DocumentationComplete:     suite.DocumentationComplete,
+	}
+}
+
 func RenderDesignSystemReport(system DesignSystem, audit DesignSystemAudit) string {
 	var lines []string
 	lines = append(lines,
@@ -623,6 +849,72 @@ func RenderInformationArchitectureReport(architecture InformationArchitecture, a
 		lines = append(lines, "- Secondary nav gaps: "+strings.Join(parts, "; "))
 	}
 	lines = append(lines, "- Orphan routes: "+joinOrNone(audit.OrphanRoutes))
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIAcceptanceReport(suite UIAcceptanceSuite, audit UIAcceptanceAudit) string {
+	var lines []string
+	lines = append(lines,
+		"# UI Acceptance Report",
+		"",
+		"- Name: "+suite.Name,
+		"- Version: "+suite.Version,
+		"- Role/Permission Scenarios: "+itoa(len(suite.RolePermissions)),
+		"- Data Accuracy Checks: "+itoa(len(suite.DataAccuracyChecks)),
+		"- Performance Budgets: "+itoa(len(suite.PerformanceBudgets)),
+		"- Usability Journeys: "+itoa(len(suite.UsabilityJourneys)),
+		"- Audit Requirements: "+itoa(len(suite.AuditRequirements)),
+		"- Readiness Score: "+format1(audit.ReadinessScore()),
+		"- Release Ready: "+boolString(audit.ReleaseReady()),
+		"",
+		"## Coverage",
+		"",
+	)
+	if len(suite.RolePermissions) == 0 {
+		lines = append(lines, "- Role/Permission: none")
+	} else {
+		for _, scenario := range suite.RolePermissions {
+			lines = append(lines, "- Role/Permission "+scenario.ScreenID+": allow="+joinOrNone(scenario.AllowedRoles)+" deny="+joinOrNone(scenario.DeniedRoles)+" audit_event="+fallback(scenario.AuditEvent, "none"))
+		}
+	}
+	if len(suite.DataAccuracyChecks) == 0 {
+		lines = append(lines, "- Data Accuracy: none")
+	} else {
+		for _, check := range suite.DataAccuracyChecks {
+			lines = append(lines, "- Data Accuracy "+check.ScreenID+"."+check.MetricID+": delta="+format1(check.ObservedDelta)+" tolerance="+format1(check.Tolerance)+" freshness="+itoa(check.ObservedFreshnessSeconds)+"/"+itoa(check.FreshnessSLOSeconds)+"s")
+		}
+	}
+	if len(suite.PerformanceBudgets) == 0 {
+		lines = append(lines, "- Performance: none")
+	} else {
+		for _, budget := range suite.PerformanceBudgets {
+			ttiText := ""
+			if budget.TargetTTIMS > 0 {
+				ttiText = " tti=" + itoa(budget.ObservedTTIMS) + "/" + itoa(budget.TargetTTIMS) + "ms"
+			}
+			lines = append(lines, "- Performance "+budget.SurfaceID+"."+budget.Interaction+": p95="+itoa(budget.ObservedP95MS)+"/"+itoa(budget.TargetP95MS)+"ms"+ttiText)
+		}
+	}
+	if len(suite.UsabilityJourneys) == 0 {
+		lines = append(lines, "- Usability: none")
+	} else {
+		for _, journey := range suite.UsabilityJourneys {
+			lines = append(lines, "- Usability "+journey.JourneyID+": steps="+itoa(journey.ObservedSteps)+"/"+itoa(journey.ExpectedMaxSteps)+" keyboard="+boolString(journey.KeyboardAccessible)+" empty_state="+boolString(journey.EmptyStateGuidance)+" recovery="+boolString(journey.RecoverySupport))
+		}
+	}
+	if len(suite.AuditRequirements) == 0 {
+		lines = append(lines, "- Audit: none")
+	} else {
+		for _, requirement := range suite.AuditRequirements {
+			lines = append(lines, "- Audit "+requirement.EventType+": fields="+itoa(len(requirement.EmittedFields))+"/"+itoa(len(requirement.RequiredFields))+" retention="+itoa(requirement.ObservedRetentionDays)+"/"+itoa(requirement.RetentionDays)+"d")
+		}
+	}
+	lines = append(lines, "", "## Gaps", "")
+	lines = append(lines, "- Role/Permission gaps: "+joinOrNone(audit.PermissionGaps))
+	lines = append(lines, "- Data accuracy gaps: "+joinOrNone(audit.FailingDataChecks))
+	lines = append(lines, "- Performance gaps: "+joinOrNone(audit.FailingPerformanceBudgets))
+	lines = append(lines, "- Usability gaps: "+joinOrNone(audit.FailingUsabilityJourneys))
+	lines = append(lines, "- Audit completeness gaps: "+joinOrNone(audit.IncompleteAuditTrails))
 	return strings.Join(lines, "\n") + "\n"
 }
 
