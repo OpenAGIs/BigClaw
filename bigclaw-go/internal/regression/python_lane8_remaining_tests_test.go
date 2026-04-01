@@ -22,6 +22,7 @@ func TestLane8PythonReplacementTrancheRemoved(t *testing.T) {
 		"tests/test_planning.py",
 		"tests/test_operations.py",
 		"tests/test_observability.py",
+		"tests/test_reports.py",
 		"tests/test_evaluation.py",
 		"tests/test_risk.py",
 		"tests/test_runtime_matrix.py",
