@@ -5,18 +5,6 @@ import (
 	"strings"
 )
 
-const LegacyPythonWrapperNotice = "Legacy Python operator wrapper: use scripts/ops/bigclawctl for the Go mainline. This Python path remains only as a compatibility shim during migration."
-
-func AppendMissingFlag(args []string, flag string, value string) []string {
-	flagPrefix := flag + "="
-	for _, arg := range args {
-		if arg == flag || strings.HasPrefix(arg, flagPrefix) {
-			return append([]string{}, args...)
-		}
-	}
-	return append(append([]string{}, args...), flag, value)
-}
-
 func BuildBigclawctlExecArgs(repoRoot string, command []string, forwarded []string) []string {
 	argv := []string{"bash", filepath.Join(repoRoot, "scripts", "ops", "bigclawctl")}
 	argv = append(argv, command...)
@@ -26,12 +14,6 @@ func BuildBigclawctlExecArgs(repoRoot string, command []string, forwarded []stri
 
 func RepoRootFromScript(scriptPath string) string {
 	return filepath.Dir(filepath.Dir(filepath.Dir(scriptPath)))
-}
-
-func BuildWorkspaceBootstrapArgs(repoRoot string, forwarded []string) []string {
-	args := AppendMissingFlag(forwarded, "--repo-url", "git@github.com:OpenAGIs/BigClaw.git")
-	args = AppendMissingFlag(args, "--cache-key", "openagis-bigclaw")
-	return BuildBigclawctlExecArgs(repoRoot, []string{"workspace", "bootstrap"}, args)
 }
 
 func TranslateWorkspaceValidateArgs(forwarded []string) []string {
@@ -66,12 +48,4 @@ func TranslateWorkspaceValidateArgs(forwarded []string) []string {
 
 func BuildWorkspaceValidateArgs(repoRoot string, forwarded []string) []string {
 	return BuildBigclawctlExecArgs(repoRoot, []string{"workspace", "validate"}, TranslateWorkspaceValidateArgs(forwarded))
-}
-
-func BuildRefillArgs(repoRoot string, forwarded []string) []string {
-	return BuildBigclawctlExecArgs(repoRoot, []string{"refill"}, forwarded)
-}
-
-func BuildWorkspaceRuntimeBootstrapArgs(repoRoot string, forwarded []string) []string {
-	return BuildBigclawctlExecArgs(repoRoot, []string{"workspace"}, forwarded)
 }

@@ -60,3 +60,51 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 		}
 	}
 }
+
+func TestWorkflowBootstrapAndRefillEntrypointsStayGoOnly(t *testing.T) {
+	repoRoot := repoRoot(t)
+	workflowPath := filepath.Join(repoRoot, "..", "workflow.md")
+	contents, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read workflow.md: %v", err)
+	}
+
+	required := []string{
+		`bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace bootstrap`,
+		`bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync install`,
+		`bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync sync`,
+		`bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json`,
+	}
+	for _, needle := range required {
+		if !strings.Contains(string(contents), needle) {
+			t.Fatalf("workflow.md missing Go-only entrypoint %q", needle)
+		}
+	}
+
+	disallowed := []string{
+		"python3 scripts/ops/bigclaw_workspace_bootstrap.py",
+		"python3 scripts/ops/symphony_workspace_bootstrap.py",
+		"python3 scripts/ops/bigclaw_refill_queue.py",
+	}
+	for _, needle := range disallowed {
+		if strings.Contains(string(contents), needle) {
+			t.Fatalf("workflow.md should not reference retired Python entrypoint %q", needle)
+		}
+	}
+}
+
+func TestRetiredWorkflowPythonEntrypointsStayDeleted(t *testing.T) {
+	repoRoot := repoRoot(t)
+	retired := []string{
+		filepath.Join(repoRoot, "..", "scripts", "ops", "bigclaw_workspace_bootstrap.py"),
+		filepath.Join(repoRoot, "..", "scripts", "ops", "symphony_workspace_bootstrap.py"),
+		filepath.Join(repoRoot, "..", "scripts", "ops", "bigclaw_refill_queue.py"),
+	}
+	for _, path := range retired {
+		if _, err := os.Stat(path); err == nil {
+			t.Fatalf("expected retired Python entrypoint to stay deleted: %s", path)
+		} else if !os.IsNotExist(err) {
+			t.Fatalf("stat retired Python entrypoint %s: %v", path, err)
+		}
+	}
+}
