@@ -90,18 +90,16 @@ Python surface must be exercised, validate it directly from source:
 PYTHONPATH=src python3 -m pytest tests
 ```
 
-Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface from the active environment without editable install
-or repo-root packaging bootstrap:
+Or use the bootstrap helper to run the supported Go smoke and bootstrap
+verification without editable install or repo-root packaging bootstrap:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
-That helper always runs the Go `bigclawctl dev-smoke` replacement first, then
-`cd bigclaw-go && go test ./internal/bootstrap`, and finally the remaining
-targeted source-level Python migration suite in `tests/test_planning.py` when
-`pytest` is available.
+That helper always runs the Go `bigclawctl dev-smoke` replacement first and
+then `cd bigclaw-go && go test ./internal/bootstrap`. The old bootstrap-linked
+Python migration sweep was removed in `BIG-GO-1065`.
 
 ## Go smoke verify
 

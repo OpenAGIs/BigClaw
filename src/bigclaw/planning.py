@@ -346,7 +346,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
                     "PYTHONPATH=src python3 -m pytest tests/test_design_system.py "
-                    "tests/test_console_ia.py tests/test_ui_review.py -q"
+                    "tests/test_console_ia.py -q"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
@@ -383,9 +383,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="review-pack-tests",
-                        target="tests/test_ui_review.py",
+                        target="bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go",
                         capability="release-gate",
-                        note="deterministic review packet validation",
+                        note="regression coverage that locks the Python review-pack test removal while the Go-first migration path remains canonical",
                     ),
                 ],
             ),
@@ -397,7 +397,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
+                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py "
                     "tests/test_evaluation.py -q && "
                     "(cd bigclaw-go && go test ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler)"
                 ),
@@ -418,9 +418,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="operations-tests",
-                        target="tests/test_operations.py",
+                        target="bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go",
                         capability="ops-control",
-                        note="dashboard, weekly report, regression, and version-center coverage",
+                        note="regression coverage that pins the removed Python operations suite and its Go-native replacements",
                     ),
                     EvidenceLink(
                         label="approval-contract",
@@ -480,7 +480,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="orchestration-office",
                 outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_reports.py -q"
+                    "cd bigclaw-go && go test ./internal/workflow ./internal/api ./internal/regression"
                 ),
                 capabilities=["commercialization", "handoff", "pilot-rollout"],
                 evidence=["pilot-evidence", "validation-report"],
@@ -499,15 +499,15 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="orchestration-tests",
-                        target="tests/test_orchestration.py",
+                        target="bigclaw-go/internal/workflow/orchestration_test.go",
                         capability="commercialization",
-                        note="handoff and policy decision validation",
+                        note="Go-native handoff and policy decision validation",
                     ),
                     EvidenceLink(
                         label="report-studio-tests",
-                        target="tests/test_reports.py",
+                        target="bigclaw-go/internal/api/expansion_test.go",
                         capability="commercialization",
-                        note="report exports and downstream evidence sharing",
+                        note="Go-native report export and downstream evidence sharing",
                     ),
                 ],
             ),
