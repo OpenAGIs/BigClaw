@@ -140,6 +140,7 @@ Result: exit code `0`, printed `usage: bigclawctl automation e2e continuation-po
 - Baseline migration commit on `main`: `004de016`
 - Evidence branch: `symphony/BIG-GO-1053-validation`
 - Push target: `origin/symphony/BIG-GO-1053-validation`
+- PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
 
 ## Residual Risk
 
@@ -147,3 +148,5 @@ Result: exit code `0`, printed `usage: bigclawctl automation e2e continuation-po
   the missing validation and closeout artifacts for the lane.
 - The repo-wide Python file count remains `46`, so any further reduction depends on follow-on
   lanes outside the scoped tranche-2 e2e entrypoint migration.
+- GitHub CLI is not authenticated in this environment, so PR creation could not be completed
+  programmatically from the shell during this turn.

@@ -33,4 +33,6 @@
   - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
   - `find . -name '*.py' | wc -l` -> `46`
   - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
+- Historical branch handoff URL:
+  - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
 - Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.

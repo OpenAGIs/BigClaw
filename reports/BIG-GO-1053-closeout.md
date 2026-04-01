@@ -74,3 +74,4 @@ the missing validation and closeout artifacts rather than another fresh `.py` de
 - `git status --short --branch` is clean on `symphony/BIG-GO-1053-validation` after the
   closeout artifacts are committed.
 - `git rev-parse origin/main` points to the landed migration commit `004de016252d6ca168a45dccda48fc9fa69e27f1`.
+- PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
