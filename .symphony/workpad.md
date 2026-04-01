@@ -48,6 +48,8 @@
 - `python3 - <<'PY' ... import bigclaw ... PY` -> `ok bigclaw`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q` -> `48 passed`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_observability.py -q` -> `21 passed`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_observability.py -q` -> `27 passed`
 - `cd bigclaw-go && go test ./internal/queue ./internal/scheduler ./internal/workflow ./internal/refill` -> passed
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> passed
 - `cd bigclaw-go && go test ./internal/regression -run TestLegacyMainlineCompatibilityManifestStaysAligned` -> passed
+- `rg -n "src/bigclaw/(runtime|workflow|queue|scheduler|orchestration|parallel_refill|service)\.py|scripts/ops/bigclaw_refill_queue\.py|tests/test_(control_center|dsl|evaluation|orchestration|queue|risk|runtime_matrix|scheduler|service)\.py|from bigclaw\.(runtime|workflow|queue|scheduler|orchestration)|bigclaw\.(runtime|workflow|queue|scheduler|orchestration)" . --glob '!reports/**' --glob '!docs/go-mainline-cutover-issue-pack.md' --glob '!local-issues.json'` -> only expected retired migration-plan mention remains
