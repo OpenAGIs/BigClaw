@@ -92,3 +92,6 @@
 - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l` -> `2`
 - `find bigclaw-go -type f -name '*.go' | wc -l` -> `282`
 - `pyproject` / `setup` impact: none
+- `python3 -m bigclaw --help` -> `usage: bigclaw [-h] {serve,repo-sync-audit} ...`
+- `python3 -m bigclaw repo-sync-audit --input <tmp>/audit.json --output <tmp>/report.md` -> rendered repo sync audit markdown successfully
+- Remaining top-level Python files under `src/bigclaw`: `__init__.py` and required package entrypoint `__main__.py`
