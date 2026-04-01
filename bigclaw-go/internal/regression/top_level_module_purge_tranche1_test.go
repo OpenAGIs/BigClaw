@@ -14,6 +14,7 @@ func TestTopLevelModulePurgeTranche1(t *testing.T) {
 		"src/bigclaw/cost_control.py",
 		"src/bigclaw/issue_archive.py",
 		"src/bigclaw/github_sync.py",
+		"scripts/ops/bigclaw_github_sync.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {

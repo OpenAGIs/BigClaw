@@ -56,10 +56,7 @@ func TestWorkspaceValidateWrapperTranslatesLegacyFlags(t *testing.T) {
 	}
 }
 
-func TestGitHubSyncAndRefillWrappersTargetGoShim(t *testing.T) {
-	if got := BuildGitHubSyncArgs("/repo", []string{"status", "--json"}); !reflect.DeepEqual(got, []string{"bash", "/repo/scripts/ops/bigclawctl", "github-sync", "status", "--json"}) {
-		t.Fatalf("unexpected github sync args: %+v", got)
-	}
+func TestRefillWrapperTargetsGoShim(t *testing.T) {
 	if got := BuildRefillArgs("/repo", []string{"--apply"}); !reflect.DeepEqual(got, []string{"bash", "/repo/scripts/ops/bigclawctl", "refill", "--apply"}) {
 		t.Fatalf("unexpected refill args: %+v", got)
 	}

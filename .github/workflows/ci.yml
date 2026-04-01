@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: bigclaw-go/go.mod
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -21,6 +24,8 @@ jobs:
         run: ruff check src tests scripts
       - name: Test
         run: PYTHONPATH=src pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml
+      - name: Verify Go GitHub Sync Entrypoint
+        run: bash scripts/ops/bigclawctl github-sync --help >/dev/null
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:

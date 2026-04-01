@@ -72,10 +72,6 @@ def build_workspace_validate_args(repo_root: Path, forwarded: Sequence[str]) -> 
     return build_bigclawctl_exec_args(repo_root, ["workspace", "validate"], translate_workspace_validate_args(forwarded))
 
 
-def build_github_sync_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
-    return build_bigclawctl_exec_args(repo_root, ["github-sync"], list(forwarded))
-
-
 def build_refill_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
     return build_bigclawctl_exec_args(repo_root, ["refill"], list(forwarded))
 
