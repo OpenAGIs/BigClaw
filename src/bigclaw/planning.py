@@ -485,16 +485,17 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="orchestration-office",
                 outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_reports.py -q"
+                    "PYTHONPATH=src python3 -m pytest tests/test_reports.py -q && "
+                    "(cd bigclaw-go && go test ./internal/workflow)"
                 ),
                 capabilities=["commercialization", "handoff", "pilot-rollout"],
                 evidence=["pilot-evidence", "validation-report"],
                 evidence_links=[
                     EvidenceLink(
                         label="orchestration-plan-src",
-                        target="src/bigclaw/orchestration.py",
+                        target="bigclaw-go/internal/workflow/orchestration.go",
                         capability="commercialization",
-                        note="cross-team orchestration, entitlement-aware policy, and handoff decisions",
+                        note="cross-team orchestration, entitlement-aware policy, and handoff decisions now owned by Go mainline",
                     ),
                     EvidenceLink(
                         label="orchestration-report-src",
@@ -504,9 +505,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="orchestration-tests",
-                        target="tests/test_orchestration.py",
+                        target="tests/test_reports.py",
                         capability="commercialization",
-                        note="handoff and policy decision validation",
+                        note="handoff, policy decision, and orchestration canvas validation",
                     ),
                     EvidenceLink(
                         label="report-studio-tests",

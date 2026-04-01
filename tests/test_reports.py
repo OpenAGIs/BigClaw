@@ -719,6 +719,8 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     class OrchestrationPlan:
         task_id: str
         collaboration_mode: str
+        departments: list[str] = field(default_factory=list)
+        required_approvals: list[str] = field(default_factory=list)
         handoffs: list[DepartmentHandoff] = field(default_factory=list)
 
     @dataclass
@@ -738,11 +740,14 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     class HandoffRequest:
         target_team: str
         reason: str
+        status: str = "blocked"
         required_approvals: list[str] = field(default_factory=list)
 
     plan = OrchestrationPlan(
         task_id="OPE-66-canvas",
         collaboration_mode="tier-limited",
+        departments=["operations", "engineering"],
+        required_approvals=["ops-manager"],
         handoffs=[
             DepartmentHandoff("operations", "coordinate"),
             DepartmentHandoff("engineering", "execute", required_tools=["browser"]),
@@ -760,7 +765,12 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
         overage_usage_units=1,
         overage_cost_usd=4.0,
     )
-    handoff = HandoffRequest(target_team="operations", reason=policy.reason, required_approvals=["ops-manager"])
+    handoff = HandoffRequest(
+        target_team="operations",
+        reason=policy.reason,
+        status="pending",
+        required_approvals=["ops-manager"],
+    )
 
     canvas = build_orchestration_canvas(run, plan, policy, handoff)
     report = render_orchestration_canvas(canvas)
