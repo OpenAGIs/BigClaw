@@ -2,39 +2,36 @@
 
 ## Scope
 - Residual sweep for `src/bigclaw` Python assets in the issue's suggested tranche.
-- Current physical targets handled across this checkout: initially present were `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/design_system.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/governance.py`.
-- Current residual physical targets still present after this tranche: `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`.
-- Missing from the suggested list in the current checkout and therefore out of edit scope unless encountered indirectly: `connectors.py`, `cost_control.py`, `dashboard_run_contract.py`, `dsl.py`, `event_bus.py`, `execution_contract.py`, `github_sync.py`.
+- Physical targets still present in this checkout from the suggested list: `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`.
+- Adjacent residual helper likely removable within the same compatibility slice: `src/bigclaw/deprecation.py`.
+- Already absent from the suggested list in the current checkout and therefore out of edit scope unless encountered indirectly: `audit_events.py`, `collaboration.py`, `connectors.py`, `console_ia.py`, `cost_control.py`, `dashboard_run_contract.py`, `design_system.py`, `dsl.py`, `evaluation.py`, `event_bus.py`, `execution_contract.py`, `github_sync.py`, `governance.py`.
+- Current Go validation drift to fix during this tranche: `bigclaw-go/internal/legacyshim/compilecheck.go` and related tests still reference deleted `src/bigclaw/service.py`.
 
 ## Plan
-1. Audit residual module usage and existing Go replacement coverage.
-2. Collapse low-complexity Python modules into package-level compatibility shims where import paths can stay stable.
-3. Delete physical Python files that become redundant.
-4. Run targeted Python and Go regression checks for the affected surfaces.
-5. Measure Python file-count delta, then commit and push the issue branch.
+1. Refresh this workpad to match the actual residual Python asset list and stale validation surfaces in the checkout.
+2. Delete `src/bigclaw/__main__.py` if no live validation or import path requires it, preserving Go-first replacement guidance in docs instead of Python code.
+3. Inline the tiny deprecation helper into a surviving module if that safely removes `src/bigclaw/deprecation.py`.
+4. Update Go compile-check coverage, regression tests, and current compatibility docs/manifest to the reduced shim list.
+5. Run targeted Python and Go regression checks, measure Python file-count delta, then commit and push the issue branch.
 
 ## Acceptance
-- Identify the concrete Python asset list handled in this tranche.
-- Remove, replace, or downgrade as many residual Python files as is safe while preserving import compatibility.
-- Keep a verifiable Go replacement path or migration note for each removed surface.
+- Identify the concrete Python asset list handled in this tranche and separate it from already-absent files.
+- Remove, replace, or downgrade redundant residual Python files while preserving the remaining package compatibility surface.
+- Keep a verifiable Go replacement path or migration note for each removed entry or shim.
 - Record exact validation commands and outcomes.
 - Report Python file-count impact and any residual risk.
 
 ## Validation
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q`
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py tests/test_design_system.py tests/test_console_ia.py -q`
-- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)`
+- `(cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl -count=1)`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `find . -name '*.py' | wc -l`
 - `git status --short`
 
 ## Validation Results
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q` -> `30 passed in 0.11s`
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py -q` -> `50 passed in 0.12s`
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py tests/test_design_system.py tests/test_console_ia.py -q` -> `76 passed in 0.15s`
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_console_ia.py tests/test_design_system.py tests/test_planning.py -q` -> `41 passed in 0.10s`
-- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py tests/test_design_system.py tests/test_console_ia.py -q` -> `76 passed in 0.14s`
-- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	0.427s`, `ok  	bigclaw-go/internal/events	1.464s`, `ok  	bigclaw-go/internal/regression	0.811s`
-- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	1.115s`, `ok  	bigclaw-go/internal/events	1.699s`, `ok  	bigclaw-go/internal/regression	1.979s`
-- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	3.162s`, `ok  	bigclaw-go/internal/events	3.404s`, `ok  	bigclaw-go/internal/regression	3.349s`
-- `find . -name '*.py' | wc -l` -> `40` (pre-change baseline: `45`, net `-5`)
+- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py tests/test_design_system.py tests/test_console_ia.py -q` -> `76 passed in 0.28s`
+- `(cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl -count=1)` -> `ok  	bigclaw-go/internal/legacyshim	1.316s`, `ok  	bigclaw-go/internal/regression	1.569s`, `ok  	bigclaw-go/cmd/bigclawctl	4.678s`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> `status: ok`; files: `src/bigclaw/__init__.py`, `src/bigclaw/legacy_shim.py`, `src/bigclaw/runtime.py`
+- `find . -name '*.py' | wc -l` -> `38` (pre-change baseline: `40`, net `-2`)
+- `rg --files src/bigclaw | rg '\.py$' | wc -l` -> `11` (pre-change baseline: `13`, net `-2`)
+- `git status --short` -> modified tracked files plus deletions for `src/bigclaw/__main__.py` and `src/bigclaw/deprecation.py`
