@@ -33,8 +33,9 @@
 ## Validation Results
 - `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py tests/test_design_system.py tests/test_console_ia.py -q` -> `76 passed in 0.28s`
 - `(cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl -count=1)` -> `ok  	bigclaw-go/internal/legacyshim	1.316s`, `ok  	bigclaw-go/internal/regression	1.569s`, `ok  	bigclaw-go/cmd/bigclawctl	4.678s`
+- `(cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14 -count=1)` -> `ok  	bigclaw-go/internal/regression	1.893s`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> `status: ok`; files: `src/bigclaw/__init__.py`, `src/bigclaw/legacy_shim.py`, `src/bigclaw/runtime.py`
-- `bash scripts/ops/bigclawctl github-sync status --json` -> `branch: big-go-1061-residual-sweep`, `local_sha: 78f957908a6415f7d87ad8f84a670f9ad3d2fc7b`, `remote_sha: 78f957908a6415f7d87ad8f84a670f9ad3d2fc7b`, `status: ok`, `synced: true`
+- `bash scripts/ops/bigclawctl github-sync status --json` -> `branch: big-go-1061-residual-sweep`, `local_sha: 9df504144ab1e1dc0ca026e6992b6b6459a56b73`, `remote_sha: 9df504144ab1e1dc0ca026e6992b6b6459a56b73`, `status: ok`, `synced: true`
 - `find . -name '*.py' | wc -l` -> `38` (pre-change baseline: `40`, net `-2`)
 - `rg --files src/bigclaw | rg '\.py$' | wc -l` -> `11` (pre-change baseline: `13`, net `-2`)
-- `git status --short` -> modified tracked files plus deletions for `src/bigclaw/__main__.py` and `src/bigclaw/deprecation.py`
+- `git status --short` -> clean after pushing `origin/big-go-1061-residual-sweep`

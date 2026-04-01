@@ -6,7 +6,8 @@
   },
   "branch": {
     "name": "big-go-1061-residual-sweep",
-    "latest_code_migration_commit": "78f957908a6415f7d87ad8f84a670f9ad3d2fc7b"
+    "latest_code_migration_commit": "78f957908a6415f7d87ad8f84a670f9ad3d2fc7b",
+    "last_verified_head": "9df504144ab1e1dc0ca026e6992b6b6459a56b73"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-1061-closeout.md",
@@ -31,7 +32,7 @@
       "go_tests": "ok bigclaw-go/internal/legacyshim 1.316s; ok bigclaw-go/internal/regression 1.569s; ok bigclaw-go/cmd/bigclawctl 4.678s",
       "purge_regression": "ok bigclaw-go/internal/regression 1.893s",
       "legacy_python_compile_check": "status ok for src/bigclaw/__init__.py, src/bigclaw/legacy_shim.py, and src/bigclaw/runtime.py",
-      "github_sync_status": "branch big-go-1061-residual-sweep synced true with local and remote sha 78f957908a6415f7d87ad8f84a670f9ad3d2fc7b",
+      "github_sync_status": "branch big-go-1061-residual-sweep synced true with local and remote sha 9df504144ab1e1dc0ca026e6992b6b6459a56b73",
       "repo_python_count": "38",
       "src_bigclaw_python_count": "11",
       "lane_python_delta": "repo 40->38 (-2), src/bigclaw 13->11 (-2)"

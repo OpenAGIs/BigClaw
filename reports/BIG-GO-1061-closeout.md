@@ -59,5 +59,7 @@ compatibility surfaces outside this lane's deleted package-entry files.
 
 - `bash scripts/ops/bigclawctl github-sync status --json` reported `status: ok`
   and `synced: true` for `origin/big-go-1061-residual-sweep`.
+- `git rev-parse HEAD` matched `git rev-parse origin/big-go-1061-residual-sweep`
+  at `9df504144ab1e1dc0ca026e6992b6b6459a56b73` when this closeout was recorded.
 - `.symphony/workpad.md` records the handled asset list, exact validation
   commands, and the Python file-count impact for this tranche.

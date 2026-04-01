@@ -122,11 +122,11 @@ Result:
   "detached": false,
   "dirty": false,
   "diverged": false,
-  "local_sha": "78f957908a6415f7d87ad8f84a670f9ad3d2fc7b",
+  "local_sha": "9df504144ab1e1dc0ca026e6992b6b6459a56b73",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "78f957908a6415f7d87ad8f84a670f9ad3d2fc7b",
+  "remote_sha": "9df504144ab1e1dc0ca026e6992b6b6459a56b73",
   "status": "ok",
   "synced": true
 }
@@ -165,9 +165,9 @@ Measured impact for this lane:
 
 ## Commit And Push
 
-- Commit: `78f957908a6415f7d87ad8f84a670f9ad3d2fc7b`
-- Message: `BIG-GO-1061: purge residual package entry shims`
-- Push: `git push origin big-go-1061-residual-sweep` succeeded
+- Code migration commit: `78f957908a6415f7d87ad8f84a670f9ad3d2fc7b`
+- Closeout artifact commit: `9df504144ab1e1dc0ca026e6992b6b6459a56b73`
+- Push: `git push origin big-go-1061-residual-sweep` succeeded for both commits
 
 ## Residual Risk
 
