@@ -1,0 +1,73 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1068",
+    "title": "bigclaw-go scripts e2e residual sweep B",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1068",
+    "baseline_commit": "d36a1c700480054955f46d8a02e4c25cf80d094b"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1068-closeout.md",
+    "validation_report": "reports/BIG-GO-1068-validation.md",
+    "migration_matrix": "bigclaw-go/docs/go-cli-script-migration.md",
+    "regression_guards": [
+      "bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go",
+      "bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
+      "bigclaw-go/cmd/bigclawctl/automation_commands_test.go"
+    ],
+    "workpad": ".symphony/workpad.md"
+  },
+  "scope": {
+    "nominated_assets": [
+      "bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py",
+      "bigclaw-go/scripts/e2e/run_all_test.py",
+      "bigclaw-go/scripts/e2e/run_task_smoke.py",
+      "bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py",
+      "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py",
+      "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py",
+      "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py",
+      "bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+      "bigclaw-go/scripts/migration/live_shadow_scorecard.py",
+      "bigclaw-go/scripts/migration/shadow_compare.py",
+      "bigclaw-go/scripts/migration/shadow_matrix.py"
+    ],
+    "removed_python_tests": [
+      "tests/test_live_shadow_bundle.py"
+    ]
+  },
+  "validation": {
+    "commands": [
+      "find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l",
+      "find bigclaw-go/scripts/migration -maxdepth 1 -name '*.py' | wc -l",
+      "find . -name '*.py' | wc -l",
+      "rg -n \"export_live_shadow_bundle\\.py|live_shadow_scorecard\\.py|shadow_compare\\.py|shadow_matrix\\.py|validation_bundle_continuation_scorecard\\.py|validation_bundle_continuation_policy_gate(_test)?\\.py|run_task_smoke\\.py|subscriber_takeover_fault_matrix\\.py|multi_node_shared_queue_test\\.py|run_all_test\\.py\" tests bigclaw-go docs README.md workflow.md .github . -g '!reports/**' -g '!.symphony/workpad.md'",
+      "cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-matrix --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help"
+    ],
+    "results": {
+      "e2e_py_count": "0",
+      "migration_py_count": "0 (directory absent)",
+      "repo_py_count_before": "43",
+      "repo_py_count_after": "42",
+      "reference_scan": "historical migration-plan mapping, regression guard literals, and historical local-issues tracker comments only",
+      "targeted_go_tests": "ok bigclaw-go/cmd/bigclawctl 8.345s; ok bigclaw-go/internal/regression 5.987s",
+      "help_commands": "all exited 0 with expected usage banners"
+    }
+  },
+  "blocker": {
+    "type": "none",
+    "summary": "No blocking repo work remains for BIG-GO-1068."
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw"
+  }
+}
