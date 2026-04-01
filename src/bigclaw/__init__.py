@@ -139,6 +139,40 @@ _install_compat_surface_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
 )
 _install_compat_surface_module(
+    "observability",
+    _legacy_reports_surface,
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "AuditEventSpec",
+        "BUDGET_OVERRIDE_EVENT",
+        "CollaborationComment",
+        "CollaborationThread",
+        "DecisionNote",
+        "FLOW_HANDOFF_EVENT",
+        "GitSyncTelemetry",
+        "MANUAL_TAKEOVER_EVENT",
+        "ObservabilityLedger",
+        "P0_AUDIT_EVENT_SPECS",
+        "PullRequestFreshness",
+        "RepoSyncAudit",
+        "RunCommitBinding",
+        "RunCommitLink",
+        "RunCloseout",
+        "SCHEDULER_DECISION_EVENT",
+        "TaskRun",
+        "bind_run_commits",
+        "build_collaboration_thread",
+        "build_collaboration_thread_from_audits",
+        "get_audit_event_spec",
+        "missing_required_fields",
+        "validate_run_commit_roles",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "the legacy Python observability compatibility surface remains migration-only scaffolding."
+    ),
+)
+_install_compat_surface_module(
     "console_ia",
     _legacy_design_system_surface,
     [
