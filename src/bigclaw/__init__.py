@@ -129,18 +129,24 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .audit_events import (
+from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
+from .observability import (
     APPROVAL_RECORDED_EVENT,
+    AuditEventSpec,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
+    GitSyncTelemetry,
     MANUAL_TAKEOVER_EVENT,
+    ObservabilityLedger,
     P0_AUDIT_EVENT_SPECS,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
     SCHEDULER_DECISION_EVENT,
-    AuditEventSpec,
+    TaskRun,
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
@@ -311,6 +317,27 @@ risk.__dict__.update(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
 )
 sys.modules[risk.__name__] = risk
+audit_events = types.ModuleType(f"{__name__}.audit_events")
+for export_name in [
+    "APPROVAL_RECORDED_EVENT",
+    "AuditEventSpec",
+    "BUDGET_OVERRIDE_EVENT",
+    "FLOW_HANDOFF_EVENT",
+    "MANUAL_TAKEOVER_EVENT",
+    "P0_AUDIT_EVENT_SPECS",
+    "SCHEDULER_DECISION_EVENT",
+    "get_audit_event_spec",
+    "missing_required_fields",
+]:
+    audit_events.__dict__[export_name] = globals()[export_name]
+audit_events.__dict__.update(
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "audit_events.py has been retired in favor of package-level compatibility exports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
+)
+sys.modules[audit_events.__name__] = audit_events
 
 __all__ = [
     "Task",

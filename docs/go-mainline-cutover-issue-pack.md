@@ -398,7 +398,6 @@ tracker work.
 
 Python source:
 - remaining active consumers of `src/bigclaw/execution_contract.py`
-- remaining active consumers of `src/bigclaw/audit_events.py`
 
 Go ownership:
 - `bigclaw-go/internal/risk/risk.go`
