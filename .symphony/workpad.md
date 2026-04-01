@@ -32,11 +32,9 @@
   - `tests/test_design_system.py`
   - `tests/test_evaluation.py`
   - `tests/test_event_bus.py`
-  - `tests/test_live_shadow_bundle.py`
   - `tests/test_memory.py`
   - `tests/test_observability.py`
   - `tests/test_operations.py`
-  - `tests/test_parallel_validation_bundle.py`
   - `tests/test_planning.py`
   - `tests/test_repo_collaboration.py`
   - `tests/test_repo_rollout.py`
@@ -44,12 +42,11 @@
   - `tests/test_runtime_matrix.py`
   - `tests/test_scheduler.py`
   - `tests/test_ui_review.py`
-  - `tests/test_validation_bundle_continuation_policy_gate.py`
   - `tests/test_validation_policy.py`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `20`
+  - `17`
 - `find . -name '*.py' | sort | wc -l`
-  - `70`
+  - `67`
 - `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
   - no output
 - `cd bigclaw-go && go test ./internal/repo`
@@ -70,5 +67,10 @@
   - `ok  	bigclaw-go/internal/scheduler	1.189s`
 - `cd bigclaw-go && go test ./internal/workflow`
   - `ok  	bigclaw-go/internal/workflow	(cached)`
+- `cd bigclaw-go && go test ./internal/regression ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/internal/regression	0.580s`
+  - `ok  	bigclaw-go/cmd/bigclawctl	3.196s`
 - `git status --short`
-  - `D tests/test_dsl.py`
+  - `D tests/test_live_shadow_bundle.py`
+  - `D tests/test_parallel_validation_bundle.py`
+  - `D tests/test_validation_bundle_continuation_policy_gate.py`
