@@ -296,6 +296,64 @@ func TestBuildOperationsSnapshotTracksSLAAndSuccessRate(t *testing.T) {
 	}
 }
 
+func TestAnalyzeBenchmarkRegressionsFlagsScoreDropAndPassFailure(t *testing.T) {
+	baseline := BenchmarkSuiteResult{
+		Version: "v0.1",
+		Results: []BenchmarkCaseResult{
+			{CaseID: "case-stable", Score: 100, Passed: true},
+			{CaseID: "case-drop", Score: 100, Passed: true},
+		},
+	}
+	current := BenchmarkSuiteResult{
+		Version: "v0.2",
+		Results: []BenchmarkCaseResult{
+			{CaseID: "case-stable", Score: 100, Passed: true},
+			{CaseID: "case-drop", Score: 60, Passed: false},
+		},
+	}
+
+	regressions := AnalyzeBenchmarkRegressions(current, baseline)
+	if len(regressions) != 1 {
+		t.Fatalf("unexpected regressions: %+v", regressions)
+	}
+	if regressions[0].CaseID != "case-drop" || regressions[0].Delta != -40 || regressions[0].Severity != "high" {
+		t.Fatalf("unexpected regression finding: %+v", regressions[0])
+	}
+}
+
+func TestBuildBenchmarkRegressionCenterSeparatesRegressionsAndImprovements(t *testing.T) {
+	baseline := BenchmarkSuiteResult{
+		Version: "v0.1",
+		Results: []BenchmarkCaseResult{
+			{CaseID: "case-drop", Score: 100, Passed: true},
+			{CaseID: "case-up", Score: 60, Passed: false},
+			{CaseID: "case-stable", Score: 100, Passed: true},
+		},
+	}
+	current := BenchmarkSuiteResult{
+		Version: "v0.2",
+		Results: []BenchmarkCaseResult{
+			{CaseID: "case-drop", Score: 70, Passed: false},
+			{CaseID: "case-up", Score: 100, Passed: true},
+			{CaseID: "case-stable", Score: 100, Passed: true},
+		},
+	}
+
+	center := BuildBenchmarkRegressionCenter(current, baseline, "Regression Analysis Center")
+	if center.RegressionCount() != 1 {
+		t.Fatalf("unexpected regression count: %+v", center)
+	}
+	if center.Regressions[0].CaseID != "case-drop" {
+		t.Fatalf("unexpected regressions: %+v", center.Regressions)
+	}
+	if !reflect.DeepEqual(center.ImprovedCases, []string{"case-up"}) {
+		t.Fatalf("unexpected improved cases: %+v", center.ImprovedCases)
+	}
+	if !reflect.DeepEqual(center.UnchangedCases, []string{"case-stable"}) {
+		t.Fatalf("unexpected unchanged cases: %+v", center.UnchangedCases)
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)

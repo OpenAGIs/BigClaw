@@ -2157,26 +2157,6 @@ def make_versioned_artifact(
 
 
 
-def test_regression_analysis_flags_score_drop_and_pass_failure() -> None:
-    analytics = OperationsAnalytics()
-    baseline = BenchmarkSuiteResult(
-        version="v0.1",
-        results=[make_result("case-stable", 100, True), make_result("case-drop", 100, True)],
-    )
-    current = BenchmarkSuiteResult(
-        version="v0.2",
-        results=[make_result("case-stable", 100, True), make_result("case-drop", 60, False)],
-    )
-
-    regressions = analytics.analyze_regressions(current, baseline)
-
-    assert len(regressions) == 1
-    assert regressions[0].case_id == "case-drop"
-    assert regressions[0].delta == -40
-    assert regressions[0].severity == "high"
-
-
-
 def test_operations_dashboard_renders_shared_view_loading_state() -> None:
     analytics = OperationsAnalytics()
     snapshot = analytics.summarize_runs([])
@@ -2187,29 +2167,6 @@ def test_operations_dashboard_renders_shared_view_loading_state() -> None:
     assert "- State: loading" in dashboard
     assert "- Summary: Loading data for the current filters." in dashboard
     assert "- Team: engineering" in dashboard
-
-
-def test_build_regression_center_separates_regressions_and_improvements() -> None:
-    analytics = OperationsAnalytics()
-    baseline = BenchmarkSuiteResult(
-        version="v0.1",
-        results=[make_result("case-drop", 100, True), make_result("case-up", 60, False), make_result("case-stable", 100, True)],
-    )
-    current = BenchmarkSuiteResult(
-        version="v0.2",
-        results=[make_result("case-drop", 70, False), make_result("case-up", 100, True), make_result("case-stable", 100, True)],
-    )
-
-    center = analytics.build_regression_center(current, baseline)
-    report = render_regression_center(center)
-
-    assert center.regression_count == 1
-    assert center.regressions[0].case_id == "case-drop"
-    assert center.improved_cases == ["case-up"]
-    assert center.unchanged_cases == ["case-stable"]
-    assert "# Regression Analysis Center" in report
-    assert "case-drop" in report
-    assert "case-up" in report
 
 
 def test_regression_center_renders_shared_view_partial_state() -> None:

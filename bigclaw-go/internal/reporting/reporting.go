@@ -141,6 +141,70 @@ type OperationsSnapshot struct {
 	TopBlockers         []TriageCluster `json:"top_blockers,omitempty"`
 }
 
+type BenchmarkCaseResult struct {
+	CaseID string `json:"case_id"`
+	Score  int    `json:"score"`
+	Passed bool   `json:"passed"`
+}
+
+type BenchmarkComparison struct {
+	CaseID        string `json:"case_id"`
+	BaselineScore int    `json:"baseline_score"`
+	CurrentScore  int    `json:"current_score"`
+	Delta         int    `json:"delta"`
+	Changed       bool   `json:"changed"`
+}
+
+type BenchmarkSuiteResult struct {
+	Results []BenchmarkCaseResult `json:"results,omitempty"`
+	Version string                `json:"version"`
+}
+
+func (s BenchmarkSuiteResult) Compare(baseline BenchmarkSuiteResult) []BenchmarkComparison {
+	baselineByCase := make(map[string]BenchmarkCaseResult, len(baseline.Results))
+	for _, result := range baseline.Results {
+		baselineByCase[result.CaseID] = result
+	}
+	comparisons := make([]BenchmarkComparison, 0, len(s.Results))
+	for _, result := range s.Results {
+		baselineScore := 0
+		if baselineResult, ok := baselineByCase[result.CaseID]; ok {
+			baselineScore = baselineResult.Score
+		}
+		delta := result.Score - baselineScore
+		comparisons = append(comparisons, BenchmarkComparison{
+			CaseID:        result.CaseID,
+			BaselineScore: baselineScore,
+			CurrentScore:  result.Score,
+			Delta:         delta,
+			Changed:       delta != 0,
+		})
+	}
+	return comparisons
+}
+
+type BenchmarkRegressionFinding struct {
+	CaseID        string `json:"case_id"`
+	BaselineScore int    `json:"baseline_score"`
+	CurrentScore  int    `json:"current_score"`
+	Delta         int    `json:"delta"`
+	Severity      string `json:"severity"`
+	Summary       string `json:"summary"`
+}
+
+type BenchmarkRegressionCenter struct {
+	Name            string                       `json:"name"`
+	BaselineVersion string                       `json:"baseline_version"`
+	CurrentVersion  string                       `json:"current_version"`
+	Regressions     []BenchmarkRegressionFinding `json:"regressions,omitempty"`
+	ImprovedCases   []string                     `json:"improved_cases,omitempty"`
+	UnchangedCases  []string                     `json:"unchanged_cases,omitempty"`
+}
+
+func (c BenchmarkRegressionCenter) RegressionCount() int {
+	return len(c.Regressions)
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -1093,6 +1157,79 @@ func BuildOperationsSnapshot(runs []map[string]any, slaTargetMinutes int, topNBl
 		SLABreachCount:      slaBreachCount,
 		AverageCycleMinutes: averageCycleMinutes,
 		TopBlockers:         blockers,
+	}
+}
+
+func AnalyzeBenchmarkRegressions(current BenchmarkSuiteResult, baseline BenchmarkSuiteResult) []BenchmarkRegressionFinding {
+	baselineResults := make(map[string]BenchmarkCaseResult, len(baseline.Results))
+	currentResults := make(map[string]BenchmarkCaseResult, len(current.Results))
+	for _, result := range baseline.Results {
+		baselineResults[result.CaseID] = result
+	}
+	for _, result := range current.Results {
+		currentResults[result.CaseID] = result
+	}
+
+	findings := make([]BenchmarkRegressionFinding, 0)
+	for _, comparison := range current.Compare(baseline) {
+		baselineResult, baselineOK := baselineResults[comparison.CaseID]
+		currentResult := currentResults[comparison.CaseID]
+		if comparison.Delta >= 0 && !(baselineOK && baselineResult.Passed && !currentResult.Passed) {
+			continue
+		}
+
+		severity := "medium"
+		if comparison.Delta <= -20 || (baselineOK && baselineResult.Passed && !currentResult.Passed) {
+			severity = "high"
+		}
+		summary := "case regressed from passing to failing"
+		if comparison.Delta < 0 {
+			summary = fmt.Sprintf("score dropped from %d to %d", comparison.BaselineScore, comparison.CurrentScore)
+		}
+		findings = append(findings, BenchmarkRegressionFinding{
+			CaseID:        comparison.CaseID,
+			BaselineScore: comparison.BaselineScore,
+			CurrentScore:  comparison.CurrentScore,
+			Delta:         comparison.Delta,
+			Severity:      severity,
+			Summary:       summary,
+		})
+	}
+
+	sort.SliceStable(findings, func(i, j int) bool {
+		if findings[i].Delta == findings[j].Delta {
+			return findings[i].CaseID < findings[j].CaseID
+		}
+		return findings[i].Delta < findings[j].Delta
+	})
+	return findings
+}
+
+func BuildBenchmarkRegressionCenter(current BenchmarkSuiteResult, baseline BenchmarkSuiteResult, name string) BenchmarkRegressionCenter {
+	if strings.TrimSpace(name) == "" {
+		name = "Regression Analysis Center"
+	}
+	comparisons := current.Compare(baseline)
+	improvedCases := make([]string, 0)
+	unchangedCases := make([]string, 0)
+	for _, comparison := range comparisons {
+		switch {
+		case comparison.Delta > 0:
+			improvedCases = append(improvedCases, comparison.CaseID)
+		case comparison.Delta == 0:
+			unchangedCases = append(unchangedCases, comparison.CaseID)
+		}
+	}
+	sort.Strings(improvedCases)
+	sort.Strings(unchangedCases)
+
+	return BenchmarkRegressionCenter{
+		Name:            name,
+		BaselineVersion: baseline.Version,
+		CurrentVersion:  current.Version,
+		Regressions:     AnalyzeBenchmarkRegressions(current, baseline),
+		ImprovedCases:   improvedCases,
+		UnchangedCases:  unchangedCases,
 	}
 }
 
