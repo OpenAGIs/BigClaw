@@ -38,6 +38,9 @@ cutover set.
   Go-mainline ownership work.
 - The default mainline posture is Go-first, with remaining Python entrypoints
   marked as migration-only compatibility shims.
+- `src/bigclaw/connectors.py`, `src/bigclaw/roadmap.py`, and
+  `src/bigclaw/validation_policy.py` have since been retired from the repo
+  tree as Go-only follow-up cleanup.
 
 ## Remaining non-blocking caveats
 

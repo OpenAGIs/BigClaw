@@ -35,6 +35,8 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 
 ### `src/bigclaw/connectors.py`
 
+- Retired from the repo tree after Go cutover cleanup; active ownership now
+  lives only in the Go surfaces below.
 - `SourceIssue` -> `bigclaw-go/internal/intake/types.go`
 - `Connector` protocol -> `bigclaw-go/internal/intake/connector.go`
 - `GitHubConnector`, `LinearConnector`, `JiraConnector` -> `bigclaw-go/internal/intake/connector.go`

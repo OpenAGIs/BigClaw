@@ -468,6 +468,9 @@ Go ownership:
 - optional new `bigclaw-go/internal/repo/*`
 - `bigclaw-go/internal/product/console.go`
 
+Follow-up cleanup retired `src/bigclaw/roadmap.py`; the remaining roadmap
+contract is anchored by Go regression coverage and repo-native docs.
+
 Historical planned state:
 - `Backlog`
 
@@ -510,3 +513,5 @@ Go ownership:
 
 Historical planned state:
 - `Backlog`
+- Follow-up cleanup retired `src/bigclaw/connectors.py`; the repo now relies on
+  `bigclaw-go/internal/intake/*` for the active connector surface.
