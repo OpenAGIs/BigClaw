@@ -354,6 +354,114 @@ func TestBuildBenchmarkRegressionCenterSeparatesRegressionsAndImprovements(t *te
 	}
 }
 
+func TestRenderOperationsSnapshotDashboardShowsSharedViewLoadingState(t *testing.T) {
+	resultCount := 0
+	view := &SharedViewContext{
+		Filters: []SharedViewFilter{
+			{Label: "Team", Value: "engineering"},
+			{Label: "Status", Value: "needs-approval"},
+		},
+		ResultCount: &resultCount,
+		Loading:     true,
+		LastUpdated: "2026-03-11T09:00:00Z",
+	}
+
+	dashboard := RenderOperationsSnapshotDashboard(OperationsSnapshot{}, view)
+	for _, fragment := range []string{
+		"## View State",
+		"- State: loading",
+		"- Summary: Loading data for the current filters.",
+		"- Team: engineering",
+	} {
+		if !strings.Contains(dashboard, fragment) {
+			t.Fatalf("expected %q in dashboard, got %s", fragment, dashboard)
+		}
+	}
+}
+
+func TestRenderRegressionCenterShowsSharedViewPartialState(t *testing.T) {
+	resultCount := 1
+	view := &SharedViewContext{
+		Filters: []SharedViewFilter{
+			{Label: "Team", Value: "engineering"},
+			{Label: "Status", Value: "needs-approval"},
+		},
+		ResultCount: &resultCount,
+		PartialData: []string{"Historical baseline fetch is delayed."},
+		LastUpdated: "2026-03-11T09:00:00Z",
+	}
+	center := regression.Center{
+		Summary: regression.Summary{TotalRegressions: 1},
+		Findings: []regression.Finding{
+			{TaskID: "case-drop", Severity: "high", RegressionCount: 1, Summary: "score dropped"},
+		},
+	}
+
+	report := RenderRegressionCenterWithView("Regression Analysis Center", center, view)
+	for _, fragment := range []string{
+		"- State: partial-data",
+		"## Partial Data",
+		"Historical baseline fetch is delayed.",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in regression report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestRenderPolicyPromptVersionCenterShowsSharedViewContext(t *testing.T) {
+	resultCount := 1
+	view := &SharedViewContext{
+		Filters: []SharedViewFilter{
+			{Label: "Team", Value: "engineering"},
+			{Label: "Status", Value: "needs-approval"},
+		},
+		ResultCount: &resultCount,
+		PartialData: []string{"Rollback simulation still running."},
+		LastUpdated: "2026-03-11T09:00:00Z",
+	}
+	center := PolicyPromptVersionCenter{
+		Name:        "Policy/Prompt Version Center",
+		GeneratedAt: "2026-03-10T14:00:00Z",
+		Histories: []VersionedArtifactHistory{
+			{
+				ArtifactType:     "prompt",
+				ArtifactID:       "triage-system",
+				CurrentVersion:   "v2",
+				CurrentUpdatedAt: "2026-03-10T14:00:00Z",
+				CurrentAuthor:    "ops-bot",
+				CurrentSummary:   "reduce false escalations",
+				RevisionCount:    2,
+				Revisions: []VersionedArtifact{
+					{Version: "v2", UpdatedAt: "2026-03-10T14:00:00Z", Author: "ops-bot", Summary: "reduce false escalations"},
+					{Version: "v1", UpdatedAt: "2026-03-08T14:00:00Z", Author: "ops-bot", Summary: "initial prompt"},
+				},
+				RollbackVersion: "v1",
+				RollbackReady:   true,
+				ChangeSummary: &VersionChangeSummary{
+					FromVersion: "v1",
+					ToVersion:   "v2",
+					Preview:     []string{"--- v1", "+++ v2", "+rubric: strict"},
+				},
+			},
+		},
+	}
+
+	report := RenderPolicyPromptVersionCenterWithView(center, view)
+	for _, fragment := range []string{
+		"# Policy/Prompt Version Center",
+		"### prompt / triage-system",
+		"- Rollback Version: v1",
+		"```diff",
+		"- State: partial-data",
+		"Rollback simulation still running.",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in version center report, got %s", fragment, report)
+		}
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)

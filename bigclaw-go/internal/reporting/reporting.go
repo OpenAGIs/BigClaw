@@ -205,6 +205,51 @@ func (c BenchmarkRegressionCenter) RegressionCount() int {
 	return len(c.Regressions)
 }
 
+type SharedViewFilter struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type SharedViewContext struct {
+	Filters      []SharedViewFilter `json:"filters,omitempty"`
+	ResultCount  *int               `json:"result_count,omitempty"`
+	Loading      bool               `json:"loading,omitempty"`
+	Errors       []string           `json:"errors,omitempty"`
+	PartialData  []string           `json:"partial_data,omitempty"`
+	EmptyMessage string             `json:"empty_message,omitempty"`
+	LastUpdated  string             `json:"last_updated,omitempty"`
+}
+
+func (v SharedViewContext) State() string {
+	switch {
+	case v.Loading:
+		return "loading"
+	case len(v.Errors) > 0 && (v.ResultCount == nil || *v.ResultCount == 0):
+		return "error"
+	case v.ResultCount != nil && *v.ResultCount == 0 && len(v.PartialData) == 0:
+		return "empty"
+	case len(v.Errors) > 0 || len(v.PartialData) > 0:
+		return "partial-data"
+	default:
+		return "ready"
+	}
+}
+
+func (v SharedViewContext) Summary() string {
+	switch v.State() {
+	case "loading":
+		return "Loading data for the current filters."
+	case "error":
+		return "Unable to load data for the current filters."
+	case "empty":
+		return firstNonEmpty(v.EmptyMessage, "No records match the current filters.")
+	case "partial-data":
+		return "Showing partial data while one or more sources are unavailable."
+	default:
+		return "Data is current for the selected filters."
+	}
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -568,6 +613,35 @@ func RenderOperationsDashboard(weekly Weekly) string {
 	} else {
 		for _, team := range weekly.TeamBreakdown {
 			builder.WriteString(fmt.Sprintf("- %s: total=%d completed=%d blocked=%d interventions=%d\n", team.Key, team.TotalRuns, team.CompletedRuns, team.BlockedRuns, team.HumanInterventions))
+		}
+	}
+	return builder.String() + "\n"
+}
+
+func RenderOperationsSnapshotDashboard(snapshot OperationsSnapshot, view *SharedViewContext) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Operations Dashboard\n\n")
+	builder.WriteString(fmt.Sprintf("- Total Runs: %d\n", snapshot.TotalRuns))
+	builder.WriteString(fmt.Sprintf("- Success Rate: %.1f%%\n", snapshot.SuccessRate))
+	builder.WriteString(fmt.Sprintf("- Approval Queue Depth: %d\n", snapshot.ApprovalQueueDepth))
+	builder.WriteString(fmt.Sprintf("- SLA Target: %d minutes\n", snapshot.SLATargetMinutes))
+	builder.WriteString(fmt.Sprintf("- SLA Breaches: %d\n", snapshot.SLABreachCount))
+	builder.WriteString(fmt.Sprintf("- Average Cycle Time: %.1f minutes\n\n", snapshot.AverageCycleMinutes))
+	builder.WriteString("## Status Counts\n\n")
+	builder.WriteString(renderSharedViewContext(view))
+	if len(snapshot.StatusCounts) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, status := range sortedMapKeys(snapshot.StatusCounts) {
+			builder.WriteString(fmt.Sprintf("- %s: %d\n", status, snapshot.StatusCounts[status]))
+		}
+	}
+	builder.WriteString("\n## Top Blockers\n\n")
+	if len(snapshot.TopBlockers) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, cluster := range snapshot.TopBlockers {
+			builder.WriteString(fmt.Sprintf("- %s: occurrences=%d statuses=%s tasks=%s\n", cluster.Reason, cluster.Occurrences(), joinOrNone(cluster.Statuses), joinOrNone(cluster.TaskIDs)))
 		}
 	}
 	return builder.String() + "\n"
@@ -1369,6 +1443,10 @@ func BuildPolicyPromptVersionCenter(name string, generatedAt time.Time, artifact
 }
 
 func RenderPolicyPromptVersionCenter(center PolicyPromptVersionCenter) string {
+	return RenderPolicyPromptVersionCenterWithView(center, nil)
+}
+
+func RenderPolicyPromptVersionCenterWithView(center PolicyPromptVersionCenter, view *SharedViewContext) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Policy/Prompt Version Center\n\n")
 	builder.WriteString(fmt.Sprintf("- Name: %s\n", center.Name))
@@ -1376,6 +1454,7 @@ func RenderPolicyPromptVersionCenter(center PolicyPromptVersionCenter) string {
 	builder.WriteString(fmt.Sprintf("- Versioned Artifacts: %d\n", center.ArtifactCount()))
 	builder.WriteString(fmt.Sprintf("- Rollback Ready Artifacts: %d\n\n", center.RollbackReadyCount()))
 	builder.WriteString("## Artifact Histories\n\n")
+	builder.WriteString(renderSharedViewContext(view))
 	if len(center.Histories) == 0 {
 		builder.WriteString("- None\n")
 		return builder.String()
@@ -1422,6 +1501,10 @@ func WritePolicyPromptVersionCenterBundle(rootDir string, center PolicyPromptVer
 }
 
 func RenderRegressionCenter(name string, center regression.Center) string {
+	return RenderRegressionCenterWithView(name, center, nil)
+}
+
+func RenderRegressionCenterWithView(name string, center regression.Center, view *SharedViewContext) string {
 	if strings.TrimSpace(name) == "" {
 		name = "Regression Analysis Center"
 	}
@@ -1435,6 +1518,7 @@ func RenderRegressionCenter(name string, center regression.Center) string {
 	builder.WriteString(fmt.Sprintf("- Rework Events: %d\n", center.Summary.ReworkEvents))
 	builder.WriteString(fmt.Sprintf("- Top Source: %s\n", firstNonEmpty(center.Summary.TopSource, "none")))
 	builder.WriteString(fmt.Sprintf("- Top Workflow: %s\n\n", firstNonEmpty(center.Summary.TopWorkflow, "none")))
+	builder.WriteString(renderSharedViewContext(view))
 
 	builder.WriteString("## Findings\n\n")
 	if len(center.Findings) == 0 {
@@ -1835,6 +1919,44 @@ func containsString(items []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+func renderSharedViewContext(view *SharedViewContext) string {
+	if view == nil {
+		return ""
+	}
+	builder := strings.Builder{}
+	builder.WriteString("## View State\n\n")
+	builder.WriteString(fmt.Sprintf("- State: %s\n", view.State()))
+	builder.WriteString(fmt.Sprintf("- Summary: %s\n", view.Summary()))
+	if view.ResultCount != nil {
+		builder.WriteString(fmt.Sprintf("- Result Count: %d\n", *view.ResultCount))
+	}
+	if strings.TrimSpace(view.LastUpdated) != "" {
+		builder.WriteString(fmt.Sprintf("- Last Updated: %s\n", view.LastUpdated))
+	}
+	builder.WriteString("\n## Filters\n\n")
+	if len(view.Filters) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, filter := range view.Filters {
+			builder.WriteString(fmt.Sprintf("- %s: %s\n", filter.Label, filter.Value))
+		}
+	}
+	if len(view.Errors) > 0 {
+		builder.WriteString("\n## Errors\n\n")
+		for _, message := range view.Errors {
+			builder.WriteString(fmt.Sprintf("- %s\n", message))
+		}
+	}
+	if len(view.PartialData) > 0 {
+		builder.WriteString("\n## Partial Data\n\n")
+		for _, message := range view.PartialData {
+			builder.WriteString(fmt.Sprintf("- %s\n", message))
+		}
+	}
+	builder.WriteString("\n")
+	return builder.String()
 }
 
 func anyFloat(value any) float64 {
