@@ -982,26 +982,128 @@ func (q OpenQuestion) normalized() OpenQuestion {
 	return q
 }
 
+type ReviewerChecklistItem struct {
+	ItemID        string   `json:"item_id"`
+	SurfaceID     string   `json:"surface_id"`
+	Prompt        string   `json:"prompt"`
+	Owner         string   `json:"owner"`
+	Status        string   `json:"status,omitempty"`
+	EvidenceLinks []string `json:"evidence_links,omitempty"`
+	Notes         string   `json:"notes,omitempty"`
+}
+
+func (i ReviewerChecklistItem) normalized() ReviewerChecklistItem {
+	if strings.TrimSpace(i.Status) == "" {
+		i.Status = "todo"
+	}
+	return i
+}
+
+type ReviewDecision struct {
+	DecisionID string `json:"decision_id"`
+	SurfaceID  string `json:"surface_id"`
+	Owner      string `json:"owner"`
+	Summary    string `json:"summary"`
+	Rationale  string `json:"rationale"`
+	Status     string `json:"status,omitempty"`
+	FollowUp   string `json:"follow_up,omitempty"`
+}
+
+func (d ReviewDecision) normalized() ReviewDecision {
+	if strings.TrimSpace(d.Status) == "" {
+		d.Status = "proposed"
+	}
+	return d
+}
+
+type ReviewRoleAssignment struct {
+	AssignmentID     string   `json:"assignment_id"`
+	SurfaceID        string   `json:"surface_id"`
+	Role             string   `json:"role"`
+	Responsibilities []string `json:"responsibilities,omitempty"`
+	ChecklistItemIDs []string `json:"checklist_item_ids,omitempty"`
+	DecisionIDs      []string `json:"decision_ids,omitempty"`
+	Status           string   `json:"status,omitempty"`
+}
+
+func (a ReviewRoleAssignment) normalized() ReviewRoleAssignment {
+	if strings.TrimSpace(a.Status) == "" {
+		a.Status = "planned"
+	}
+	return a
+}
+
+type ReviewSignoff struct {
+	SignoffID       string   `json:"signoff_id"`
+	AssignmentID    string   `json:"assignment_id"`
+	SurfaceID       string   `json:"surface_id"`
+	Role            string   `json:"role"`
+	Status          string   `json:"status,omitempty"`
+	Required        bool     `json:"required"`
+	EvidenceLinks   []string `json:"evidence_links,omitempty"`
+	Notes           string   `json:"notes,omitempty"`
+	WaiverOwner     string   `json:"waiver_owner,omitempty"`
+	WaiverReason    string   `json:"waiver_reason,omitempty"`
+	RequestedAt     string   `json:"requested_at,omitempty"`
+	DueAt           string   `json:"due_at,omitempty"`
+	EscalationOwner string   `json:"escalation_owner,omitempty"`
+	SLAStatus       string   `json:"sla_status,omitempty"`
+	ReminderOwner   string   `json:"reminder_owner,omitempty"`
+	ReminderChannel string   `json:"reminder_channel,omitempty"`
+	LastReminderAt  string   `json:"last_reminder_at,omitempty"`
+	NextReminderAt  string   `json:"next_reminder_at,omitempty"`
+	ReminderCadence string   `json:"reminder_cadence,omitempty"`
+	ReminderStatus  string   `json:"reminder_status,omitempty"`
+}
+
+func (s *ReviewSignoff) UnmarshalJSON(data []byte) error {
+	type alias ReviewSignoff
+	raw := alias{
+		Status:         "pending",
+		Required:       true,
+		SLAStatus:      "on-track",
+		ReminderStatus: "scheduled",
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*s = ReviewSignoff(raw)
+	return nil
+}
+
+func (s ReviewSignoff) normalized() ReviewSignoff {
+	if strings.TrimSpace(s.Status) == "" {
+		s.Status = "pending"
+	}
+	if strings.TrimSpace(s.SLAStatus) == "" {
+		s.SLAStatus = "on-track"
+	}
+	if strings.TrimSpace(s.ReminderStatus) == "" {
+		s.ReminderStatus = "scheduled"
+	}
+	return s
+}
+
 type UIReviewPack struct {
-	IssueID                   string             `json:"issue_id"`
-	Title                     string             `json:"title"`
-	Version                   string             `json:"version"`
-	Objectives                []ReviewObjective  `json:"objectives,omitempty"`
-	Wireframes                []WireframeSurface `json:"wireframes,omitempty"`
-	Interactions              []InteractionFlow  `json:"interactions,omitempty"`
-	OpenQuestions             []OpenQuestion     `json:"open_questions,omitempty"`
-	ReviewerChecklist         []json.RawMessage  `json:"reviewer_checklist,omitempty"`
-	RequiresReviewerChecklist bool               `json:"requires_reviewer_checklist,omitempty"`
-	DecisionLog               []json.RawMessage  `json:"decision_log,omitempty"`
-	RequiresDecisionLog       bool               `json:"requires_decision_log,omitempty"`
-	RoleMatrix                []json.RawMessage  `json:"role_matrix,omitempty"`
-	RequiresRoleMatrix        bool               `json:"requires_role_matrix,omitempty"`
-	SignoffLog                []json.RawMessage  `json:"signoff_log,omitempty"`
-	RequiresSignoffLog        bool               `json:"requires_signoff_log,omitempty"`
-	BlockerLog                []json.RawMessage  `json:"blocker_log,omitempty"`
-	RequiresBlockerLog        bool               `json:"requires_blocker_log,omitempty"`
-	BlockerTimeline           []json.RawMessage  `json:"blocker_timeline,omitempty"`
-	RequiresBlockerTimeline   bool               `json:"requires_blocker_timeline,omitempty"`
+	IssueID                   string                  `json:"issue_id"`
+	Title                     string                  `json:"title"`
+	Version                   string                  `json:"version"`
+	Objectives                []ReviewObjective       `json:"objectives,omitempty"`
+	Wireframes                []WireframeSurface      `json:"wireframes,omitempty"`
+	Interactions              []InteractionFlow       `json:"interactions,omitempty"`
+	OpenQuestions             []OpenQuestion          `json:"open_questions,omitempty"`
+	ReviewerChecklist         []ReviewerChecklistItem `json:"reviewer_checklist,omitempty"`
+	RequiresReviewerChecklist bool                    `json:"requires_reviewer_checklist,omitempty"`
+	DecisionLog               []ReviewDecision        `json:"decision_log,omitempty"`
+	RequiresDecisionLog       bool                    `json:"requires_decision_log,omitempty"`
+	RoleMatrix                []ReviewRoleAssignment  `json:"role_matrix,omitempty"`
+	RequiresRoleMatrix        bool                    `json:"requires_role_matrix,omitempty"`
+	SignoffLog                []ReviewSignoff         `json:"signoff_log,omitempty"`
+	RequiresSignoffLog        bool                    `json:"requires_signoff_log,omitempty"`
+	BlockerLog                []json.RawMessage       `json:"blocker_log,omitempty"`
+	RequiresBlockerLog        bool                    `json:"requires_blocker_log,omitempty"`
+	BlockerTimeline           []json.RawMessage       `json:"blocker_timeline,omitempty"`
+	RequiresBlockerTimeline   bool                    `json:"requires_blocker_timeline,omitempty"`
 }
 
 func (p UIReviewPack) normalized() UIReviewPack {
@@ -1012,26 +1114,64 @@ func (p UIReviewPack) normalized() UIReviewPack {
 	for i, question := range out.OpenQuestions {
 		out.OpenQuestions[i] = question.normalized()
 	}
+	for i, item := range out.ReviewerChecklist {
+		out.ReviewerChecklist[i] = item.normalized()
+	}
+	for i, decision := range out.DecisionLog {
+		out.DecisionLog[i] = decision.normalized()
+	}
+	for i, assignment := range out.RoleMatrix {
+		out.RoleMatrix[i] = assignment.normalized()
+	}
+	for i, signoff := range out.SignoffLog {
+		out.SignoffLog[i] = signoff.normalized()
+	}
 	return out
 }
 
 type UIReviewPackAudit struct {
-	Ready                     bool     `json:"ready"`
-	ObjectiveCount            int      `json:"objective_count"`
-	WireframeCount            int      `json:"wireframe_count"`
-	InteractionCount          int      `json:"interaction_count"`
-	OpenQuestionCount         int      `json:"open_question_count"`
-	ChecklistCount            int      `json:"checklist_count,omitempty"`
-	DecisionCount             int      `json:"decision_count,omitempty"`
-	RoleAssignmentCount       int      `json:"role_assignment_count,omitempty"`
-	SignoffCount              int      `json:"signoff_count,omitempty"`
-	BlockerCount              int      `json:"blocker_count,omitempty"`
-	BlockerTimelineCount      int      `json:"blocker_timeline_count,omitempty"`
-	MissingSections           []string `json:"missing_sections,omitempty"`
-	ObjectivesMissingSignals  []string `json:"objectives_missing_signals,omitempty"`
-	WireframesMissingBlocks   []string `json:"wireframes_missing_blocks,omitempty"`
-	InteractionsMissingStates []string `json:"interactions_missing_states,omitempty"`
-	UnresolvedQuestionIDs     []string `json:"unresolved_question_ids,omitempty"`
+	Ready                                  bool     `json:"ready"`
+	ObjectiveCount                         int      `json:"objective_count"`
+	WireframeCount                         int      `json:"wireframe_count"`
+	InteractionCount                       int      `json:"interaction_count"`
+	OpenQuestionCount                      int      `json:"open_question_count"`
+	ChecklistCount                         int      `json:"checklist_count,omitempty"`
+	DecisionCount                          int      `json:"decision_count,omitempty"`
+	RoleAssignmentCount                    int      `json:"role_assignment_count,omitempty"`
+	SignoffCount                           int      `json:"signoff_count,omitempty"`
+	BlockerCount                           int      `json:"blocker_count,omitempty"`
+	BlockerTimelineCount                   int      `json:"blocker_timeline_count,omitempty"`
+	MissingSections                        []string `json:"missing_sections,omitempty"`
+	ObjectivesMissingSignals               []string `json:"objectives_missing_signals,omitempty"`
+	WireframesMissingBlocks                []string `json:"wireframes_missing_blocks,omitempty"`
+	InteractionsMissingStates              []string `json:"interactions_missing_states,omitempty"`
+	UnresolvedQuestionIDs                  []string `json:"unresolved_question_ids,omitempty"`
+	WireframesMissingChecklists            []string `json:"wireframes_missing_checklists,omitempty"`
+	OrphanChecklistSurfaces                []string `json:"orphan_checklist_surfaces,omitempty"`
+	ChecklistItemsMissingEvidence          []string `json:"checklist_items_missing_evidence,omitempty"`
+	ChecklistItemsMissingRoleLinks         []string `json:"checklist_items_missing_role_links,omitempty"`
+	WireframesMissingDecisions             []string `json:"wireframes_missing_decisions,omitempty"`
+	OrphanDecisionSurfaces                 []string `json:"orphan_decision_surfaces,omitempty"`
+	UnresolvedDecisionIDs                  []string `json:"unresolved_decision_ids,omitempty"`
+	UnresolvedDecisionsMissingFollowUps    []string `json:"unresolved_decisions_missing_follow_ups,omitempty"`
+	WireframesMissingRoleAssignments       []string `json:"wireframes_missing_role_assignments,omitempty"`
+	OrphanRoleAssignmentSurfaces           []string `json:"orphan_role_assignment_surfaces,omitempty"`
+	RoleAssignmentsMissingResponsibilities []string `json:"role_assignments_missing_responsibilities,omitempty"`
+	RoleAssignmentsMissingChecklistLinks   []string `json:"role_assignments_missing_checklist_links,omitempty"`
+	RoleAssignmentsMissingDecisionLinks    []string `json:"role_assignments_missing_decision_links,omitempty"`
+	DecisionsMissingRoleLinks              []string `json:"decisions_missing_role_links,omitempty"`
+	WireframesMissingSignoffs              []string `json:"wireframes_missing_signoffs,omitempty"`
+	OrphanSignoffSurfaces                  []string `json:"orphan_signoff_surfaces,omitempty"`
+	SignoffsMissingAssignments             []string `json:"signoffs_missing_assignments,omitempty"`
+	SignoffsMissingEvidence                []string `json:"signoffs_missing_evidence,omitempty"`
+	SignoffsMissingRequestedDates          []string `json:"signoffs_missing_requested_dates,omitempty"`
+	SignoffsMissingDueDates                []string `json:"signoffs_missing_due_dates,omitempty"`
+	SignoffsMissingEscalationOwners        []string `json:"signoffs_missing_escalation_owners,omitempty"`
+	SignoffsMissingReminderOwners          []string `json:"signoffs_missing_reminder_owners,omitempty"`
+	SignoffsMissingNextReminders           []string `json:"signoffs_missing_next_reminders,omitempty"`
+	SignoffsMissingReminderCadence         []string `json:"signoffs_missing_reminder_cadence,omitempty"`
+	SignoffsWithBreachedSLA                []string `json:"signoffs_with_breached_sla,omitempty"`
+	UnresolvedRequiredSignoffIDs           []string `json:"unresolved_required_signoff_ids,omitempty"`
 }
 
 func (a UIReviewPackAudit) Summary() string {
@@ -1134,28 +1274,316 @@ func (UIReviewPackAuditor) Audit(pack UIReviewPack) UIReviewPackAudit {
 		}
 	}
 
+	wireframeIDs := map[string]bool{}
+	for _, wireframe := range pack.Wireframes {
+		wireframeIDs[wireframe.SurfaceID] = true
+	}
+
+	checklistBySurface := map[string][]ReviewerChecklistItem{}
+	for _, item := range pack.ReviewerChecklist {
+		checklistBySurface[item.SurfaceID] = append(checklistBySurface[item.SurfaceID], item.normalized())
+	}
+	var wireframesMissingChecklists []string
+	var orphanChecklistSurfaces []string
+	var checklistItemsMissingEvidence []string
+	var checklistItemsMissingRoleLinks []string
+	if pack.RequiresReviewerChecklist {
+		for _, wireframe := range pack.Wireframes {
+			if _, ok := checklistBySurface[wireframe.SurfaceID]; !ok {
+				wireframesMissingChecklists = append(wireframesMissingChecklists, wireframe.SurfaceID)
+			}
+		}
+		for surfaceID := range checklistBySurface {
+			if !wireframeIDs[surfaceID] {
+				orphanChecklistSurfaces = append(orphanChecklistSurfaces, surfaceID)
+			}
+		}
+		for _, item := range pack.ReviewerChecklist {
+			if len(item.EvidenceLinks) == 0 {
+				checklistItemsMissingEvidence = append(checklistItemsMissingEvidence, item.ItemID)
+			}
+		}
+		sort.Strings(wireframesMissingChecklists)
+		sort.Strings(orphanChecklistSurfaces)
+		sort.Strings(checklistItemsMissingEvidence)
+	}
+
+	decisionBySurface := map[string][]ReviewDecision{}
+	for _, decision := range pack.DecisionLog {
+		normalized := decision.normalized()
+		decisionBySurface[normalized.SurfaceID] = append(decisionBySurface[normalized.SurfaceID], normalized)
+	}
+	var wireframesMissingDecisions []string
+	var orphanDecisionSurfaces []string
+	var unresolvedDecisionIDs []string
+	var unresolvedDecisionsMissingFollowUps []string
+	if pack.RequiresDecisionLog {
+		for _, wireframe := range pack.Wireframes {
+			if _, ok := decisionBySurface[wireframe.SurfaceID]; !ok {
+				wireframesMissingDecisions = append(wireframesMissingDecisions, wireframe.SurfaceID)
+			}
+		}
+		for surfaceID := range decisionBySurface {
+			if !wireframeIDs[surfaceID] {
+				orphanDecisionSurfaces = append(orphanDecisionSurfaces, surfaceID)
+			}
+		}
+		for _, decision := range pack.DecisionLog {
+			normalized := decision.normalized()
+			status := strings.ToLower(normalized.Status)
+			if status != "accepted" && status != "approved" && status != "resolved" && status != "waived" {
+				unresolvedDecisionIDs = append(unresolvedDecisionIDs, normalized.DecisionID)
+				if strings.TrimSpace(normalized.FollowUp) == "" {
+					unresolvedDecisionsMissingFollowUps = append(unresolvedDecisionsMissingFollowUps, normalized.DecisionID)
+				}
+			}
+		}
+		sort.Strings(wireframesMissingDecisions)
+		sort.Strings(orphanDecisionSurfaces)
+		sort.Strings(unresolvedDecisionIDs)
+		sort.Strings(unresolvedDecisionsMissingFollowUps)
+	}
+
+	checklistItemIDs := map[string]bool{}
+	for _, item := range pack.ReviewerChecklist {
+		checklistItemIDs[item.ItemID] = true
+	}
+	decisionIDs := map[string]bool{}
+	for _, decision := range pack.DecisionLog {
+		decisionIDs[decision.DecisionID] = true
+	}
+	assignmentIDs := map[string]bool{}
+	roleAssignmentsBySurface := map[string][]ReviewRoleAssignment{}
+	for _, assignment := range pack.RoleMatrix {
+		normalized := assignment.normalized()
+		assignmentIDs[normalized.AssignmentID] = true
+		roleAssignmentsBySurface[normalized.SurfaceID] = append(roleAssignmentsBySurface[normalized.SurfaceID], normalized)
+	}
+	var wireframesMissingRoleAssignments []string
+	var orphanRoleAssignmentSurfaces []string
+	var roleAssignmentsMissingResponsibilities []string
+	var roleAssignmentsMissingChecklistLinks []string
+	var roleAssignmentsMissingDecisionLinks []string
+	var decisionsMissingRoleLinks []string
+	if pack.RequiresRoleMatrix {
+		for _, wireframe := range pack.Wireframes {
+			if _, ok := roleAssignmentsBySurface[wireframe.SurfaceID]; !ok {
+				wireframesMissingRoleAssignments = append(wireframesMissingRoleAssignments, wireframe.SurfaceID)
+			}
+		}
+		for surfaceID := range roleAssignmentsBySurface {
+			if !wireframeIDs[surfaceID] {
+				orphanRoleAssignmentSurfaces = append(orphanRoleAssignmentSurfaces, surfaceID)
+			}
+		}
+		roleLinkedChecklistIDs := map[string]bool{}
+		roleLinkedDecisionIDs := map[string]bool{}
+		for _, assignment := range pack.RoleMatrix {
+			normalized := assignment.normalized()
+			if len(normalized.Responsibilities) == 0 {
+				roleAssignmentsMissingResponsibilities = append(roleAssignmentsMissingResponsibilities, normalized.AssignmentID)
+			}
+			if len(normalized.ChecklistItemIDs) == 0 {
+				roleAssignmentsMissingChecklistLinks = append(roleAssignmentsMissingChecklistLinks, normalized.AssignmentID)
+			} else {
+				missingLink := false
+				for _, itemID := range normalized.ChecklistItemIDs {
+					roleLinkedChecklistIDs[itemID] = true
+					if !checklistItemIDs[itemID] {
+						missingLink = true
+					}
+				}
+				if missingLink {
+					roleAssignmentsMissingChecklistLinks = append(roleAssignmentsMissingChecklistLinks, normalized.AssignmentID)
+				}
+			}
+			if len(normalized.DecisionIDs) == 0 {
+				roleAssignmentsMissingDecisionLinks = append(roleAssignmentsMissingDecisionLinks, normalized.AssignmentID)
+			} else {
+				missingLink := false
+				for _, decisionID := range normalized.DecisionIDs {
+					roleLinkedDecisionIDs[decisionID] = true
+					if !decisionIDs[decisionID] {
+						missingLink = true
+					}
+				}
+				if missingLink {
+					roleAssignmentsMissingDecisionLinks = append(roleAssignmentsMissingDecisionLinks, normalized.AssignmentID)
+				}
+			}
+		}
+		for _, item := range pack.ReviewerChecklist {
+			if !roleLinkedChecklistIDs[item.ItemID] {
+				checklistItemsMissingRoleLinks = append(checklistItemsMissingRoleLinks, item.ItemID)
+			}
+		}
+		for _, decision := range pack.DecisionLog {
+			if !roleLinkedDecisionIDs[decision.DecisionID] {
+				decisionsMissingRoleLinks = append(decisionsMissingRoleLinks, decision.DecisionID)
+			}
+		}
+		sort.Strings(wireframesMissingRoleAssignments)
+		sort.Strings(orphanRoleAssignmentSurfaces)
+		sort.Strings(roleAssignmentsMissingResponsibilities)
+		sort.Strings(roleAssignmentsMissingChecklistLinks)
+		sort.Strings(roleAssignmentsMissingDecisionLinks)
+		sort.Strings(checklistItemsMissingRoleLinks)
+		sort.Strings(decisionsMissingRoleLinks)
+	}
+
+	signoffsBySurface := map[string][]ReviewSignoff{}
+	for _, signoff := range pack.SignoffLog {
+		normalized := signoff.normalized()
+		signoffsBySurface[normalized.SurfaceID] = append(signoffsBySurface[normalized.SurfaceID], normalized)
+	}
+	var wireframesMissingSignoffs []string
+	var orphanSignoffSurfaces []string
+	var signoffsMissingAssignments []string
+	var signoffsMissingEvidence []string
+	var signoffsMissingRequestedDates []string
+	var signoffsMissingDueDates []string
+	var signoffsMissingEscalationOwners []string
+	var signoffsMissingReminderOwners []string
+	var signoffsMissingNextReminders []string
+	var signoffsMissingReminderCadence []string
+	var signoffsWithBreachedSLA []string
+	var unresolvedRequiredSignoffIDs []string
+	if pack.RequiresSignoffLog {
+		for _, wireframe := range pack.Wireframes {
+			if _, ok := signoffsBySurface[wireframe.SurfaceID]; !ok {
+				wireframesMissingSignoffs = append(wireframesMissingSignoffs, wireframe.SurfaceID)
+			}
+		}
+		for surfaceID := range signoffsBySurface {
+			if !wireframeIDs[surfaceID] {
+				orphanSignoffSurfaces = append(orphanSignoffSurfaces, surfaceID)
+			}
+		}
+		unresolvedStatuses := map[string]bool{
+			"approved": true,
+			"accepted": true,
+			"resolved": true,
+			"waived":   true,
+			"deferred": true,
+		}
+		for _, signoff := range pack.SignoffLog {
+			normalized := signoff.normalized()
+			status := strings.ToLower(normalized.Status)
+			if !assignmentIDs[normalized.AssignmentID] {
+				signoffsMissingAssignments = append(signoffsMissingAssignments, normalized.SignoffID)
+			}
+			if status != "waived" && len(normalized.EvidenceLinks) == 0 {
+				signoffsMissingEvidence = append(signoffsMissingEvidence, normalized.SignoffID)
+			}
+			if normalized.Required && strings.TrimSpace(normalized.RequestedAt) == "" {
+				signoffsMissingRequestedDates = append(signoffsMissingRequestedDates, normalized.SignoffID)
+			}
+			if normalized.Required && strings.TrimSpace(normalized.DueAt) == "" {
+				signoffsMissingDueDates = append(signoffsMissingDueDates, normalized.SignoffID)
+			}
+			if normalized.Required && strings.TrimSpace(normalized.EscalationOwner) == "" {
+				signoffsMissingEscalationOwners = append(signoffsMissingEscalationOwners, normalized.SignoffID)
+			}
+			if normalized.Required && !unresolvedStatuses[status] && strings.TrimSpace(normalized.ReminderOwner) == "" {
+				signoffsMissingReminderOwners = append(signoffsMissingReminderOwners, normalized.SignoffID)
+			}
+			if normalized.Required && !unresolvedStatuses[status] && strings.TrimSpace(normalized.NextReminderAt) == "" {
+				signoffsMissingNextReminders = append(signoffsMissingNextReminders, normalized.SignoffID)
+			}
+			if normalized.Required && !unresolvedStatuses[status] && strings.TrimSpace(normalized.ReminderCadence) == "" {
+				signoffsMissingReminderCadence = append(signoffsMissingReminderCadence, normalized.SignoffID)
+			}
+			if strings.ToLower(normalized.SLAStatus) == "breached" && status != "approved" && status != "accepted" && status != "resolved" {
+				signoffsWithBreachedSLA = append(signoffsWithBreachedSLA, normalized.SignoffID)
+			}
+			if normalized.Required && !unresolvedStatuses[status] {
+				unresolvedRequiredSignoffIDs = append(unresolvedRequiredSignoffIDs, normalized.SignoffID)
+			}
+		}
+		sort.Strings(wireframesMissingSignoffs)
+		sort.Strings(orphanSignoffSurfaces)
+		sort.Strings(signoffsMissingAssignments)
+		sort.Strings(signoffsMissingEvidence)
+		sort.Strings(signoffsMissingRequestedDates)
+		sort.Strings(signoffsMissingDueDates)
+		sort.Strings(signoffsMissingEscalationOwners)
+		sort.Strings(signoffsMissingReminderOwners)
+		sort.Strings(signoffsMissingNextReminders)
+		sort.Strings(signoffsMissingReminderCadence)
+		sort.Strings(signoffsWithBreachedSLA)
+		sort.Strings(unresolvedRequiredSignoffIDs)
+	}
+
 	ready := len(missingSections) == 0 &&
 		len(objectivesMissingSignals) == 0 &&
 		len(wireframesMissingBlocks) == 0 &&
-		len(interactionsMissingStates) == 0
+		len(interactionsMissingStates) == 0 &&
+		len(wireframesMissingChecklists) == 0 &&
+		len(orphanChecklistSurfaces) == 0 &&
+		len(checklistItemsMissingEvidence) == 0 &&
+		len(wireframesMissingDecisions) == 0 &&
+		len(orphanDecisionSurfaces) == 0 &&
+		len(unresolvedDecisionsMissingFollowUps) == 0 &&
+		len(wireframesMissingRoleAssignments) == 0 &&
+		len(orphanRoleAssignmentSurfaces) == 0 &&
+		len(roleAssignmentsMissingResponsibilities) == 0 &&
+		len(roleAssignmentsMissingChecklistLinks) == 0 &&
+		len(roleAssignmentsMissingDecisionLinks) == 0 &&
+		len(wireframesMissingSignoffs) == 0 &&
+		len(orphanSignoffSurfaces) == 0 &&
+		len(signoffsMissingAssignments) == 0 &&
+		len(signoffsMissingEvidence) == 0 &&
+		len(signoffsMissingRequestedDates) == 0 &&
+		len(signoffsMissingDueDates) == 0 &&
+		len(signoffsMissingEscalationOwners) == 0 &&
+		len(signoffsMissingReminderOwners) == 0 &&
+		len(signoffsMissingNextReminders) == 0 &&
+		len(signoffsMissingReminderCadence) == 0 &&
+		len(signoffsWithBreachedSLA) == 0
 
 	return UIReviewPackAudit{
-		Ready:                     ready,
-		ObjectiveCount:            len(pack.Objectives),
-		WireframeCount:            len(pack.Wireframes),
-		InteractionCount:          len(pack.Interactions),
-		OpenQuestionCount:         len(pack.OpenQuestions),
-		ChecklistCount:            len(pack.ReviewerChecklist),
-		DecisionCount:             len(pack.DecisionLog),
-		RoleAssignmentCount:       len(pack.RoleMatrix),
-		SignoffCount:              len(pack.SignoffLog),
-		BlockerCount:              len(pack.BlockerLog),
-		BlockerTimelineCount:      len(pack.BlockerTimeline),
-		MissingSections:           missingSections,
-		ObjectivesMissingSignals:  objectivesMissingSignals,
-		WireframesMissingBlocks:   wireframesMissingBlocks,
-		InteractionsMissingStates: interactionsMissingStates,
-		UnresolvedQuestionIDs:     unresolvedQuestionIDs,
+		Ready:                                  ready,
+		ObjectiveCount:                         len(pack.Objectives),
+		WireframeCount:                         len(pack.Wireframes),
+		InteractionCount:                       len(pack.Interactions),
+		OpenQuestionCount:                      len(pack.OpenQuestions),
+		ChecklistCount:                         len(pack.ReviewerChecklist),
+		DecisionCount:                          len(pack.DecisionLog),
+		RoleAssignmentCount:                    len(pack.RoleMatrix),
+		SignoffCount:                           len(pack.SignoffLog),
+		BlockerCount:                           len(pack.BlockerLog),
+		BlockerTimelineCount:                   len(pack.BlockerTimeline),
+		MissingSections:                        missingSections,
+		ObjectivesMissingSignals:               objectivesMissingSignals,
+		WireframesMissingBlocks:                wireframesMissingBlocks,
+		InteractionsMissingStates:              interactionsMissingStates,
+		UnresolvedQuestionIDs:                  unresolvedQuestionIDs,
+		WireframesMissingChecklists:            wireframesMissingChecklists,
+		OrphanChecklistSurfaces:                orphanChecklistSurfaces,
+		ChecklistItemsMissingEvidence:          checklistItemsMissingEvidence,
+		ChecklistItemsMissingRoleLinks:         checklistItemsMissingRoleLinks,
+		WireframesMissingDecisions:             wireframesMissingDecisions,
+		OrphanDecisionSurfaces:                 orphanDecisionSurfaces,
+		UnresolvedDecisionIDs:                  unresolvedDecisionIDs,
+		UnresolvedDecisionsMissingFollowUps:    unresolvedDecisionsMissingFollowUps,
+		WireframesMissingRoleAssignments:       wireframesMissingRoleAssignments,
+		OrphanRoleAssignmentSurfaces:           orphanRoleAssignmentSurfaces,
+		RoleAssignmentsMissingResponsibilities: roleAssignmentsMissingResponsibilities,
+		RoleAssignmentsMissingChecklistLinks:   roleAssignmentsMissingChecklistLinks,
+		RoleAssignmentsMissingDecisionLinks:    roleAssignmentsMissingDecisionLinks,
+		DecisionsMissingRoleLinks:              decisionsMissingRoleLinks,
+		WireframesMissingSignoffs:              wireframesMissingSignoffs,
+		OrphanSignoffSurfaces:                  orphanSignoffSurfaces,
+		SignoffsMissingAssignments:             signoffsMissingAssignments,
+		SignoffsMissingEvidence:                signoffsMissingEvidence,
+		SignoffsMissingRequestedDates:          signoffsMissingRequestedDates,
+		SignoffsMissingDueDates:                signoffsMissingDueDates,
+		SignoffsMissingEscalationOwners:        signoffsMissingEscalationOwners,
+		SignoffsMissingReminderOwners:          signoffsMissingReminderOwners,
+		SignoffsMissingNextReminders:           signoffsMissingNextReminders,
+		SignoffsMissingReminderCadence:         signoffsMissingReminderCadence,
+		SignoffsWithBreachedSLA:                signoffsWithBreachedSLA,
+		UnresolvedRequiredSignoffIDs:           unresolvedRequiredSignoffIDs,
 	}
 }
 
@@ -1787,6 +2215,73 @@ func RenderUIReviewPackReport(pack UIReviewPack, audit UIReviewPackAudit) string
 	lines = append(lines, "## Open Questions")
 	lines = append(lines, "- Unresolved questions: "+joinOrNone(audit.UnresolvedQuestionIDs))
 	return strings.Join(lines, "\n") + "\n"
+}
+
+func BuildBIG4204ReviewPack() UIReviewPack {
+	return UIReviewPack{
+		IssueID:                   "BIG-4204",
+		Title:                     "UI评审包输出",
+		Version:                   "v4.0-design-sprint",
+		RequiresReviewerChecklist: true,
+		RequiresDecisionLog:       true,
+		RequiresRoleMatrix:        true,
+		RequiresSignoffLog:        true,
+		Objectives: []ReviewObjective{
+			{ObjectiveID: "obj-overview-decision", Title: "Validate the executive overview narrative and drill-down posture", Persona: "VP Eng", Outcome: "Leadership can confirm the overview page balances KPI density with investigation entry points.", SuccessSignal: "Reviewers agree the overview supports release, risk, and queue drill-down without extra walkthroughs.", Priority: "P0", Dependencies: []string{"BIG-4203", "OPE-132"}},
+			{ObjectiveID: "obj-queue-governance", Title: "Confirm queue control actions and approval posture", Persona: "Platform Admin", Outcome: "Operators can assess batch approvals, audit visibility, and denial paths from one frame.", SuccessSignal: "The queue frame clearly shows allowed actions, denied roles, and audit expectations.", Priority: "P0", Dependencies: []string{"BIG-4203", "OPE-131", "OPE-132"}},
+			{ObjectiveID: "obj-run-detail-investigation", Title: "Validate replay and audit investigation flow", Persona: "Eng Lead", Outcome: "Run detail reviewers can trace evidence, replay context, and escalation actions in one surface.", SuccessSignal: "The run-detail frame makes failure replay and escalation decisions reviewable without hidden dependencies.", Priority: "P0", Dependencies: []string{"BIG-4203", "OPE-72", "OPE-73"}},
+			{ObjectiveID: "obj-triage-handoff", Title: "Confirm triage and cross-team handoff readiness", Persona: "Cross-Team Operator", Outcome: "Reviewers can evaluate assignment, handoff, and queue-state transitions as one operator journey.", SuccessSignal: "The triage frame exposes action states, owner switches, and handoff exceptions explicitly.", Priority: "P0", Dependencies: []string{"BIG-4203", "OPE-76", "OPE-79", "OPE-132"}},
+		},
+		Wireframes: []WireframeSurface{
+			{SurfaceID: "wf-overview", Name: "Overview command deck", Device: "desktop", EntryPoint: "/overview", PrimaryBlocks: []string{"top bar", "kpi strip", "risk panel", "drill-down table"}, ReviewNotes: []string{"Confirm metric density and executive scan path.", "Check alert prominence versus weekly summary card."}},
+			{SurfaceID: "wf-queue", Name: "Queue control center", Device: "desktop", EntryPoint: "/queue", PrimaryBlocks: []string{"approval queue", "selection toolbar", "filters", "audit rail"}, ReviewNotes: []string{"Validate batch-approve CTA hierarchy.", "Review denied-role behavior for non-operator personas."}},
+			{SurfaceID: "wf-run-detail", Name: "Run detail and replay", Device: "desktop", EntryPoint: "/runs/detail", PrimaryBlocks: []string{"timeline", "artifact drawer", "replay controls", "audit notes"}, ReviewNotes: []string{"Check replay mode discoverability.", "Ensure escalation path is visible next to audit evidence."}},
+			{SurfaceID: "wf-triage", Name: "Triage and handoff board", Device: "desktop", EntryPoint: "/triage", PrimaryBlocks: []string{"severity lanes", "bulk actions", "handoff panel", "ownership history"}, ReviewNotes: []string{"Validate cross-team operator workflow.", "Confirm exception path for denied escalation."}},
+		},
+		Interactions: []InteractionFlow{
+			{FlowID: "flow-overview-drilldown", Name: "Overview to investigation drill-down", Trigger: "VP Eng selects a KPI card or blocker cluster on the overview page", SystemResponse: "The console pivots into the matching queue or run-detail slice while preserving context filters.", States: []string{"default", "focus", "handoff-ready"}, Exceptions: []string{"Warn when the requested slice is permission-denied.", "Show fallback summary when no matching runs exist."}},
+			{FlowID: "flow-queue-bulk-approval", Name: "Queue batch approval review", Trigger: "Platform Admin selects multiple tasks and opens the bulk approval toolbar", SystemResponse: "The queue shows approval scope, audit consequence, and denied-role messaging before submit.", States: []string{"default", "selection", "confirming", "success"}, Exceptions: []string{"Disable submit when tasks cross unauthorized scopes.", "Route to audit timeline when approval policy changes mid-flow."}},
+			{FlowID: "flow-run-replay", Name: "Run replay with evidence audit", Trigger: "Eng Lead switches replay mode on a failed run", SystemResponse: "The page updates the timeline, artifacts, and escalation controls while keeping the audit trail visible.", States: []string{"default", "replay", "compare", "escalated"}, Exceptions: []string{"Show replay-unavailable state for incomplete artifacts.", "Require escalation reason before handoff."}},
+			{FlowID: "flow-triage-handoff", Name: "Triage ownership reassignment and handoff", Trigger: "Cross-Team Operator bulk-assigns a finding set or opens the handoff panel", SystemResponse: "The triage board updates owner, workflow, and handoff evidence in one acknowledgement step.", States: []string{"default", "selected", "handoff", "completed"}, Exceptions: []string{"Block handoff when reviewer coverage is incomplete.", "Record denied-role attempt in the audit summary."}},
+		},
+		OpenQuestions: []OpenQuestion{
+			{QuestionID: "oq-role-density", Theme: "role-matrix", Question: "Should VP Eng see queue batch controls in read-only form or be routed to a summary-only state?", Owner: "product-experience", Impact: "Changes denial-path copy, button placement, and review criteria for queue and triage pages."},
+			{QuestionID: "oq-alert-priority", Theme: "information-architecture", Question: "Should regression alerts outrank approval alerts in the top bar for the design sprint prototype?", Owner: "engineering-operations", Impact: "Affects alert hierarchy and the scan path used in the overview and triage reviews."},
+			{QuestionID: "oq-handoff-evidence", Theme: "handoff", Question: "How much ownership history must stay visible before the run-detail and triage pages collapse older audit entries?", Owner: "orchestration-office", Impact: "Shapes the default density of the audit rail and the threshold for the review-ready packet."},
+		},
+		ReviewerChecklist: []ReviewerChecklistItem{
+			{ItemID: "chk-overview-kpi-scan", SurfaceID: "wf-overview", Prompt: "Verify the KPI strip still supports one-screen executive scanning before drill-down.", Owner: "VP Eng", Status: "ready", EvidenceLinks: []string{"wf-overview", "flow-overview-drilldown"}, Notes: "Use the overview card hierarchy as the primary decision frame."},
+			{ItemID: "chk-overview-alert-hierarchy", SurfaceID: "wf-overview", Prompt: "Confirm alert priority is readable when approvals and regressions compete for attention.", Owner: "engineering-operations", Status: "open", EvidenceLinks: []string{"wf-overview", "oq-alert-priority"}},
+			{ItemID: "chk-queue-batch-approval", SurfaceID: "wf-queue", Prompt: "Check that batch approval clearly communicates scope, denial paths, and audit consequences.", Owner: "Platform Admin", Status: "ready", EvidenceLinks: []string{"wf-queue", "flow-queue-bulk-approval"}},
+			{ItemID: "chk-queue-role-density", SurfaceID: "wf-queue", Prompt: "Validate whether VP Eng should get a summary-only queue variant instead of operator controls.", Owner: "product-experience", Status: "open", EvidenceLinks: []string{"wf-queue", "oq-role-density"}},
+			{ItemID: "chk-run-replay-context", SurfaceID: "wf-run-detail", Prompt: "Ensure replay, compare, and escalation states remain distinguishable without narration.", Owner: "Eng Lead", Status: "ready", EvidenceLinks: []string{"wf-run-detail", "flow-run-replay"}},
+			{ItemID: "chk-run-audit-density", SurfaceID: "wf-run-detail", Prompt: "Confirm the audit rail retains enough ownership history before collapsing older entries.", Owner: "orchestration-office", Status: "open", EvidenceLinks: []string{"wf-run-detail", "oq-handoff-evidence"}},
+			{ItemID: "chk-triage-handoff-clarity", SurfaceID: "wf-triage", Prompt: "Check that cross-team handoff consequences are explicit before ownership changes commit.", Owner: "Cross-Team Operator", Status: "ready", EvidenceLinks: []string{"wf-triage", "flow-triage-handoff"}},
+			{ItemID: "chk-triage-bulk-assign", SurfaceID: "wf-triage", Prompt: "Validate bulk assignment visibility without burying the audit context.", Owner: "Platform Admin", Status: "ready", EvidenceLinks: []string{"wf-triage", "flow-triage-handoff"}},
+		},
+		DecisionLog: []ReviewDecision{
+			{DecisionID: "dec-overview-alert-stack", SurfaceID: "wf-overview", Owner: "product-experience", Summary: "Keep approval and regression alerts in one stacked priority rail.", Rationale: "Reviewers need one comparison lane before jumping into queue or triage surfaces.", Status: "accepted"},
+			{DecisionID: "dec-queue-vp-summary", SurfaceID: "wf-queue", Owner: "VP Eng", Summary: "Route VP Eng to a summary-first queue state instead of operator controls.", Rationale: "The VP Eng persona needs queue visibility without accidental action affordances.", Status: "proposed", FollowUp: "Resolve after the next design critique with policy owners."},
+			{DecisionID: "dec-run-detail-audit-rail", SurfaceID: "wf-run-detail", Owner: "Eng Lead", Summary: "Keep audit evidence visible beside replay controls in all replay states.", Rationale: "Replay decisions are inseparable from audit context and escalation evidence.", Status: "accepted"},
+			{DecisionID: "dec-triage-handoff-density", SurfaceID: "wf-triage", Owner: "Cross-Team Operator", Summary: "Preserve ownership history in the triage rail until handoff is acknowledged.", Rationale: "Operators need a stable handoff trail before collapsing older events.", Status: "accepted"},
+		},
+		RoleMatrix: []ReviewRoleAssignment{
+			{AssignmentID: "role-overview-vp-eng", SurfaceID: "wf-overview", Role: "VP Eng", Responsibilities: []string{"approve overview scan path", "validate KPI-to-drilldown narrative"}, ChecklistItemIDs: []string{"chk-overview-kpi-scan"}, DecisionIDs: []string{"dec-overview-alert-stack"}, Status: "ready"},
+			{AssignmentID: "role-overview-eng-ops", SurfaceID: "wf-overview", Role: "engineering-operations", Responsibilities: []string{"review alert priority posture"}, ChecklistItemIDs: []string{"chk-overview-alert-hierarchy"}, DecisionIDs: []string{"dec-overview-alert-stack"}, Status: "open"},
+			{AssignmentID: "role-queue-platform-admin", SurfaceID: "wf-queue", Role: "Platform Admin", Responsibilities: []string{"validate batch-approval copy", "confirm permission posture"}, ChecklistItemIDs: []string{"chk-queue-batch-approval"}, DecisionIDs: []string{"dec-queue-vp-summary"}, Status: "ready"},
+			{AssignmentID: "role-queue-product-experience", SurfaceID: "wf-queue", Role: "product-experience", Responsibilities: []string{"tune summary-only VP variant"}, ChecklistItemIDs: []string{"chk-queue-role-density"}, DecisionIDs: []string{"dec-queue-vp-summary"}, Status: "open"},
+			{AssignmentID: "role-run-detail-eng-lead", SurfaceID: "wf-run-detail", Role: "Eng Lead", Responsibilities: []string{"approve replay-state clarity", "confirm escalation adjacency"}, ChecklistItemIDs: []string{"chk-run-replay-context"}, DecisionIDs: []string{"dec-run-detail-audit-rail"}, Status: "ready"},
+			{AssignmentID: "role-run-detail-orchestration-office", SurfaceID: "wf-run-detail", Role: "orchestration-office", Responsibilities: []string{"review audit density threshold"}, ChecklistItemIDs: []string{"chk-run-audit-density"}, DecisionIDs: []string{"dec-run-detail-audit-rail"}, Status: "open"},
+			{AssignmentID: "role-triage-cross-team-operator", SurfaceID: "wf-triage", Role: "Cross-Team Operator", Responsibilities: []string{"approve handoff clarity", "validate ownership transition story"}, ChecklistItemIDs: []string{"chk-triage-handoff-clarity"}, DecisionIDs: []string{"dec-triage-handoff-density"}, Status: "ready"},
+			{AssignmentID: "role-triage-platform-admin", SurfaceID: "wf-triage", Role: "Platform Admin", Responsibilities: []string{"confirm bulk-assign audit visibility"}, ChecklistItemIDs: []string{"chk-triage-bulk-assign"}, DecisionIDs: []string{"dec-triage-handoff-density"}, Status: "ready"},
+		},
+		SignoffLog: []ReviewSignoff{
+			{SignoffID: "sig-overview-vp-eng", AssignmentID: "role-overview-vp-eng", SurfaceID: "wf-overview", Role: "VP Eng", Status: "approved", Required: true, EvidenceLinks: []string{"chk-overview-kpi-scan", "dec-overview-alert-stack"}, Notes: "Overview narrative approved for design sprint review.", RequestedAt: "2026-03-10T09:00:00Z", DueAt: "2026-03-12T18:00:00Z", EscalationOwner: "design-program-manager", SLAStatus: "met"},
+			{SignoffID: "sig-queue-platform-admin", AssignmentID: "role-queue-platform-admin", SurfaceID: "wf-queue", Role: "Platform Admin", Status: "approved", Required: true, EvidenceLinks: []string{"chk-queue-batch-approval", "dec-queue-vp-summary"}, Notes: "Queue control actions meet operator review criteria.", RequestedAt: "2026-03-10T11:00:00Z", DueAt: "2026-03-13T18:00:00Z", EscalationOwner: "platform-ops-manager", SLAStatus: "met"},
+			{SignoffID: "sig-run-detail-eng-lead", AssignmentID: "role-run-detail-eng-lead", SurfaceID: "wf-run-detail", Role: "Eng Lead", Status: "pending", Required: true, EvidenceLinks: []string{"chk-run-replay-context", "dec-run-detail-audit-rail"}, Notes: "Waiting for final replay-state copy review.", RequestedAt: "2026-03-12T11:00:00Z", DueAt: "2026-03-15T18:00:00Z", EscalationOwner: "engineering-director", SLAStatus: "at-risk", ReminderOwner: "design-program-manager", ReminderChannel: "slack", LastReminderAt: "2026-03-14T09:45:00Z", NextReminderAt: "2026-03-15T10:00:00Z", ReminderCadence: "daily", ReminderStatus: "scheduled"},
+			{SignoffID: "sig-triage-cross-team-operator", AssignmentID: "role-triage-cross-team-operator", SurfaceID: "wf-triage", Role: "Cross-Team Operator", Status: "approved", Required: true, EvidenceLinks: []string{"chk-triage-handoff-clarity", "dec-triage-handoff-density"}, Notes: "Cross-team handoff flow approved for prototype review.", RequestedAt: "2026-03-11T14:00:00Z", DueAt: "2026-03-13T12:00:00Z", EscalationOwner: "cross-team-program-manager", SLAStatus: "met"},
+		},
+	}
 }
 
 func BuildBIG4203ConsoleInteractionDraft() ConsoleInteractionDraft {

@@ -409,6 +409,140 @@ func TestRenderUIReviewPackReportSummarizesReviewShapeAndFindings(t *testing.T) 
 	}
 }
 
+func TestUIReviewPackAuditFlagsMissingChecklistCoverageAndEvidence(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.ReviewerChecklist = []ReviewerChecklistItem{{
+		ItemID:        "chk-overview-kpi-scan",
+		SurfaceID:     "wf-overview",
+		Prompt:        "Verify the KPI strip still supports one-screen executive scanning before drill-down.",
+		Owner:         "VP Eng",
+		Status:        "ready",
+		EvidenceLinks: []string{},
+	}}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.WireframesMissingChecklists, []string{"wf-queue", "wf-run-detail", "wf-triage"}) ||
+		!reflect.DeepEqual(audit.ChecklistItemsMissingEvidence, []string{"chk-overview-kpi-scan"}) ||
+		len(audit.OrphanChecklistSurfaces) != 0 {
+		t.Fatalf("unexpected checklist audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsMissingDecisionCoverage(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.DecisionLog = []ReviewDecision{{
+		DecisionID: "dec-overview-alert-stack",
+		SurfaceID:  "wf-overview",
+		Owner:      "product-experience",
+		Summary:    "Keep approval and regression alerts in one stacked priority rail.",
+		Rationale:  "Reviewers need one comparison lane before jumping into queue or triage surfaces.",
+		Status:     "accepted",
+	}}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.WireframesMissingDecisions, []string{"wf-queue", "wf-run-detail", "wf-triage"}) ||
+		len(audit.OrphanDecisionSurfaces) != 0 ||
+		len(audit.UnresolvedDecisionIDs) != 0 {
+		t.Fatalf("unexpected decision audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsMissingRoleMatrixCoverage(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.RoleMatrix = []ReviewRoleAssignment{{
+		AssignmentID:     "role-overview-vp-eng",
+		SurfaceID:        "wf-overview",
+		Role:             "VP Eng",
+		Responsibilities: []string{"approve overview scan path"},
+		ChecklistItemIDs: []string{"chk-overview-kpi-scan"},
+		DecisionIDs:      []string{"dec-overview-alert-stack"},
+		Status:           "ready",
+	}}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.WireframesMissingRoleAssignments, []string{"wf-queue", "wf-run-detail", "wf-triage"}) ||
+		len(audit.OrphanRoleAssignmentSurfaces) != 0 ||
+		len(audit.RoleAssignmentsMissingResponsibilities) != 0 ||
+		len(audit.RoleAssignmentsMissingChecklistLinks) != 0 ||
+		len(audit.RoleAssignmentsMissingDecisionLinks) != 0 ||
+		!reflect.DeepEqual(audit.ChecklistItemsMissingRoleLinks, []string{
+			"chk-overview-alert-hierarchy",
+			"chk-queue-batch-approval",
+			"chk-queue-role-density",
+			"chk-run-audit-density",
+			"chk-run-replay-context",
+			"chk-triage-bulk-assign",
+			"chk-triage-handoff-clarity",
+		}) ||
+		!reflect.DeepEqual(audit.DecisionsMissingRoleLinks, []string{
+			"dec-queue-vp-summary",
+			"dec-run-detail-audit-rail",
+			"dec-triage-handoff-density",
+		}) {
+		t.Fatalf("unexpected role audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsMissingSignoffCoverageAndAssignmentLinks(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.SignoffLog = []ReviewSignoff{{
+		SignoffID:     "sig-overview-vp-eng",
+		AssignmentID:  "role-overview-missing",
+		SurfaceID:     "wf-overview",
+		Role:          "VP Eng",
+		Status:        "approved",
+		Required:      true,
+		EvidenceLinks: []string{"chk-overview-kpi-scan"},
+	}}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.WireframesMissingSignoffs, []string{"wf-queue", "wf-run-detail", "wf-triage"}) ||
+		len(audit.OrphanSignoffSurfaces) != 0 ||
+		!reflect.DeepEqual(audit.SignoffsMissingAssignments, []string{"sig-overview-vp-eng"}) ||
+		len(audit.SignoffsMissingEvidence) != 0 ||
+		len(audit.UnresolvedRequiredSignoffIDs) != 0 {
+		t.Fatalf("unexpected signoff coverage audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsMissingSignoffSLAMetadata(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.SignoffLog[2] = ReviewSignoff{
+		SignoffID:       "sig-run-detail-eng-lead",
+		AssignmentID:    "role-run-detail-eng-lead",
+		SurfaceID:       "wf-run-detail",
+		Role:            "Eng Lead",
+		Status:          "pending",
+		Required:        true,
+		EvidenceLinks:   []string{"chk-run-replay-context", "dec-run-detail-audit-rail"},
+		Notes:           "Waiting for final replay-state copy review.",
+		RequestedAt:     "",
+		DueAt:           "",
+		EscalationOwner: "",
+		SLAStatus:       "breached",
+		ReminderOwner:   "",
+		ReminderChannel: "slack",
+		LastReminderAt:  "2026-03-14T09:45:00Z",
+		NextReminderAt:  "",
+	}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.SignoffsMissingRequestedDates, []string{"sig-run-detail-eng-lead"}) ||
+		!reflect.DeepEqual(audit.SignoffsMissingDueDates, []string{"sig-run-detail-eng-lead"}) ||
+		!reflect.DeepEqual(audit.SignoffsMissingEscalationOwners, []string{"sig-run-detail-eng-lead"}) ||
+		!reflect.DeepEqual(audit.SignoffsMissingReminderOwners, []string{"sig-run-detail-eng-lead"}) ||
+		!reflect.DeepEqual(audit.SignoffsMissingNextReminders, []string{"sig-run-detail-eng-lead"}) ||
+		!reflect.DeepEqual(audit.SignoffsMissingReminderCadence, []string{"sig-run-detail-eng-lead"}) ||
+		!reflect.DeepEqual(audit.SignoffsWithBreachedSLA, []string{"sig-run-detail-eng-lead"}) {
+		t.Fatalf("unexpected signoff sla audit: %+v", audit)
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{
