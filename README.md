@@ -115,7 +115,8 @@ bash scripts/ops/bigclawctl github-sync status --json
 
 ## Go Dev Smoke Verify
 
-Use this to verify the root dev smoke path:
+Use this to verify the root dev smoke path. The legacy `scripts/dev_smoke.py`
+entrypoint has been removed, so the repo-root smoke check is Go-only:
 
 ```bash
 bash scripts/ops/bigclawctl dev-smoke

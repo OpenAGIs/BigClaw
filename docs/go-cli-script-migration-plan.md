@@ -13,7 +13,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
-- root dev smoke path is Go-only: use `bigclawctl dev-smoke`
+- retired `scripts/dev_smoke.py`; use `bigclawctl dev-smoke`
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
@@ -112,6 +112,9 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - Root compatibility retirement:
   repo operators must stop invoking removed repo-root Python shims and switch to
   `bash scripts/ops/bigclawctl ...` entrypoints.
+- Root dev smoke cutover:
+  `scripts/dev_smoke.py` must stay deleted and the repo-facing smoke path must stay on
+  `bash scripts/ops/bigclawctl dev-smoke`.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
   for the migrated `bigclaw-go/scripts/*` automation callers.

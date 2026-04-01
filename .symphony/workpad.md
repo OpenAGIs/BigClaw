@@ -1,45 +1,23 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1056 Workpad
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+- Confirm the root `dev_smoke` Python entrypoint is absent from the tracked tree and identify any remaining live references outside archived reports.
+- Update repo-facing entry surfaces that still describe or validate the removed Python path so the Go `bigclawctl dev-smoke` route is the only supported root smoke entrypoint.
+- Add or tighten regression coverage to pin the removal of `scripts/dev_smoke.py` and the continued availability of the Go smoke command.
+- Run targeted validation including `.py` file counts, focused searches for stale references, and Go tests for the affected command/regression surface.
+- Commit the scoped changes and push the branch tip to origin.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- `scripts/dev_smoke.py` is absent from the tracked repository after the change.
+- Non-archived README / workflow / hooks / CI-facing references do not call or recommend `scripts/dev_smoke.py`.
+- The supported root dev smoke path is Go-only via `bash scripts/ops/bigclawctl dev-smoke` or the equivalent Go command.
+- Regression coverage fails if the deleted root Python smoke path returns or if the documented Go path regresses.
+- Repository `.py` file count is not increased by this slice, and the root dev smoke Python entrypoint remains removed.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
-
-## Archived Closeout
-
-### BIG-GO-1053
-
-- Baseline code migration landed on `main` at `004de016252d6ca168a45dccda48fc9fa69e27f1`.
-- Closeout artifacts for the lane are tracked in:
-  - `reports/BIG-GO-1053-validation.md`
-  - `reports/BIG-GO-1053-closeout.md`
-  - `reports/BIG-GO-1053-status.json`
-- Additional stale Python entrypoint tests removed after closeout verification:
-  - `tests/test_parallel_validation_bundle.py`
-  - `tests/test_validation_bundle_continuation_policy_gate.py`
-- Validation recorded for `BIG-GO-1053`:
-  - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
-  - `find . -name '*.py' | wc -l` -> `43`
-  - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
-- Historical branch handoff URL:
-  - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
-- Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
-  the closeout landed on `main`.
-- No writable local tracker entry exists for `BIG-GO-1053` in `local-issues.json` or the
-  Symphony local issue store, so any remaining active state is external to this workspace.
-- Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
+- `find . -type f -name '*.py' | wc -l`
+- `rg -n "dev_smoke\\.py|scripts/dev_smoke\\.py|python3? .*dev_smoke\\.py|PYTHONPATH=.*dev_smoke\\.py" . -g '!reports/**' -g '!.git/**'`
+- `rg -n "dev-smoke|bigclawctl dev-smoke" README.md workflow.md scripts .github bigclaw-go docs -g '!reports/**'`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
+- `bash scripts/ops/bigclawctl dev-smoke`
+- Capture exact command results in the closeout summary and local tracker comment.

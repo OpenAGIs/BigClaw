@@ -60,3 +60,23 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 		}
 	}
 }
+
+func TestRootDevSmokeEntrypointStaysGoOnly(t *testing.T) {
+	repoRoot := regressionRepoRoot(t)
+
+	readme := readRepoFile(t, repoRoot, "README.md")
+	if !strings.Contains(readme, "bash scripts/ops/bigclawctl dev-smoke") {
+		t.Fatal("README.md should document the Go dev-smoke entrypoint")
+	}
+	if strings.Contains(readme, "python3 scripts/dev_smoke.py") || strings.Contains(readme, "PYTHONPATH=src python3 scripts/dev_smoke.py") {
+		t.Fatal("README.md should not recommend invoking the removed root Python dev smoke entrypoint")
+	}
+
+	bootstrap := readRepoFile(t, repoRoot, "scripts/dev_bootstrap.sh")
+	if !strings.Contains(bootstrap, "scripts/ops/bigclawctl\" dev-smoke") {
+		t.Fatal("scripts/dev_bootstrap.sh should call the Go dev-smoke entrypoint")
+	}
+	if strings.Contains(bootstrap, "scripts/dev_smoke.py") {
+		t.Fatal("scripts/dev_bootstrap.sh should not invoke the removed root Python dev smoke entrypoint")
+	}
+}
