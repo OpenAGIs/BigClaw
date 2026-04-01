@@ -155,8 +155,7 @@ Result: exit code `0`, printed `usage: bigclawctl automation e2e continuation-po
 ## Commit And Push
 
 - Baseline migration commit on `main`: `004de016`
-- Closeout commits on `main`: `7cde78db`, `702293e2`, `9d23c137`, `215234bb`, `179db471`
-- Final cleanup commit on `main`: recorded in Git history after this report update
+- Closeout commits on `main`: `7cde78db`, `702293e2`, `9d23c137`, `215234bb`, `179db471`, `5e207e3b`, `e96216e3`
 - Push target: `origin/main`
 - Historical PR seed URL from the now-deleted evidence branch:
   `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
