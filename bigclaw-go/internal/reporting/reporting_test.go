@@ -146,6 +146,55 @@ func TestBuildRepoCollaborationMetrics(t *testing.T) {
 	}
 }
 
+func TestNormalizeDashboardLayoutClampsDimensionsAndSortsPlacements(t *testing.T) {
+	widgets := []DashboardWidgetSpec{
+		{
+			WidgetID:   "success-rate",
+			Title:      "Success Rate",
+			Module:     "kpis",
+			DataSource: "operations.snapshot",
+			MinWidth:   3,
+			MaxWidth:   6,
+		},
+	}
+	layout := DashboardLayout{
+		LayoutID: "desktop",
+		Name:     "Desktop",
+		Placements: []DashboardWidgetPlacement{
+			{
+				PlacementID: "late",
+				WidgetID:    "success-rate",
+				Column:      8,
+				Row:         4,
+				Width:       8,
+				Height:      0,
+			},
+			{
+				PlacementID: "early",
+				WidgetID:    "success-rate",
+				Column:      -2,
+				Row:         -1,
+				Width:       1,
+				Height:      2,
+			},
+		},
+	}
+
+	normalized := NormalizeDashboardLayout(layout, widgets)
+	if len(normalized.Placements) != 2 {
+		t.Fatalf("expected two placements, got %+v", normalized.Placements)
+	}
+	if normalized.Placements[0].PlacementID != "early" || normalized.Placements[1].PlacementID != "late" {
+		t.Fatalf("unexpected placement order: %+v", normalized.Placements)
+	}
+	if normalized.Placements[0].Column != 0 || normalized.Placements[0].Row != 0 || normalized.Placements[0].Width != 3 {
+		t.Fatalf("unexpected early placement: %+v", normalized.Placements[0])
+	}
+	if normalized.Placements[1].Column != 6 || normalized.Placements[1].Width != 6 || normalized.Placements[1].Height != 1 {
+		t.Fatalf("unexpected late placement: %+v", normalized.Placements[1])
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)

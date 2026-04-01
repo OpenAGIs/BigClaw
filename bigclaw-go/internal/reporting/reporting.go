@@ -181,6 +181,69 @@ func (b DashboardBuilder) WidgetIndex() map[string]DashboardWidgetSpec {
 	return out
 }
 
+func NormalizeDashboardLayout(layout DashboardLayout, widgets []DashboardWidgetSpec) DashboardLayout {
+	widgetIndex := make(map[string]DashboardWidgetSpec, len(widgets))
+	for _, widget := range widgets {
+		widgetIndex[widget.WidgetID] = widget
+	}
+
+	columnCount := layout.Columns
+	if columnCount <= 0 {
+		columnCount = 12
+	}
+	normalized := make([]DashboardWidgetPlacement, 0, len(layout.Placements))
+	for _, placement := range layout.Placements {
+		minWidth := 1
+		maxWidth := columnCount
+		if spec, ok := widgetIndex[placement.WidgetID]; ok {
+			minWidth = spec.MinWidth
+			if minWidth <= 0 {
+				minWidth = 1
+			}
+			if spec.MaxWidth > 0 {
+				maxWidth = minInt(spec.MaxWidth, columnCount)
+			}
+		}
+		if maxWidth < minWidth {
+			maxWidth = minWidth
+		}
+
+		width := maxInt(minWidth, minInt(placement.Width, maxWidth))
+		column := maxInt(0, placement.Column)
+		if column+width > columnCount {
+			column = maxInt(0, columnCount-width)
+		}
+
+		normalized = append(normalized, DashboardWidgetPlacement{
+			PlacementID:   placement.PlacementID,
+			WidgetID:      placement.WidgetID,
+			Column:        column,
+			Row:           maxInt(0, placement.Row),
+			Width:         width,
+			Height:        maxInt(1, placement.Height),
+			TitleOverride: placement.TitleOverride,
+			Filters:       append([]string(nil), placement.Filters...),
+		})
+	}
+
+	sort.SliceStable(normalized, func(i, j int) bool {
+		if normalized[i].Row == normalized[j].Row {
+			if normalized[i].Column == normalized[j].Column {
+				return normalized[i].PlacementID < normalized[j].PlacementID
+			}
+			return normalized[i].Column < normalized[j].Column
+		}
+		return normalized[i].Row < normalized[j].Row
+	})
+
+	return DashboardLayout{
+		LayoutID:   layout.LayoutID,
+		Name:       layout.Name,
+		Columns:    columnCount,
+		Placements: normalized,
+	}
+}
+
 type DashboardBuilderAudit struct {
 	Name                  string   `json:"name"`
 	TotalWidgets          int      `json:"total_widgets"`
@@ -1540,6 +1603,20 @@ func anyFloatOK(value any) (float64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func minInt(left, right int) int {
+	if left < right {
+		return left
+	}
+	return right
+}
+
+func maxInt(left, right int) int {
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func roundTo(value float64, places int) float64 {

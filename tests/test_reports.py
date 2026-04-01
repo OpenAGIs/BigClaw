@@ -2175,52 +2175,6 @@ def test_operations_snapshot_tracks_sla_and_success_rate() -> None:
     assert snapshot.average_cycle_minutes == 51.7
 
 
-def test_normalize_dashboard_layout_clamps_dimensions_and_sorts_placements() -> None:
-    analytics = OperationsAnalytics()
-    widgets = [
-        DashboardWidgetSpec(
-            widget_id="success-rate",
-            title="Success Rate",
-            module="kpis",
-            data_source="operations.snapshot",
-            min_width=3,
-            max_width=6,
-        )
-    ]
-    layout = DashboardLayout(
-        layout_id="desktop",
-        name="Desktop",
-        placements=[
-            DashboardWidgetPlacement(
-                placement_id="late",
-                widget_id="success-rate",
-                column=8,
-                row=4,
-                width=8,
-                height=0,
-            ),
-            DashboardWidgetPlacement(
-                placement_id="early",
-                widget_id="success-rate",
-                column=-2,
-                row=-1,
-                width=1,
-                height=2,
-            ),
-        ],
-    )
-
-    normalized = analytics.normalize_dashboard_layout(layout, widgets)
-
-    assert [placement.placement_id for placement in normalized.placements] == ["early", "late"]
-    assert normalized.placements[0].column == 0
-    assert normalized.placements[0].row == 0
-    assert normalized.placements[0].width == 3
-    assert normalized.placements[1].column == 6
-    assert normalized.placements[1].width == 6
-    assert normalized.placements[1].height == 1
-
-
 def test_triage_clusters_group_actionable_runs_by_reason() -> None:
     analytics = OperationsAnalytics()
     runs = [
