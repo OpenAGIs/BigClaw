@@ -616,6 +616,245 @@ type UIAcceptanceSuite struct {
 	DocumentationComplete bool                     `json:"documentation_complete,omitempty"`
 }
 
+type NavigationItem struct {
+	Name       string `json:"name"`
+	Route      string `json:"route"`
+	Section    string `json:"section"`
+	Icon       string `json:"icon,omitempty"`
+	BadgeCount int    `json:"badge_count,omitempty"`
+}
+
+type GlobalAction struct {
+	ActionID          string `json:"action_id"`
+	Label             string `json:"label"`
+	Placement         string `json:"placement"`
+	RequiresSelection bool   `json:"requires_selection,omitempty"`
+	Intent            string `json:"intent,omitempty"`
+}
+
+func (a GlobalAction) normalized() GlobalAction {
+	if strings.TrimSpace(a.Intent) == "" {
+		a.Intent = "default"
+	}
+	return a
+}
+
+type FilterDefinition struct {
+	Name         string   `json:"name"`
+	Field        string   `json:"field"`
+	Control      string   `json:"control"`
+	Options      []string `json:"options,omitempty"`
+	DefaultValue string   `json:"default_value,omitempty"`
+}
+
+type SurfaceState struct {
+	Name           string   `json:"name"`
+	Message        string   `json:"message,omitempty"`
+	AllowedActions []string `json:"allowed_actions,omitempty"`
+}
+
+type ConsoleSurface struct {
+	Name                string             `json:"name"`
+	Route               string             `json:"route"`
+	NavigationSection   string             `json:"navigation_section"`
+	TopBarActions       []GlobalAction     `json:"top_bar_actions,omitempty"`
+	Filters             []FilterDefinition `json:"filters,omitempty"`
+	States              []SurfaceState     `json:"states,omitempty"`
+	SupportsBulkActions bool               `json:"supports_bulk_actions,omitempty"`
+}
+
+var requiredSurfaceStates = []string{"default", "empty", "error", "loading"}
+
+func (s ConsoleSurface) ActionIDs() []string {
+	ids := make([]string, 0, len(s.TopBarActions))
+	for _, action := range s.TopBarActions {
+		ids = append(ids, action.ActionID)
+	}
+	return ids
+}
+
+func (s ConsoleSurface) StateNames() []string {
+	names := make([]string, 0, len(s.States))
+	for _, state := range s.States {
+		names = append(names, state.Name)
+	}
+	return names
+}
+
+func (s ConsoleSurface) MissingRequiredStates() []string {
+	have := map[string]bool{}
+	for _, state := range s.StateNames() {
+		have[state] = true
+	}
+	var missing []string
+	for _, state := range requiredSurfaceStates {
+		if !have[state] {
+			missing = append(missing, state)
+		}
+	}
+	return missing
+}
+
+func (s ConsoleSurface) UnresolvedStateActions() map[string][]string {
+	available := map[string]bool{}
+	for _, actionID := range s.ActionIDs() {
+		available[actionID] = true
+	}
+	unresolved := map[string][]string{}
+	for _, state := range s.States {
+		var missing []string
+		for _, actionID := range state.AllowedActions {
+			if !available[actionID] {
+				missing = append(missing, actionID)
+			}
+		}
+		sort.Strings(missing)
+		if len(missing) > 0 {
+			unresolved[state.Name] = missing
+		}
+	}
+	return unresolved
+}
+
+func (s ConsoleSurface) StatesMissingActions() []string {
+	var missing []string
+	for _, state := range s.States {
+		if state.Name != "default" && len(state.AllowedActions) == 0 {
+			missing = append(missing, state.Name)
+		}
+	}
+	return missing
+}
+
+type ConsoleIA struct {
+	Name       string           `json:"name"`
+	Version    string           `json:"version"`
+	Navigation []NavigationItem `json:"navigation,omitempty"`
+	Surfaces   []ConsoleSurface `json:"surfaces,omitempty"`
+	TopBar     ConsoleTopBar    `json:"top_bar"`
+}
+
+func (a ConsoleIA) normalized() ConsoleIA {
+	out := a
+	for i, action := range out.TopBar.CommandEntry.Commands {
+		out.TopBar.CommandEntry.Commands[i] = action
+	}
+	for i, surface := range out.Surfaces {
+		for j, action := range surface.TopBarActions {
+			surface.TopBarActions[j] = action.normalized()
+		}
+		out.Surfaces[i] = surface
+	}
+	return out
+}
+
+func (a ConsoleIA) RouteIndex() map[string]ConsoleSurface {
+	index := map[string]ConsoleSurface{}
+	for _, surface := range a.Surfaces {
+		index[surface.Route] = surface
+	}
+	return index
+}
+
+type ConsoleIAAudit struct {
+	SystemName             string                         `json:"system_name"`
+	Version                string                         `json:"version"`
+	SurfaceCount           int                            `json:"surface_count"`
+	NavigationCount        int                            `json:"navigation_count"`
+	TopBarAudit            ConsoleTopBarAudit             `json:"top_bar_audit"`
+	SurfacesMissingFilters []string                       `json:"surfaces_missing_filters,omitempty"`
+	SurfacesMissingActions []string                       `json:"surfaces_missing_actions,omitempty"`
+	SurfacesMissingStates  map[string][]string            `json:"surfaces_missing_states,omitempty"`
+	StatesMissingActions   map[string][]string            `json:"states_missing_actions,omitempty"`
+	UnresolvedStateActions map[string]map[string][]string `json:"unresolved_state_actions,omitempty"`
+	OrphanNavigationRoutes []string                       `json:"orphan_navigation_routes,omitempty"`
+	UnnavigableSurfaces    []string                       `json:"unnavigable_surfaces,omitempty"`
+}
+
+func (a ConsoleIAAudit) ReadinessScore() float64 {
+	if a.SurfaceCount == 0 {
+		return 0
+	}
+	penalties := len(a.SurfacesMissingFilters) +
+		len(a.SurfacesMissingActions) +
+		len(a.SurfacesMissingStates) +
+		len(a.StatesMissingActions) +
+		len(a.UnresolvedStateActions) +
+		len(a.OrphanNavigationRoutes) +
+		len(a.UnnavigableSurfaces)
+	if !a.TopBarAudit.ReleaseReady() {
+		penalties++
+	}
+	score := 100 - ((float64(penalties) * 100) / float64(a.SurfaceCount))
+	if score < 0 {
+		return 0
+	}
+	return round1(score)
+}
+
+type ConsoleIAAuditor struct{}
+
+func (ConsoleIAAuditor) Audit(architecture ConsoleIA) ConsoleIAAudit {
+	topBarAudit := (ConsoleChromeLibrary{}).AuditTopBar(architecture.TopBar)
+	routeIndex := architecture.RouteIndex()
+	navigationRoutes := map[string]bool{}
+	for _, item := range architecture.Navigation {
+		navigationRoutes[item.Route] = true
+	}
+	var missingFilters []string
+	var missingActions []string
+	missingStates := map[string][]string{}
+	statesMissingActions := map[string][]string{}
+	unresolvedStateActions := map[string]map[string][]string{}
+	for _, surface := range architecture.Surfaces {
+		if len(surface.Filters) == 0 {
+			missingFilters = append(missingFilters, surface.Name)
+		}
+		if len(surface.TopBarActions) == 0 {
+			missingActions = append(missingActions, surface.Name)
+		}
+		if missing := surface.MissingRequiredStates(); len(missing) > 0 {
+			missingStates[surface.Name] = missing
+		}
+		if missing := surface.StatesMissingActions(); len(missing) > 0 {
+			statesMissingActions[surface.Name] = missing
+		}
+		if unresolved := surface.UnresolvedStateActions(); len(unresolved) > 0 {
+			unresolvedStateActions[surface.Name] = unresolved
+		}
+	}
+	var orphanRoutes []string
+	for route := range navigationRoutes {
+		if _, ok := routeIndex[route]; !ok {
+			orphanRoutes = append(orphanRoutes, route)
+		}
+	}
+	sort.Strings(orphanRoutes)
+	var unnavigableSurfaces []string
+	for _, surface := range architecture.Surfaces {
+		if !navigationRoutes[surface.Route] {
+			unnavigableSurfaces = append(unnavigableSurfaces, surface.Name)
+		}
+	}
+	sort.Strings(unnavigableSurfaces)
+	sort.Strings(missingFilters)
+	sort.Strings(missingActions)
+	return ConsoleIAAudit{
+		SystemName:             architecture.Name,
+		Version:                architecture.Version,
+		SurfaceCount:           len(architecture.Surfaces),
+		NavigationCount:        len(architecture.Navigation),
+		TopBarAudit:            topBarAudit,
+		SurfacesMissingFilters: missingFilters,
+		SurfacesMissingActions: missingActions,
+		SurfacesMissingStates:  missingStates,
+		StatesMissingActions:   statesMissingActions,
+		UnresolvedStateActions: unresolvedStateActions,
+		OrphanNavigationRoutes: orphanRoutes,
+		UnnavigableSurfaces:    unnavigableSurfaces,
+	}
+}
+
 type UIAcceptanceAudit struct {
 	Name                      string   `json:"name"`
 	Version                   string   `json:"version"`
@@ -918,6 +1157,86 @@ func RenderUIAcceptanceReport(suite UIAcceptanceSuite, audit UIAcceptanceAudit) 
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func RenderConsoleIAReport(architecture ConsoleIA, audit ConsoleIAAudit) string {
+	var lines []string
+	lines = append(lines,
+		"# Console Information Architecture Report",
+		"",
+		"- Name: "+architecture.Name,
+		"- Version: "+architecture.Version,
+		"- Navigation Items: "+itoa(audit.NavigationCount),
+		"- Surfaces: "+itoa(audit.SurfaceCount),
+		"- Readiness Score: "+format1(audit.ReadinessScore()),
+		"",
+		"## Global Header",
+		"",
+		"- Name: "+fallback(architecture.TopBar.Name, "none"),
+		"- Release Ready: "+boolString(audit.TopBarAudit.ReleaseReady()),
+		"- Missing capabilities: "+joinOrNone(audit.TopBarAudit.MissingCapabilities),
+		"- Command Count: "+itoa(audit.TopBarAudit.CommandCount),
+		"- Cmd/Ctrl+K supported: "+boolString(audit.TopBarAudit.CommandShortcutSupported),
+		"",
+		"## Navigation",
+		"",
+	)
+	if len(architecture.Navigation) == 0 {
+		lines = append(lines, "- None")
+	} else {
+		for _, item := range architecture.Navigation {
+			lines = append(lines, "- "+item.Section+" / "+item.Name+": route="+item.Route+" badge="+itoa(item.BadgeCount)+" icon="+fallback(item.Icon, "none"))
+		}
+	}
+	lines = append(lines, "", "## Surface Coverage", "")
+	if len(architecture.Surfaces) == 0 {
+		lines = append(lines, "- None")
+	} else {
+		for _, surface := range architecture.Surfaces {
+			var filterNames []string
+			for _, filter := range surface.Filters {
+				filterNames = append(filterNames, filter.Name)
+			}
+			var actionLabels []string
+			for _, action := range surface.TopBarActions {
+				actionLabels = append(actionLabels, action.Label)
+			}
+			unresolved := audit.UnresolvedStateActions[surface.Name]
+			unresolvedText := "none"
+			if len(unresolved) > 0 {
+				var parts []string
+				for _, state := range sortedKeys(unresolved) {
+					parts = append(parts, state+"="+strings.Join(unresolved[state], ", "))
+				}
+				unresolvedText = strings.Join(parts, "; ")
+			}
+			lines = append(lines, "- "+surface.Name+
+				": route="+surface.Route+
+				" filters="+joinOrNone(filterNames)+
+				" actions="+joinOrNone(actionLabels)+
+				" states="+joinOrNone(surface.StateNames())+
+				" missing_states="+joinOrNone(surface.MissingRequiredStates())+
+				" states_without_actions="+joinOrNone(audit.StatesMissingActions[surface.Name])+
+				" unresolved_state_actions="+unresolvedText)
+		}
+	}
+	lines = append(lines, "", "## Audit", "")
+	lines = append(lines, "- Surfaces missing filters: "+joinOrNone(audit.SurfacesMissingFilters))
+	lines = append(lines, "- Surfaces missing actions: "+joinOrNone(audit.SurfacesMissingActions))
+	if len(audit.SurfacesMissingStates) == 0 {
+		lines = append(lines, "- Surfaces missing states: none")
+	} else {
+		var parts []string
+		for _, surface := range sortedKeys(audit.SurfacesMissingStates) {
+			parts = append(parts, surface+"="+strings.Join(audit.SurfacesMissingStates[surface], ", "))
+		}
+		lines = append(lines, "- Surfaces missing states: "+strings.Join(parts, "; "))
+	}
+	lines = append(lines, "- States missing actions: "+formatListMap(audit.StatesMissingActions))
+	lines = append(lines, "- Undefined state actions: "+formatNestedListMap(audit.UnresolvedStateActions))
+	lines = append(lines, "- Orphan navigation routes: "+joinOrNone(audit.OrphanNavigationRoutes))
+	lines = append(lines, "- Unnavigable surfaces: "+joinOrNone(audit.UnnavigableSurfaces))
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func flattenNode(node NavigationNode, parentPath string, depth int, parentID string) []NavigationEntry {
 	path := joinPath(parentPath, node.Segment)
 	entries := []NavigationEntry{{
@@ -1006,6 +1325,32 @@ func sortedStringMapKeys(m map[string]string) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func formatListMap(m map[string][]string) string {
+	if len(m) == 0 {
+		return "none"
+	}
+	var parts []string
+	for _, key := range sortedKeys(m) {
+		parts = append(parts, key+"="+strings.Join(m[key], ", "))
+	}
+	return strings.Join(parts, "; ")
+}
+
+func formatNestedListMap(m map[string]map[string][]string) string {
+	if len(m) == 0 {
+		return "none"
+	}
+	var parts []string
+	for _, key := range sortedKeys(m) {
+		var nested []string
+		for _, state := range sortedKeys(m[key]) {
+			nested = append(nested, state+"="+strings.Join(m[key][state], ", "))
+		}
+		parts = append(parts, key+"="+strings.Join(nested, "; "))
+	}
+	return strings.Join(parts, " | ")
 }
 
 func round1(v float64) float64 {

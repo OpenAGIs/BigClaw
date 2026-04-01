@@ -585,6 +585,187 @@ func TestRenderUIAcceptanceReportSummarizesReleaseReadiness(t *testing.T) {
 	}
 }
 
+func TestConsoleIARoundTripPreservesManifestShape(t *testing.T) {
+	architecture := ConsoleIA{
+		Name:    "BigClaw Console IA",
+		Version: "v3",
+		TopBar: ConsoleTopBar{
+			Name:                      "BigClaw Global Header",
+			SearchPlaceholder:         "Search runs, issues, commands",
+			EnvironmentOptions:        []string{"Production", "Staging"},
+			TimeRangeOptions:          []string{"24h", "7d"},
+			AlertChannels:             []string{"approvals"},
+			DocumentationComplete:     true,
+			AccessibilityRequirements: []string{"keyboard-navigation", "screen-reader-label", "focus-visible"},
+			CommandEntry: ConsoleCommandEntry{
+				TriggerLabel: "Command Menu",
+				Placeholder:  "Type a command",
+				Shortcut:     "Cmd+K / Ctrl+K",
+				Commands:     []CommandAction{{ID: "search-runs", Title: "Search runs", Section: "Navigate"}},
+			},
+		},
+		Navigation: []NavigationItem{{Name: "Overview", Route: "/overview", Section: "Operate", Icon: "dashboard", BadgeCount: 2}},
+		Surfaces: []ConsoleSurface{{
+			Name:              "Overview",
+			Route:             "/overview",
+			NavigationSection: "Operate",
+			TopBarActions:     []GlobalAction{{ActionID: "refresh", Label: "Refresh", Placement: "topbar"}},
+			Filters:           []FilterDefinition{{Name: "Team", Field: "team", Control: "select", Options: []string{"all", "platform"}, DefaultValue: "all"}},
+			States: []SurfaceState{
+				{Name: "default"},
+				{Name: "loading", AllowedActions: []string{"refresh"}},
+				{Name: "empty", AllowedActions: []string{"refresh"}},
+				{Name: "error", AllowedActions: []string{"refresh"}},
+			},
+		}},
+	}
+
+	var restored ConsoleIA
+	roundTripJSON(t, architecture, &restored)
+	if !reflect.DeepEqual(restored.normalized(), architecture.normalized()) {
+		t.Fatalf("console ia round trip mismatch: got %+v want %+v", restored, architecture)
+	}
+}
+
+func TestConsoleIAAuditSurfacesGlobalInteractionGaps(t *testing.T) {
+	architecture := ConsoleIA{
+		Name:    "BigClaw Console IA",
+		Version: "v3",
+		TopBar: ConsoleTopBar{
+			Name:                      "Incomplete Header",
+			EnvironmentOptions:        []string{"Production"},
+			TimeRangeOptions:          []string{"24h"},
+			DocumentationComplete:     false,
+			AccessibilityRequirements: []string{"focus-visible"},
+			CommandEntry:              ConsoleCommandEntry{Shortcut: "Cmd+K"},
+		},
+		Navigation: []NavigationItem{
+			{Name: "Overview", Route: "/overview", Section: "Operate"},
+			{Name: "Ghost", Route: "/ghost", Section: "Operate"},
+		},
+		Surfaces: []ConsoleSurface{
+			{
+				Name:              "Overview",
+				Route:             "/overview",
+				NavigationSection: "Operate",
+				TopBarActions:     []GlobalAction{{ActionID: "refresh", Label: "Refresh", Placement: "topbar"}},
+				Filters:           []FilterDefinition{{Name: "Team", Field: "team", Control: "select", Options: []string{"all"}}},
+				States:            []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"refresh"}}, {Name: "empty", AllowedActions: []string{"refresh"}}, {Name: "error", AllowedActions: []string{"refresh"}}},
+			},
+			{
+				Name:              "Queue",
+				Route:             "/queue",
+				NavigationSection: "Operate",
+				States:            []SurfaceState{{Name: "default"}, {Name: "loading"}, {Name: "empty", AllowedActions: []string{"retry"}}},
+			},
+		},
+	}
+
+	audit := (ConsoleIAAuditor{}).Audit(architecture)
+	if !reflect.DeepEqual(audit.SurfacesMissingFilters, []string{"Queue"}) ||
+		!reflect.DeepEqual(audit.SurfacesMissingActions, []string{"Queue"}) ||
+		!reflect.DeepEqual(audit.TopBarAudit.MissingCapabilities, []string{"global-search", "time-range-switch", "environment-switch", "alert-entry", "command-shell"}) ||
+		audit.TopBarAudit.ReleaseReady() ||
+		!reflect.DeepEqual(audit.SurfacesMissingStates, map[string][]string{"Queue": []string{"error"}}) ||
+		!reflect.DeepEqual(audit.StatesMissingActions, map[string][]string{"Queue": []string{"loading"}}) ||
+		!reflect.DeepEqual(audit.UnresolvedStateActions, map[string]map[string][]string{"Queue": {"empty": []string{"retry"}}}) ||
+		!reflect.DeepEqual(audit.OrphanNavigationRoutes, []string{"/ghost"}) ||
+		!reflect.DeepEqual(audit.UnnavigableSurfaces, []string{"Queue"}) ||
+		audit.ReadinessScore() != 0.0 {
+		t.Fatalf("unexpected console ia audit: %+v", audit)
+	}
+}
+
+func TestConsoleIAAuditRoundTripPreservesFindings(t *testing.T) {
+	topBarAudit := (ConsoleIAAuditor{}).Audit(ConsoleIA{
+		Name:    "BigClaw Console IA",
+		Version: "v3",
+		TopBar: ConsoleTopBar{
+			Name:                      "Incomplete Header",
+			EnvironmentOptions:        []string{"Production"},
+			TimeRangeOptions:          []string{"24h"},
+			DocumentationComplete:     false,
+			AccessibilityRequirements: []string{"focus-visible"},
+			CommandEntry:              ConsoleCommandEntry{Shortcut: "Cmd+K"},
+		},
+	}).TopBarAudit
+
+	audit := ConsoleIAAudit{
+		SystemName:             "BigClaw Console IA",
+		Version:                "v3",
+		SurfaceCount:           2,
+		NavigationCount:        1,
+		TopBarAudit:            topBarAudit,
+		SurfacesMissingFilters: []string{"Queue"},
+		SurfacesMissingActions: []string{"Queue"},
+		SurfacesMissingStates:  map[string][]string{"Queue": []string{"error"}},
+		StatesMissingActions:   map[string][]string{"Queue": []string{"loading"}},
+		UnresolvedStateActions: map[string]map[string][]string{"Queue": {"empty": []string{"retry"}}},
+		OrphanNavigationRoutes: []string{"/ghost"},
+		UnnavigableSurfaces:    []string{"Queue"},
+	}
+
+	var restored ConsoleIAAudit
+	roundTripJSON(t, audit, &restored)
+	if !reflect.DeepEqual(restored, audit) {
+		t.Fatalf("console ia audit round trip mismatch: got %+v want %+v", restored, audit)
+	}
+}
+
+func TestRenderConsoleIAReportSummarizesSurfaceCoverage(t *testing.T) {
+	architecture := ConsoleIA{
+		Name:    "BigClaw Console IA",
+		Version: "v3",
+		TopBar: ConsoleTopBar{
+			Name:                      "BigClaw Global Header",
+			SearchPlaceholder:         "Search runs, issues, commands",
+			EnvironmentOptions:        []string{"Production", "Staging"},
+			TimeRangeOptions:          []string{"24h", "7d", "30d"},
+			AlertChannels:             []string{"approvals", "sla"},
+			DocumentationComplete:     true,
+			AccessibilityRequirements: []string{"keyboard-navigation", "screen-reader-label", "focus-visible"},
+			CommandEntry: ConsoleCommandEntry{
+				TriggerLabel: "Command Menu",
+				Placeholder:  "Type a command or jump to a run",
+				Shortcut:     "Cmd+K / Ctrl+K",
+				Commands: []CommandAction{
+					{ID: "search-runs", Title: "Search runs", Section: "Navigate", Shortcut: "/"},
+					{ID: "open-alerts", Title: "Open alerts", Section: "Monitor"},
+				},
+			},
+		},
+		Navigation: []NavigationItem{{Name: "Overview", Route: "/overview", Section: "Operate"}},
+		Surfaces: []ConsoleSurface{{
+			Name:              "Overview",
+			Route:             "/overview",
+			NavigationSection: "Operate",
+			TopBarActions:     []GlobalAction{{ActionID: "refresh", Label: "Refresh", Placement: "topbar"}},
+			Filters:           []FilterDefinition{{Name: "Team", Field: "team", Control: "select", Options: []string{"all"}}},
+			States: []SurfaceState{
+				{Name: "default"},
+				{Name: "loading", AllowedActions: []string{"refresh"}},
+				{Name: "empty", AllowedActions: []string{"refresh"}},
+				{Name: "error", AllowedActions: []string{"refresh"}},
+			},
+		}},
+	}
+
+	report := RenderConsoleIAReport(architecture, (ConsoleIAAuditor{}).Audit(architecture))
+	for _, fragment := range []string{
+		"# Console Information Architecture Report",
+		"- Name: BigClaw Global Header",
+		"- Release Ready: True",
+		"- Navigation Items: 1",
+		"- Overview: route=/overview filters=Team actions=Refresh states=default, loading, empty, error missing_states=none states_without_actions=none unresolved_state_actions=none",
+		"- Surfaces missing filters: none",
+		"- Undefined state actions: none",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in report, got %s", fragment, report)
+		}
+	}
+}
+
 func roundTripJSON(t *testing.T, input any, target any) {
 	t.Helper()
 	body, err := json.Marshal(input)
