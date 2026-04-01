@@ -30,6 +30,9 @@ Date: `2026-04-01`
 ## Outcome
 
 - `bigclaw-go/scripts/e2e/` remains Go-only with no tracked Python files.
+- stale Python tests that still referenced deleted tranche-2 helpers are removed:
+  - `tests/test_parallel_validation_bundle.py`
+  - `tests/test_validation_bundle_continuation_policy_gate.py`
 - Active tranche-2 e2e entrypoints resolve through:
   - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`
   - `go run ./bigclaw-go/cmd/bigclawctl automation e2e export-validation-bundle ...`
@@ -54,6 +57,7 @@ Date: `2026-04-01`
 find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l
 find . -name '*.py' | wc -l
 dirs=(); for p in README.md bigclaw-go/docs docs .github .husky .git/hooks; do [ -e "$p" ] && dirs+=("$p"); done; rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/e2e/.*\.py" "${dirs[@]}"
+rg -n "validation_bundle_continuation_policy_gate\.py|export_validation_bundle\.py|run_task_smoke\.py|multi_node_shared_queue\.py|mixed_workload_matrix\.py|cross_process_coordination_surface\.py|subscriber_takeover_fault_matrix\.py|external_store_validation\.py" tests bigclaw-go docs README.md workflow.md .github . -g '!reports/**' -g '!.symphony/workpad.md' 2>/dev/null
 cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...
 cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help
 cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
@@ -68,7 +72,8 @@ No blocking repo action remains for `BIG-GO-1053`.
 The only caveat is historical: the tranche-2 e2e Python helpers had already been removed
 in the baseline `main` commit before these evidence commits were created, so this closeout
 sequence adds the missing validation and closeout artifacts rather than another fresh `.py`
-deletion.
+deletion in `bigclaw-go/scripts/e2e/`. The later follow-up within this lane still removed
+two stale Python tests that preserved the deleted entrypoint contract in active test code.
 
 ## Final Repo Check
 

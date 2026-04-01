@@ -29,9 +29,12 @@
   - `reports/BIG-GO-1053-validation.md`
   - `reports/BIG-GO-1053-closeout.md`
   - `reports/BIG-GO-1053-status.json`
+- Additional stale Python entrypoint tests removed after closeout verification:
+  - `tests/test_parallel_validation_bundle.py`
+  - `tests/test_validation_bundle_continuation_policy_gate.py`
 - Validation recorded for `BIG-GO-1053`:
   - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
-  - `find . -name '*.py' | wc -l` -> `46`
+  - `find . -name '*.py' | wc -l` -> `43`
   - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
 - Historical branch handoff URL:
   - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
