@@ -19,6 +19,7 @@ Plan
 - Remove `src/bigclaw/evaluation.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/observability.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/models.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
+- Remove `src/bigclaw/operations.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Update the Go legacy-shim compile-check so the frozen Python compatibility list follows the surviving package entrypoints after `legacy_shim.py` is deleted.
 - Run targeted tests and inventory checks, then commit and push the scoped branch.
 
@@ -66,6 +67,8 @@ Validation
 - `PYTHONPATH=src python3 -c "import bigclaw.observability, bigclaw.runtime, bigclaw.reports; print('ok')"`
 - `PYTHONPATH=src python3 -m pytest tests/test_models.py tests/test_scheduler.py tests/test_risk.py tests/test_queue.py tests/test_orchestration.py -q`
 - `PYTHONPATH=src python3 -c "import bigclaw.models, bigclaw.runtime; print('ok')"`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_control_center.py -q`
+- `PYTHONPATH=src python3 -c "import bigclaw.operations; print('ok')"`
 
 Results
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `21`
@@ -148,3 +151,9 @@ Results
 - `PYTHONPATH=src python3 -m pytest tests/test_models.py tests/test_scheduler.py tests/test_risk.py tests/test_queue.py tests/test_orchestration.py -q` -> `20 passed, 1 warning in 0.12s`
 - `PYTHONPATH=src python3 -c "import bigclaw.models, bigclaw.runtime; print('ok')"` -> `ok`
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `models.py` -> `ok  	bigclaw-go/internal/regression	1.192s`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` after deleting `operations.py` -> `5`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort` after deleting `operations.py` -> `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/reports.py`, `src/bigclaw/runtime.py`, `src/bigclaw/ui_review.py`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` after deleting `operations.py` -> exit 0
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_control_center.py -q` -> `23 passed, 1 warning in 0.12s`
+- `PYTHONPATH=src python3 -c "import bigclaw.operations; print('ok')"` -> `ok`
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `operations.py` -> `ok  	bigclaw-go/internal/regression	1.338s`
