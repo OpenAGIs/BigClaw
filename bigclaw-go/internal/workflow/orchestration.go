@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"bigclaw-go/internal/domain"
@@ -192,6 +193,31 @@ func BuildHandoffRequest(accepted bool, plan OrchestrationPlan, policyDecision O
 		Status:            status,
 		RequiredApprovals: plan.RequiredApprovals(),
 	}
+}
+
+func RenderOrchestrationPlan(plan OrchestrationPlan, policyDecision OrchestrationPolicyDecision) string {
+	lines := []string{
+		"# Cross-Department Orchestration Plan",
+		"",
+		fmt.Sprintf("- Task ID: %s", plan.TaskID),
+		fmt.Sprintf("- Collaboration Mode: %s", plan.CollaborationMode),
+		fmt.Sprintf("- Departments: %s", strings.Join(plan.Departments(), ", ")),
+		fmt.Sprintf("- Tier: %s", policyDecision.Tier),
+		fmt.Sprintf("- Entitlement Status: %s", policyDecision.EntitlementStatus),
+		fmt.Sprintf("- Billing Model: %s", policyDecision.BillingModel),
+		fmt.Sprintf("- Estimated Cost (USD): %s", strconv.FormatFloat(policyDecision.EstimatedCostUSD, 'f', 2, 64)),
+	}
+
+	if len(policyDecision.BlockedDepartments) > 0 {
+		lines = append(lines, fmt.Sprintf("- Blocked Departments: %s", strings.Join(policyDecision.BlockedDepartments, ", ")))
+	}
+	if len(plan.Handoffs) > 0 {
+		lines = append(lines, "", "## Handoffs")
+		for _, handoff := range plan.Handoffs {
+			lines = append(lines, fmt.Sprintf("- %s: %s", handoff.Department, handoff.Reason))
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func operationsReason(task domain.Task, labels []string, text string) string {

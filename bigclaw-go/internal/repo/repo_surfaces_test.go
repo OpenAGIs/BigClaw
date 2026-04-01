@@ -124,6 +124,9 @@ func TestRepoRegistryJSONRoundTripPreservesSpacesAndAgents(t *testing.T) {
 	if !ok || space.Repo != "OpenAGIs/BigClaw" {
 		t.Fatalf("expected restored space, got %+v ok=%t", space, ok)
 	}
+	if channel := restored.ResolveDefaultChannel("BIGCLAW", domain.Task{ID: "OPE-141"}); channel != "bigclaw-ope-141" {
+		t.Fatalf("expected restored default channel, got %q", channel)
+	}
 	agent := restored.ResolveAgent("native cloud", "reviewer")
 	if agent.RepoAgentID != "agent-native-cloud" {
 		t.Fatalf("expected restored agent id, got %+v", agent)

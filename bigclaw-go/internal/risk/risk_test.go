@@ -26,6 +26,19 @@ func TestScoreTaskElevatesProdBrowserWork(t *testing.T) {
 	}
 }
 
+func TestScoreTaskRaisesProdSecurityDeployToApprovalThreshold(t *testing.T) {
+	score := ScoreTask(domain.Task{
+		ID:            "BIG-902-high",
+		Title:         "security deploy",
+		Labels:        []string{"security", "prod"},
+		Priority:      1,
+		RequiredTools: []string{"deploy"},
+	}, nil)
+	if score.Total != 70 || score.Level != domain.RiskHigh || !score.RequiresApproval {
+		t.Fatalf("expected approval-threshold high risk score, got %+v", score)
+	}
+}
+
 func TestScoreTaskUsesFailuresRetriesAndRegressions(t *testing.T) {
 	score := ScoreTask(domain.Task{
 		ID:            "BIG-902-high",
