@@ -258,3 +258,7 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `90 passed in 0.11s`
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/__init__.py src/bigclaw/runtime.py src/bigclaw/operations.py` -> success
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 9`; `go 286`; `pkg 0`
+- Folded `src/bigclaw/models.py` into `src/bigclaw/__init__.py`, installed `bigclaw.models` as a package compatibility module before the legacy runtime surfaces load, and deleted the standalone module to reduce repository `.py` count without changing the residual task, risk, triage, flow, or billing model compatibility surface.
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `90 passed in 0.11s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/reports.py src/bigclaw/runtime.py src/bigclaw/operations.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 8`; `go 286`; `pkg 0`
