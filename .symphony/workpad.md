@@ -25,6 +25,30 @@
 
 ## Validation Results
 
+- Tranche: delete orphaned Python repo integration modules
+  - Removed Python files:
+    - `src/bigclaw/repo_commits.py`
+    - `src/bigclaw/repo_gateway.py`
+    - `src/bigclaw/repo_governance.py`
+    - `src/bigclaw/repo_registry.py`
+    - `src/bigclaw/repo_triage.py`
+- `cd bigclaw-go && go test ./internal/repo ./internal/api`
+  - `ok  	bigclaw-go/internal/repo	(cached)`
+  - `ok  	bigclaw-go/internal/api	3.225s`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `31`
+- `find . -name '*.py' | sort | wc -l`
+  - `47`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `11`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `D src/bigclaw/repo_commits.py`
+  - `D src/bigclaw/repo_gateway.py`
+  - `D src/bigclaw/repo_governance.py`
+  - `D src/bigclaw/repo_registry.py`
+  - `D src/bigclaw/repo_triage.py`
 - Tranche: delete orphaned Python contract and roadmap modules with Go-owned replacements
   - Removed Python files:
     - `src/bigclaw/cost_control.py`
