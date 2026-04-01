@@ -2,11 +2,13 @@
 
 ## Plan
 
-1. Add a small Go-native collaboration package that covers thread construction and merge behavior,
-   then delete `tests/test_repo_collaboration.py`.
-2. Add a small Go-native repo rollout package that covers the pilot rollout scorecard, candidate
-   gate evaluation, and repo narrative export rendering, then delete `tests/test_repo_rollout.py`.
-3. Run targeted Go validation for `./internal/collaboration` and `./internal/reporollout`, plus
+1. Add a small Go-native event bus package with a file-backed run ledger that covers the remaining
+   PR approval, CI completion, and task-failure transition tests, then delete
+   `tests/test_event_bus.py`.
+2. Add a small Go-native evaluation package that covers benchmark case execution, replay mismatch
+   detection, suite comparison, and the replay/detail page renderers, then delete
+   `tests/test_evaluation.py`.
+3. Run targeted Go validation for `./internal/eventbus` and `./internal/evaluation`, plus
    repo-level file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
@@ -21,16 +23,16 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/collaboration ./internal/reporollout`
+- `cd bigclaw-go && go test ./internal/eventbus ./internal/evaluation`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
-- `cd bigclaw-go && go test ./internal/collaboration ./internal/reporollout`
-  - `ok  	bigclaw-go/internal/collaboration	0.380s`
-  - `ok  	bigclaw-go/internal/reporollout	0.769s`
+- `cd bigclaw-go && go test ./internal/eventbus ./internal/evaluation`
+  - `ok  	bigclaw-go/internal/eventbus	0.799s`
+  - `ok  	bigclaw-go/internal/evaluation	0.395s`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `13`
+  - `11`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - no output
