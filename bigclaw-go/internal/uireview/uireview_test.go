@@ -3,6 +3,7 @@ package uireview
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -80,6 +81,25 @@ func TestUIReviewPackAuditAllowsOpenQuestionsWhileMarkingPackReady(t *testing.T)
 	}
 	if len(audit.MissingSections) != 0 {
 		t.Fatalf("expected no missing sections, got %+v", audit.MissingSections)
+	}
+}
+
+func TestRenderUIReviewPackReportSummarizesReviewShapeAndFindings(t *testing.T) {
+	pack := buildReviewPack()
+	audit := UIReviewPackAuditor{}.Audit(pack)
+
+	report := RenderUIReviewPackReport(pack, audit)
+
+	for _, needle := range []string{
+		"# UI Review Pack",
+		"- Issue: BIG-4204 UI评审包输出",
+		"- Audit: READY: objectives=1 wireframes=1 interactions=1 open_questions=1 checklist=0 decisions=0 role_assignments=0 signoffs=0 blockers=0 timeline_events=0",
+		"- obj-alignment: Align reviewers on the release-control story persona=product-experience priority=P0",
+		"- Unresolved questions: oq-mobile-depth",
+	} {
+		if !strings.Contains(report, needle) {
+			t.Fatalf("expected report to contain %q, got:\n%s", needle, report)
+		}
 	}
 }
 

@@ -68,3 +68,4 @@
 - `cd bigclaw-go && go test ./internal/consoleia ./internal/regression` -> `ok   bigclaw-go/internal/consoleia (cached)` and `ok   bigclaw-go/internal/regression 0.624s`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/billing ./internal/collaboration ./internal/consoleia ./internal/designsystem ./internal/evaluation ./internal/observability ./internal/pilot ./internal/planning ./internal/queue ./internal/reporting ./internal/reportstudio ./internal/regression ./internal/repo ./internal/risk ./internal/scheduler ./internal/triage ./internal/worker ./internal/workflow` -> all listed packages `ok` with cached reuse where applicable
 - `cd bigclaw-go && go test ./internal/uireview` -> `ok   bigclaw-go/internal/uireview 0.840s`
+- `cd bigclaw-go && go test ./internal/uireview` -> `ok   bigclaw-go/internal/uireview 1.120s`
