@@ -21,6 +21,8 @@
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
 
 ## Execution Result
+- Branch pushed: `symphony/BIG-GO-1055`
+- Commit: `8c7884634b7ed5191a7aef40f11a5775b4af048c`
 - Removed the five repo-root Python operator shim files under `scripts/ops/`.
 - Switched root README, CI, hooks, and bootstrap guidance to Go-only entrypoints.
 - Added `bigclaw-go/internal/regression/root_entrypoint_cutover_test.go` to keep the cutover surfaces aligned.
