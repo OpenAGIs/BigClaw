@@ -21,9 +21,7 @@ and the retained `scripts/benchmark/run_suite.sh` wrapper.
 | `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` | `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/e2e/external_store_validation.py` | `go run ./cmd/bigclawctl automation e2e external-store-validation ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` | `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...` | migrated and Python shim removed |
-| `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated and Python shim removed |
-| `bigclaw-go/scripts/benchmark/run_matrix.py` | `go run ./cmd/bigclawctl automation benchmark run-matrix ...` | migrated and Python shim removed |
-| `bigclaw-go/scripts/benchmark/capacity_certification.py` | `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` | migrated and Python shim removed |
+| retired `bigclaw-go/scripts/benchmark/*` Python helpers | `go run ./cmd/bigclawctl automation benchmark soak-local|run-matrix|capacity-certification ...` | migrated and Python shims removed |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/shadow_matrix.py` | `go run ./cmd/bigclawctl automation migration shadow-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` | migrated and Python shim removed |

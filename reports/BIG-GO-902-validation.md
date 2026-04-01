@@ -45,7 +45,7 @@ This issue now covers two delivered migration batches:
   - `automation migration shadow-compare`
 - Compatibility shims now dispatch directly into those Go automation commands for:
   - `bigclaw-go/scripts/e2e/run_task_smoke.py`
-  - `bigclaw-go/scripts/benchmark/soak_local.py`
+  - the retired benchmark helper entrypoint under `bigclaw-go/scripts/benchmark/`
   - `bigclaw-go/scripts/migration/shadow_compare.py`
 - Migration docs and operator guidance were refreshed in:
   - `docs/go-cli-script-migration-plan.md`

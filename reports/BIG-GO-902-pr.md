@@ -42,7 +42,7 @@
   - `bigclawctl automation migration shadow-compare`
 - converted these `bigclaw-go/scripts/*` entrypoints into compatibility shims:
   - `bigclaw-go/scripts/e2e/run_task_smoke.py`
-  - `bigclaw-go/scripts/benchmark/soak_local.py`
+  - the retired benchmark helper entrypoint under `bigclaw-go/scripts/benchmark/`
   - `bigclaw-go/scripts/migration/shadow_compare.py`
 - updated reviewer/operator docs:
   - `README.md`
