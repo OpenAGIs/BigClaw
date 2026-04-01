@@ -36,4 +36,5 @@
   - passed; help output confirms the supported Go refill entrypoint and flags
 
 ## Remaining Blocker
-- None currently.
+- PR creation is blocked in this workspace because `gh auth status` reports no logged-in GitHub host and no `GITHUB_TOKEN`/`GH_TOKEN` environment variable is present.
+- Branch `symphony/BIG-GO-1058` is pushed to origin and local/remote SHAs match at `1c4d9e531faaf7cf0e0a3641c46f3b941179c5d3`.
