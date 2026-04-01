@@ -20,6 +20,11 @@ if [ ! -f "scripts/ops/bigclawctl" ]; then
   exit 0
 fi
 
+if git grep -nE 'bigclaw-go/scripts/migration/.+\.py' -- README.md workflow.md .github/workflows .githooks bigclaw-go/README.md >/dev/null 2>&1; then
+  echo "[bigclaw-sync] stale deleted Python migration helper references detected; use go run ./bigclaw-go/cmd/bigclawctl automation migration ..." >&2
+  exit 1
+fi
+
 bash scripts/ops/bigclawctl github-sync sync --json --allow-dirty || {
   echo "[bigclaw-sync] post-rewrite auto-sync failed; inspect branch sync state." >&2
   exit 0

@@ -4,10 +4,12 @@ Issue: `BIG-GO-902`
 
 ## Implemented In This Slice
 
-`bigclaw-go/scripts/benchmark/` is now a Go-only operator surface. The removed
-Python benchmark helpers remain listed below only as historical migration
-records; the supported entrypoints are `bigclawctl automation benchmark ...`
-and the retained `scripts/benchmark/run_suite.sh` wrapper.
+`bigclaw-go/scripts/benchmark/` and the removed `bigclaw-go/scripts/migration/`
+Python helpers are now Go-only operator surfaces. The retired Python entrypoints
+remain listed below only as historical migration records; the supported
+entrypoints are `bigclawctl automation benchmark ...`,
+`bigclawctl automation migration ...`, and the retained
+`scripts/benchmark/run_suite.sh` wrapper.
 
 | Retired script | Go CLI replacement | Status |
 | --- | --- | --- |
@@ -60,10 +62,8 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - Report serialization compatibility for JSON consumers that previously read the Python script output
 ## Compatibility Layer Plan
 
-- Keep new behavior in Go-native entrypoints and reserve Python only for batches that are not yet migrated.
-- Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
-  - migration scorecards/bundle exporters
-- Remaining Python generators still need native replacements before they can be removed.
+- Keep new behavior in Go-native entrypoints and reserve Python only for automation batches that are not yet migrated outside this benchmark and migration surface.
+- Treat the migration scorecard and bundle exporter flow as complete on the Go CLI path; follow-up batches should focus on unrelated legacy Python generators that still sit outside `bigclawctl automation`.
 
 ## Branch And PR Suggestion
 
@@ -74,4 +74,4 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 
 - `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old Python thread pool.
 - `run-task-smoke --autostart` and `soak-local --autostart` still rely on ephemeral port reservation before `bigclawd` binds, so local port races remain possible.
-- Remaining Python report generators still exist, so automation ownership is split until later migration batches land.
+- Other legacy Python generators still exist elsewhere in the repo, so automation ownership outside this migrated benchmark and migration surface remains split until later batches land.

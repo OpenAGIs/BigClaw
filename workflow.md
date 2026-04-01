@@ -71,6 +71,7 @@ Primary operating mode:
 - Use the local tracker store in `local-issues.json` as the source of truth for planning, state transitions, and completion comments.
 - Use Symphony as the parallel orchestration layer whenever the current project has multiple independent slices that can advance concurrently.
 - Treat `bigclaw-go` as the sole implementation mainline for new development; only touch `src/bigclaw` when migrating a required surface to Go or explicitly freezing a legacy Python path.
+- Treat `go run ./bigclaw-go/cmd/bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle>` as the only supported migration automation surface; do not reference deleted migration helper shims.
 - Prefer 2-4 active child tickets in parallel when the work can be safely decomposed without merge conflicts.
 - Keep at least 2 tickets in `In Progress` whenever the project still has parallel-safe `Todo` slices available.
 - Use `Backlog` rather than `Todo` for standby slices that should not be picked up immediately; Symphony treats `Todo` as runnable work.

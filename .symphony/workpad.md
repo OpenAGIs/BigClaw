@@ -1,31 +1,24 @@
-## Plan
+## BIG-GO-1054
 
-1. Confirm the benchmark helper state under `bigclaw-go/scripts/benchmark/` and enumerate any remaining README / workflow / hook / CI references to removed benchmark Python entrypoints.
-2. Keep benchmark-facing docs and wrappers pointed only at the Go-owned `bigclawctl automation benchmark ...` commands and the retained `run_suite.sh` wrapper.
-3. Run targeted validation for the benchmark Go CLI commands, the benchmark suite wrapper, and benchmark-related `.py` file counts.
-4. Record validation, closeout, and machine-readable status artifacts for `BIG-GO-1051`, then commit and push the lane.
+### Plan
+1. Inspect the current `bigclaw-go` migration command surface and identify any remaining references to deleted Python migration helpers in repo entrypoints.
+2. Update scoped entrypoint references so README / workflow / hooks / CI point to Go-only migration commands where applicable.
+3. Validate the Go replacement commands still build and targeted tests pass, then record exact commands and results.
+4. Commit the scoped changes and push the branch to `origin`.
 
-## Acceptance
+### Acceptance
+- No remaining repo entrypoint references to `bigclaw-go/scripts/migration/*.py`.
+- Migration entrypoints reference Go commands under `bigclaw-go/cmd/bigclawctl` instead of Python helpers.
+- Targeted validation demonstrates the Go migration command surface still works.
+- `.py` file count is lower than before this migration batch or, if the helpers were already deleted in this branch baseline, the remaining scope removes stale Python entrypoint references without reintroducing Python helpers.
 
-- No tracked Python files remain under `bigclaw-go/scripts/benchmark/`.
-- Repository entrypoints do not tell operators to invoke `bigclaw-go/scripts/benchmark/*.py`.
-- Benchmark documentation points at `go run ./cmd/bigclawctl automation benchmark soak-local|run-matrix|capacity-certification` or `scripts/benchmark/run_suite.sh`.
-- Any benchmark-related workflow / hook / CI references in the touched scope use Go entrypoints only.
-- Validation records the exact commands and outcomes for benchmark help commands, the benchmark suite wrapper, and `.py` file counts.
-- Closeout artifacts for `BIG-GO-1051` exist in `reports/`.
-- Changes are committed and pushed on `main`.
-
-## Validation
-
-- `find bigclaw-go/scripts/benchmark -name '*.py' | wc -l`
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./cmd/bigclawctl/...`
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help`
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
-- `cd bigclaw-go && ./scripts/benchmark/run_suite.sh`
-- `rg -n "bigclaw-go/scripts/benchmark/(soak_local|run_matrix|capacity_certification)\.py|scripts/benchmark/.*\.py|soak_local\.py|run_matrix\.py|capacity_certification\.py" .`
-- `python3 -m json.tool reports/BIG-GO-1051-status.json >/dev/null`
-- `git status --short --branch`
-- `git rev-parse HEAD`
-- `git rev-parse origin/main`
+### Validation
+- `find bigclaw-go/scripts -path '*/migration/*.py' -print | sort`
+- `git grep -nE 'bigclaw-go/scripts/migration/.+\\.py' -- README.md workflow.md bigclaw-go/README.md`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression -run 'TestAutomationMigrationHelpSurface|TestMigrationEntryPointsStayGoOnly'`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help`
+- `git diff --stat`

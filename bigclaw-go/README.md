@@ -84,6 +84,9 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 - `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` is the generic submit/poll helper used by all wrappers
 - `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` exports repo-native evidence bundles, latest report copies, and the validation index
 - `go run ./cmd/bigclawctl automation migration shadow-compare ...` compares primary vs shadow BigClaw endpoints
+- `go run ./cmd/bigclawctl automation migration shadow-matrix ...` runs the fixture or corpus-backed parity matrix
+- `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` refreshes the live shadow scorecard
+- `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...` writes the live shadow evidence bundle and index
 - `scripts/benchmark/run_suite.sh` regenerates benchmark evidence
 - Full instructions live in `docs/e2e-validation.md` and `docs/migration-shadow.md`
 

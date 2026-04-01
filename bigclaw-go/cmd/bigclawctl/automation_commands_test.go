@@ -46,6 +46,27 @@ func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
 	}
 }
 
+func TestAutomationMigrationHelpSurface(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		return runAutomation([]string{"migration", "--help"})
+	})
+	if err != nil {
+		t.Fatalf("automation migration help: %v", err)
+	}
+	helpText := string(output)
+	for _, want := range []string{
+		"usage: bigclawctl automation migration <shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle> [flags]",
+		"shadow-compare",
+		"shadow-matrix",
+		"live-shadow-scorecard",
+		"export-live-shadow-bundle",
+	} {
+		if !strings.Contains(helpText, want) {
+			t.Fatalf("automation migration help missing %q: %s", want, helpText)
+		}
+	}
+}
+
 func TestRunAutomationRunTaskSmokeJSONOutput(t *testing.T) {
 	var mu sync.Mutex
 	statusCalls := 0

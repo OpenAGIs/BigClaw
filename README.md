@@ -71,9 +71,12 @@ Notes:
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark capacity-certification ...`,
-  and `go run ./bigclaw-go/cmd/bigclawctl automation migration shadow-compare ...`
-  are the supported automation entrypoints. `bigclaw-go/scripts/benchmark/` is
-  now Go-only and keeps `run_suite.sh` as the retained wrapper; the migration matrix lives in
+  `go run ./bigclaw-go/cmd/bigclawctl automation migration shadow-compare ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation migration shadow-matrix ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation migration live-shadow-scorecard ...`,
+  and `go run ./bigclaw-go/cmd/bigclawctl automation migration export-live-shadow-bundle ...`
+  are the supported automation entrypoints. `bigclaw-go/scripts/benchmark/` and the deleted
+  migration helper shims are now Go-only surfaces; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
