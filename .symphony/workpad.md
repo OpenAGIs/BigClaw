@@ -25,6 +25,59 @@
 
 ## Validation Results
 
+- Tranche: retire the Python package entrypoint and align Go compatibility contracts
+  - Removed Python files:
+    - `src/bigclaw/__main__.py`
+  - Updated files:
+    - `README.md`
+    - `docs/go-mainline-cutover-handoff.md`
+    - `bigclaw-go/cmd/bigclawctl/main_test.go`
+    - `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+    - `bigclaw-go/internal/legacyshim/compilecheck.go`
+    - `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+    - `bigclaw-go/internal/regression/deprecation_contract_test.go`
+- `gofmt -w bigclaw-go/internal/legacyshim/compilecheck.go bigclaw-go/internal/legacyshim/compilecheck_test.go bigclaw-go/cmd/bigclawctl/main_test.go bigclaw-go/internal/regression/deprecation_contract_test.go`
+  - no output
+- `PYTHONPATH=src python3 -m bigclaw --help`
+  - `/Library/Developer/CommandLineTools/usr/bin/python3: No module named bigclaw.__main__; 'bigclaw' is a package and cannot be directly executed`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+  - `{`
+  - `  "files": [`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/bigclaw_github_sync.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/bigclaw_refill_queue.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/bigclaw_workspace_bootstrap.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/symphony_workspace_bootstrap.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/symphony_workspace_validate.py"`
+  - `  ],`
+  - `  "python": "python3",`
+  - `  "repo": "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040",`
+  - `  "status": "ok"`
+  - `}`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/internal/legacyshim	(cached)`
+  - `ok  	bigclaw-go/internal/regression	0.924s`
+  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `10`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `20`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `M README.md`
+  - `M bigclaw-go/cmd/bigclawctl/main_test.go`
+  - `M bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+  - `M bigclaw-go/internal/legacyshim/compilecheck.go`
+  - `M bigclaw-go/internal/legacyshim/compilecheck_test.go`
+  - `M bigclaw-go/internal/regression/deprecation_contract_test.go`
+  - `M docs/go-mainline-cutover-handoff.md`
+  - `D src/bigclaw/__main__.py`
 - Tranche: replace Python runtime matrix test with Go worker matrix coverage
   - Removed Python files:
     - `tests/test_runtime_matrix.py`

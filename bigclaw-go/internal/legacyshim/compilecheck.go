@@ -15,7 +15,6 @@ type runner func(name string, args ...string) ([]byte, error)
 
 func FrozenCompileCheckFiles(repoRoot string) []string {
 	relative := []string{
-		"src/bigclaw/__main__.py",
 		"scripts/ops/bigclaw_github_sync.py",
 		"scripts/ops/bigclaw_refill_queue.py",
 		"scripts/ops/bigclaw_workspace_bootstrap.py",
