@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from bigclaw.models import Task
 from bigclaw.observability import RunCommitLink, TaskRun, bind_run_commits
 
@@ -26,3 +28,35 @@ def test_run_closeout_supports_commit_roles_and_accepted_hash():
     restored = TaskRun.from_dict(run.to_dict())
     assert restored.closeout.accepted_commit_hash == "ccc333"
     assert restored.closeout.run_commit_links[1].role == "candidate"
+
+
+def test_workspace_python_wrappers_are_removed_from_active_entrypoints():
+    repo_root = Path(__file__).resolve().parents[1]
+    deleted_wrappers = [
+        repo_root / "scripts/ops/bigclaw_workspace_bootstrap.py",
+        repo_root / "scripts/ops/symphony_workspace_bootstrap.py",
+        repo_root / "scripts/ops/symphony_workspace_validate.py",
+    ]
+
+    for wrapper in deleted_wrappers:
+        assert not wrapper.exists()
+
+    active_files = [
+        repo_root / "README.md",
+        repo_root / "workflow.md",
+        repo_root / ".github/workflows/ci.yml",
+        repo_root / ".githooks/post-commit",
+        repo_root / ".githooks/post-rewrite",
+    ]
+    deleted_names = {path.name for path in deleted_wrappers}
+
+    for active_file in active_files:
+        content = active_file.read_text()
+        for deleted_name in deleted_names:
+            assert deleted_name not in content
+
+    workflow_content = (repo_root / "workflow.md").read_text()
+    assert "bash \"$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl\" workspace bootstrap" in workflow_content
+
+    ci_content = (repo_root / ".github/workflows/ci.yml").read_text()
+    assert "bash scripts/ops/bigclawctl github-sync --help >/dev/null" in ci_content

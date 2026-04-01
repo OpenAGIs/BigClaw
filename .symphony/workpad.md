@@ -1,21 +1,19 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1059
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+- Inspect current workspace bootstrap entrypoints under `scripts/ops/` and all references from docs, CI, workflows, and hooks.
+- Remove workspace bootstrap Python compatibility wrappers and route callers to the Go or shell bootstrap entrypoints only.
+- Update affected documentation and automation so no bootstrap path points at the deleted Python files.
+- Run targeted validation covering bootstrap entrypoints, references, and Python file-count regression checks.
+- Commit the scoped changes and push the issue branch to the remote.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- `scripts/ops/*workspace*.py` compatibility wrappers targeted by this issue are deleted rather than only documented away.
+- README, workflows, hooks, and CI no longer reference deleted Python workspace bootstrap entrypoints.
+- Workspace bootstrap still resolves through supported Go or shell entrypoints.
+- Repository `.py` count decreases versus the pre-change state.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
+- Use repository search to confirm no remaining references to deleted workspace bootstrap Python files.
+- Run targeted tests for regression coverage related to repo links, orchestration, or bootstrap entrypoints if present.
+- Record exact commands and results in the final report.
