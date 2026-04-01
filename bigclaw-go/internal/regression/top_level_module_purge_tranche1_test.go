@@ -14,7 +14,12 @@ func TestTopLevelModulePurgeTranche1(t *testing.T) {
 		"src/bigclaw/cost_control.py",
 		"src/bigclaw/issue_archive.py",
 		"src/bigclaw/github_sync.py",
+		"src/bigclaw/legacy_shim.py",
 		"scripts/ops/bigclaw_github_sync.py",
+		"scripts/ops/bigclaw_refill_queue.py",
+		"scripts/ops/bigclaw_workspace_bootstrap.py",
+		"scripts/ops/symphony_workspace_bootstrap.py",
+		"scripts/ops/symphony_workspace_validate.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
@@ -26,6 +31,8 @@ func TestTopLevelModulePurgeTranche1(t *testing.T) {
 		"bigclaw-go/internal/costcontrol/controller.go",
 		"bigclaw-go/internal/issuearchive/archive.go",
 		"bigclaw-go/internal/githubsync/sync.go",
+		"bigclaw-go/internal/bootstrap/bootstrap.go",
+		"bigclaw-go/internal/refill/queue.go",
 	}
 	for _, relativePath := range goReplacementFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); err != nil {
