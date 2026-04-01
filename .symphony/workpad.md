@@ -13,6 +13,7 @@ Plan
 - Remove `src/bigclaw/governance.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/deprecation.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/workspace_bootstrap_validation.py` and `src/bigclaw/workspace_bootstrap_cli.py` by moving their compatibility surfaces into synthetic package modules in `src/bigclaw/__init__.py`.
+- Remove `src/bigclaw/audit_events.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Update the Go legacy-shim compile-check so the frozen Python compatibility list follows the surviving package entrypoints after `legacy_shim.py` is deleted.
 - Run targeted tests and inventory checks, then commit and push the scoped branch.
 
@@ -48,6 +49,8 @@ Validation
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/runtime.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py -q`
 - `PYTHONPATH=src python3 -c "import bigclaw.workspace_bootstrap_validation, bigclaw.workspace_bootstrap_cli; print('ok')"`
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py -q`
+- `PYTHONPATH=src python3 -c "import bigclaw.audit_events, bigclaw.observability; print('ok')"`
 
 Results
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `21`
@@ -91,3 +94,8 @@ Results
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	1.261s`
 - `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py -q` -> `9 passed in 3.67s`
 - `PYTHONPATH=src python3 -c "import bigclaw.workspace_bootstrap_validation, bigclaw.workspace_bootstrap_cli; print('ok')"` -> `ok`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` after deleting `audit_events.py` -> `12`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` -> exit 0
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `audit_events.py` -> `ok  	bigclaw-go/internal/regression	(cached)`
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py -q` -> `5 passed, 1 warning in 0.10s`
+- `PYTHONPATH=src python3 -c "import bigclaw.audit_events, bigclaw.observability; print('ok')"` -> `ok`
