@@ -95,3 +95,5 @@
 - `python3 -m bigclaw --help` -> `usage: bigclaw [-h] {serve,repo-sync-audit} ...`
 - `python3 -m bigclaw repo-sync-audit --input <tmp>/audit.json --output <tmp>/report.md` -> rendered repo sync audit markdown successfully
 - Remaining top-level Python files under `src/bigclaw`: `__init__.py` and required package entrypoint `__main__.py`
+- Recursive `src/bigclaw` Python file count: `2`
+- Whole-repo Python file count after this tranche: `52`
