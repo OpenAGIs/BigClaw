@@ -1,27 +1,26 @@
 ## Plan
 
-1. Purge `src/bigclaw/deprecation.py` by moving the retained Python legacy-runtime guidance helpers into `src/bigclaw/runtime.py`.
-2. Keep the `bigclaw.deprecation` import path working by exporting that moved surface from `src/bigclaw/__init__.py` and installing a synthetic compatibility module there.
-3. Repoint retained Python callers in `__main__.py` and `runtime.py` to the runtime-owned deprecation surface.
-4. Add tranche 17 Go regression coverage proving the deleted Python file is gone and the Go deprecation replacement files exist.
-5. Run focused Python and Go validation plus the repository Python file count check.
-6. Commit with the deleted Python file and added Go test file explicitly listed, then push to `origin/BIG-GO-1041`.
+1. Delete `src/bigclaw/run_detail.py` by moving its retained dataclasses and HTML rendering helpers into `src/bigclaw/reports.py`.
+2. Repoint retained Python callers in `src/bigclaw/evaluation.py` and package compatibility wiring in `src/bigclaw/__init__.py` so the deleted module path is no longer required.
+3. Add a tranche-specific Go regression test proving `src/bigclaw/run_detail.py` is absent and its Go replacement files remain present.
+4. Run focused Python and Go validation plus the repository Python file count check.
+5. Commit the scoped changes with the deleted Python file and added Go test file called out explicitly, then push to `origin/BIG-GO-1041`.
 
 ## Acceptance
 
-- `src/bigclaw/deprecation.py` is deleted.
-- `src/bigclaw/runtime.py` provides the retained Python deprecation surface previously owned by `deprecation.py`.
-- `src/bigclaw/__init__.py` no longer imports from `src/bigclaw/deprecation.py`, and `import bigclaw.deprecation` still resolves through package compatibility wiring.
-- Retained Python callers use the runtime-owned deprecation surface.
-- `bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go` asserts the Python deletion and Go replacement files.
-- `find . -name '*.py' | wc -l` decreases from the current baseline of `42`.
+- `src/bigclaw/run_detail.py` is deleted.
+- `src/bigclaw/reports.py` owns the `RunDetail*` dataclasses plus `render_run_detail_console`, `render_resource_grid`, and `render_timeline_panel`.
+- `src/bigclaw/evaluation.py` and `src/bigclaw/__init__.py` no longer import from `src/bigclaw/run_detail.py`.
+- `bigclaw.run_detail` continues to resolve through package compatibility wiring if imported.
+- `bigclaw-go/internal/regression/top_level_module_purge_tranche18_test.go` asserts the deleted Python file and replacement Go files.
+- `find . -name '*.py' | wc -l` drops below the current baseline of `41`.
 - Focused Python and Go tests pass.
-- Changes are committed and pushed to `origin/BIG-GO-1041`.
+- The branch is committed and pushed to `origin/BIG-GO-1041`.
 
 ## Validation
 
 - `find . -name '*.py' | wc -l`
-- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_rollout.py -q`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17)'`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_evaluation.py -q`
+- `cd bigclaw-go && go test ./internal/product ./internal/regression -run 'TestDashboardRunContractAuditFlagsMissingRequiredFields|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18)'`
 - `git status --short`
 - `git log -1 --stat`

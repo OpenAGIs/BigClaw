@@ -135,6 +135,23 @@ _install_surface_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
 
+from . import reports as _reports_surface
+
+_install_surface_module(
+    "run_detail",
+    [
+        "RunDetailEvent",
+        "RunDetailResource",
+        "RunDetailStat",
+        "RunDetailTab",
+        "render_resource_grid",
+        "render_run_detail_console",
+        "render_timeline_panel",
+    ],
+    _reports_surface,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/dashboard_run_contract.go",
+)
+
 from .runtime import (
     AcceptanceDecision,
     AcceptanceGate,
