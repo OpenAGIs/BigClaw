@@ -25,6 +25,32 @@
 
 ## Validation Results
 
+- Tranche: delete orphaned Python surface, contract, and bootstrap modules
+  - Removed Python files:
+    - `src/bigclaw/execution_contract.py`
+    - `src/bigclaw/mapping.py`
+    - `src/bigclaw/pilot.py`
+    - `src/bigclaw/saved_views.py`
+    - `src/bigclaw/workspace_bootstrap.py`
+  - Updated Python files:
+    - `src/bigclaw/__init__.py`
+- `cd bigclaw-go && go test ./internal/product ./internal/contract ./internal/intake ./internal/api ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/internal/product	(cached)`
+  - `ok  	bigclaw-go/internal/contract	0.889s`
+  - `ok  	bigclaw-go/internal/intake	1.339s`
+  - `ok  	bigclaw-go/internal/api	(cached)`
+  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `22`
+- `find . -name '*.py' | sort | wc -l`
+  - `38`
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/execution_contract.py`
+  - `D src/bigclaw/mapping.py`
+  - `D src/bigclaw/pilot.py`
+  - `D src/bigclaw/saved_views.py`
+  - `D src/bigclaw/workspace_bootstrap.py`
 - Tranche: delete orphaned Python operator glue modules
   - Removed Python files:
     - `src/bigclaw/github_sync.py`
