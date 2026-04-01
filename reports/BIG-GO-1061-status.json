@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1061",
+    "title": "src/bigclaw runtime/orchestration residual sweep",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "big-go-1061-residual-sweep",
+    "latest_code_migration_commit": "78f957908a6415f7d87ad8f84a670f9ad3d2fc7b"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1061-closeout.md",
+    "validation_report": "reports/BIG-GO-1061-validation.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw"
+  },
+  "validation": {
+    "commands": [
+      "PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py tests/test_design_system.py tests/test_console_ia.py -q",
+      "cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl -count=1",
+      "cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14 -count=1",
+      "bash scripts/ops/bigclawctl legacy-python compile-check --json",
+      "bash scripts/ops/bigclawctl github-sync status --json",
+      "find . -name '*.py' | wc -l",
+      "rg --files src/bigclaw | rg '\\.py$' | wc -l"
+    ],
+    "results": {
+      "python_tests": "76 passed in 0.28s",
+      "go_tests": "ok bigclaw-go/internal/legacyshim 1.316s; ok bigclaw-go/internal/regression 1.569s; ok bigclaw-go/cmd/bigclawctl 4.678s",
+      "purge_regression": "ok bigclaw-go/internal/regression 1.893s",
+      "legacy_python_compile_check": "status ok for src/bigclaw/__init__.py, src/bigclaw/legacy_shim.py, and src/bigclaw/runtime.py",
+      "github_sync_status": "branch big-go-1061-residual-sweep synced true with local and remote sha 78f957908a6415f7d87ad8f84a670f9ad3d2fc7b",
+      "repo_python_count": "38",
+      "src_bigclaw_python_count": "11",
+      "lane_python_delta": "repo 40->38 (-2), src/bigclaw 13->11 (-2)"
+    }
+  },
+  "blocker": {
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1061."
+  },
+  "notes": [
+    "This lane only covered the residual package-entry Python assets still physically present from the suggested src/bigclaw tranche in this checkout.",
+    "Remaining Python files under src/bigclaw are retained migration-only compatibility surfaces outside this lane's deleted package-entry modules."
+  ]
+}
