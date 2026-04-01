@@ -17,12 +17,15 @@
    - `src/bigclaw/pilot.py`
    - `src/bigclaw/dashboard_run_contract.py`
    - `src/bigclaw/saved_views.py`
-5. Remove any package exports or Python tests that still point at deleted Python modules.
-6. Add focused Go regression tests that assert the migration contract for each tranche:
+5. Purge the next low-coupling top-level contract/intake tranche:
+   - `src/bigclaw/mapping.py`
+   - `src/bigclaw/execution_contract.py`
+6. Remove any package exports or Python tests that still point at deleted Python modules.
+7. Add focused Go regression tests that assert the migration contract for each tranche:
    - the deleted Python files are absent
    - the corresponding Go replacement files exist
-7. Run targeted validation for the touched Go packages and the new regression tests.
-8. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
+8. Run targeted validation for the touched Go packages and the new regression tests.
+9. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
 
 ## Acceptance
 
@@ -31,6 +34,7 @@
 - `src/bigclaw/repo_board.py`, `src/bigclaw/repo_commits.py`, `src/bigclaw/repo_gateway.py`, `src/bigclaw/repo_governance.py`, `src/bigclaw/repo_registry.py`, and `src/bigclaw/repo_triage.py` are deleted.
 - `src/bigclaw/workspace_bootstrap_validation.py` is deleted.
 - `src/bigclaw/pilot.py`, `src/bigclaw/dashboard_run_contract.py`, and `src/bigclaw/saved_views.py` are deleted.
+- `src/bigclaw/mapping.py` and `src/bigclaw/execution_contract.py` are deleted.
 - `src/bigclaw/__init__.py` and retained Python tests no longer import deleted modules.
 - Go regression tests cover the tranche replacement contracts against the repository tree.
 - Targeted Go tests pass.
@@ -39,6 +43,6 @@
 ## Validation
 
 - `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/costcontrol ./internal/issuearchive ./internal/githubsync ./internal/repo ./internal/bootstrap ./internal/pilot ./internal/product ./internal/regression -run 'TestTopLevelModulePurgeTranche(1|2|3|4)|TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestNormalizeGatewayPayloadsAndErrors|TestRecommendTriageAction|TestBuildValidationReportSummaries|TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestBuildDefaultDashboardRunContractIsReleaseReady|TestBuildSavedViewCatalogAddsScopedViewsAndDigests'`
+- `cd bigclaw-go && go test ./internal/costcontrol ./internal/issuearchive ./internal/githubsync ./internal/repo ./internal/bootstrap ./internal/pilot ./internal/product ./internal/intake ./internal/contract ./internal/regression -run 'TestTopLevelModulePurgeTranche(1|2|3|4|5)|TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestNormalizeGatewayPayloadsAndErrors|TestRecommendTriageAction|TestBuildValidationReportSummaries|TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestBuildDefaultDashboardRunContractIsReleaseReady|TestBuildSavedViewCatalogAddsScopedViewsAndDigests|TestExecutionContractAuditAcceptsWellFormedContract|TestAssessmentJSONEmitsPythonContractDefaults|TestMapSourceIssueToTaskSetsDefaultsAndMetadata'`
 - `git status --short`
 - `git log -1 --stat`

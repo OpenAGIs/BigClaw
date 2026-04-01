@@ -185,7 +185,6 @@ from .governance import (
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -206,22 +205,6 @@ from .event_bus import (
     EventBus,
 )
 from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
-from .execution_contract import (
-    AuditPolicy,
-    build_operations_api_contract,
-    ExecutionApiSpec,
-    ExecutionContract,
-    ExecutionContractAudit,
-    ExecutionContractLibrary,
-    ExecutionField,
-    ExecutionModel,
-    ExecutionPermission,
-    ExecutionPermissionMatrix,
-    ExecutionRole,
-    MetricDefinition,
-    PermissionCheckResult,
-    render_execution_contract_report,
-)
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
@@ -494,7 +477,6 @@ __all__ = [
     "build_collaboration_thread_from_audits",
     "WorkflowDefinition",
     "WorkflowStep",
-    "map_source_issue_to_task",
     "EpicMilestone",
     "ExecutionPackRoadmap",
     "build_execution_pack_roadmap",
@@ -532,20 +514,6 @@ __all__ = [
     "ToolPolicy",
     "ToolRuntime",
     "WorkerExecutionResult",
-    "AuditPolicy",
-    "ExecutionApiSpec",
-    "ExecutionContract",
-    "ExecutionContractAudit",
-    "ExecutionContractLibrary",
-    "ExecutionField",
-    "ExecutionModel",
-    "ExecutionPermission",
-    "ExecutionPermissionMatrix",
-    "ExecutionRole",
-    "MetricDefinition",
-    "PermissionCheckResult",
-    "render_execution_contract_report",
-    "build_operations_api_contract",
     "AutoTriageCenter",
     "ConsoleAction",
     "BillingEntitlementsPage",
