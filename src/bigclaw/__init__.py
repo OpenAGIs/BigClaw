@@ -24,15 +24,25 @@ from .models import (
     UsageRecord,
 )
 from . import runtime as _legacy_runtime_surface
+from . import planning as _planning_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_surface_module(
+    name: str,
+    export_names: list[str],
+    source_module: object,
+    **extra_attrs: object,
+) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
+
+
+def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+    _install_surface_module(name, export_names, _legacy_runtime_surface, **extra_attrs)
 
 
 _install_legacy_surface_module(
@@ -83,6 +93,19 @@ _install_legacy_surface_module(
         "service.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+)
+_install_surface_module(
+    "governance",
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+    ],
+    _planning_surface,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
 )
 
 from .runtime import (
@@ -177,7 +200,7 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .governance import (
+from .planning import (
     FreezeException,
     GovernanceBacklogItem,
     ScopeFreezeAudit,
@@ -319,6 +342,11 @@ from .planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -326,6 +354,7 @@ from .planning import (
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+    render_scope_freeze_report,
 )
 from .ui_review import (
     InteractionFlow,
