@@ -2,11 +2,13 @@
 
 ## Plan
 
-1. Inventory remaining `tests/*.py` files and identify the tranche with clear Go-native replacements already present in `bigclaw-go/`.
-2. Add or extend targeted Go tests where Python coverage still lacks a direct Go home but the production contract already exists in Go.
-3. Delete the replaced Python test files and remove `tests/conftest.py` if no remaining Python tests require it.
-4. Run targeted Go validation for the touched packages and record exact commands and results.
-5. Commit the scoped migration changes and push the branch to the remote.
+1. Delete the repo-surface and risk Python tests that already have direct Go replacements:
+   `tests/test_repo_governance.py`, `tests/test_repo_board.py`, `tests/test_repo_triage.py`,
+   `tests/test_repo_links.py`, `tests/test_repo_registry.py`, `tests/test_repo_gateway.py`,
+   `tests/test_risk.py`, and `tests/test_dsl.py`.
+2. Extend `bigclaw-go/internal/repo/repo_surfaces_test.go` with the missing registry JSON round-trip coverage that replaces the remaining Python-only round-trip assertion.
+3. Run targeted Go validation for `./internal/repo`, `./internal/risk`, and `./internal/workflow`, plus repo-level file-count checks.
+4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
 
@@ -18,13 +20,19 @@
 
 ## Validation
 
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- Targeted `go test` commands for each touched Go package
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+- `cd bigclaw-go && go test ./internal/repo ./internal/risk ./internal/workflow`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
+- `cd bigclaw-go && go test ./internal/repo ./internal/risk ./internal/workflow`
+  - `ok  	bigclaw-go/internal/repo	1.151s`
+  - `ok  	bigclaw-go/internal/risk	2.022s`
+  - `ok  	bigclaw-go/internal/workflow	1.574s`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `23`
 - `cd bigclaw-go && go test ./internal/bootstrap`
   - `ok  	bigclaw-go/internal/bootstrap	4.862s`
 - `cd bigclaw-go && go test ./internal/product`
