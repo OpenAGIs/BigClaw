@@ -484,6 +484,9 @@ Python source:
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:
+
+- Follow-up cleanup retired `src/bigclaw/console_ia.py`; the active console
+  surface now relies on Go-owned product contracts and tests.
 - `bigclaw-go/internal/product/console.go`
 - `bigclaw-go/internal/api/v2.go`
 - `bigclaw-go/internal/api/server.go`
