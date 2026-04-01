@@ -22,7 +22,7 @@
 ## Validation
 - Inventory: `find src -type f \( -name "*.py" -o -name "*.pyi" \) | wc -l`
 - Python compatibility checks:
-  - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py tests/test_repo_rollout.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_control_center.py tests/test_operations.py tests/test_evaluation.py -q`
+  - `PYTHONPATH=src python3 -m pytest tests/test_legacy_surface_imports.py tests/test_planning.py tests/test_reports.py tests/test_observability.py tests/test_repo_rollout.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_control_center.py tests/test_operations.py tests/test_evaluation.py -q`
 - Go regression:
   - `cd bigclaw-go && go test ./internal/regression -run TestPythonResidualSweepKeepsTargetedModulesPurged -count=1`
 - Reference sweep:
@@ -31,10 +31,10 @@
 ## Results
 - `python3 - <<'PY'`
   - `import bigclaw.reports` resolved to `src/bigclaw/_legacy/reports.legacy`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py tests/test_repo_rollout.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_control_center.py tests/test_operations.py tests/test_evaluation.py -q`
-  - `93 passed in 0.17s`
+- `PYTHONPATH=src python3 -m pytest tests/test_legacy_surface_imports.py tests/test_planning.py tests/test_reports.py tests/test_observability.py tests/test_repo_rollout.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_control_center.py tests/test_operations.py tests/test_evaluation.py -q`
+  - `95 passed in 0.16s`
 - `cd bigclaw-go && go test ./internal/regression -run TestPythonResidualSweepKeepsTargetedModulesPurged -count=1`
-  - `ok  	bigclaw-go/internal/regression	0.750s`
+  - `ok  	bigclaw-go/internal/regression	1.349s`
 - `find src -type f \( -name "*.py" -o -name "*.pyi" \) | wc -l`
   - `14`
 
