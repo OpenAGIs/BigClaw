@@ -1,21 +1,20 @@
-# BIG-GO-1075 Workpad
+# BIG-GO-1079 Workpad
 
 ## Plan
-- Confirm the live git-hook execution path for GitHub sync and identify any remaining non-Go default hop in the hook/install flow.
-- Move `.githooks/post-commit` and `.githooks/post-rewrite` to invoke the Go github-sync entrypoint directly from `bigclaw-go/cmd/bigclawctl`.
-- Teach the Go github-sync installer to materialize the canonical hook scripts so the repo-default and regenerated hooks stay aligned on the same Go-only path.
-- Add regression coverage for hook installation/content so the Python-era or wrapper-era hook path does not come back.
-- Run targeted validation, capture exact commands/results, then commit and push the branch.
+- Confirm the remaining live Python entry surface under `src/bigclaw` and keep the change scoped to an actual executable path rather than passive docs.
+- Remove `src/bigclaw/__main__.py` so `python -m bigclaw` no longer exists as a default Python entrypoint.
+- Update the Go-owned legacy compile-check and regression coverage so the frozen compatibility surface no longer expects the deleted Python entry file.
+- Run targeted validation that proves the Python file count dropped, the deleted entrypoint is absent, and the remaining Go-owned validation path still passes.
+- Commit the scoped change and push the branch.
 
 ## Acceptance
-- `.githooks/post-commit` and `.githooks/post-rewrite` no longer depend on a Python sync path or on `scripts/ops/bigclawctl` as their default execution hop.
-- `bigclawctl github-sync install` writes or refreshes those hook scripts with the canonical Go-only content.
-- Regression tests pin the generated hook content and install behavior.
-- Validation proves the Go-only hook path works and records the exact commands/results.
+- `src/bigclaw/__main__.py` is deleted from the repo.
+- The Go compile-check path no longer references `src/bigclaw/__main__.py`.
+- Regression coverage pins the removed top-level module so the Python CLI entrypoint cannot return unnoticed.
+- Validation records an actual decrease in repository `.py` count and confirms the remaining Go-owned checks still pass.
 
 ## Validation
 - `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/githubsync ./cmd/bigclawctl`
-- `bash .githooks/post-commit`
-- `bash .githooks/post-rewrite`
-- `bash scripts/ops/bigclawctl github-sync status --json`
+- `test ! -f src/bigclaw/__main__.py`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
