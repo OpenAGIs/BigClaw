@@ -17,6 +17,7 @@
 - Fold the standalone `tests/test_planning.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file now that the planning compatibility surface is owned by `reports.py`.
 - Fold the standalone `tests/test_audit_events.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file while keeping canonical audit-event, scheduler, workflow, and ledger-backed report coverage intact.
 - Fold the standalone `tests/test_operations.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file while keeping operations analytics, replay, dashboard, and bundle coverage intact.
+- Fold the standalone `tests/test_design_system.py` coverage into `tests/test_ui_review.py` and delete the extra physical Python test file while keeping design-system, console IA, and UI review coverage intact.
 - Fold the standalone `tests/test_runtime_matrix.py` coverage into `tests/test_audit_events.py` and delete the extra physical Python test file while keeping runtime, scheduler, and audit-chain coverage intact.
 - Fold the standalone `tests/test_observability.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file while keeping task-run, closeout, repo-sync, and detail-page coverage intact.
 - Fold the standalone `tests/test_planning.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file now that the planning compatibility surface is owned by `reports.py`.
@@ -250,3 +251,6 @@
 - Folded the standalone `tests/test_operations.py` coverage into `tests/test_reports.py` and deleted the extra physical Python test file while keeping operations analytics, replay, dashboard, and bundle coverage intact.
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `90 passed in 0.22s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 11`; `go 286`; `pkg 0`
+- Folded the standalone `tests/test_design_system.py` coverage into `tests/test_ui_review.py` and deleted the extra physical Python test file while keeping design-system, console-IA, console-interaction, and UI-review coverage intact.
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q` -> `51 passed in 0.23s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 10`; `go 286`; `pkg 0`

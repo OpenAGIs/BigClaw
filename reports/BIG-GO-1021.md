@@ -218,10 +218,16 @@
   [test_reports.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_reports.py)
   and deleted the extra Python test file while keeping operations analytics,
   replay, dashboard, and bundle coverage intact.
+- Folded the standalone
+  [test_design_system.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_design_system.py)
+  coverage into
+  [test_ui_review.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_ui_review.py)
+  and deleted the extra Python test file while keeping design-system,
+  console-IA, console-interaction, and UI-review coverage intact.
 
 ## File-count impact
 
-- `.py`: `50 -> 11`
+- `.py`: `50 -> 10`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -287,6 +293,7 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -336,6 +343,8 @@
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 12`; `go 286`; `pkg 0`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `90 passed in 0.22s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 11`; `go 286`; `pkg 0`
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q` -> `51 passed in 0.23s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 10`; `go 286`; `pkg 0`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk
