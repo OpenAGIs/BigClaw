@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"bigclaw-go/internal/collaboration"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/regression"
 	"github.com/pmezard/go-difflib/difflib"
@@ -124,9 +125,14 @@ type SharedViewFilter struct {
 }
 
 type SharedViewContext struct {
-	Filters      []SharedViewFilter `json:"filters,omitempty"`
-	ResultCount  int                `json:"result_count"`
-	EmptyMessage string             `json:"empty_message,omitempty"`
+	Filters       []SharedViewFilter    `json:"filters,omitempty"`
+	ResultCount   int                   `json:"result_count"`
+	Loading       bool                  `json:"loading,omitempty"`
+	Errors        []string              `json:"errors,omitempty"`
+	PartialData   []string              `json:"partial_data,omitempty"`
+	EmptyMessage  string                `json:"empty_message,omitempty"`
+	LastUpdated   string                `json:"last_updated,omitempty"`
+	Collaboration *collaboration.Thread `json:"collaboration,omitempty"`
 }
 
 type EngineeringOverviewPermission struct {

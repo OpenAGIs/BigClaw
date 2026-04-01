@@ -7,7 +7,7 @@ func TestBuildCollaborationThreadCountsMentionsAcrossCommentsAndDecisions(t *tes
 		"dashboard",
 		"ops-overview",
 		[]Comment{{CommentID: "c1", Author: "pm", Body: "Please review with @ops and @eng."}},
-		[]Decision{{DecisionID: "d1", Author: "ops", Outcome: "approved", Summary: "Keep @pm posted.", RecordedAt: "Follow up with @design."}},
+		[]Decision{{DecisionID: "d1", Author: "ops", Outcome: "approved", Summary: "Keep @pm posted.", FollowUp: "Follow up with @design."}},
 	)
 
 	if thread.Surface != "dashboard" || thread.TargetID != "ops-overview" {
@@ -52,7 +52,7 @@ func TestBuildCollaborationThreadFromAuditsBuildsCommentAndDecisionRecords(t *te
 	if thread.Comments[0].CommentID != "flow-comment-1" || thread.Comments[0].CreatedAt != "handoff-lane" {
 		t.Fatalf("unexpected comment mapping: %+v", thread.Comments[0])
 	}
-	if thread.Decisions[0].DecisionID != "flow-decision-1" || thread.Decisions[0].RecordedAt != "Notify @ops after deploy." {
+	if thread.Decisions[0].DecisionID != "flow-decision-1" || thread.Decisions[0].RecordedAt != "" || thread.Decisions[0].FollowUp != "Notify @ops after deploy." {
 		t.Fatalf("unexpected decision mapping: %+v", thread.Decisions[0])
 	}
 	if thread.MentionCount != 2 {
