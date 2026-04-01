@@ -34,7 +34,7 @@
     },
     "service": {
       "go_mainline_replacement": "bigclaw-go/cmd/bigclawd/main.go",
-      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; service.py remains migration-only compatibility scaffolding."
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy Python service surface has been removed."
     }
   }
 }

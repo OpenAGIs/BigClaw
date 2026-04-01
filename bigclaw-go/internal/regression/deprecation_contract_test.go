@@ -69,5 +69,8 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 		if !strings.Contains(got.LegacyMainlineStatus, "sole implementation mainline") {
 			t.Fatalf("module %s legacy status missing mainline guidance: %+v", module, got)
 		}
+		if module == "service" && !strings.Contains(got.LegacyMainlineStatus, "removed") {
+			t.Fatalf("service legacy status should record removal, got %+v", got)
+		}
 	}
 }

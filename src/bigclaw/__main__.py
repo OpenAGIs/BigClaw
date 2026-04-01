@@ -12,7 +12,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="bigclaw", description="BigClaw developer utilities")
     sub = parser.add_subparsers(dest="command")
 
-    serve = sub.add_parser("serve", help="Run legacy migration-only static web server")
+    serve = sub.add_parser("serve", help="Removed legacy static web server entrypoint")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8008)
     serve.add_argument("--dir", default="reports")
