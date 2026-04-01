@@ -2,7 +2,8 @@
 
 ## Scope
 - Residual sweep for `src/bigclaw` Python assets in the issue's suggested tranche.
-- Current physical targets present in this checkout: `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/design_system.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/governance.py`.
+- Current physical targets handled across this checkout: initially present were `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/design_system.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/governance.py`.
+- Current residual physical targets still present after this tranche: `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/design_system.py`.
 - Missing from the suggested list in the current checkout and therefore out of edit scope unless encountered indirectly: `connectors.py`, `cost_control.py`, `dashboard_run_contract.py`, `dsl.py`, `event_bus.py`, `execution_contract.py`, `github_sync.py`.
 
 ## Plan
@@ -21,11 +22,13 @@
 
 ## Validation
 - `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py -q`
 - `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)`
 - `find . -name '*.py' | wc -l`
 - `git status --short`
 
 ## Validation Results
 - `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py -q` -> `30 passed in 0.11s`
-- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	0.419s`, `ok  	bigclaw-go/internal/events	0.924s`, `ok  	bigclaw-go/internal/regression	1.126s`
-- `find . -name '*.py' | wc -l` -> `43` (pre-change baseline: `45`, net `-2`)
+- `PYTHONPATH=src python3 -m pytest tests/test_top_level_module_shims.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_planning.py tests/test_evaluation.py tests/test_operations.py -q` -> `50 passed in 0.12s`
+- `(cd bigclaw-go && go test ./internal/governance ./internal/events ./internal/regression -count=1)` -> `ok  	bigclaw-go/internal/governance	0.427s`, `ok  	bigclaw-go/internal/events	1.464s`, `ok  	bigclaw-go/internal/regression	0.811s`
+- `find . -name '*.py' | wc -l` -> `42` (pre-change baseline: `45`, net `-3`)
