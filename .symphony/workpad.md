@@ -10,6 +10,7 @@ Plan
 - Remove `src/bigclaw/repo_plane.py` and `src/bigclaw/repo_links.py` by keeping a minimal compatibility surface in `src/bigclaw/__init__.py` while pointing canonical ownership at `bigclaw-go/internal/repo/{plane,links}.go`.
 - Remove `src/bigclaw/github_sync.py` and `src/bigclaw/parallel_refill.py` while preserving legacy Python imports via synthetic package modules in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/legacy_shim.py` and `src/bigclaw/risk.py` by moving their compatibility surfaces into synthetic package modules in `src/bigclaw/__init__.py`.
+- Remove `src/bigclaw/governance.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Update the Go legacy-shim compile-check so the frozen Python compatibility list follows the surviving package entrypoints after `legacy_shim.py` is deleted.
 - Run targeted tests and inventory checks, then commit and push the scoped branch.
 
@@ -40,6 +41,7 @@ Validation
 - `PYTHONPATH=src python3 -m pytest tests/test_risk.py -q`
 - `python3 scripts/ops/bigclaw_github_sync.py --help`
 - `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `PYTHONPATH=src python3 -m pytest tests/test_governance.py tests/test_planning.py -q`
 
 Results
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `21`
@@ -64,3 +66,8 @@ Results
 - `python3 scripts/ops/bigclaw_github_sync.py --help` -> `usage: bigclawctl github-sync <install|status|sync> [flags]`
 - `python3 scripts/ops/symphony_workspace_validate.py --help` -> `usage: bigclawctl workspace validate [flags]`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py scripts/ops/bigclaw_github_sync.py scripts/ops/symphony_workspace_validate.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py` -> exit 0
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` after deleting `governance.py` -> `18`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` -> exit 0
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	0.822s`
+- `PYTHONPATH=src python3 -m pytest tests/test_governance.py tests/test_planning.py -q` -> `18 passed in 0.08s`
+- `PYTHONPATH=src python3 -c "import bigclaw.governance, bigclaw.planning; print('ok')"` -> `ok`

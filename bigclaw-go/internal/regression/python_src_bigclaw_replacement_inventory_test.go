@@ -29,6 +29,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/repo_gateway.py",
 		"src/bigclaw/repo_governance.py",
 		"src/bigclaw/github_sync.py",
+		"src/bigclaw/governance.py",
 		"src/bigclaw/repo_links.py",
 		"src/bigclaw/repo_plane.py",
 		"src/bigclaw/repo_registry.py",
