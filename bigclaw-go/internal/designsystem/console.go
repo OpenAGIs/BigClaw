@@ -10,10 +10,11 @@ type CommandAction struct {
 }
 
 type ConsoleCommandEntry struct {
-	TriggerLabel string          `json:"trigger_label"`
-	Placeholder  string          `json:"placeholder"`
-	Shortcut     string          `json:"shortcut,omitempty"`
-	Commands     []CommandAction `json:"commands,omitempty"`
+	TriggerLabel         string          `json:"trigger_label"`
+	Placeholder          string          `json:"placeholder"`
+	Shortcut             string          `json:"shortcut,omitempty"`
+	RecentQueriesEnabled bool            `json:"recent_queries_enabled,omitempty"`
+	Commands             []CommandAction `json:"commands,omitempty"`
 }
 
 type ConsoleTopBar struct {
@@ -28,9 +29,13 @@ type ConsoleTopBar struct {
 }
 
 type ConsoleTopBarAudit struct {
-	Name                string   `json:"name"`
-	MissingCapabilities []string `json:"missing_capabilities,omitempty"`
-	ReleaseReady        bool     `json:"release_ready"`
+	Name                     string   `json:"name"`
+	MissingCapabilities      []string `json:"missing_capabilities,omitempty"`
+	DocumentationComplete    bool     `json:"documentation_complete"`
+	AccessibilityComplete    bool     `json:"accessibility_complete"`
+	CommandShortcutSupported bool     `json:"command_shortcut_supported"`
+	CommandCount             int      `json:"command_count"`
+	ReleaseReady             bool     `json:"release_ready"`
 }
 
 type ConsoleTopBarAuditor struct{}
@@ -55,11 +60,17 @@ func (ConsoleTopBarAuditor) Audit(topBar ConsoleTopBar) ConsoleTopBarAudit {
 		missing = append(missing, "command-shell")
 	}
 	requiredA11y := []string{"keyboard-navigation", "screen-reader-label", "focus-visible"}
-	releaseReady := topBar.DocumentationComplete && len(missing) == 0 && hasAll(topBar.AccessibilityRequirements, requiredA11y)
+	accessibilityComplete := hasAll(topBar.AccessibilityRequirements, requiredA11y)
+	commandShortcutSupported := strings.Contains(topBar.CommandEntry.Shortcut, "Cmd+K") && strings.Contains(topBar.CommandEntry.Shortcut, "Ctrl+K")
+	releaseReady := topBar.DocumentationComplete && len(missing) == 0 && accessibilityComplete && commandShortcutSupported
 	return ConsoleTopBarAudit{
-		Name:                topBar.Name,
-		MissingCapabilities: missing,
-		ReleaseReady:        releaseReady,
+		Name:                     topBar.Name,
+		MissingCapabilities:      missing,
+		DocumentationComplete:    topBar.DocumentationComplete,
+		AccessibilityComplete:    accessibilityComplete,
+		CommandShortcutSupported: commandShortcutSupported,
+		CommandCount:             len(topBar.CommandEntry.Commands),
+		ReleaseReady:             releaseReady,
 	}
 }
 

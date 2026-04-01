@@ -2,14 +2,12 @@
 
 ## Plan
 
-1. Add Go-native `designsystem` and `consoleia` packages to cover the behavior from
-   `tests/test_console_ia.py`, including console IA manifests, top-bar auditing, interaction-draft
-   auditing, static BIG-4203 draft construction, and report rendering, then delete that Python
-   test.
-2. Keep the shared design-system types limited to the console IA tranche so future remaining UI
-   migrations can build on them without widening this diff unnecessarily.
-3. Run targeted Go validation for `./internal/designsystem` and `./internal/consoleia`, plus
-   repo-level file-count checks.
+1. Extend `internal/designsystem` to cover the behavior from `tests/test_design_system.py`,
+   including component-library auditing, console top-bar auditing, information-architecture
+   auditing, UI-acceptance auditing, and the corresponding reports, then delete that Python test.
+2. Preserve compatibility with the newly added console IA tranche while expanding the shared
+   design-system package rather than creating another overlapping UI package.
+3. Run targeted Go validation for `./internal/designsystem`, plus repo-level file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
@@ -23,16 +21,15 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/designsystem ./internal/consoleia`
+- `cd bigclaw-go && go test ./internal/designsystem`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - Result: `5`
-- `cd bigclaw-go && go test ./internal/designsystem ./internal/consoleia`
+  - Result: `4`
+- `cd bigclaw-go && go test ./internal/designsystem`
   - Result:
-    - `ok  	bigclaw-go/internal/designsystem	0.414s`
-    - `ok  	bigclaw-go/internal/consoleia	0.838s`
+    - `ok  	bigclaw-go/internal/designsystem	0.471s`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - Result: no output
