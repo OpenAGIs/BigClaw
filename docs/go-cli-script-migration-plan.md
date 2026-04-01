@@ -26,7 +26,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 ### `bigclaw-go/scripts/*` first automation batch
 
 - `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `bigclawctl automation e2e run-task-smoke`
-- `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
+- retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
 
 The remaining compatibility layer is intentionally thin:
@@ -97,6 +97,8 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
 
 ## Regression Surface

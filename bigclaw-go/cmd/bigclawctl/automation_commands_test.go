@@ -12,6 +12,40 @@ import (
 	"time"
 )
 
+func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	goRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	benchmarkDir := filepath.Join(goRoot, "scripts", "benchmark")
+	entries, err := os.ReadDir(benchmarkDir)
+	if err != nil {
+		t.Fatalf("read benchmark script directory: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatalf("expected benchmark wrapper files in %s", benchmarkDir)
+	}
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".py") {
+			t.Fatalf("benchmark directory must not contain Python helpers: %s", entry.Name())
+		}
+	}
+	body, err := os.ReadFile(filepath.Join(benchmarkDir, "run_suite.sh"))
+	if err != nil {
+		t.Fatalf("read benchmark wrapper: %v", err)
+	}
+	wrapper := string(body)
+	for _, want := range []string{
+		"go test -bench . ./internal/queue ./internal/scheduler",
+		"go run ./cmd/bigclawctl automation benchmark run-matrix",
+	} {
+		if !strings.Contains(wrapper, want) {
+			t.Fatalf("benchmark wrapper missing %q: %s", want, wrapper)
+		}
+	}
+}
+
 func TestRunAutomationRunTaskSmokeJSONOutput(t *testing.T) {
 	var mu sync.Mutex
 	statusCalls := 0

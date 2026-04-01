@@ -4,7 +4,12 @@ Issue: `BIG-GO-902`
 
 ## Implemented In This Slice
 
-| Legacy script | Go CLI replacement | Status |
+`bigclaw-go/scripts/benchmark/` is now a Go-only operator surface. The removed
+Python benchmark helpers remain listed below only as historical migration
+records; the supported entrypoints are `bigclawctl automation benchmark ...`
+and the retained `scripts/benchmark/run_suite.sh` wrapper.
+
+| Retired script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/e2e/export_validation_bundle.py` | `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` | migrated and Python shim removed |
