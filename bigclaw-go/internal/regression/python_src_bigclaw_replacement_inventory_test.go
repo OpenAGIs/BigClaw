@@ -40,6 +40,8 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/roadmap.py",
 		"src/bigclaw/saved_views.py",
 		"src/bigclaw/validation_policy.py",
+		"src/bigclaw/workspace_bootstrap_cli.py",
+		"src/bigclaw/workspace_bootstrap_validation.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
 		path := filepath.Join(repoRoot, relativePath)
@@ -77,6 +79,8 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"bigclaw-go/internal/repo/registry.go",
 		"bigclaw-go/internal/repo/triage.go",
 		"bigclaw-go/internal/roadmap/roadmap.go",
+		"bigclaw-go/internal/bootstrap/bootstrap.go",
+		"bigclaw-go/cmd/bigclawctl/main.go",
 		"bigclaw-go/internal/workflow/definition.go",
 	}
 	for _, relativePath := range goOwners {
