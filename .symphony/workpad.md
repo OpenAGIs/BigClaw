@@ -25,6 +25,51 @@
 
 ## Validation Results
 
+- Tranche: replace Python memory and validation policy modules with Go packages
+  - Removed Python files:
+    - `src/bigclaw/memory.py`
+    - `src/bigclaw/validation_policy.py`
+    - `tests/test_memory.py`
+    - `tests/test_validation_policy.py`
+  - Added Go files:
+    - `bigclaw-go/internal/memory/store.go`
+    - `bigclaw-go/internal/memory/store_test.go`
+    - `bigclaw-go/internal/validationpolicy/policy.go`
+    - `bigclaw-go/internal/validationpolicy/policy_test.go`
+- `gofmt -w bigclaw-go/internal/memory/store.go bigclaw-go/internal/memory/store_test.go bigclaw-go/internal/validationpolicy/policy.go bigclaw-go/internal/validationpolicy/policy_test.go`
+  - no output
+- `cd bigclaw-go && go test ./internal/memory ./internal/validationpolicy`
+  - `ok  	bigclaw-go/internal/memory	0.872s`
+  - `ok  	bigclaw-go/internal/validationpolicy	0.441s`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_console_ia.py`
+  - `tests/test_control_center.py`
+  - `tests/test_design_system.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_event_bus.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_planning.py`
+  - `tests/test_repo_collaboration.py`
+  - `tests/test_repo_rollout.py`
+  - `tests/test_reports.py`
+  - `tests/test_runtime_matrix.py`
+  - `tests/test_scheduler.py`
+  - `tests/test_ui_review.py`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `15`
+- `find . -name '*.py' | sort | wc -l`
+  - `63`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `D src/bigclaw/memory.py`
+  - `D src/bigclaw/validation_policy.py`
+  - `D tests/test_memory.py`
+  - `D tests/test_validation_policy.py`
+  - `?? bigclaw-go/internal/memory/`
+  - `?? bigclaw-go/internal/validationpolicy/`
 - `find tests -maxdepth 1 -name '*.py' | sort`
   - `tests/conftest.py`
   - `tests/test_console_ia.py`
