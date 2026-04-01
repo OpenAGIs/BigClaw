@@ -13,6 +13,7 @@
 - Continue the tranche by folding `bigclaw.design_system` into package-level compatibility exports and deleting the standalone module.
 - Continue the tranche by folding `bigclaw.console_ia` into package-level compatibility exports and deleting the standalone module.
 - Continue the tranche by folding `bigclaw.support_surfaces` into package-level compatibility exports and deleting the standalone module.
+- Continue the tranche by folding `bigclaw.reports` into package-level compatibility exports and deleting the standalone module.
 
 ### Acceptance
 - Changes stay scoped to remaining `src/bigclaw` Python assets for this tranche.
@@ -31,6 +32,7 @@
 - Legacy Python imports and existing tests for design system, information architecture, UI acceptance, and console top bar surfaces still pass after `design_system.py` deletion.
 - Legacy Python imports and existing tests for console information architecture, permissions, and narrative review pack surfaces still pass after `console_ia.py` deletion.
 - Legacy Python imports and existing tests for connectors, mapping, saved views, event bus, collaboration, github sync, dashboard contracts, and pilot surfaces still pass after `support_surfaces.py` deletion.
+- Legacy Python imports and existing tests for reports, observability, control center, repo rollout, operations analytics, and audit-event derived report surfaces still pass after `reports.py` deletion.
 - Report the impact on Python/Go file counts and note any `pyproject`/`setup` impact.
 
 ### Validation
@@ -56,6 +58,8 @@
 - `PYTHONPATH=src python3 - <<'PY' ... import smoke for bigclaw.console_ia ... PY`
 - `python3 -m pytest tests/test_mapping_connectors.py tests/test_saved_views.py tests/test_event_bus.py tests/test_repo_collaboration.py tests/test_pilot.py tests/test_github_sync.py tests/test_dashboard_run_contract.py`
 - `PYTHONPATH=src python3 - <<'PY' ... import smoke for bigclaw.support_surfaces compat exports ... PY`
+- `python3 -m pytest tests/test_reports.py tests/test_observability.py tests/test_control_center.py tests/test_operations.py tests/test_repo_rollout.py tests/test_audit_events.py`
+- `PYTHONPATH=src python3 - <<'PY' ... import smoke for bigclaw.reports compat exports ... PY`
 - `cd bigclaw-go && go test ./internal/bootstrap ./internal/repo ./internal/regression`
 - `cd bigclaw-go && go test ./internal/observability ./internal/workflow ./internal/regression`
 - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
@@ -68,5 +72,12 @@
 - `PYTHONPATH=src python3 - <<'PY' ... import bigclaw.support_surfaces compat smoke ... PY` -> `support_surfaces compat smoke passed`
 - `cd bigclaw-go && go test ./internal/bootstrap ./internal/repo ./internal/regression` -> `ok`, `ok`, `ok`
 - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l` -> `4`
+- `find bigclaw-go -type f -name '*.go' | wc -l` -> `282`
+- `pyproject` / `setup` impact: none
+- Removed `src/bigclaw/reports.py` by keeping its legacy API available through package-level compat exports in `src/bigclaw/__init__.py`.
+- `python3 -m pytest tests/test_reports.py tests/test_observability.py tests/test_control_center.py tests/test_operations.py tests/test_repo_rollout.py tests/test_audit_events.py` -> `71 passed in 0.12s`
+- `PYTHONPATH=src python3 - <<'PY' ... import bigclaw.reports compat smoke ... PY` -> `reports compat smoke passed`
+- `cd bigclaw-go && go test ./internal/observability ./internal/workflow ./internal/regression` -> `ok`, `ok`, `ok`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l` -> `3`
 - `find bigclaw-go -type f -name '*.go' | wc -l` -> `282`
 - `pyproject` / `setup` impact: none
