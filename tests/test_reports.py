@@ -2206,45 +2206,6 @@ def test_build_repo_collaboration_metrics() -> None:
     assert metrics["accepted_lineage_depth_avg"] == 3.0
 
 
-def test_dashboard_builder_round_trip_preserves_manifest_shape() -> None:
-    analytics = OperationsAnalytics()
-    builder = DashboardBuilder(
-        name="Exec Builder",
-        period="2026-W11",
-        owner="ops-lead",
-        permissions=analytics._permissions_for_role("engineering-manager"),
-        widgets=[
-            DashboardWidgetSpec(
-                widget_id="success-rate",
-                title="Success Rate",
-                module="kpis",
-                data_source="operations.snapshot",
-            )
-        ],
-        layouts=[
-            DashboardLayout(
-                layout_id="desktop",
-                name="Desktop",
-                placements=[
-                    DashboardWidgetPlacement(
-                        placement_id="success-rate-main",
-                        widget_id="success-rate",
-                        column=0,
-                        row=0,
-                        width=4,
-                        height=2,
-                    )
-                ],
-            )
-        ],
-        documentation_complete=True,
-    )
-
-    restored = DashboardBuilder.from_dict(builder.to_dict())
-
-    assert restored == builder
-
-
 def test_normalize_dashboard_layout_clamps_dimensions_and_sorts_placements() -> None:
     analytics = OperationsAnalytics()
     widgets = [

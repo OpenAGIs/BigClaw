@@ -1,8 +1,10 @@
 package reporting
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -263,6 +265,57 @@ func TestAuditDashboardBuilderFlagsGovernanceGaps(t *testing.T) {
 	}
 }
 
+func TestDashboardBuilderRoundTripPreservesManifestShape(t *testing.T) {
+	dashboard := DashboardBuilder{
+		Name:   "Exec Builder",
+		Period: "2026-W11",
+		Owner:  "ops-lead",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "engineering-manager",
+			AllowedModules: []string{"kpis", "operations", "regressions", "delivery", "finance"},
+		},
+		Widgets: []DashboardWidgetSpec{
+			{
+				WidgetID:   "success-rate",
+				Title:      "Success Rate",
+				Module:     "kpis",
+				DataSource: "operations.snapshot",
+			},
+		},
+		Layouts: []DashboardLayout{
+			{
+				LayoutID: "desktop",
+				Name:     "Desktop",
+				Placements: []DashboardWidgetPlacement{
+					{
+						PlacementID: "success-rate-main",
+						WidgetID:    "success-rate",
+						Column:      0,
+						Row:         0,
+						Width:       4,
+						Height:      2,
+					},
+				},
+			},
+		},
+		DocumentationComplete: true,
+	}
+
+	payload, err := json.Marshal(dashboard)
+	if err != nil {
+		t.Fatalf("marshal dashboard builder: %v", err)
+	}
+
+	var restored DashboardBuilder
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal dashboard builder: %v", err)
+	}
+
+	if !reflect.DeepEqual(restored, dashboard) {
+		t.Fatalf("dashboard builder mismatch: restored=%+v want=%+v", restored, dashboard)
+	}
+}
+
 func TestRenderAndWriteDashboardBuilderBundle(t *testing.T) {
 	dashboard := DashboardBuilder{
 		Name:   "Ops Console",
@@ -452,6 +505,64 @@ func TestRenderAndWriteEngineeringOverviewBundle(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "## Activity Modules") || !strings.Contains(string(body), "approval pending for prod rollout") {
 		t.Fatalf("unexpected overview bundle content: %s", string(body))
+	}
+}
+
+func TestRenderEngineeringOverviewHidesModulesWithoutPermission(t *testing.T) {
+	base := time.Date(2026, 3, 10, 9, 0, 0, 0, time.UTC)
+	tasks := []domain.Task{
+		{
+			ID:        "BIG-1401-1",
+			Title:     "merged",
+			State:     domain.TaskSucceeded,
+			CreatedAt: base,
+			UpdatedAt: base.Add(20 * time.Minute),
+			Metadata: map[string]string{
+				"run_id":  "run-1",
+				"summary": "merged",
+				"team":    "platform",
+			},
+		},
+		{
+			ID:        "BIG-1401-2",
+			Title:     "approval",
+			State:     domain.TaskBlocked,
+			CreatedAt: base.Add(time.Hour),
+			UpdatedAt: base.Add(85 * time.Minute),
+			Metadata: map[string]string{
+				"run_id":          "run-2",
+				"summary":         "approval",
+				"team":            "operations",
+				"approval_status": "needs-approval",
+				"blocked_reason":  "requires approval for prod deploy",
+			},
+		},
+	}
+	events := []domain.Event{
+		{
+			ID:        "evt-approval",
+			Type:      domain.EventRunAnnotated,
+			TaskID:    "BIG-1401-2",
+			RunID:     "run-2",
+			Timestamp: base.Add(85 * time.Minute),
+			Payload:   map[string]any{"reason": "requires approval for prod deploy"},
+		},
+	}
+
+	executiveReport := RenderEngineeringOverview(BuildEngineeringOverview("Executive View", "2026-W11", "executive", tasks, events, 60, 0, 0))
+	contributorReport := RenderEngineeringOverview(BuildEngineeringOverview("Contributor View", "2026-W11", "contributor", tasks, events, 60, 0, 0))
+
+	if !strings.Contains(executiveReport, "## KPI Modules") ||
+		!strings.Contains(executiveReport, "## Funnel Modules") ||
+		!strings.Contains(executiveReport, "## Blocker Modules") ||
+		strings.Contains(executiveReport, "## Activity Modules") {
+		t.Fatalf("unexpected executive module visibility: %s", executiveReport)
+	}
+	if !strings.Contains(contributorReport, "## KPI Modules") ||
+		!strings.Contains(contributorReport, "## Activity Modules") ||
+		strings.Contains(contributorReport, "## Funnel Modules") ||
+		strings.Contains(contributorReport, "## Blocker Modules") {
+		t.Fatalf("unexpected contributor module visibility: %s", contributorReport)
 	}
 }
 
