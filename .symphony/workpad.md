@@ -1,21 +1,19 @@
-# BIG-GO-1075 Workpad
+# BIG-GO-1080 Workpad
 
 ## Plan
-- Confirm the live git-hook execution path for GitHub sync and identify any remaining non-Go default hop in the hook/install flow.
-- Move `.githooks/post-commit` and `.githooks/post-rewrite` to invoke the Go github-sync entrypoint directly from `bigclaw-go/cmd/bigclawctl`.
-- Teach the Go github-sync installer to materialize the canonical hook scripts so the repo-default and regenerated hooks stay aligned on the same Go-only path.
-- Add regression coverage for hook installation/content so the Python-era or wrapper-era hook path does not come back.
-- Run targeted validation, capture exact commands/results, then commit and push the branch.
+- Confirm which residual `tests/*.py` files already have repo-native Go coverage strong enough to replace them without reducing behavioral protection.
+- Remove the residual Python tranche that is already covered by Go tests: live-shadow bundle export, queue control-center rendering, orchestration policy/handoff behavior, and file-backed queue persistence.
+- Add a Go regression test that asserts this Python tranche stays deleted so the repo does not silently restore these default Python test entrypoints.
+- Run targeted validation for the affected Go packages and record exact commands and results, then verify the repo `.py` count dropped.
+- Commit the scoped change set and push the branch to the remote.
 
 ## Acceptance
-- `.githooks/post-commit` and `.githooks/post-rewrite` no longer depend on a Python sync path or on `scripts/ops/bigclawctl` as their default execution hop.
-- `bigclawctl github-sync install` writes or refreshes those hook scripts with the canonical Go-only content.
-- Regression tests pin the generated hook content and install behavior.
-- Validation proves the Go-only hook path works and records the exact commands/results.
+- The residual Python tranche is removed from `tests/`, reducing the repository `.py` count.
+- Equivalent or stronger Go-only validation remains in place for the removed tranche.
+- A Go regression test fails if the removed Python test files are reintroduced.
+- Validation proves the affected Go packages still pass after the Python test removal.
 
 ## Validation
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/githubsync ./cmd/bigclawctl`
-- `bash .githooks/post-commit`
-- `bash .githooks/post-rewrite`
-- `bash scripts/ops/bigclawctl github-sync status --json`
+- `find . -name '*.py' | sed 's#^./##' | sort | wc -l`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/queue ./internal/reporting ./internal/regression ./internal/scheduler ./internal/workflow`
+- `git status --short`

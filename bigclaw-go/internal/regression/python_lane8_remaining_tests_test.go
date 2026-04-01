@@ -1,10 +1,27 @@
 package regression
 
 import (
+	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestLane8PythonReplacementTrancheRemoved(t *testing.T) {
+	repoRoot := repoRoot(t)
+	for _, path := range []string{
+		"tests/test_control_center.py",
+		"tests/test_live_shadow_bundle.py",
+		"tests/test_orchestration.py",
+		"tests/test_queue.py",
+	} {
+		_, err := os.Stat(filepath.Join(repoRoot, path))
+		if !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("expected %s to stay removed, stat err=%v", path, err)
+		}
+	}
+}
 
 func TestLane8CrossProcessCoordinationSurfaceStaysAligned(t *testing.T) {
 	repoRoot := repoRoot(t)
