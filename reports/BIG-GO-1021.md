@@ -186,10 +186,16 @@
   and deleted the extra Python test file while aligning the merged assertions
   to the current console IA and interaction-contract API exposed by
   [design_system.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/design_system.py).
+- Folded the standalone
+  [test_runtime_matrix.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_runtime_matrix.py)
+  coverage into
+  [test_audit_events.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_audit_events.py)
+  and deleted the extra Python test file while keeping runtime lifecycle,
+  scheduler medium routing, and tool-policy audit-chain coverage intact.
 
 ## File-count impact
 
-- `.py`: `50 -> 16`
+- `.py`: `50 -> 15`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -250,6 +256,7 @@
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/__init__.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_planning.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_design_system.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py -q`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -289,6 +296,8 @@
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 17`; `go 286`; `pkg 0`
 - `PYTHONPATH=src python3 -m pytest tests/test_design_system.py -q` -> `24 passed in 0.09s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 16`; `go 286`; `pkg 0`
+- `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py -q` -> `8 passed in 0.07s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 15`; `go 286`; `pkg 0`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk
