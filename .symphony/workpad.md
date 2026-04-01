@@ -11,7 +11,7 @@
 ## Acceptance
 
 - The repository-wide `*.py` file count decreases from the starting count for this issue.
-- The deleted tranche is limited to top-level `src/bigclaw/*.py` modules already assigned to canonical Go owners, specifically the intake/DSL compatibility slice, the risk/governance/audit/execution-contract compatibility slice, the repo-governance compatibility slice, the small repo-collaboration lineage slice (`repo_links`, `repo_commits`, `repo_gateway`), the repo-platform slice (`repo_plane`, `repo_registry`, `repo_board`), the repo-triage slice (`repo_triage`), the product-planning slice (`collaboration`, `issue_archive`, `roadmap`), and the saved-views slice (`saved_views`).
+- The deleted tranche is limited to top-level `src/bigclaw/*.py` modules already assigned to canonical Go owners, specifically the intake/DSL compatibility slice, the risk/governance/audit/execution-contract compatibility slice, the repo-governance compatibility slice, the small repo-collaboration lineage slice (`repo_links`, `repo_commits`, `repo_gateway`), the repo-platform slice (`repo_plane`, `repo_registry`, `repo_board`), the repo-triage slice (`repo_triage`), the product-planning slice (`collaboration`, `issue_archive`, `roadmap`), the saved-views slice (`saved_views`), and the operator-console review-pack slice (`ui_review`).
 - No new Python files are added.
 - The final commit message names the deleted Python files and the added Go file(s) and Go test file(s).
 - Targeted Python compatibility checks and targeted Go tests pass for the touched surfaces.
@@ -24,6 +24,8 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py -q`
 - `cd bigclaw-go && go test ./internal/intake ./internal/workflow ./internal/risk ./internal/governance ./internal/observability ./internal/regression`
 - `cd bigclaw-go && go test ./internal/contract ./internal/regression`
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q`
+- `cd bigclaw-go && go test ./internal/regression`
 - `git status --short`
 
 ## Validation Results
@@ -90,5 +92,15 @@
   - `ok  	bigclaw-go/internal/regression	0.914s`
 - `cd bigclaw-go && go test ./internal/regression`
   - `ok  	bigclaw-go/internal/regression	1.804s`
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q`
+  - failed initially: `NameError: name 'Path' is not defined`
+  - rerun after importing `Path` in `src/bigclaw/__init__.py`: `27 passed in 0.12s`
+- `cd bigclaw-go && go test ./internal/regression`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `find . -name "*.py" | wc -l`
+  - `61`
 - `git status --short`
-  - pending final stage/commit for second tranche
+  - `M .symphony/workpad.md`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/ui_review.py`
+  - `?? bigclaw-go/internal/regression/top_level_module_purge_tranche2_ui_review_test.go`
