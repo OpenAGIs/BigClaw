@@ -25,6 +25,47 @@
 
 ## Validation Results
 
+- Tranche: collapse Python audit event helper module into observability surfaces
+  - Removed Python files:
+    - `src/bigclaw/audit_events.py`
+  - Updated Python files:
+    - `src/bigclaw/__init__.py`
+    - `src/bigclaw/observability.py`
+    - `src/bigclaw/reports.py`
+    - `src/bigclaw/runtime.py`
+- `python3 -m pytest tests/test_observability.py tests/test_reports.py tests/test_runtime_matrix.py`
+  - `============================= test session starts ==============================`
+  - `platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0`
+  - `rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1040`
+  - `plugins: cov-7.1.0`
+  - `collected 44 items`
+  - `tests/test_observability.py .......                                      [ 15%]`
+  - `tests/test_reports.py ..................................                 [ 93%]`
+  - `tests/test_runtime_matrix.py ...                                         [100%]`
+  - `============================== 44 passed in 0.15s ==============================`
+- `cd bigclaw-go && go test ./internal/observability ./internal/api ./internal/workflow`
+  - `ok  	bigclaw-go/internal/observability	(cached)`
+  - `ok  	bigclaw-go/internal/api	(cached)`
+  - `ok  	bigclaw-go/internal/workflow	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `12`
+- `find . -name '*.py' | sort | wc -l`
+  - `23`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+  - `tests/test_runtime_matrix.py`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/audit_events.py`
+  - `M src/bigclaw/observability.py`
+  - `M src/bigclaw/reports.py`
+  - `M src/bigclaw/runtime.py`
 - Tranche: collapse Python deprecation and repo closeout helper modules into existing consumers
   - Removed Python files:
     - `src/bigclaw/deprecation.py`
