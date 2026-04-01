@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_code_migration_commit": "9746a50c",
-    "latest_closeout_commit": "fbc1d348"
+    "latest_closeout_commit": "81f668db"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-1051-closeout.md",
