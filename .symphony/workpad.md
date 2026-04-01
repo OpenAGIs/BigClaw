@@ -21,6 +21,7 @@
 - Fold the standalone `tests/test_runtime_matrix.py` coverage into `tests/test_audit_events.py` and delete the extra physical Python test file while keeping runtime, scheduler, and audit-chain coverage intact.
 - Fold the standalone `tests/test_observability.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file while keeping task-run, closeout, repo-sync, and detail-page coverage intact.
 - Fold the standalone `tests/test_planning.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file now that the planning compatibility surface is owned by `reports.py`.
+- Fold the remaining standalone `design_system.py` compatibility surface into `ui_review.py`, keep `bigclaw.design_system` and `bigclaw.console_ia` available via package compatibility modules, and delete the extra physical Python file.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -41,6 +42,8 @@
 - `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q`
+- `python3 -m py_compile src/bigclaw/ui_review.py src/bigclaw/__init__.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_design_system.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
@@ -262,3 +265,7 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `90 passed in 0.11s`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/reports.py src/bigclaw/runtime.py src/bigclaw/operations.py` -> success
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 8`; `go 286`; `pkg 0`
+- Folded `src/bigclaw/design_system.py` into `src/bigclaw/ui_review.py`, updated `src/bigclaw/__init__.py` so `bigclaw.design_system` and `bigclaw.console_ia` compatibility modules source from `ui_review.py`, and deleted the standalone module to reduce repository `.py` count without changing design-system, console-IA, or UI-review compatibility behavior.
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q` -> `51 passed in 0.10s`
+- `python3 -m py_compile src/bigclaw/ui_review.py src/bigclaw/__init__.py src/bigclaw/reports.py src/bigclaw/runtime.py src/bigclaw/operations.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 7`; `go 286`; `pkg 0`

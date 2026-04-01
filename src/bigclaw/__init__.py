@@ -548,7 +548,7 @@ _install_compat_surface_module(
 
 
 from . import runtime as _legacy_runtime_surface
-from . import design_system as _legacy_design_system_surface
+from . import ui_review as _legacy_ui_review_surface
 
 
 def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
@@ -683,8 +683,63 @@ _install_compat_surface_module(
     ),
 )
 _install_compat_surface_module(
+    "design_system",
+    _legacy_ui_review_surface,
+    [
+        "AuditRequirement",
+        "CommandAction",
+        "ComponentLibrary",
+        "ComponentSpec",
+        "ComponentVariant",
+        "ConsoleIA",
+        "ConsoleIAAudit",
+        "ConsoleIAAuditor",
+        "ConsoleChromeLibrary",
+        "ConsoleCommandEntry",
+        "ConsoleInteractionAudit",
+        "ConsoleInteractionAuditor",
+        "ConsoleInteractionDraft",
+        "ConsoleSurface",
+        "ConsoleTopBar",
+        "ConsoleTopBarAudit",
+        "DataAccuracyCheck",
+        "DesignSystem",
+        "DesignSystemAudit",
+        "DesignToken",
+        "FilterDefinition",
+        "GlobalAction",
+        "InformationArchitecture",
+        "InformationArchitectureAudit",
+        "NavigationItem",
+        "NavigationEntry",
+        "NavigationNode",
+        "NavigationRoute",
+        "PerformanceBudget",
+        "RolePermissionScenario",
+        "SurfaceInteractionContract",
+        "SurfacePermissionRule",
+        "SurfaceState",
+        "UIAcceptanceAudit",
+        "UIAcceptanceLibrary",
+        "UIAcceptanceSuite",
+        "UsabilityJourney",
+        "build_big_4203_console_interaction_draft",
+        "render_console_interaction_report",
+        "render_console_ia_report",
+        "render_console_top_bar_report",
+        "render_design_system_report",
+        "render_information_architecture_report",
+        "render_ui_acceptance_report",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "the legacy Python design-system compatibility surface remains migration-only scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/console.go",
+)
+_install_compat_surface_module(
     "console_ia",
-    _legacy_design_system_surface,
+    _legacy_ui_review_surface,
     [
         "ConsoleIA",
         "ConsoleIAAudit",
@@ -767,7 +822,7 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .design_system import (
+from .ui_review import (
     AuditRequirement,
     CommandAction,
     ComponentLibrary,
