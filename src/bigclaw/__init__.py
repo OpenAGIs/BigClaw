@@ -24,7 +24,6 @@ from .models import (
     UsageRecord,
 )
 from . import runtime as _legacy_runtime_surface
-from . import planning as _legacy_planning_surface
 from . import design_system as _legacy_design_system_surface
 
 
@@ -95,9 +94,36 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
+from . import reports as _legacy_reports_surface
+_install_compat_surface_module(
+    "planning",
+    _legacy_reports_surface,
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "FourWeekExecutionPlan",
+        "CandidateBacklog",
+        "CandidateEntry",
+        "CandidatePlanner",
+        "EvidenceLink",
+        "EntryGate",
+        "EntryGateDecision",
+        "WeeklyExecutionPlan",
+        "WeeklyGoal",
+        "build_big_4701_execution_plan",
+        "build_v3_candidate_backlog",
+        "build_v3_entry_gate",
+        "render_scope_freeze_report",
+        "render_candidate_backlog_report",
+        "render_four_week_execution_report",
+    ],
+)
 _install_compat_surface_module(
     "governance",
-    _legacy_planning_surface,
+    _legacy_reports_surface,
     [
         "FreezeException",
         "GovernanceBacklogItem",
@@ -386,7 +412,7 @@ from .evaluation import (
     render_run_replay_index_page,
     ReplayRecord,
 )
-from .planning import (
+from .reports import (
     FreezeException,
     GovernanceBacklogItem,
     ScopeFreezeAudit,

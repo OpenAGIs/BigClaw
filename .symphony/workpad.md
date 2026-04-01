@@ -11,6 +11,7 @@
 - Retire the remaining leaf Python compatibility tests for repo collaboration and repo rollout helper formatting after confirming broader collaboration, planning, and report surfaces remain exercised by the surviving Python suites.
 - Retire the remaining queue control-center compatibility test after confirming the broader operations surface remains exercised by the surviving operations suite.
 - Fold the remaining standalone console IA compatibility surface into `design_system.py`, keep `bigclaw.console_ia` available via a package compatibility module, and delete the extra physical Python file.
+- Fold the remaining standalone planning compatibility surface into `reports.py`, keep `bigclaw.planning` and `bigclaw.governance` available via package compatibility modules, and delete the extra physical Python file.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -33,6 +34,8 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_console_ia.py tests/test_design_system.py -q`
 - `python3 -m py_compile src/bigclaw/design_system.py src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/__init__.py`
 
 ## Results
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> `ok  	bigclaw-go/internal/legacyshim	1.098s` and `ok  	bigclaw-go/cmd/bigclawctl	5.977s`
@@ -208,3 +211,7 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_operations.py -q` -> `27 passed in 0.08s`
 - `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py` -> success
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `19`
+- Folded `src/bigclaw/planning.py` into `src/bigclaw/reports.py`, installed `bigclaw.planning` and `bigclaw.governance` as package compatibility modules from `src/bigclaw/__init__.py`, and deleted the standalone module to reduce repository `.py` count without changing the planning/governance compatibility surface.
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q` -> `48 passed in 0.08s`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/__init__.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 18`; `go 286`; `pkg 0`

@@ -161,10 +161,19 @@
   to keep `bigclaw.evaluation` available as a package compatibility module, and
   deleted the extra module without changing the benchmark/replay compatibility
   behavior.
+- Folded the standalone
+  [planning.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/planning.py)
+  helper into
+  [reports.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/reports.py),
+  updated
+  [__init__.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/__init__.py)
+  to keep `bigclaw.planning` and `bigclaw.governance` available as package
+  compatibility modules, and deleted the extra module without changing the
+  planning/governance compatibility behavior.
 
 ## File-count impact
 
-- `.py`: `50 -> 19`
+- `.py`: `50 -> 18`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -221,6 +230,8 @@
 - `python3 -m py_compile src/bigclaw/design_system.py src/bigclaw/__init__.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_operations.py -q`
 - `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/__init__.py`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -253,7 +264,9 @@
 - `python3 -m py_compile src/bigclaw/design_system.py src/bigclaw/__init__.py` -> success
 - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_operations.py -q` -> `27 passed in 0.08s`
 - `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py` -> success
-- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 19`; `go 286`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q` -> `48 passed in 0.08s`
+- `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/__init__.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 18`; `go 286`; `pkg 0`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk
