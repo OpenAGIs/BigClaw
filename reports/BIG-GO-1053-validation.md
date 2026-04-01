@@ -141,7 +141,8 @@ Result: exit code `0`, printed `usage: bigclawctl automation e2e continuation-po
 - Baseline migration commit on `main`: `004de016`
 - Closeout commits on `main`: `7cde78db`, `702293e2`, `9d23c137`
 - Push target: `origin/main`
-- Historical PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
+- Historical PR seed URL from the now-deleted evidence branch:
+  `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
 
 ## Residual Risk
 

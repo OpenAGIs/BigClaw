@@ -35,4 +35,6 @@
   - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
 - Historical branch handoff URL:
   - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
+- Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
+  the closeout landed on `main`.
 - Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.

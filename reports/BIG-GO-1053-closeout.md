@@ -75,4 +75,5 @@ deletion.
 - `git status --short --branch` is clean on `main` after the closeout artifacts are
   committed.
 - `git rev-parse origin/main` points to the rebased `BIG-GO-1053` closeout tip after push.
-- Historical PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
+- Historical PR seed URL from the now-deleted evidence branch:
+  `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
