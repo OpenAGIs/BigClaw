@@ -1,15 +1,27 @@
 import argparse
 import json
+import warnings
 from pathlib import Path
 
-from .deprecation import warn_legacy_runtime_surface
 from .observability import RepoSyncAudit
 from .reports import render_repo_sync_audit_report, write_report
 from .service import run_server
 
 
+_LEGACY_RUNTIME_GUIDANCE = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "the legacy Python runtime surface remains migration-only."
+)
+
+
+def _warn_legacy_runtime_surface(surface: str, replacement: str) -> str:
+    message = f"{surface} is frozen for migration-only use. {_LEGACY_RUNTIME_GUIDANCE} Use {replacement} instead."
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return message
+
+
 def main() -> None:
-    warn_legacy_runtime_surface("python -m bigclaw", "bash scripts/ops/bigclawctl or go run ./bigclaw-go/cmd/bigclawd")
+    _warn_legacy_runtime_surface("python -m bigclaw", "bash scripts/ops/bigclawctl or go run ./bigclaw-go/cmd/bigclawd")
     parser = argparse.ArgumentParser(prog="bigclaw", description="BigClaw developer utilities")
     sub = parser.add_subparsers(dest="command")
 

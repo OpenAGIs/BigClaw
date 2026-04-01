@@ -8,8 +8,63 @@ from typing import Any, Dict, List, Optional
 from .audit_events import missing_required_fields
 from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
-from .repo_links import bind_run_commits
-from .repo_plane import RunCommitLink
+
+VALID_RUN_COMMIT_ROLES = {"source", "candidate", "closeout", "accepted"}
+
+
+@dataclass
+class RunCommitLink:
+    run_id: str
+    commit_hash: str
+    role: str
+    repo_space_id: str
+    actor: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "commit_hash": self.commit_hash,
+            "role": self.role,
+            "repo_space_id": self.repo_space_id,
+            "actor": self.actor,
+            "metadata": dict(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RunCommitLink":
+        return cls(
+            run_id=str(data["run_id"]),
+            commit_hash=str(data["commit_hash"]),
+            role=str(data["role"]),
+            repo_space_id=str(data["repo_space_id"]),
+            actor=str(data.get("actor", "")),
+            metadata=dict(data.get("metadata", {})),
+        )
+
+
+@dataclass
+class RunCommitBinding:
+    links: List[RunCommitLink]
+
+    @property
+    def accepted_commit_hash(self) -> str:
+        for link in self.links:
+            if link.role == "accepted":
+                return link.commit_hash
+        return ""
+
+
+def validate_run_commit_roles(links: List[RunCommitLink]) -> None:
+    invalid = [link.role for link in links if link.role not in VALID_RUN_COMMIT_ROLES]
+    if invalid:
+        invalid_text = ", ".join(sorted(set(invalid)))
+        raise ValueError(f"unsupported run commit roles: {invalid_text}")
+
+
+def bind_run_commits(links: List[RunCommitLink]) -> RunCommitBinding:
+    validate_run_commit_roles(links)
+    return RunCommitBinding(links=list(links))
 
 
 def utc_now() -> str:

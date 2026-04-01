@@ -25,6 +25,40 @@
 
 ## Validation Results
 
+- Tranche: collapse Python deprecation and repo closeout helper modules into existing consumers
+  - Removed Python files:
+    - `src/bigclaw/deprecation.py`
+    - `src/bigclaw/repo_links.py`
+    - `src/bigclaw/repo_plane.py`
+  - Updated Python files:
+    - `src/bigclaw/__main__.py`
+    - `src/bigclaw/observability.py`
+    - `src/bigclaw/runtime.py`
+    - `tests/test_observability.py`
+- `cd bigclaw-go && go test ./internal/repo ./internal/observability ./cmd/bigclawctl ./internal/api`
+  - `ok  	bigclaw-go/internal/repo	(cached)`
+  - `ok  	bigclaw-go/internal/observability	0.453s`
+  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+  - `ok  	bigclaw-go/internal/api	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `13`
+- `find . -name '*.py' | sort | wc -l`
+  - `24`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+  - `tests/test_runtime_matrix.py`
+- `git status --short`
+  - `M src/bigclaw/__main__.py`
+  - `D src/bigclaw/deprecation.py`
+  - `M src/bigclaw/observability.py`
+  - `D src/bigclaw/repo_links.py`
+  - `D src/bigclaw/repo_plane.py`
+  - `M src/bigclaw/runtime.py`
+  - `M tests/test_observability.py`
 - Tranche: delete orphaned Python connector surface
   - Removed Python files:
     - `src/bigclaw/connectors.py`
