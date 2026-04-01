@@ -5,6 +5,7 @@
 - Replace remaining root-level operational Python entrypoints with non-Python wrappers or existing Go binaries where possible.
 - Validate targeted commands and measure repository `*.py` / `*.go` counts plus packaging-file impact.
 - Commit scoped changes and push the issue branch.
+- Fold the remaining standalone governance compatibility surface into `planning.py`, keep `bigclaw.governance` available via a package compatibility module, and delete the extra physical Python file.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -16,6 +17,9 @@
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l`
 - `find . -path './.git' -prune -o -name '*.go' -print | wc -l`
 - Targeted execution of affected operational entrypoints and their tests, based on changed files.
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py -q`
+- `cd bigclaw-go && go test ./internal/governance -count=1`
+- `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py`
 
 ## Results
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> `ok  	bigclaw-go/internal/legacyshim	1.098s` and `ok  	bigclaw-go/cmd/bigclawctl	5.977s`
@@ -126,6 +130,9 @@
 - `rg -n "from \\.run_detail|from bigclaw\\.run_detail" src tests -S`
 - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py -q`
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py`
+- `rg -n "from \\.risk|from bigclaw\\.risk" src tests -S`
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_operations.py -q`
+- `python3 -m py_compile src/bigclaw/runtime.py`
 
 ### Results
 - `rg -n "test_governance\\.py|from bigclaw\\.governance|bigclaw\\.governance" src tests README.md docs reports scripts -S` -> `tests/test_planning.py:19:from bigclaw.governance import ScopeFreezeAudit` and `tests/test_governance.py:1:from bigclaw.governance import (` before retiring the redundant Python governance test.
@@ -155,3 +162,14 @@
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py` -> success
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 32`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
+- Folded `src/bigclaw/risk.py` into `src/bigclaw/runtime.py`, updated package exports to source the residual risk helpers from the runtime compatibility surface, and deleted the standalone risk module to reduce repository `.py` count without changing scheduler/runtime behavior.
+- `rg -n "from \\.risk|from bigclaw\\.risk" src tests -S` -> no matches
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_operations.py -q` -> `32 passed in 0.07s`
+- `python3 -m py_compile src/bigclaw/runtime.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 31`; `go 286`
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
+- Folded `src/bigclaw/governance.py` into `src/bigclaw/planning.py`, installed `bigclaw.governance` as a package compatibility module from `src/bigclaw/__init__.py`, and deleted the standalone module to reduce repository `.py` count without changing the planning/governance compatibility contract.
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py -q` -> `16 passed in 0.07s`
+- `cd bigclaw-go && go test ./internal/governance -count=1` -> `ok  	bigclaw-go/internal/governance	1.164s`
+- `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 30`; `go 286`; `pkg 0`

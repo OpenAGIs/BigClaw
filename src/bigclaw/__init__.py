@@ -24,15 +24,25 @@ from .models import (
     UsageRecord,
 )
 from . import runtime as _legacy_runtime_surface
+from . import planning as _legacy_planning_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_compat_surface_module(
+    name: str,
+    source_module: object,
+    export_names: list[str],
+    **extra_attrs: object,
+) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
+
+
+def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+    _install_compat_surface_module(name, _legacy_runtime_surface, export_names, **extra_attrs)
 
 
 _install_legacy_surface_module(
@@ -83,6 +93,23 @@ _install_legacy_surface_module(
         "the legacy Python service compatibility surface remains migration-only scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+)
+_install_compat_surface_module(
+    "governance",
+    _legacy_planning_surface,
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "the legacy Python governance compatibility surface remains migration-only scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
 )
 
 from .runtime import (
@@ -167,15 +194,6 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -198,6 +216,7 @@ from .observability import (
     get_audit_event_spec,
     missing_required_fields,
 )
+from .runtime import RiskFactor, RiskScore, RiskScorer
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
@@ -313,6 +332,11 @@ from .evaluation import (
     render_benchmark_suite_report,
 )
 from .planning import (
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
@@ -325,6 +349,7 @@ from .planning import (
     build_big_4701_execution_plan,
     build_v3_candidate_backlog,
     build_v3_entry_gate,
+    render_scope_freeze_report,
     render_candidate_backlog_report,
     render_four_week_execution_report,
 )

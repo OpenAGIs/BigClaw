@@ -96,10 +96,26 @@
   to consume the shared detail-rendering helpers from `reports.py`, and
   deleted the extra module without changing the shared Python run-detail
   behavior.
+- Folded the standalone
+  [risk.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/risk.py)
+  helper into
+  [runtime.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/runtime.py),
+  updated package exports to source the residual risk helpers from the runtime
+  compatibility surface, and deleted the extra module without changing the
+  scheduler/runtime behavior.
+- Folded the standalone
+  [governance.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/governance.py)
+  helper into
+  [planning.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/planning.py),
+  updated
+  [__init__.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/src/bigclaw/__init__.py)
+  to keep `bigclaw.governance` available as a package compatibility module, and
+  deleted the extra module without changing the residual planning/governance
+  behavior.
 
 ## File-count impact
 
-- `.py`: `50 -> 32`
+- `.py`: `50 -> 30`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -140,6 +156,12 @@
 - `rg -n "from \\.run_detail|from bigclaw\\.run_detail" src tests -S`
 - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py -q`
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py`
+- `rg -n "from \\.risk|from bigclaw\\.risk" src tests -S`
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_operations.py -q`
+- `python3 -m py_compile src/bigclaw/runtime.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py -q`
+- `cd bigclaw-go && go test ./internal/governance -count=1`
+- `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -156,7 +178,13 @@
 - `rg -n "from \\.run_detail|from bigclaw\\.run_detail" src tests -S` -> no matches
 - `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_reports.py tests/test_observability.py -q` -> `48 passed in 0.09s`
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py` -> success
-- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 32`; `go 286`
+- `rg -n "from \\.risk|from bigclaw\\.risk" src tests -S` -> no matches
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_operations.py -q` -> `32 passed in 0.07s`
+- `python3 -m py_compile src/bigclaw/runtime.py` -> success
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py -q` -> `16 passed in 0.07s`
+- `cd bigclaw-go && go test ./internal/governance -count=1` -> `ok  	bigclaw-go/internal/governance	1.164s`
+- `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 30`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk
