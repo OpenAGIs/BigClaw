@@ -20,6 +20,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/deprecation.py",
 		"src/bigclaw/design_system.py",
 		"src/bigclaw/dsl.py",
+		"src/bigclaw/evaluation.py",
 		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/event_bus.py",
 		"src/bigclaw/issue_archive.py",
@@ -89,6 +90,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"bigclaw-go/internal/bootstrap/bootstrap.go",
 		"bigclaw-go/internal/api/v2.go",
 		"bigclaw-go/internal/api/admission_policy_surface.go",
+		"bigclaw-go/cmd/bigclawctl/automation_benchmark_commands.go",
 		"bigclaw-go/cmd/bigclawctl/main.go",
 		"bigclaw-go/internal/workflow/definition.go",
 	}
