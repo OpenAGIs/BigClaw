@@ -2,12 +2,12 @@
 
 ## Plan
 
-1. Keep this tranche scoped to the remaining Python tests now replaced by Go-native coverage on
-   this branch: `tests/test_models.py`, `tests/test_repo_gateway.py`, `tests/test_repo_registry.py`,
-   `tests/test_risk.py`, `tests/test_orchestration.py`, and `tests/test_validation_policy.py`.
-2. Extend the matching Go-native tests and packages only where a deleted Python assertion still
-   needs an explicit repo-native replacement, without touching unrelated product areas.
-3. Validate the touched Go packages and record the exact commands and results.
+1. Delete `tests/test_orchestration.py` after closing its remaining Go gap with a repo-native
+   orchestration plan renderer test in `bigclaw-go/internal/workflow`.
+2. Add a small Go-native validation policy package and tests that replace
+   `tests/test_validation_policy.py`, then delete that Python test.
+3. Run targeted Go validation for `./internal/workflow`, `./internal/scheduler`,
+   `./internal/worker`, and `./internal/validationpolicy`, plus repo-level file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
@@ -21,22 +21,18 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/workflow ./internal/scheduler ./internal/worker ./internal/validationpolicy ./internal/repo ./internal/risk ./internal/billing ./internal/triage`
+- `cd bigclaw-go && go test ./internal/workflow ./internal/scheduler ./internal/worker ./internal/validationpolicy`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
-- `cd bigclaw-go && go test ./internal/workflow ./internal/scheduler ./internal/worker ./internal/validationpolicy ./internal/repo ./internal/risk ./internal/billing ./internal/triage`
-  - `ok  	bigclaw-go/internal/workflow	(cached)`
-  - `ok  	bigclaw-go/internal/scheduler	(cached)`
-  - `ok  	bigclaw-go/internal/worker	(cached)`
-  - `ok  	bigclaw-go/internal/validationpolicy	(cached)`
-  - `ok  	bigclaw-go/internal/repo	(cached)`
-  - `ok  	bigclaw-go/internal/risk	(cached)`
-  - `ok  	bigclaw-go/internal/billing	(cached)`
-  - `ok  	bigclaw-go/internal/triage	(cached)`
+- `cd bigclaw-go && go test ./internal/workflow ./internal/scheduler ./internal/worker ./internal/validationpolicy`
+  - `ok  	bigclaw-go/internal/workflow	0.488s`
+  - `ok  	bigclaw-go/internal/scheduler	1.885s`
+  - `ok  	bigclaw-go/internal/worker	1.161s`
+  - `ok  	bigclaw-go/internal/validationpolicy	1.099s`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `20`
+  - `18`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - no output
