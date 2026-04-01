@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1070",
+    "title": "other python assets + packaging cleanup",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1070",
+    "latest_code_migration_commit": "06789289080b536c02beb749882bbefa25fedec8",
+    "final_branch_head": "pending-after-evidence-commit"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1070-closeout.md",
+    "validation_report": "reports/BIG-GO-1070-validation.md",
+    "regression_guard": "bigclaw-go/internal/regression/top_level_module_purge_tranche1_test.go",
+    "compile_check_surface": "bigclaw-go/internal/legacyshim/compilecheck.go",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw",
+    "branch": "https://github.com/OpenAGIs/BigClaw/tree/symphony/BIG-GO-1070"
+  },
+  "validation": {
+    "commands": [
+      "rg --files . | rg '\\.py$' | wc -l",
+      "cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl",
+      "bash scripts/ops/bigclawctl refill --help",
+      "BIGCLAW_BOOTSTRAP_REPO_URL=git@github.com:OpenAGIs/BigClaw.git BIGCLAW_BOOTSTRAP_CACHE_KEY=openagis-bigclaw bash scripts/ops/bigclawctl workspace bootstrap --help",
+      "bash scripts/ops/bigclawctl workspace validate --help",
+      "bash scripts/ops/bigclawctl legacy-python compile-check --json"
+    ],
+    "results": {
+      "repo_py_count_before": "43",
+      "repo_py_count_after": "38",
+      "repo_py_delta": "-5",
+      "targeted_go_tests": "ok   bigclaw-go/internal/legacyshim (cached); ok   bigclaw-go/internal/regression 3.220s; ok   bigclaw-go/cmd/bigclawctl (cached)",
+      "refill_help": "exit 0; usage: bigclawctl refill [flags]",
+      "workspace_bootstrap_help": "exit 0; usage: bigclawctl workspace bootstrap [flags]",
+      "workspace_validate_help": "exit 0; usage: bigclawctl workspace validate [flags]",
+      "legacy_python_compile_check": "status ok for src/bigclaw/__main__.py"
+    }
+  },
+  "blocker": {
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1070."
+  },
+  "notes": [
+    "The suggested packaging files pyproject.toml and setup.py were already absent in this checkout, so this lane focused on the remaining physical operator-wrapper Python assets that could be deleted immediately while preserving a verifiable Go replacement path.",
+    "Historical reports and tracker comments still mention the removed Python wrapper paths, but those references are archival rather than live operator entry surfaces.",
+    "The repository still contains other Python files outside the narrow scope of this cleanup lane."
+  ]
+}
