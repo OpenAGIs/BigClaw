@@ -398,7 +398,6 @@ tracker work.
 
 Python source:
 - `src/bigclaw/risk.py`
-- remaining active consumers of `src/bigclaw/governance.py`
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of `src/bigclaw/audit_events.py`
 

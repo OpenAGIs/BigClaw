@@ -126,14 +126,6 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -269,6 +261,11 @@ from .planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -276,7 +273,27 @@ from .planning import (
     build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
+    render_scope_freeze_report,
 )
+
+governance = types.ModuleType(f"{__name__}.governance")
+for export_name in [
+    "FreezeException",
+    "GovernanceBacklogItem",
+    "ScopeFreezeAudit",
+    "ScopeFreezeBoard",
+    "ScopeFreezeGovernance",
+    "render_scope_freeze_report",
+]:
+    governance.__dict__[export_name] = globals()[export_name]
+governance.__dict__.update(
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "governance.py has been retired in favor of package-level compatibility exports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
+)
+sys.modules[governance.__name__] = governance
 
 __all__ = [
     "Task",
