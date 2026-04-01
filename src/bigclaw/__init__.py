@@ -135,7 +135,6 @@ from .governance import (
     render_scope_freeze_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -318,8 +317,6 @@ __all__ = [
     "DecisionNote",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
-    "WorkflowDefinition",
-    "WorkflowStep",
     "APPROVAL_RECORDED_EVENT",
     "BUDGET_OVERRIDE_EVENT",
     "FLOW_HANDOFF_EVENT",

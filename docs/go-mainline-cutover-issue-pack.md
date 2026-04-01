@@ -104,6 +104,9 @@ Go ownership:
 - `bigclaw-go/internal/domain/priority.go`
 - `bigclaw-go/internal/intake/*`
 - `bigclaw-go/internal/workflow/definition.go`
+
+Follow-up cleanup retired `src/bigclaw/dsl.py`; the active workflow-definition
+surface now relies on Go-owned workflow contracts and tests.
 - `bigclaw-go/internal/workflow/model.go`
 - `bigclaw-go/internal/prd/intake.go`
 
