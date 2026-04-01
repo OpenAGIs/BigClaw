@@ -6,6 +6,8 @@
 - Validate targeted commands and measure repository `*.py` / `*.go` counts plus packaging-file impact.
 - Commit scoped changes and push the issue branch.
 - Fold the remaining standalone governance compatibility surface into `planning.py`, keep `bigclaw.governance` available via a package compatibility module, and delete the extra physical Python file.
+- Retire the remaining redundant Python compatibility tests for queue, orchestration, and scheduler after confirming equivalent Go-owned coverage remains active under `bigclaw-go/internal`.
+- Retire the remaining Python doc/regression wrapper tests for live-shadow and validation-bundle surfaces after confirming checked-in artifact coverage remains active in Go regression and API suites.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -20,6 +22,10 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py -q`
 - `cd bigclaw-go && go test ./internal/governance -count=1`
 - `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_reports.py -q`
+- `cd bigclaw-go && go test ./internal/queue ./internal/workflow ./internal/scheduler -count=1`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1`
+- `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1`
 
 ## Results
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> `ok  	bigclaw-go/internal/legacyshim	1.098s` and `ok  	bigclaw-go/cmd/bigclawctl	5.977s`
@@ -173,3 +179,11 @@
 - `cd bigclaw-go && go test ./internal/governance -count=1` -> `ok  	bigclaw-go/internal/governance	1.164s`
 - `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py` -> success
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 30`; `go 286`; `pkg 0`
+- Deleted the redundant Python `tests/test_queue.py`, `tests/test_orchestration.py`, and `tests/test_scheduler.py` after confirming the active queue, workflow/orchestration, and scheduler behaviors are already covered by Go-owned `bigclaw-go/internal/queue`, `bigclaw-go/internal/workflow`, and `bigclaw-go/internal/scheduler` suites while residual Python integration coverage remains through `tests/test_runtime_matrix.py`, `tests/test_audit_events.py`, and `tests/test_reports.py`.
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_reports.py -q` -> `42 passed in 0.17s`
+- `cd bigclaw-go && go test ./internal/queue ./internal/workflow ./internal/scheduler -count=1` -> `ok  	bigclaw-go/internal/queue	29.350s`; `ok  	bigclaw-go/internal/workflow	0.416s`; `ok  	bigclaw-go/internal/scheduler	1.119s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 27`; `go 286`; `pkg 0`
+- Deleted the redundant Python `tests/test_live_shadow_bundle.py`, `tests/test_parallel_validation_bundle.py`, and `tests/test_validation_bundle_continuation_policy_gate.py` after confirming their checked-in live-shadow and validation-bundle artifact coverage remains exercised by Go-owned `bigclaw-go/internal/regression` and `bigclaw-go/internal/api` suites.
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.667s`
+- `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1` -> `ok  	bigclaw-go/internal/api	0.869s [no tests to run]`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 24`; `go 286`; `pkg 0`

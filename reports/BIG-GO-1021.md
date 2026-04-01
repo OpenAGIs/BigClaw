@@ -112,10 +112,29 @@
   to keep `bigclaw.governance` available as a package compatibility module, and
   deleted the extra module without changing the residual planning/governance
   behavior.
+- Deleted the redundant Python
+  [test_queue.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_queue.py),
+  [test_orchestration.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_orchestration.py),
+  and
+  [test_scheduler.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_scheduler.py)
+  after confirming their queue persistence, orchestration policy, and scheduler
+  routing/degradation scenarios are already covered by the Go-owned
+  `bigclaw-go/internal/queue`, `bigclaw-go/internal/workflow`, and
+  `bigclaw-go/internal/scheduler` suites while residual Python integration
+  behavior remains exercised by `tests/test_runtime_matrix.py`,
+  `tests/test_audit_events.py`, and `tests/test_reports.py`.
+- Deleted the redundant Python
+  [test_live_shadow_bundle.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_live_shadow_bundle.py),
+  [test_parallel_validation_bundle.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_parallel_validation_bundle.py),
+  and
+  [test_validation_bundle_continuation_policy_gate.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_validation_bundle_continuation_policy_gate.py)
+  after confirming their checked-in live-shadow and validation-bundle artifact
+  assertions are already covered by Go-owned `bigclaw-go/internal/regression`
+  and `bigclaw-go/internal/api` suites.
 
 ## File-count impact
 
-- `.py`: `50 -> 30`
+- `.py`: `50 -> 24`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -162,6 +181,10 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py -q`
 - `cd bigclaw-go && go test ./internal/governance -count=1`
 - `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_reports.py -q`
+- `cd bigclaw-go && go test ./internal/queue ./internal/workflow ./internal/scheduler -count=1`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1`
+- `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -184,7 +207,11 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_repo_rollout.py -q` -> `16 passed in 0.07s`
 - `cd bigclaw-go && go test ./internal/governance -count=1` -> `ok  	bigclaw-go/internal/governance	1.164s`
 - `python3 -m py_compile src/bigclaw/planning.py src/bigclaw/__init__.py` -> success
-- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 30`; `go 286`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_audit_events.py tests/test_reports.py -q` -> `42 passed in 0.17s`
+- `cd bigclaw-go && go test ./internal/queue ./internal/workflow ./internal/scheduler -count=1` -> `ok  	bigclaw-go/internal/queue	29.350s`; `ok  	bigclaw-go/internal/workflow	0.416s`; `ok  	bigclaw-go/internal/scheduler	1.119s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.667s`
+- `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1` -> `ok  	bigclaw-go/internal/api	0.869s [no tests to run]`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 24`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk
