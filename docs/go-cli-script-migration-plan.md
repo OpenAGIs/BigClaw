@@ -17,8 +17,8 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
-- `scripts/ops/bigclaw_github_sync.py` -> `bigclawctl github-sync`
-- `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
+- retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
+- retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`
 - `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
 - `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
 - `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
@@ -56,8 +56,6 @@ The remaining compatibility layer is intentionally thin:
 
 ### Compatibility shims kept in place
 
-- `scripts/ops/bigclaw_github_sync.py`
-- `scripts/ops/bigclaw_refill_queue.py`
 - `scripts/ops/bigclaw_workspace_bootstrap.py`
 - `scripts/ops/symphony_workspace_bootstrap.py`
 - `scripts/ops/symphony_workspace_validate.py`
@@ -66,8 +64,8 @@ The remaining compatibility layer is intentionally thin:
 - `scripts/ops/bigclaw-panel`
 
 These shims should remain until operator docs and external automation references are updated to
-invoke `bash scripts/ops/bigclawctl ...` directly. The two repo-root Python shims were removed
-because the root no longer carries Python packaging/bootstrap ownership.
+invoke `bash scripts/ops/bigclawctl ...` directly. The GitHub sync and refill Python wrappers are
+already retired because the operator path is now Go-only for those surfaces.
 
 ## Remaining Backlog
 
@@ -85,8 +83,8 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
 - `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
-- `python3 scripts/ops/bigclaw_github_sync.py status --json`
-- `python3 scripts/ops/bigclaw_refill_queue.py --help`
+- `bash scripts/ops/bigclawctl github-sync status --json`
+- `bash scripts/ops/bigclawctl refill --help`
 - `python3 scripts/ops/symphony_workspace_validate.py --help`
 - `bash scripts/dev_bootstrap.sh`
 - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
