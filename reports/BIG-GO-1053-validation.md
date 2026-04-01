@@ -64,13 +64,14 @@ find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1053 -name '*.py' | wc -l
 Result:
 
 ```text
-46
+45
 ```
 
 Note: the tranche-2 e2e Python helpers were already absent in this checkout before the
-validation branch was created, so the measurable repo-wide `.py` reduction occurred in
-the baseline migration commit on `main`. This lane branch records the missing validation
-and closeout evidence for that already-landed cutover.
+evidence commits were created, so the measurable repo-wide `.py` reduction for this lane
+occurred in the baseline migration commit on `main`. The current repo-wide count is `45`
+because a later `main` commit from `BIG-GO-1057` also removed one additional Python
+entrypoint while this closeout was being rebased.
 
 ### Stale reference scan
 
@@ -98,7 +99,7 @@ Result:
 
 ```text
 ok  	bigclaw-go/cmd/bigclawctl	3.707s
-ok  	bigclaw-go/internal/regression	0.471s
+ok  	bigclaw-go/internal/regression	0.878s
 ```
 
 ### E2E command help checks
@@ -138,15 +139,13 @@ Result: exit code `0`, printed `usage: bigclawctl automation e2e continuation-po
 ## Commit And Push
 
 - Baseline migration commit on `main`: `004de016`
-- Evidence branch: `symphony/BIG-GO-1053-validation`
-- Push target: `origin/symphony/BIG-GO-1053-validation`
-- PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
+- Closeout commits on `main`: `7cde78db`, `702293e2`, `9d23c137`
+- Push target: `origin/main`
+- Historical PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
 
 ## Residual Risk
 
-- This evidence branch does not change the already-landed code migration on `main`; it adds
+- This closeout sequence does not change the already-landed code migration on `main`; it adds
   the missing validation and closeout artifacts for the lane.
 - The repo-wide Python file count remains `46`, so any further reduction depends on follow-on
   lanes outside the scoped tranche-2 e2e entrypoint migration.
-- GitHub CLI is not authenticated in this environment, so PR creation could not be completed
-  programmatically from the shell during this turn.

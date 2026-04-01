@@ -8,7 +8,7 @@ Date: `2026-04-01`
 
 ## Branch
 
-`symphony/BIG-GO-1053-validation`
+`main`
 
 ## Latest Code Migration Commit
 
@@ -66,12 +66,13 @@ cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate
 No blocking repo action remains for `BIG-GO-1053`.
 
 The only caveat is historical: the tranche-2 e2e Python helpers had already been removed
-in the baseline `main` commit before this evidence branch was created, so this branch adds
-the missing validation and closeout artifacts rather than another fresh `.py` deletion.
+in the baseline `main` commit before these evidence commits were created, so this closeout
+sequence adds the missing validation and closeout artifacts rather than another fresh `.py`
+deletion.
 
 ## Final Repo Check
 
-- `git status --short --branch` is clean on `symphony/BIG-GO-1053-validation` after the
-  closeout artifacts are committed.
-- `git rev-parse origin/main` points to the landed migration commit `004de016252d6ca168a45dccda48fc9fa69e27f1`.
-- PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
+- `git status --short --branch` is clean on `main` after the closeout artifacts are
+  committed.
+- `git rev-parse origin/main` points to the rebased `BIG-GO-1053` closeout tip after push.
+- Historical PR seed URL: `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`

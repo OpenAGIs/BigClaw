@@ -5,7 +5,7 @@
     "state": "Done"
   },
   "branch": {
-    "name": "symphony/BIG-GO-1053-validation",
+    "name": "main",
     "latest_code_migration_commit": "004de016"
   },
   "artifacts": {
@@ -32,18 +32,19 @@
     ],
     "results": {
       "e2e_py_count": "0",
-      "repo_py_count": "46",
+      "repo_py_count": "45",
       "stale_reference_scan": "no matches in existing README/docs/workflow/hooks/CI surfaces",
-      "targeted_go_tests": "ok   bigclaw-go/cmd/bigclawctl  3.707s; ok   bigclaw-go/internal/regression  0.471s",
+      "targeted_go_tests": "ok   bigclaw-go/cmd/bigclawctl  3.707s; ok   bigclaw-go/internal/regression  0.878s",
       "e2e_help_commands": "all exited 0"
     }
   },
   "blocker": {
-    "type": "external_handoff",
-    "summary": "No additional in-repo implementation work remains for BIG-GO-1053; GitHub CLI authentication is unavailable in this environment, so PR creation could not be completed programmatically."
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1053."
   },
   "notes": [
-    "The tranche-2 e2e Python helper files were already absent in this checkout before the validation branch was created, so the code migration itself is represented by origin/main at commit 004de016.",
-    "This branch adds the missing validation and closeout artifacts so the lane has the same in-repo reporting surface as adjacent Go-replacement issues."
+    "The tranche-2 e2e Python helper files were already absent in this checkout before the evidence commits were created, so the code migration itself is represented by origin/main at commit 004de016.",
+    "The final repo-wide Python count at the rebased main tip is 45 because BIG-GO-1057 also removed one Python entrypoint while this closeout was being rebased.",
+    "The follow-up rebased commits on main add the missing validation and closeout artifacts so the lane has the same in-repo reporting surface as adjacent Go-replacement issues."
   ]
 }
