@@ -1,39 +1,39 @@
-# BIG-GO-1053
+# BIG-GO-1058
 
 ## Plan
-- Inspect `bigclaw-go/scripts/e2e` and repo references to identify tranche-2 helper remnants and current Go entrypoints.
-- Remove stale Python-helper references and replace them with Go-native `bigclawctl automation e2e ...` commands or existing shell wrappers where appropriate.
-- Add/adjust regression coverage so `bigclaw-go/scripts/e2e` stays Python-free and closeout surfaces point at Go-only entrypoints.
-- Run targeted tests plus repository checks for `.py` count / reference removal, then commit and push.
+- Inspect the refill queue Python shim, current `bigclawctl refill` replacement path, and all repo references that still point at the Python entrypoint.
+- Update README and workflow-facing guidance to use the Go-first `bash scripts/ops/bigclawctl refill ...` path and remove stale mentions of `scripts/ops/bigclaw_refill_queue.py`.
+- Delete `scripts/ops/bigclaw_refill_queue.py` and add a targeted regression check so the removed shim path stays absent while the Go replacement remains present.
+- Run focused validation for reference cleanup, `.py` count reduction, and the relevant Go tests, then commit and push the issue branch.
 
 ## Acceptance
-- `bigclaw-go/scripts/e2e` contains no Python helper files for tranche 2.
-- README / docs / workflows / hooks / CI do not instruct users to invoke removed tranche-2 Python helpers.
-- Validation and regression tests pass for the updated entrypoints.
-- Repo evidence shows no remaining tracked `bigclaw-go/scripts/e2e/*.py` files and no stale references to the removed tranche-2 helper paths.
+- `scripts/ops/bigclaw_refill_queue.py` is deleted from the repository.
+- README / workflow / hooks / CI no longer direct operators to the removed Python refill queue entrypoint.
+- The supported refill queue operator path is `bash scripts/ops/bigclawctl refill ...`.
+- Repository evidence shows the tracked `.py` file count decreased by one from the pre-change baseline.
+- Targeted regression coverage passes for the deleted shim path and its Go replacement.
 
 ## Validation
-- `find bigclaw-go/scripts/e2e -maxdepth 1 -type f | sort`
-- `rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/e2e/.*\.py" README.md bigclaw-go .github .husky .git/hooks`
-- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
+- `find . -type f -name '*.py' | sort | wc -l`
+- `rg -n "bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py" README.md workflow.md .github .githooks docs bigclaw-go --hidden`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression`
 
 ## Execution Result
-- Branch pushed: `symphony/BIG-GO-1053`
-- Code commit: `b9795a1c643708b7c20793f069039a42690f4d2e`
-- PR: `https://github.com/OpenAGIs/BigClaw/pull/217`
-- Scope completed:
-  - rewrote `bigclaw-go/docs/go-cli-script-migration.md` to describe only active Go/shell e2e entrypoints
-  - updated migration planning/follow-on docs to stop naming removed tranche-2 Python helpers as future/current entrypoints
-  - added `bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go` to keep `bigclaw-go/scripts/e2e` Python-free
+- Removed `scripts/ops/bigclaw_refill_queue.py` and kept `bash scripts/ops/bigclawctl refill ...` as the only supported refill queue entrypoint.
+- Updated `README.md` so local orchestration guidance no longer points at the deleted Python refill shim.
+- Updated migration tracking docs to reflect that the refill shim is retired while other migration-only wrappers remain.
+- Added `bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go` so the deleted refill shim path stays absent and the Go replacement files stay present.
+- Updated `bigclaw-go/internal/legacyshim/wrappers_test.go` to stop referencing the removed refill shim path.
 
 ## Validation Result
-- `find bigclaw-go/scripts/e2e -maxdepth 1 -type f | sort`
-  - passed; only `broker_bootstrap_summary.go`, `kubernetes_smoke.sh`, `ray_smoke.sh`, and `run_all.sh` remain
-- `rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/e2e/.*\.py" README.md bigclaw-go/docs docs .github .husky .git/hooks 2>/dev/null`
-  - passed; no matches in README/docs/workflow/hooks/CI surfaces
-- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
+- `find . -type f -name '*.py' | sort | wc -l`
+  - passed; count dropped from `46` before the change to `45` after deleting `scripts/ops/bigclaw_refill_queue.py`
+- `rg -n "bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py" README.md workflow.md .github .githooks --hidden`
+  - passed; no matches in README / workflow / hooks / CI surfaces
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression`
   - passed
+- `bash scripts/ops/bigclawctl refill --help`
+  - passed; help output confirms the supported Go refill entrypoint and flags
 
 ## Remaining Blocker
-- No code blocker remains.
-- `gh` is still unauthenticated in this workspace, but Git credential helper access was sufficient to create PR `#217` via the GitHub REST API.
+- None currently.

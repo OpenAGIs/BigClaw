@@ -64,9 +64,10 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/ops/bigclaw_github_sync.py ...`,
-  `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
-  `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
+- `python3 scripts/ops/bigclaw_github_sync.py ...` and the legacy
+  `scripts/ops/*workspace*.py` helpers are still compatibility shims over the same Go CLI.
+- The refill queue entrypoint is Go-only: use
+  `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...`,
