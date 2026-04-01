@@ -2,13 +2,17 @@
 
 ## Plan
 
-1. Delete the repo-surface and risk Python tests that already have direct Go replacements:
-   `tests/test_repo_governance.py`, `tests/test_repo_board.py`, `tests/test_repo_triage.py`,
-   `tests/test_repo_links.py`, `tests/test_repo_registry.py`, `tests/test_repo_gateway.py`,
-   `tests/test_risk.py`, and `tests/test_dsl.py`.
-2. Extend `bigclaw-go/internal/repo/repo_surfaces_test.go` with the missing registry JSON round-trip coverage that replaces the remaining Python-only round-trip assertion.
-3. Run targeted Go validation for `./internal/repo`, `./internal/risk`, and `./internal/workflow`, plus repo-level file-count checks.
-4. Commit the scoped migration changes and push the branch to the remote.
+1. Delete the next Go-covered Python tests:
+   `tests/test_models.py`, `tests/test_queue.py`, and `tests/test_scheduler.py`.
+2. Extend `bigclaw-go/internal/queue/file_queue.go` and `bigclaw-go/internal/queue/file_queue_test.go`
+   so the Go file-backed queue covers the remaining Python-only persistence behaviors, including
+   parent-directory creation, payload preservation, and legacy list storage compatibility.
+3. Reuse the existing Go scheduler, workflow, billing, triage, risk, and domain test coverage as the
+   replacement surface for the deleted Python model and scheduler tests.
+4. Run targeted Go validation for `./internal/queue`, `./internal/scheduler`, `./internal/domain`,
+   `./internal/workflow`, `./internal/triage`, `./internal/risk`, and `./internal/billing`, plus
+   repo-level file-count checks.
+5. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
 
@@ -21,12 +25,24 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/repo ./internal/risk ./internal/workflow`
+- `cd bigclaw-go && go test ./internal/queue ./internal/scheduler ./internal/domain ./internal/workflow ./internal/triage ./internal/risk ./internal/billing`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
+- `cd bigclaw-go && go test ./internal/queue ./internal/scheduler ./internal/domain ./internal/workflow ./internal/triage ./internal/risk ./internal/billing`
+  - `ok  	bigclaw-go/internal/queue	27.429s`
+  - `ok  	bigclaw-go/internal/scheduler	0.612s`
+  - `ok  	bigclaw-go/internal/domain	1.084s`
+  - `ok  	bigclaw-go/internal/workflow	(cached)`
+  - `ok  	bigclaw-go/internal/triage	1.483s`
+  - `ok  	bigclaw-go/internal/risk	(cached)`
+  - `ok  	bigclaw-go/internal/billing	1.882s`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `20`
+- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+  - no output
 - `cd bigclaw-go && go test ./internal/repo ./internal/risk ./internal/workflow`
   - `ok  	bigclaw-go/internal/repo	1.151s`
   - `ok  	bigclaw-go/internal/risk	2.022s`

@@ -2,7 +2,9 @@ package queue
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -29,6 +31,55 @@ func TestFileQueuePersistsAcrossReload(t *testing.T) {
 	}
 	if got := reloaded.Size(ctx); got != 1 {
 		t.Fatalf("expected size 1, got %d", got)
+	}
+}
+
+func TestFileQueueCreatesParentDirectoryAndPreservesTaskPayload(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "state", "queue.json")
+
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	task := domain.Task{
+		ID:                 "task-meta",
+		Source:             "linear",
+		Title:              "Persist metadata",
+		Description:        "keep fields",
+		Labels:             []string{"platform"},
+		RequiredTools:      []string{"browser"},
+		AcceptanceCriteria: []string{"queue survives restart"},
+		ValidationPlan:     []string{"go test ./internal/queue"},
+		Priority:           1,
+		CreatedAt:          time.Now(),
+	}
+	if err := q.Enqueue(ctx, task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected queue file to exist: %v", err)
+	}
+
+	reloaded, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("reload queue: %v", err)
+	}
+	leased, _, err := reloaded.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || leased == nil {
+		t.Fatalf("lease reloaded task: %v task=%v", err, leased)
+	}
+	if got := leased.Labels; len(got) != 1 || got[0] != "platform" {
+		t.Fatalf("expected labels to persist, got %+v", leased)
+	}
+	if got := leased.RequiredTools; len(got) != 1 || got[0] != "browser" {
+		t.Fatalf("expected required tools to persist, got %+v", leased)
+	}
+	if got := leased.AcceptanceCriteria; len(got) != 1 || got[0] != "queue survives restart" {
+		t.Fatalf("expected acceptance criteria to persist, got %+v", leased)
+	}
+	if got := leased.ValidationPlan; len(got) != 1 || got[0] != "go test ./internal/queue" {
+		t.Fatalf("expected validation plan to persist, got %+v", leased)
 	}
 }
 
@@ -147,5 +198,44 @@ func TestFileQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
 	}
 	if _, err := reloaded.GetTask(ctx, "task-expire"); !errors.Is(err, ErrTaskNotFound) {
 		t.Fatalf("expected task to be purged after reload, got %v", err)
+	}
+}
+
+func TestFileQueueLoadsLegacyListStorage(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	payload, err := json.Marshal([]map[string]any{
+		{
+			"priority": 0,
+			"task_id":  "legacy",
+			"task": domain.Task{
+				ID:          "legacy",
+				Source:      "linear",
+				Title:       "legacy",
+				Description: "legacy payload",
+				Priority:    0,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal legacy payload: %v", err)
+	}
+	if err := os.WriteFile(path, payload, 0o644); err != nil {
+		t.Fatalf("write legacy payload: %v", err)
+	}
+
+	reloaded, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("load legacy queue: %v", err)
+	}
+	if got := reloaded.Size(ctx); got != 1 {
+		t.Fatalf("expected legacy queue size 1, got %d", got)
+	}
+	leased, _, err := reloaded.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || leased == nil {
+		t.Fatalf("lease legacy task: %v task=%v", err, leased)
+	}
+	if leased.ID != "legacy" {
+		t.Fatalf("expected legacy task to load, got %+v", leased)
 	}
 }
