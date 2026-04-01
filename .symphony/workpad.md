@@ -1,45 +1,42 @@
-# BIG-GO-1038 Workpad
+# BIG-GO-1042 Workpad
 
 ## Plan
 
-1. Inventory remaining `tests/*.py` files and identify the tranche with clear Go-native replacements already present in `bigclaw-go/`.
-2. Add or extend targeted Go tests where Python coverage still lacks a direct Go home but the production contract already exists in Go.
-3. Delete the replaced Python test files and remove `tests/conftest.py` if no remaining Python tests require it.
-4. Run targeted Go validation for the touched packages and record exact commands and results.
-5. Commit the scoped migration changes and push the branch to the remote.
+1. Verify which `src/bigclaw/*.py` top-level modules already have canonical Go owners and still have only limited Python compatibility references.
+2. Replace the package-level compatibility for the tranche in `src/bigclaw/__init__.py` so the standalone Python files are no longer required.
+3. Delete the retired Python tranche files from `src/bigclaw/` and add or extend focused Go tests for their canonical owners under `bigclaw-go/internal/...`.
+4. Run targeted validation for the touched Python and Go surfaces, plus before/after Python file counts, and record exact commands and results.
+5. Commit the scoped change with a message that lists the deleted Python files and added Go files/tests, then push the branch.
 
 ## Acceptance
 
-- The number of Python files under `tests/` decreases in this issue scope.
-- Any deleted Python test has a checked-in Go replacement test in `bigclaw-go/`.
-- No new Python tests are introduced.
-- `pyproject.toml` and `setup.py` remain absent.
-- The final change can name the deleted Python files and the added or expanded Go test files.
+- The repository-wide `*.py` file count decreases from the starting count for this issue.
+- The deleted tranche is limited to top-level `src/bigclaw/*.py` modules already assigned to canonical Go owners.
+- No new Python files are added.
+- The final commit message names the deleted Python files and the added Go file(s) and Go test file(s).
+- Targeted Python compatibility checks and targeted Go tests pass for the touched surfaces.
 
 ## Validation
 
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- Targeted `go test` commands for each touched Go package
-- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+- `find . -name "*.py" | wc -l`
+- `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py -q`
+- `cd bigclaw-go && go test ./internal/intake ./internal/workflow ./internal/regression`
 - `git status --short`
 
 ## Validation Results
 
-- `cd bigclaw-go && go test ./internal/bootstrap`
-  - `ok  	bigclaw-go/internal/bootstrap	4.862s`
-- `cd bigclaw-go && go test ./internal/product`
-  - `ok  	bigclaw-go/internal/product	2.728s`
-- `cd bigclaw-go && go test ./internal/contract`
-  - `ok  	bigclaw-go/internal/contract	1.370s`
-- `cd bigclaw-go && go test ./internal/githubsync`
-  - `ok  	bigclaw-go/internal/githubsync	3.702s`
-- `cd bigclaw-go && go test ./internal/governance`
-  - `ok  	bigclaw-go/internal/governance	0.534s`
-- `cd bigclaw-go && go test ./internal/observability`
-  - `ok  	bigclaw-go/internal/observability	1.891s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - `14 passed in 0.18s`
-- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `31`
-- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
-  - no output
+- `find . -name "*.py" | wc -l`
+  - `78`
+- `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py -q`
+  - `8 passed in 0.21s`
+- `cd bigclaw-go && go test ./internal/intake ./internal/workflow ./internal/regression`
+  - `ok  	bigclaw-go/internal/intake	0.464s`
+  - `ok  	bigclaw-go/internal/workflow	0.916s`
+  - `ok  	bigclaw-go/internal/regression	1.251s`
+- `git status --short`
+  - `M .symphony/workpad.md`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/connectors.py`
+  - `D src/bigclaw/dsl.py`
+  - `D src/bigclaw/mapping.py`
+  - `?? bigclaw-go/internal/regression/top_level_module_purge_tranche2_test.go`
