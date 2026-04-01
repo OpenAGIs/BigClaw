@@ -1,45 +1,28 @@
-# BIG-GO-1038 Workpad
-
 ## Plan
 
-1. Inventory remaining `tests/*.py` files and identify the tranche with clear Go-native replacements already present in `bigclaw-go/`.
-2. Add or extend targeted Go tests where Python coverage still lacks a direct Go home but the production contract already exists in Go.
-3. Delete the replaced Python test files and remove `tests/conftest.py` if no remaining Python tests require it.
-4. Run targeted Go validation for the touched packages and record exact commands and results.
-5. Commit the scoped migration changes and push the branch to the remote.
+1. Purge the first safe top-level Python tranche under `src/bigclaw` by deleting:
+   - `src/bigclaw/cost_control.py`
+   - `src/bigclaw/issue_archive.py`
+   - `src/bigclaw/github_sync.py`
+2. Remove any package exports that still point at those deleted Python modules so `src/bigclaw/__init__.py` no longer imports them.
+3. Add a focused Go regression test that asserts the migration contract for this tranche:
+   - the deleted Python files are absent
+   - the corresponding Go replacement files exist
+4. Run targeted validation for the touched Go packages and the new regression test.
+5. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
 
 ## Acceptance
 
-- The number of Python files under `tests/` decreases in this issue scope.
-- Any deleted Python test has a checked-in Go replacement test in `bigclaw-go/`.
-- No new Python tests are introduced.
-- `pyproject.toml` and `setup.py` remain absent.
-- The final change can name the deleted Python files and the added or expanded Go test files.
+- Python file count in the repository decreases from the pre-change baseline.
+- `src/bigclaw/cost_control.py`, `src/bigclaw/issue_archive.py`, and `src/bigclaw/github_sync.py` are deleted.
+- `src/bigclaw/__init__.py` no longer imports symbols from deleted modules.
+- A Go test covers the tranche replacement contract against the repository tree.
+- Targeted Go tests pass.
+- Changes are committed and pushed to the remote branch for `BIG-GO-1041`.
 
 ## Validation
 
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- Targeted `go test` commands for each touched Go package
-- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+- `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test ./internal/costcontrol ./internal/issuearchive ./internal/githubsync ./internal/regression -run 'TestTopLevelModulePurgeTranche1'`
 - `git status --short`
-
-## Validation Results
-
-- `cd bigclaw-go && go test ./internal/bootstrap`
-  - `ok  	bigclaw-go/internal/bootstrap	4.862s`
-- `cd bigclaw-go && go test ./internal/product`
-  - `ok  	bigclaw-go/internal/product	2.728s`
-- `cd bigclaw-go && go test ./internal/contract`
-  - `ok  	bigclaw-go/internal/contract	1.370s`
-- `cd bigclaw-go && go test ./internal/githubsync`
-  - `ok  	bigclaw-go/internal/githubsync	3.702s`
-- `cd bigclaw-go && go test ./internal/governance`
-  - `ok  	bigclaw-go/internal/governance	0.534s`
-- `cd bigclaw-go && go test ./internal/observability`
-  - `ok  	bigclaw-go/internal/observability	1.891s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - `14 passed in 0.18s`
-- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `31`
-- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
-  - no output
+- `git log -1 --stat`
