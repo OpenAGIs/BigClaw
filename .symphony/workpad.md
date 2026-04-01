@@ -25,6 +25,35 @@
 
 ## Validation Results
 
+- Tranche: delete Python control-center and scheduler tests with existing Go coverage
+  - Removed Python files:
+    - `tests/test_control_center.py`
+    - `tests/test_scheduler.py`
+- `cd bigclaw-go && go test ./internal/reporting ./internal/scheduler`
+  - `ok  	bigclaw-go/internal/reporting	0.405s`
+  - `ok  	bigclaw-go/internal/scheduler	(cached)`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_console_ia.py`
+  - `tests/test_design_system.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_planning.py`
+  - `tests/test_repo_collaboration.py`
+  - `tests/test_repo_rollout.py`
+  - `tests/test_reports.py`
+  - `tests/test_runtime_matrix.py`
+  - `tests/test_ui_review.py`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `12`
+- `find . -name '*.py' | sort | wc -l`
+  - `59`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `D tests/test_control_center.py`
+  - `D tests/test_scheduler.py`
 - Tranche: replace Python event bus module with Go package
   - Removed Python files:
     - `src/bigclaw/event_bus.py`
