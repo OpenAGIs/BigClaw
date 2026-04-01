@@ -14,11 +14,18 @@ if [ -z "$branch" ]; then
   exit 0
 fi
 
-if [ ! -f "scripts/ops/bigclawctl" ]; then
+if [ ! -d "bigclaw-go" ]; then
   exit 0
 fi
 
-bash scripts/ops/bigclawctl github-sync sync --json --allow-dirty || {
+if ! command -v go >/dev/null 2>&1; then
+  exit 0
+fi
+
+(
+  cd "$repo_root/bigclaw-go" || exit 0
+  go run ./cmd/bigclawctl github-sync sync --json --allow-dirty --repo "$repo_root"
+) || {
   echo "[bigclaw-sync] post-rewrite auto-sync failed; inspect branch sync state." >&2
   exit 0
 }

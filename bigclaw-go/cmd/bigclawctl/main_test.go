@@ -406,6 +406,16 @@ func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	if bytes.Contains(output, []byte(`\u003e`)) {
 		t.Fatalf("expected no HTML escaping in github-sync JSON output, got %s", string(output))
 	}
+	hookBody, err := os.ReadFile(hookFile)
+	if err != nil {
+		t.Fatalf("read installed hook: %v", err)
+	}
+	if !bytes.Contains(hookBody, []byte("go run ./cmd/bigclawctl github-sync sync")) {
+		t.Fatalf("expected Go github-sync hook content, got %s", string(hookBody))
+	}
+	if bytes.Contains(hookBody, []byte("scripts/ops/bigclawctl")) {
+		t.Fatalf("expected installed hook to avoid shell wrapper, got %s", string(hookBody))
+	}
 }
 
 func TestRunGitHubSyncStatusErrorJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {

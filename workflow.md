@@ -84,7 +84,7 @@ Hook-backed GitHub sync:
 - Workspace `after_create` now uses the Go-first `scripts/ops/bigclawctl workspace bootstrap` entrypoint, with repo URL / branch / cache location supplied via `SYMPHONY_BOOTSTRAP_*` env vars.
 - GitHub sync install/status/sync in this workflow is Go-only through `bash scripts/ops/bigclawctl github-sync ...`; do not call the removed `scripts/ops/bigclaw_github_sync.py` shim.
 - Workspace `before_run` re-applies `core.hooksPath=.githooks` and auto-pushes any clean unsynced branch head at the start of every turn.
-- Repository `.githooks/post-commit` and `.githooks/post-rewrite` automatically push the active branch and verify local/remote SHA equality after each commit or amend.
+- Repository `.githooks/post-commit` and `.githooks/post-rewrite` now invoke `go run ./cmd/bigclawctl github-sync sync --repo "$repo_root"` from `bigclaw-go`, so hook-driven sync stays on the canonical Go entrypoint after each commit or amend.
 - Workspace `after_run` emits a final sync audit and flags dirty or unsynced workspaces in Symphony logs.
 - Workspace `before_remove` prunes the issue worktree from the shared seed repo so terminal issue cleanup does not leak worktree metadata.
 - The same bootstrap layer is designed to be copied into other repos without renaming the workflow hooks; only the env defaults need to change.

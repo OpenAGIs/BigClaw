@@ -84,6 +84,15 @@ func TestInstallGitHooksConfiguresCoreHooksPath(t *testing.T) {
 	if info.Mode()&0o111 == 0 {
 		t.Fatalf("expected executable hook bits for %s", hookPath)
 	}
+	for _, name := range managedHookNames {
+		content, err := os.ReadFile(filepath.Join(hooksDir, name))
+		if err != nil {
+			t.Fatalf("read managed hook %s: %v", name, err)
+		}
+		if string(content) != hookScript(name) {
+			t.Fatalf("expected canonical hook content for %s, got:\n%s", name, string(content))
+		}
+	}
 }
 
 func TestInstallGitHooksSkipsRewriteWhenHooksPathAlreadyMatches(t *testing.T) {
