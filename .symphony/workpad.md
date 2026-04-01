@@ -2,15 +2,12 @@
 
 ## Plan
 
-1. Delete `tests/test_validation_bundle_continuation_policy_gate.py` because the Go-native
-   `bigclawctl automation e2e continuation-policy-gate` tests already cover the policy-go and
-   policy-hold paths for the same continuation bundle surface.
-2. Delete `tests/test_parallel_validation_bundle.py` because the Go-native automation bundle
-   command and regression tests already cover live validation bundle export, summary generation,
-   index generation, and shared-queue companion paths.
-3. Run targeted Go validation for `./cmd/bigclawctl` and `./internal/regression`, plus repo-level
+1. Delete `tests/test_live_shadow_bundle.py` because the Go-native live-shadow bundle export path
+   is already covered by `bigclawctl` automation command tests and the checked-in live-shadow
+   bundle surfaces are locked by regression tests.
+2. Run targeted Go validation for `./cmd/bigclawctl` and `./internal/regression`, plus repo-level
    file-count checks.
-4. Commit the scoped migration changes and push the branch to the remote.
+3. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
 
@@ -30,9 +27,9 @@
 ## Validation Results
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
-  - `ok  	bigclaw-go/cmd/bigclawctl	3.903s`
-  - `ok  	bigclaw-go/internal/regression	1.064s`
+  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `16`
+  - `15`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - no output
