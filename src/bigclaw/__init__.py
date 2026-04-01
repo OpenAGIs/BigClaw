@@ -26,7 +26,6 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-from . import runtime as _legacy_runtime_surface
 
 
 @dataclass
@@ -230,18 +229,577 @@ class WorkflowDefinition:
             raise ValueError(f"invalid workflow step kind(s): {joined}")
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
-    module = types.ModuleType(f"{__name__}.{name}")
-    for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
-    module.__dict__.update(extra_attrs)
-    sys.modules[module.__name__] = module
-    globals()[name] = module
+SCHEDULER_DECISION_EVENT = "execution.scheduler_decision"
+MANUAL_TAKEOVER_EVENT = "execution.manual_takeover"
+APPROVAL_RECORDED_EVENT = "execution.approval_recorded"
+BUDGET_OVERRIDE_EVENT = "execution.budget_override"
+FLOW_HANDOFF_EVENT = "execution.flow_handoff"
+
+
+@dataclass(frozen=True)
+class AuditEventSpec:
+    event_type: str
+    description: str
+    severity: str
+    retention_days: int
+    required_fields: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "event_type": self.event_type,
+            "description": self.description,
+            "severity": self.severity,
+            "retention_days": self.retention_days,
+            "required_fields": list(self.required_fields),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "AuditEventSpec":
+        return cls(
+            event_type=str(data["event_type"]),
+            description=str(data["description"]),
+            severity=str(data["severity"]),
+            retention_days=int(data["retention_days"]),
+            required_fields=[str(value) for value in data.get("required_fields", [])],
+        )
+
+
+P0_AUDIT_EVENT_SPECS: List[AuditEventSpec] = [
+    AuditEventSpec(
+        event_type=SCHEDULER_DECISION_EVENT,
+        description="Records the scheduler routing decision and risk context for a run.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "medium", "approved", "reason", "risk_level", "risk_score"],
+    ),
+    AuditEventSpec(
+        event_type=MANUAL_TAKEOVER_EVENT,
+        description="Captures escalation into a human takeover queue.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "target_team", "reason", "requested_by", "required_approvals"],
+    ),
+    AuditEventSpec(
+        event_type=APPROVAL_RECORDED_EVENT,
+        description="Records explicit human approvals attached to a run or acceptance decision.",
+        severity="info",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "approvals", "approval_count", "acceptance_status"],
+    ),
+    AuditEventSpec(
+        event_type=BUDGET_OVERRIDE_EVENT,
+        description="Captures a manual override to the run budget envelope.",
+        severity="warn",
+        retention_days=365,
+        required_fields=["task_id", "run_id", "requested_budget", "approved_budget", "override_actor", "reason"],
+    ),
+    AuditEventSpec(
+        event_type=FLOW_HANDOFF_EVENT,
+        description="Captures ownership transfer between automated flow stages and teams.",
+        severity="info",
+        retention_days=180,
+        required_fields=["task_id", "run_id", "source_stage", "target_team", "reason", "collaboration_mode"],
+    ),
+]
+
+_SPEC_BY_EVENT = {spec.event_type: spec for spec in P0_AUDIT_EVENT_SPECS}
+
+
+def get_audit_event_spec(event_type: str) -> Optional[AuditEventSpec]:
+    return _SPEC_BY_EVENT.get(event_type)
+
+
+def missing_required_fields(event_type: str, details: Dict[str, object]) -> List[str]:
+    spec = get_audit_event_spec(event_type)
+    if spec is None:
+        return []
+    return [field_name for field_name in spec.required_fields if field_name not in details]
+
+
+@dataclass
+class RiskFactor:
+    name: str
+    points: int
+    reason: str
+
+
+@dataclass
+class RiskScore:
+    level: RiskLevel
+    total: int
+    requires_approval: bool
+    factors: List[RiskFactor] = field(default_factory=list)
+
+    @property
+    def summary(self) -> str:
+        return ", ".join(f"{factor.name}={factor.points}" for factor in self.factors) or "baseline=0"
+
+
+class RiskScorer:
+    TOOL_POINTS = {
+        "browser": 10,
+        "terminal": 15,
+        "github": 10,
+        "deploy": 20,
+        "sql": 15,
+        "warehouse": 15,
+        "bi": 10,
+    }
+    LABEL_POINTS = {
+        "security": 20,
+        "compliance": 20,
+        "prod": 20,
+        "release": 15,
+        "ops": 10,
+    }
+
+    def score_task(self, task: Task) -> RiskScore:
+        factors: List[RiskFactor] = []
+        total = 0
+
+        risk_points = {
+            RiskLevel.LOW: 0,
+            RiskLevel.MEDIUM: 30,
+            RiskLevel.HIGH: 60,
+        }[task.risk_level]
+        total += risk_points
+        if risk_points:
+            factors.append(RiskFactor("risk-level", risk_points, f"declared risk level {task.risk_level.value}"))
+
+        if task.priority == Priority.P0:
+            total += 10
+            factors.append(RiskFactor("priority", 10, "p0 task needs tighter controls"))
+
+        labels = {label.lower() for label in task.labels}
+        for label in sorted(labels):
+            points = self.LABEL_POINTS.get(label)
+            if points:
+                total += points
+                factors.append(RiskFactor(f"label:{label}", points, f"label {label} increases operational risk"))
+
+        tools = {tool.lower() for tool in task.required_tools}
+        for tool in sorted(tools):
+            points = self.TOOL_POINTS.get(tool)
+            if points:
+                total += points
+                factors.append(RiskFactor(f"tool:{tool}", points, f"tool {tool} expands execution surface"))
+
+        if task.budget < 0:
+            total += 20
+            factors.append(RiskFactor("budget", 20, "invalid budget requires manual review"))
+
+        level = self._level_for_total(total)
+        return RiskScore(level=level, total=total, requires_approval=(level == RiskLevel.HIGH), factors=factors)
+
+    def _level_for_total(self, total: int) -> RiskLevel:
+        if total >= 60:
+            return RiskLevel.HIGH
+        if total >= 25:
+            return RiskLevel.MEDIUM
+        return RiskLevel.LOW
+
+
+REQUIRED_RUN_CLOSEOUTS = ("validation-evidence", "git-push", "git-log-stat")
+ALLOWED_SCOPE_STATUSES = {"frozen", "approved-exception", "proposed"}
+
+
+@dataclass(frozen=True)
+class FreezeException:
+    issue_id: str
+    reason: str
+    approved_by: str = ""
+    decision_note: str = ""
+
+    @property
+    def approved(self) -> bool:
+        return bool(self.approved_by.strip())
+
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "issue_id": self.issue_id,
+            "reason": self.reason,
+            "approved_by": self.approved_by,
+            "decision_note": self.decision_note,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, str]) -> "FreezeException":
+        return cls(
+            issue_id=data["issue_id"],
+            reason=data.get("reason", ""),
+            approved_by=data.get("approved_by", ""),
+            decision_note=data.get("decision_note", ""),
+        )
+
+
+@dataclass
+class GovernanceBacklogItem:
+    issue_id: str
+    title: str
+    phase: str
+    owner: str = ""
+    status: str = "planned"
+    scope_status: str = "frozen"
+    acceptance_criteria: List[str] = field(default_factory=list)
+    validation_plan: List[str] = field(default_factory=list)
+    required_closeout: List[str] = field(default_factory=lambda: list(REQUIRED_RUN_CLOSEOUTS))
+    linked_epics: List[str] = field(default_factory=list)
+    notes: str = ""
+
+    @property
+    def missing_closeout_requirements(self) -> List[str]:
+        present = {item.strip().lower() for item in self.required_closeout if item.strip()}
+        return [item for item in REQUIRED_RUN_CLOSEOUTS if item not in present]
+
+    @property
+    def governance_ready(self) -> bool:
+        return (
+            bool(self.owner.strip())
+            and self.scope_status in ALLOWED_SCOPE_STATUSES
+            and bool(self.acceptance_criteria)
+            and bool(self.validation_plan)
+            and not self.missing_closeout_requirements
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "issue_id": self.issue_id,
+            "title": self.title,
+            "phase": self.phase,
+            "owner": self.owner,
+            "status": self.status,
+            "scope_status": self.scope_status,
+            "acceptance_criteria": list(self.acceptance_criteria),
+            "validation_plan": list(self.validation_plan),
+            "required_closeout": list(self.required_closeout),
+            "linked_epics": list(self.linked_epics),
+            "notes": self.notes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "GovernanceBacklogItem":
+        return cls(
+            issue_id=str(data["issue_id"]),
+            title=str(data["title"]),
+            phase=str(data.get("phase", "")),
+            owner=str(data.get("owner", "")),
+            status=str(data.get("status", "planned")),
+            scope_status=str(data.get("scope_status", "frozen")),
+            acceptance_criteria=[str(item) for item in data.get("acceptance_criteria", [])],
+            validation_plan=[str(item) for item in data.get("validation_plan", [])],
+            required_closeout=[str(item) for item in data.get("required_closeout", [])],
+            linked_epics=[str(item) for item in data.get("linked_epics", [])],
+            notes=str(data.get("notes", "")),
+        )
+
+
+@dataclass
+class ScopeFreezeBoard:
+    name: str
+    version: str
+    freeze_date: str
+    freeze_owner: str
+    backlog_items: List[GovernanceBacklogItem] = field(default_factory=list)
+    exceptions: List[FreezeException] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "freeze_date": self.freeze_date,
+            "freeze_owner": self.freeze_owner,
+            "backlog_items": [item.to_dict() for item in self.backlog_items],
+            "exceptions": [exception.to_dict() for exception in self.exceptions],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ScopeFreezeBoard":
+        return cls(
+            name=str(data["name"]),
+            version=str(data["version"]),
+            freeze_date=str(data.get("freeze_date", "")),
+            freeze_owner=str(data.get("freeze_owner", "")),
+            backlog_items=[GovernanceBacklogItem.from_dict(item) for item in data.get("backlog_items", [])],
+            exceptions=[FreezeException.from_dict(item) for item in data.get("exceptions", [])],
+        )
+
+
+@dataclass
+class ScopeFreezeAudit:
+    board_name: str
+    version: str
+    total_items: int
+    duplicate_issue_ids: List[str] = field(default_factory=list)
+    missing_owners: List[str] = field(default_factory=list)
+    missing_acceptance: List[str] = field(default_factory=list)
+    missing_validation: List[str] = field(default_factory=list)
+    missing_closeout_requirements: Dict[str, List[str]] = field(default_factory=dict)
+    unauthorized_scope_changes: List[str] = field(default_factory=list)
+    invalid_scope_statuses: List[str] = field(default_factory=list)
+    unapproved_exceptions: List[str] = field(default_factory=list)
+
+    @property
+    def release_ready(self) -> bool:
+        return not (
+            self.duplicate_issue_ids
+            or self.missing_owners
+            or self.missing_acceptance
+            or self.missing_validation
+            or self.missing_closeout_requirements
+            or self.unauthorized_scope_changes
+            or self.invalid_scope_statuses
+            or self.unapproved_exceptions
+        )
+
+    @property
+    def readiness_score(self) -> float:
+        checks = [
+            not self.duplicate_issue_ids,
+            not self.missing_owners,
+            not self.missing_acceptance,
+            not self.missing_validation,
+            not self.missing_closeout_requirements,
+            not self.unauthorized_scope_changes,
+            not self.invalid_scope_statuses,
+            not self.unapproved_exceptions,
+        ]
+        passed = sum(1 for item in checks if item)
+        return round((passed / len(checks)) * 100, 1)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "board_name": self.board_name,
+            "version": self.version,
+            "total_items": self.total_items,
+            "duplicate_issue_ids": list(self.duplicate_issue_ids),
+            "missing_owners": list(self.missing_owners),
+            "missing_acceptance": list(self.missing_acceptance),
+            "missing_validation": list(self.missing_validation),
+            "missing_closeout_requirements": {
+                issue_id: list(requirements)
+                for issue_id, requirements in self.missing_closeout_requirements.items()
+            },
+            "unauthorized_scope_changes": list(self.unauthorized_scope_changes),
+            "invalid_scope_statuses": list(self.invalid_scope_statuses),
+            "unapproved_exceptions": list(self.unapproved_exceptions),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ScopeFreezeAudit":
+        return cls(
+            board_name=str(data["board_name"]),
+            version=str(data["version"]),
+            total_items=int(data.get("total_items", 0)),
+            duplicate_issue_ids=[str(item) for item in data.get("duplicate_issue_ids", [])],
+            missing_owners=[str(item) for item in data.get("missing_owners", [])],
+            missing_acceptance=[str(item) for item in data.get("missing_acceptance", [])],
+            missing_validation=[str(item) for item in data.get("missing_validation", [])],
+            missing_closeout_requirements={
+                str(issue_id): [str(requirement) for requirement in requirements]
+                for issue_id, requirements in dict(data.get("missing_closeout_requirements", {})).items()
+            },
+            unauthorized_scope_changes=[str(item) for item in data.get("unauthorized_scope_changes", [])],
+            invalid_scope_statuses=[str(item) for item in data.get("invalid_scope_statuses", [])],
+            unapproved_exceptions=[str(item) for item in data.get("unapproved_exceptions", [])],
+        )
+
+
+class ScopeFreezeGovernance:
+    def audit(self, board: ScopeFreezeBoard) -> ScopeFreezeAudit:
+        counts: Dict[str, int] = {}
+        exception_index = {exception.issue_id: exception for exception in board.exceptions}
+
+        for item in board.backlog_items:
+            counts[item.issue_id] = counts.get(item.issue_id, 0) + 1
+        duplicate_issue_ids = sorted(issue_id for issue_id, count in counts.items() if count > 1)
+
+        missing_owners = sorted(item.issue_id for item in board.backlog_items if not item.owner.strip())
+        missing_acceptance = sorted(item.issue_id for item in board.backlog_items if not item.acceptance_criteria)
+        missing_validation = sorted(item.issue_id for item in board.backlog_items if not item.validation_plan)
+        missing_closeout_requirements = {
+            item.issue_id: item.missing_closeout_requirements
+            for item in board.backlog_items
+            if item.missing_closeout_requirements
+        }
+        invalid_scope_statuses = sorted(
+            item.issue_id for item in board.backlog_items if item.scope_status not in ALLOWED_SCOPE_STATUSES
+        )
+
+        unauthorized_scope_changes: List[str] = []
+        for item in board.backlog_items:
+            if item.scope_status != "proposed":
+                continue
+            exception = exception_index.get(item.issue_id)
+            if exception is None or not exception.approved:
+                unauthorized_scope_changes.append(item.issue_id)
+
+        unapproved_exceptions = sorted(
+            exception.issue_id for exception in board.exceptions if not exception.approved
+        )
+
+        return ScopeFreezeAudit(
+            board_name=board.name,
+            version=board.version,
+            total_items=len(board.backlog_items),
+            duplicate_issue_ids=duplicate_issue_ids,
+            missing_owners=missing_owners,
+            missing_acceptance=missing_acceptance,
+            missing_validation=missing_validation,
+            missing_closeout_requirements=missing_closeout_requirements,
+            unauthorized_scope_changes=sorted(unauthorized_scope_changes),
+            invalid_scope_statuses=invalid_scope_statuses,
+            unapproved_exceptions=unapproved_exceptions,
+        )
+
+
+def render_scope_freeze_report(board: ScopeFreezeBoard, audit: ScopeFreezeAudit) -> str:
+    lines = [
+        "# Scope Freeze Governance Report",
+        "",
+        f"- Name: {board.name}",
+        f"- Version: {board.version}",
+        f"- Freeze Date: {board.freeze_date}",
+        f"- Freeze Owner: {board.freeze_owner}",
+        f"- Backlog Items: {len(board.backlog_items)}",
+        f"- Exceptions: {len(board.exceptions)}",
+        f"- Readiness Score: {audit.readiness_score:.1f}",
+        f"- Release Ready: {audit.release_ready}",
+        "",
+        "## Backlog",
+        "",
+    ]
+
+    if board.backlog_items:
+        for item in board.backlog_items:
+            closeout = ", ".join(item.required_closeout) or "none"
+            lines.append(
+                f"- {item.issue_id}: phase={item.phase} owner={item.owner or 'none'} "
+                f"status={item.status} scope={item.scope_status} closeout={closeout}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Freeze Exceptions", ""])
+    if board.exceptions:
+        for exception in board.exceptions:
+            lines.append(
+                f"- {exception.issue_id}: approved_by={exception.approved_by or 'pending'} reason={exception.reason or 'none'}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Audit", ""])
+    lines.append(
+        f"- Duplicate issues: {', '.join(audit.duplicate_issue_ids) if audit.duplicate_issue_ids else 'none'}"
+    )
+    lines.append(f"- Missing owners: {', '.join(audit.missing_owners) if audit.missing_owners else 'none'}")
+    lines.append(
+        f"- Missing acceptance: {', '.join(audit.missing_acceptance) if audit.missing_acceptance else 'none'}"
+    )
+    lines.append(
+        f"- Missing validation: {', '.join(audit.missing_validation) if audit.missing_validation else 'none'}"
+    )
+    if audit.missing_closeout_requirements:
+        missing_closeout = "; ".join(
+            f"{issue_id}={', '.join(requirements)}"
+            for issue_id, requirements in sorted(audit.missing_closeout_requirements.items())
+        )
+    else:
+        missing_closeout = "none"
+    lines.append(f"- Missing closeout requirements: {missing_closeout}")
+    lines.append(
+        "- Unauthorized scope changes: "
+        f"{', '.join(audit.unauthorized_scope_changes) if audit.unauthorized_scope_changes else 'none'}"
+    )
+    lines.append(
+        f"- Invalid scope statuses: {', '.join(audit.invalid_scope_statuses) if audit.invalid_scope_statuses else 'none'}"
+    )
+    lines.append(
+        f"- Unapproved exceptions: {', '.join(audit.unapproved_exceptions) if audit.unapproved_exceptions else 'none'}"
+    )
+    return "\n".join(lines) + "\n"
 
 
 def _install_compatibility_module(name: str, exports: Dict[str, object], **extra_attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     module.__dict__.update(exports)
+    module.__dict__.update(extra_attrs)
+    sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
+_install_compatibility_module(
+    "connectors",
+    {
+        "SourceIssue": SourceIssue,
+        "Connector": Connector,
+        "GitHubConnector": GitHubConnector,
+        "LinearConnector": LinearConnector,
+        "JiraConnector": JiraConnector,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/connector.go",
+)
+_install_compatibility_module(
+    "mapping",
+    {
+        "map_priority": map_priority,
+        "map_state": map_state,
+        "map_source_issue_to_task": map_source_issue_to_task,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/mapping.go",
+)
+_install_compatibility_module(
+    "dsl",
+    {
+        "WorkflowDefinition": WorkflowDefinition,
+        "WorkflowStep": WorkflowStep,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
+)
+_install_compatibility_module(
+    "risk",
+    {
+        "RiskFactor": RiskFactor,
+        "RiskScore": RiskScore,
+        "RiskScorer": RiskScorer,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
+)
+_install_compatibility_module(
+    "governance",
+    {
+        "FreezeException": FreezeException,
+        "GovernanceBacklogItem": GovernanceBacklogItem,
+        "ScopeFreezeAudit": ScopeFreezeAudit,
+        "ScopeFreezeBoard": ScopeFreezeBoard,
+        "ScopeFreezeGovernance": ScopeFreezeGovernance,
+        "render_scope_freeze_report": render_scope_freeze_report,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
+)
+_install_compatibility_module(
+    "audit_events",
+    {
+        "APPROVAL_RECORDED_EVENT": APPROVAL_RECORDED_EVENT,
+        "BUDGET_OVERRIDE_EVENT": BUDGET_OVERRIDE_EVENT,
+        "FLOW_HANDOFF_EVENT": FLOW_HANDOFF_EVENT,
+        "MANUAL_TAKEOVER_EVENT": MANUAL_TAKEOVER_EVENT,
+        "P0_AUDIT_EVENT_SPECS": P0_AUDIT_EVENT_SPECS,
+        "SCHEDULER_DECISION_EVENT": SCHEDULER_DECISION_EVENT,
+        "AuditEventSpec": AuditEventSpec,
+        "get_audit_event_spec": get_audit_event_spec,
+        "missing_required_fields": missing_required_fields,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
+)
+
+from . import runtime as _legacy_runtime_surface
+
+
+def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+    module = types.ModuleType(f"{__name__}.{name}")
+    for export_name in export_names:
+        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
@@ -295,34 +853,6 @@ _install_legacy_surface_module(
         "service.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
-)
-_install_compatibility_module(
-    "connectors",
-    {
-        "SourceIssue": SourceIssue,
-        "Connector": Connector,
-        "GitHubConnector": GitHubConnector,
-        "LinearConnector": LinearConnector,
-        "JiraConnector": JiraConnector,
-    },
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/connector.go",
-)
-_install_compatibility_module(
-    "mapping",
-    {
-        "map_priority": map_priority,
-        "map_state": map_state,
-        "map_source_issue_to_task": map_source_issue_to_task,
-    },
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/mapping.go",
-)
-_install_compatibility_module(
-    "dsl",
-    {
-        "WorkflowDefinition": WorkflowDefinition,
-        "WorkflowStep": WorkflowStep,
-    },
-    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
 )
 
 from .runtime import (
@@ -423,14 +953,6 @@ from .saved_views import (
     SavedViewLibrary,
     render_saved_view_report,
 )
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
 from .issue_archive import (
     ArchivedIssue,
     IssuePriorityArchive,
@@ -438,19 +960,7 @@ from .issue_archive import (
     IssuePriorityArchivist,
     render_issue_priority_archive_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
-from .audit_events import (
-    APPROVAL_RECORDED_EVENT,
-    BUDGET_OVERRIDE_EVENT,
-    FLOW_HANDOFF_EVENT,
-    MANUAL_TAKEOVER_EVENT,
-    P0_AUDIT_EVENT_SPECS,
-    SCHEDULER_DECISION_EVENT,
-    AuditEventSpec,
-    get_audit_event_spec,
-    missing_required_fields,
-)
 from .event_bus import (
     CI_COMPLETED_EVENT,
     PULL_REQUEST_COMMENT_EVENT,
