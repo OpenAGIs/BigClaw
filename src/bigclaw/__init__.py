@@ -1476,12 +1476,113 @@ def missing_repo_audit_fields(action: str, payload: Dict[str, object]) -> List[s
     return [field_name for field_name in required if field_name not in payload]
 
 
+@dataclass
+class RepoSpace:
+    space_id: str
+    project_key: str
+    repo: str
+    default_branch: str = "main"
+    sidecar_url: str = ""
+    sidecar_enabled: bool = True
+    health_state: str = "unknown"
+    default_channel_strategy: str = "task"
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def default_channel_for_task(self, task_id: str) -> str:
+        normalized = "".join(ch.lower() if ch.isalnum() else "-" for ch in task_id).strip("-")
+        normalized = "-".join(part for part in normalized.split("-") if part)
+        return f"{self.project_key.lower()}-{normalized}"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "space_id": self.space_id,
+            "project_key": self.project_key,
+            "repo": self.repo,
+            "default_branch": self.default_branch,
+            "sidecar_url": self.sidecar_url,
+            "sidecar_enabled": self.sidecar_enabled,
+            "health_state": self.health_state,
+            "default_channel_strategy": self.default_channel_strategy,
+            "metadata": dict(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RepoSpace":
+        return cls(
+            space_id=str(data["space_id"]),
+            project_key=str(data["project_key"]),
+            repo=str(data["repo"]),
+            default_branch=str(data.get("default_branch", "main")),
+            sidecar_url=str(data.get("sidecar_url", "")),
+            sidecar_enabled=bool(data.get("sidecar_enabled", True)),
+            health_state=str(data.get("health_state", "unknown")),
+            default_channel_strategy=str(data.get("default_channel_strategy", "task")),
+            metadata=dict(data.get("metadata", {})),
+        )
+
+
+@dataclass
+class RepoAgent:
+    actor: str
+    repo_agent_id: str
+    display_name: str = ""
+    roles: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "actor": self.actor,
+            "repo_agent_id": self.repo_agent_id,
+            "display_name": self.display_name,
+            "roles": list(self.roles),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RepoAgent":
+        return cls(
+            actor=str(data["actor"]),
+            repo_agent_id=str(data["repo_agent_id"]),
+            display_name=str(data.get("display_name", "")),
+            roles=[str(item) for item in data.get("roles", [])],
+        )
+
+
+@dataclass
+class RunCommitLink:
+    run_id: str
+    commit_hash: str
+    role: str
+    repo_space_id: str
+    actor: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "commit_hash": self.commit_hash,
+            "role": self.role,
+            "repo_space_id": self.repo_space_id,
+            "actor": self.actor,
+            "metadata": dict(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RunCommitLink":
+        return cls(
+            run_id=str(data["run_id"]),
+            commit_hash=str(data["commit_hash"]),
+            role=str(data["role"]),
+            repo_space_id=str(data["repo_space_id"]),
+            actor=str(data.get("actor", "")),
+            metadata=dict(data.get("metadata", {})),
+        )
+
+
 VALID_ROLES = {"source", "candidate", "closeout", "accepted"}
 
 
 @dataclass
 class RunCommitBinding:
-    links: List["RunCommitLink"]
+    links: List[RunCommitLink]
 
     @property
     def accepted_commit_hash(self) -> str:
@@ -1497,14 +1598,14 @@ class RunCommitBinding:
         }
 
 
-def validate_roles(links: List["RunCommitLink"]) -> None:
+def validate_roles(links: List[RunCommitLink]) -> None:
     invalid = [link.role for link in links if link.role not in VALID_ROLES]
     if invalid:
         invalid_text = ", ".join(sorted(set(invalid)))
         raise ValueError(f"unsupported run commit roles: {invalid_text}")
 
 
-def bind_run_commits(links: List["RunCommitLink"]) -> RunCommitBinding:
+def bind_run_commits(links: List[RunCommitLink]) -> RunCommitBinding:
     validate_roles(list(links))
     return RunCommitBinding(links=list(links))
 
@@ -1632,6 +1733,167 @@ def repo_audit_payload(*, actor: str, action: str, outcome: str, commit_hash: st
         "commit_hash": commit_hash,
         "repo_space_id": repo_space_id,
     }
+
+
+def _slug(value: str) -> str:
+    cleaned = "".join(ch.lower() if ch.isalnum() else "-" for ch in value)
+    return "-".join(part for part in cleaned.split("-") if part) or "agent"
+
+
+@dataclass
+class RepoRegistry:
+    spaces_by_project: Dict[str, RepoSpace] = field(default_factory=dict)
+    agents_by_actor: Dict[str, RepoAgent] = field(default_factory=dict)
+
+    def register_space(self, space: RepoSpace) -> None:
+        self.spaces_by_project[space.project_key] = space
+
+    def resolve_space(self, project_key: str) -> Optional[RepoSpace]:
+        return self.spaces_by_project.get(project_key)
+
+    def resolve_default_channel(self, project_key: str, task: Task) -> str:
+        space = self.resolve_space(project_key)
+        if not space:
+            return f"{project_key.lower()}-{_slug(task.task_id)}"
+        return space.default_channel_for_task(task.task_id)
+
+    def resolve_agent(self, actor: str, role: str = "executor") -> RepoAgent:
+        if actor in self.agents_by_actor:
+            return self.agents_by_actor[actor]
+        agent = RepoAgent(
+            actor=actor,
+            repo_agent_id=f"agent-{_slug(actor)}",
+            display_name=actor,
+            roles=[role],
+        )
+        self.agents_by_actor[actor] = agent
+        return agent
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "spaces_by_project": {key: value.to_dict() for key, value in self.spaces_by_project.items()},
+            "agents_by_actor": {key: value.to_dict() for key, value in self.agents_by_actor.items()},
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "RepoRegistry":
+        registry = cls()
+        for key, value in dict(data.get("spaces_by_project", {})).items():
+            registry.spaces_by_project[str(key)] = RepoSpace.from_dict(dict(value))
+        for key, value in dict(data.get("agents_by_actor", {})).items():
+            registry.agents_by_actor[str(key)] = RepoAgent.from_dict(dict(value))
+        return registry
+
+
+def _repo_board_now() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+@dataclass
+class RepoPost:
+    post_id: str
+    channel: str
+    author: str
+    body: str
+    target_surface: str = "task"
+    target_id: str = ""
+    parent_post_id: str = ""
+    created_at: str = field(default_factory=_repo_board_now)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "post_id": self.post_id,
+            "channel": self.channel,
+            "author": self.author,
+            "body": self.body,
+            "target_surface": self.target_surface,
+            "target_id": self.target_id,
+            "parent_post_id": self.parent_post_id,
+            "created_at": self.created_at,
+            "metadata": dict(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RepoPost":
+        return cls(
+            post_id=str(data.get("post_id", "")),
+            channel=str(data.get("channel", "")),
+            author=str(data.get("author", "")),
+            body=str(data.get("body", "")),
+            target_surface=str(data.get("target_surface", "task")),
+            target_id=str(data.get("target_id", "")),
+            parent_post_id=str(data.get("parent_post_id", "")),
+            created_at=str(data.get("created_at", _repo_board_now())),
+            metadata=dict(data.get("metadata", {})),
+        )
+
+    def to_collaboration_comment(self) -> "CollaborationComment":
+        from .collaboration import CollaborationComment
+
+        return CollaborationComment(
+            comment_id=f"repo-{self.post_id}",
+            author=self.author,
+            body=self.body,
+            created_at=self.created_at,
+            anchor=f"{self.target_surface}:{self.target_id}",
+            status="resolved" if self.metadata.get("resolved") else "open",
+        )
+
+
+@dataclass
+class RepoDiscussionBoard:
+    posts: List[RepoPost] = field(default_factory=list)
+
+    def create_post(
+        self,
+        *,
+        channel: str,
+        author: str,
+        body: str,
+        target_surface: str,
+        target_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> RepoPost:
+        post = RepoPost(
+            post_id=f"post-{len(self.posts) + 1}",
+            channel=channel,
+            author=author,
+            body=body,
+            target_surface=target_surface,
+            target_id=target_id,
+            metadata=dict(metadata or {}),
+        )
+        self.posts.append(post)
+        return post
+
+    def reply(self, *, parent_post_id: str, author: str, body: str) -> RepoPost:
+        parent = next((post for post in self.posts if post.post_id == parent_post_id), None)
+        if not parent:
+            raise ValueError(f"unknown parent post: {parent_post_id}")
+        post = RepoPost(
+            post_id=f"post-{len(self.posts) + 1}",
+            channel=parent.channel,
+            author=author,
+            body=body,
+            target_surface=parent.target_surface,
+            target_id=parent.target_id,
+            parent_post_id=parent_post_id,
+        )
+        self.posts.append(post)
+        return post
+
+    def list_posts(self, *, channel: str = "", target_surface: str = "", target_id: str = "") -> List[RepoPost]:
+        result = self.posts
+        if channel:
+            result = [post for post in result if post.channel == channel]
+        if target_surface:
+            result = [post for post in result if post.target_surface == target_surface]
+        if target_id:
+            result = [post for post in result if post.target_id == target_id]
+        return list(result)
 
 
 def _install_compatibility_module(name: str, exports: Dict[str, object], **extra_attrs: object) -> None:
@@ -1767,6 +2029,30 @@ _install_compatibility_module(
         "repo_audit_payload": repo_audit_payload,
     },
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/gateway.go",
+)
+_install_compatibility_module(
+    "repo_plane",
+    {
+        "RepoSpace": RepoSpace,
+        "RepoAgent": RepoAgent,
+        "RunCommitLink": RunCommitLink,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/plane.go",
+)
+_install_compatibility_module(
+    "repo_registry",
+    {
+        "RepoRegistry": RepoRegistry,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/registry.go",
+)
+_install_compatibility_module(
+    "repo_board",
+    {
+        "RepoPost": RepoPost,
+        "RepoDiscussionBoard": RepoDiscussionBoard,
+    },
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/board.go",
 )
 
 from . import runtime as _legacy_runtime_surface
