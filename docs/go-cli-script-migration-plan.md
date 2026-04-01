@@ -13,7 +13,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
-- retired `scripts/dev_smoke.py`; use `bigclawctl dev-smoke`
+- root dev smoke path is Go-only: use `bigclawctl dev-smoke`
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`

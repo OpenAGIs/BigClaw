@@ -20,9 +20,9 @@ if [ "${BIGCLAW_ENABLE_LEGACY_PYTHON:-0}" = "1" ]; then
     echo "BigClaw Go environment is ready, and the remaining Python migration smoke suite was validated from source."
   else
     echo "BigClaw Go environment is ready."
-    echo "Python migration validation was limited to bigclawctl dev-smoke, plus Go bootstrap tests, because pytest is not installed in the active environment."
+    echo "Source-level Python migration validation was skipped because pytest is not installed in the active environment; Go smoke and bootstrap checks still ran."
   fi
 else
   echo "BigClaw Go development environment is ready."
-  echo "Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 to validate the remaining Python migration smoke suite and Go bootstrap coverage."
+  echo "Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 to add the remaining source-level Python migration suite after the default Go smoke and bootstrap coverage."
 fi
