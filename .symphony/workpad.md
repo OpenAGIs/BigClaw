@@ -177,6 +177,15 @@ Results
 - `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` after deleting `__main__.py` -> exit 0
 - `PYTHONPATH=src python3 -c "import bigclaw; print('ok')"` after deleting `__main__.py` -> `ok`
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `__main__.py` -> `ok  	bigclaw-go/internal/regression	0.770s`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` after deleting `runtime.py` and `ui_review.py` -> exit 0
+- `python3 -m py_compile src/bigclaw/__init__.py` after deleting `runtime.py` and `ui_review.py` -> exit 0
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q` after deleting `ui_review.py` -> `27 passed, 1 warning in 0.14s`
+- `PYTHONPATH=src python3 -c "import bigclaw.ui_review; print('ok')"` after deleting `ui_review.py` -> `ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_orchestration.py tests/test_audit_events.py tests/test_risk.py -q` after deleting `runtime.py` -> `20 passed, 1 warning in 0.12s`
+- `PYTHONPATH=src python3 -c "import bigclaw.runtime, bigclaw.scheduler, bigclaw.workflow; print('ok')"` after deleting `runtime.py` -> `ok`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` after deleting `runtime.py` and `ui_review.py` -> `1`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort` after deleting `runtime.py` and `ui_review.py` -> `src/bigclaw/__init__.py`
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `runtime.py` and `ui_review.py` -> `ok  	bigclaw-go/internal/regression	1.058s`
 
 Runtime Slice Plan (BIG-GO-1035 continuation)
 - Delete `src/bigclaw/runtime.py` and move its compatibility surface into a synthetic `bigclaw.runtime` module in `src/bigclaw/__init__.py`.
@@ -196,6 +205,18 @@ Runtime Slice Validation
 - `PYTHONPATH=src python3 -c "import bigclaw.runtime, bigclaw.scheduler, bigclaw.workflow; print('ok')"`
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory`
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+
+Runtime/UI Review Slice Results
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q` -> `27 passed, 1 warning in 0.14s`
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_orchestration.py tests/test_audit_events.py tests/test_risk.py -q` -> `20 passed, 1 warning in 0.13s`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_repo_rollout.py tests/test_observability.py -q` -> `43 passed, 1 warning in 0.15s`
+- `PYTHONPATH=src python3 -c "import bigclaw.runtime, bigclaw.scheduler, bigclaw.workflow; print('ok')"` -> `ok`
+- `PYTHONPATH=src python3 -c "import bigclaw.ui_review; print('ok')"` -> `ok`
+- `PYTHONPATH=src python3 -c "import bigclaw.reports; print('ok')"` -> `ok`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` -> exit 0
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort` -> `src/bigclaw/__init__.py`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `1`
 
 Runtime Slice Results
 - `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py` -> exit 0
