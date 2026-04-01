@@ -543,6 +543,170 @@ func TestUIReviewPackAuditFlagsMissingSignoffSLAMetadata(t *testing.T) {
 	}
 }
 
+func TestUIReviewPackAuditFlagsUnresolvedDecisionWithoutFollowUp(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.DecisionLog[1] = ReviewDecision{
+		DecisionID: "dec-queue-vp-summary",
+		SurfaceID:  "wf-queue",
+		Owner:      "VP Eng",
+		Summary:    "Route VP Eng to a summary-first queue state instead of operator controls.",
+		Rationale:  "The VP Eng persona needs queue visibility without accidental action affordances.",
+		Status:     "proposed",
+		FollowUp:   "",
+	}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.UnresolvedDecisionIDs, []string{"dec-queue-vp-summary"}) ||
+		!reflect.DeepEqual(audit.UnresolvedDecisionsMissingFollowUps, []string{"dec-queue-vp-summary"}) {
+		t.Fatalf("unexpected unresolved decision audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsMissingFreezeAndHandoffMetadata(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.BlockerLog[0] = ReviewBlocker{
+		BlockerID:        "blk-run-detail-copy-final",
+		SurfaceID:        "wf-run-detail",
+		SignoffID:        "sig-run-detail-eng-lead",
+		Owner:            "product-experience",
+		Summary:          "Replay-state copy still needs final wording review before Eng Lead signoff can close.",
+		Status:           "open",
+		Severity:         "medium",
+		EscalationOwner:  "design-program-manager",
+		NextAction:       "Review replay-state copy with Eng Lead and update the run-detail frame in the next critique.",
+		FreezeException:  true,
+		FreezeOwner:      "",
+		FreezeUntil:      "",
+		FreezeReason:     "Allow the design sprint review pack to ship while tracked copy cleanup lands in the next critique.",
+		FreezeApprovedBy: "",
+		FreezeApprovedAt: "",
+	}
+	pack.BlockerTimeline[1] = ReviewBlockerEvent{
+		EventID:     "evt-run-detail-copy-escalated",
+		BlockerID:   "blk-run-detail-copy-final",
+		Actor:       "design-program-manager",
+		Status:      "escalated",
+		Summary:     "Scheduled a joint wording review with Eng Lead and product-experience to close the signoff blocker.",
+		Timestamp:   "2026-03-14T09:30:00Z",
+		NextAction:  "Refresh the run-detail frame annotations after the wording review completes.",
+		HandoffFrom: "product-experience",
+		HandoffTo:   "",
+		Channel:     "design-critique",
+		ArtifactRef: "",
+	}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.FreezeExceptionsMissingOwners, []string{"blk-run-detail-copy-final"}) ||
+		!reflect.DeepEqual(audit.FreezeExceptionsMissingUntil, []string{"blk-run-detail-copy-final"}) ||
+		!reflect.DeepEqual(audit.FreezeExceptionsMissingApprovers, []string{"blk-run-detail-copy-final"}) ||
+		!reflect.DeepEqual(audit.FreezeExceptionsMissingApprovalDates, []string{"blk-run-detail-copy-final"}) ||
+		!reflect.DeepEqual(audit.FreezeExceptionsMissingRenewalOwners, []string{"blk-run-detail-copy-final"}) ||
+		!reflect.DeepEqual(audit.FreezeExceptionsMissingRenewalDates, []string{"blk-run-detail-copy-final"}) ||
+		!reflect.DeepEqual(audit.HandoffEventsMissingTargets, []string{"evt-run-detail-copy-escalated"}) ||
+		!reflect.DeepEqual(audit.HandoffEventsMissingArtifacts, []string{"evt-run-detail-copy-escalated"}) ||
+		!reflect.DeepEqual(audit.HandoffEventsMissingAckOwners, []string{"evt-run-detail-copy-escalated"}) ||
+		!reflect.DeepEqual(audit.HandoffEventsMissingAckDates, []string{"evt-run-detail-copy-escalated"}) {
+		t.Fatalf("unexpected freeze and handoff audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsUnresolvedSignoffWithoutBlocker(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.BlockerLog = nil
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.UnresolvedRequiredSignoffIDs, []string{"sig-run-detail-eng-lead"}) ||
+		!reflect.DeepEqual(audit.UnresolvedRequiredSignoffsWithoutBlockers, []string{"sig-run-detail-eng-lead"}) ||
+		len(audit.BlockersMissingSignoffLinks) != 0 ||
+		len(audit.BlockersMissingEscalationOwners) != 0 ||
+		len(audit.BlockersMissingNextActions) != 0 {
+		t.Fatalf("unexpected unresolved signoff audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsWaivedSignoffWithoutMetadata(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.SignoffLog[2] = ReviewSignoff{
+		SignoffID:     "sig-run-detail-eng-lead",
+		AssignmentID:  "role-run-detail-eng-lead",
+		SurfaceID:     "wf-run-detail",
+		Role:          "Eng Lead",
+		Status:        "waived",
+		Required:      true,
+		EvidenceLinks: []string{},
+		Notes:         "Design review accepted a temporary waiver pending copy cleanup.",
+	}
+	pack.BlockerLog = nil
+	pack.BlockerTimeline = nil
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.WaivedSignoffsMissingMetadata, []string{"sig-run-detail-eng-lead"}) ||
+		len(audit.SignoffsMissingEvidence) != 0 ||
+		len(audit.UnresolvedRequiredSignoffIDs) != 0 {
+		t.Fatalf("unexpected waived signoff audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsMissingOrInvalidBlockerTimeline(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.BlockerTimeline = nil
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		!reflect.DeepEqual(audit.BlockersMissingTimelineEvents, []string{"blk-run-detail-copy-final"}) ||
+		len(audit.ClosedBlockersMissingResolutionEvents) != 0 ||
+		len(audit.OrphanBlockerTimelineBlockerIDs) != 0 {
+		t.Fatalf("unexpected blocker timeline audit: %+v", audit)
+	}
+}
+
+func TestUIReviewPackAuditFlagsClosedBlockerWithoutResolutionEventAndOrphans(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	pack.BlockerLog[0] = ReviewBlocker{
+		BlockerID:       "blk-run-detail-copy-final",
+		SurfaceID:       "wf-run-detail",
+		SignoffID:       "sig-run-detail-eng-lead",
+		Owner:           "product-experience",
+		Summary:         "Replay-state copy review is closed pending audit trail confirmation.",
+		Status:          "closed",
+		Severity:        "medium",
+		EscalationOwner: "design-program-manager",
+		NextAction:      "Archive the blocker after the final review sync.",
+	}
+	pack.BlockerTimeline = []ReviewBlockerEvent{
+		{
+			EventID:    "evt-run-detail-copy-opened",
+			BlockerID:  "blk-run-detail-copy-final",
+			Actor:      "product-experience",
+			Status:     "opened",
+			Summary:    "Tracked the replay-state wording gap during review prep.",
+			Timestamp:  "2026-03-13T10:00:00Z",
+			NextAction: "Review wording changes with Eng Lead.",
+		},
+		{
+			EventID:    "evt-orphan-blocker",
+			BlockerID:  "blk-missing",
+			Actor:      "design-program-manager",
+			Status:     "escalated",
+			Summary:    "Unexpected timeline entry remained after blocker merge cleanup.",
+			Timestamp:  "2026-03-14T11:00:00Z",
+			NextAction: "Remove orphaned timeline entry from the bundle.",
+		},
+	}
+
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	if audit.Ready ||
+		len(audit.BlockersMissingTimelineEvents) != 0 ||
+		!reflect.DeepEqual(audit.ClosedBlockersMissingResolutionEvents, []string{"blk-run-detail-copy-final"}) ||
+		!reflect.DeepEqual(audit.OrphanBlockerTimelineBlockerIDs, []string{"blk-missing"}) {
+		t.Fatalf("unexpected closed blocker audit: %+v", audit)
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{

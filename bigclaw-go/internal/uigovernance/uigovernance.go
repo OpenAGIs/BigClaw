@@ -1084,6 +1084,64 @@ func (s ReviewSignoff) normalized() ReviewSignoff {
 	return s
 }
 
+type ReviewBlocker struct {
+	BlockerID           string `json:"blocker_id"`
+	SurfaceID           string `json:"surface_id"`
+	SignoffID           string `json:"signoff_id"`
+	Owner               string `json:"owner"`
+	Summary             string `json:"summary"`
+	Status              string `json:"status,omitempty"`
+	Severity            string `json:"severity,omitempty"`
+	EscalationOwner     string `json:"escalation_owner,omitempty"`
+	NextAction          string `json:"next_action,omitempty"`
+	FreezeException     bool   `json:"freeze_exception,omitempty"`
+	FreezeOwner         string `json:"freeze_owner,omitempty"`
+	FreezeUntil         string `json:"freeze_until,omitempty"`
+	FreezeReason        string `json:"freeze_reason,omitempty"`
+	FreezeApprovedBy    string `json:"freeze_approved_by,omitempty"`
+	FreezeApprovedAt    string `json:"freeze_approved_at,omitempty"`
+	FreezeRenewalOwner  string `json:"freeze_renewal_owner,omitempty"`
+	FreezeRenewalBy     string `json:"freeze_renewal_by,omitempty"`
+	FreezeRenewalStatus string `json:"freeze_renewal_status,omitempty"`
+}
+
+func (b ReviewBlocker) normalized() ReviewBlocker {
+	if strings.TrimSpace(b.Status) == "" {
+		b.Status = "open"
+	}
+	if strings.TrimSpace(b.Severity) == "" {
+		b.Severity = "medium"
+	}
+	if strings.TrimSpace(b.FreezeRenewalStatus) == "" {
+		b.FreezeRenewalStatus = "not-needed"
+	}
+	return b
+}
+
+type ReviewBlockerEvent struct {
+	EventID     string `json:"event_id"`
+	BlockerID   string `json:"blocker_id"`
+	Actor       string `json:"actor"`
+	Status      string `json:"status"`
+	Summary     string `json:"summary"`
+	Timestamp   string `json:"timestamp"`
+	NextAction  string `json:"next_action,omitempty"`
+	HandoffFrom string `json:"handoff_from,omitempty"`
+	HandoffTo   string `json:"handoff_to,omitempty"`
+	Channel     string `json:"channel,omitempty"`
+	ArtifactRef string `json:"artifact_ref,omitempty"`
+	AckOwner    string `json:"ack_owner,omitempty"`
+	AckAt       string `json:"ack_at,omitempty"`
+	AckStatus   string `json:"ack_status,omitempty"`
+}
+
+func (e ReviewBlockerEvent) normalized() ReviewBlockerEvent {
+	if strings.TrimSpace(e.AckStatus) == "" {
+		e.AckStatus = "pending"
+	}
+	return e
+}
+
 type UIReviewPack struct {
 	IssueID                   string                  `json:"issue_id"`
 	Title                     string                  `json:"title"`
@@ -1100,9 +1158,9 @@ type UIReviewPack struct {
 	RequiresRoleMatrix        bool                    `json:"requires_role_matrix,omitempty"`
 	SignoffLog                []ReviewSignoff         `json:"signoff_log,omitempty"`
 	RequiresSignoffLog        bool                    `json:"requires_signoff_log,omitempty"`
-	BlockerLog                []json.RawMessage       `json:"blocker_log,omitempty"`
+	BlockerLog                []ReviewBlocker         `json:"blocker_log,omitempty"`
 	RequiresBlockerLog        bool                    `json:"requires_blocker_log,omitempty"`
-	BlockerTimeline           []json.RawMessage       `json:"blocker_timeline,omitempty"`
+	BlockerTimeline           []ReviewBlockerEvent    `json:"blocker_timeline,omitempty"`
 	RequiresBlockerTimeline   bool                    `json:"requires_blocker_timeline,omitempty"`
 }
 
@@ -1126,52 +1184,77 @@ func (p UIReviewPack) normalized() UIReviewPack {
 	for i, signoff := range out.SignoffLog {
 		out.SignoffLog[i] = signoff.normalized()
 	}
+	for i, blocker := range out.BlockerLog {
+		out.BlockerLog[i] = blocker.normalized()
+	}
+	for i, event := range out.BlockerTimeline {
+		out.BlockerTimeline[i] = event.normalized()
+	}
 	return out
 }
 
 type UIReviewPackAudit struct {
-	Ready                                  bool     `json:"ready"`
-	ObjectiveCount                         int      `json:"objective_count"`
-	WireframeCount                         int      `json:"wireframe_count"`
-	InteractionCount                       int      `json:"interaction_count"`
-	OpenQuestionCount                      int      `json:"open_question_count"`
-	ChecklistCount                         int      `json:"checklist_count,omitempty"`
-	DecisionCount                          int      `json:"decision_count,omitempty"`
-	RoleAssignmentCount                    int      `json:"role_assignment_count,omitempty"`
-	SignoffCount                           int      `json:"signoff_count,omitempty"`
-	BlockerCount                           int      `json:"blocker_count,omitempty"`
-	BlockerTimelineCount                   int      `json:"blocker_timeline_count,omitempty"`
-	MissingSections                        []string `json:"missing_sections,omitempty"`
-	ObjectivesMissingSignals               []string `json:"objectives_missing_signals,omitempty"`
-	WireframesMissingBlocks                []string `json:"wireframes_missing_blocks,omitempty"`
-	InteractionsMissingStates              []string `json:"interactions_missing_states,omitempty"`
-	UnresolvedQuestionIDs                  []string `json:"unresolved_question_ids,omitempty"`
-	WireframesMissingChecklists            []string `json:"wireframes_missing_checklists,omitempty"`
-	OrphanChecklistSurfaces                []string `json:"orphan_checklist_surfaces,omitempty"`
-	ChecklistItemsMissingEvidence          []string `json:"checklist_items_missing_evidence,omitempty"`
-	ChecklistItemsMissingRoleLinks         []string `json:"checklist_items_missing_role_links,omitempty"`
-	WireframesMissingDecisions             []string `json:"wireframes_missing_decisions,omitempty"`
-	OrphanDecisionSurfaces                 []string `json:"orphan_decision_surfaces,omitempty"`
-	UnresolvedDecisionIDs                  []string `json:"unresolved_decision_ids,omitempty"`
-	UnresolvedDecisionsMissingFollowUps    []string `json:"unresolved_decisions_missing_follow_ups,omitempty"`
-	WireframesMissingRoleAssignments       []string `json:"wireframes_missing_role_assignments,omitempty"`
-	OrphanRoleAssignmentSurfaces           []string `json:"orphan_role_assignment_surfaces,omitempty"`
-	RoleAssignmentsMissingResponsibilities []string `json:"role_assignments_missing_responsibilities,omitempty"`
-	RoleAssignmentsMissingChecklistLinks   []string `json:"role_assignments_missing_checklist_links,omitempty"`
-	RoleAssignmentsMissingDecisionLinks    []string `json:"role_assignments_missing_decision_links,omitempty"`
-	DecisionsMissingRoleLinks              []string `json:"decisions_missing_role_links,omitempty"`
-	WireframesMissingSignoffs              []string `json:"wireframes_missing_signoffs,omitempty"`
-	OrphanSignoffSurfaces                  []string `json:"orphan_signoff_surfaces,omitempty"`
-	SignoffsMissingAssignments             []string `json:"signoffs_missing_assignments,omitempty"`
-	SignoffsMissingEvidence                []string `json:"signoffs_missing_evidence,omitempty"`
-	SignoffsMissingRequestedDates          []string `json:"signoffs_missing_requested_dates,omitempty"`
-	SignoffsMissingDueDates                []string `json:"signoffs_missing_due_dates,omitempty"`
-	SignoffsMissingEscalationOwners        []string `json:"signoffs_missing_escalation_owners,omitempty"`
-	SignoffsMissingReminderOwners          []string `json:"signoffs_missing_reminder_owners,omitempty"`
-	SignoffsMissingNextReminders           []string `json:"signoffs_missing_next_reminders,omitempty"`
-	SignoffsMissingReminderCadence         []string `json:"signoffs_missing_reminder_cadence,omitempty"`
-	SignoffsWithBreachedSLA                []string `json:"signoffs_with_breached_sla,omitempty"`
-	UnresolvedRequiredSignoffIDs           []string `json:"unresolved_required_signoff_ids,omitempty"`
+	Ready                                     bool     `json:"ready"`
+	ObjectiveCount                            int      `json:"objective_count"`
+	WireframeCount                            int      `json:"wireframe_count"`
+	InteractionCount                          int      `json:"interaction_count"`
+	OpenQuestionCount                         int      `json:"open_question_count"`
+	ChecklistCount                            int      `json:"checklist_count,omitempty"`
+	DecisionCount                             int      `json:"decision_count,omitempty"`
+	RoleAssignmentCount                       int      `json:"role_assignment_count,omitempty"`
+	SignoffCount                              int      `json:"signoff_count,omitempty"`
+	BlockerCount                              int      `json:"blocker_count,omitempty"`
+	BlockerTimelineCount                      int      `json:"blocker_timeline_count,omitempty"`
+	MissingSections                           []string `json:"missing_sections,omitempty"`
+	ObjectivesMissingSignals                  []string `json:"objectives_missing_signals,omitempty"`
+	WireframesMissingBlocks                   []string `json:"wireframes_missing_blocks,omitempty"`
+	InteractionsMissingStates                 []string `json:"interactions_missing_states,omitempty"`
+	UnresolvedQuestionIDs                     []string `json:"unresolved_question_ids,omitempty"`
+	WireframesMissingChecklists               []string `json:"wireframes_missing_checklists,omitempty"`
+	OrphanChecklistSurfaces                   []string `json:"orphan_checklist_surfaces,omitempty"`
+	ChecklistItemsMissingEvidence             []string `json:"checklist_items_missing_evidence,omitempty"`
+	ChecklistItemsMissingRoleLinks            []string `json:"checklist_items_missing_role_links,omitempty"`
+	WireframesMissingDecisions                []string `json:"wireframes_missing_decisions,omitempty"`
+	OrphanDecisionSurfaces                    []string `json:"orphan_decision_surfaces,omitempty"`
+	UnresolvedDecisionIDs                     []string `json:"unresolved_decision_ids,omitempty"`
+	UnresolvedDecisionsMissingFollowUps       []string `json:"unresolved_decisions_missing_follow_ups,omitempty"`
+	WireframesMissingRoleAssignments          []string `json:"wireframes_missing_role_assignments,omitempty"`
+	OrphanRoleAssignmentSurfaces              []string `json:"orphan_role_assignment_surfaces,omitempty"`
+	RoleAssignmentsMissingResponsibilities    []string `json:"role_assignments_missing_responsibilities,omitempty"`
+	RoleAssignmentsMissingChecklistLinks      []string `json:"role_assignments_missing_checklist_links,omitempty"`
+	RoleAssignmentsMissingDecisionLinks       []string `json:"role_assignments_missing_decision_links,omitempty"`
+	DecisionsMissingRoleLinks                 []string `json:"decisions_missing_role_links,omitempty"`
+	WireframesMissingSignoffs                 []string `json:"wireframes_missing_signoffs,omitempty"`
+	OrphanSignoffSurfaces                     []string `json:"orphan_signoff_surfaces,omitempty"`
+	SignoffsMissingAssignments                []string `json:"signoffs_missing_assignments,omitempty"`
+	SignoffsMissingEvidence                   []string `json:"signoffs_missing_evidence,omitempty"`
+	SignoffsMissingRequestedDates             []string `json:"signoffs_missing_requested_dates,omitempty"`
+	SignoffsMissingDueDates                   []string `json:"signoffs_missing_due_dates,omitempty"`
+	SignoffsMissingEscalationOwners           []string `json:"signoffs_missing_escalation_owners,omitempty"`
+	SignoffsMissingReminderOwners             []string `json:"signoffs_missing_reminder_owners,omitempty"`
+	SignoffsMissingNextReminders              []string `json:"signoffs_missing_next_reminders,omitempty"`
+	SignoffsMissingReminderCadence            []string `json:"signoffs_missing_reminder_cadence,omitempty"`
+	SignoffsWithBreachedSLA                   []string `json:"signoffs_with_breached_sla,omitempty"`
+	UnresolvedRequiredSignoffIDs              []string `json:"unresolved_required_signoff_ids,omitempty"`
+	WaivedSignoffsMissingMetadata             []string `json:"waived_signoffs_missing_metadata,omitempty"`
+	BlockersMissingSignoffLinks               []string `json:"blockers_missing_signoff_links,omitempty"`
+	BlockersMissingEscalationOwners           []string `json:"blockers_missing_escalation_owners,omitempty"`
+	BlockersMissingNextActions                []string `json:"blockers_missing_next_actions,omitempty"`
+	FreezeExceptionsMissingOwners             []string `json:"freeze_exceptions_missing_owners,omitempty"`
+	FreezeExceptionsMissingUntil              []string `json:"freeze_exceptions_missing_until,omitempty"`
+	FreezeExceptionsMissingApprovers          []string `json:"freeze_exceptions_missing_approvers,omitempty"`
+	FreezeExceptionsMissingApprovalDates      []string `json:"freeze_exceptions_missing_approval_dates,omitempty"`
+	FreezeExceptionsMissingRenewalOwners      []string `json:"freeze_exceptions_missing_renewal_owners,omitempty"`
+	FreezeExceptionsMissingRenewalDates       []string `json:"freeze_exceptions_missing_renewal_dates,omitempty"`
+	BlockersMissingTimelineEvents             []string `json:"blockers_missing_timeline_events,omitempty"`
+	ClosedBlockersMissingResolutionEvents     []string `json:"closed_blockers_missing_resolution_events,omitempty"`
+	OrphanBlockerSurfaces                     []string `json:"orphan_blocker_surfaces,omitempty"`
+	OrphanBlockerTimelineBlockerIDs           []string `json:"orphan_blocker_timeline_blocker_ids,omitempty"`
+	HandoffEventsMissingTargets               []string `json:"handoff_events_missing_targets,omitempty"`
+	HandoffEventsMissingArtifacts             []string `json:"handoff_events_missing_artifacts,omitempty"`
+	HandoffEventsMissingAckOwners             []string `json:"handoff_events_missing_ack_owners,omitempty"`
+	HandoffEventsMissingAckDates              []string `json:"handoff_events_missing_ack_dates,omitempty"`
+	UnresolvedRequiredSignoffsWithoutBlockers []string `json:"unresolved_required_signoffs_without_blockers,omitempty"`
 }
 
 func (a UIReviewPackAudit) Summary() string {
@@ -1448,6 +1531,7 @@ func (UIReviewPackAuditor) Audit(pack UIReviewPack) UIReviewPackAudit {
 	var signoffsMissingReminderCadence []string
 	var signoffsWithBreachedSLA []string
 	var unresolvedRequiredSignoffIDs []string
+	var waivedSignoffsMissingMetadata []string
 	if pack.RequiresSignoffLog {
 		for _, wireframe := range pack.Wireframes {
 			if _, ok := signoffsBySurface[wireframe.SurfaceID]; !ok {
@@ -1496,6 +1580,9 @@ func (UIReviewPackAuditor) Audit(pack UIReviewPack) UIReviewPackAudit {
 			if strings.ToLower(normalized.SLAStatus) == "breached" && status != "approved" && status != "accepted" && status != "resolved" {
 				signoffsWithBreachedSLA = append(signoffsWithBreachedSLA, normalized.SignoffID)
 			}
+			if status == "waived" && (strings.TrimSpace(normalized.WaiverOwner) == "" || strings.TrimSpace(normalized.WaiverReason) == "") {
+				waivedSignoffsMissingMetadata = append(waivedSignoffsMissingMetadata, normalized.SignoffID)
+			}
 			if normalized.Required && !unresolvedStatuses[status] {
 				unresolvedRequiredSignoffIDs = append(unresolvedRequiredSignoffIDs, normalized.SignoffID)
 			}
@@ -1511,7 +1598,156 @@ func (UIReviewPackAuditor) Audit(pack UIReviewPack) UIReviewPackAudit {
 		sort.Strings(signoffsMissingNextReminders)
 		sort.Strings(signoffsMissingReminderCadence)
 		sort.Strings(signoffsWithBreachedSLA)
+		sort.Strings(waivedSignoffsMissingMetadata)
 		sort.Strings(unresolvedRequiredSignoffIDs)
+	}
+
+	blockerBySignoff := map[string][]ReviewBlocker{}
+	blockerSurfaces := map[string]bool{}
+	for _, blocker := range pack.BlockerLog {
+		normalized := blocker.normalized()
+		blockerSurfaces[normalized.SurfaceID] = true
+		blockerBySignoff[normalized.SignoffID] = append(blockerBySignoff[normalized.SignoffID], normalized)
+	}
+	var blockersMissingSignoffLinks []string
+	var blockersMissingEscalationOwners []string
+	var blockersMissingNextActions []string
+	var freezeExceptionsMissingOwners []string
+	var freezeExceptionsMissingUntil []string
+	var freezeExceptionsMissingApprovers []string
+	var freezeExceptionsMissingApprovalDates []string
+	var freezeExceptionsMissingRenewalOwners []string
+	var freezeExceptionsMissingRenewalDates []string
+	var orphanBlockerSurfaces []string
+	var unresolvedRequiredSignoffsWithoutBlockers []string
+	if pack.RequiresBlockerLog {
+		signoffIDs := map[string]bool{}
+		for _, signoff := range pack.SignoffLog {
+			signoffIDs[signoff.SignoffID] = true
+		}
+		for _, blocker := range pack.BlockerLog {
+			normalized := blocker.normalized()
+			if !signoffIDs[normalized.SignoffID] {
+				blockersMissingSignoffLinks = append(blockersMissingSignoffLinks, normalized.BlockerID)
+			}
+			if strings.TrimSpace(normalized.EscalationOwner) == "" {
+				blockersMissingEscalationOwners = append(blockersMissingEscalationOwners, normalized.BlockerID)
+			}
+			if strings.TrimSpace(normalized.NextAction) == "" {
+				blockersMissingNextActions = append(blockersMissingNextActions, normalized.BlockerID)
+			}
+			if normalized.FreezeException && strings.TrimSpace(normalized.FreezeOwner) == "" {
+				freezeExceptionsMissingOwners = append(freezeExceptionsMissingOwners, normalized.BlockerID)
+			}
+			if normalized.FreezeException && strings.TrimSpace(normalized.FreezeUntil) == "" {
+				freezeExceptionsMissingUntil = append(freezeExceptionsMissingUntil, normalized.BlockerID)
+			}
+			if normalized.FreezeException && strings.TrimSpace(normalized.FreezeApprovedBy) == "" {
+				freezeExceptionsMissingApprovers = append(freezeExceptionsMissingApprovers, normalized.BlockerID)
+			}
+			if normalized.FreezeException && strings.TrimSpace(normalized.FreezeApprovedAt) == "" {
+				freezeExceptionsMissingApprovalDates = append(freezeExceptionsMissingApprovalDates, normalized.BlockerID)
+			}
+			if normalized.FreezeException && strings.TrimSpace(normalized.FreezeRenewalOwner) == "" {
+				freezeExceptionsMissingRenewalOwners = append(freezeExceptionsMissingRenewalOwners, normalized.BlockerID)
+			}
+			if normalized.FreezeException && strings.TrimSpace(normalized.FreezeRenewalBy) == "" {
+				freezeExceptionsMissingRenewalDates = append(freezeExceptionsMissingRenewalDates, normalized.BlockerID)
+			}
+		}
+		for surfaceID := range blockerSurfaces {
+			if !wireframeIDs[surfaceID] {
+				orphanBlockerSurfaces = append(orphanBlockerSurfaces, surfaceID)
+			}
+		}
+		for _, signoffID := range unresolvedRequiredSignoffIDs {
+			if _, ok := blockerBySignoff[signoffID]; !ok {
+				unresolvedRequiredSignoffsWithoutBlockers = append(unresolvedRequiredSignoffsWithoutBlockers, signoffID)
+			}
+		}
+		sort.Strings(blockersMissingSignoffLinks)
+		sort.Strings(blockersMissingEscalationOwners)
+		sort.Strings(blockersMissingNextActions)
+		sort.Strings(freezeExceptionsMissingOwners)
+		sort.Strings(freezeExceptionsMissingUntil)
+		sort.Strings(freezeExceptionsMissingApprovers)
+		sort.Strings(freezeExceptionsMissingApprovalDates)
+		sort.Strings(freezeExceptionsMissingRenewalOwners)
+		sort.Strings(freezeExceptionsMissingRenewalDates)
+		sort.Strings(orphanBlockerSurfaces)
+		sort.Strings(unresolvedRequiredSignoffsWithoutBlockers)
+	}
+
+	blockerTimelineByBlocker := map[string][]ReviewBlockerEvent{}
+	for _, event := range pack.BlockerTimeline {
+		normalized := event.normalized()
+		blockerTimelineByBlocker[normalized.BlockerID] = append(blockerTimelineByBlocker[normalized.BlockerID], normalized)
+	}
+	var blockersMissingTimelineEvents []string
+	var closedBlockersMissingResolutionEvents []string
+	var orphanBlockerTimelineBlockerIDs []string
+	var handoffEventsMissingTargets []string
+	var handoffEventsMissingArtifacts []string
+	var handoffEventsMissingAckOwners []string
+	var handoffEventsMissingAckDates []string
+	if pack.RequiresBlockerTimeline {
+		blockerIDs := map[string]bool{}
+		for _, blocker := range pack.BlockerLog {
+			blockerIDs[blocker.BlockerID] = true
+		}
+		for blockerID := range blockerTimelineByBlocker {
+			if !blockerIDs[blockerID] {
+				orphanBlockerTimelineBlockerIDs = append(orphanBlockerTimelineBlockerIDs, blockerID)
+			}
+		}
+		for _, blocker := range pack.BlockerLog {
+			normalized := blocker.normalized()
+			status := strings.ToLower(normalized.Status)
+			if status != "resolved" && status != "closed" {
+				if _, ok := blockerTimelineByBlocker[normalized.BlockerID]; !ok {
+					blockersMissingTimelineEvents = append(blockersMissingTimelineEvents, normalized.BlockerID)
+				}
+			}
+			if status == "resolved" || status == "closed" {
+				hasResolution := false
+				for _, event := range blockerTimelineByBlocker[normalized.BlockerID] {
+					eventStatus := strings.ToLower(event.Status)
+					if eventStatus == "resolved" || eventStatus == "closed" {
+						hasResolution = true
+						break
+					}
+				}
+				if !hasResolution {
+					closedBlockersMissingResolutionEvents = append(closedBlockersMissingResolutionEvents, normalized.BlockerID)
+				}
+			}
+		}
+		handoffStatuses := map[string]bool{"escalated": true, "handoff": true, "reassigned": true}
+		for _, event := range pack.BlockerTimeline {
+			normalized := event.normalized()
+			if !handoffStatuses[strings.ToLower(normalized.Status)] {
+				continue
+			}
+			if strings.TrimSpace(normalized.HandoffTo) == "" {
+				handoffEventsMissingTargets = append(handoffEventsMissingTargets, normalized.EventID)
+			}
+			if strings.TrimSpace(normalized.ArtifactRef) == "" {
+				handoffEventsMissingArtifacts = append(handoffEventsMissingArtifacts, normalized.EventID)
+			}
+			if strings.TrimSpace(normalized.AckOwner) == "" {
+				handoffEventsMissingAckOwners = append(handoffEventsMissingAckOwners, normalized.EventID)
+			}
+			if strings.TrimSpace(normalized.AckAt) == "" {
+				handoffEventsMissingAckDates = append(handoffEventsMissingAckDates, normalized.EventID)
+			}
+		}
+		sort.Strings(blockersMissingTimelineEvents)
+		sort.Strings(closedBlockersMissingResolutionEvents)
+		sort.Strings(orphanBlockerTimelineBlockerIDs)
+		sort.Strings(handoffEventsMissingTargets)
+		sort.Strings(handoffEventsMissingArtifacts)
+		sort.Strings(handoffEventsMissingAckOwners)
+		sort.Strings(handoffEventsMissingAckDates)
 	}
 
 	ready := len(missingSections) == 0 &&
@@ -1539,51 +1775,89 @@ func (UIReviewPackAuditor) Audit(pack UIReviewPack) UIReviewPackAudit {
 		len(signoffsMissingReminderOwners) == 0 &&
 		len(signoffsMissingNextReminders) == 0 &&
 		len(signoffsMissingReminderCadence) == 0 &&
-		len(signoffsWithBreachedSLA) == 0
+		len(signoffsWithBreachedSLA) == 0 &&
+		len(waivedSignoffsMissingMetadata) == 0 &&
+		len(blockersMissingSignoffLinks) == 0 &&
+		len(blockersMissingEscalationOwners) == 0 &&
+		len(blockersMissingNextActions) == 0 &&
+		len(freezeExceptionsMissingOwners) == 0 &&
+		len(freezeExceptionsMissingUntil) == 0 &&
+		len(freezeExceptionsMissingApprovers) == 0 &&
+		len(freezeExceptionsMissingApprovalDates) == 0 &&
+		len(freezeExceptionsMissingRenewalOwners) == 0 &&
+		len(freezeExceptionsMissingRenewalDates) == 0 &&
+		len(blockersMissingTimelineEvents) == 0 &&
+		len(closedBlockersMissingResolutionEvents) == 0 &&
+		len(orphanBlockerSurfaces) == 0 &&
+		len(orphanBlockerTimelineBlockerIDs) == 0 &&
+		len(handoffEventsMissingTargets) == 0 &&
+		len(handoffEventsMissingArtifacts) == 0 &&
+		len(handoffEventsMissingAckOwners) == 0 &&
+		len(handoffEventsMissingAckDates) == 0 &&
+		len(unresolvedRequiredSignoffsWithoutBlockers) == 0
 
 	return UIReviewPackAudit{
-		Ready:                                  ready,
-		ObjectiveCount:                         len(pack.Objectives),
-		WireframeCount:                         len(pack.Wireframes),
-		InteractionCount:                       len(pack.Interactions),
-		OpenQuestionCount:                      len(pack.OpenQuestions),
-		ChecklistCount:                         len(pack.ReviewerChecklist),
-		DecisionCount:                          len(pack.DecisionLog),
-		RoleAssignmentCount:                    len(pack.RoleMatrix),
-		SignoffCount:                           len(pack.SignoffLog),
-		BlockerCount:                           len(pack.BlockerLog),
-		BlockerTimelineCount:                   len(pack.BlockerTimeline),
-		MissingSections:                        missingSections,
-		ObjectivesMissingSignals:               objectivesMissingSignals,
-		WireframesMissingBlocks:                wireframesMissingBlocks,
-		InteractionsMissingStates:              interactionsMissingStates,
-		UnresolvedQuestionIDs:                  unresolvedQuestionIDs,
-		WireframesMissingChecklists:            wireframesMissingChecklists,
-		OrphanChecklistSurfaces:                orphanChecklistSurfaces,
-		ChecklistItemsMissingEvidence:          checklistItemsMissingEvidence,
-		ChecklistItemsMissingRoleLinks:         checklistItemsMissingRoleLinks,
-		WireframesMissingDecisions:             wireframesMissingDecisions,
-		OrphanDecisionSurfaces:                 orphanDecisionSurfaces,
-		UnresolvedDecisionIDs:                  unresolvedDecisionIDs,
-		UnresolvedDecisionsMissingFollowUps:    unresolvedDecisionsMissingFollowUps,
-		WireframesMissingRoleAssignments:       wireframesMissingRoleAssignments,
-		OrphanRoleAssignmentSurfaces:           orphanRoleAssignmentSurfaces,
-		RoleAssignmentsMissingResponsibilities: roleAssignmentsMissingResponsibilities,
-		RoleAssignmentsMissingChecklistLinks:   roleAssignmentsMissingChecklistLinks,
-		RoleAssignmentsMissingDecisionLinks:    roleAssignmentsMissingDecisionLinks,
-		DecisionsMissingRoleLinks:              decisionsMissingRoleLinks,
-		WireframesMissingSignoffs:              wireframesMissingSignoffs,
-		OrphanSignoffSurfaces:                  orphanSignoffSurfaces,
-		SignoffsMissingAssignments:             signoffsMissingAssignments,
-		SignoffsMissingEvidence:                signoffsMissingEvidence,
-		SignoffsMissingRequestedDates:          signoffsMissingRequestedDates,
-		SignoffsMissingDueDates:                signoffsMissingDueDates,
-		SignoffsMissingEscalationOwners:        signoffsMissingEscalationOwners,
-		SignoffsMissingReminderOwners:          signoffsMissingReminderOwners,
-		SignoffsMissingNextReminders:           signoffsMissingNextReminders,
-		SignoffsMissingReminderCadence:         signoffsMissingReminderCadence,
-		SignoffsWithBreachedSLA:                signoffsWithBreachedSLA,
-		UnresolvedRequiredSignoffIDs:           unresolvedRequiredSignoffIDs,
+		Ready:                                     ready,
+		ObjectiveCount:                            len(pack.Objectives),
+		WireframeCount:                            len(pack.Wireframes),
+		InteractionCount:                          len(pack.Interactions),
+		OpenQuestionCount:                         len(pack.OpenQuestions),
+		ChecklistCount:                            len(pack.ReviewerChecklist),
+		DecisionCount:                             len(pack.DecisionLog),
+		RoleAssignmentCount:                       len(pack.RoleMatrix),
+		SignoffCount:                              len(pack.SignoffLog),
+		BlockerCount:                              len(pack.BlockerLog),
+		BlockerTimelineCount:                      len(pack.BlockerTimeline),
+		MissingSections:                           missingSections,
+		ObjectivesMissingSignals:                  objectivesMissingSignals,
+		WireframesMissingBlocks:                   wireframesMissingBlocks,
+		InteractionsMissingStates:                 interactionsMissingStates,
+		UnresolvedQuestionIDs:                     unresolvedQuestionIDs,
+		WireframesMissingChecklists:               wireframesMissingChecklists,
+		OrphanChecklistSurfaces:                   orphanChecklistSurfaces,
+		ChecklistItemsMissingEvidence:             checklistItemsMissingEvidence,
+		ChecklistItemsMissingRoleLinks:            checklistItemsMissingRoleLinks,
+		WireframesMissingDecisions:                wireframesMissingDecisions,
+		OrphanDecisionSurfaces:                    orphanDecisionSurfaces,
+		UnresolvedDecisionIDs:                     unresolvedDecisionIDs,
+		UnresolvedDecisionsMissingFollowUps:       unresolvedDecisionsMissingFollowUps,
+		WireframesMissingRoleAssignments:          wireframesMissingRoleAssignments,
+		OrphanRoleAssignmentSurfaces:              orphanRoleAssignmentSurfaces,
+		RoleAssignmentsMissingResponsibilities:    roleAssignmentsMissingResponsibilities,
+		RoleAssignmentsMissingChecklistLinks:      roleAssignmentsMissingChecklistLinks,
+		RoleAssignmentsMissingDecisionLinks:       roleAssignmentsMissingDecisionLinks,
+		DecisionsMissingRoleLinks:                 decisionsMissingRoleLinks,
+		WireframesMissingSignoffs:                 wireframesMissingSignoffs,
+		OrphanSignoffSurfaces:                     orphanSignoffSurfaces,
+		SignoffsMissingAssignments:                signoffsMissingAssignments,
+		SignoffsMissingEvidence:                   signoffsMissingEvidence,
+		SignoffsMissingRequestedDates:             signoffsMissingRequestedDates,
+		SignoffsMissingDueDates:                   signoffsMissingDueDates,
+		SignoffsMissingEscalationOwners:           signoffsMissingEscalationOwners,
+		SignoffsMissingReminderOwners:             signoffsMissingReminderOwners,
+		SignoffsMissingNextReminders:              signoffsMissingNextReminders,
+		SignoffsMissingReminderCadence:            signoffsMissingReminderCadence,
+		SignoffsWithBreachedSLA:                   signoffsWithBreachedSLA,
+		UnresolvedRequiredSignoffIDs:              unresolvedRequiredSignoffIDs,
+		WaivedSignoffsMissingMetadata:             waivedSignoffsMissingMetadata,
+		BlockersMissingSignoffLinks:               blockersMissingSignoffLinks,
+		BlockersMissingEscalationOwners:           blockersMissingEscalationOwners,
+		BlockersMissingNextActions:                blockersMissingNextActions,
+		FreezeExceptionsMissingOwners:             freezeExceptionsMissingOwners,
+		FreezeExceptionsMissingUntil:              freezeExceptionsMissingUntil,
+		FreezeExceptionsMissingApprovers:          freezeExceptionsMissingApprovers,
+		FreezeExceptionsMissingApprovalDates:      freezeExceptionsMissingApprovalDates,
+		FreezeExceptionsMissingRenewalOwners:      freezeExceptionsMissingRenewalOwners,
+		FreezeExceptionsMissingRenewalDates:       freezeExceptionsMissingRenewalDates,
+		BlockersMissingTimelineEvents:             blockersMissingTimelineEvents,
+		ClosedBlockersMissingResolutionEvents:     closedBlockersMissingResolutionEvents,
+		OrphanBlockerSurfaces:                     orphanBlockerSurfaces,
+		OrphanBlockerTimelineBlockerIDs:           orphanBlockerTimelineBlockerIDs,
+		HandoffEventsMissingTargets:               handoffEventsMissingTargets,
+		HandoffEventsMissingArtifacts:             handoffEventsMissingArtifacts,
+		HandoffEventsMissingAckOwners:             handoffEventsMissingAckOwners,
+		HandoffEventsMissingAckDates:              handoffEventsMissingAckDates,
+		UnresolvedRequiredSignoffsWithoutBlockers: unresolvedRequiredSignoffsWithoutBlockers,
 	}
 }
 
@@ -2226,6 +2500,8 @@ func BuildBIG4204ReviewPack() UIReviewPack {
 		RequiresDecisionLog:       true,
 		RequiresRoleMatrix:        true,
 		RequiresSignoffLog:        true,
+		RequiresBlockerLog:        true,
+		RequiresBlockerTimeline:   true,
 		Objectives: []ReviewObjective{
 			{ObjectiveID: "obj-overview-decision", Title: "Validate the executive overview narrative and drill-down posture", Persona: "VP Eng", Outcome: "Leadership can confirm the overview page balances KPI density with investigation entry points.", SuccessSignal: "Reviewers agree the overview supports release, risk, and queue drill-down without extra walkthroughs.", Priority: "P0", Dependencies: []string{"BIG-4203", "OPE-132"}},
 			{ObjectiveID: "obj-queue-governance", Title: "Confirm queue control actions and approval posture", Persona: "Platform Admin", Outcome: "Operators can assess batch approvals, audit visibility, and denial paths from one frame.", SuccessSignal: "The queue frame clearly shows allowed actions, denied roles, and audit expectations.", Priority: "P0", Dependencies: []string{"BIG-4203", "OPE-131", "OPE-132"}},
@@ -2280,6 +2556,13 @@ func BuildBIG4204ReviewPack() UIReviewPack {
 			{SignoffID: "sig-queue-platform-admin", AssignmentID: "role-queue-platform-admin", SurfaceID: "wf-queue", Role: "Platform Admin", Status: "approved", Required: true, EvidenceLinks: []string{"chk-queue-batch-approval", "dec-queue-vp-summary"}, Notes: "Queue control actions meet operator review criteria.", RequestedAt: "2026-03-10T11:00:00Z", DueAt: "2026-03-13T18:00:00Z", EscalationOwner: "platform-ops-manager", SLAStatus: "met"},
 			{SignoffID: "sig-run-detail-eng-lead", AssignmentID: "role-run-detail-eng-lead", SurfaceID: "wf-run-detail", Role: "Eng Lead", Status: "pending", Required: true, EvidenceLinks: []string{"chk-run-replay-context", "dec-run-detail-audit-rail"}, Notes: "Waiting for final replay-state copy review.", RequestedAt: "2026-03-12T11:00:00Z", DueAt: "2026-03-15T18:00:00Z", EscalationOwner: "engineering-director", SLAStatus: "at-risk", ReminderOwner: "design-program-manager", ReminderChannel: "slack", LastReminderAt: "2026-03-14T09:45:00Z", NextReminderAt: "2026-03-15T10:00:00Z", ReminderCadence: "daily", ReminderStatus: "scheduled"},
 			{SignoffID: "sig-triage-cross-team-operator", AssignmentID: "role-triage-cross-team-operator", SurfaceID: "wf-triage", Role: "Cross-Team Operator", Status: "approved", Required: true, EvidenceLinks: []string{"chk-triage-handoff-clarity", "dec-triage-handoff-density"}, Notes: "Cross-team handoff flow approved for prototype review.", RequestedAt: "2026-03-11T14:00:00Z", DueAt: "2026-03-13T12:00:00Z", EscalationOwner: "cross-team-program-manager", SLAStatus: "met"},
+		},
+		BlockerLog: []ReviewBlocker{
+			{BlockerID: "blk-run-detail-copy-final", SurfaceID: "wf-run-detail", SignoffID: "sig-run-detail-eng-lead", Owner: "product-experience", Summary: "Replay-state copy still needs final wording review before Eng Lead signoff can close.", Status: "open", Severity: "medium", EscalationOwner: "design-program-manager", NextAction: "Review replay-state copy with Eng Lead and update the run-detail frame in the next critique.", FreezeException: true, FreezeOwner: "release-director", FreezeUntil: "2026-03-18T18:00:00Z", FreezeReason: "Allow the design sprint review pack to ship while tracked copy cleanup lands in the next critique.", FreezeApprovedBy: "release-director", FreezeApprovedAt: "2026-03-14T08:30:00Z", FreezeRenewalOwner: "release-director", FreezeRenewalBy: "2026-03-17T12:00:00Z", FreezeRenewalStatus: "review-needed"},
+		},
+		BlockerTimeline: []ReviewBlockerEvent{
+			{EventID: "evt-run-detail-copy-opened", BlockerID: "blk-run-detail-copy-final", Actor: "product-experience", Status: "opened", Summary: "Captured the final replay-state copy gap during design sprint prep.", Timestamp: "2026-03-13T10:00:00Z", NextAction: "Draft updated replay labels before the Eng Lead review."},
+			{EventID: "evt-run-detail-copy-escalated", BlockerID: "blk-run-detail-copy-final", Actor: "design-program-manager", Status: "escalated", Summary: "Scheduled a joint wording review with Eng Lead and product-experience to close the signoff blocker.", Timestamp: "2026-03-14T09:30:00Z", NextAction: "Refresh the run-detail frame annotations after the wording review completes.", HandoffFrom: "product-experience", HandoffTo: "Eng Lead", Channel: "design-critique", ArtifactRef: "wf-run-detail#copy-v5", AckOwner: "Eng Lead", AckAt: "2026-03-14T10:15:00Z", AckStatus: "acknowledged"},
 		},
 	}
 }
