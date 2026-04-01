@@ -139,10 +139,14 @@
   compatibility surfaces remain exercised by the surviving Python suites
   `tests/test_observability.py`, `tests/test_planning.py`, and
   `tests/test_reports.py`.
+- Deleted the redundant Python
+  [test_control_center.py](/Users/openagi/code/bigclaw-workspaces/BIG-GO-1021/tests/test_control_center.py)
+  after confirming the broader operations compatibility surface remains
+  exercised by `tests/test_operations.py`.
 
 ## File-count impact
 
-- `.py`: `50 -> 22`
+- `.py`: `50 -> 21`
 - `.go`: `282 -> 286`
 - `pyproject.toml`: absent before, absent after
 - `setup.py`: absent before, absent after
@@ -194,6 +198,7 @@
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1`
 - `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q`
 - `python3 - <<'PY'\nfrom pathlib import Path\nci = Path('.github/workflows/ci.yml').read_text()\nassert 'PYTHONPATH=src python3 -m pytest' in ci\nassert 'PYTHONPATH=src pytest' not in ci\nPY`
 - `rg -n "pyproject|setup.py|egg-info|pip install -e|python -m build|setuptools" -S README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh reports/BIG-GO-1021.md`
 
@@ -221,7 +226,8 @@
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.667s`
 - `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1` -> `ok  	bigclaw-go/internal/api	0.869s [no tests to run]`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py -q` -> `55 passed in 0.09s`
-- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 22`; `go 286`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q` -> `20 passed in 0.07s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l` -> `py 21`; `go 286`
 - `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print` -> no output
 
 ## Residual risk
