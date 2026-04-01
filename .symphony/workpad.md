@@ -2,8 +2,8 @@
 
 ## Plan
 
-1. Inventory remaining repository Python files and select a scoped tranche whose behavior is already covered in `bigclaw-go/` or can be replaced with small Go tests in the same domain package.
-2. Delete the selected Python tests and add or extend Go tests so the replaced behavior still has checked-in coverage.
+1. Inventory the remaining repository Python files and target the next removable top-level Python test whose behavior is already covered in `bigclaw-go/` or can be replaced with a small Go contract test in the same domain package.
+2. Delete the selected Python test file and add or extend Go tests so the replaced operations/reporting behavior still has checked-in Go-owned coverage.
 3. Verify the repo state with targeted `go test` commands plus file-count checks for remaining `.py` files and absent Python packaging files.
 4. Commit the scoped migration change on an issue branch and push it to the remote.
 
@@ -25,6 +25,35 @@
 
 ## Validation Results
 
+- Tranche: replace Python operations tests with Go reporting contract coverage
+  - Removed Python files:
+    - `tests/test_operations.py`
+  - Added Go files:
+    - `bigclaw-go/internal/reporting/operations_contract_test.go`
+- `gofmt -w bigclaw-go/internal/reporting/operations_contract_test.go`
+  - no output
+- `cd bigclaw-go && go test ./internal/reporting ./internal/triage ./internal/regression`
+  - `ok  	bigclaw-go/internal/reporting	1.158s`
+  - `ok  	bigclaw-go/internal/triage	(cached)`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
+  - `============================= test session starts ==============================`
+  - `platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0`
+  - `rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1040`
+  - `plugins: cov-7.1.0`
+  - `collected 34 items`
+  - `tests/test_reports.py ..................................                 [100%]`
+  - `============================== 34 passed in 0.08s ==============================`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/test_reports.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `16`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `M .symphony/workpad.md`
+  - `D tests/test_operations.py`
+  - `?? bigclaw-go/internal/reporting/operations_contract_test.go`
 - Tranche: replace Python observability tests with Go run-detail report contract coverage
   - Removed Python files:
     - `tests/test_observability.py`
