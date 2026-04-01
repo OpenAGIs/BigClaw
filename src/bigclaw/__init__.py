@@ -139,6 +139,29 @@ _install_compat_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/console.go",
 )
+from . import operations as _legacy_operations_surface
+_install_compat_surface_module(
+    "evaluation",
+    _legacy_operations_surface,
+    [
+        "BenchmarkCase",
+        "BenchmarkComparison",
+        "BenchmarkResult",
+        "BenchmarkRunner",
+        "BenchmarkSuiteResult",
+        "EvaluationCriterion",
+        "ReplayOutcome",
+        "ReplayRecord",
+        "render_run_replay_index_page",
+        "render_replay_detail_page",
+        "render_benchmark_suite_report",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "the legacy Python evaluation compatibility surface remains migration-only scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -306,6 +329,11 @@ from .reports import (
     write_report_studio_bundle,
 )
 from .operations import (
+    BenchmarkCase,
+    BenchmarkComparison,
+    BenchmarkResult,
+    BenchmarkRunner,
+    BenchmarkSuiteResult,
     DashboardBuilder,
     DashboardBuilderAudit,
     DashboardLayout,
@@ -317,6 +345,7 @@ from .operations import (
     EngineeringOverviewBlocker,
     EngineeringOverviewKPI,
     EngineeringOverviewPermission,
+    EvaluationCriterion,
     OperationsAnalytics,
     OperationsMetricDefinition,
     OperationsMetricSpec,
@@ -352,10 +381,10 @@ from .evaluation import (
     BenchmarkSuiteResult,
     EvaluationCriterion,
     ReplayOutcome,
-    ReplayRecord,
-    render_run_replay_index_page,
-    render_replay_detail_page,
     render_benchmark_suite_report,
+    render_replay_detail_page,
+    render_run_replay_index_page,
+    ReplayRecord,
 )
 from .planning import (
     FreezeException,

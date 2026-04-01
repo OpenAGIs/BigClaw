@@ -204,3 +204,7 @@
 - `PYTHONPATH=src python3 -m pytest tests/test_console_ia.py tests/test_design_system.py -q` -> `26 passed in 0.11s`
 - `python3 -m py_compile src/bigclaw/design_system.py src/bigclaw/__init__.py` -> success
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 20`; `go 286`; `pkg 0`
+- Folded `src/bigclaw/evaluation.py` into `src/bigclaw/operations.py`, installed `bigclaw.evaluation` as a package compatibility module from `src/bigclaw/__init__.py`, and deleted the standalone module to reduce repository `.py` count without changing the benchmark/replay compatibility surface.
+- `PYTHONPATH=src python3 -m pytest tests/test_evaluation.py tests/test_operations.py -q` -> `27 passed in 0.08s`
+- `python3 -m py_compile src/bigclaw/operations.py src/bigclaw/__init__.py` -> success
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `19`
