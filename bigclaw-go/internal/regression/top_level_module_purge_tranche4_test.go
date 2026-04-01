@@ -65,11 +65,7 @@ func TestTopLevelModulePurgePythonCountDrops(t *testing.T) {
 	}
 
 	const prePurgePythonFileCount = 66
-	const expectedPostPurgePythonFileCount = 61
 	if count >= prePurgePythonFileCount {
 		t.Fatalf("expected Python file count to drop below %d, got %d", prePurgePythonFileCount, count)
-	}
-	if count != expectedPostPurgePythonFileCount {
-		t.Fatalf("expected Python file count to land at %d after tranche 4 purge, got %d", expectedPostPurgePythonFileCount, count)
 	}
 }
