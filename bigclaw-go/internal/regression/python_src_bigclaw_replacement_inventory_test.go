@@ -42,6 +42,7 @@ func TestSrcBigClawGoReplacementInventory(t *testing.T) {
 		"src/bigclaw/roadmap.py",
 		"src/bigclaw/saved_views.py",
 		"src/bigclaw/validation_policy.py",
+		"src/bigclaw/workspace_bootstrap.py",
 		"src/bigclaw/workspace_bootstrap_cli.py",
 		"src/bigclaw/workspace_bootstrap_validation.py",
 	}

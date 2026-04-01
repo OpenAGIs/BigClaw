@@ -99,3 +99,8 @@ Results
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `audit_events.py` -> `ok  	bigclaw-go/internal/regression	(cached)`
 - `PYTHONPATH=src python3 -m pytest tests/test_audit_events.py -q` -> `5 passed, 1 warning in 0.10s`
 - `PYTHONPATH=src python3 -c "import bigclaw.audit_events, bigclaw.observability; print('ok')"` -> `ok`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` after deleting `workspace_bootstrap.py` -> `11`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` -> exit 0
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py -q` after deleting `workspace_bootstrap.py` -> `9 passed, 1 warning in 3.48s`
+- `PYTHONPATH=src python3 -c "import bigclaw.workspace_bootstrap, bigclaw.workspace_bootstrap_validation, bigclaw.workspace_bootstrap_cli; print('ok')"` -> `ok`
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `workspace_bootstrap.py` -> `ok  	bigclaw-go/internal/regression	0.440s`
