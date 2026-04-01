@@ -2,12 +2,13 @@
 
 ## Plan
 
-1. Delete `tests/test_live_shadow_bundle.py` because the Go-native live-shadow bundle export path
-   is already covered by `bigclawctl` automation command tests and the checked-in live-shadow
-   bundle surfaces are locked by regression tests.
-2. Run targeted Go validation for `./cmd/bigclawctl` and `./internal/regression`, plus repo-level
-   file-count checks.
-3. Commit the scoped migration changes and push the branch to the remote.
+1. Add a small Go-native collaboration package that covers thread construction and merge behavior,
+   then delete `tests/test_repo_collaboration.py`.
+2. Add a small Go-native repo rollout package that covers the pilot rollout scorecard, candidate
+   gate evaluation, and repo narrative export rendering, then delete `tests/test_repo_rollout.py`.
+3. Run targeted Go validation for `./internal/collaboration` and `./internal/reporollout`, plus
+   repo-level file-count checks.
+4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
 
@@ -20,16 +21,16 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
+- `cd bigclaw-go && go test ./internal/collaboration ./internal/reporollout`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
-  - `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
-  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `cd bigclaw-go && go test ./internal/collaboration ./internal/reporollout`
+  - `ok  	bigclaw-go/internal/collaboration	0.380s`
+  - `ok  	bigclaw-go/internal/reporollout	0.769s`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `15`
+  - `13`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - no output
