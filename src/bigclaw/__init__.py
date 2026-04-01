@@ -23,6 +23,7 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
+from . import observability as _observability_surface
 from . import runtime as _legacy_runtime_surface
 from . import planning as _planning_surface
 
@@ -106,6 +107,22 @@ _install_surface_module(
     ],
     _planning_surface,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
+)
+_install_surface_module(
+    "audit_events",
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "BUDGET_OVERRIDE_EVENT",
+        "FLOW_HANDOFF_EVENT",
+        "MANUAL_TAKEOVER_EVENT",
+        "P0_AUDIT_EVENT_SPECS",
+        "SCHEDULER_DECISION_EVENT",
+        "AuditEventSpec",
+        "get_audit_event_spec",
+        "missing_required_fields",
+    ],
+    _observability_surface,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
 )
 
 from .runtime import (
@@ -208,18 +225,23 @@ from .planning import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .audit_events import (
+from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
+    GitSyncTelemetry,
     MANUAL_TAKEOVER_EVENT,
+    ObservabilityLedger,
     P0_AUDIT_EVENT_SPECS,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
     SCHEDULER_DECISION_EVENT,
+    TaskRun,
     AuditEventSpec,
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
