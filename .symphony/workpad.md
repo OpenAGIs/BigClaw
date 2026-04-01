@@ -2,13 +2,12 @@
 
 ## Plan
 
-1. Add a small Go-native event bus package with a file-backed run ledger that covers the remaining
-   PR approval, CI completion, and task-failure transition tests, then delete
-   `tests/test_event_bus.py`.
-2. Add a small Go-native evaluation package that covers benchmark case execution, replay mismatch
-   detection, suite comparison, and the replay/detail page renderers, then delete
-   `tests/test_evaluation.py`.
-3. Run targeted Go validation for `./internal/eventbus` and `./internal/evaluation`, plus
+1. Add a small Go-native memory package that covers the persisted successful-task pattern reuse
+   behavior from `tests/test_memory.py`, then delete that Python test.
+2. Add a small Go-native runtime matrix package that covers multi-tool execution, routing
+   expectations, and tool policy auditing from `tests/test_runtime_matrix.py`, then delete that
+   Python test.
+3. Run targeted Go validation for `./internal/memory` and `./internal/runtimematrix`, plus
    repo-level file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
@@ -23,16 +22,16 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/eventbus ./internal/evaluation`
+- `cd bigclaw-go && go test ./internal/memory ./internal/runtimematrix`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
-
-- `cd bigclaw-go && go test ./internal/eventbus ./internal/evaluation`
-  - `ok  	bigclaw-go/internal/eventbus	0.799s`
-  - `ok  	bigclaw-go/internal/evaluation	0.395s`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `11`
+  - Result: `9`
+- `cd bigclaw-go && go test ./internal/memory ./internal/runtimematrix`
+  - Result:
+    - `ok  	bigclaw-go/internal/memory	0.936s`
+    - `ok  	bigclaw-go/internal/runtimematrix	0.462s`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
-  - no output
+  - Result: no output
