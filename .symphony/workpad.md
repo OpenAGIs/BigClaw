@@ -2,11 +2,13 @@
 
 ## Plan
 
-1. Add a Go-native planning package that covers the candidate backlog, entry-gate evaluation, and
-   four-week execution plan behavior from `tests/test_planning.py`, then delete that Python test.
-2. Keep the implementation self-contained and reuse the existing governance freeze audit only for
-   baseline readiness / readiness score checks.
-3. Run targeted Go validation for the new planning package, plus repo-level file-count checks.
+1. Add a Go-native run-history / observability surface that covers the behaviors from
+   `tests/test_observability.py`, including task-run capture, ledger persistence, repo sync audit
+   rendering, detail-page rendering, and collaboration extraction from audits, then delete that
+   Python test.
+2. Reuse existing repo commit-link types where it helps, but keep the task-run and rendering
+   implementation scoped to this issue.
+3. Run targeted Go validation for the touched packages, plus repo-level file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
@@ -20,15 +22,16 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/planning`
+- `cd bigclaw-go && go test ./internal/observability ./internal/collaboration`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - Result: `7`
-- `cd bigclaw-go && go test ./internal/planning`
+  - Result: `6`
+- `cd bigclaw-go && go test ./internal/observability ./internal/collaboration`
   - Result:
-    - `ok  	bigclaw-go/internal/planning	1.120s`
+    - `ok  	bigclaw-go/internal/observability	0.429s`
+    - `ok  	bigclaw-go/internal/collaboration	(cached)`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - Result: no output
