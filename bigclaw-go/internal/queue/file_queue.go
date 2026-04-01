@@ -309,7 +309,30 @@ func (q *FileQueue) load() error {
 	if len(contents) == 0 {
 		return nil
 	}
-	return json.Unmarshal(contents, &q.items)
+	if err := json.Unmarshal(contents, &q.items); err == nil {
+		return nil
+	}
+	var legacy []legacyQueueItem
+	if err := json.Unmarshal(contents, &legacy); err != nil {
+		return err
+	}
+	for _, entry := range legacy {
+		task := entry.Task
+		if task.ID == "" {
+			task.ID = entry.TaskID
+		}
+		if task.ID == "" {
+			continue
+		}
+		if task.State == "" {
+			task.State = domain.TaskQueued
+		}
+		q.items[task.ID] = &item{
+			Task:        task,
+			AvailableAt: time.Now(),
+		}
+	}
+	return nil
 }
 
 func (q *FileQueue) save() error {
@@ -346,4 +369,9 @@ func (q *FileQueue) recoverExpiredLeases(now time.Time) (bool, error) {
 		return false, nil
 	}
 	return true, q.save()
+}
+
+type legacyQueueItem struct {
+	TaskID string      `json:"task_id"`
+	Task   domain.Task `json:"task"`
 }

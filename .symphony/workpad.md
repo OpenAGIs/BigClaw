@@ -35,13 +35,11 @@
   - `tests/test_event_bus.py`
   - `tests/test_live_shadow_bundle.py`
   - `tests/test_memory.py`
-  - `tests/test_models.py`
   - `tests/test_observability.py`
   - `tests/test_operations.py`
   - `tests/test_orchestration.py`
   - `tests/test_parallel_validation_bundle.py`
   - `tests/test_planning.py`
-  - `tests/test_queue.py`
   - `tests/test_repo_collaboration.py`
   - `tests/test_repo_rollout.py`
   - `tests/test_reports.py`
@@ -52,17 +50,26 @@
   - `tests/test_validation_bundle_continuation_policy_gate.py`
   - `tests/test_validation_policy.py`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `25`
+  - `23`
 - `find . -name '*.py' | sort | wc -l`
-  - `75`
+  - `73`
 - `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
   - no output
 - `cd bigclaw-go && go test ./internal/repo`
   - `ok  	bigclaw-go/internal/repo	1.187s`
 - `cd bigclaw-go && go test ./internal/triage`
   - `ok  	bigclaw-go/internal/triage	1.614s`
+- `cd bigclaw-go && go test ./internal/queue`
+  - `ok  	bigclaw-go/internal/queue	28.934s`
+- `cd bigclaw-go && go test ./internal/queue ./internal/risk ./internal/triage ./internal/workflow ./internal/billing`
+  - `ok  	bigclaw-go/internal/queue	(cached)`
+  - `ok  	bigclaw-go/internal/risk	0.904s`
+  - `ok  	bigclaw-go/internal/triage	(cached)`
+  - `ok  	bigclaw-go/internal/workflow	1.312s`
+  - `ok  	bigclaw-go/internal/billing	1.746s`
 - `git status --short`
   - `M .symphony/workpad.md`
-  - `M bigclaw-go/internal/repo/python_parity_test.go`
-  - `D tests/test_repo_links.py`
-  - `D tests/test_repo_triage.py`
+  - `M bigclaw-go/internal/queue/file_queue.go`
+  - `A bigclaw-go/internal/queue/python_parity_test.go`
+  - `D tests/test_models.py`
+  - `D tests/test_queue.py`
