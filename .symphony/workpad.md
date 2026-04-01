@@ -2,8 +2,8 @@
 
 ## Plan
 
-1. Inventory the remaining repository Python files and target the next removable top-level Python test whose behavior is already covered in `bigclaw-go/` or can be replaced with a small Go contract test in the same domain package.
-2. Delete the selected Python test file and add or extend Go tests so the replaced operations/reporting behavior still has checked-in Go-owned coverage.
+1. Inventory the remaining repository Python files and target the next removable module whose behavior can be collapsed into an already-loaded legacy compatibility surface without adding new Python files.
+2. Delete the selected Python file and adjust package exports or Go-owned compatibility checks so the reduced surface still validates cleanly.
 3. Verify the repo state with targeted `go test` commands plus file-count checks for remaining `.py` files and absent Python packaging files.
 4. Commit the scoped migration change on an issue branch and push it to the remote.
 
@@ -25,6 +25,30 @@
 
 ## Validation Results
 
+- Tranche: inline the legacy Python risk surface into the runtime compatibility module and delete the standalone file
+  - Removed Python files:
+    - `src/bigclaw/risk.py`
+  - Updated Python files:
+    - `src/bigclaw/runtime.py`
+    - `src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 - <<'PY' ...`
+  - `bigclaw-go/internal/risk/risk.go`
+  - `RiskFactor RiskScore RiskScorer`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
+  - `============================= test session starts ==============================`
+  - `platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0`
+  - `rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1040`
+  - `plugins: cov-7.1.0`
+  - `collected 34 items`
+  - `tests/test_reports.py ..................................                 [100%]`
+  - `============================== 34 passed in 0.06s ==============================`
+- `find . -name '*.py' | sort | wc -l`
+  - `10`
+- `git status --short`
+  - `M .symphony/workpad.md`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/risk.py`
+  - `M src/bigclaw/runtime.py`
 - Tranche: delete Python ops compatibility wrappers and freeze the legacy compile-check surface to zero files
   - Removed Python files:
     - `scripts/ops/bigclaw_github_sync.py`

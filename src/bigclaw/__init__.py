@@ -56,6 +56,12 @@ _install_legacy_surface_module(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
 )
 _install_legacy_surface_module(
+    "risk",
+    ["RiskFactor", "RiskScore", "RiskScorer"],
+    LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
+)
+_install_legacy_surface_module(
     "scheduler",
     ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
@@ -114,6 +120,9 @@ from .runtime import (
     WorkflowEngine,
     WorkflowRunResult,
     WorkpadJournal,
+    RiskFactor,
+    RiskScore,
+    RiskScorer,
     create_server,
     render_orchestration_plan,
     run_server,
@@ -126,7 +135,6 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
