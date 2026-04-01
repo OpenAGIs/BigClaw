@@ -2,12 +2,11 @@
 
 ## Plan
 
-1. Extend the existing Go queue and reporting surfaces to cover the remaining
-   `tests/test_control_center.py` behaviors, including queue peeking and shared-view empty-state
-   rendering, then delete that Python test.
-2. Delete `tests/conftest.py` once no remaining top-level Python tests depend on it.
-3. Run targeted Go validation for the touched queue and reporting packages, plus repo-level
-   file-count checks.
+1. Add a Go-native planning package that covers the candidate backlog, entry-gate evaluation, and
+   four-week execution plan behavior from `tests/test_planning.py`, then delete that Python test.
+2. Keep the implementation self-contained and reuse the existing governance freeze audit only for
+   baseline readiness / readiness score checks.
+3. Run targeted Go validation for the new planning package, plus repo-level file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
@@ -21,16 +20,15 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/queue ./internal/reporting`
+- `cd bigclaw-go && go test ./internal/planning`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - Result: `8`
-- `cd bigclaw-go && go test ./internal/queue ./internal/reporting`
+  - Result: `7`
+- `cd bigclaw-go && go test ./internal/planning`
   - Result:
-    - `ok  	bigclaw-go/internal/queue	(cached)`
-    - `ok  	bigclaw-go/internal/reporting	0.402s`
+    - `ok  	bigclaw-go/internal/planning	1.120s`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - Result: no output
