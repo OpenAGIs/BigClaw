@@ -1,47 +1,30 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1067 Workpad
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+- Confirm the full `BIG-GO-1067` target list of residual benchmark and e2e Python assets is already absent from `bigclaw-go/scripts/benchmark/` and `bigclaw-go/scripts/e2e/`.
+- Verify the Go replacement paths and regression guards that now cover the deleted benchmark and e2e entrypoints.
+- Record a fresh validation pass for the umbrella sweep, including current `.py` counts, targeted `go test` runs, and Go CLI help commands for the retained benchmark/e2e entry surfaces.
+- Add issue-scoped closeout artifacts summarizing the covered asset list, overall Python-file impact, exact validation commands/results, and remaining risk.
+- Commit the issue-scoped evidence on a dedicated branch and push it to `origin`.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- The batch asset list for `BIG-GO-1067` is explicitly enumerated in repo artifacts.
+- The listed Python assets are either deleted or already absent, with active Go or shell replacement entrypoints identified.
+- Targeted validation commands and exact results are recorded for the current branch state.
+- The response quantifies the net Python-file impact for this sweep.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
-
-## Archived Closeout
-
-### BIG-GO-1053
-
-- Baseline code migration landed on `main` at `004de016252d6ca168a45dccda48fc9fa69e27f1`.
-- Closeout artifacts for the lane are tracked in:
-  - `reports/BIG-GO-1053-validation.md`
-  - `reports/BIG-GO-1053-closeout.md`
-  - `reports/BIG-GO-1053-status.json`
-- Additional stale Python entrypoint tests removed after closeout verification:
-  - `tests/test_parallel_validation_bundle.py`
-  - `tests/test_validation_bundle_continuation_policy_gate.py`
-- Validation recorded for `BIG-GO-1053`:
-  - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
-  - `find . -name '*.py' | wc -l` -> `43`
-  - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
-- Historical branch handoff URL:
-  - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
-- Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
-  the closeout landed on `main`.
-- Remote closeout comment posted on merged PR `#217`:
-  - `https://github.com/OpenAGIs/BigClaw/pull/217#issuecomment-4167169146`
-- No writable local tracker entry exists for `BIG-GO-1053` in `local-issues.json` or the
-  Symphony local issue store, so any remaining active state is external to this workspace.
-- Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
+- `find bigclaw-go/scripts/benchmark -maxdepth 1 -name '*.py' | wc -l`
+- `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l`
+- `find . -name '*.py' | wc -l`
+- `rg -n "capacity_certification\\.py|capacity_certification_test\\.py|run_matrix\\.py|soak_local\\.py|broker_failover_stub_matrix\\.py|broker_failover_stub_matrix_test\\.py|cross_process_coordination_surface\\.py|export_validation_bundle\\.py|export_validation_bundle_test\\.py|external_store_validation\\.py|mixed_workload_matrix\\.py|multi_node_shared_queue\\.py" .`
+- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`

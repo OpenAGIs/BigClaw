@@ -1,0 +1,86 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1067",
+    "title": "bigclaw-go scripts e2e residual sweep A",
+    "date": "2026-04-01",
+    "branch": "symphony/BIG-GO-1067-validation",
+    "baseline_head": "d36a1c70"
+  },
+  "scope": {
+    "benchmark_assets": [
+      "bigclaw-go/scripts/benchmark/capacity_certification.py",
+      "bigclaw-go/scripts/benchmark/capacity_certification_test.py",
+      "bigclaw-go/scripts/benchmark/run_matrix.py",
+      "bigclaw-go/scripts/benchmark/soak_local.py"
+    ],
+    "e2e_assets": [
+      "bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py",
+      "bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py",
+      "bigclaw-go/scripts/e2e/cross_process_coordination_surface.py",
+      "bigclaw-go/scripts/e2e/export_validation_bundle.py",
+      "bigclaw-go/scripts/e2e/export_validation_bundle_test.py",
+      "bigclaw-go/scripts/e2e/external_store_validation.py",
+      "bigclaw-go/scripts/e2e/mixed_workload_matrix.py",
+      "bigclaw-go/scripts/e2e/multi_node_shared_queue.py"
+    ]
+  },
+  "replacements": {
+    "benchmark": [
+      "go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...",
+      "go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...",
+      "go run ./bigclaw-go/cmd/bigclawctl automation benchmark capacity-certification ...",
+      "bigclaw-go/scripts/benchmark/run_suite.sh"
+    ],
+    "e2e": [
+      "go run ./bigclaw-go/cmd/bigclawctl automation e2e broker-failover-stub-matrix ...",
+      "go run ./bigclaw-go/cmd/bigclawctl automation e2e mixed-workload-matrix ...",
+      "go run ./bigclaw-go/cmd/bigclawctl automation e2e cross-process-coordination-surface ...",
+      "go run ./bigclaw-go/cmd/bigclawctl automation e2e export-validation-bundle ...",
+      "go run ./bigclaw-go/cmd/bigclawctl automation e2e external-store-validation ...",
+      "go run ./bigclaw-go/cmd/bigclawctl automation e2e multi-node-shared-queue ...",
+      "bigclaw-go/scripts/e2e/run_all.sh",
+      "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+      "bigclaw-go/scripts/e2e/ray_smoke.sh"
+    ]
+  },
+  "validation": {
+    "commands": [
+      "find bigclaw-go/scripts/benchmark -maxdepth 1 -name '*.py' | wc -l",
+      "find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l",
+      "find . -name '*.py' | wc -l",
+      "rg -n \"capacity_certification\\.py|capacity_certification_test\\.py|run_matrix\\.py|soak_local\\.py|broker_failover_stub_matrix\\.py|broker_failover_stub_matrix_test\\.py|cross_process_coordination_surface\\.py|export_validation_bundle\\.py|export_validation_bundle_test\\.py|external_store_validation\\.py|mixed_workload_matrix\\.py|multi_node_shared_queue\\.py\" tests bigclaw-go docs README.md workflow.md .github . -g '!reports/**' -g '!.symphony/workpad.md' 2>/dev/null",
+      "cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help",
+      "cd bigclaw-go && ./scripts/benchmark/run_suite.sh",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help"
+    ],
+    "results": {
+      "benchmark_py_count": 0,
+      "e2e_py_count": 0,
+      "repo_py_count": 43,
+      "targeted_go_test": [
+        "ok   bigclaw-go/cmd/bigclawctl 4.237s",
+        "ok   bigclaw-go/internal/regression 1.186s"
+      ],
+      "reference_scan": "historical tracker notes in local-issues.json and the live regression guard only",
+      "run_suite_exit_code": 0
+    }
+  },
+  "python_count_impact": {
+    "current_repo_py_count": 43,
+    "prior_benchmark_closeout_repo_py_count": 46,
+    "minimum_delta_across_landed_sweep": -3,
+    "note": "The target asset list was already removed on main before this umbrella evidence branch was created."
+  },
+  "risk": [
+    "No fresh code-path deletion lands in this branch because the scoped Python assets were already absent on main.",
+    "Archived references to retired Python filenames remain in historical reports and local tracker data."
+  ]
+}
