@@ -68,10 +68,6 @@ func BuildWorkspaceValidateArgs(repoRoot string, forwarded []string) []string {
 	return BuildBigclawctlExecArgs(repoRoot, []string{"workspace", "validate"}, TranslateWorkspaceValidateArgs(forwarded))
 }
 
-func BuildRefillArgs(repoRoot string, forwarded []string) []string {
-	return BuildBigclawctlExecArgs(repoRoot, []string{"refill"}, forwarded)
-}
-
 func BuildWorkspaceRuntimeBootstrapArgs(repoRoot string, forwarded []string) []string {
 	return BuildBigclawctlExecArgs(repoRoot, []string{"workspace"}, forwarded)
 }
