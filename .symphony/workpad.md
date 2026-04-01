@@ -17,6 +17,7 @@
 - Fold the standalone `tests/test_planning.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file now that the planning compatibility surface is owned by `reports.py`.
 - Fold the standalone `tests/test_runtime_matrix.py` coverage into `tests/test_audit_events.py` and delete the extra physical Python test file while keeping runtime, scheduler, and audit-chain coverage intact.
 - Fold the standalone `tests/test_observability.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file while keeping task-run, closeout, repo-sync, and detail-page coverage intact.
+- Fold the standalone `tests/test_planning.py` coverage into `tests/test_reports.py` and delete the extra physical Python test file now that the planning compatibility surface is owned by `reports.py`.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -237,3 +238,6 @@
 - Folded the standalone `tests/test_observability.py` coverage into `tests/test_reports.py` and deleted the extra physical Python test file while keeping task-run persistence, closeout repo-sync serialization, repo-sync report rendering, and detail-page coverage intact.
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `41 passed in 0.13s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 14`; `go 286`; `pkg 0`
+- Folded the standalone `tests/test_planning.py` coverage into `tests/test_reports.py` and deleted the extra physical Python test file now that the planning compatibility surface is owned by `reports.py`.
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `55 passed in 0.15s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 13`; `go 286`; `pkg 0`
