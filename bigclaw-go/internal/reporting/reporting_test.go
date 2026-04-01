@@ -462,6 +462,27 @@ func TestRenderPolicyPromptVersionCenterShowsSharedViewContext(t *testing.T) {
 	}
 }
 
+func TestRenderBenchmarkSuiteReport(t *testing.T) {
+	suite := BenchmarkSuiteResult{
+		Version: "v0.2",
+		Results: []BenchmarkCaseResult{
+			{CaseID: "browser-low-risk", Score: 100, Passed: true},
+		},
+	}
+	baseline := BenchmarkSuiteResult{Version: "v0.1"}
+
+	report := RenderBenchmarkSuiteReport(suite, &baseline)
+	for _, fragment := range []string{
+		"Version: v0.2",
+		"Baseline Version: v0.1",
+		"Score Delta: 100",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in benchmark suite report, got %s", fragment, report)
+		}
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)

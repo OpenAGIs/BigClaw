@@ -1307,6 +1307,39 @@ func BuildBenchmarkRegressionCenter(current BenchmarkSuiteResult, baseline Bench
 	}
 }
 
+func RenderBenchmarkSuiteReport(suite BenchmarkSuiteResult, baseline *BenchmarkSuiteResult) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Benchmark Suite Report\n\n")
+	builder.WriteString(fmt.Sprintf("- Version: %s\n", suite.Version))
+	builder.WriteString(fmt.Sprintf("- Cases: %d\n", len(suite.Results)))
+	builder.WriteString(fmt.Sprintf("- Passed: %t\n", benchmarkSuitePassed(suite)))
+	builder.WriteString(fmt.Sprintf("- Score: %d\n\n", benchmarkSuiteScore(suite)))
+	builder.WriteString("## Cases\n\n")
+	if len(suite.Results) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, result := range suite.Results {
+			builder.WriteString(fmt.Sprintf("- %s: score=%d passed=%t\n", result.CaseID, result.Score, result.Passed))
+		}
+	}
+	builder.WriteString("\n## Comparison\n\n")
+	if baseline == nil {
+		builder.WriteString("- No baseline provided\n")
+		return builder.String()
+	}
+	builder.WriteString(fmt.Sprintf("- Baseline Version: %s\n", baseline.Version))
+	builder.WriteString(fmt.Sprintf("- Score Delta: %d\n", benchmarkSuiteScore(suite)-benchmarkSuiteScore(*baseline)))
+	comparisons := suite.Compare(*baseline)
+	if len(comparisons) == 0 {
+		builder.WriteString("- No comparable cases\n")
+		return builder.String()
+	}
+	for _, comparison := range comparisons {
+		builder.WriteString(fmt.Sprintf("- %s: baseline=%d current=%d delta=%d\n", comparison.CaseID, comparison.BaselineScore, comparison.CurrentScore, comparison.Delta))
+	}
+	return builder.String()
+}
+
 func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 	center := QueueControlCenter{
 		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
@@ -2063,6 +2096,26 @@ func isActionableStatus(status string) bool {
 	default:
 		return false
 	}
+}
+
+func benchmarkSuiteScore(suite BenchmarkSuiteResult) int {
+	if len(suite.Results) == 0 {
+		return 0
+	}
+	total := 0
+	for _, result := range suite.Results {
+		total += result.Score
+	}
+	return int(math.Round(float64(total) / float64(len(suite.Results))))
+}
+
+func benchmarkSuitePassed(suite BenchmarkSuiteResult) bool {
+	for _, result := range suite.Results {
+		if !result.Passed {
+			return false
+		}
+	}
+	return true
 }
 
 func roundTo(value float64, places int) float64 {

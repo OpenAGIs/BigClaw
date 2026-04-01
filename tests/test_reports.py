@@ -2233,38 +2233,6 @@ def test_replay_outcome_reports_mismatch(tmp_path: Path):
     assert Path(outcome.report_path).exists()
 
 
-def test_suite_comparison_and_report(tmp_path: Path):
-    runner = BenchmarkRunner(storage_dir=str(tmp_path))
-    improved_suite = runner.run_suite(
-        [
-            BenchmarkCase(
-                case_id="browser-low-risk",
-                task=Task(
-                    task_id="BIG-601-v2",
-                    source="linear",
-                    title="Run browser benchmark",
-                    description="validate routing",
-                    required_tools=["browser"],
-                ),
-                expected_medium="browser",
-                expected_approved=True,
-                expected_status="approved",
-            )
-        ],
-        version="v0.2",
-    )
-    baseline_suite = BenchmarkSuiteResult(results=[], version="v0.1")
-
-    comparison = improved_suite.compare(baseline_suite)
-    report = render_benchmark_suite_report(improved_suite, baseline_suite)
-
-    assert comparison[0].delta == 100
-    assert improved_suite.score == 100
-    assert "Version: v0.2" in report
-    assert "Baseline Version: v0.1" in report
-    assert "Score Delta: 100" in report
-
-
 def test_render_replay_detail_page_lists_mismatches():
     task = Task(task_id="BIG-804", source="linear", title="Replay detail", description="")
     expected = ReplayRecord(task=task, run_id="run-1", medium="docker", approved=True, status="approved")
