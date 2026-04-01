@@ -2,18 +2,17 @@
 
 ## Plan
 
-1. Add a small Go-native memory package that covers the persisted successful-task pattern reuse
-   behavior from `tests/test_memory.py`, then delete that Python test.
-2. Add a small Go-native runtime matrix package that covers multi-tool execution, routing
-   expectations, and tool policy auditing from `tests/test_runtime_matrix.py`, then delete that
-   Python test.
-3. Run targeted Go validation for `./internal/memory` and `./internal/runtimematrix`, plus
-   repo-level file-count checks.
+1. Extend the existing Go queue and reporting surfaces to cover the remaining
+   `tests/test_control_center.py` behaviors, including queue peeking and shared-view empty-state
+   rendering, then delete that Python test.
+2. Delete `tests/conftest.py` once no remaining top-level Python tests depend on it.
+3. Run targeted Go validation for the touched queue and reporting packages, plus repo-level
+   file-count checks.
 4. Commit the scoped migration changes and push the branch to the remote.
 
 ## Acceptance
 
-- The number of Python files under `tests/` decreases in this tranche.
+- The number of Python files under `tests/` decreases again in this tranche.
 - Deleted Python tests are covered by checked-in or expanded Go tests in `bigclaw-go/`.
 - No new Python tests are introduced.
 - `pyproject.toml` and `setup.py` remain absent.
@@ -22,16 +21,16 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/memory ./internal/runtimematrix`
+- `cd bigclaw-go && go test ./internal/queue ./internal/reporting`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
 - `git status --short`
 
 ## Validation Results
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - Result: `9`
-- `cd bigclaw-go && go test ./internal/memory ./internal/runtimematrix`
+  - Result: `8`
+- `cd bigclaw-go && go test ./internal/queue ./internal/reporting`
   - Result:
-    - `ok  	bigclaw-go/internal/memory	0.936s`
-    - `ok  	bigclaw-go/internal/runtimematrix	0.462s`
+    - `ok  	bigclaw-go/internal/queue	(cached)`
+    - `ok  	bigclaw-go/internal/reporting	0.402s`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
   - Result: no output

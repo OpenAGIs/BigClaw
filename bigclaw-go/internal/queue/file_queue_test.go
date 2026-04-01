@@ -239,3 +239,30 @@ func TestFileQueueLoadsLegacyListStorage(t *testing.T) {
 		t.Fatalf("expected legacy task to load, got %+v", leased)
 	}
 }
+
+func TestFileQueuePeekTasksReturnsPriorityOrder(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+
+	if err := q.Enqueue(ctx, domain.Task{ID: "p2", Source: "linear", Title: "low", Priority: 2, CreatedAt: time.Now().Add(2 * time.Second)}); err != nil {
+		t.Fatalf("enqueue p2: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "p0", Source: "linear", Title: "top", Priority: 0, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue p0: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "p1", Source: "linear", Title: "mid", Priority: 1, CreatedAt: time.Now().Add(time.Second)}); err != nil {
+		t.Fatalf("enqueue p1: %v", err)
+	}
+
+	peeked := q.PeekTasks()
+	if len(peeked) != 3 {
+		t.Fatalf("expected three peeked tasks, got %d", len(peeked))
+	}
+	if got := []string{peeked[0].ID, peeked[1].ID, peeked[2].ID}; got[0] != "p0" || got[1] != "p1" || got[2] != "p2" {
+		t.Fatalf("expected p0,p1,p2 ordering, got %v", got)
+	}
+}

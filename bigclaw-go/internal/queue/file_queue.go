@@ -97,6 +97,31 @@ func (q *FileQueue) LeaseNext(_ context.Context, workerID string, ttl time.Durat
 	return &copy, lease, nil
 }
 
+func (q *FileQueue) PeekTasks() []domain.Task {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	now := time.Now()
+	ordered := make([]*item, 0, len(q.items))
+	for _, current := range q.items {
+		if current.Leased || current.AvailableAt.After(now) || !isActionableState(current.Task.State) {
+			continue
+		}
+		ordered = append(ordered, current)
+	}
+	sort.SliceStable(ordered, func(i, j int) bool {
+		if ordered[i].Task.Priority == ordered[j].Task.Priority {
+			return ordered[i].Task.CreatedAt.Before(ordered[j].Task.CreatedAt)
+		}
+		return ordered[i].Task.Priority < ordered[j].Task.Priority
+	})
+	out := make([]domain.Task, 0, len(ordered))
+	for _, current := range ordered {
+		out = append(out, current.Task)
+	}
+	return out
+}
+
 func (q *FileQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Duration) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()

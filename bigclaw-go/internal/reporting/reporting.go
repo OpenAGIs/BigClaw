@@ -112,6 +112,23 @@ type QueueControlCenter struct {
 	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
+type QueueRun struct {
+	TaskID string `json:"task_id"`
+	Status string `json:"status"`
+	Medium string `json:"medium"`
+}
+
+type SharedViewFilter struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type SharedViewContext struct {
+	Filters      []SharedViewFilter `json:"filters,omitempty"`
+	ResultCount  int                `json:"result_count"`
+	EmptyMessage string             `json:"empty_message,omitempty"`
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -869,27 +886,54 @@ func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview
 }
 
 func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
+	return BuildQueueControlCenterWithRuns(tasks, nil)
+}
+
+func BuildQueueControlCenterWithRuns(tasks []domain.Task, runs []QueueRun) QueueControlCenter {
 	center := QueueControlCenter{
 		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
 		QueuedByRisk:     map[string]int{"low": 0, "medium": 0, "high": 0},
 		ExecutionMedia:   make(map[string]int),
 		Actions:          make(map[string][]ConsoleAction),
 	}
+	waitingApprovalSeen := make(map[string]struct{})
+	runByTaskID := make(map[string]QueueRun, len(runs))
+	for _, run := range runs {
+		runByTaskID[run.TaskID] = run
+		if medium := strings.TrimSpace(run.Medium); medium != "" {
+			center.ExecutionMedia[medium]++
+		}
+		if strings.EqualFold(strings.TrimSpace(run.Status), "needs-approval") {
+			if _, ok := waitingApprovalSeen[run.TaskID]; !ok {
+				center.WaitingApprovalRuns++
+				waitingApprovalSeen[run.TaskID] = struct{}{}
+			}
+		}
+	}
 	for _, task := range tasks {
 		if domain.IsActiveTaskState(task.State) {
 			center.QueueDepth++
 		}
-		if task.State == domain.TaskBlocked || strings.EqualFold(task.Metadata["approval_status"], "needs-approval") {
-			center.WaitingApprovalRuns++
+		run, hasRun := runByTaskID[task.ID]
+		blocked := task.State == domain.TaskBlocked ||
+			strings.EqualFold(task.Metadata["approval_status"], "needs-approval") ||
+			(hasRun && strings.EqualFold(strings.TrimSpace(run.Status), "needs-approval"))
+		if blocked {
 			center.BlockedTasks = append(center.BlockedTasks, task.ID)
+			if _, ok := waitingApprovalSeen[task.ID]; !ok {
+				center.WaitingApprovalRuns++
+				waitingApprovalSeen[task.ID] = struct{}{}
+			}
 		}
 		if task.State == domain.TaskQueued || task.State == domain.TaskLeased || task.State == domain.TaskRetrying {
 			center.QueuedTasks = append(center.QueuedTasks, task.ID)
 			center.QueuedByPriority[priorityBucket(task.Priority)]++
 			center.QueuedByRisk[riskBucket(task.RiskLevel)]++
-			medium := firstNonEmpty(string(task.RequiredExecutor), task.Metadata["medium"], "unknown")
-			center.ExecutionMedia[medium]++
-			center.Actions[task.ID] = buildConsoleActions(task.ID, task.State == domain.TaskBlocked, task.State != domain.TaskBlocked, task.State == domain.TaskBlocked)
+			if len(runs) == 0 && !hasRun {
+				medium := firstNonEmpty(string(task.RequiredExecutor), task.Metadata["medium"], "unknown")
+				center.ExecutionMedia[medium]++
+			}
+			center.Actions[task.ID] = buildConsoleActions(task.ID, blocked, !blocked, blocked)
 		}
 	}
 	sort.Strings(center.BlockedTasks)
@@ -897,12 +941,27 @@ func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 	return center
 }
 
-func RenderQueueControlCenter(center QueueControlCenter) string {
+func RenderQueueControlCenter(center QueueControlCenter, view ...SharedViewContext) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Queue Control Center\n\n")
 	builder.WriteString(fmt.Sprintf("- Queue Depth: %d\n", center.QueueDepth))
 	builder.WriteString(fmt.Sprintf("- Waiting Approval Runs: %d\n", center.WaitingApprovalRuns))
 	builder.WriteString(fmt.Sprintf("- Queued Tasks: %s\n\n", joinOrNone(center.QueuedTasks)))
+	if len(view) > 0 {
+		builder.WriteString("## View State\n\n")
+		state := "results"
+		summary := fmt.Sprintf("%d results", view[0].ResultCount)
+		if view[0].ResultCount == 0 {
+			state = "empty"
+			summary = firstNonEmpty(strings.TrimSpace(view[0].EmptyMessage), "No results.")
+		}
+		builder.WriteString(fmt.Sprintf("- State: %s\n", state))
+		builder.WriteString(fmt.Sprintf("- Summary: %s\n", summary))
+		for _, filter := range view[0].Filters {
+			builder.WriteString(fmt.Sprintf("- %s: %s\n", filter.Label, filter.Value))
+		}
+		builder.WriteString("\n")
+	}
 	builder.WriteString("## Queue By Priority\n\n")
 	for _, priority := range []string{"P0", "P1", "P2"} {
 		builder.WriteString(fmt.Sprintf("- %s: %d\n", priority, center.QueuedByPriority[priority]))

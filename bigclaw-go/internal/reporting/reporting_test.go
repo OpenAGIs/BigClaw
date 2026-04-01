@@ -3,6 +3,7 @@ package reporting
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -536,6 +537,90 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "## Actions") || !strings.Contains(string(body), "task-retrying") {
 		t.Fatalf("unexpected queue control center content: %s", string(body))
+	}
+}
+
+func TestBuildQueueControlCenterWithRunsSummarizesQueueAndExecutionMedia(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "BIG-802-1", Source: "linear", Title: "top", Priority: 0, State: domain.TaskQueued, RiskLevel: domain.RiskHigh},
+		{ID: "BIG-802-2", Source: "linear", Title: "mid", Priority: 1, State: domain.TaskQueued, RiskLevel: domain.RiskMedium},
+		{ID: "BIG-802-3", Source: "linear", Title: "low", Priority: 2, State: domain.TaskQueued, RiskLevel: domain.RiskLow},
+	}
+
+	center := BuildQueueControlCenterWithRuns(tasks, []QueueRun{
+		{TaskID: "BIG-802-1", Status: "needs-approval", Medium: "vm"},
+		{TaskID: "BIG-802-2", Status: "approved", Medium: "browser"},
+		{TaskID: "BIG-802-4", Status: "approved", Medium: "docker"},
+	})
+
+	rendered := RenderQueueControlCenter(center)
+
+	if center.QueueDepth != 3 {
+		t.Fatalf("expected queue depth 3, got %d", center.QueueDepth)
+	}
+	if !reflect.DeepEqual(center.QueuedByPriority, map[string]int{"P0": 1, "P1": 1, "P2": 1}) {
+		t.Fatalf("unexpected queued by priority: %+v", center.QueuedByPriority)
+	}
+	if !reflect.DeepEqual(center.QueuedByRisk, map[string]int{"low": 1, "medium": 1, "high": 1}) {
+		t.Fatalf("unexpected queued by risk: %+v", center.QueuedByRisk)
+	}
+	if !reflect.DeepEqual(center.ExecutionMedia, map[string]int{"vm": 1, "browser": 1, "docker": 1}) {
+		t.Fatalf("unexpected execution media: %+v", center.ExecutionMedia)
+	}
+	if center.WaitingApprovalRuns != 1 {
+		t.Fatalf("expected one waiting approval run, got %d", center.WaitingApprovalRuns)
+	}
+	if !reflect.DeepEqual(center.BlockedTasks, []string{"BIG-802-1"}) {
+		t.Fatalf("unexpected blocked tasks: %+v", center.BlockedTasks)
+	}
+	if !reflect.DeepEqual(center.QueuedTasks, []string{"BIG-802-1", "BIG-802-2", "BIG-802-3"}) {
+		t.Fatalf("unexpected queued tasks: %+v", center.QueuedTasks)
+	}
+	if got := center.Actions["BIG-802-1"]; len(got) != 7 ||
+		got[0].ActionID != "drill-down" ||
+		got[1].ActionID != "export" ||
+		got[2].ActionID != "add-note" ||
+		got[3].ActionID != "escalate" ||
+		got[4].ActionID != "retry" ||
+		got[5].ActionID != "pause" ||
+		got[6].ActionID != "audit" {
+		t.Fatalf("unexpected actions: %+v", got)
+	}
+	if !center.Actions["BIG-802-1"][3].Enabled || !center.Actions["BIG-802-1"][4].Enabled || center.Actions["BIG-802-1"][5].Enabled {
+		t.Fatalf("unexpected blocked-task action states: %+v", center.Actions["BIG-802-1"])
+	}
+	for _, fragment := range []string{
+		"# Queue Control Center",
+		"- Waiting Approval Runs: 1",
+		"- BIG-802-1",
+		"BIG-802-1: Drill Down [drill-down]",
+		"Escalate [escalate] state=enabled",
+		"Pause [pause] state=disabled target=BIG-802-1 reason=approval-blocked tasks should be escalated instead of paused",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered center, got %s", fragment, rendered)
+		}
+	}
+}
+
+func TestRenderQueueControlCenterSharedViewEmptyState(t *testing.T) {
+	center := BuildQueueControlCenter(nil)
+
+	rendered := RenderQueueControlCenter(center, SharedViewContext{
+		Filters:      []SharedViewFilter{{Label: "Team", Value: "operations"}},
+		ResultCount:  0,
+		EmptyMessage: "No queued work for the selected team.",
+	})
+
+	for _, fragment := range []string{
+		"## View State",
+		"- State: empty",
+		"- Summary: No queued work for the selected team.",
+		"- Team: operations",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered view state, got %s", fragment, rendered)
+		}
 	}
 }
 
