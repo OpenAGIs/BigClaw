@@ -13,6 +13,7 @@
 - Add a bounded Go-native report-studio / pilot / issue-closure surface and retire `tests/test_reports.py` from default execution so the remaining Python-only report sublanes stop being default test entrypoints.
 - Add a bounded Go-native design-system surface covering component governance, console top-bar, information-architecture, and UI-acceptance auditing so `tests/test_design_system.py` can be removed with direct replacement coverage.
 - Add a bounded Go-native console-IA surface on top of the Go design-system package so `tests/test_console_ia.py` can be removed with direct replacement coverage for surface audits and four-page interaction contracts.
+- Add a Go-native UI-review pack subsystem covering the pack model, auditor, review boards, HTML export, and bundle writing so `tests/test_ui_review.py` can be removed with actual Go-only parity.
 - Add a Go regression test that asserts this Python tranche stays deleted so the repo does not silently restore these default Python test entrypoints.
 - Run targeted validation for the affected Go packages and record exact commands and results, then verify the repo `.py` count dropped.
 - Commit the scoped change set and push the branch to the remote.
@@ -31,6 +32,7 @@
 - The Python reports lane should only leave default execution if Go-native coverage exists for the isolated report-studio / pilot / issue-closure block and the remaining uncovered Python report sublanes are moved out of default discovery.
 - The Python design-system lane is removed only if equivalent Go-native coverage exists for design tokens/components, console top-bar governance, information architecture auditing, and UI acceptance readiness/report rendering.
 - The Python console-IA lane is removed only if equivalent Go-native coverage exists for console surface manifests, IA audits, interaction-contract audits, report rendering, and the `BIG-4203` draft builder.
+- The Python UI-review lane is removed only if equivalent Go-native coverage exists for the review-pack manifest, auditor findings, review summary/coverage boards, signoff-escalation views, freeze/blocker ledgers, HTML rendering, and bundle export.
 - Validation proves the affected Go packages still pass after the Python test removal.
 
 ## Validation
@@ -38,6 +40,7 @@
 - `find tests -maxdepth 1 -name 'test_*.py' | sort`
 - `cd bigclaw-go && go test ./internal/designsystem ./internal/regression`
 - `cd bigclaw-go && go test ./internal/consoleia ./internal/regression`
+- `cd bigclaw-go && go test ./internal/uireview ./internal/regression`
 - `cd bigclaw-go && go test ./internal/planning ./internal/regression`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/billing ./internal/collaboration ./internal/evaluation ./internal/pilot ./internal/planning ./internal/queue ./internal/reporting ./internal/regression ./internal/repo ./internal/risk ./internal/scheduler ./internal/triage ./internal/worker ./internal/workflow`
 - `git status --short`
@@ -64,3 +67,4 @@
 - `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `26`
 - `cd bigclaw-go && go test ./internal/consoleia ./internal/regression` -> `ok   bigclaw-go/internal/consoleia (cached)` and `ok   bigclaw-go/internal/regression 0.624s`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/billing ./internal/collaboration ./internal/consoleia ./internal/designsystem ./internal/evaluation ./internal/observability ./internal/pilot ./internal/planning ./internal/queue ./internal/reporting ./internal/reportstudio ./internal/regression ./internal/repo ./internal/risk ./internal/scheduler ./internal/triage ./internal/worker ./internal/workflow` -> all listed packages `ok` with cached reuse where applicable
+- `cd bigclaw-go && go test ./internal/uireview` -> `ok   bigclaw-go/internal/uireview 0.840s`
