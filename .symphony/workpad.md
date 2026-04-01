@@ -11,7 +11,7 @@
 ## Acceptance
 
 - The repository-wide `*.py` file count decreases from the starting count for this issue.
-- The deleted tranche is limited to top-level `src/bigclaw/*.py` modules already assigned to canonical Go owners, specifically the intake/DSL compatibility slice and the risk/governance/audit compatibility slice.
+- The deleted tranche is limited to top-level `src/bigclaw/*.py` modules already assigned to canonical Go owners, specifically the intake/DSL compatibility slice, the risk/governance/audit/execution-contract compatibility slice, and the repo-governance compatibility slice.
 - No new Python files are added.
 - The final commit message names the deleted Python files and the added Go file(s) and Go test file(s).
 - Targeted Python compatibility checks and targeted Go tests pass for the touched surfaces.
@@ -21,21 +21,29 @@
 - `find . -name "*.py" | wc -l`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py -q`
 - `cd bigclaw-go && go test ./internal/intake ./internal/workflow ./internal/risk ./internal/governance ./internal/observability ./internal/regression`
+- `cd bigclaw-go && go test ./internal/contract ./internal/regression`
 - `git status --short`
 
 ## Validation Results
 
 - `find . -name "*.py" | wc -l`
-  - `75`
+  - `73`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py -q`
   - `8 passed in 0.21s`
 - `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py -q`
   - superseded by broader focused sweep below
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py -q`
+  - `2 passed in 0.17s`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py tests/test_audit_events.py -q`
   - failed: `ERROR: file or directory not found: tests/test_audit_events.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py -q`
   - `66 passed in 0.18s`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py -q`
+  - `2 passed in 0.10s`
+- `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py tests/test_repo_governance.py -q`
+  - `68 passed in 0.16s`
 - `cd bigclaw-go && go test ./internal/intake ./internal/workflow ./internal/risk ./internal/governance ./internal/observability ./internal/regression`
   - `ok  	bigclaw-go/internal/intake	(cached)`
   - `ok  	bigclaw-go/internal/workflow	(cached)`
@@ -43,5 +51,12 @@
   - `ok  	bigclaw-go/internal/governance	2.167s`
   - `ok  	bigclaw-go/internal/observability	2.550s`
   - `ok  	bigclaw-go/internal/regression	2.895s`
+- `cd bigclaw-go && go test ./internal/contract ./internal/regression`
+  - `ok  	bigclaw-go/internal/contract	1.242s`
+  - `ok  	bigclaw-go/internal/regression	2.082s`
+- `cd bigclaw-go && go test ./internal/contract ./internal/repo ./internal/regression`
+  - `ok  	bigclaw-go/internal/contract	(cached)`
+  - `ok  	bigclaw-go/internal/repo	1.067s`
+  - `ok  	bigclaw-go/internal/regression	1.368s`
 - `git status --short`
   - pending final stage/commit for second tranche
