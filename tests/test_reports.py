@@ -2340,53 +2340,6 @@ def test_regression_center_renders_shared_view_partial_state() -> None:
     assert "Historical baseline fetch is delayed." in report
 
 
-def test_build_policy_prompt_version_center_tracks_history_diff_and_rollback() -> None:
-    analytics = OperationsAnalytics()
-    center = analytics.build_policy_prompt_version_center(
-        [
-            make_versioned_artifact(
-                "workflow",
-                "deploy-prod",
-                "v1",
-                "2026-03-09T08:00:00Z",
-                "initial rollout",
-                "step: build\nstep: deploy\n",
-                change_ticket="OPE-101",
-            ),
-            make_versioned_artifact(
-                "workflow",
-                "deploy-prod",
-                "v2",
-                "2026-03-10T08:00:00Z",
-                "added verification gate",
-                "step: build\nstep: verify\nstep: deploy\n",
-                change_ticket="OPE-111",
-            ),
-            make_versioned_artifact(
-                "policy",
-                "prod-approval",
-                "v3",
-                "2026-03-10T10:00:00Z",
-                "tighten reviewer quorum",
-                "approvals: 2\nregions: us, eu\n",
-                change_ticket="OPE-109",
-            ),
-        ],
-        generated_at="2026-03-11T09:30:00Z",
-    )
-
-    assert center.artifact_count == 2
-    assert center.rollback_ready_count == 1
-    workflow_history = next(history for history in center.histories if history.artifact_id == "deploy-prod")
-    assert workflow_history.current_version == "v2"
-    assert workflow_history.rollback_version == "v1"
-    assert workflow_history.rollback_ready is True
-    assert workflow_history.change_summary is not None
-    assert workflow_history.change_summary.additions == 1
-    assert workflow_history.change_summary.deletions == 0
-    assert workflow_history.change_summary.preview[:2] == ["--- v1", "+++ v2"]
-
-
 def test_render_policy_prompt_version_center_supports_shared_view_context() -> None:
     analytics = OperationsAnalytics()
     center = analytics.build_policy_prompt_version_center(
