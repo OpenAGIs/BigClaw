@@ -1,40 +1,38 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1056
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+- Inspect the root smoke migration surface and confirm whether `scripts/dev_smoke.py` still exists or only stale references remain.
+- Remove root-facing references to the deleted Python dev smoke path and point operators to the Go `bigclawctl dev-smoke` replacement.
+- Keep the bootstrap helper aligned with the Go-only root smoke path so legacy Python validation no longer treats the deleted script as an entrypoint.
+- Rebase onto current `origin/main`, resolve any closeout-only workpad conflicts, and keep PR `#219` mergeable.
+- Run targeted validation for reference removal, `.py` count, and the active Go smoke command, then push the updated issue branch.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- `scripts/dev_smoke.py` is absent from the repository and no root README / workflow / hooks / CI / bootstrap surface directs operators to it.
+- Root smoke guidance uses `bash scripts/ops/bigclawctl dev-smoke` as the only supported dev smoke entrypoint.
+- Validation captures the current tracked `.py` file count and confirms the Go smoke replacement still succeeds.
+- PR `#219` is rebased onto current `main` without merge conflicts.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
+- `find . -path '*/.git' -prune -o -name 'dev_smoke.py' -print`
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort | wc -l`
+- `rg -n "scripts/dev_smoke\\.py|python3 scripts/dev_smoke\\.py|PYTHONPATH=src python3 scripts/dev_smoke\\.py" README.md docs scripts .github .githooks bigclaw-go`
+- `bash scripts/ops/bigclawctl dev-smoke`
+- `bash scripts/dev_bootstrap.sh`
 
-## Archived Closeout
+## Validation Result
+- `find . -path '*/.git' -prune -o -name 'dev_smoke.py' -print`
+  - passed; no output and `scripts/dev_smoke.py` is absent
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort | wc -l`
+  - passed; current tracked `.py` count is `45`
+- `rg -n "scripts/dev_smoke\\.py|python3 scripts/dev_smoke\\.py|PYTHONPATH=src python3 scripts/dev_smoke\\.py" README.md docs scripts .github .githooks bigclaw-go`
+  - passed; no remaining matches in the scoped root/docs/workflow/hooks surfaces
+- `bash scripts/ops/bigclawctl dev-smoke`
+  - passed; output `smoke_ok local`
+- `bash scripts/dev_bootstrap.sh`
+  - passed; `go test ./cmd/bigclawctl` succeeded and the helper reported the updated Go-first bootstrap message
 
-### BIG-GO-1053
-
-- Baseline code migration landed on `main` at `004de016252d6ca168a45dccda48fc9fa69e27f1`.
-- Closeout artifacts for the lane are tracked in:
-  - `reports/BIG-GO-1053-validation.md`
-  - `reports/BIG-GO-1053-closeout.md`
-  - `reports/BIG-GO-1053-status.json`
-- Validation recorded for `BIG-GO-1053`:
-  - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
-  - `find . -name '*.py' | wc -l` -> `46`
-  - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
-- Historical branch handoff URL:
-  - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
-- Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
-  the closeout landed on `main`.
-- Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
+## Execution Result
+- Branch: `symphony/BIG-GO-1056`
+- PR: `https://github.com/OpenAGIs/BigClaw/pull/219`
+- Rebase note: resolved `.symphony/workpad.md` conflicts caused by later mainline closeout updates and preserved the `BIG-GO-1056` issue-local workpad state.

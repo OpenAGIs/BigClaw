@@ -98,9 +98,10 @@ or repo-root packaging bootstrap:
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
-That legacy path runs `bigclawctl dev-smoke`, `cd bigclaw-go && go test ./internal/bootstrap`,
-and the remaining targeted source-level smoke suite in `tests/test_planning.py`
-when `pytest` is available.
+That helper always runs the Go `bigclawctl dev-smoke` replacement first, then
+`cd bigclaw-go && go test ./internal/bootstrap`, and finally the remaining
+targeted source-level Python migration suite in `tests/test_planning.py` when
+`pytest` is available.
 
 ## Go smoke verify
 
@@ -112,9 +113,9 @@ curl localhost:8080/healthz
 bash scripts/ops/bigclawctl github-sync status --json
 ```
 
-## Legacy Python smoke verify
+## Go Dev Smoke Verify
 
-Use this only when validating a frozen migration-reference path:
+Use this to verify the root dev smoke path:
 
 ```bash
 bash scripts/ops/bigclawctl dev-smoke
