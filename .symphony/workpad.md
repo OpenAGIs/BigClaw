@@ -25,6 +25,31 @@
 
 ## Validation Results
 
+- Tranche: replace Python runtime matrix test with Go worker matrix coverage
+  - Removed Python files:
+    - `tests/test_runtime_matrix.py`
+  - Added Go files:
+    - `bigclaw-go/internal/worker/runtime_matrix_test.go`
+- `gofmt -w bigclaw-go/internal/worker/runtime_matrix_test.go`
+  - no output
+- `cd bigclaw-go && go test ./internal/worker ./internal/scheduler`
+  - `ok  	bigclaw-go/internal/worker	1.194s`
+  - `ok  	bigclaw-go/internal/scheduler	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `11`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `21`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `D tests/test_runtime_matrix.py`
+  - `?? bigclaw-go/internal/worker/runtime_matrix_test.go`
 - Tranche: inline Python legacy shim helpers into ops wrappers and delete the shared shim module
   - Removed Python files:
     - `src/bigclaw/legacy_shim.py`
