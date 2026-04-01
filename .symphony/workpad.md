@@ -19,3 +19,18 @@
 - Run targeted Go tests covering the github-sync CLI and purge regression.
 - Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
 - Record exact commands and pass/fail outcomes in the closeout response.
+
+## Archived Closeout
+
+### BIG-GO-1053
+
+- Baseline code migration landed on `main` at `004de016252d6ca168a45dccda48fc9fa69e27f1`.
+- Closeout artifacts for the lane are tracked in:
+  - `reports/BIG-GO-1053-validation.md`
+  - `reports/BIG-GO-1053-closeout.md`
+  - `reports/BIG-GO-1053-status.json`
+- Validation recorded for `BIG-GO-1053`:
+  - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
+  - `find . -name '*.py' | wc -l` -> `46`
+  - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
+- Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
