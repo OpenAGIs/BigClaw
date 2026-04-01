@@ -57,10 +57,8 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - Report serialization compatibility for JSON consumers that previously read the Python script output
 ## Compatibility Layer Plan
 
-- Keep new behavior in Go-native entrypoints and reserve Python only for batches that are not yet migrated.
-- Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
-  - migration scorecards/bundle exporters
-- Remaining Python generators still need native replacements before they can be removed.
+- Keep the migrated automation surface Go-native and reject new Python helpers under `bigclaw-go/scripts/**`.
+- Add regression coverage in `internal/regression` so the repository fails closed if `.py`, `pyproject.toml`, or `setup.py` reappear in the migrated script surface.
 
 ## Branch And PR Suggestion
 
@@ -71,4 +69,4 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 
 - `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old Python thread pool.
 - `run-task-smoke --autostart` and `soak-local --autostart` still rely on ephemeral port reservation before `bigclawd` binds, so local port races remain possible.
-- Remaining Python report generators still exist, so automation ownership is split until later migration batches land.
+- The remaining script entrypoints in `bigclaw-go/scripts` include shell wrappers, so they still depend on stable `go run` and environment tooling behavior even though the Python helpers are removed.
