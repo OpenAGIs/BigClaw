@@ -1,0 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1051",
+    "title": "Go-replacement U: remove bigclaw-go benchmark Python helpers",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_code_migration_commit": "9746a50c",
+    "latest_closeout_commit": "fbc1d348"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1051-closeout.md",
+    "validation_report": "reports/BIG-GO-1051-validation.md",
+    "migration_plan": "docs/go-cli-script-migration-plan.md",
+    "automation_migration_matrix": "bigclaw-go/docs/go-cli-script-migration.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw"
+  },
+  "validation": {
+    "commands": [
+      "find bigclaw-go/scripts/benchmark -name '*.py' | wc -l",
+      "find . -name '*.py' | wc -l",
+      "cd bigclaw-go && go test ./cmd/bigclawctl/...",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help",
+      "cd bigclaw-go && ./scripts/benchmark/run_suite.sh",
+      "rg -n \"bigclaw-go/scripts/benchmark/(soak_local|run_matrix|capacity_certification)\\.py|scripts/benchmark/.*\\.py|soak_local\\.py|run_matrix\\.py|capacity_certification\\.py\" ."
+    ],
+    "results": {
+      "benchmark_py_count": "0",
+      "repo_py_count": "56",
+      "bigclawctl_tests": "ok   bigclaw-go/cmd/bigclawctl  4.697s",
+      "benchmark_help_commands": "all exited 0",
+      "run_suite": "exited 0 and refreshed checked-in benchmark evidence",
+      "stale_reference_scan": "only reports/BIG-GO-1051-validation.md retains a generic .py regression note"
+    }
+  },
+  "blocker": {
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1051."
+  },
+  "notes": [
+    "The benchmark helper Python files were already absent in this checkout before the lane started, so the delivered value is Go-only enforcement, stale-entrypoint cleanup, and benchmark evidence refresh rather than a fresh in-branch file-count drop."
+  ]
+}
