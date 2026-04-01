@@ -47,3 +47,49 @@ func TestRenderPilotImplementationReportContainsReadinessFields(t *testing.T) {
 		}
 	}
 }
+
+func TestKPIAndImplementationResultHandleLowerIsBetterMetrics(t *testing.T) {
+	result := ImplementationResult{
+		Customer:       "Design Partner C",
+		Environment:    "production",
+		ProductionRuns: 8,
+		Incidents:      0,
+		KPIs: []KPI{
+			{Name: "automation-coverage", Target: 80, Actual: 82, HigherIsBetter: true},
+			{Name: "manual-review-hours", Target: 5, Actual: 4, HigherIsBetter: false},
+		},
+	}
+
+	if !result.KPIs[1].Met() {
+		t.Fatalf("expected lower-is-better KPI to pass, got %+v", result.KPIs[1])
+	}
+	if got := result.KPIPassRate(); got != 100.0 {
+		t.Fatalf("expected kpi pass rate 100.0, got %v", got)
+	}
+	if !result.Ready() {
+		t.Fatalf("expected ready=true, got false")
+	}
+}
+
+func TestImplementationResultNotReadyBelowPassThreshold(t *testing.T) {
+	result := ImplementationResult{
+		Customer:       "Design Partner D",
+		Environment:    "production",
+		ProductionRuns: 5,
+		Incidents:      0,
+		KPIs: []KPI{
+			{Name: "automation-coverage", Target: 80, Actual: 81, HigherIsBetter: true},
+			{Name: "review-hours", Target: 5, Actual: 6, HigherIsBetter: false},
+			{Name: "handoff-latency", Target: 10, Actual: 12, HigherIsBetter: false},
+			{Name: "evidence-completeness", Target: 95, Actual: 97, HigherIsBetter: true},
+			{Name: "stability", Target: 99, Actual: 98, HigherIsBetter: true},
+		},
+	}
+
+	if got := result.KPIPassRate(); got != 40.0 {
+		t.Fatalf("expected kpi pass rate 40.0, got %v", got)
+	}
+	if result.Ready() {
+		t.Fatalf("expected ready=false below threshold")
+	}
+}

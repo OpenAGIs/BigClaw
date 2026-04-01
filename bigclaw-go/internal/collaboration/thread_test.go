@@ -2,6 +2,64 @@ package collaboration
 
 import "testing"
 
+func TestBuildCollaborationThreadCountsMentionsAcrossCommentsAndDecisions(t *testing.T) {
+	thread := BuildCollaborationThread(
+		"dashboard",
+		"ops-overview",
+		[]Comment{{CommentID: "c1", Author: "pm", Body: "Please review with @ops and @eng."}},
+		[]Decision{{DecisionID: "d1", Author: "ops", Outcome: "approved", Summary: "Keep @pm posted.", RecordedAt: "Follow up with @design."}},
+	)
+
+	if thread.Surface != "dashboard" || thread.TargetID != "ops-overview" {
+		t.Fatalf("unexpected thread identity: %+v", thread)
+	}
+	if thread.MentionCount != 4 {
+		t.Fatalf("expected four mentions, got %+v", thread)
+	}
+}
+
+func TestBuildCollaborationThreadFromAuditsBuildsCommentAndDecisionRecords(t *testing.T) {
+	thread := BuildCollaborationThreadFromAudits([]map[string]any{
+		{
+			"action": "collaboration.comment",
+			"details": map[string]any{
+				"comment_id": "flow-comment-1",
+				"author":     "ops-lead",
+				"body":       "Route @eng after review.",
+				"anchor":     "handoff-lane",
+			},
+		},
+		{
+			"action": "collaboration.decision",
+			"details": map[string]any{
+				"decision_id": "flow-decision-1",
+				"author":      "eng-manager",
+				"outcome":     "accepted",
+				"summary":     "Engineering owns the next handoff.",
+				"follow_up":   "Notify @ops after deploy.",
+			},
+		},
+	}, "flow", "run-113")
+	if thread == nil {
+		t.Fatal("expected thread from audits")
+	}
+	if thread.Surface != "flow" || thread.TargetID != "run-113" {
+		t.Fatalf("unexpected thread identity: %+v", thread)
+	}
+	if len(thread.Comments) != 1 || len(thread.Decisions) != 1 {
+		t.Fatalf("unexpected thread contents: %+v", thread)
+	}
+	if thread.Comments[0].CommentID != "flow-comment-1" || thread.Comments[0].CreatedAt != "handoff-lane" {
+		t.Fatalf("unexpected comment mapping: %+v", thread.Comments[0])
+	}
+	if thread.Decisions[0].DecisionID != "flow-decision-1" || thread.Decisions[0].RecordedAt != "Notify @ops after deploy." {
+		t.Fatalf("unexpected decision mapping: %+v", thread.Decisions[0])
+	}
+	if thread.MentionCount != 2 {
+		t.Fatalf("expected two mentions, got %+v", thread)
+	}
+}
+
 func TestMergeCollaborationThreadsCombinesNativeAndRepoSurfaces(t *testing.T) {
 	native := BuildCollaborationThread(
 		"run",
