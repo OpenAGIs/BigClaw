@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from html import escape
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from .models import Task
 from .observability import ObservabilityLedger
@@ -14,7 +14,6 @@ from .run_detail import (
     render_run_detail_console,
     render_timeline_panel,
 )
-from .scheduler import ExecutionRecord, Scheduler
 from .reports import write_report
 
 
@@ -45,7 +44,7 @@ class ReplayRecord:
     status: str
 
     @classmethod
-    def from_execution(cls, task: Task, run_id: str, record: ExecutionRecord) -> "ReplayRecord":
+    def from_execution(cls, task: Task, run_id: str, record: Any) -> "ReplayRecord":
         return cls(
             task=task,
             run_id=run_id,
@@ -69,7 +68,7 @@ class BenchmarkResult:
     score: int
     passed: bool
     criteria: List[EvaluationCriterion]
-    record: ExecutionRecord
+    record: Any
     replay: ReplayOutcome
     detail_page_path: Optional[str] = None
 
@@ -118,11 +117,13 @@ class BenchmarkSuiteResult:
 
 
 class BenchmarkRunner:
-    def __init__(self, scheduler: Optional[Scheduler] = None, storage_dir: Optional[str] = None):
-        self.scheduler = scheduler or Scheduler()
+    def __init__(self, scheduler: Optional[Any] = None, storage_dir: Optional[str] = None):
+        self.scheduler = scheduler
         self.storage_dir = Path(storage_dir) if storage_dir else None
 
     def run_case(self, case: BenchmarkCase) -> BenchmarkResult:
+        if self.scheduler is None:
+            raise RuntimeError("legacy Python scheduler surface removed; use Go runtime packages for benchmark execution")
         ledger = ObservabilityLedger(str(self._case_path(case.case_id, "ledger.json")))
         report_path = None
         if case.require_report:
@@ -163,6 +164,8 @@ class BenchmarkRunner:
         )
 
     def replay(self, replay_record: ReplayRecord) -> ReplayOutcome:
+        if self.scheduler is None:
+            raise RuntimeError("legacy Python scheduler surface removed; use Go runtime packages for benchmark replay")
         ledger = ObservabilityLedger(str(self._case_path(replay_record.run_id, "replay-ledger.json")))
         replayed = self.scheduler.execute(
             replay_record.task,
@@ -195,7 +198,7 @@ class BenchmarkRunner:
             report_path=report_path,
         )
 
-    def _evaluate(self, case: BenchmarkCase, record: ExecutionRecord) -> List[EvaluationCriterion]:
+    def _evaluate(self, case: BenchmarkCase, record: Any) -> List[EvaluationCriterion]:
         return [
             self._criterion(
                 name="decision-medium",
@@ -394,7 +397,7 @@ def render_replay_detail_page(expected: ReplayRecord, observed: ReplayRecord, mi
 
 def render_run_replay_index_page(
     case_id: str,
-    record: ExecutionRecord,
+    record: Any,
     replay: ReplayOutcome,
     criteria: List[EvaluationCriterion],
 ) -> str:

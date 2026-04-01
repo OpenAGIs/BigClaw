@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
@@ -30,7 +31,20 @@ from bigclaw.operations import (
     write_weekly_operations_bundle,
 )
 from bigclaw.reports import SharedViewContext, SharedViewFilter
-from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
+
+
+@dataclass
+class SchedulerDecision:
+    medium: str
+    approved: bool
+    reason: str
+
+
+@dataclass
+class ExecutionRecord:
+    decision: SchedulerDecision
+    run: TaskRun
+    report_path: Optional[str] = None
 
 
 

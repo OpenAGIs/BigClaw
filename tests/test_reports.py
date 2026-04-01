@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
@@ -708,7 +709,36 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     run = TaskRun.from_task(task, run_id="run-canvas", medium="browser")
     run.audit("tool.invoke", "worker", "success", tool="browser")
 
-    from bigclaw.orchestration import DepartmentHandoff, HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
+    @dataclass
+    class DepartmentHandoff:
+        department: str
+        reason: str
+        required_tools: list[str] = field(default_factory=list)
+
+    @dataclass
+    class OrchestrationPlan:
+        task_id: str
+        collaboration_mode: str
+        handoffs: list[DepartmentHandoff] = field(default_factory=list)
+
+    @dataclass
+    class OrchestrationPolicyDecision:
+        tier: str
+        upgrade_required: bool
+        reason: str
+        blocked_departments: list[str] = field(default_factory=list)
+        entitlement_status: str = ""
+        billing_model: str = ""
+        estimated_cost_usd: float = 0.0
+        included_usage_units: int = 0
+        overage_usage_units: int = 0
+        overage_cost_usd: float = 0.0
+
+    @dataclass
+    class HandoffRequest:
+        target_team: str
+        reason: str
+        required_approvals: list[str] = field(default_factory=list)
 
     plan = OrchestrationPlan(
         task_id="OPE-66-canvas",

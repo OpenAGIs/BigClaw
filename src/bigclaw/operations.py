@@ -2,10 +2,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from difflib import unified_diff
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Protocol, Sequence
 
 from .models import Task
-from .queue import PersistentTaskQueue
 
 from .evaluation import BenchmarkSuiteResult
 from .reports import (
@@ -19,6 +18,14 @@ from .reports import (
 
 STATUS_COMPLETE = {"approved", "accepted", "completed", "succeeded"}
 STATUS_ACTIONABLE = {"needs-approval", "failed", "rejected"}
+
+
+class QueueSnapshotSource(Protocol):
+    def peek_tasks(self) -> List[Task]:
+        ...
+
+    def size(self) -> int:
+        ...
 
 
 @dataclass
@@ -788,7 +795,7 @@ class OperationsAnalytics:
 
     def build_queue_control_center(
         self,
-        queue: PersistentTaskQueue,
+        queue: QueueSnapshotSource,
         runs: Sequence[dict],
     ) -> QueueControlCenter:
         queued_tasks = queue.peek_tasks()

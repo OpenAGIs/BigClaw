@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from html import escape
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from .audit_events import FLOW_HANDOFF_EVENT, MANUAL_TAKEOVER_EVENT
 from .collaboration import (
@@ -13,7 +13,6 @@ from .collaboration import (
     render_collaboration_panel_html,
 )
 from .observability import RepoSyncAudit, TaskRun
-from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
 from .run_detail import (
     RunDetailEvent,
     RunDetailResource,
@@ -1690,9 +1689,9 @@ def build_orchestration_canvas_from_ledger_entry(entry: dict) -> OrchestrationCa
 
 def build_orchestration_canvas(
     run: TaskRun,
-    plan: OrchestrationPlan,
-    policy: Optional[OrchestrationPolicyDecision] = None,
-    handoff_request: Optional[HandoffRequest] = None,
+    plan: Any,
+    policy: Optional[Any] = None,
+    handoff_request: Optional[Any] = None,
 ) -> OrchestrationCanvas:
     return OrchestrationCanvas(
         task_id=run.task_id,

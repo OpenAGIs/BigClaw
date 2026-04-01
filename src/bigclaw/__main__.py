@@ -5,7 +5,6 @@ from pathlib import Path
 from .deprecation import warn_legacy_runtime_surface
 from .observability import RepoSyncAudit
 from .reports import render_repo_sync_audit_report, write_report
-from .service import run_server
 
 
 def main() -> None:
@@ -25,8 +24,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "serve":
-        run_server(host=args.host, port=args.port, directory=args.dir)
-        return
+        raise SystemExit("legacy Python serve surface removed; use bash scripts/ops/bigclawctl or go run ./bigclaw-go/cmd/bigclawd")
 
     if args.command == "repo-sync-audit":
         payload = json.loads(Path(args.input).read_text())

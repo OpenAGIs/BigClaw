@@ -1,48 +1,21 @@
-## Plan
+# BIG-GO-1047 Workpad
 
-1. Purge the first safe top-level Python tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/cost_control.py`
-   - `src/bigclaw/issue_archive.py`
-   - `src/bigclaw/github_sync.py`
-2. Purge the next safe top-level Python repo-surface tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/repo_board.py`
-   - `src/bigclaw/repo_commits.py`
-   - `src/bigclaw/repo_gateway.py`
-   - `src/bigclaw/repo_governance.py`
-   - `src/bigclaw/repo_registry.py`
-   - `src/bigclaw/repo_triage.py`
-3. Purge the isolated bootstrap validation surface:
-   - `src/bigclaw/workspace_bootstrap_validation.py`
-4. Purge the next low-coupling top-level product/reporting tranche:
-   - `src/bigclaw/pilot.py`
-   - `src/bigclaw/dashboard_run_contract.py`
-   - `src/bigclaw/saved_views.py`
-5. Purge the next low-coupling top-level contract/intake tranche:
-   - `src/bigclaw/mapping.py`
-   - `src/bigclaw/execution_contract.py`
-6. Remove any package exports or Python tests that still point at deleted Python modules.
-7. Add focused Go regression tests that assert the migration contract for each tranche:
-   - the deleted Python files are absent
-   - the corresponding Go replacement files exist
-8. Run targeted validation for the touched Go packages and the new regression tests.
-9. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
+## Plan
+- Audit Python residues for workflow/runtime/scheduler/queue and identify direct in-repo consumers.
+- Decouple remaining Python modules from legacy runtime shims where required to keep package imports coherent.
+- Delete legacy Python implementation/test files for workflow/runtime/scheduler/queue surfaces and rely on Go mainline packages.
+- Add or adjust Go tests only if coverage is needed for removed Python behavior.
+- Run targeted validation, capture exact commands/results, verify Python file count decreases.
+- Commit and push scoped changes to the remote branch.
 
 ## Acceptance
-
-- Python file count in the repository decreases from the pre-change baseline.
-- `src/bigclaw/cost_control.py`, `src/bigclaw/issue_archive.py`, and `src/bigclaw/github_sync.py` are deleted.
-- `src/bigclaw/repo_board.py`, `src/bigclaw/repo_commits.py`, `src/bigclaw/repo_gateway.py`, `src/bigclaw/repo_governance.py`, `src/bigclaw/repo_registry.py`, and `src/bigclaw/repo_triage.py` are deleted.
-- `src/bigclaw/workspace_bootstrap_validation.py` is deleted.
-- `src/bigclaw/pilot.py`, `src/bigclaw/dashboard_run_contract.py`, and `src/bigclaw/saved_views.py` are deleted.
-- `src/bigclaw/mapping.py` and `src/bigclaw/execution_contract.py` are deleted.
-- `src/bigclaw/__init__.py` and retained Python tests no longer import deleted modules.
-- Go regression tests cover the tranche replacement contracts against the repository tree.
-- Targeted Go tests pass.
-- Changes are committed and pushed to the remote branch for `BIG-GO-1041`.
+- Python files implementing or directly testing workflow/runtime/scheduler/queue legacy surfaces are removed.
+- Remaining Python modules no longer require deleted legacy shim modules to import.
+- Go workflow/scheduler/queue packages remain validated through targeted `go test` runs.
+- Repository `find . -name "*.py" | wc -l` is lower than before the change.
+- Commit message enumerates deleted Python files and added Go files/tests if any.
 
 ## Validation
-
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/costcontrol ./internal/issuearchive ./internal/githubsync ./internal/repo ./internal/bootstrap ./internal/pilot ./internal/product ./internal/intake ./internal/contract ./internal/regression -run 'TestTopLevelModulePurgeTranche(1|2|3|4|5)|TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestNormalizeGatewayPayloadsAndErrors|TestRecommendTriageAction|TestBuildValidationReportSummaries|TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestBuildDefaultDashboardRunContractIsReleaseReady|TestBuildSavedViewCatalogAddsScopedViewsAndDigests|TestExecutionContractAuditAcceptsWellFormedContract|TestAssessmentJSONEmitsPythonContractDefaults|TestMapSourceIssueToTaskSetsDefaultsAndMetadata'`
-- `git status --short`
-- `git log -1 --stat`
+- `find . -name "*.py" | wc -l`
+- `cd bigclaw-go && go test ./internal/queue ./internal/scheduler ./internal/workflow`
+- Package-level spot check for remaining Python imports if needed.
