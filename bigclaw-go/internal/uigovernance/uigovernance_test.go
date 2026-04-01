@@ -766,6 +766,202 @@ func TestRenderConsoleIAReportSummarizesSurfaceCoverage(t *testing.T) {
 	}
 }
 
+func TestConsoleInteractionDraftRoundTripPreservesFourPageManifest(t *testing.T) {
+	draft := ConsoleInteractionDraft{
+		Name:    "BIG-4203 Four Critical Pages",
+		Version: "v1",
+		Architecture: ConsoleIA{
+			Name:    "BigClaw Console IA",
+			Version: "v3",
+			TopBar: ConsoleTopBar{
+				Name:                      "BigClaw Global Header",
+				SearchPlaceholder:         "Search runs, issues, commands",
+				EnvironmentOptions:        []string{"Production", "Staging"},
+				TimeRangeOptions:          []string{"24h", "7d"},
+				AlertChannels:             []string{"approvals"},
+				DocumentationComplete:     true,
+				AccessibilityRequirements: []string{"keyboard-navigation", "screen-reader-label", "focus-visible"},
+				CommandEntry: ConsoleCommandEntry{
+					TriggerLabel: "Command Menu",
+					Placeholder:  "Type a command",
+					Shortcut:     "Cmd+K / Ctrl+K",
+					Commands:     []CommandAction{{ID: "search-runs", Title: "Search runs", Section: "Navigate"}},
+				},
+			},
+			Navigation: []NavigationItem{{Name: "Overview", Route: "/overview", Section: "Operate"}, {Name: "Queue", Route: "/queue", Section: "Operate"}, {Name: "Run Detail", Route: "/runs/detail", Section: "Operate"}, {Name: "Triage", Route: "/triage", Section: "Operate"}},
+			Surfaces:   []ConsoleSurface{{Name: "Overview", Route: "/overview", NavigationSection: "Operate"}, {Name: "Queue", Route: "/queue", NavigationSection: "Operate"}, {Name: "Run Detail", Route: "/runs/detail", NavigationSection: "Operate"}, {Name: "Triage", Route: "/triage", NavigationSection: "Operate"}},
+		},
+		Contracts: []SurfaceInteractionContract{
+			{SurfaceName: "Overview"},
+			{SurfaceName: "Queue", RequiresBatchActions: true},
+			{SurfaceName: "Run Detail"},
+			{SurfaceName: "Triage"},
+		},
+	}
+
+	var restored ConsoleInteractionDraft
+	roundTripJSON(t, draft, &restored)
+	for i := range draft.Contracts {
+		draft.Contracts[i].RequiresFilters = true
+		draft.Contracts[i].RequiredStates = []string{"default", "empty", "error", "loading"}
+	}
+	if !reflect.DeepEqual(restored, draft) {
+		t.Fatalf("console interaction draft round trip mismatch: got %+v want %+v", restored, draft)
+	}
+}
+
+func TestConsoleInteractionAuditSurfacesMissingActionsPermissionsAndBatchOps(t *testing.T) {
+	architecture := ConsoleIA{
+		Name:    "BigClaw Console IA",
+		Version: "v3",
+		TopBar: ConsoleTopBar{
+			Name:                      "BigClaw Global Header",
+			SearchPlaceholder:         "Search runs, issues, commands",
+			EnvironmentOptions:        []string{"Production", "Staging"},
+			TimeRangeOptions:          []string{"24h", "7d"},
+			AlertChannels:             []string{"approvals"},
+			DocumentationComplete:     true,
+			AccessibilityRequirements: []string{"keyboard-navigation", "screen-reader-label", "focus-visible"},
+			CommandEntry: ConsoleCommandEntry{
+				TriggerLabel: "Command Menu",
+				Placeholder:  "Type a command",
+				Shortcut:     "Cmd+K / Ctrl+K",
+				Commands:     []CommandAction{{ID: "search-runs", Title: "Search runs", Section: "Navigate"}},
+			},
+		},
+		Navigation: []NavigationItem{{Name: "Overview", Route: "/overview", Section: "Operate"}, {Name: "Queue", Route: "/queue", Section: "Operate"}, {Name: "Run Detail", Route: "/runs/detail", Section: "Operate"}, {Name: "Triage", Route: "/triage", Section: "Operate"}},
+		Surfaces: []ConsoleSurface{
+			{Name: "Overview", Route: "/overview", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "export", Label: "Export", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}}, Filters: []FilterDefinition{{Name: "Team", Field: "team", Control: "select", Options: []string{"all"}}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"export"}}, {Name: "error", AllowedActions: []string{"audit"}}}},
+			{Name: "Queue", Route: "/queue", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}}, Filters: []FilterDefinition{{Name: "Status", Field: "status", Control: "select", Options: []string{"all"}}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"audit"}}, {Name: "empty", AllowedActions: []string{"audit"}}}},
+			{Name: "Run Detail", Route: "/runs/detail", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "export", Label: "Export", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}}, Filters: []FilterDefinition{{Name: "Run", Field: "run_id", Control: "search"}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"drill-down"}}, {Name: "error", AllowedActions: []string{"audit"}}}},
+			{Name: "Triage", Route: "/triage", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "export", Label: "Export", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}, {ActionID: "bulk-assign", Label: "Bulk Assign", Placement: "topbar", RequiresSelection: true}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"audit"}}, {Name: "error", AllowedActions: []string{"audit"}}}},
+		},
+	}
+	draft := ConsoleInteractionDraft{
+		Name:         "BIG-4203 Four Critical Pages",
+		Version:      "v1",
+		Architecture: architecture,
+		Contracts: []SurfaceInteractionContract{
+			{SurfaceName: "Overview", RequiredActionIDs: []string{"drill-down", "export", "audit"}, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator"}, DeniedRoles: []string{"viewer"}, AuditEvent: "overview.access.denied"}},
+			{SurfaceName: "Queue", RequiredActionIDs: []string{"drill-down", "export", "audit"}, RequiresBatchActions: true, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator"}, DeniedRoles: []string{"viewer"}}},
+			{SurfaceName: "Run Detail", RequiredActionIDs: []string{"drill-down", "export", "audit"}, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator", "viewer"}, DeniedRoles: []string{}, AuditEvent: "run-detail.access.denied"}},
+			{SurfaceName: "Triage", RequiredActionIDs: []string{"drill-down", "export", "audit"}, RequiresFilters: true, RequiresBatchActions: true, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator"}, DeniedRoles: []string{"viewer"}, AuditEvent: "triage.access.denied"}},
+		},
+	}
+
+	audit := (ConsoleInteractionAuditor{}).Audit(draft)
+	if audit.Name != "BIG-4203 Four Critical Pages" ||
+		audit.Version != "v1" ||
+		audit.ContractCount != 4 ||
+		len(audit.MissingSurfaces) != 0 ||
+		!reflect.DeepEqual(audit.SurfacesMissingFilters, []string{"Triage"}) ||
+		!reflect.DeepEqual(audit.SurfacesMissingActions, map[string][]string{"Queue": []string{"export"}}) ||
+		!reflect.DeepEqual(audit.SurfacesMissingBatchActions, []string{"Queue"}) ||
+		!reflect.DeepEqual(audit.SurfacesMissingStates, map[string][]string{"Queue": []string{"error"}}) ||
+		!reflect.DeepEqual(audit.PermissionGaps, map[string][]string{"Queue": []string{"audit-event"}, "Run Detail": []string{"denied-roles"}}) {
+		t.Fatalf("unexpected console interaction audit: %+v", audit)
+	}
+	if audit.ReadinessScore() != 0 || audit.ReleaseReady() {
+		t.Fatalf("expected non-ready interaction audit, got %+v", audit)
+	}
+}
+
+func TestRenderConsoleInteractionReportSummarizesCriticalPageContracts(t *testing.T) {
+	draft := ConsoleInteractionDraft{
+		Name:    "BIG-4203 Four Critical Pages",
+		Version: "v1",
+		Architecture: ConsoleIA{
+			Name:    "BigClaw Console IA",
+			Version: "v3",
+			TopBar: ConsoleTopBar{
+				Name:                      "BigClaw Global Header",
+				SearchPlaceholder:         "Search runs, issues, commands",
+				EnvironmentOptions:        []string{"Production", "Staging"},
+				TimeRangeOptions:          []string{"24h", "7d"},
+				AlertChannels:             []string{"approvals"},
+				DocumentationComplete:     true,
+				AccessibilityRequirements: []string{"keyboard-navigation", "screen-reader-label", "focus-visible"},
+				CommandEntry:              ConsoleCommandEntry{TriggerLabel: "Command Menu", Placeholder: "Type a command", Shortcut: "Cmd+K / Ctrl+K", Commands: []CommandAction{{ID: "search-runs", Title: "Search runs", Section: "Navigate"}}},
+			},
+			Navigation: []NavigationItem{{Name: "Overview", Route: "/overview", Section: "Operate"}, {Name: "Queue", Route: "/queue", Section: "Operate"}, {Name: "Run Detail", Route: "/runs/detail", Section: "Operate"}, {Name: "Triage", Route: "/triage", Section: "Operate"}},
+			Surfaces: []ConsoleSurface{
+				{Name: "Overview", Route: "/overview", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "export", Label: "Export", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}}, Filters: []FilterDefinition{{Name: "Team", Field: "team", Control: "select", Options: []string{"all"}}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"drill-down"}}, {Name: "error", AllowedActions: []string{"audit"}}}},
+				{Name: "Queue", Route: "/queue", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "export", Label: "Export", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}, {ActionID: "bulk-approve", Label: "Bulk Approve", Placement: "topbar", RequiresSelection: true}}, Filters: []FilterDefinition{{Name: "Status", Field: "status", Control: "select", Options: []string{"all"}}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"audit"}}, {Name: "error", AllowedActions: []string{"audit"}}}},
+				{Name: "Run Detail", Route: "/runs/detail", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "export", Label: "Export", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}}, Filters: []FilterDefinition{{Name: "Run", Field: "run_id", Control: "search"}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"drill-down"}}, {Name: "error", AllowedActions: []string{"audit"}}}},
+				{Name: "Triage", Route: "/triage", NavigationSection: "Operate", TopBarActions: []GlobalAction{{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"}, {ActionID: "export", Label: "Export", Placement: "topbar"}, {ActionID: "audit", Label: "Audit Trail", Placement: "topbar"}, {ActionID: "bulk-assign", Label: "Bulk Assign", Placement: "topbar", RequiresSelection: true}}, Filters: []FilterDefinition{{Name: "Severity", Field: "severity", Control: "select", Options: []string{"all"}}}, States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"audit"}}, {Name: "error", AllowedActions: []string{"audit"}}}},
+			},
+		},
+		Contracts: []SurfaceInteractionContract{
+			{SurfaceName: "Overview", RequiredActionIDs: []string{"drill-down", "export", "audit"}, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator"}, DeniedRoles: []string{"viewer"}, AuditEvent: "overview.access.denied"}},
+			{SurfaceName: "Queue", RequiredActionIDs: []string{"drill-down", "export", "audit"}, RequiresBatchActions: true, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator"}, DeniedRoles: []string{"viewer"}, AuditEvent: "queue.access.denied"}},
+			{SurfaceName: "Run Detail", RequiredActionIDs: []string{"drill-down", "export", "audit"}, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator", "viewer"}, DeniedRoles: []string{"guest"}, AuditEvent: "run-detail.access.denied"}},
+			{SurfaceName: "Triage", RequiredActionIDs: []string{"drill-down", "export", "audit"}, RequiresBatchActions: true, PermissionRule: SurfacePermissionRule{AllowedRoles: []string{"admin", "operator"}, DeniedRoles: []string{"viewer"}, AuditEvent: "triage.access.denied"}},
+		},
+	}
+	report := RenderConsoleInteractionReport(draft, (ConsoleInteractionAuditor{}).Audit(draft))
+	for _, fragment := range []string{
+		"# Console Interaction Draft Report",
+		"- Critical Pages: 4",
+		"- Required Roles: none",
+		"- Readiness Score: 100.0",
+		"- Release Ready: True",
+		"- Overview: route=/overview required_actions=drill-down, export, audit available_actions=drill-down, export, audit filters=1 states=default, loading, empty, error batch=optional permissions=complete",
+		"- Queue: route=/queue required_actions=drill-down, export, audit available_actions=drill-down, export, audit, bulk-approve filters=1 states=default, loading, empty, error batch=required permissions=complete",
+		"- Permission gaps: none",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestBuildBIG4203ConsoleInteractionDraftIsReleaseReady(t *testing.T) {
+	draft := BuildBIG4203ConsoleInteractionDraft()
+	audit := (ConsoleInteractionAuditor{}).Audit(draft)
+	report := RenderConsoleInteractionReport(draft, audit)
+	if !reflect.DeepEqual(draft.RequiredRoles, []string{"eng-lead", "platform-admin", "vp-eng", "cross-team-operator"}) ||
+		!draft.RequiresFrameContracts || !audit.ReleaseReady() || len(audit.UncoveredRoles) != 0 {
+		t.Fatalf("unexpected BIG-4203 draft/audit: draft=%+v audit=%+v", draft, audit)
+	}
+	for _, fragment := range []string{
+		"- Required Roles: eng-lead, platform-admin, vp-eng, cross-team-operator",
+		"persona=VP Eng wireframe=wf-overview",
+		"review_focus=metric hierarchy,drill-down posture,alert prioritization",
+		"- Uncovered roles: none",
+		"- Pages missing personas: none",
+		"- Pages missing wireframe links: none",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestConsoleInteractionAuditFlagsUncoveredRequiredRoles(t *testing.T) {
+	draft := BuildBIG4203ConsoleInteractionDraft()
+	draft.RequiredRoles = append(draft.RequiredRoles, "finance-reviewer")
+	audit := (ConsoleInteractionAuditor{}).Audit(draft)
+	if !reflect.DeepEqual(audit.UncoveredRoles, []string{"finance-reviewer"}) || audit.ReleaseReady() {
+		t.Fatalf("unexpected uncovered role audit: %+v", audit)
+	}
+}
+
+func TestConsoleInteractionAuditFlagsMissingFrameContractDetails(t *testing.T) {
+	draft := BuildBIG4203ConsoleInteractionDraft()
+	draft.Contracts[0].PrimaryPersona = ""
+	draft.Contracts[0].LinkedWireframeID = ""
+	draft.Contracts[0].ReviewFocusAreas = nil
+	draft.Contracts[0].DecisionPrompts = nil
+	audit := (ConsoleInteractionAuditor{}).Audit(draft)
+	if !reflect.DeepEqual(audit.SurfacesMissingPrimaryPersonas, []string{"Overview"}) ||
+		!reflect.DeepEqual(audit.SurfacesMissingWireframeLinks, []string{"Overview"}) ||
+		!reflect.DeepEqual(audit.SurfacesMissingReviewFocus, []string{"Overview"}) ||
+		!reflect.DeepEqual(audit.SurfacesMissingDecisionPrompts, []string{"Overview"}) ||
+		audit.ReleaseReady() {
+		t.Fatalf("unexpected missing frame contract audit: %+v", audit)
+	}
+}
+
 func roundTripJSON(t *testing.T, input any, target any) {
 	t.Helper()
 	body, err := json.Marshal(input)

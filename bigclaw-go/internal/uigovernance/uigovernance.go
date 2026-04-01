@@ -855,6 +855,261 @@ func (ConsoleIAAuditor) Audit(architecture ConsoleIA) ConsoleIAAudit {
 	}
 }
 
+type SurfacePermissionRule struct {
+	AllowedRoles []string `json:"allowed_roles,omitempty"`
+	DeniedRoles  []string `json:"denied_roles,omitempty"`
+	AuditEvent   string   `json:"audit_event,omitempty"`
+}
+
+func (r SurfacePermissionRule) MissingCoverage() []string {
+	var missing []string
+	if len(r.AllowedRoles) == 0 {
+		missing = append(missing, "allowed-roles")
+	}
+	if len(r.DeniedRoles) == 0 {
+		missing = append(missing, "denied-roles")
+	}
+	if strings.TrimSpace(r.AuditEvent) == "" {
+		missing = append(missing, "audit-event")
+	}
+	return missing
+}
+
+func (r SurfacePermissionRule) Complete() bool {
+	return len(r.MissingCoverage()) == 0
+}
+
+type SurfaceInteractionContract struct {
+	SurfaceName          string                `json:"surface_name"`
+	RequiredActionIDs    []string              `json:"required_action_ids,omitempty"`
+	RequiresFilters      bool                  `json:"requires_filters,omitempty"`
+	RequiresBatchActions bool                  `json:"requires_batch_actions,omitempty"`
+	RequiredStates       []string              `json:"required_states,omitempty"`
+	PermissionRule       SurfacePermissionRule `json:"permission_rule"`
+	PrimaryPersona       string                `json:"primary_persona,omitempty"`
+	LinkedWireframeID    string                `json:"linked_wireframe_id,omitempty"`
+	ReviewFocusAreas     []string              `json:"review_focus_areas,omitempty"`
+	DecisionPrompts      []string              `json:"decision_prompts,omitempty"`
+}
+
+func (c *SurfaceInteractionContract) UnmarshalJSON(data []byte) error {
+	type alias SurfaceInteractionContract
+	raw := alias{
+		RequiresFilters: true,
+		RequiredStates:  append([]string{}, requiredSurfaceStates...),
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*c = SurfaceInteractionContract(raw)
+	return nil
+}
+
+type ConsoleInteractionDraft struct {
+	Name                   string                       `json:"name"`
+	Version                string                       `json:"version"`
+	Architecture           ConsoleIA                    `json:"architecture"`
+	Contracts              []SurfaceInteractionContract `json:"contracts,omitempty"`
+	RequiredRoles          []string                     `json:"required_roles,omitempty"`
+	RequiresFrameContracts bool                         `json:"requires_frame_contracts,omitempty"`
+}
+
+type ConsoleInteractionAudit struct {
+	Name                           string              `json:"name"`
+	Version                        string              `json:"version"`
+	ContractCount                  int                 `json:"contract_count"`
+	MissingSurfaces                []string            `json:"missing_surfaces,omitempty"`
+	SurfacesMissingFilters         []string            `json:"surfaces_missing_filters,omitempty"`
+	SurfacesMissingActions         map[string][]string `json:"surfaces_missing_actions,omitempty"`
+	SurfacesMissingBatchActions    []string            `json:"surfaces_missing_batch_actions,omitempty"`
+	SurfacesMissingStates          map[string][]string `json:"surfaces_missing_states,omitempty"`
+	PermissionGaps                 map[string][]string `json:"permission_gaps,omitempty"`
+	UncoveredRoles                 []string            `json:"uncovered_roles,omitempty"`
+	SurfacesMissingPrimaryPersonas []string            `json:"surfaces_missing_primary_personas,omitempty"`
+	SurfacesMissingWireframeLinks  []string            `json:"surfaces_missing_wireframe_links,omitempty"`
+	SurfacesMissingReviewFocus     []string            `json:"surfaces_missing_review_focus,omitempty"`
+	SurfacesMissingDecisionPrompts []string            `json:"surfaces_missing_decision_prompts,omitempty"`
+}
+
+func (a ConsoleInteractionAudit) ReadinessScore() float64 {
+	if a.ContractCount == 0 {
+		return 0
+	}
+	penalties := len(a.MissingSurfaces) +
+		len(a.SurfacesMissingFilters) +
+		len(a.SurfacesMissingActions) +
+		len(a.SurfacesMissingBatchActions) +
+		len(a.SurfacesMissingStates) +
+		len(a.PermissionGaps) +
+		len(a.UncoveredRoles) +
+		len(a.SurfacesMissingPrimaryPersonas) +
+		len(a.SurfacesMissingWireframeLinks) +
+		len(a.SurfacesMissingReviewFocus) +
+		len(a.SurfacesMissingDecisionPrompts)
+	score := 100 - ((float64(penalties) * 100) / float64(a.ContractCount))
+	if score < 0 {
+		return 0
+	}
+	return round1(score)
+}
+
+func (a ConsoleInteractionAudit) ReleaseReady() bool {
+	return len(a.MissingSurfaces) == 0 &&
+		len(a.SurfacesMissingFilters) == 0 &&
+		len(a.SurfacesMissingActions) == 0 &&
+		len(a.SurfacesMissingBatchActions) == 0 &&
+		len(a.SurfacesMissingStates) == 0 &&
+		len(a.PermissionGaps) == 0 &&
+		len(a.UncoveredRoles) == 0 &&
+		len(a.SurfacesMissingPrimaryPersonas) == 0 &&
+		len(a.SurfacesMissingWireframeLinks) == 0 &&
+		len(a.SurfacesMissingReviewFocus) == 0 &&
+		len(a.SurfacesMissingDecisionPrompts) == 0
+}
+
+type ConsoleInteractionAuditor struct{}
+
+func (ConsoleInteractionAuditor) Audit(draft ConsoleInteractionDraft) ConsoleInteractionAudit {
+	routeIndex := draft.Architecture.RouteIndex()
+	var missingSurfaces []string
+	var missingFilters []string
+	missingActions := map[string][]string{}
+	var missingBatchActions []string
+	missingStates := map[string][]string{}
+	permissionGaps := map[string][]string{}
+	referencedRoles := map[string]bool{}
+	var missingPersonas []string
+	var missingWireframes []string
+	var missingReviewFocus []string
+	var missingDecisionPrompts []string
+
+	for _, contract := range draft.Contracts {
+		surface, ok := routeIndex[contract.SurfaceName]
+		if !ok {
+			for _, candidate := range draft.Architecture.Surfaces {
+				if candidate.Name == contract.SurfaceName {
+					surface = candidate
+					ok = true
+					break
+				}
+			}
+		}
+		if !ok {
+			missingSurfaces = append(missingSurfaces, contract.SurfaceName)
+			continue
+		}
+
+		if len(surface.Filters) == 0 {
+			missingFilters = append(missingFilters, contract.SurfaceName)
+		}
+
+		availableActionIDs := map[string]bool{}
+		for _, actionID := range surface.ActionIDs() {
+			availableActionIDs[actionID] = true
+		}
+		var missingActionIDs []string
+		for _, actionID := range contract.RequiredActionIDs {
+			if !availableActionIDs[actionID] {
+				missingActionIDs = append(missingActionIDs, actionID)
+			}
+		}
+		if len(missingActionIDs) > 0 {
+			sort.Strings(missingActionIDs)
+			missingActions[contract.SurfaceName] = missingActionIDs
+		}
+
+		if contract.RequiresBatchActions {
+			hasBatch := false
+			for _, action := range surface.TopBarActions {
+				if action.RequiresSelection {
+					hasBatch = true
+					break
+				}
+			}
+			if !hasBatch {
+				missingBatchActions = append(missingBatchActions, contract.SurfaceName)
+			}
+		}
+
+		haveStates := map[string]bool{}
+		for _, stateName := range surface.StateNames() {
+			haveStates[stateName] = true
+		}
+		requiredStates := contract.RequiredStates
+		if len(requiredStates) == 0 {
+			requiredStates = requiredSurfaceStates
+		}
+		var missingStateIDs []string
+		for _, stateName := range requiredStates {
+			if !haveStates[stateName] {
+				missingStateIDs = append(missingStateIDs, stateName)
+			}
+		}
+		if len(missingStateIDs) > 0 {
+			sort.Strings(missingStateIDs)
+			missingStates[contract.SurfaceName] = missingStateIDs
+		}
+
+		for _, role := range contract.PermissionRule.AllowedRoles {
+			referencedRoles[role] = true
+		}
+		for _, role := range contract.PermissionRule.DeniedRoles {
+			referencedRoles[role] = true
+		}
+		if gaps := contract.PermissionRule.MissingCoverage(); len(gaps) > 0 {
+			permissionGaps[contract.SurfaceName] = gaps
+		}
+
+		if draft.RequiresFrameContracts {
+			if strings.TrimSpace(contract.PrimaryPersona) == "" {
+				missingPersonas = append(missingPersonas, contract.SurfaceName)
+			}
+			if strings.TrimSpace(contract.LinkedWireframeID) == "" {
+				missingWireframes = append(missingWireframes, contract.SurfaceName)
+			}
+			if len(contract.ReviewFocusAreas) == 0 {
+				missingReviewFocus = append(missingReviewFocus, contract.SurfaceName)
+			}
+			if len(contract.DecisionPrompts) == 0 {
+				missingDecisionPrompts = append(missingDecisionPrompts, contract.SurfaceName)
+			}
+		}
+	}
+
+	var uncoveredRoles []string
+	for _, role := range draft.RequiredRoles {
+		if !referencedRoles[role] {
+			uncoveredRoles = append(uncoveredRoles, role)
+		}
+	}
+
+	sort.Strings(missingSurfaces)
+	sort.Strings(missingFilters)
+	sort.Strings(missingBatchActions)
+	sort.Strings(uncoveredRoles)
+	sort.Strings(missingPersonas)
+	sort.Strings(missingWireframes)
+	sort.Strings(missingReviewFocus)
+	sort.Strings(missingDecisionPrompts)
+
+	return ConsoleInteractionAudit{
+		Name:                           draft.Name,
+		Version:                        draft.Version,
+		ContractCount:                  len(draft.Contracts),
+		MissingSurfaces:                missingSurfaces,
+		SurfacesMissingFilters:         missingFilters,
+		SurfacesMissingActions:         missingActions,
+		SurfacesMissingBatchActions:    missingBatchActions,
+		SurfacesMissingStates:          missingStates,
+		PermissionGaps:                 permissionGaps,
+		UncoveredRoles:                 uncoveredRoles,
+		SurfacesMissingPrimaryPersonas: missingPersonas,
+		SurfacesMissingWireframeLinks:  missingWireframes,
+		SurfacesMissingReviewFocus:     missingReviewFocus,
+		SurfacesMissingDecisionPrompts: missingDecisionPrompts,
+	}
+}
+
 type UIAcceptanceAudit struct {
 	Name                      string   `json:"name"`
 	Version                   string   `json:"version"`
@@ -1237,6 +1492,251 @@ func RenderConsoleIAReport(architecture ConsoleIA, audit ConsoleIAAudit) string 
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func RenderConsoleInteractionReport(draft ConsoleInteractionDraft, audit ConsoleInteractionAudit) string {
+	routeIndex := draft.Architecture.RouteIndex()
+	var lines []string
+	lines = append(lines,
+		"# Console Interaction Draft Report",
+		"",
+		"- Name: "+draft.Name,
+		"- Version: "+draft.Version,
+		"- Critical Pages: "+itoa(len(draft.Contracts)),
+		"- Required Roles: "+joinOrNone(draft.RequiredRoles),
+		"- Readiness Score: "+format1(audit.ReadinessScore()),
+		"- Release Ready: "+boolString(audit.ReleaseReady()),
+		"",
+		"## Page Coverage",
+		"",
+	)
+	if len(draft.Contracts) == 0 {
+		lines = append(lines, "- None")
+	} else {
+		for _, contract := range draft.Contracts {
+			surface, ok := routeIndex[contract.SurfaceName]
+			if !ok {
+				for _, candidate := range draft.Architecture.Surfaces {
+					if candidate.Name == contract.SurfaceName {
+						surface = candidate
+						ok = true
+						break
+					}
+				}
+			}
+			if !ok {
+				lines = append(lines, "- "+contract.SurfaceName+": missing surface definition")
+				continue
+			}
+			requiredActions := joinOrNone(contract.RequiredActionIDs)
+			availableActions := joinOrNone(surface.ActionIDs())
+			batchMode := "optional"
+			if contract.RequiresBatchActions {
+				batchMode = "required"
+			}
+			permissionState := "incomplete"
+			if contract.PermissionRule.Complete() {
+				permissionState = "complete"
+			}
+			lines = append(lines, "- "+contract.SurfaceName+
+				": route="+surface.Route+
+				" required_actions="+requiredActions+
+				" available_actions="+availableActions+
+				" filters="+itoa(len(surface.Filters))+
+				" states="+joinOrNone(surface.StateNames())+
+				" batch="+batchMode+
+				" permissions="+permissionState)
+			lines = append(lines, "  persona="+fallback(contract.PrimaryPersona, "none")+
+				" wireframe="+fallback(contract.LinkedWireframeID, "none")+
+				" review_focus="+joinCSVOrNone(contract.ReviewFocusAreas)+
+				" decision_prompts="+joinCSVOrNone(contract.DecisionPrompts))
+		}
+	}
+	lines = append(lines, "", "## Gaps", "")
+	lines = append(lines, "- Missing surfaces: "+joinOrNone(audit.MissingSurfaces))
+	lines = append(lines, "- Pages missing filters: "+joinOrNone(audit.SurfacesMissingFilters))
+	lines = append(lines, "- Pages missing actions: "+formatListMap(audit.SurfacesMissingActions))
+	lines = append(lines, "- Pages missing batch actions: "+joinOrNone(audit.SurfacesMissingBatchActions))
+	lines = append(lines, "- Pages missing states: "+formatListMap(audit.SurfacesMissingStates))
+	lines = append(lines, "- Permission gaps: "+formatListMap(audit.PermissionGaps))
+	lines = append(lines, "- Uncovered roles: "+joinOrNone(audit.UncoveredRoles))
+	lines = append(lines, "- Pages missing personas: "+joinOrNone(audit.SurfacesMissingPrimaryPersonas))
+	lines = append(lines, "- Pages missing wireframe links: "+joinOrNone(audit.SurfacesMissingWireframeLinks))
+	lines = append(lines, "- Pages missing review focus: "+joinOrNone(audit.SurfacesMissingReviewFocus))
+	lines = append(lines, "- Pages missing decision prompts: "+joinOrNone(audit.SurfacesMissingDecisionPrompts))
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func BuildBIG4203ConsoleInteractionDraft() ConsoleInteractionDraft {
+	return ConsoleInteractionDraft{
+		Name:                   "BIG-4203 Four Critical Pages",
+		Version:                "v4.0-design-sprint",
+		RequiredRoles:          []string{"eng-lead", "platform-admin", "vp-eng", "cross-team-operator"},
+		RequiresFrameContracts: true,
+		Architecture: ConsoleIA{
+			Name:    "BigClaw Console IA",
+			Version: "v4.0-design-sprint",
+			TopBar: ConsoleTopBar{
+				Name:                      "BigClaw Global Header",
+				SearchPlaceholder:         "Search runs, queues, prompts, and commands",
+				EnvironmentOptions:        []string{"Production", "Staging", "Shadow"},
+				TimeRangeOptions:          []string{"24h", "7d", "30d"},
+				AlertChannels:             []string{"approvals", "sla", "regressions"},
+				DocumentationComplete:     true,
+				AccessibilityRequirements: []string{"keyboard-navigation", "screen-reader-label", "focus-visible"},
+				CommandEntry: ConsoleCommandEntry{
+					TriggerLabel: "Command Menu",
+					Placeholder:  "Jump to a run, queue, or release control action",
+					Shortcut:     "Cmd+K / Ctrl+K",
+					Commands: []CommandAction{
+						{ID: "search-runs", Title: "Search runs", Section: "Navigate", Shortcut: "/"},
+						{ID: "open-queue", Title: "Open queue control", Section: "Operate"},
+						{ID: "open-triage", Title: "Open triage center", Section: "Operate"},
+					},
+				},
+			},
+			Navigation: []NavigationItem{
+				{Name: "Overview", Route: "/overview", Section: "Operate", Icon: "dashboard"},
+				{Name: "Queue", Route: "/queue", Section: "Operate", Icon: "queue"},
+				{Name: "Run Detail", Route: "/runs/detail", Section: "Operate", Icon: "activity"},
+				{Name: "Triage", Route: "/triage", Section: "Operate", Icon: "alert"},
+			},
+			Surfaces: []ConsoleSurface{
+				{
+					Name:              "Overview",
+					Route:             "/overview",
+					NavigationSection: "Operate",
+					TopBarActions: []GlobalAction{
+						{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"},
+						{ActionID: "export", Label: "Export", Placement: "topbar"},
+						{ActionID: "audit", Label: "Audit Trail", Placement: "topbar"},
+					},
+					Filters: []FilterDefinition{
+						{Name: "Team", Field: "team", Control: "select", Options: []string{"all", "platform", "product"}},
+						{Name: "Time", Field: "time_range", Control: "segmented", Options: []string{"24h", "7d", "30d"}, DefaultValue: "7d"},
+					},
+					States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"drill-down"}}, {Name: "error", AllowedActions: []string{"audit"}}},
+				},
+				{
+					Name:              "Queue",
+					Route:             "/queue",
+					NavigationSection: "Operate",
+					TopBarActions: []GlobalAction{
+						{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"},
+						{ActionID: "export", Label: "Export", Placement: "topbar"},
+						{ActionID: "audit", Label: "Audit Trail", Placement: "topbar"},
+						{ActionID: "bulk-approve", Label: "Bulk Approve", Placement: "topbar", RequiresSelection: true},
+					},
+					Filters: []FilterDefinition{
+						{Name: "Status", Field: "status", Control: "select", Options: []string{"all", "queued", "approval"}},
+						{Name: "Owner", Field: "owner", Control: "search"},
+					},
+					States:              []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"audit"}}, {Name: "error", AllowedActions: []string{"audit"}}},
+					SupportsBulkActions: true,
+				},
+				{
+					Name:              "Run Detail",
+					Route:             "/runs/detail",
+					NavigationSection: "Operate",
+					TopBarActions: []GlobalAction{
+						{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"},
+						{ActionID: "export", Label: "Export", Placement: "topbar"},
+						{ActionID: "audit", Label: "Audit Trail", Placement: "topbar"},
+					},
+					Filters: []FilterDefinition{
+						{Name: "Run", Field: "run_id", Control: "search"},
+						{Name: "Replay Mode", Field: "replay_mode", Control: "select", Options: []string{"latest", "failure-only"}},
+					},
+					States: []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"drill-down"}}, {Name: "error", AllowedActions: []string{"audit"}}},
+				},
+				{
+					Name:              "Triage",
+					Route:             "/triage",
+					NavigationSection: "Operate",
+					TopBarActions: []GlobalAction{
+						{ActionID: "drill-down", Label: "Drill Down", Placement: "topbar"},
+						{ActionID: "export", Label: "Export", Placement: "topbar"},
+						{ActionID: "audit", Label: "Audit Trail", Placement: "topbar"},
+						{ActionID: "bulk-assign", Label: "Bulk Assign", Placement: "topbar", RequiresSelection: true},
+					},
+					Filters: []FilterDefinition{
+						{Name: "Severity", Field: "severity", Control: "select", Options: []string{"all", "high", "critical"}},
+						{Name: "Workflow", Field: "workflow", Control: "select", Options: []string{"all", "triage", "handoff"}},
+					},
+					States:              []SurfaceState{{Name: "default"}, {Name: "loading", AllowedActions: []string{"export"}}, {Name: "empty", AllowedActions: []string{"audit"}}, {Name: "error", AllowedActions: []string{"audit"}}},
+					SupportsBulkActions: true,
+				},
+			},
+		},
+		Contracts: []SurfaceInteractionContract{
+			{
+				SurfaceName:       "Overview",
+				RequiredActionIDs: []string{"drill-down", "export", "audit"},
+				PermissionRule: SurfacePermissionRule{
+					AllowedRoles: []string{"eng-lead", "platform-admin", "vp-eng", "cross-team-operator"},
+					DeniedRoles:  []string{"guest"},
+					AuditEvent:   "overview.access.denied",
+				},
+				PrimaryPersona:    "VP Eng",
+				LinkedWireframeID: "wf-overview",
+				ReviewFocusAreas:  []string{"metric hierarchy", "drill-down posture", "alert prioritization"},
+				DecisionPrompts: []string{
+					"Is the executive KPI density still scannable within one screen?",
+					"Do risk and blocker cards point to the correct downstream investigation surface?",
+				},
+			},
+			{
+				SurfaceName:          "Queue",
+				RequiredActionIDs:    []string{"drill-down", "export", "audit"},
+				RequiresBatchActions: true,
+				PermissionRule: SurfacePermissionRule{
+					AllowedRoles: []string{"eng-lead", "platform-admin", "cross-team-operator"},
+					DeniedRoles:  []string{"vp-eng", "guest"},
+					AuditEvent:   "queue.access.denied",
+				},
+				PrimaryPersona:    "Platform Admin",
+				LinkedWireframeID: "wf-queue",
+				ReviewFocusAreas:  []string{"batch approvals", "denied-role state", "audit rail"},
+				DecisionPrompts: []string{
+					"Does the queue clearly separate selection, confirmation, and audit outcomes?",
+					"Is the denied-role treatment explicit enough for VP Eng and guest personas?",
+				},
+			},
+			{
+				SurfaceName:       "Run Detail",
+				RequiredActionIDs: []string{"drill-down", "export", "audit"},
+				PermissionRule: SurfacePermissionRule{
+					AllowedRoles: []string{"eng-lead", "platform-admin", "vp-eng", "cross-team-operator"},
+					DeniedRoles:  []string{"guest"},
+					AuditEvent:   "run-detail.access.denied",
+				},
+				PrimaryPersona:    "Eng Lead",
+				LinkedWireframeID: "wf-run-detail",
+				ReviewFocusAreas:  []string{"replay context", "artifact evidence", "escalation path"},
+				DecisionPrompts: []string{
+					"Can reviewers distinguish replay, compare, and escalated states without narration?",
+					"Is the audit trail visible at the moment an escalation decision is made?",
+				},
+			},
+			{
+				SurfaceName:          "Triage",
+				RequiredActionIDs:    []string{"drill-down", "export", "audit"},
+				RequiresBatchActions: true,
+				PermissionRule: SurfacePermissionRule{
+					AllowedRoles: []string{"eng-lead", "platform-admin", "cross-team-operator"},
+					DeniedRoles:  []string{"vp-eng", "guest"},
+					AuditEvent:   "triage.access.denied",
+				},
+				PrimaryPersona:    "Cross-Team Operator",
+				LinkedWireframeID: "wf-triage",
+				ReviewFocusAreas:  []string{"handoff path", "bulk assignment", "ownership history"},
+				DecisionPrompts: []string{
+					"Does the triage frame explain handoff consequences before ownership changes commit?",
+					"Is bulk assignment discoverable without overpowering the audit context?",
+				},
+			},
+		},
+	}
+}
+
 func flattenNode(node NavigationNode, parentPath string, depth int, parentID string) []NavigationEntry {
 	path := joinPath(parentPath, node.Segment)
 	entries := []NavigationEntry{{
@@ -1300,6 +1800,13 @@ func joinOrNone(items []string) string {
 		return "none"
 	}
 	return strings.Join(items, ", ")
+}
+
+func joinCSVOrNone(items []string) string {
+	if len(items) == 0 {
+		return "none"
+	}
+	return strings.Join(items, ",")
 }
 
 func fallback(value, defaultValue string) string {
