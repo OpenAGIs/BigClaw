@@ -8,6 +8,7 @@
 - Fold the remaining standalone governance compatibility surface into `planning.py`, keep `bigclaw.governance` available via a package compatibility module, and delete the extra physical Python file.
 - Retire the remaining redundant Python compatibility tests for queue, orchestration, and scheduler after confirming equivalent Go-owned coverage remains active under `bigclaw-go/internal`.
 - Retire the remaining Python doc/regression wrapper tests for live-shadow and validation-bundle surfaces after confirming checked-in artifact coverage remains active in Go regression and API suites.
+- Retire the remaining leaf Python compatibility tests for repo collaboration and repo rollout helper formatting after confirming broader collaboration, planning, and report surfaces remain exercised by the surviving Python suites.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -26,6 +27,7 @@
 - `cd bigclaw-go && go test ./internal/queue ./internal/workflow ./internal/scheduler -count=1`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1`
 - `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py -q`
 
 ## Results
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> `ok  	bigclaw-go/internal/legacyshim	1.098s` and `ok  	bigclaw-go/cmd/bigclawctl	5.977s`
@@ -187,3 +189,6 @@
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowDocsStayAligned|TestLiveValidationIndexSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.667s`
 - `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1` -> `ok  	bigclaw-go/internal/api	0.869s [no tests to run]`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 24`; `go 286`; `pkg 0`
+- Deleted the redundant Python `tests/test_repo_collaboration.py` and `tests/test_repo_rollout.py` after confirming the broader collaboration, planning, and report compatibility surfaces remain exercised by `tests/test_observability.py`, `tests/test_planning.py`, and `tests/test_reports.py`.
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py -q` -> `55 passed in 0.09s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 22`; `go 286`; `pkg 0`
