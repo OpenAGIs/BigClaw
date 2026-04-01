@@ -163,7 +163,7 @@ Historical initial state:
 ### BIG-GOM-303 Workflow orchestration and scheduler loop migration
 
 Python source:
-- `src/bigclaw/runtime.py`
+- `src/bigclaw/legacy_shim.py` backing the frozen `bigclaw.runtime` compatibility surface
 - `src/bigclaw/scheduler.py`
 - `src/bigclaw/orchestration.py`
 - `src/bigclaw/workflow.py`
@@ -194,7 +194,7 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
+- `src/bigclaw/_legacy/reports.legacy` backing the `bigclaw.reports` compatibility surface
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/operations.py`
 
@@ -408,7 +408,7 @@ Historical planned state:
 ### 2. Port the workflow, scheduler, runtime, and orchestration loop to Go
 
 Python source:
-- `src/bigclaw/runtime.py`
+- `src/bigclaw/legacy_shim.py` backing the frozen `bigclaw.runtime` compatibility surface
 - `src/bigclaw/scheduler.py`
 - `src/bigclaw/orchestration.py`
 - `src/bigclaw/workflow.py`
@@ -428,7 +428,7 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
+- `src/bigclaw/_legacy/reports.legacy` backing the `bigclaw.reports` compatibility surface
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
@@ -477,7 +477,7 @@ Python source:
 - `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
+- `src/bigclaw/ui_review.py` (removed in BIG-GO-1063)
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:

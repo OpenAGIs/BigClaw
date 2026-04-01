@@ -36,3 +36,7 @@
   - `ok  	bigclaw-go/internal/regression	0.435s`
 - `find src -type f \( -name "*.py" -o -name "*.pyi" \) | wc -l`
   - `14`
+
+## Residual Risk
+- Code-path residual risk is now limited to compatibility shims and legacy source assets: `src/bigclaw/legacy_shim.py` and `src/bigclaw/_legacy/reports.legacy`.
+- Historical cutover planning docs may still describe older migration states, but the explicit deleted-path references in `docs/go-mainline-cutover-issue-pack.md` were updated in this batch.
