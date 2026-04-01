@@ -225,7 +225,6 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/repo_triage.py`
-- `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/saved_views.py`
@@ -438,7 +437,6 @@ Python source:
 - `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
-- `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/planning.py`
 

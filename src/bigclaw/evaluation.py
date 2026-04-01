@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from .models import Task
 from .observability import ObservabilityLedger
-from .run_detail import (
+from .reports import (
     RunDetailEvent,
     RunDetailResource,
     RunDetailStat,
@@ -13,9 +13,9 @@ from .run_detail import (
     render_resource_grid,
     render_run_detail_console,
     render_timeline_panel,
+    write_report,
 )
 from .scheduler import ExecutionRecord, Scheduler
-from .reports import write_report
 
 
 @dataclass
