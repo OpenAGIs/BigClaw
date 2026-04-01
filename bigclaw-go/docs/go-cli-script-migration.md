@@ -9,6 +9,12 @@ Python benchmark helpers remain listed below only as historical migration
 records; the supported entrypoints are `bigclawctl automation benchmark ...`
 and the retained `scripts/benchmark/run_suite.sh` wrapper.
 
+`bigclaw-go/scripts/e2e/` tranche 1 is also Go-only now. The retired Python
+helpers remain listed below only as migration history; supported entrypoints are
+`bigclawctl automation e2e ...` plus the retained shell wrappers
+`scripts/e2e/run_all.sh`, `scripts/e2e/kubernetes_smoke.sh`, and
+`scripts/e2e/ray_smoke.sh`.
+
 | Retired script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed |
@@ -61,9 +67,7 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 ## Compatibility Layer Plan
 
 - Keep new behavior in Go-native entrypoints and reserve Python only for batches that are not yet migrated.
-- Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
-  - migration scorecards/bundle exporters
-- Remaining Python generators still need native replacements before they can be removed.
+- Continue the remaining migration-lane scorecards and bundle exporters in follow-up batches until the automation surface is fully Go-native.
 
 ## Branch And PR Suggestion
 

@@ -1,74 +1,29 @@
-## Plan
+# BIG-GO-1052
 
-1. Purge the first safe top-level Python tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/cost_control.py`
-   - `src/bigclaw/issue_archive.py`
-   - `src/bigclaw/github_sync.py`
-2. Purge the next safe top-level Python repo-surface tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/repo_board.py`
-   - `src/bigclaw/repo_commits.py`
-   - `src/bigclaw/repo_gateway.py`
-   - `src/bigclaw/repo_governance.py`
-   - `src/bigclaw/repo_registry.py`
-   - `src/bigclaw/repo_triage.py`
-3. Purge the isolated bootstrap validation surface:
-   - `src/bigclaw/workspace_bootstrap_validation.py`
-4. Purge the next low-coupling top-level product/reporting tranche:
-   - `src/bigclaw/pilot.py`
-   - `src/bigclaw/dashboard_run_contract.py`
-   - `src/bigclaw/saved_views.py`
-5. Purge the next low-coupling top-level contract/intake tranche:
-   - `src/bigclaw/mapping.py`
-   - `src/bigclaw/execution_contract.py`
-6. Purge the isolated refill queue surface:
-   - `src/bigclaw/parallel_refill.py`
-7. Purge the isolated workspace bootstrap CLI surface:
-   - `src/bigclaw/workspace_bootstrap_cli.py`
-8. Purge the isolated workspace bootstrap implementation surface:
-   - `src/bigclaw/workspace_bootstrap.py`
-9. Purge the next low-coupling top-level intake/roadmap surface:
-   - `src/bigclaw/connectors.py`
-   - `src/bigclaw/roadmap.py`
-10. Purge the next low-coupling top-level repo-link surface by collapsing the retained Python compatibility into `observability.py`:
-   - `src/bigclaw/repo_links.py`
-   - `src/bigclaw/repo_plane.py`
-11. Purge the next isolated top-level policy memory/validation surface by replacing it in Go:
-   - `src/bigclaw/validation_policy.py`
-   - `src/bigclaw/memory.py`
-   - `tests/test_validation_policy.py`
-   - `tests/test_memory.py`
-12. Remove any package exports or Python tests that still point at deleted Python modules.
-13. Add focused Go regression tests that assert the migration contract for each tranche:
-   - the deleted Python files are absent
-   - the corresponding Go replacement files exist
-14. Run targeted validation for the touched Go packages and the new regression tests.
-15. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
+## Plan
+- Audit `bigclaw-go/scripts/e2e` and repo references to removed Python e2e helpers.
+- Add/adjust Go regression coverage so tranche 1 e2e helpers stay deleted and wrapper/docs/CI stay Go-only.
+- Update README/workflow/CI references that still imply Python e2e entrypoints.
+- Run targeted validation, record exact commands and outcomes, then commit and push.
 
 ## Acceptance
-
-- Python file count in the repository decreases from the pre-change baseline.
-- `src/bigclaw/cost_control.py`, `src/bigclaw/issue_archive.py`, and `src/bigclaw/github_sync.py` are deleted.
-- `src/bigclaw/repo_board.py`, `src/bigclaw/repo_commits.py`, `src/bigclaw/repo_gateway.py`, `src/bigclaw/repo_governance.py`, `src/bigclaw/repo_registry.py`, and `src/bigclaw/repo_triage.py` are deleted.
-- `src/bigclaw/workspace_bootstrap_validation.py` is deleted.
-- `src/bigclaw/pilot.py`, `src/bigclaw/dashboard_run_contract.py`, and `src/bigclaw/saved_views.py` are deleted.
-- `src/bigclaw/mapping.py` and `src/bigclaw/execution_contract.py` are deleted.
-- `src/bigclaw/parallel_refill.py` is deleted.
-- `src/bigclaw/workspace_bootstrap_cli.py` is deleted.
-- `src/bigclaw/workspace_bootstrap.py` is deleted.
-- `src/bigclaw/connectors.py` and `src/bigclaw/roadmap.py` are deleted.
-- `src/bigclaw/repo_links.py` and `src/bigclaw/repo_plane.py` are deleted.
-- `src/bigclaw/validation_policy.py` and `src/bigclaw/memory.py` are deleted.
-- `src/bigclaw/__init__.py` and retained Python tests no longer import deleted modules.
-- Go regression tests cover the tranche replacement contracts against the repository tree.
-- Targeted Go tests pass.
-- Changes are committed and pushed to the remote branch for `BIG-GO-1041`.
+- `bigclaw-go/scripts/e2e` contains no tranche-1 Python helpers and regression coverage fails if they reappear.
+- README/workflow/hooks/CI references for the migrated e2e entrypoints point to Go/shell entrypoints only.
+- Targeted tests pass and exact commands/results are recorded.
+- Changes stay scoped to this issue.
 
 ## Validation
-
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/policy ./internal/regression -run 'TestEnforceValidationReportPolicyBlocksMissingArtifacts|TestEnforceValidationReportPolicyAllowsCompleteArtifacts|TestTaskMemoryStoreReusesHistoryAndInjectsRules|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10|11)'`
-- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py -q`
-- `cd bigclaw-go && go test ./internal/repo ./internal/regression -run 'TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10)'`
-- `cd bigclaw-go && go test ./internal/intake ./internal/regression -run 'TestConnectorByNameReturnsKnownConnectors|TestConnectorStubsReturnSeededIssues|TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9)'`
+- `go test ./cmd/bigclawctl ./internal/regression`
+- `go test ./...` only if targeted coverage indicates broader breakage risk.
+- `git diff --check`
 - `git status --short`
-- `git log -1 --stat`
+
+## Results
+- Audited `.github/workflows`, repo hooks, and checked-in docs for direct tranche-1 `bigclaw-go/scripts/e2e/*.py` entrypoint usage. No remaining workflow or hook invocations were present; the remaining drift was documentation language and missing regression coverage.
+- Added Go regression coverage to fail if tranche-1 e2e Python helpers reappear and to assert `scripts/e2e/run_all.sh` stays wired to Go entrypoints.
+- Updated Go-facing README and e2e migration docs to describe `scripts/e2e/` as a Go-and-shell-only surface.
+
+## Validation Results
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression` -> passed
+- `git diff --check` -> passed
+- `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `50`

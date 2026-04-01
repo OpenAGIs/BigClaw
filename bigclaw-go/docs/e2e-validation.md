@@ -5,7 +5,6 @@ This document covers real cluster smoke validation for the `Kubernetes` and `Ray
 ## Prerequisites
 
 - `go`
-- `python3`
 - BigClaw Go dependencies installed via `go mod tidy`
 - For `Kubernetes`:
   - a reachable cluster
@@ -16,6 +15,10 @@ This document covers real cluster smoke validation for the `Kubernetes` and `Ray
   - `BIGCLAW_RAY_ADDRESS`, e.g. `ray://127.0.0.1:10001` or `http://127.0.0.1:8265`
 
 ## What the scripts do
+
+The supported entrypoints in `scripts/e2e/` are now Go-and-shell-only. The
+retired Python helpers were removed; use `go run ./cmd/bigclawctl automation e2e ...`
+for the migrated lanes and the retained shell wrappers for live smoke orchestration.
 
 1. Reuse an already healthy `bigclawd` if one is listening on the requested base URL
 2. Otherwise autostart an isolated local `bigclawd` on a fresh loopback port with an isolated queue/audit state directory
@@ -261,7 +264,7 @@ export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
 Optional overrides:
 
 ```bash
-export BIGCLAW_RAY_SMOKE_ENTRYPOINT='python -c "print(123)"'
+export BIGCLAW_RAY_SMOKE_ENTRYPOINT='echo ray smoke override'
 export BIGCLAW_RAY_RUNTIME_ENV_JSON='{"env_vars":{"BIGCLAW_SMOKE":"1"}}'
 export BIGCLAW_RAY_SMOKE_REPORT_PATH=docs/reports/ray-live-smoke-report.json
 ./scripts/e2e/ray_smoke.sh

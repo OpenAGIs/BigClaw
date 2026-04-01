@@ -46,6 +46,45 @@ func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
 	}
 }
 
+func TestE2EScriptsStayGoOnly(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	goRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	e2eDir := filepath.Join(goRoot, "scripts", "e2e")
+	entries, err := os.ReadDir(e2eDir)
+	if err != nil {
+		t.Fatalf("read e2e script directory: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatalf("expected e2e wrapper files in %s", e2eDir)
+	}
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".py") {
+			t.Fatalf("e2e directory must not contain Python helpers: %s", entry.Name())
+		}
+	}
+	body, err := os.ReadFile(filepath.Join(e2eDir, "run_all.sh"))
+	if err != nil {
+		t.Fatalf("read e2e wrapper: %v", err)
+	}
+	wrapper := string(body)
+	for _, want := range []string{
+		`go run "$ROOT/cmd/bigclawctl" automation e2e run-task-smoke`,
+		`go run "$ROOT/cmd/bigclawctl" automation e2e export-validation-bundle`,
+		`go run "$ROOT/cmd/bigclawctl" automation e2e continuation-scorecard`,
+		`go run "$ROOT/cmd/bigclawctl" automation e2e continuation-policy-gate`,
+	} {
+		if !strings.Contains(wrapper, want) {
+			t.Fatalf("e2e wrapper missing %q: %s", want, wrapper)
+		}
+	}
+	if strings.Contains(wrapper, ".py") {
+		t.Fatalf("e2e wrapper must not reference Python helpers: %s", wrapper)
+	}
+}
+
 func TestRunAutomationRunTaskSmokeJSONOutput(t *testing.T) {
 	var mu sync.Mutex
 	statusCalls := 0

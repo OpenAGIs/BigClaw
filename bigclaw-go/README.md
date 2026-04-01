@@ -78,6 +78,7 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 
 ## End-to-end scripts
 
+- `scripts/e2e/` is now a Go-and-shell-only operator surface; the tranche-1 Python helpers were removed and replaced by `bigclawctl automation e2e ...` commands
 - `scripts/e2e/run_all.sh` runs local SQLite, Kubernetes, and Ray validation concurrently, writes a timestamped bundle under `docs/reports/live-validation-runs/`, and refreshes `docs/reports/live-validation-summary.json` plus `docs/reports/live-validation-index.md`
 - `scripts/e2e/kubernetes_smoke.sh` runs a real Kubernetes smoke task through BigClaw
 - `scripts/e2e/ray_smoke.sh` runs a real Ray Jobs API smoke task through BigClaw
