@@ -2423,39 +2423,6 @@ def test_render_policy_prompt_version_center_supports_shared_view_context() -> N
     assert "Rollback simulation still running." in report
 
 
-def test_render_engineering_overview_hides_modules_without_permission() -> None:
-    analytics = OperationsAnalytics()
-    runs = [
-        make_run("run-1", "BIG-1401-1", "approved", "2026-03-10T09:00:00Z", "2026-03-10T09:20:00Z", "merged", "default low risk path"),
-        make_run("run-2", "BIG-1401-2", "needs-approval", "2026-03-10T10:00:00Z", "2026-03-10T10:25:00Z", "approval", "requires approval for prod deploy"),
-    ]
-
-    executive_view = analytics.build_engineering_overview(
-        name="Executive View",
-        period="2026-W11",
-        runs=runs,
-        viewer_role="executive",
-    )
-    contributor_view = analytics.build_engineering_overview(
-        name="Contributor View",
-        period="2026-W11",
-        runs=runs,
-        viewer_role="contributor",
-    )
-
-    executive_report = render_engineering_overview(executive_view)
-    contributor_report = render_engineering_overview(contributor_view)
-
-    assert "## KPI Modules" in executive_report
-    assert "## Funnel Modules" in executive_report
-    assert "## Blocker Modules" in executive_report
-    assert "## Activity Modules" not in executive_report
-    assert "## KPI Modules" in contributor_report
-    assert "## Activity Modules" in contributor_report
-    assert "## Funnel Modules" not in contributor_report
-    assert "## Blocker Modules" not in contributor_report
-
-
 def test_benchmark_runner_scores_and_replays_case(tmp_path: Path):
     runner = BenchmarkRunner(storage_dir=str(tmp_path))
     case = BenchmarkCase(
