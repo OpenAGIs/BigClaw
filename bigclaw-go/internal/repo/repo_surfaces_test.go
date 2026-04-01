@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -104,6 +105,37 @@ func TestRepoRegistryFallsBackWithoutSpaceAndReusesCachedAgent(t *testing.T) {
 	}
 }
 
+func TestRepoRegistryJSONRoundTrip(t *testing.T) {
+	registry := RepoRegistry{}
+	registry.RegisterSpace(RepoSpace{
+		SpaceID:        "space-1",
+		ProjectKey:     "BIGCLAW",
+		Repo:           "OpenAGIs/BigClaw",
+		SidecarURL:     "http://127.0.0.1:4041",
+		HealthState:    "healthy",
+		SidecarEnabled: true,
+	})
+	registry.ResolveAgent("native cloud", "reviewer")
+
+	encoded, err := json.Marshal(registry)
+	if err != nil {
+		t.Fatalf("marshal registry: %v", err)
+	}
+
+	var restored RepoRegistry
+	if err := json.Unmarshal(encoded, &restored); err != nil {
+		t.Fatalf("unmarshal registry: %v", err)
+	}
+
+	space, ok := restored.ResolveSpace("BIGCLAW")
+	if !ok || space.Repo != "OpenAGIs/BigClaw" || space.SidecarURL != "http://127.0.0.1:4041" || space.HealthState != "healthy" {
+		t.Fatalf("unexpected restored space: %+v ok=%v", space, ok)
+	}
+	if agent := restored.ResolveAgent("native cloud", "executor"); agent.RepoAgentID != "agent-native-cloud" {
+		t.Fatalf("unexpected restored agent: %+v", agent)
+	}
+}
+
 func TestRepoSlugNormalizesPunctuationAndFallbacks(t *testing.T) {
 	if got := slug("BIG-401 / review closeout"); got != "big-401-review-closeout" {
 		t.Fatalf("unexpected normalized slug: %q", got)
@@ -126,6 +158,11 @@ func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	filtered := board.ListPosts("alpha-release", "task", "BIG-401")
 	if len(filtered) != 2 {
 		t.Fatalf("expected filtered posts, got %+v", filtered)
+	}
+
+	comment := post.ToCollaborationComment()
+	if comment.CommentID != "repo-"+post.PostID || comment.Author != "alice" || comment.Anchor != "task:BIG-401" || comment.Status != "open" || comment.Body != "Need reviewer eyes" {
+		t.Fatalf("unexpected collaboration comment: %+v", comment)
 	}
 }
 
@@ -162,6 +199,11 @@ func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) 
 	}
 	if got := board.ListPosts("", "task", "BIG-402"); len(got) != 1 || got[0].PostID != second.PostID {
 		t.Fatalf("expected combined surface/id filter to isolate second post, got %+v", got)
+	}
+
+	resolvedComment := second.ToCollaborationComment()
+	if resolvedComment.Status != "open" || resolvedComment.Anchor != "task:BIG-402" {
+		t.Fatalf("unexpected second collaboration comment: %+v", resolvedComment)
 	}
 }
 
@@ -303,5 +345,22 @@ func TestBuildApprovalEvidencePacket(t *testing.T) {
 
 	if packet.RunID != "run-77" || packet.CandidateCommitHash != "abc123" || packet.AcceptedCommitHash != "def456" || packet.LineageSummary == "" || len(packet.Links) != 2 {
 		t.Fatalf("unexpected approval packet: %+v", packet)
+	}
+}
+
+func TestBindRunCommitsAcceptedHashPrefersAcceptedRoleWithCandidatePresent(t *testing.T) {
+	binding, err := BindRunCommits([]RunCommitLink{
+		{RunID: "run-143", CommitHash: "aaa111", Role: "source", RepoSpaceID: "space-1"},
+		{RunID: "run-143", CommitHash: "bbb222", Role: "candidate", RepoSpaceID: "space-1"},
+		{RunID: "run-143", CommitHash: "ccc333", Role: "accepted", RepoSpaceID: "space-1"},
+	})
+	if err != nil {
+		t.Fatalf("bind run commits: %v", err)
+	}
+	if got := binding.AcceptedCommitHash(); got != "ccc333" {
+		t.Fatalf("unexpected accepted commit hash: %q", got)
+	}
+	if !reflect.DeepEqual(binding.Links[1], (RunCommitLink{RunID: "run-143", CommitHash: "bbb222", Role: "candidate", RepoSpaceID: "space-1"})) {
+		t.Fatalf("expected candidate link to survive binding, got %+v", binding.Links[1])
 	}
 }
