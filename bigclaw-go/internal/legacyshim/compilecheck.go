@@ -15,9 +15,12 @@ type runner func(name string, args ...string) ([]byte, error)
 
 func FrozenCompileCheckFiles(repoRoot string) []string {
 	relative := []string{
-		"src/bigclaw/service.py",
 		"src/bigclaw/__main__.py",
-		"src/bigclaw/legacy_shim.py",
+		"scripts/ops/bigclaw_github_sync.py",
+		"scripts/ops/bigclaw_refill_queue.py",
+		"scripts/ops/bigclaw_workspace_bootstrap.py",
+		"scripts/ops/symphony_workspace_bootstrap.py",
+		"scripts/ops/symphony_workspace_validate.py",
 	}
 	files := make([]string, 0, len(relative))
 	for _, item := range relative {

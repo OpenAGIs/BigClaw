@@ -25,6 +25,99 @@
 
 ## Validation Results
 
+- Tranche: inline Python legacy shim helpers into ops wrappers and delete the shared shim module
+  - Removed Python files:
+    - `src/bigclaw/legacy_shim.py`
+  - Updated Python files:
+    - `scripts/ops/bigclaw_github_sync.py`
+    - `scripts/ops/bigclaw_refill_queue.py`
+    - `scripts/ops/bigclaw_workspace_bootstrap.py`
+    - `scripts/ops/symphony_workspace_bootstrap.py`
+    - `scripts/ops/symphony_workspace_validate.py`
+  - Updated Go files:
+    - `bigclaw-go/cmd/bigclawctl/main_test.go`
+    - `bigclaw-go/internal/legacyshim/compilecheck.go`
+    - `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+- `gofmt -w bigclaw-go/internal/legacyshim/compilecheck.go bigclaw-go/internal/legacyshim/compilecheck_test.go bigclaw-go/cmd/bigclawctl/main_test.go`
+  - no output
+- `python3 -m py_compile src/bigclaw/__main__.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py`
+  - no output
+- `python3 scripts/ops/bigclaw_github_sync.py --help`
+  - `usage: bigclawctl github-sync <install|status|sync> [flags]`
+- `python3 scripts/ops/bigclaw_refill_queue.py --help`
+  - `usage: bigclawctl refill [flags]`
+  - `       bigclawctl refill seed [flags]`
+  - `  -apply`
+  - `  -interval int`
+  - `  -local-issues string`
+  - `  -markdown string`
+  - `  -queue string`
+  - `  -refresh-url string`
+  - `  -repo string`
+  - `  -sync-queue-status`
+  - `  -target-in-progress int`
+  - `  -watch`
+  - `subcommands:`
+  - `  seed    add or update a queue entry and matching local tracker issue`
+- `python3 scripts/ops/bigclaw_workspace_bootstrap.py --help`
+  - `usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]`
+- `python3 scripts/ops/symphony_workspace_bootstrap.py --help`
+  - `usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]`
+- `python3 scripts/ops/symphony_workspace_validate.py --help`
+  - `usage: bigclawctl workspace validate [flags]`
+  - `  -cache-base string`
+  - `  -cache-key string`
+  - `  -cache-root string`
+  - `  -cleanup`
+  - `  -default-branch string`
+  - `  -issue string`
+  - `  -issues string`
+  - `  -json`
+  - `  -repo string`
+  - `  -repo-url string`
+  - `  -report string`
+  - `  -workspace string`
+  - `  -workspace-root string`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+  - `{`
+  - `  "files": [`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/src/bigclaw/__main__.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/bigclaw_github_sync.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/bigclaw_refill_queue.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/bigclaw_workspace_bootstrap.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/symphony_workspace_bootstrap.py",`
+  - `    "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040/scripts/ops/symphony_workspace_validate.py"`
+  - `  ],`
+  - `  "python": "python3",`
+  - `  "repo": "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040",`
+  - `  "status": "ok"`
+  - `}`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/internal/legacyshim	0.803s`
+  - `ok  	bigclaw-go/cmd/bigclawctl	4.405s`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `11`
+- `find . -name '*.py' | sort | wc -l`
+  - `22`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+  - `tests/test_runtime_matrix.py`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `M bigclaw-go/cmd/bigclawctl/main_test.go`
+  - `M bigclaw-go/internal/legacyshim/compilecheck.go`
+  - `M bigclaw-go/internal/legacyshim/compilecheck_test.go`
+  - `M scripts/ops/bigclaw_github_sync.py`
+  - `M scripts/ops/bigclaw_refill_queue.py`
+  - `M scripts/ops/bigclaw_workspace_bootstrap.py`
+  - `M scripts/ops/symphony_workspace_bootstrap.py`
+  - `M scripts/ops/symphony_workspace_validate.py`
+  - `D src/bigclaw/legacy_shim.py`
 - Tranche: collapse Python audit event helper module into observability surfaces
   - Removed Python files:
     - `src/bigclaw/audit_events.py`
