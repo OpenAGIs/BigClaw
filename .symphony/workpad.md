@@ -30,7 +30,6 @@
   - `tests/test_console_ia.py`
   - `tests/test_control_center.py`
   - `tests/test_design_system.py`
-  - `tests/test_dsl.py`
   - `tests/test_evaluation.py`
   - `tests/test_event_bus.py`
   - `tests/test_live_shadow_bundle.py`
@@ -48,9 +47,9 @@
   - `tests/test_validation_bundle_continuation_policy_gate.py`
   - `tests/test_validation_policy.py`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `21`
+  - `20`
 - `find . -name '*.py' | sort | wc -l`
-  - `71`
+  - `70`
 - `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
   - no output
 - `cd bigclaw-go && go test ./internal/repo`
@@ -69,6 +68,7 @@
   - `ok  	bigclaw-go/internal/risk	(cached)`
   - `ok  	bigclaw-go/internal/workflow	(cached)`
   - `ok  	bigclaw-go/internal/scheduler	1.189s`
+- `cd bigclaw-go && go test ./internal/workflow`
+  - `ok  	bigclaw-go/internal/workflow	(cached)`
 - `git status --short`
-  - `D tests/test_orchestration.py`
-  - `D tests/test_risk.py`
+  - `D tests/test_dsl.py`
