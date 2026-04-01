@@ -182,7 +182,7 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
+from .runtime import RiskFactor, RiskScore, RiskScorer
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,

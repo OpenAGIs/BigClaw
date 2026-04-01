@@ -2,7 +2,7 @@ from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger
-from bigclaw.risk import RiskScorer
+from bigclaw.runtime import RiskScorer
 from bigclaw.scheduler import Scheduler
 
 

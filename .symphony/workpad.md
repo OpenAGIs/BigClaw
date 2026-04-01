@@ -1,24 +1,23 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1063 Workpad
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+1. Inventory the residual Python assets in `src/bigclaw` and confirm which files from the suggested scope still physically exist.
+2. Trace imports, CLI entrypoints, and test references for the surviving files to determine whether they can be deleted outright or need a compatibility downgrade.
+3. Apply the smallest scoped change that reduces Python file count while preserving a verifiable replacement or explicit non-support path.
+4. Run targeted validation commands, capture exact results, and summarize file-count impact plus residual risks.
+5. Commit the scoped change set and push the branch.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- Identify the Python assets handled in this batch.
+- Delete, replace, or downgrade them away from active Python implementation where feasible.
+- Provide exact validation commands and outcomes.
+- Report the impact on total `src/bigclaw` Python file count and any remaining risk.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
+- `rg -n "(reports|risk|run_detail|runtime|ui_review)"`
+- `find src/bigclaw -type f | sort | rg '\\.py$' | wc -l`
+- Targeted tests or smoke checks based on any remaining references discovered during implementation.
+- `git status --short`
 
 ## Archived Closeout
 
@@ -45,3 +44,12 @@
 - No writable local tracker entry exists for `BIG-GO-1053` in `local-issues.json` or the
   Symphony local issue store, so any remaining active state is external to this workspace.
 - Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
+
+## Results
+- Residual suggested-scope files physically present at start: `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`, `src/bigclaw/runtime.py`, `src/bigclaw/ui_review.py`.
+- Removed by this batch: `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`.
+- Consolidation targets: `src/bigclaw/runtime.py` now owns risk scoring types; `src/bigclaw/reports.py` now owns run-detail rendering types and helpers.
+- Validation command: `python3 -m compileall src/bigclaw` -> passed.
+- Validation command: `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_runtime_matrix.py tests/test_reports.py tests/test_observability.py` -> `47 passed in 0.15s`.
+- Python file count impact in `src/bigclaw`: `19 -> 17` (`-2`).
+- Residual risk: `src/bigclaw/ui_review.py`, `src/bigclaw/runtime.py`, and `src/bigclaw/reports.py` remain because they still carry active package exports and broad test or runtime dependency surfaces that would require a wider refactor.
