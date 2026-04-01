@@ -456,6 +456,52 @@ func TestRenderAndWriteEngineeringOverviewBundle(t *testing.T) {
 	}
 }
 
+func TestRenderEngineeringOverviewHonorsViewerPermissions(t *testing.T) {
+	executive := EngineeringOverview{
+		Name:   "Executive View",
+		Period: "2026-W12",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "executive",
+			AllowedModules: []string{"kpis", "funnel", "blockers"},
+		},
+		KPIs:       []EngineeringOverviewKPI{{Name: "success-rate", Value: 95, Target: 90, Unit: "%", Direction: "up"}},
+		Funnel:     []EngineeringFunnelStage{{Name: "completed", Count: 8, Share: 80}},
+		Blockers:   []EngineeringOverviewBlocker{{Summary: "approval pending", Owner: "operations", Severity: "medium", AffectedRuns: 1}},
+		Activities: []EngineeringActivity{{Timestamp: "2026-03-18T09:30:00Z", RunID: "run-1", TaskID: "BIG-1", Status: "blocked", Summary: "approval pending"}},
+	}
+	contributor := EngineeringOverview{
+		Name:   "Contributor View",
+		Period: "2026-W12",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "contributor",
+			AllowedModules: []string{"kpis", "activity"},
+		},
+		KPIs:       executive.KPIs,
+		Funnel:     executive.Funnel,
+		Blockers:   executive.Blockers,
+		Activities: executive.Activities,
+	}
+
+	executiveRendered := RenderEngineeringOverview(executive)
+	contributorRendered := RenderEngineeringOverview(contributor)
+
+	if !strings.Contains(executiveRendered, "## KPI Modules") ||
+		!strings.Contains(executiveRendered, "## Funnel Modules") ||
+		!strings.Contains(executiveRendered, "## Blocker Modules") {
+		t.Fatalf("expected executive modules in report, got %s", executiveRendered)
+	}
+	if strings.Contains(executiveRendered, "## Activity Modules") {
+		t.Fatalf("expected executive report to hide activity module, got %s", executiveRendered)
+	}
+	if !strings.Contains(contributorRendered, "## KPI Modules") ||
+		!strings.Contains(contributorRendered, "## Activity Modules") {
+		t.Fatalf("expected contributor KPI and activity modules, got %s", contributorRendered)
+	}
+	if strings.Contains(contributorRendered, "## Funnel Modules") || strings.Contains(contributorRendered, "## Blocker Modules") {
+		t.Fatalf("expected contributor report to hide funnel and blocker modules, got %s", contributorRendered)
+	}
+}
+
 func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	tasks := []domain.Task{
 		{
