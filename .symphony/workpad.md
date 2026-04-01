@@ -11,6 +11,7 @@
 - Top up `internal/reporting` with any missing repo-operations metrics coverage needed to remove `tests/test_operations.py` without dropping backend validation.
 - Add a focused Go-native task-run observability surface under `internal/observability` so `tests/test_observability.py` can be removed with actual ledger/report parity.
 - Add a bounded Go-native report-studio / pilot / issue-closure surface and retire `tests/test_reports.py` from default execution so the remaining Python-only report sublanes stop being default test entrypoints.
+- Add a bounded Go-native design-system surface covering component governance, console top-bar, information-architecture, and UI-acceptance auditing so `tests/test_design_system.py` can be removed with direct replacement coverage.
 - Add a Go regression test that asserts this Python tranche stays deleted so the repo does not silently restore these default Python test entrypoints.
 - Run targeted validation for the affected Go packages and record exact commands and results, then verify the repo `.py` count dropped.
 - Commit the scoped change set and push the branch to the remote.
@@ -27,10 +28,13 @@
 - The Python operations lane is removed only if the existing Go reporting coverage plus any narrow top-up tests fully cover the backend/reporting behaviors from `tests/test_operations.py`.
 - The Python observability lane is removed only if Go-native task-run ledger, repo-sync audit, collaboration extraction, and detail/report rendering coverage are in place.
 - The Python reports lane should only leave default execution if Go-native coverage exists for the isolated report-studio / pilot / issue-closure block and the remaining uncovered Python report sublanes are moved out of default discovery.
+- The Python design-system lane is removed only if equivalent Go-native coverage exists for design tokens/components, console top-bar governance, information architecture auditing, and UI acceptance readiness/report rendering.
 - Validation proves the affected Go packages still pass after the Python test removal.
 
 ## Validation
 - `find . -name '*.py' | sed 's#^./##' | sort | wc -l`
+- `find tests -maxdepth 1 -name 'test_*.py' | sort`
+- `cd bigclaw-go && go test ./internal/designsystem ./internal/regression`
 - `cd bigclaw-go && go test ./internal/planning ./internal/regression`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/billing ./internal/collaboration ./internal/evaluation ./internal/pilot ./internal/planning ./internal/queue ./internal/reporting ./internal/regression ./internal/repo ./internal/risk ./internal/scheduler ./internal/triage ./internal/worker ./internal/workflow`
 - `git status --short`
@@ -49,3 +53,7 @@
 - `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `28`
 - `cd bigclaw-go && go test ./internal/reportstudio ./internal/regression` -> `ok   bigclaw-go/internal/reportstudio (cached)` and `ok   bigclaw-go/internal/regression 0.515s`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/billing ./internal/collaboration ./internal/evaluation ./internal/observability ./internal/pilot ./internal/planning ./internal/queue ./internal/reporting ./internal/reportstudio ./internal/regression ./internal/repo ./internal/risk ./internal/scheduler ./internal/triage ./internal/worker ./internal/workflow` -> all listed packages `ok` with cached reuse where applicable
+- `find tests -maxdepth 1 -name 'test_*.py' | sort` -> `tests/test_console_ia.py`, `tests/test_ui_review.py`
+- `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `27`
+- `cd bigclaw-go && go test ./internal/designsystem ./internal/regression` -> `ok   bigclaw-go/internal/designsystem (cached)` and `ok   bigclaw-go/internal/regression 0.166s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/billing ./internal/collaboration ./internal/designsystem ./internal/evaluation ./internal/observability ./internal/pilot ./internal/planning ./internal/queue ./internal/reporting ./internal/reportstudio ./internal/regression ./internal/repo ./internal/risk ./internal/scheduler ./internal/triage ./internal/worker ./internal/workflow` -> all listed packages `ok` with cached reuse where applicable
