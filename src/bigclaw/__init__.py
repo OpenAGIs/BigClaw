@@ -467,6 +467,195 @@ _parallel_refill_module.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/refill/qu
 sys.modules[_parallel_refill_module.__name__] = _parallel_refill_module
 globals()["parallel_refill"] = _parallel_refill_module
 
+
+LEGACY_PYTHON_WRAPPER_NOTICE = (
+    "Legacy Python operator wrapper: use scripts/ops/bigclawctl for the Go mainline. "
+    "This Python path remains only as a compatibility shim during migration."
+)
+
+
+def _append_missing_flag(args: Sequence[str], flag: str, value: str) -> List[str]:
+    flag_prefix = flag + "="
+    if any(arg == flag or arg.startswith(flag_prefix) for arg in args):
+        return list(args)
+    return [*args, flag, value]
+
+
+def _build_bigclawctl_exec_args(repo_root: Path, command: Iterable[str], forwarded: Sequence[str]) -> List[str]:
+    return ["bash", str(repo_root / "scripts/ops/bigclawctl"), *command, *forwarded]
+
+
+def _repo_root_from_script(script_path: str) -> Path:
+    return Path(script_path).resolve().parents[2]
+
+
+def _run_bigclawctl_shim(script_path: str, command: Iterable[str], forwarded: Sequence[str]) -> int:
+    repo_root = _repo_root_from_script(script_path)
+    argv = _build_bigclawctl_exec_args(repo_root, command, forwarded)
+    return subprocess.call(argv, cwd=repo_root)
+
+
+def _build_workspace_bootstrap_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    args = list(forwarded)
+    args = _append_missing_flag(args, "--repo-url", "git@github.com:OpenAGIs/BigClaw.git")
+    args = _append_missing_flag(args, "--cache-key", "openagis-bigclaw")
+    return _build_bigclawctl_exec_args(repo_root, ["workspace", "bootstrap"], args)
+
+
+def _translate_workspace_validate_args(forwarded: Sequence[str]) -> List[str]:
+    translated: List[str] = []
+    i = 0
+    while i < len(forwarded):
+        arg = forwarded[i]
+        if arg == "--report-file":
+            translated.extend(["--report", forwarded[i + 1]])
+            i += 2
+            continue
+        if arg.startswith("--report-file="):
+            translated.append("--report=" + arg.split("=", 1)[1])
+            i += 1
+            continue
+        if arg == "--no-cleanup":
+            translated.append("--cleanup=false")
+            i += 1
+            continue
+        if arg == "--issues":
+            issues: List[str] = []
+            i += 1
+            while i < len(forwarded) and not forwarded[i].startswith("-"):
+                issues.append(forwarded[i])
+                i += 1
+            translated.extend(["--issues", ",".join(issues)])
+            continue
+        translated.append(arg)
+        i += 1
+    return translated
+
+
+def _build_workspace_validate_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return _build_bigclawctl_exec_args(repo_root, ["workspace", "validate"], _translate_workspace_validate_args(forwarded))
+
+
+def _build_github_sync_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return _build_bigclawctl_exec_args(repo_root, ["github-sync"], list(forwarded))
+
+
+def _build_refill_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return _build_bigclawctl_exec_args(repo_root, ["refill"], list(forwarded))
+
+
+def _build_workspace_runtime_bootstrap_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return _build_bigclawctl_exec_args(repo_root, ["workspace"], list(forwarded))
+
+
+_legacy_shim_module = types.ModuleType(f"{__name__}.legacy_shim")
+_legacy_shim_module.LEGACY_PYTHON_WRAPPER_NOTICE = LEGACY_PYTHON_WRAPPER_NOTICE
+_legacy_shim_module.append_missing_flag = _append_missing_flag
+_legacy_shim_module.build_bigclawctl_exec_args = _build_bigclawctl_exec_args
+_legacy_shim_module.repo_root_from_script = _repo_root_from_script
+_legacy_shim_module.run_bigclawctl_shim = _run_bigclawctl_shim
+_legacy_shim_module.build_workspace_bootstrap_args = _build_workspace_bootstrap_args
+_legacy_shim_module.translate_workspace_validate_args = _translate_workspace_validate_args
+_legacy_shim_module.build_workspace_validate_args = _build_workspace_validate_args
+_legacy_shim_module.build_github_sync_args = _build_github_sync_args
+_legacy_shim_module.build_refill_args = _build_refill_args
+_legacy_shim_module.build_workspace_runtime_bootstrap_args = _build_workspace_runtime_bootstrap_args
+_legacy_shim_module.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/legacyshim/wrappers.go"
+sys.modules[_legacy_shim_module.__name__] = _legacy_shim_module
+globals()["legacy_shim"] = _legacy_shim_module
+
+
+@dataclass
+class _RiskFactor:
+    name: str
+    points: int
+    reason: str
+
+
+@dataclass
+class _RiskScore:
+    level: RiskLevel
+    total: int
+    requires_approval: bool
+    factors: List[_RiskFactor] = field(default_factory=list)
+
+    @property
+    def summary(self) -> str:
+        return ", ".join(f"{factor.name}={factor.points}" for factor in self.factors) or "baseline=0"
+
+
+class _RiskScorer:
+    TOOL_POINTS = {
+        "browser": 10,
+        "terminal": 15,
+        "github": 10,
+        "deploy": 20,
+        "sql": 15,
+        "warehouse": 15,
+        "bi": 10,
+    }
+    LABEL_POINTS = {
+        "security": 20,
+        "compliance": 20,
+        "prod": 20,
+        "release": 15,
+        "ops": 10,
+    }
+
+    def score_task(self, task: Task) -> _RiskScore:
+        factors: List[_RiskFactor] = []
+        total = 0
+
+        risk_points = {
+            RiskLevel.LOW: 0,
+            RiskLevel.MEDIUM: 30,
+            RiskLevel.HIGH: 60,
+        }[task.risk_level]
+        total += risk_points
+        if risk_points:
+            factors.append(_RiskFactor("risk-level", risk_points, f"declared risk level {task.risk_level.value}"))
+
+        if task.priority == Priority.P0:
+            total += 10
+            factors.append(_RiskFactor("priority", 10, "p0 task needs tighter controls"))
+
+        labels = {label.lower() for label in task.labels}
+        for label in sorted(labels):
+            points = self.LABEL_POINTS.get(label)
+            if points:
+                total += points
+                factors.append(_RiskFactor(f"label:{label}", points, f"label {label} increases operational risk"))
+
+        tools = {tool.lower() for tool in task.required_tools}
+        for tool in sorted(tools):
+            points = self.TOOL_POINTS.get(tool)
+            if points:
+                total += points
+                factors.append(_RiskFactor(f"tool:{tool}", points, f"tool {tool} expands execution surface"))
+
+        if task.budget < 0:
+            total += 20
+            factors.append(_RiskFactor("budget", 20, "invalid budget requires manual review"))
+
+        level = self._level_for_total(total)
+        return _RiskScore(level=level, total=total, requires_approval=(level == RiskLevel.HIGH), factors=factors)
+
+    def _level_for_total(self, total: int) -> RiskLevel:
+        if total >= 60:
+            return RiskLevel.HIGH
+        if total >= 25:
+            return RiskLevel.MEDIUM
+        return RiskLevel.LOW
+
+
+_risk_module = types.ModuleType(f"{__name__}.risk")
+_risk_module.RiskFactor = _RiskFactor
+_risk_module.RiskScore = _RiskScore
+_risk_module.RiskScorer = _RiskScorer
+_risk_module.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/risk/risk.go"
+sys.modules[_risk_module.__name__] = _risk_module
+globals()["risk"] = _risk_module
+
 from . import runtime as _legacy_runtime_surface
 
 

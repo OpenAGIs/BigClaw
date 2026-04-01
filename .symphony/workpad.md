@@ -9,6 +9,8 @@ Plan
 - Refresh migration docs that still list the deleted modules as remaining Python inventory.
 - Remove `src/bigclaw/repo_plane.py` and `src/bigclaw/repo_links.py` by keeping a minimal compatibility surface in `src/bigclaw/__init__.py` while pointing canonical ownership at `bigclaw-go/internal/repo/{plane,links}.go`.
 - Remove `src/bigclaw/github_sync.py` and `src/bigclaw/parallel_refill.py` while preserving legacy Python imports via synthetic package modules in `src/bigclaw/__init__.py`.
+- Remove `src/bigclaw/legacy_shim.py` and `src/bigclaw/risk.py` by moving their compatibility surfaces into synthetic package modules in `src/bigclaw/__init__.py`.
+- Update the Go legacy-shim compile-check so the frozen Python compatibility list follows the surviving package entrypoints after `legacy_shim.py` is deleted.
 - Run targeted tests and inventory checks, then commit and push the scoped branch.
 
 Acceptance
@@ -19,6 +21,7 @@ Acceptance
 - Final report can name which Python files were deleted and which Go files/tests now cover them.
 - `src/bigclaw/observability.py` and repo link tests continue to import successfully after the physical repo Python modules are deleted.
 - `tests/test_github_sync.py` continues to pass after the physical `github_sync.py` file is deleted.
+- `tests/test_risk.py` and the ops script wrappers continue to work after the physical `legacy_shim.py` and `risk.py` files are deleted.
 
 Validation
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
@@ -33,6 +36,10 @@ Validation
 - `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py -q`
 - `find . -maxdepth 2 \\( -name 'pyproject.toml' -o -name 'setup.py' \\) | sort`
 - `git status --short`
+- `cd bigclaw-go && go test ./internal/legacyshim`
+- `PYTHONPATH=src python3 -m pytest tests/test_risk.py -q`
+- `python3 scripts/ops/bigclaw_github_sync.py --help`
+- `python3 scripts/ops/symphony_workspace_validate.py --help`
 
 Results
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `21`
@@ -47,3 +54,13 @@ Results
 - `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py -q` -> `5 passed in 1.15s`
 - `find . -maxdepth 2 \\( -name 'pyproject.toml' -o -name 'setup.py' \\) | sort` -> no output
 - `git status --short` before commit -> `M .symphony/workpad.md`, `M bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go`, `M src/bigclaw/__init__.py`, `D src/bigclaw/github_sync.py`, `D src/bigclaw/parallel_refill.py`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` after deleting `legacy_shim.py` and `risk.py` -> `19`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort` after deleting `legacy_shim.py` and `risk.py` -> `src/bigclaw/__init__.py`, `src/bigclaw/__main__.py`, `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/deprecation.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/execution_contract.py`, `src/bigclaw/governance.py`, `src/bigclaw/models.py`, `src/bigclaw/observability.py`, `src/bigclaw/operations.py`, `src/bigclaw/planning.py`, `src/bigclaw/reports.py`, `src/bigclaw/run_detail.py`, `src/bigclaw/runtime.py`, `src/bigclaw/ui_review.py`, `src/bigclaw/workspace_bootstrap.py`, `src/bigclaw/workspace_bootstrap_cli.py`, `src/bigclaw/workspace_bootstrap_validation.py`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go bigclaw-go/internal/legacyshim/compilecheck.go bigclaw-go/internal/legacyshim/compilecheck_test.go` -> exit 0
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	1.356s`
+- `cd bigclaw-go && go test ./internal/legacyshim` -> `ok  	bigclaw-go/internal/legacyshim	1.142s`
+- `PYTHONPATH=src python3 -m pytest tests/test_risk.py -q` -> `3 passed in 0.07s`
+- `PYTHONPATH=src python3 -c "import bigclaw.risk, bigclaw.legacy_shim; print('ok')"` -> `ok`
+- `python3 scripts/ops/bigclaw_github_sync.py --help` -> `usage: bigclawctl github-sync <install|status|sync> [flags]`
+- `python3 scripts/ops/symphony_workspace_validate.py --help` -> `usage: bigclawctl workspace validate [flags]`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py scripts/ops/bigclaw_github_sync.py scripts/ops/symphony_workspace_validate.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py` -> exit 0
