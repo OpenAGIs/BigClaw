@@ -43,9 +43,7 @@
   - `tests/test_planning.py`
   - `tests/test_queue.py`
   - `tests/test_repo_collaboration.py`
-  - `tests/test_repo_links.py`
   - `tests/test_repo_rollout.py`
-  - `tests/test_repo_triage.py`
   - `tests/test_reports.py`
   - `tests/test_risk.py`
   - `tests/test_runtime_matrix.py`
@@ -54,10 +52,17 @@
   - `tests/test_validation_bundle_continuation_policy_gate.py`
   - `tests/test_validation_policy.py`
 - `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `27`
+  - `25`
 - `find . -name '*.py' | sort | wc -l`
-  - `77`
+  - `75`
 - `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
   - no output
 - `cd bigclaw-go && go test ./internal/repo`
-  - `ok  	bigclaw-go/internal/repo	0.432s`
+  - `ok  	bigclaw-go/internal/repo	1.187s`
+- `cd bigclaw-go && go test ./internal/triage`
+  - `ok  	bigclaw-go/internal/triage	1.614s`
+- `git status --short`
+  - `M .symphony/workpad.md`
+  - `M bigclaw-go/internal/repo/python_parity_test.go`
+  - `D tests/test_repo_links.py`
+  - `D tests/test_repo_triage.py`

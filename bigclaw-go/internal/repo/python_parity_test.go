@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -147,6 +148,37 @@ func TestPythonParityRepoRegistryDeterminism(t *testing.T) {
 	}
 	if got := restored.ResolveAgent("native cloud", "reviewer").RepoAgentID; got != "agent-native-cloud" {
 		t.Fatalf("unexpected restored agent id: %q", got)
+	}
+}
+
+func TestPythonParityRunCommitBindingAcceptedHashAndRoundTrip(t *testing.T) {
+	links := []RunCommitLink{
+		{RunID: "run-143", CommitHash: "aaa111", Role: "source", RepoSpaceID: "space-1"},
+		{RunID: "run-143", CommitHash: "bbb222", Role: "candidate", RepoSpaceID: "space-1"},
+		{RunID: "run-143", CommitHash: "ccc333", Role: "accepted", RepoSpaceID: "space-1"},
+	}
+
+	binding, err := BindRunCommits(links)
+	if err != nil {
+		t.Fatalf("bind run commits: %v", err)
+	}
+	if got := binding.AcceptedCommitHash(); got != "ccc333" {
+		t.Fatalf("unexpected accepted hash: %q", got)
+	}
+
+	encoded, err := json.Marshal(binding)
+	if err != nil {
+		t.Fatalf("marshal binding: %v", err)
+	}
+	var restored RunCommitBinding
+	if err := json.Unmarshal(encoded, &restored); err != nil {
+		t.Fatalf("unmarshal binding: %v", err)
+	}
+	if got := restored.AcceptedCommitHash(); got != "ccc333" {
+		t.Fatalf("unexpected restored accepted hash: %q", got)
+	}
+	if len(restored.Links) != 3 || restored.Links[1].Role != "candidate" {
+		t.Fatalf("unexpected restored links: %+v", restored.Links)
 	}
 }
 
