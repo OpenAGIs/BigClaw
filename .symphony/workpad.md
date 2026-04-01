@@ -1,21 +1,20 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1060 Workpad
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+- Confirm the residual Python operator entrypoints still shipped in `scripts/ops/` and every live README/workflow/doc/hook/CI reference that tracks them.
+- Delete the four residual Python wrappers: `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py`.
+- Update README and migration-tracking docs so the supported operator paths are Go-only via `bash scripts/ops/bigclawctl ...`.
+- Replace wrapper-focused regression coverage with checks that the deleted Python entrypoints stay absent and that the tracked docs no longer advertise them as supported defaults.
+- Run targeted validation, capture exact commands and results, then commit and push the branch.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- The four residual Python entrypoints under `scripts/ops/` are deleted from the repo.
+- README, workflow-adjacent docs, hooks, and CI references for refill/workspace operator entrypoints use `bash scripts/ops/bigclawctl ...` and do not present the deleted Python wrappers as supported defaults.
+- Regression tests fail if those deleted Python wrappers reappear or if the tracked migration docs regress back to Python-first guidance.
+- The repository `.py` file count decreases from the pre-change baseline.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
+- Capture pre/post `.py` counts with `rg --files -g '*.py' | wc -l`.
+- Run targeted Go regression tests for the entrypoint migration and legacy-shim wrapper coverage.
+- Run direct `bash scripts/ops/bigclawctl` help commands for `refill` and `workspace validate` to confirm the supported Go entrypoints remain usable.
+- Record every command and result exactly for closeout.

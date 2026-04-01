@@ -26,6 +26,16 @@ jobs:
         run: PYTHONPATH=src pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml
       - name: Verify Go GitHub Sync Entrypoint
         run: bash scripts/ops/bigclawctl github-sync --help >/dev/null
+      - name: Verify Go Refill Entrypoint
+        run: bash scripts/ops/bigclawctl refill --help >/dev/null
+      - name: Verify Go Workspace Validation Entrypoint
+        run: bash scripts/ops/bigclawctl workspace validate --help >/dev/null
+      - name: Verify Residual Python Wrappers Removed
+        run: |
+          test ! -e scripts/ops/bigclaw_refill_queue.py
+          test ! -e scripts/ops/bigclaw_workspace_bootstrap.py
+          test ! -e scripts/ops/symphony_workspace_bootstrap.py
+          test ! -e scripts/ops/symphony_workspace_validate.py
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
