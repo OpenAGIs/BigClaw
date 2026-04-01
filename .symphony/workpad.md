@@ -25,6 +25,29 @@
 
 ## Validation Results
 
+- Tranche: delete orphaned Python planning and governance island
+  - Removed Python files:
+    - `src/bigclaw/governance.py`
+    - `src/bigclaw/planning.py`
+    - `tests/test_planning.py`
+    - `tests/test_repo_rollout.py`
+  - Updated Python files:
+    - `src/bigclaw/__init__.py`
+- `cd bigclaw-go && go test ./internal/governance ./internal/regression`
+  - `ok  	bigclaw-go/internal/governance	0.816s`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `17`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `6`
+- `find . -name '*.py' | sort | wc -l`
+  - `28`
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/governance.py`
+  - `D src/bigclaw/planning.py`
+  - `D tests/test_planning.py`
+  - `D tests/test_repo_rollout.py`
 - Tranche: delete orphaned Python UI and design island
   - Removed Python files:
     - `src/bigclaw/console_ia.py`

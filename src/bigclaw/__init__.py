@@ -127,14 +127,6 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -262,22 +254,6 @@ from .evaluation import (
     render_replay_detail_page,
     render_benchmark_suite_report,
 )
-from .planning import (
-    FourWeekExecutionPlan,
-    CandidateBacklog,
-    CandidateEntry,
-    CandidatePlanner,
-    EvidenceLink,
-    EntryGate,
-    EntryGateDecision,
-    WeeklyExecutionPlan,
-    WeeklyGoal,
-    build_big_4701_execution_plan,
-    build_v3_candidate_backlog,
-    build_v3_entry_gate,
-    render_candidate_backlog_report,
-    render_four_week_execution_report,
-)
 __all__ = [
     "Task",
     "TaskState",
@@ -307,12 +283,6 @@ __all__ = [
     "GitHubConnector",
     "LinearConnector",
     "JiraConnector",
-    "FreezeException",
-    "GovernanceBacklogItem",
-    "ScopeFreezeAudit",
-    "ScopeFreezeBoard",
-    "ScopeFreezeGovernance",
-    "render_scope_freeze_report",
     "RiskFactor",
     "RiskScore",
     "RiskScorer",
@@ -463,18 +433,4 @@ __all__ = [
     "render_run_replay_index_page",
     "render_replay_detail_page",
     "render_benchmark_suite_report",
-    "CandidateBacklog",
-    "CandidateEntry",
-    "CandidatePlanner",
-    "EvidenceLink",
-    "EntryGate",
-    "EntryGateDecision",
-    "FourWeekExecutionPlan",
-    "WeeklyExecutionPlan",
-    "WeeklyGoal",
-    "build_big_4701_execution_plan",
-    "build_v3_candidate_backlog",
-    "build_v3_entry_gate",
-    "render_candidate_backlog_report",
-    "render_four_week_execution_report",
 ]
