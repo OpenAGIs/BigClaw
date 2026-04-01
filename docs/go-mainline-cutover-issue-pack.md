@@ -397,7 +397,6 @@ tracker work.
 ### 1. Close risk and policy parity on the Go mainline
 
 Python source:
-- `src/bigclaw/risk.py`
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of `src/bigclaw/audit_events.py`
 

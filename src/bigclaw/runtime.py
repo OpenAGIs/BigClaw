@@ -22,9 +22,8 @@ from .audit_events import (
     MANUAL_TAKEOVER_EVENT,
     SCHEDULER_DECISION_EVENT,
 )
-from .models import RiskLevel, Task
+from .models import RiskLevel, RiskScore, RiskScorer, Task
 from .observability import ObservabilityLedger, RepoSyncAudit, TaskRun, utc_now
-from .risk import RiskScore, RiskScorer
 
 
 LEGACY_RUNTIME_GUIDANCE = (

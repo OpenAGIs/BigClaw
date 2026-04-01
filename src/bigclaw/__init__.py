@@ -14,7 +14,10 @@ from .models import (
     FlowTrigger,
     Priority,
     RiskAssessment,
+    RiskFactor,
     RiskLevel,
+    RiskScore,
+    RiskScorer,
     RiskSignal,
     Task,
     TaskState,
@@ -126,7 +129,6 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -294,6 +296,21 @@ governance.__dict__.update(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
 )
 sys.modules[governance.__name__] = governance
+risk = types.ModuleType(f"{__name__}.risk")
+for export_name in [
+    "RiskFactor",
+    "RiskScore",
+    "RiskScorer",
+]:
+    risk.__dict__[export_name] = globals()[export_name]
+risk.__dict__.update(
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "risk.py has been retired in favor of package-level compatibility exports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/risk/risk.go",
+)
+sys.modules[risk.__name__] = risk
 
 __all__ = [
     "Task",
