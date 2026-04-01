@@ -16,3 +16,22 @@
 - `find bigclaw-go/scripts/e2e -maxdepth 1 -type f | sort`
 - `rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/e2e/.*\.py" README.md bigclaw-go .github .husky .git/hooks`
 - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
+
+## Execution Result
+- Branch pushed: `symphony/BIG-GO-1053`
+- Code commit: `b9795a1c643708b7c20793f069039a42690f4d2e`
+- Scope completed:
+  - rewrote `bigclaw-go/docs/go-cli-script-migration.md` to describe only active Go/shell e2e entrypoints
+  - updated migration planning/follow-on docs to stop naming removed tranche-2 Python helpers as future/current entrypoints
+  - added `bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go` to keep `bigclaw-go/scripts/e2e` Python-free
+
+## Validation Result
+- `find bigclaw-go/scripts/e2e -maxdepth 1 -type f | sort`
+  - passed; only `broker_bootstrap_summary.go`, `kubernetes_smoke.sh`, `ray_smoke.sh`, and `run_all.sh` remain
+- `rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/e2e/.*\.py" README.md bigclaw-go/docs docs .github .husky .git/hooks 2>/dev/null`
+  - passed; no matches in README/docs/workflow/hooks/CI surfaces
+- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...`
+  - passed
+
+## Remaining Blocker
+- `gh pr status` failed with exit code `4`: GitHub CLI is installed but not authenticated in this environment (`gh auth login` or `GH_TOKEN` required), so PR creation/inspection cannot be completed unattended from this workspace.
