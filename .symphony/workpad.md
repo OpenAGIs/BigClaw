@@ -22,6 +22,7 @@ Plan
 - Remove `src/bigclaw/reports.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
 - Remove `src/bigclaw/__main__.py` and keep canonical CLI ownership in Go (`bigclaw-go/cmd/bigclawctl/main.go`).
 - Remove `src/bigclaw/operations.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py`.
+- Remove `src/bigclaw/ui_review.py` by moving its compatibility surface into a synthetic package module in `src/bigclaw/__init__.py` while pointing canonical ownership at `bigclaw-go/internal/api/server.go`.
 - Update the Go legacy-shim compile-check so the frozen Python compatibility list follows the surviving package entrypoints after `legacy_shim.py` is deleted.
 - Run targeted tests and inventory checks, then commit and push the scoped branch.
 
@@ -74,6 +75,9 @@ Validation
 - `PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_control_center.py -q`
 - `PYTHONPATH=src python3 -c "import bigclaw.operations; print('ok')"`
+- `python3 -m py_compile src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_ui_review.py -q`
+- `PYTHONPATH=src python3 -c "import bigclaw.ui_review; print('ok')"`
 
 Results
 - `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `21`
@@ -173,3 +177,30 @@ Results
 - `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` after deleting `__main__.py` -> exit 0
 - `PYTHONPATH=src python3 -c "import bigclaw; print('ok')"` after deleting `__main__.py` -> `ok`
 - `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` after deleting `__main__.py` -> `ok  	bigclaw-go/internal/regression	0.770s`
+
+Runtime Slice Plan (BIG-GO-1035 continuation)
+- Delete `src/bigclaw/runtime.py` and move its compatibility surface into a synthetic `bigclaw.runtime` module in `src/bigclaw/__init__.py`.
+- Register synthetic `bigclaw.runtime` in `sys.modules` before any later imports/installers that read from `.runtime`.
+- Preserve legacy installer behavior and package exports by keeping `_legacy_runtime_surface` bound to that synthetic module.
+- Update `bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` for runtime deletion and runtime/scheduler/workflow/server Go owner files.
+- Run targeted validation and record exact commands/results.
+
+Runtime Slice Acceptance
+- `src/bigclaw/runtime.py` is absent.
+- Runtime compatibility imports still resolve through `bigclaw.runtime`.
+- Legacy installers and bottom-level package exports continue to function.
+- Regression inventory test locks runtime deletion + Go owners.
+
+Runtime Slice Validation
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_orchestration.py tests/test_audit_events.py tests/test_risk.py -q`
+- `PYTHONPATH=src python3 -c "import bigclaw.runtime, bigclaw.scheduler, bigclaw.workflow; print('ok')"`
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+
+Runtime Slice Results
+- `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py` -> exit 0
+- `PYTHONPATH=src python3 -c "import bigclaw.runtime, bigclaw.scheduler, bigclaw.workflow; print('ok')"` -> `ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime_matrix.py tests/test_orchestration.py tests/test_audit_events.py tests/test_risk.py -q` -> `20 passed, 1 warning in 0.12s`
+- `gofmt -w bigclaw-go/internal/regression/python_src_bigclaw_replacement_inventory_test.go` -> exit 0
+- `cd bigclaw-go && go test ./internal/regression -run TestSrcBigClawGoReplacementInventory` -> `ok  	bigclaw-go/internal/regression	0.486s`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l` -> `1`
