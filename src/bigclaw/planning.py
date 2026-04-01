@@ -343,10 +343,10 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 theme="console-governance",
                 priority="P0",
                 owner="product-experience",
-                outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
+                outcome="Converge console shell governance and UI acceptance evidence into one release-control candidate.",
                 validation_command=(
                     "PYTHONPATH=src python3 -m pytest tests/test_design_system.py "
-                    "tests/test_console_ia.py tests/test_ui_review.py -q"
+                    "tests/test_console_ia.py -q"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
@@ -364,12 +364,6 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         note="global navigation, top bar, filters, and state contracts",
                     ),
                     EvidenceLink(
-                        label="ui-review-pack",
-                        target="src/bigclaw/ui_review.py",
-                        capability="release-gate",
-                        note="review objectives, wireframes, interaction coverage, and open questions",
-                    ),
-                    EvidenceLink(
                         label="ui-acceptance-tests",
                         target="tests/test_design_system.py",
                         capability="release-gate",
@@ -380,12 +374,6 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         target="tests/test_console_ia.py",
                         capability="release-gate",
                         note="console shell and interaction draft release readiness",
-                    ),
-                    EvidenceLink(
-                        label="review-pack-tests",
-                        target="tests/test_ui_review.py",
-                        capability="release-gate",
-                        note="deterministic review packet validation",
                     ),
                 ],
             ),

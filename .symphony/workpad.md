@@ -20,8 +20,16 @@
 ## Validation
 - Inventory: `find src -type f \( -name "*.py" -o -name "*.pyi" \) | wc -l`
 - Python compatibility checks:
-  - `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_risk.py tests/test_control_center.py tests/test_operations.py tests/test_evaluation.py -q`
+  - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_control_center.py tests/test_operations.py tests/test_evaluation.py -q`
 - Go regression:
-  - `go test ./bigclaw-go/internal/regression -run TestPythonResidualSweepRemovesRuntimeAndUIReview -count=1`
+  - `cd bigclaw-go && go test ./internal/regression -run TestPythonResidualSweepRemovesRuntimeAndUIReview -count=1`
 - Reference sweep:
   - `rg -n "bigclaw\\.ui_review|src/bigclaw/ui_review.py|src/bigclaw/runtime.py" src tests README.md docs bigclaw-go`
+
+## Results
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_control_center.py tests/test_operations.py tests/test_evaluation.py -q`
+  - `50 passed in 0.11s`
+- `cd bigclaw-go && go test ./internal/regression -run TestPythonResidualSweepRemovesRuntimeAndUIReview -count=1`
+  - `ok  	bigclaw-go/internal/regression	0.178s`
+- `find src -type f \( -name "*.py" -o -name "*.pyi" \) | wc -l`
+  - `15`
