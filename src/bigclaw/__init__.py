@@ -12,6 +12,7 @@ from .models import (
     FlowTemplate,
     FlowTemplateStep,
     FlowTrigger,
+    MemoryPattern,
     Priority,
     RiskAssessment,
     RiskFactor,
@@ -19,6 +20,7 @@ from .models import (
     RiskScore,
     RiskScorer,
     RiskSignal,
+    TaskMemoryStore,
     Task,
     TaskState,
     TriageLabel,
@@ -355,6 +357,20 @@ collaboration.__dict__.update(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/console.go",
 )
 sys.modules[collaboration.__name__] = collaboration
+memory = types.ModuleType(f"{__name__}.memory")
+for export_name in [
+    "MemoryPattern",
+    "TaskMemoryStore",
+]:
+    memory.__dict__[export_name] = globals()[export_name]
+memory.__dict__.update(
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "memory.py has been retired in favor of package-level compatibility exports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/refill/local_store.go",
+)
+sys.modules[memory.__name__] = memory
 
 __all__ = [
     "Task",
@@ -377,6 +393,8 @@ __all__ = [
     "BillingRate",
     "UsageRecord",
     "BillingSummary",
+    "MemoryPattern",
+    "TaskMemoryStore",
     "PersistentTaskQueue",
     "Scheduler",
     "SchedulerDecision",
