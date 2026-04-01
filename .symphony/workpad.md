@@ -25,6 +25,32 @@
 
 ## Validation Results
 
+- Tranche: replace Python observability tests with Go run-detail report contract coverage
+  - Removed Python files:
+    - `tests/test_observability.py`
+  - Added Go files:
+    - `bigclaw-go/internal/api/run_detail_report_contract_test.go`
+- `gofmt -w bigclaw-go/internal/api/run_detail_report_contract_test.go`
+  - no output
+- `cd bigclaw-go && go test ./internal/api`
+  - `ok  	bigclaw-go/internal/api	2.484s`
+- `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_reports.py`
+  - `============================= test session starts ==============================`
+  - `platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0`
+  - `rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1040`
+  - `plugins: cov-7.1.0`
+  - `collected 54 items`
+  - `tests/test_operations.py ....................                            [ 37%]`
+  - `tests/test_reports.py ..................................                 [100%]`
+  - `============================== 54 passed in 0.12s ==============================`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `17`
+- `git status --short`
+  - `D tests/test_observability.py`
+  - `?? bigclaw-go/internal/api/run_detail_report_contract_test.go`
 - Tranche: replace Python evaluation test coverage with Go benchmark report contract tests
   - Removed Python files:
     - `tests/test_evaluation.py`
