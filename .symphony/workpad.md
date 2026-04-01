@@ -1,32 +1,40 @@
 ## Plan
 
-1. Delete the retired Python Go-export smoke tests:
-   - `tests/test_live_shadow_bundle.py`
-   - `tests/test_parallel_validation_bundle.py`
-   - `tests/test_validation_bundle_continuation_policy_gate.py`
-2. Replace their remaining migration-only coverage with a focused Go regression contract that records the files as retired and anchors the repo-native Go regression surfaces already covering the same reports.
-3. Keep validation scoped to surviving Python modules that still own adjacent report and observability behavior.
+1. Delete the legacy Python CLI entrypoint:
+   - `src/bigclaw/__main__.py`
+2. Retire the stale Go compilecheck shim that still points at removed Python frozen-shim files, replacing it with an explicit empty frozen-shim contract.
+3. Keep validation scoped to the affected Go legacy-shim and CLI packages, plus the tranche regression that records the Python file removal.
 4. Update cutover docs so the deleted Python file is recorded as retired while preserving the historical migration notes.
 5. Add a focused Go regression test that asserts:
-   - the deleted Python files are absent
+   - the deleted Python file is absent
    - the Go-owned replacement surfaces still exist
-   - the tranche is recorded as `TestTopLevelModulePurgeTranche27`
+   - the tranche is recorded as `TestTopLevelModulePurgeTranche28`
 6. Run targeted validation for the touched Python syntax and Go regression package, then measure the repository Python file count delta from the current baseline.
 7. Commit with a message that explicitly lists deleted Python files and added Go files/Go tests, then push the branch.
 
 ## Acceptance
 
-- Repository Python file count decreases from the continuation baseline of `25`.
-- `tests/test_live_shadow_bundle.py`, `tests/test_parallel_validation_bundle.py`, and `tests/test_validation_bundle_continuation_policy_gate.py` are deleted.
-- A Go regression test covers the deletion contract and the Go replacement files for the retired Go-export smoke tests.
+- Repository Python file count decreases from the continuation baseline of `22`.
+- `src/bigclaw/__main__.py` is deleted.
+- The Go legacy-shim compilecheck no longer expects removed frozen Python entrypoints.
+- A Go regression test covers the deletion contract and the Go replacement files for the retired Python CLI entrypoint.
 - Targeted tests pass.
 - Changes are committed and pushed on the working branch.
 
 ## Validation
 
-- `python3 -m py_compile src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/__init__.py`
-- `PYTHONPATH=src python3 -m pytest -q tests/test_observability.py tests/test_reports.py`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
 - `rg --files -g '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche27$'`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche28$'`
 - `git status --short`
 - `git log -1 --stat`
+
+## Validation Results
+
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/internal/legacyshim	(cached)`
+  - `ok  	bigclaw-go/cmd/bigclawctl	4.188s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche28$'`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `rg --files -g '*.py' | wc -l`
+  - `21`
