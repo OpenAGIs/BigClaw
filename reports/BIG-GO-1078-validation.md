@@ -50,7 +50,7 @@ Replacement surfaces confirmed:
 - `bash scripts/ops/bigclawctl workspace validate --help`
   - Result: exited `0`; printed `usage: bigclawctl workspace validate [flags]`
 - `git rev-parse HEAD`
-  - Result: `f7b35bb887b2df887373012ff958d78ad85df562`
+  - Result: `cf3860ae8f129da1d6d070c09995c617fd773f71`
 - `git branch --show-current`
   - Result: `symphony/BIG-GO-1078`
 
