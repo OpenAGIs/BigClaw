@@ -27,3 +27,4 @@
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression` -> passed
 - `git diff --check` -> passed
 - `find . -path './.git' -prune -o -name '*.py' -print | wc -l` -> `50`
+- Validation report added: `reports/BIG-GO-1052-validation.md`
