@@ -1,21 +1,20 @@
-# BIG-GO-1075 Workpad
+# BIG-GO-1078 Workpad
 
 ## Plan
-- Confirm the live git-hook execution path for GitHub sync and identify any remaining non-Go default hop in the hook/install flow.
-- Move `.githooks/post-commit` and `.githooks/post-rewrite` to invoke the Go github-sync entrypoint directly from `bigclaw-go/cmd/bigclawctl`.
-- Teach the Go github-sync installer to materialize the canonical hook scripts so the repo-default and regenerated hooks stay aligned on the same Go-only path.
-- Add regression coverage for hook installation/content so the Python-era or wrapper-era hook path does not come back.
-- Run targeted validation, capture exact commands/results, then commit and push the branch.
+- Confirm the remaining `scripts/ops/*.py` wrappers are thin compatibility shims with Go replacements already available in `scripts/ops/bigclawctl`.
+- Remove the residual operator-facing Python wrapper files from `scripts/ops` and switch repo-default references onto the Go or shell entrypoints.
+- Update targeted docs and regression tests so the deleted Python entrypoints are no longer advertised and cannot silently return.
+- Run targeted validation, capture the exact commands and results, then commit and push the issue branch.
 
 ## Acceptance
-- `.githooks/post-commit` and `.githooks/post-rewrite` no longer depend on a Python sync path or on `scripts/ops/bigclawctl` as their default execution hop.
-- `bigclawctl github-sync install` writes or refreshes those hook scripts with the canonical Go-only content.
-- Regression tests pin the generated hook content and install behavior.
-- Validation proves the Go-only hook path works and records the exact commands/results.
+- `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py` are deleted from the repository.
+- Repo-default operator guidance points at `bash scripts/ops/bigclawctl ...` instead of the deleted Python entrypoints.
+- Regression coverage asserts the tranche-2 Python wrapper files stay absent while the Go replacement surfaces remain present.
+- Validation records show the `.py` file count drops and the replacement Go entrypoints still execute successfully.
 
 ## Validation
 - `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/githubsync ./cmd/bigclawctl`
-- `bash .githooks/post-commit`
-- `bash .githooks/post-rewrite`
-- `bash scripts/ops/bigclawctl github-sync status --json`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
+- `bash scripts/ops/bigclawctl refill --help`
+- `bash scripts/ops/bigclawctl workspace bootstrap --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
