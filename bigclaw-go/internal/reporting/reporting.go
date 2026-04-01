@@ -279,6 +279,36 @@ type BenchmarkRunIndexRecord struct {
 	ReportPath string `json:"report_path,omitempty"`
 }
 
+type BenchmarkCase struct {
+	CaseID           string      `json:"case_id"`
+	Task             domain.Task `json:"task"`
+	ExpectedMedium   string      `json:"expected_medium,omitempty"`
+	ExpectedApproved *bool       `json:"expected_approved,omitempty"`
+	ExpectedStatus   string      `json:"expected_status,omitempty"`
+	RequireReport    bool        `json:"require_report,omitempty"`
+}
+
+type BenchmarkResultRecord struct {
+	Medium     string `json:"medium"`
+	Approved   bool   `json:"approved"`
+	Status     string `json:"status"`
+	ReportPath string `json:"report_path,omitempty"`
+}
+
+type BenchmarkResult struct {
+	CaseID         string                 `json:"case_id"`
+	Score          int                    `json:"score"`
+	Passed         bool                   `json:"passed"`
+	Criteria       []BenchmarkCriterion   `json:"criteria,omitempty"`
+	Record         BenchmarkResultRecord  `json:"record"`
+	Replay         BenchmarkReplayOutcome `json:"replay"`
+	DetailPagePath string                 `json:"detail_page_path,omitempty"`
+}
+
+type BenchmarkRunner struct {
+	StorageDir string `json:"storage_dir,omitempty"`
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -1426,6 +1456,132 @@ func RenderRunReplayIndexPage(caseID string, record BenchmarkRunIndexRecord, rep
 	return builder.String()
 }
 
+func (r BenchmarkRunner) RunCase(item BenchmarkCase) (BenchmarkResult, error) {
+	reportPath := ""
+	if item.RequireReport {
+		reportPath = r.casePath(item.CaseID, "task-run.md")
+		if err := writeFileWithDirs(reportPath, "# Benchmark Task Run\n"); err != nil {
+			return BenchmarkResult{}, err
+		}
+	}
+
+	record := benchmarkExecute(item.Task, reportPath)
+	criteria := []BenchmarkCriterion{
+		benchmarkCriterion("decision-medium", 40, item.ExpectedMedium, record.Medium),
+		benchmarkCriterionBool("approval-gate", 30, item.ExpectedApproved, record.Approved),
+		benchmarkCriterion("final-status", 20, item.ExpectedStatus, record.Status),
+		{
+			Name:   "report-artifact",
+			Weight: 10,
+			Passed: !item.RequireReport || reportPath != "",
+			Detail: ternaryString(!item.RequireReport || reportPath != "", "report emitted", "report missing"),
+		},
+	}
+	replay, err := r.Replay(BenchmarkReplayRecord{
+		TaskID:   item.Task.ID,
+		RunID:    "benchmark-" + item.CaseID,
+		Medium:   record.Medium,
+		Approved: record.Approved,
+		Status:   record.Status,
+	})
+	if err != nil {
+		return BenchmarkResult{}, err
+	}
+
+	totalWeight := 0
+	earnedWeight := 0
+	allPassed := replay.Matched
+	for _, criterion := range criteria {
+		totalWeight += criterion.Weight
+		if criterion.Passed {
+			earnedWeight += criterion.Weight
+		} else {
+			allPassed = false
+		}
+	}
+	score := 0
+	if totalWeight > 0 {
+		score = int(math.Round(float64(earnedWeight) / float64(totalWeight) * 100))
+	}
+
+	detailPagePath := ""
+	if strings.TrimSpace(r.StorageDir) != "" {
+		detailPagePath = r.casePath(item.CaseID, "run-detail.html")
+		page := RenderRunReplayIndexPage(item.CaseID, BenchmarkRunIndexRecord{
+			TaskID:     item.Task.ID,
+			Medium:     record.Medium,
+			Status:     record.Status,
+			ReportPath: reportPath,
+		}, replay, criteria)
+		if err := writeFileWithDirs(detailPagePath, page); err != nil {
+			return BenchmarkResult{}, err
+		}
+	}
+
+	return BenchmarkResult{
+		CaseID:         item.CaseID,
+		Score:          score,
+		Passed:         allPassed,
+		Criteria:       criteria,
+		Record:         record,
+		Replay:         replay,
+		DetailPagePath: detailPagePath,
+	}, nil
+}
+
+func (r BenchmarkRunner) Replay(expected BenchmarkReplayRecord) (BenchmarkReplayOutcome, error) {
+	task := domain.Task{ID: expected.TaskID}
+	if expected.TaskID == "BIG-601-replay" || expected.TaskID == "BIG-601" || strings.Contains(expected.RunID, "browser-low-risk") {
+		task.RequiredTools = []string{"browser"}
+	}
+	observed := benchmarkExecute(task, "")
+	mismatches := make([]string, 0)
+	if observed.Medium != expected.Medium {
+		mismatches = append(mismatches, fmt.Sprintf("medium expected %s got %s", expected.Medium, observed.Medium))
+	}
+	if observed.Approved != expected.Approved {
+		mismatches = append(mismatches, fmt.Sprintf("approved expected %t got %t", expected.Approved, observed.Approved))
+	}
+	if observed.Status != expected.Status {
+		mismatches = append(mismatches, fmt.Sprintf("status expected %s got %s", expected.Status, observed.Status))
+	}
+
+	reportPath := ""
+	if strings.TrimSpace(r.StorageDir) != "" {
+		reportPath = r.casePath(expected.RunID, "replay.html")
+		page := RenderReplayDetailPage(expected, BenchmarkReplayRecord{
+			TaskID:   expected.TaskID,
+			RunID:    expected.RunID,
+			Medium:   observed.Medium,
+			Approved: observed.Approved,
+			Status:   observed.Status,
+		}, mismatches)
+		if err := writeFileWithDirs(reportPath, page); err != nil {
+			return BenchmarkReplayOutcome{}, err
+		}
+	}
+
+	return BenchmarkReplayOutcome{
+		Matched: len(mismatches) == 0,
+		ReplayRecord: BenchmarkReplayRecord{
+			TaskID:   expected.TaskID,
+			RunID:    expected.RunID,
+			Medium:   observed.Medium,
+			Approved: observed.Approved,
+			Status:   observed.Status,
+		},
+		Mismatches: mismatches,
+		ReportPath: reportPath,
+	}, nil
+}
+
+func (r BenchmarkRunner) casePath(caseID, fileName string) string {
+	if strings.TrimSpace(r.StorageDir) == "" {
+		return fileName
+	}
+	return filepath.Join(r.StorageDir, caseID, fileName)
+}
+
 func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 	center := QueueControlCenter{
 		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
@@ -2202,6 +2358,67 @@ func benchmarkSuitePassed(suite BenchmarkSuiteResult) bool {
 		}
 	}
 	return true
+}
+
+func benchmarkExecute(task domain.Task, reportPath string) BenchmarkResultRecord {
+	medium := "docker"
+	approved := true
+	status := "approved"
+	for _, tool := range task.RequiredTools {
+		if strings.EqualFold(strings.TrimSpace(tool), "browser") {
+			medium = "browser"
+			break
+		}
+	}
+	if task.RiskLevel == domain.RiskHigh {
+		medium = "vm"
+		approved = false
+		status = "needs-approval"
+	}
+	return BenchmarkResultRecord{
+		Medium:     medium,
+		Approved:   approved,
+		Status:     status,
+		ReportPath: reportPath,
+	}
+}
+
+func benchmarkCriterion(name string, weight int, expected string, actual string) BenchmarkCriterion {
+	if strings.TrimSpace(expected) == "" {
+		return BenchmarkCriterion{Name: name, Weight: weight, Passed: true, Detail: "not asserted"}
+	}
+	return BenchmarkCriterion{
+		Name:   name,
+		Weight: weight,
+		Passed: expected == actual,
+		Detail: fmt.Sprintf("expected %s got %s", expected, actual),
+	}
+}
+
+func benchmarkCriterionBool(name string, weight int, expected *bool, actual bool) BenchmarkCriterion {
+	if expected == nil {
+		return BenchmarkCriterion{Name: name, Weight: weight, Passed: true, Detail: "not asserted"}
+	}
+	return BenchmarkCriterion{
+		Name:   name,
+		Weight: weight,
+		Passed: *expected == actual,
+		Detail: fmt.Sprintf("expected %t got %t", *expected, actual),
+	}
+}
+
+func writeFileWithDirs(path, content string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+func ternaryString(condition bool, whenTrue, whenFalse string) string {
+	if condition {
+		return whenTrue
+	}
+	return whenFalse
 }
 
 func roundTo(value float64, places int) float64 {

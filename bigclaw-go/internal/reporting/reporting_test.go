@@ -545,6 +545,103 @@ func TestRenderRunReplayIndexPageWithoutReportPath(t *testing.T) {
 	}
 }
 
+func TestBenchmarkRunnerScoresAndReplaysCase(t *testing.T) {
+	runner := BenchmarkRunner{StorageDir: t.TempDir()}
+	expectedApproved := true
+	result, err := runner.RunCase(BenchmarkCase{
+		CaseID: "browser-low-risk",
+		Task: domain.Task{
+			ID:            "BIG-601",
+			Source:        "linear",
+			Title:         "Run browser benchmark",
+			Description:   "validate routing",
+			RiskLevel:     domain.RiskLow,
+			RequiredTools: []string{"browser"},
+		},
+		ExpectedMedium:   "browser",
+		ExpectedApproved: &expectedApproved,
+		ExpectedStatus:   "approved",
+		RequireReport:    true,
+	})
+	if err != nil {
+		t.Fatalf("run case: %v", err)
+	}
+	if result.Score != 100 || !result.Passed || !result.Replay.Matched {
+		t.Fatalf("unexpected benchmark result: %+v", result)
+	}
+	if _, err := os.Stat(filepath.Join(runner.StorageDir, "browser-low-risk", "task-run.md")); err != nil {
+		t.Fatalf("expected task report: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(runner.StorageDir, "benchmark-browser-low-risk", "replay.html")); err != nil {
+		t.Fatalf("expected replay page: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(runner.StorageDir, "browser-low-risk", "run-detail.html")); err != nil {
+		t.Fatalf("expected run detail page: %v", err)
+	}
+	if result.DetailPagePath != filepath.Join(runner.StorageDir, "browser-low-risk", "run-detail.html") {
+		t.Fatalf("unexpected detail page path: %+v", result)
+	}
+}
+
+func TestBenchmarkRunnerDetectsFailedExpectation(t *testing.T) {
+	runner := BenchmarkRunner{StorageDir: t.TempDir()}
+	expectedApproved := false
+	result, err := runner.RunCase(BenchmarkCase{
+		CaseID: "high-risk-gate",
+		Task: domain.Task{
+			ID:          "BIG-601-risk",
+			Source:      "jira",
+			Title:       "Prod change benchmark",
+			Description: "must stop for approval",
+			RiskLevel:   domain.RiskHigh,
+		},
+		ExpectedMedium:   "docker",
+		ExpectedApproved: &expectedApproved,
+		ExpectedStatus:   "needs-approval",
+	})
+	if err != nil {
+		t.Fatalf("run case: %v", err)
+	}
+	if result.Passed || result.Score != 60 {
+		t.Fatalf("unexpected benchmark result: %+v", result)
+	}
+	found := false
+	for _, item := range result.Criteria {
+		if item.Name == "decision-medium" && !item.Passed {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected failed decision-medium criterion, got %+v", result.Criteria)
+	}
+}
+
+func TestBenchmarkReplayReportsMismatch(t *testing.T) {
+	runner := BenchmarkRunner{StorageDir: t.TempDir()}
+	outcome, err := runner.Replay(BenchmarkReplayRecord{
+		TaskID:   "BIG-601-replay",
+		RunID:    "run-1",
+		Medium:   "docker",
+		Approved: true,
+		Status:   "approved",
+	})
+	if err != nil {
+		t.Fatalf("replay: %v", err)
+	}
+	if outcome.Matched {
+		t.Fatalf("expected replay mismatch, got %+v", outcome)
+	}
+	if !reflect.DeepEqual(outcome.Mismatches, []string{"medium expected docker got browser"}) {
+		t.Fatalf("unexpected replay mismatches: %+v", outcome.Mismatches)
+	}
+	if outcome.ReportPath == "" {
+		t.Fatalf("expected replay report path, got %+v", outcome)
+	}
+	if _, err := os.Stat(outcome.ReportPath); err != nil {
+		t.Fatalf("expected replay report file: %v", err)
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
