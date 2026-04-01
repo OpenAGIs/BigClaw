@@ -1,39 +1,27 @@
-## Plan
+## BIG-GO-1048
 
-1. Purge the first safe top-level Python tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/cost_control.py`
-   - `src/bigclaw/issue_archive.py`
-   - `src/bigclaw/github_sync.py`
-2. Purge the next safe top-level Python repo-surface tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/repo_board.py`
-   - `src/bigclaw/repo_commits.py`
-   - `src/bigclaw/repo_gateway.py`
-   - `src/bigclaw/repo_governance.py`
-   - `src/bigclaw/repo_registry.py`
-   - `src/bigclaw/repo_triage.py`
-3. Purge the isolated bootstrap validation surface:
-   - `src/bigclaw/workspace_bootstrap_validation.py`
-4. Remove any package exports or Python tests that still point at deleted Python modules.
-5. Add focused Go regression tests that assert the migration contract for each tranche:
-   - the deleted Python files are absent
-   - the corresponding Go replacement files exist
-6. Run targeted validation for the touched Go packages and the new regression tests.
-7. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
+### Plan
+- Confirm the remaining governance/reporting/observability Python top-level modules targeted by this tranche and the existing Go replacements under `bigclaw-go/internal`.
+- Delete the scoped Python module files for governance, reporting, and observability, plus their direct Python test files so the repository Python file count drops materially within this issue scope.
+- Add or extend Go regression coverage to assert the deleted Python files are absent and the corresponding Go implementation and Go tests exist.
+- Run targeted validation for the new regression coverage and record exact commands and results.
+- Commit the scoped change with a message that lists deleted Python files and added Go regression coverage, then push the branch.
 
-## Acceptance
+### Acceptance
+- Python file count in the repository decreases versus the pre-change count.
+- `src/bigclaw/governance.py`, `src/bigclaw/reports.py`, and `src/bigclaw/observability.py` are removed.
+- Direct Python tests covering those modules are removed in the same tranche.
+- Go regression coverage exists for this tranche and points at the Go replacements in `bigclaw-go/internal/governance`, `bigclaw-go/internal/reporting`, and `bigclaw-go/internal/observability`.
 
-- Python file count in the repository decreases from the pre-change baseline.
-- `src/bigclaw/cost_control.py`, `src/bigclaw/issue_archive.py`, and `src/bigclaw/github_sync.py` are deleted.
-- `src/bigclaw/repo_board.py`, `src/bigclaw/repo_commits.py`, `src/bigclaw/repo_gateway.py`, `src/bigclaw/repo_governance.py`, `src/bigclaw/repo_registry.py`, and `src/bigclaw/repo_triage.py` are deleted.
-- `src/bigclaw/workspace_bootstrap_validation.py` is deleted.
-- `src/bigclaw/__init__.py` and retained Python tests no longer import deleted modules.
-- Go regression tests cover the tranche replacement contracts against the repository tree.
-- Targeted Go tests pass.
-- Changes are committed and pushed to the remote branch for `BIG-GO-1041`.
-
-## Validation
-
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/costcontrol ./internal/issuearchive ./internal/githubsync ./internal/repo ./internal/bootstrap ./internal/regression -run 'TestTopLevelModulePurgeTranche(1|2|3)|TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestNormalizeGatewayPayloadsAndErrors|TestRecommendTriageAction|TestBuildValidationReportSummaries'`
+### Validation
+- `find . -name "*.py" | wc -l`
+- `go test ./internal/regression -run 'TestTopLevelModulePurgeTranche4|TestTopLevelModulePurgePythonCountDrops'`
 - `git status --short`
-- `git log -1 --stat`
+
+### Notes
+- Keep the change limited to the governance/reporting/observability purge tranche; do not broaden into unrelated Python cleanup.
+
+### Results
+- Pre-change Python file count: `find . -name "*.py" | wc -l` -> `66`
+- Post-change Python file count: `find . -name "*.py" | wc -l` -> `61`
+- Targeted Go regression: `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche4|TestTopLevelModulePurgePythonCountDrops'` -> `ok  	bigclaw-go/internal/regression	0.517s`
