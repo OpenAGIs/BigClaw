@@ -1,48 +1,26 @@
 ## Plan
 
-1. Purge the first safe top-level Python tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/cost_control.py`
-   - `src/bigclaw/issue_archive.py`
-   - `src/bigclaw/github_sync.py`
-2. Purge the next safe top-level Python repo-surface tranche under `src/bigclaw` by deleting:
-   - `src/bigclaw/repo_board.py`
-   - `src/bigclaw/repo_commits.py`
-   - `src/bigclaw/repo_gateway.py`
-   - `src/bigclaw/repo_governance.py`
-   - `src/bigclaw/repo_registry.py`
-   - `src/bigclaw/repo_triage.py`
-3. Purge the isolated bootstrap validation surface:
-   - `src/bigclaw/workspace_bootstrap_validation.py`
-4. Purge the next low-coupling top-level product/reporting tranche:
-   - `src/bigclaw/pilot.py`
-   - `src/bigclaw/dashboard_run_contract.py`
-   - `src/bigclaw/saved_views.py`
-5. Purge the next low-coupling top-level contract/intake tranche:
-   - `src/bigclaw/mapping.py`
-   - `src/bigclaw/execution_contract.py`
-6. Remove any package exports or Python tests that still point at deleted Python modules.
-7. Add focused Go regression tests that assert the migration contract for each tranche:
-   - the deleted Python files are absent
-   - the corresponding Go replacement files exist
-8. Run targeted validation for the touched Go packages and the new regression tests.
-9. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
+1. Inspect the current repo and CI/test entrypoints that still allow Python-first validation paths.
+2. Add a Go-native regression/enforcement test that fails when new repository Python files appear outside an explicit frozen allowlist.
+3. Remove `scripts/ops/symphony_workspace_validate.py`, an existing Python wrapper whose active replacement is `bigclawctl workspace validate`, so the repository `.py` count decreases in the same change.
+4. Wire the new enforcement into the root validation path so `make test` and CI exercise the Go-native Python-ban guard.
+5. Run targeted validation for the touched Go packages and record exact commands and outcomes.
+6. Commit with a message that explicitly lists deleted Python files and added Go files/Go tests, then push the branch.
 
 ## Acceptance
 
-- Python file count in the repository decreases from the pre-change baseline.
-- `src/bigclaw/cost_control.py`, `src/bigclaw/issue_archive.py`, and `src/bigclaw/github_sync.py` are deleted.
-- `src/bigclaw/repo_board.py`, `src/bigclaw/repo_commits.py`, `src/bigclaw/repo_gateway.py`, `src/bigclaw/repo_governance.py`, `src/bigclaw/repo_registry.py`, and `src/bigclaw/repo_triage.py` are deleted.
-- `src/bigclaw/workspace_bootstrap_validation.py` is deleted.
-- `src/bigclaw/pilot.py`, `src/bigclaw/dashboard_run_contract.py`, and `src/bigclaw/saved_views.py` are deleted.
-- `src/bigclaw/mapping.py` and `src/bigclaw/execution_contract.py` are deleted.
-- `src/bigclaw/__init__.py` and retained Python tests no longer import deleted modules.
-- Go regression tests cover the tranche replacement contracts against the repository tree.
-- Targeted Go tests pass.
-- Changes are committed and pushed to the remote branch for `BIG-GO-1041`.
+- Repository Python file count decreases from the pre-change baseline.
+- A repo-wide Go regression guard exists to block newly added Python files outside the frozen allowlist.
+- The guard runs from standard repository validation entrypoints rather than being dead code.
+- `scripts/ops/symphony_workspace_validate.py` is deleted and the Go workspace-validate entrypoint remains present.
+- Targeted Go validation passes for the touched paths.
+- The commit message lists the deleted Python file(s) and the added Go file(s)/Go test file(s).
+- Changes are committed and pushed to the remote branch for `BIG-GO-1049`.
 
 ## Validation
 
 - `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/costcontrol ./internal/issuearchive ./internal/githubsync ./internal/repo ./internal/bootstrap ./internal/pilot ./internal/product ./internal/intake ./internal/contract ./internal/regression -run 'TestTopLevelModulePurgeTranche(1|2|3|4|5)|TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestNormalizeGatewayPayloadsAndErrors|TestRecommendTriageAction|TestBuildValidationReportSummaries|TestImplementationResultReadyWhenKPIsPassAndNoIncidents|TestBuildDefaultDashboardRunContractIsReleaseReady|TestBuildSavedViewCatalogAddsScopedViewsAndDigests|TestExecutionContractAuditAcceptsWellFormedContract|TestAssessmentJSONEmitsPythonContractDefaults|TestMapSourceIssueToTaskSetsDefaultsAndMetadata'`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestRepoWidePythonFileBan|TestWorkspaceValidatePythonShimRemoved'`
+- `make test`
 - `git status --short`
 - `git log -1 --stat`
