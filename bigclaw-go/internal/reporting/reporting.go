@@ -76,6 +76,13 @@ type OperationsMetricSpec struct {
 	Values       []OperationsMetricValue      `json:"values,omitempty"`
 }
 
+type RepoCollaborationMetrics struct {
+	RepoLinkCoverage        float64 `json:"repo_link_coverage"`
+	AcceptedCommitRate      float64 `json:"accepted_commit_rate"`
+	DiscussionDensity       float64 `json:"discussion_density"`
+	AcceptedLineageDepthAvg float64 `json:"accepted_lineage_depth_avg"`
+}
+
 type WeeklyArtifacts struct {
 	RootDir              string `json:"root_dir"`
 	WeeklyReportPath     string `json:"weekly_report_path"`
@@ -502,6 +509,41 @@ func BuildOperationsMetricSpec(tasks []domain.Task, events []domain.Event, perio
 			{MetricID: "avg-risk-score", Label: "Avg Risk Score", Value: avgRisk, DisplayValue: fmt.Sprintf("%.1f", avgRisk), Numerator: roundTenth(riskSum), Denominator: float64(riskCount), Unit: "score", Evidence: []string{"Risk score mapping is low=25, medium=60, high=90."}},
 			{MetricID: "budget-spend", Label: "Budget Spend", Value: budgetUSDTotal, DisplayValue: fmt.Sprintf("$%.2f", budgetUSDTotal), Numerator: budgetUSDTotal, Denominator: float64(totalRuns), Unit: "USD", Evidence: []string{"Budget spend is derived from `task.budget_cents`."}},
 		},
+	}
+}
+
+func BuildRepoCollaborationMetrics(tasks []domain.Task) RepoCollaborationMetrics {
+	totalRuns := len(tasks)
+	if totalRuns == 0 {
+		return RepoCollaborationMetrics{}
+	}
+
+	runsWithLinks := 0
+	runsWithAcceptedCommit := 0
+	totalDiscussionPosts := 0
+	totalAcceptedLineageDepth := 0
+
+	for _, task := range tasks {
+		linkCount := firstPositiveInt(
+			parseInt(task.Metadata["repo_link_count"]),
+			parseInt(task.Metadata["run_commit_links_count"]),
+		)
+		if linkCount > 0 {
+			runsWithLinks++
+		}
+		if strings.TrimSpace(task.Metadata["accepted_commit_hash"]) != "" {
+			runsWithAcceptedCommit++
+		}
+		totalDiscussionPosts += parseInt(task.Metadata["repo_discussion_posts"])
+		totalAcceptedLineageDepth += parseInt(task.Metadata["accepted_lineage_depth"])
+	}
+
+	totalRunsFloat := float64(totalRuns)
+	return RepoCollaborationMetrics{
+		RepoLinkCoverage:        roundTenth(float64(runsWithLinks) / totalRunsFloat * 100),
+		AcceptedCommitRate:      roundTenth(float64(runsWithAcceptedCommit) / totalRunsFloat * 100),
+		DiscussionDensity:       roundTenth(float64(totalDiscussionPosts) / totalRunsFloat),
+		AcceptedLineageDepthAvg: roundTenth(float64(totalAcceptedLineageDepth) / totalRunsFloat),
 	}
 }
 
@@ -1169,15 +1211,21 @@ func within(anchor time.Time, start time.Time, end time.Time) bool {
 func regressionCount(task domain.Task) int {
 	for _, key := range []string{"regression_count", "regressions"} {
 		if value := strings.TrimSpace(task.Metadata[key]); value != "" {
-			if parsed, err := strconv.Atoi(value); err == nil {
-				return parsed
-			}
+			return parseInt(value)
 		}
 	}
 	if strings.EqualFold(strings.TrimSpace(task.Metadata["regression"]), "true") {
 		return 1
 	}
 	return 0
+}
+
+func parseInt(value string) int {
+	parsed, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil {
+		return 0
+	}
+	return parsed
 }
 
 func firstNonEmpty(values ...string) string {
@@ -1456,6 +1504,15 @@ func buildRecentActivities(tasks []domain.Task, latest map[string]domain.Event, 
 
 func roundTenth(value float64) float64 {
 	return math.Round(value*10) / 10
+}
+
+func firstPositiveInt(values ...int) int {
+	for _, value := range values {
+		if value > 0 {
+			return value
+		}
+	}
+	return 0
 }
 
 func parseRFC3339ish(value string) time.Time {
