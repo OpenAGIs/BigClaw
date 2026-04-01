@@ -13,6 +13,7 @@
 - Fold the remaining standalone console IA compatibility surface into `design_system.py`, keep `bigclaw.console_ia` available via a package compatibility module, and delete the extra physical Python file.
 - Fold the remaining standalone planning compatibility surface into `reports.py`, keep `bigclaw.planning` and `bigclaw.governance` available via package compatibility modules, and delete the extra physical Python file.
 - Fold the standalone `tests/test_evaluation.py` coverage into `tests/test_operations.py` and delete the extra physical Python test file now that the evaluation compatibility surface is owned by `operations.py`.
+- Fold the standalone `tests/test_console_ia.py` coverage into `tests/test_design_system.py` and delete the extra physical Python test file now that the console IA compatibility surface is owned by `design_system.py`.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -33,6 +34,7 @@
 - `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_design_system.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_console_ia.py tests/test_design_system.py -q`
 - `python3 -m py_compile src/bigclaw/design_system.py src/bigclaw/__init__.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py -q`
@@ -220,3 +222,6 @@
 - Folded the standalone `tests/test_evaluation.py` coverage into `tests/test_operations.py`, updated the planning candidate-backlog fixture to point at the merged operations test surface, and deleted the extra physical Python test file.
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py tests/test_planning.py -q` -> `41 passed in 0.10s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 17`; `go 286`; `pkg 0`
+- Folded the standalone `tests/test_console_ia.py` coverage into `tests/test_design_system.py` and deleted the extra physical Python test file while aligning the merged assertions to the current `design_system.py` console IA and interaction-contract API.
+- `PYTHONPATH=src python3 -m pytest tests/test_design_system.py -q` -> `24 passed in 0.09s`
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 16`; `go 286`; `pkg 0`

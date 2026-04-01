@@ -1,27 +1,43 @@
 from bigclaw.design_system import (
     AuditRequirement,
     CommandAction,
+    ConsoleIA,
+    ConsoleIAAudit,
+    ConsoleIAAuditor,
     ComponentLibrary,
     ComponentSpec,
     ComponentVariant,
     ConsoleChromeLibrary,
     ConsoleCommandEntry,
+    ConsoleInteractionAudit,
+    ConsoleInteractionAuditor,
+    ConsoleInteractionDraft,
+    ConsoleSurface,
     ConsoleTopBar,
     ConsoleTopBarAudit,
     DataAccuracyCheck,
     DesignSystem,
     DesignSystemAudit,
     DesignToken,
+    FilterDefinition,
+    GlobalAction,
     InformationArchitecture,
     InformationArchitectureAudit,
+    NavigationItem,
     NavigationNode,
     NavigationRoute,
     PerformanceBudget,
     RolePermissionScenario,
+    SurfaceInteractionContract,
+    SurfacePermissionRule,
+    SurfaceState,
     UIAcceptanceAudit,
     UIAcceptanceLibrary,
     UIAcceptanceSuite,
     UsabilityJourney,
+    build_big_4203_console_interaction_draft,
+    render_console_interaction_report,
+    render_console_ia_report,
     render_console_top_bar_report,
     render_design_system_report,
     render_information_architecture_report,
@@ -705,3 +721,419 @@ def test_render_ui_acceptance_report_summarizes_release_readiness():
     assert "- Performance triage-center.initial-load: p95=980/1200ms tti=1400/1800ms" in report
     assert "- Usability approve-high-risk-run: steps=3/4 keyboard=True empty_state=True recovery=True" in report
     assert "- Audit completeness gaps: none" in report
+
+
+def test_console_ia_round_trip_preserves_manifest_shape() -> None:
+    architecture = ConsoleIA(
+        name="BigClaw Console IA",
+        version="v3",
+        top_bar=ConsoleTopBar(
+            name="BigClaw Global Header",
+            search_placeholder="Search runs, issues, commands",
+            environment_options=["Production", "Staging"],
+            time_range_options=["24h", "7d"],
+            alert_channels=["approvals"],
+            documentation_complete=True,
+            accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+            command_entry=ConsoleCommandEntry(
+                trigger_label="Command Menu",
+                placeholder="Type a command",
+                shortcut="Cmd+K / Ctrl+K",
+                commands=[CommandAction(id="search-runs", title="Search runs", section="Navigate")],
+            ),
+        ),
+        navigation=[
+            NavigationItem(name="Overview", route="/overview", section="Operate", icon="dashboard", badge_count=2)
+        ],
+        surfaces=[
+            ConsoleSurface(
+                name="Overview",
+                route="/overview",
+                navigation_section="Operate",
+                top_bar_actions=[GlobalAction(action_id="refresh", label="Refresh", placement="topbar")],
+                filters=[
+                    FilterDefinition(
+                        name="Team",
+                        field="team",
+                        control="select",
+                        options=["all", "platform"],
+                        default_value="all",
+                    )
+                ],
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading", allowed_actions=["refresh"]),
+                    SurfaceState(name="empty", allowed_actions=["refresh"]),
+                    SurfaceState(name="error", allowed_actions=["refresh"]),
+                ],
+            )
+        ],
+    )
+
+    restored = ConsoleIA.from_dict(architecture.to_dict())
+
+    assert restored == architecture
+
+
+def test_console_ia_audit_surfaces_global_interaction_gaps() -> None:
+    architecture = ConsoleIA(
+        name="BigClaw Console IA",
+        version="v3",
+        top_bar=ConsoleTopBar(
+            name="Incomplete Header",
+            search_placeholder="",
+            environment_options=["Production"],
+            time_range_options=["24h"],
+            documentation_complete=False,
+            accessibility_requirements=["focus-visible"],
+            command_entry=ConsoleCommandEntry(trigger_label="", placeholder="", shortcut="Cmd+K"),
+        ),
+        navigation=[
+            NavigationItem(name="Overview", route="/overview", section="Operate"),
+            NavigationItem(name="Ghost", route="/ghost", section="Operate"),
+        ],
+        surfaces=[
+            ConsoleSurface(
+                name="Overview",
+                route="/overview",
+                navigation_section="Operate",
+                top_bar_actions=[GlobalAction(action_id="refresh", label="Refresh", placement="topbar")],
+                filters=[FilterDefinition(name="Team", field="team", control="select", options=["all"])],
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading", allowed_actions=["refresh"]),
+                    SurfaceState(name="empty", allowed_actions=["refresh"]),
+                    SurfaceState(name="error", allowed_actions=["refresh"]),
+                ],
+            ),
+            ConsoleSurface(
+                name="Queue",
+                route="/queue",
+                navigation_section="Operate",
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading"),
+                    SurfaceState(name="empty", allowed_actions=["retry"]),
+                ],
+            ),
+        ],
+    )
+
+    audit = ConsoleIAAuditor().audit(architecture)
+
+    assert audit.surfaces_missing_filters == ["Queue"]
+    assert audit.surfaces_missing_actions == ["Queue"]
+    assert audit.top_bar_audit.missing_capabilities == [
+        "global-search",
+        "time-range-switch",
+        "environment-switch",
+        "alert-entry",
+        "command-shell",
+    ]
+    assert audit.top_bar_audit.release_ready is False
+    assert audit.surfaces_missing_states == {"Queue": ["error"]}
+    assert audit.states_missing_actions == {"Queue": ["loading"]}
+    assert audit.unresolved_state_actions == {"Queue": {"empty": ["retry"]}}
+    assert audit.orphan_navigation_routes == ["/ghost"]
+    assert audit.unnavigable_surfaces == ["Queue"]
+    assert audit.readiness_score == 0.0
+
+
+def test_console_ia_audit_round_trip_preserves_findings() -> None:
+    audit = ConsoleIAAudit(
+        system_name="BigClaw Console IA",
+        version="v3",
+        surface_count=2,
+        navigation_count=1,
+        top_bar_audit=ConsoleIAAuditor().audit(
+            ConsoleIA(
+                name="BigClaw Console IA",
+                version="v3",
+                top_bar=ConsoleTopBar(
+                    name="Incomplete Header",
+                    search_placeholder="",
+                    environment_options=["Production"],
+                    time_range_options=["24h"],
+                    documentation_complete=False,
+                    accessibility_requirements=["focus-visible"],
+                    command_entry=ConsoleCommandEntry(trigger_label="", placeholder="", shortcut="Cmd+K"),
+                ),
+            )
+        ).top_bar_audit,
+        surfaces_missing_filters=["Queue"],
+        surfaces_missing_actions=["Queue"],
+        surfaces_missing_states={"Queue": ["error"]},
+        states_missing_actions={"Queue": ["loading"]},
+        unresolved_state_actions={"Queue": {"empty": ["retry"]}},
+        orphan_navigation_routes=["/ghost"],
+        unnavigable_surfaces=["Queue"],
+    )
+
+    restored = ConsoleIAAudit.from_dict(audit.to_dict())
+
+    assert restored == audit
+
+
+def test_render_console_ia_report_summarizes_surface_coverage() -> None:
+    architecture = ConsoleIA(
+        name="BigClaw Console IA",
+        version="v3",
+        top_bar=ConsoleTopBar(
+            name="BigClaw Global Header",
+            search_placeholder="Search runs, issues, commands",
+            environment_options=["Production", "Staging"],
+            time_range_options=["24h", "7d", "30d"],
+            alert_channels=["approvals", "sla"],
+            documentation_complete=True,
+            accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+            command_entry=ConsoleCommandEntry(
+                trigger_label="Command Menu",
+                placeholder="Type a command or jump to a run",
+                shortcut="Cmd+K / Ctrl+K",
+                commands=[
+                    CommandAction(id="search-runs", title="Search runs", section="Navigate", shortcut="/"),
+                    CommandAction(id="open-alerts", title="Open alerts", section="Monitor"),
+                ],
+            ),
+        ),
+        navigation=[NavigationItem(name="Overview", route="/overview", section="Operate")],
+        surfaces=[
+            ConsoleSurface(
+                name="Overview",
+                route="/overview",
+                navigation_section="Operate",
+                top_bar_actions=[GlobalAction(action_id="refresh", label="Refresh", placement="topbar")],
+                filters=[FilterDefinition(name="Team", field="team", control="select", options=["all"])],
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading", allowed_actions=["refresh"]),
+                    SurfaceState(name="empty", allowed_actions=["refresh"]),
+                    SurfaceState(name="error", allowed_actions=["refresh"]),
+                ],
+            )
+        ],
+    )
+
+    audit = ConsoleIAAuditor().audit(architecture)
+    report = render_console_ia_report(architecture, audit)
+
+    assert "# Console Information Architecture Report" in report
+    assert "- Name: BigClaw Global Header" in report
+    assert "- Release Ready: True" in report
+    assert "- Navigation Items: 1" in report
+    assert "- Overview: route=/overview filters=Team actions=Refresh states=default, loading, empty, error missing_states=none states_without_actions=none unresolved_state_actions=none" in report
+    assert "- Surfaces missing filters: none" in report
+    assert "- Undefined state actions: none" in report
+
+
+def test_console_interaction_draft_round_trip_preserves_four_page_manifest() -> None:
+    draft = ConsoleInteractionDraft(
+        name="BIG-4203 Four Critical Pages",
+        version="v1",
+        architecture=ConsoleIA(
+            name="BigClaw Console IA",
+            version="v3",
+            top_bar=ConsoleTopBar(
+                name="BigClaw Global Header",
+                search_placeholder="Search runs, issues, commands",
+                environment_options=["Production", "Staging"],
+                time_range_options=["24h", "7d"],
+                alert_channels=["approvals"],
+                documentation_complete=True,
+                accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+                command_entry=ConsoleCommandEntry(
+                    trigger_label="Command Menu",
+                    placeholder="Type a command",
+                    shortcut="Cmd+K / Ctrl+K",
+                    commands=[CommandAction(id="search-runs", title="Search runs", section="Navigate")],
+                ),
+            ),
+            navigation=[
+                NavigationItem(name="Overview", route="/overview", section="Operate"),
+                NavigationItem(name="Queue", route="/queue", section="Operate"),
+                NavigationItem(name="Run Detail", route="/runs/detail", section="Operate"),
+                NavigationItem(name="Triage", route="/triage", section="Operate"),
+            ],
+            surfaces=[
+                ConsoleSurface(name="Overview", route="/overview", navigation_section="Operate"),
+                ConsoleSurface(name="Queue", route="/queue", navigation_section="Operate"),
+                ConsoleSurface(name="Run Detail", route="/runs/detail", navigation_section="Operate"),
+                ConsoleSurface(name="Triage", route="/triage", navigation_section="Operate"),
+            ],
+        ),
+        contracts=[
+            SurfaceInteractionContract(surface_name="Overview"),
+            SurfaceInteractionContract(surface_name="Queue", requires_batch_actions=True),
+            SurfaceInteractionContract(surface_name="Run Detail"),
+            SurfaceInteractionContract(surface_name="Triage"),
+        ],
+    )
+
+    restored = ConsoleInteractionDraft.from_dict(draft.to_dict())
+
+    assert restored == draft
+
+
+def test_console_interaction_audit_surfaces_missing_actions_permissions_and_batch_ops() -> None:
+    architecture = ConsoleIA(
+        name="BigClaw Console IA",
+        version="v3",
+        top_bar=ConsoleTopBar(
+            name="BigClaw Global Header",
+            search_placeholder="Search runs, issues, commands",
+            environment_options=["Production", "Staging"],
+            time_range_options=["24h", "7d"],
+            alert_channels=["approvals"],
+            documentation_complete=True,
+            accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+            command_entry=ConsoleCommandEntry(
+                trigger_label="Command Menu",
+                placeholder="Type a command",
+                shortcut="Cmd+K / Ctrl+K",
+                commands=[CommandAction(id="search-runs", title="Search runs", section="Navigate")],
+            ),
+        ),
+        navigation=[
+            NavigationItem(name="Overview", route="/overview", section="Operate"),
+            NavigationItem(name="Queue", route="/queue", section="Operate"),
+            NavigationItem(name="Run Detail", route="/runs/detail", section="Operate"),
+            NavigationItem(name="Triage", route="/triage", section="Operate"),
+        ],
+        surfaces=[
+            ConsoleSurface(
+                name="Overview",
+                route="/overview",
+                navigation_section="Operate",
+                top_bar_actions=[
+                    GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
+                    GlobalAction(action_id="export", label="Export", placement="topbar"),
+                    GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
+                ],
+                filters=[FilterDefinition(name="Team", field="team", control="select", options=["all"])],
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading", allowed_actions=["export"]),
+                    SurfaceState(name="empty", allowed_actions=["export"]),
+                    SurfaceState(name="error", allowed_actions=["audit"]),
+                ],
+            ),
+            ConsoleSurface(
+                name="Queue",
+                route="/queue",
+                navigation_section="Operate",
+                top_bar_actions=[
+                    GlobalAction(action_id="bulk-approve", label="Bulk Approve", placement="topbar"),
+                    GlobalAction(action_id="reassign", label="Reassign", placement="topbar"),
+                ],
+                filters=[FilterDefinition(name="Status", field="status", control="select", options=["all"])],
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading", allowed_actions=["reassign"]),
+                    SurfaceState(name="empty"),
+                    SurfaceState(name="error", allowed_actions=["reassign"]),
+                ],
+            ),
+            ConsoleSurface(
+                name="Run Detail",
+                route="/runs/detail",
+                navigation_section="Operate",
+                top_bar_actions=[GlobalAction(action_id="share", label="Share", placement="topbar")],
+                filters=[FilterDefinition(name="Run", field="run_id", control="text")],
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading"),
+                    SurfaceState(name="empty"),
+                    SurfaceState(name="error"),
+                ],
+            ),
+            ConsoleSurface(
+                name="Triage",
+                route="/triage",
+                navigation_section="Operate",
+                top_bar_actions=[GlobalAction(action_id="triage", label="Triage", placement="topbar")],
+                filters=[FilterDefinition(name="Severity", field="severity", control="select", options=["all"])],
+                states=[
+                    SurfaceState(name="default"),
+                    SurfaceState(name="loading"),
+                    SurfaceState(name="empty"),
+                    SurfaceState(name="error"),
+                ],
+            ),
+        ],
+    )
+    draft = ConsoleInteractionDraft(
+        name="BIG-4203 Four Critical Pages",
+        version="v1",
+        architecture=architecture,
+            contracts=[
+                SurfaceInteractionContract(
+                    surface_name="Overview",
+                    required_action_ids=["drill-down", "export", "audit"],
+                    permission_rule=SurfacePermissionRule(
+                        allowed_roles=["operator"],
+                        denied_roles=["viewer"],
+                        audit_event="ui.access.overview",
+                    ),
+                ),
+                SurfaceInteractionContract(
+                    surface_name="Queue",
+                    required_action_ids=["bulk-approve", "reassign", "assign-owner"],
+                    permission_rule=SurfacePermissionRule(
+                        allowed_roles=["operator"],
+                        denied_roles=[],
+                        audit_event="",
+                    ),
+                    requires_batch_actions=True,
+                ),
+                SurfaceInteractionContract(
+                    surface_name="Run Detail",
+                    required_action_ids=["share", "timeline-sync"],
+                    permission_rule=SurfacePermissionRule(),
+                ),
+                SurfaceInteractionContract(
+                    surface_name="Ghost Surface",
+                    required_action_ids=["ghost-action"],
+                ),
+            ],
+        )
+
+    audit = ConsoleInteractionAuditor().audit(draft)
+
+    assert audit.release_ready is False
+    assert audit.missing_surfaces == ["Ghost Surface"]
+    assert audit.surfaces_missing_actions["Queue"] == ["assign-owner"]
+    assert audit.surfaces_missing_actions["Run Detail"] == ["timeline-sync"]
+    assert audit.surfaces_missing_batch_actions == ["Queue"]
+    assert audit.permission_gaps["Queue"] == ["denied-roles", "audit-event"]
+    assert audit.permission_gaps["Run Detail"] == ["allowed-roles", "denied-roles", "audit-event"]
+    assert audit.uncovered_roles == []
+
+
+def test_console_interaction_audit_round_trip_preserves_findings() -> None:
+    audit = ConsoleInteractionAudit(
+        name="BIG-4203 Four Critical Pages",
+        version="v1",
+        contract_count=4,
+        missing_surfaces=["Ghost Surface"],
+        surfaces_missing_actions={"Queue": ["assign-owner"]},
+        surfaces_missing_batch_actions=["Queue"],
+        permission_gaps={"Run Detail": ["allowed-roles", "denied-roles", "audit-event"]},
+    )
+
+    restored = ConsoleInteractionAudit.from_dict(audit.to_dict())
+
+    assert restored == audit
+
+
+def test_render_console_interaction_report_summarizes_release_gaps() -> None:
+    draft = build_big_4203_console_interaction_draft()
+    audit = ConsoleInteractionAuditor().audit(draft)
+
+    report = render_console_interaction_report(draft, audit)
+
+    assert "# Console Interaction Draft Report" in report
+    assert "- Name: BIG-4203 Four Critical Pages" in report
+    assert "- Version: v4.0-design-sprint" in report
+    assert "- Release Ready: True" in report
+    assert "- Missing surfaces: none" in report
+    assert "- Queue: route=/queue required_actions=drill-down, export, audit available_actions=drill-down, export, audit, bulk-approve filters=2 states=default, loading, empty, error batch=required permissions=complete" in report
