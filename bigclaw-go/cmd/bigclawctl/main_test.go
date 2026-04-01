@@ -316,20 +316,8 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 
 func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "repo->")
-	for _, relativePath := range []string{
-		"scripts/ops/bigclaw_github_sync.py",
-		"scripts/ops/bigclaw_refill_queue.py",
-		"scripts/ops/bigclaw_workspace_bootstrap.py",
-		"scripts/ops/symphony_workspace_bootstrap.py",
-		"scripts/ops/symphony_workspace_validate.py",
-	} {
-		path := filepath.Join(repoRoot, relativePath)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatalf("mkdir %s: %v", path, err)
-		}
-		if err := os.WriteFile(path, []byte("x = 1\n"), 0o644); err != nil {
-			t.Fatalf("write %s: %v", path, err)
-		}
+	if err := os.MkdirAll(repoRoot, 0o755); err != nil {
+		t.Fatalf("mkdir repo root: %v", err)
 	}
 
 	originalStdout := os.Stdout
@@ -356,8 +344,8 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	if !bytes.Contains(output, []byte(repoRoot)) {
 		t.Fatalf("expected raw arrow token in legacy-python repo path, got %s", string(output))
 	}
-	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "scripts/ops/bigclaw_github_sync.py"))) {
-		t.Fatalf("expected raw arrow token in legacy-python file list, got %s", string(output))
+	if !bytes.Contains(output, []byte(`"files": []`)) {
+		t.Fatalf("expected empty legacy-python file list, got %s", string(output))
 	}
 	if bytes.Contains(output, []byte(`\u003e`)) {
 		t.Fatalf("expected no HTML escaping in legacy-python JSON output, got %s", string(output))

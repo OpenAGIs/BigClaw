@@ -2,7 +2,6 @@ package legacyshim
 
 import (
 	"errors"
-	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -10,13 +9,7 @@ import (
 func TestFrozenCompileCheckFilesUsesFrozenShimList(t *testing.T) {
 	repoRoot := "/repo"
 	got := FrozenCompileCheckFiles(repoRoot)
-	want := []string{
-		filepath.Join(repoRoot, "scripts/ops/bigclaw_github_sync.py"),
-		filepath.Join(repoRoot, "scripts/ops/bigclaw_refill_queue.py"),
-		filepath.Join(repoRoot, "scripts/ops/bigclaw_workspace_bootstrap.py"),
-		filepath.Join(repoRoot, "scripts/ops/symphony_workspace_bootstrap.py"),
-		filepath.Join(repoRoot, "scripts/ops/symphony_workspace_validate.py"),
-	}
+	want := []string{}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected compile-check files: got=%v want=%v", got, want)
 	}
@@ -40,11 +33,6 @@ func TestCompileCheckRunsPyCompileAgainstFrozenShimList(t *testing.T) {
 	wantArgs := []string{
 		"-m",
 		"py_compile",
-		filepath.Join(repoRoot, "scripts/ops/bigclaw_github_sync.py"),
-		filepath.Join(repoRoot, "scripts/ops/bigclaw_refill_queue.py"),
-		filepath.Join(repoRoot, "scripts/ops/bigclaw_workspace_bootstrap.py"),
-		filepath.Join(repoRoot, "scripts/ops/symphony_workspace_bootstrap.py"),
-		filepath.Join(repoRoot, "scripts/ops/symphony_workspace_validate.py"),
 	}
 	if !reflect.DeepEqual(gotArgs, wantArgs) {
 		t.Fatalf("unexpected args: got=%v want=%v", gotArgs, wantArgs)

@@ -25,6 +25,46 @@
 
 ## Validation Results
 
+- Tranche: delete Python ops compatibility wrappers and freeze the legacy compile-check surface to zero files
+  - Removed Python files:
+    - `scripts/ops/bigclaw_github_sync.py`
+    - `scripts/ops/bigclaw_refill_queue.py`
+    - `scripts/ops/bigclaw_workspace_bootstrap.py`
+    - `scripts/ops/symphony_workspace_bootstrap.py`
+    - `scripts/ops/symphony_workspace_validate.py`
+  - Updated Go files:
+    - `bigclaw-go/internal/legacyshim/compilecheck.go`
+    - `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+    - `bigclaw-go/cmd/bigclawctl/main_test.go`
+- `gofmt -w bigclaw-go/internal/legacyshim/compilecheck.go bigclaw-go/internal/legacyshim/compilecheck_test.go bigclaw-go/cmd/bigclawctl/main_test.go`
+  - no output
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/internal/legacyshim	(cached)`
+  - `ok  	bigclaw-go/cmd/bigclawctl	2.661s`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+  - `{`
+  - `  "files": [],`
+  - `  "python": "python3",`
+  - `  "repo": "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1040",`
+  - `  "status": "ok"`
+  - `}`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/test_reports.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `11`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `M README.md`
+  - `M bigclaw-go/cmd/bigclawctl/main_test.go`
+  - `M bigclaw-go/internal/legacyshim/compilecheck.go`
+  - `M bigclaw-go/internal/legacyshim/compilecheck_test.go`
+  - `M docs/go-cli-script-migration-plan.md`
+  - `D scripts/ops/bigclaw_github_sync.py`
+  - `D scripts/ops/bigclaw_refill_queue.py`
+  - `D scripts/ops/bigclaw_workspace_bootstrap.py`
+  - `D scripts/ops/symphony_workspace_bootstrap.py`
+  - `D scripts/ops/symphony_workspace_validate.py`
 - Tranche: replace Python operations tests with Go reporting contract coverage
   - Removed Python files:
     - `tests/test_operations.py`

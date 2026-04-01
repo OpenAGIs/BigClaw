@@ -14,13 +14,7 @@ type CompileCheckResult struct {
 type runner func(name string, args ...string) ([]byte, error)
 
 func FrozenCompileCheckFiles(repoRoot string) []string {
-	relative := []string{
-		"scripts/ops/bigclaw_github_sync.py",
-		"scripts/ops/bigclaw_refill_queue.py",
-		"scripts/ops/bigclaw_workspace_bootstrap.py",
-		"scripts/ops/symphony_workspace_bootstrap.py",
-		"scripts/ops/symphony_workspace_validate.py",
-	}
+	relative := []string{}
 	files := make([]string, 0, len(relative))
 	for _, item := range relative {
 		files = append(files, filepath.Join(repoRoot, item))
