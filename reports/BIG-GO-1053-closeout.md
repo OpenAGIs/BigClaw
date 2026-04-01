@@ -79,7 +79,7 @@ two stale Python tests that preserved the deleted entrypoint contract in active 
 
 - `git status --short --branch` is clean on `main` after the closeout artifacts are
   committed.
-- `git rev-parse origin/main` matches final landed tip `331b1ec030aa25fe2261367363dc3d574f8002ee`.
+- `git rev-parse origin/main` matches final landed tip `4c32394e3d59c4a664198d4ddc9b1e22d02b3671`.
 - No `BIG-GO-1053` entry exists in `local-issues.json` or the Symphony local issue store,
   so there is no remaining writable in-workspace tracker state to transition.
 - Historical PR seed URL from the now-deleted evidence branch:
