@@ -1,0 +1,50 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1060",
+    "title": "Go-replacement AD: remove residual Python entrypoints tracked in README/workflow",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1060",
+    "latest_code_migration_commit": "c8f270b1fa5e58ae413561d29aae983a8d7ab55e"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1060-closeout.md",
+    "validation_report": "reports/BIG-GO-1060-validation.md",
+    "migration_plan": "docs/go-cli-script-migration-plan.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1060?expand=1",
+    "pr_seed_url": "https://github.com/OpenAGIs/BigClaw/pull/new/symphony/BIG-GO-1060"
+  },
+  "validation": {
+    "commands": [
+      "git ls-tree -r --name-only HEAD^ | rg '\\.py$' | wc -l",
+      "git ls-tree -r --name-only HEAD | rg '\\.py$' | wc -l",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestResidualPythonOperatorEntrypointsStayDeleted|TestTrackedOperatorSurfacesStayGoOnly|TestE2EMigrationDocListsOnlyActiveEntrypoints'",
+      "cd bigclaw-go && go test ./internal/legacyshim",
+      "bash scripts/ops/bigclawctl refill --help | sed -n '1,20p'",
+      "bash scripts/ops/bigclawctl workspace validate --help | sed -n '1,20p'",
+      "rg -n \"python3 scripts/ops/bigclaw_refill_queue\\.py|scripts/ops/\\*workspace\\*\\.py|python3 scripts/ops/symphony_workspace_validate\\.py|python3 scripts/ops/bigclaw_workspace_bootstrap\\.py|python3 scripts/ops/symphony_workspace_bootstrap\\.py\" README.md .github/workflows/ci.yml workflow.md .githooks docs/go-cli-script-migration-plan.md"
+    ],
+    "results": {
+      "repo_py_count_before": "45",
+      "repo_py_count_after": "41",
+      "regression_tests": "ok   bigclaw-go/internal/regression\t(cached)",
+      "legacyshim_tests": "ok   bigclaw-go/internal/legacyshim\t(cached)",
+      "refill_help": "exited 0 and printed bigclawctl refill usage",
+      "workspace_validate_help": "exited 0 and printed bigclawctl workspace validate usage",
+      "stale_reference_scan": "exit code 1 with no matches across README/workflow/hooks/CI/migration plan"
+    }
+  },
+  "blocker": {
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1060."
+  },
+  "notes": [
+    "The four residual Python operator wrappers were deleted in the latest code migration commit and the repository .py count dropped by four files in that commit.",
+    "BIG-GO-1060 is not mirrored in local-issues.json, so the branch records closeout evidence in reports/ without a repo-local tracker state transition."
+  ]
+}
