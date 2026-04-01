@@ -15,6 +15,10 @@ func TestLane8PythonReplacementTrancheRemoved(t *testing.T) {
 		"tests/test_live_shadow_bundle.py",
 		"tests/test_orchestration.py",
 		"tests/test_queue.py",
+		"tests/test_repo_links.py",
+		"tests/test_risk.py",
+		"tests/test_runtime_matrix.py",
+		"tests/test_scheduler.py",
 	} {
 		_, err := os.Stat(filepath.Join(repoRoot, path))
 		if !errors.Is(err, os.ErrNotExist) {
