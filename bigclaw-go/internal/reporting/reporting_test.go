@@ -621,6 +621,24 @@ func TestRenderQueueControlCenterWithSharedViewEmptyState(t *testing.T) {
 	}
 }
 
+func TestRepoWeeklyNarrativeExportsRemainConsistent(t *testing.T) {
+	section := RenderWeeklyRepoEvidenceSection(14, 9, 7, []string{"repo/ope-168", "repo/ope-170"})
+	exports := RenderRepoNarrativeExports(14, 9, 7, []string{"repo/ope-168", "repo/ope-170"})
+
+	if !strings.Contains(section, "Accepted Commits: 7") {
+		t.Fatalf("expected accepted commit count in section, got %s", section)
+	}
+	if !strings.Contains(exports["markdown"], "Repo Evidence Summary") {
+		t.Fatalf("expected repo evidence heading in markdown export, got %+v", exports)
+	}
+	if !strings.Contains(exports["text"], "Accepted Commits: 7") {
+		t.Fatalf("expected accepted commit count in text export, got %+v", exports)
+	}
+	if !strings.Contains(exports["html"], "<section><h2>Repo Evidence Summary</h2>") {
+		t.Fatalf("expected repo evidence html wrapper, got %+v", exports)
+	}
+}
+
 func TestBuildPolicyPromptVersionCenterSummarizesRevisionDiffs(t *testing.T) {
 	center := BuildPolicyPromptVersionCenter(
 		"Policy/Prompt Version Center",

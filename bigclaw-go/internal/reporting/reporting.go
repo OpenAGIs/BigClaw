@@ -2,6 +2,7 @@ package reporting
 
 import (
 	"fmt"
+	"html"
 	"math"
 	"os"
 	"path/filepath"
@@ -1032,6 +1033,33 @@ func WriteQueueControlCenterBundle(rootDir string, center QueueControlCenter) (s
 		return "", err
 	}
 	return path, nil
+}
+
+func RenderWeeklyRepoEvidenceSection(experimentVolume, convergedTasks, acceptedCommits int, hottestThreads []string) string {
+	lines := []string{
+		"## Repo Evidence Summary",
+		fmt.Sprintf("- Experiment Volume: %d", experimentVolume),
+		fmt.Sprintf("- Converged Tasks: %d", convergedTasks),
+		fmt.Sprintf("- Accepted Commits: %d", acceptedCommits),
+		fmt.Sprintf("- Hottest Threads: %s", joinOrNone(hottestThreads)),
+	}
+	return strings.Join(lines, "\n")
+}
+
+func RenderRepoNarrativeExports(experimentVolume, convergedTasks, acceptedCommits int, hottestThreads []string) map[string]string {
+	markdown := RenderWeeklyRepoEvidenceSection(experimentVolume, convergedTasks, acceptedCommits, hottestThreads)
+	plain := strings.Replace(markdown, "## ", "", 1)
+	htmlBody := "<section><h2>Repo Evidence Summary</h2>" +
+		fmt.Sprintf("<p>Experiment Volume: %d</p>", experimentVolume) +
+		fmt.Sprintf("<p>Converged Tasks: %d</p>", convergedTasks) +
+		fmt.Sprintf("<p>Accepted Commits: %d</p>", acceptedCommits) +
+		fmt.Sprintf("<p>Hottest Threads: %s</p>", html.EscapeString(joinOrNone(hottestThreads))) +
+		"</section>"
+	return map[string]string{
+		"markdown": markdown,
+		"text":     plain,
+		"html":     htmlBody,
+	}
 }
 
 func BuildPolicyPromptVersionCenter(name string, generatedAt time.Time, artifacts []VersionedArtifact, diffPreviewLines int) PolicyPromptVersionCenter {
