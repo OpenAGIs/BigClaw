@@ -37,12 +37,15 @@
    - `src/bigclaw/memory.py`
    - `tests/test_validation_policy.py`
    - `tests/test_memory.py`
-12. Remove any package exports or Python tests that still point at deleted Python modules.
-13. Add focused Go regression tests that assert the migration contract for each tranche:
+12. Purge the next isolated top-level workflow definition surface:
+   - `src/bigclaw/dsl.py`
+   - `tests/test_dsl.py`
+13. Remove any package exports or Python tests that still point at deleted Python modules.
+14. Add focused Go regression tests that assert the migration contract for each tranche:
    - the deleted Python files are absent
    - the corresponding Go replacement files exist
-14. Run targeted validation for the touched Go packages and the new regression tests.
-15. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
+15. Run targeted validation for the touched Go packages and the new regression tests.
+16. Commit with a message that explicitly lists deleted Python files and added Go test files, then push the branch.
 
 ## Acceptance
 
@@ -58,6 +61,7 @@
 - `src/bigclaw/connectors.py` and `src/bigclaw/roadmap.py` are deleted.
 - `src/bigclaw/repo_links.py` and `src/bigclaw/repo_plane.py` are deleted.
 - `src/bigclaw/validation_policy.py` and `src/bigclaw/memory.py` are deleted.
+- `src/bigclaw/dsl.py` is deleted.
 - `src/bigclaw/__init__.py` and retained Python tests no longer import deleted modules.
 - Go regression tests cover the tranche replacement contracts against the repository tree.
 - Targeted Go tests pass.
@@ -66,6 +70,7 @@
 ## Validation
 
 - `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test ./internal/workflow ./internal/regression -run 'TestDefinitionParsesAndRendersTemplates|TestDefinitionRespectsExplicitOptionalStep|TestDefinitionDefaultsMissingCollectionsToEmpty|TestDefinitionJSONEmitsPythonContractDefaults|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10|11|12)'`
 - `cd bigclaw-go && go test ./internal/policy ./internal/regression -run 'TestEnforceValidationReportPolicyBlocksMissingArtifacts|TestEnforceValidationReportPolicyAllowsCompleteArtifacts|TestTaskMemoryStoreReusesHistoryAndInjectsRules|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10|11)'`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_repo_links.py -q`
 - `cd bigclaw-go && go test ./internal/repo ./internal/regression -run 'TestBindRunCommitsAndAcceptedHash|TestRepoRegistryResolvesSpaceChannelAndAgent|TestTopLevelModulePurgeTranche(1|2|3|4|5|6|7|8|9|10)'`
