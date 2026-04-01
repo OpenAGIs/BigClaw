@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from .collaboration import (
+from .observability import (
     CollaborationThread,
     build_collaboration_thread_from_audits,
     render_collaboration_lines,

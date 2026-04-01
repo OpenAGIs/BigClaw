@@ -122,18 +122,14 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
 from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     AuditEventSpec,
     BUDGET_OVERRIDE_EVENT,
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
     FLOW_HANDOFF_EVENT,
     GitSyncTelemetry,
     MANUAL_TAKEOVER_EVENT,
@@ -144,6 +140,9 @@ from .observability import (
     RunCloseout,
     SCHEDULER_DECISION_EVENT,
     TaskRun,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
+    merge_collaboration_threads,
     get_audit_event_spec,
     missing_required_fields,
 )
@@ -338,6 +337,24 @@ audit_events.__dict__.update(
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
 )
 sys.modules[audit_events.__name__] = audit_events
+collaboration = types.ModuleType(f"{__name__}.collaboration")
+for export_name in [
+    "CollaborationComment",
+    "CollaborationThread",
+    "DecisionNote",
+    "build_collaboration_thread",
+    "build_collaboration_thread_from_audits",
+    "merge_collaboration_threads",
+]:
+    collaboration.__dict__[export_name] = globals()[export_name]
+collaboration.__dict__.update(
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "collaboration.py has been retired in favor of package-level compatibility exports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/console.go",
+)
+sys.modules[collaboration.__name__] = collaboration
 
 __all__ = [
     "Task",
@@ -378,6 +395,7 @@ __all__ = [
     "DecisionNote",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
+    "merge_collaboration_threads",
     "APPROVAL_RECORDED_EVENT",
     "BUDGET_OVERRIDE_EVENT",
     "FLOW_HANDOFF_EVENT",
