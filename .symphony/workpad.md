@@ -25,6 +25,34 @@
 
 ## Validation Results
 
+- Tranche: delete isolated Python repo board surface and Python collaboration test
+  - Removed Python files:
+    - `src/bigclaw/repo_board.py`
+    - `tests/test_repo_collaboration.py`
+- `cd bigclaw-go && go test ./internal/repo`
+  - `ok  	bigclaw-go/internal/repo	(cached)`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_console_ia.py`
+  - `tests/test_design_system.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_planning.py`
+  - `tests/test_repo_rollout.py`
+  - `tests/test_reports.py`
+  - `tests/test_runtime_matrix.py`
+  - `tests/test_ui_review.py`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `11`
+- `find . -name '*.py' | sort | wc -l`
+  - `57`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short --branch`
+  - `## big-go-1040...origin/big-go-1040 [ahead 1]`
+  - `D src/bigclaw/repo_board.py`
+  - `D tests/test_repo_collaboration.py`
 - Tranche: delete Python control-center and scheduler tests with existing Go coverage
   - Removed Python files:
     - `tests/test_control_center.py`
