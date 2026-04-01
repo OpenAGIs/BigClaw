@@ -84,3 +84,5 @@ two stale Python tests that preserved the deleted entrypoint contract in active 
   so there is no remaining writable in-workspace tracker state to transition.
 - Historical PR seed URL from the now-deleted evidence branch:
   `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
+- Final merged-PR closeout comment:
+  `https://github.com/OpenAGIs/BigClaw/pull/217#issuecomment-4167169146`

@@ -18,7 +18,8 @@
   },
   "links": {
     "repository": "https://github.com/OpenAGIs/BigClaw",
-    "pull_request_seed": "https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1"
+    "pull_request_seed": "https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1",
+    "merged_pr_closeout_comment": "https://github.com/OpenAGIs/BigClaw/pull/217#issuecomment-4167169146"
   },
   "validation": {
     "commands": [
@@ -50,6 +51,7 @@
     "The final repo-wide Python count at the current main tip is 43 because BIG-GO-1057 removed one Python entrypoint while this closeout was being rebased and this lane also deleted two stale Python tests that still imported removed tranche-2 helpers.",
     "The follow-up rebased commits on main add the missing validation and closeout artifacts so the lane has the same in-repo reporting surface as adjacent Go-replacement issues, while the final cleanup removes stale test-only imports of deleted helper paths.",
     "The evidence branch symphony/BIG-GO-1053-validation was deleted after its contents were landed on main; the pull_request_seed link is retained only as historical traceability.",
+    "A final closeout comment was posted on merged PR #217 to synchronize the remote record with the additional mainline cleanup commits.",
     "No BIG-GO-1053 record exists in local-issues.json or the Symphony local issue store, so any remaining active state is external to this workspace."
   ]
 }

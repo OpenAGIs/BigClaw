@@ -40,6 +40,8 @@
   - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
 - Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
   the closeout landed on `main`.
+- Remote closeout comment posted on merged PR `#217`:
+  - `https://github.com/OpenAGIs/BigClaw/pull/217#issuecomment-4167169146`
 - No writable local tracker entry exists for `BIG-GO-1053` in `local-issues.json` or the
   Symphony local issue store, so any remaining active state is external to this workspace.
 - Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
