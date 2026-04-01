@@ -25,6 +25,33 @@
 
 ## Validation Results
 
+- Tranche: delete orphaned Python UI and design island
+  - Removed Python files:
+    - `src/bigclaw/console_ia.py`
+    - `src/bigclaw/design_system.py`
+    - `src/bigclaw/ui_review.py`
+    - `tests/test_console_ia.py`
+    - `tests/test_design_system.py`
+    - `tests/test_ui_review.py`
+  - Updated Python files:
+    - `src/bigclaw/__init__.py`
+- `cd bigclaw-go && go test ./internal/product ./internal/api`
+  - `ok  	bigclaw-go/internal/product	(cached)`
+  - `ok  	bigclaw-go/internal/api	(cached)`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `19`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `8`
+- `find . -name '*.py' | sort | wc -l`
+  - `32`
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/console_ia.py`
+  - `D src/bigclaw/design_system.py`
+  - `D src/bigclaw/ui_review.py`
+  - `D tests/test_console_ia.py`
+  - `D tests/test_design_system.py`
+  - `D tests/test_ui_review.py`
 - Tranche: delete orphaned Python surface, contract, and bootstrap modules
   - Removed Python files:
     - `src/bigclaw/execution_contract.py`
