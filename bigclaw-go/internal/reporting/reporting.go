@@ -250,6 +250,35 @@ func (v SharedViewContext) Summary() string {
 	}
 }
 
+type BenchmarkReplayRecord struct {
+	TaskID   string `json:"task_id"`
+	RunID    string `json:"run_id"`
+	Medium   string `json:"medium"`
+	Approved bool   `json:"approved"`
+	Status   string `json:"status"`
+}
+
+type BenchmarkReplayOutcome struct {
+	Matched      bool                  `json:"matched"`
+	ReplayRecord BenchmarkReplayRecord `json:"replay_record"`
+	Mismatches   []string              `json:"mismatches,omitempty"`
+	ReportPath   string                `json:"report_path,omitempty"`
+}
+
+type BenchmarkCriterion struct {
+	Name   string `json:"name"`
+	Weight int    `json:"weight"`
+	Passed bool   `json:"passed"`
+	Detail string `json:"detail"`
+}
+
+type BenchmarkRunIndexRecord struct {
+	TaskID     string `json:"task_id"`
+	Medium     string `json:"medium"`
+	Status     string `json:"status"`
+	ReportPath string `json:"report_path,omitempty"`
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -1337,6 +1366,63 @@ func RenderBenchmarkSuiteReport(suite BenchmarkSuiteResult, baseline *BenchmarkS
 	for _, comparison := range comparisons {
 		builder.WriteString(fmt.Sprintf("- %s: baseline=%d current=%d delta=%d\n", comparison.CaseID, comparison.BaselineScore, comparison.CurrentScore, comparison.Delta))
 	}
+	return builder.String()
+}
+
+func RenderReplayDetailPage(expected, observed BenchmarkReplayRecord, mismatches []string) string {
+	builder := strings.Builder{}
+	builder.WriteString("<html><head><title>Replay Detail</title></head><body>\n")
+	builder.WriteString(fmt.Sprintf("<h1>Replay Detail</h1><p>Task %s replay comparison for run %s.</p>\n", expected.TaskID, expected.RunID))
+	builder.WriteString("<h2>Timeline / Log Sync</h2>\n")
+	builder.WriteString(fmt.Sprintf("<p>expected medium=%s observed medium=%s</p>\n", expected.Medium, observed.Medium))
+	builder.WriteString("<h2>Split View</h2>\n")
+	builder.WriteString(fmt.Sprintf("<p>expected status=%s observed status=%s</p>\n", expected.Status, observed.Status))
+	builder.WriteString("<h2>Replay</h2>\n<ul>\n")
+	if len(mismatches) == 0 {
+		builder.WriteString("<li>None</li>\n")
+	} else {
+		for _, mismatch := range mismatches {
+			builder.WriteString("<li>" + mismatch + "</li>\n")
+		}
+	}
+	builder.WriteString("</ul>\n")
+	builder.WriteString("<h2>Reports</h2>\n<p>No standalone reports.</p>\n")
+	builder.WriteString("</body></html>\n")
+	return builder.String()
+}
+
+func RenderRunReplayIndexPage(caseID string, record BenchmarkRunIndexRecord, replay BenchmarkReplayOutcome, criteria []BenchmarkCriterion) string {
+	reportPath := firstNonEmpty(record.ReportPath, "n/a")
+	detailPath := "n/a"
+	if strings.TrimSpace(record.ReportPath) != "" {
+		detailPath = strings.TrimSuffix(record.ReportPath, filepath.Ext(record.ReportPath)) + ".html"
+	}
+	replayPath := firstNonEmpty(replay.ReportPath, "n/a")
+
+	builder := strings.Builder{}
+	builder.WriteString("<html><head><title>Run Detail Index</title></head><body>\n")
+	builder.WriteString(fmt.Sprintf("<h1>Run Detail Index</h1><p>Case %s task %s medium %s.</p>\n", caseID, record.TaskID, record.Medium))
+	builder.WriteString("<h2>Timeline / Log Sync</h2>\n")
+	for _, criterion := range criteria {
+		builder.WriteString(fmt.Sprintf("<div>%s</div>\n", criterion.Name))
+	}
+	builder.WriteString("<h2>Acceptance</h2>\n<ul>\n")
+	if len(criteria) == 0 {
+		builder.WriteString("<li>None</li>\n")
+	} else {
+		for _, criterion := range criteria {
+			builder.WriteString(fmt.Sprintf("<li>%s | weight=%d | passed=%t</li>\n", criterion.Name, criterion.Weight, criterion.Passed))
+		}
+	}
+	builder.WriteString("</ul>\n")
+	builder.WriteString("<h2>Replay</h2>\n")
+	builder.WriteString(fmt.Sprintf("<p>matched=%t run=%s</p>\n", replay.Matched, replay.ReplayRecord.RunID))
+	builder.WriteString("<h2>Reports</h2>\n<ul>\n")
+	builder.WriteString(fmt.Sprintf("<li>%s</li>\n", reportPath))
+	builder.WriteString(fmt.Sprintf("<li>%s</li>\n", detailPath))
+	builder.WriteString(fmt.Sprintf("<li>%s</li>\n", replayPath))
+	builder.WriteString("</ul>\n")
+	builder.WriteString("</body></html>\n")
 	return builder.String()
 }
 

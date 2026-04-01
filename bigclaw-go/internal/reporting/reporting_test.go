@@ -483,6 +483,68 @@ func TestRenderBenchmarkSuiteReport(t *testing.T) {
 	}
 }
 
+func TestRenderReplayDetailPageListsMismatches(t *testing.T) {
+	expected := BenchmarkReplayRecord{TaskID: "BIG-804", RunID: "run-1", Medium: "docker", Approved: true, Status: "approved"}
+	observed := BenchmarkReplayRecord{TaskID: "BIG-804", RunID: "run-1", Medium: "browser", Approved: false, Status: "needs-approval"}
+
+	page := RenderReplayDetailPage(expected, observed, []string{"medium expected docker got browser", "approved expected True got False"})
+	for _, fragment := range []string{
+		"Replay Detail",
+		"Timeline / Log Sync",
+		"Split View",
+		"Reports",
+		"medium expected docker got browser",
+		"needs-approval",
+	} {
+		if !strings.Contains(page, fragment) {
+			t.Fatalf("expected %q in replay detail page, got %s", fragment, page)
+		}
+	}
+}
+
+func TestRenderRunReplayIndexPageLinksOutputs(t *testing.T) {
+	page := RenderRunReplayIndexPage(
+		"big-804-index",
+		BenchmarkRunIndexRecord{TaskID: "BIG-804", Medium: "browser", Status: "approved", ReportPath: "task-run.md"},
+		BenchmarkReplayOutcome{
+			Matched:      true,
+			ReplayRecord: BenchmarkReplayRecord{TaskID: "BIG-804", RunID: "run-1", Medium: "browser", Approved: true, Status: "approved"},
+			ReportPath:   "replay.html",
+		},
+		[]BenchmarkCriterion{{Name: "decision-medium", Weight: 40, Passed: true, Detail: "detail"}},
+	)
+	for _, fragment := range []string{
+		"Run Detail Index",
+		"Timeline / Log Sync",
+		"Acceptance",
+		"Reports",
+		"task-run.md",
+		"replay.html",
+		"decision-medium",
+	} {
+		if !strings.Contains(page, fragment) {
+			t.Fatalf("expected %q in run replay index page, got %s", fragment, page)
+		}
+	}
+}
+
+func TestRenderRunReplayIndexPageWithoutReportPath(t *testing.T) {
+	page := RenderRunReplayIndexPage(
+		"big-804-index",
+		BenchmarkRunIndexRecord{TaskID: "BIG-804", Medium: "docker", Status: "approved"},
+		BenchmarkReplayOutcome{
+			Matched:      true,
+			ReplayRecord: BenchmarkReplayRecord{TaskID: "BIG-804", RunID: "run-1", Medium: "docker", Approved: true, Status: "approved"},
+		},
+		nil,
+	)
+	for _, fragment := range []string{"n/a", "Replay"} {
+		if !strings.Contains(page, fragment) {
+			t.Fatalf("expected %q in run replay index page, got %s", fragment, page)
+		}
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
