@@ -6,8 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_code_migration_commit": "9746a50c",
-    "latest_closeout_commit": "68140d54"
+    "latest_code_migration_commit": "9746a50c"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-1051-closeout.md",
@@ -44,6 +43,7 @@
     "summary": "No additional in-repo implementation work remains for BIG-GO-1051."
   },
   "notes": [
-    "The benchmark helper Python files were already absent in this checkout before the lane started, so the delivered value is Go-only enforcement, stale-entrypoint cleanup, and benchmark evidence refresh rather than a fresh in-branch file-count drop."
+    "The benchmark helper Python files were already absent in this checkout before the lane started, so the delivered value is Go-only enforcement, stale-entrypoint cleanup, and benchmark evidence refresh rather than a fresh in-branch file-count drop.",
+    "The closeout artifacts intentionally avoid pinning a self-updating latest metadata SHA so the lane status does not drift on every follow-up bookkeeping commit."
   ]
 }

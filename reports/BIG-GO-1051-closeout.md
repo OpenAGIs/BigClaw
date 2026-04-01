@@ -14,10 +14,6 @@ Date: `2026-04-01`
 
 `9746a50c`
 
-## Latest Documentation And Closeout Commit
-
-`68140d54`
-
 ## In-Repo Artifacts
 
 - Validation report:
@@ -66,4 +62,4 @@ evidence, and added regression coverage rather than performing a fresh in-branch
 ## Final Repo Check
 
 - `git status --short --branch` is clean against `origin/main`.
-- `git rev-parse HEAD` matches `git rev-parse origin/main` at `68140d5477b949b2c93effebfec93647db34c478`.
+- `git rev-parse HEAD` matched `git rev-parse origin/main` when the closeout was recorded.
