@@ -25,6 +25,45 @@
 
 ## Validation Results
 
+- Tranche: replace Python event bus module with Go package
+  - Removed Python files:
+    - `src/bigclaw/event_bus.py`
+    - `tests/test_event_bus.py`
+  - Updated Python files:
+    - `src/bigclaw/__init__.py`
+  - Added Go files:
+    - `bigclaw-go/internal/runevents/bus.go`
+    - `bigclaw-go/internal/runevents/bus_test.go`
+- `gofmt -w bigclaw-go/internal/runevents/bus.go bigclaw-go/internal/runevents/bus_test.go`
+  - no output
+- `cd bigclaw-go && go test ./internal/runevents`
+  - `ok  	bigclaw-go/internal/runevents	0.456s`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/conftest.py`
+  - `tests/test_console_ia.py`
+  - `tests/test_control_center.py`
+  - `tests/test_design_system.py`
+  - `tests/test_evaluation.py`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_planning.py`
+  - `tests/test_repo_collaboration.py`
+  - `tests/test_repo_rollout.py`
+  - `tests/test_reports.py`
+  - `tests/test_runtime_matrix.py`
+  - `tests/test_scheduler.py`
+  - `tests/test_ui_review.py`
+- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
+  - `14`
+- `find . -name '*.py' | sort | wc -l`
+  - `61`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+- `git status --short`
+  - `M src/bigclaw/__init__.py`
+  - `D src/bigclaw/event_bus.py`
+  - `D tests/test_event_bus.py`
+  - `?? bigclaw-go/internal/runevents/`
 - Tranche: replace Python memory and validation policy modules with Go packages
   - Removed Python files:
     - `src/bigclaw/memory.py`
