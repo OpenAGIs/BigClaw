@@ -349,6 +349,10 @@ Milestone:
 Historical initial state:
 - `Backlog`
 
+Follow-up cleanup retired `src/bigclaw/deprecation.py`; the remaining Python
+compatibility warnings are now defined inline on the few migration-only entry
+surfaces that still exist.
+
 ## Parallel execution order
 
 Phase 1:
