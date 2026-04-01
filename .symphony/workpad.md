@@ -10,11 +10,13 @@
 - `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py` are deleted from the repository.
 - Repo-default operator guidance points at `bash scripts/ops/bigclawctl ...` instead of the deleted Python entrypoints.
 - Regression coverage asserts the tranche-2 Python wrapper files stay absent while the Go replacement surfaces remain present.
+- Regression coverage also asserts `scripts/ops` stays Python-free.
 - Validation records show the `.py` file count drops and the replacement Go entrypoints still execute successfully.
 
 ## Validation
 - `find . -name '*.py' | wc -l`
 - `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
+- `find scripts/ops -maxdepth 1 -type f -name '*.py'`
 - `bash scripts/ops/bigclawctl refill --help`
 - `bash scripts/ops/bigclawctl workspace bootstrap --help`
 - `bash scripts/ops/bigclawctl workspace validate --help`

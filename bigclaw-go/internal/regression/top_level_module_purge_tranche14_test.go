@@ -21,6 +21,14 @@ func TestTopLevelModulePurgeTranche14(t *testing.T) {
 		}
 	}
 
+	residualOpsPython, err := filepath.Glob(filepath.Join(repoRoot, "scripts", "ops", "*.py"))
+	if err != nil {
+		t.Fatalf("glob scripts/ops/*.py: %v", err)
+	}
+	if len(residualOpsPython) != 0 {
+		t.Fatalf("expected scripts/ops to stay Python-free, found %v", residualOpsPython)
+	}
+
 	goReplacementFiles := []string{
 		"scripts/ops/bigclawctl",
 		"bigclaw-go/internal/bootstrap/bootstrap.go",

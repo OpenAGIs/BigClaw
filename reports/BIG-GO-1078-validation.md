@@ -23,6 +23,7 @@ Replacement surfaces confirmed:
 
 - `find . -name '*.py' | wc -l`
 - `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
+- `find scripts/ops -maxdepth 1 -type f -name '*.py'`
 - `bash scripts/ops/bigclawctl refill --help`
 - `bash scripts/ops/bigclawctl workspace bootstrap --help`
 - `bash scripts/ops/bigclawctl workspace validate --help`
@@ -38,6 +39,10 @@ Replacement surfaces confirmed:
     - `ok  	bigclaw-go/internal/legacyshim	1.219s`
     - `ok  	bigclaw-go/internal/regression	1.256s`
     - `ok  	bigclaw-go/cmd/bigclawctl	5.340s`
+- `find scripts/ops -maxdepth 1 -type f -name '*.py'`
+  - Result: no output
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14`
+  - Result: `ok  	bigclaw-go/internal/regression	0.523s`
 - `bash scripts/ops/bigclawctl refill --help`
   - Result: exited `0`; printed `usage: bigclawctl refill [flags]`
 - `bash scripts/ops/bigclawctl workspace bootstrap --help`
