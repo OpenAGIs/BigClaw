@@ -317,7 +317,6 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "repo->")
 	for _, relativePath := range []string{
-		"src/bigclaw/service.py",
 		"src/bigclaw/__main__.py",
 		"src/bigclaw/legacy_shim.py",
 	} {
@@ -354,7 +353,7 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	if !bytes.Contains(output, []byte(repoRoot)) {
 		t.Fatalf("expected raw arrow token in legacy-python repo path, got %s", string(output))
 	}
-	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/service.py"))) {
+	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/__main__.py"))) {
 		t.Fatalf("expected raw arrow token in legacy-python file list, got %s", string(output))
 	}
 	if bytes.Contains(output, []byte(`\u003e`)) {

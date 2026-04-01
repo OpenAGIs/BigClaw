@@ -159,6 +159,6 @@ ops wrappers remain only as compatibility shims during migration.
 
 The legacy Python execution-kernel modules for runtime, scheduler, workflow,
 orchestration, queue, and refill have been removed from the active repo
-surface. The legacy `python -m bigclaw serve` / `src/bigclaw/service.py` path
-is also retired; use `go run ./bigclaw-go/cmd/bigclawd` for the active local
-server path. Active runtime development belongs in `bigclaw-go/internal/*`.
+surface. The old `python -m bigclaw serve` path is also retired; use
+`go run ./bigclaw-go/cmd/bigclawd` for the active local server path. Active
+runtime development belongs in `bigclaw-go/internal/*`.
