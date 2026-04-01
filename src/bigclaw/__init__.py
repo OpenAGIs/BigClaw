@@ -124,6 +124,16 @@ _install_surface_module(
     _observability_surface,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
 )
+_install_surface_module(
+    "deprecation",
+    [
+        "LEGACY_RUNTIME_GUIDANCE",
+        "legacy_runtime_message",
+        "warn_legacy_runtime_surface",
+    ],
+    _legacy_runtime_surface,
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
