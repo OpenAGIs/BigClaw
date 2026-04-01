@@ -25,6 +25,34 @@
 
 ## Validation Results
 
+- Tranche: replace Python evaluation test coverage with Go benchmark report contract tests
+  - Removed Python files:
+    - `tests/test_evaluation.py`
+  - Added Go files:
+    - `bigclaw-go/cmd/bigclawctl/automation_benchmark_report_contract_test.go`
+- `gofmt -w bigclaw-go/cmd/bigclawctl/automation_benchmark_report_contract_test.go`
+  - no output
+- `cd bigclaw-go && go test ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/cmd/bigclawctl	2.811s`
+- `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_operations.py tests/test_reports.py`
+  - `============================= test session starts ==============================`
+  - `platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0`
+  - `rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1040`
+  - `plugins: cov-7.1.0`
+  - `collected 61 items`
+  - `tests/test_observability.py .......                                      [ 11%]`
+  - `tests/test_operations.py ....................                            [ 44%]`
+  - `tests/test_reports.py ..................................                 [100%]`
+  - `============================== 61 passed in 0.10s ==============================`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/test_observability.py`
+  - `tests/test_operations.py`
+  - `tests/test_reports.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `18`
+- `git status --short`
+  - `D tests/test_evaluation.py`
+  - `?? bigclaw-go/cmd/bigclawctl/automation_benchmark_report_contract_test.go`
 - Tranche: delete Python pytest path shim and run the residual test slice with explicit PYTHONPATH
   - Removed Python files:
     - `tests/conftest.py`
