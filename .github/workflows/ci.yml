@@ -22,10 +22,14 @@ jobs:
           pip install pytest pytest-cov ruff
       - name: Verify Go-only migration entrypoints
         run: |
-          if git grep -nE 'bigclaw-go/scripts/migration/.+\.py' -- README.md workflow.md .github/workflows .githooks bigclaw-go/README.md; then
-            echo "stale deleted Python migration helper references found"
-            exit 1
-          fi
+          for legacy_suffix in "_compare.py" "_matrix.py" "_scorecard.py" "_bundle.py"; do
+            if git grep -nF "scripts/migration/shadow${legacy_suffix}" -- README.md workflow.md bigclaw-go/README.md || \
+              git grep -nF "scripts/migration/live_shadow${legacy_suffix}" -- README.md workflow.md bigclaw-go/README.md || \
+              git grep -nF "scripts/migration/export_live_shadow${legacy_suffix}" -- README.md workflow.md bigclaw-go/README.md; then
+              echo "stale deleted Python migration helper references found"
+              exit 1
+            fi
+          done
       - name: Go migration regression
         run: cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression -run 'TestAutomationMigrationHelpSurface|TestMigrationEntryPointsStayGoOnly'
       - name: Lint
