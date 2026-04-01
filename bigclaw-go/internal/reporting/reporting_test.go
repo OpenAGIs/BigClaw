@@ -109,6 +109,43 @@ func TestBuildOperationsMetricSpec(t *testing.T) {
 	}
 }
 
+func TestBuildRepoCollaborationMetrics(t *testing.T) {
+	runs := []map[string]any{
+		{
+			"run_id": "r1",
+			"closeout": map[string]any{
+				"run_commit_links":     []any{map[string]any{"role": "candidate"}},
+				"accepted_commit_hash": "abc123",
+			},
+			"repo_discussion_posts":  3,
+			"accepted_lineage_depth": 2,
+		},
+		{
+			"run_id": "r2",
+			"closeout": map[string]any{
+				"run_commit_links":     []any{},
+				"accepted_commit_hash": "",
+			},
+			"repo_discussion_posts":  1,
+			"accepted_lineage_depth": 4,
+		},
+	}
+
+	metrics := BuildRepoCollaborationMetrics(runs)
+	if metrics.RepoLinkCoverage != 50.0 {
+		t.Fatalf("unexpected repo link coverage: %+v", metrics)
+	}
+	if metrics.AcceptedCommitRate != 50.0 {
+		t.Fatalf("unexpected accepted commit rate: %+v", metrics)
+	}
+	if metrics.DiscussionDensity != 2.0 {
+		t.Fatalf("unexpected discussion density: %+v", metrics)
+	}
+	if metrics.AcceptedLineageDepthAvg != 3.0 {
+		t.Fatalf("unexpected accepted lineage depth avg: %+v", metrics)
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)

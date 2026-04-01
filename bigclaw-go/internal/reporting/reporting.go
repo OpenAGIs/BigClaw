@@ -86,6 +86,13 @@ type WeeklyArtifacts struct {
 	VersionCenterPath    string `json:"version_center_path,omitempty"`
 }
 
+type RepoCollaborationMetrics struct {
+	RepoLinkCoverage        float64 `json:"repo_link_coverage"`
+	AcceptedCommitRate      float64 `json:"accepted_commit_rate"`
+	DiscussionDensity       float64 `json:"discussion_density"`
+	AcceptedLineageDepthAvg float64 `json:"accepted_lineage_depth_avg"`
+}
+
 type ConsoleAction struct {
 	ActionID string `json:"action_id"`
 	Label    string `json:"label"`
@@ -868,6 +875,42 @@ func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview
 	return path, nil
 }
 
+func BuildRepoCollaborationMetrics(runs []map[string]any) RepoCollaborationMetrics {
+	total := len(runs)
+	linked := 0
+	accepted := 0
+	discussionPosts := 0.0
+	lineageDepthSum := 0.0
+	lineageDepthCount := 0
+
+	for _, run := range runs {
+		if closeout, ok := run["closeout"].(map[string]any); ok {
+			if links, ok := closeout["run_commit_links"].([]any); ok && len(links) > 0 {
+				linked++
+			}
+			if strings.TrimSpace(anyString(closeout["accepted_commit_hash"])) != "" {
+				accepted++
+			}
+		}
+		discussionPosts += anyFloat(run["repo_discussion_posts"])
+		if depth, ok := anyFloatOK(run["accepted_lineage_depth"]); ok {
+			lineageDepthSum += depth
+			lineageDepthCount++
+		}
+	}
+
+	metrics := RepoCollaborationMetrics{}
+	if total > 0 {
+		metrics.RepoLinkCoverage = roundTo((float64(linked)/float64(total))*100, 1)
+		metrics.AcceptedCommitRate = roundTo((float64(accepted)/float64(total))*100, 1)
+		metrics.DiscussionDensity = roundTo(discussionPosts/float64(total), 2)
+	}
+	if lineageDepthCount > 0 {
+		metrics.AcceptedLineageDepthAvg = roundTo(lineageDepthSum/float64(lineageDepthCount), 2)
+	}
+	return metrics
+}
+
 func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 	center := QueueControlCenter{
 		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
@@ -1452,6 +1495,59 @@ func buildRecentActivities(tasks []domain.Task, latest map[string]domain.Event, 
 		})
 	}
 	return out
+}
+
+func anyString(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	default:
+		return ""
+	}
+}
+
+func anyFloat(value any) float64 {
+	out, _ := anyFloatOK(value)
+	return out
+}
+
+func anyFloatOK(value any) (float64, bool) {
+	switch typed := value.(type) {
+	case int:
+		return float64(typed), true
+	case int8:
+		return float64(typed), true
+	case int16:
+		return float64(typed), true
+	case int32:
+		return float64(typed), true
+	case int64:
+		return float64(typed), true
+	case uint:
+		return float64(typed), true
+	case uint8:
+		return float64(typed), true
+	case uint16:
+		return float64(typed), true
+	case uint32:
+		return float64(typed), true
+	case uint64:
+		return float64(typed), true
+	case float32:
+		return float64(typed), true
+	case float64:
+		return typed, true
+	default:
+		return 0, false
+	}
+}
+
+func roundTo(value float64, places int) float64 {
+	if places < 0 {
+		return value
+	}
+	factor := math.Pow10(places)
+	return math.Round(value*factor) / factor
 }
 
 func roundTenth(value float64) float64 {

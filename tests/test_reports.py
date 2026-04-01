@@ -130,7 +130,6 @@ from bigclaw.operations import (
     DashboardWidgetSpec,
     OperationsAnalytics,
     VersionedArtifact,
-    build_repo_collaboration_metrics,
     render_dashboard_builder_report,
     render_engineering_overview,
     render_operations_dashboard,
@@ -2174,36 +2173,6 @@ def test_operations_snapshot_tracks_sla_and_success_rate() -> None:
     assert snapshot.approval_queue_depth == 1
     assert snapshot.sla_breach_count == 1
     assert snapshot.average_cycle_minutes == 51.7
-
-
-def test_build_repo_collaboration_metrics() -> None:
-    runs = [
-        {
-            "run_id": "r1",
-            "closeout": {
-                "run_commit_links": [{"role": "candidate"}],
-                "accepted_commit_hash": "abc123",
-            },
-            "repo_discussion_posts": 3,
-            "accepted_lineage_depth": 2,
-        },
-        {
-            "run_id": "r2",
-            "closeout": {
-                "run_commit_links": [],
-                "accepted_commit_hash": "",
-            },
-            "repo_discussion_posts": 1,
-            "accepted_lineage_depth": 4,
-        },
-    ]
-
-    metrics = build_repo_collaboration_metrics(runs)
-
-    assert metrics["repo_link_coverage"] == 50.0
-    assert metrics["accepted_commit_rate"] == 50.0
-    assert metrics["discussion_density"] == 2.0
-    assert metrics["accepted_lineage_depth_avg"] == 3.0
 
 
 def test_normalize_dashboard_layout_clamps_dimensions_and_sorts_placements() -> None:
