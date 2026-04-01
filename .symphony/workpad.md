@@ -1,47 +1,43 @@
-# BIG-GO-1057 Workpad
+# BIG-GO-1064 Workpad
 
 ## Plan
-- Confirm every live entry surface that still references `scripts/ops/bigclaw_github_sync.py`.
-- Remove `scripts/ops/bigclaw_github_sync.py`.
-- Update hooks, README, migration docs, and regression tests to use `bash scripts/ops/bigclawctl github-sync ...` instead of the deleted Python wrapper.
-- Add or adjust regression coverage so this slice asserts the deleted wrapper stays absent and the Go-first entrypoint remains usable.
-- Run targeted validation, record exact commands and results, then commit and push the branch.
+- Capture the pre-change Python file baseline for the repo and confirm which suggested residual tests still exist in this workspace.
+- Inspect the remaining Python test assets in scope: `tests/conftest.py`, `tests/test_console_ia.py`, `tests/test_control_center.py`, `tests/test_design_system.py`, and `tests/test_evaluation.py`.
+- Map each in-scope Python test to an existing Go replacement, or decide that the Python file can be deleted with no replacement because Go regression coverage already pins the surface.
+- Remove the in-scope Python test assets that are now redundant and add or adjust Go regression coverage only where the deletion would otherwise become unverifiable.
+- Run targeted validation, record exact commands and outcomes, then commit and push the branch.
 
 ## Acceptance
-- `scripts/ops/bigclaw_github_sync.py` is deleted from the repo.
-- Live operator entry surfaces no longer call the deleted Python wrapper.
-- README, hooks, workflow-adjacent docs, and CI-facing references for this entrypoint point at `scripts/ops/bigclawctl` or equivalent shell/Go entry.
-- Regression coverage pins the removal so the Python entrypoint does not return.
-- `.py` file count decreases relative to the pre-change baseline.
+- This batch explicitly accounts for the in-scope residual Python assets that still exist in the workspace.
+- The chosen Python test files are deleted, replaced, or otherwise downgraded away from live Python execution.
+- Go-side validation remains available for the affected product surfaces after the Python removals.
+- Exact validation commands and outcomes are captured for closeout.
+- Repo-wide physical Python file count decreases from the pre-change baseline.
 
 ## Validation
-- Capture pre/post `.py` file counts with `rg --files . | rg '\\.py$' | wc -l`.
-- Run targeted Go tests covering the github-sync CLI and purge regression.
-- Run the Go-first github-sync help/status commands through `scripts/ops/bigclawctl`.
-- Record exact commands and pass/fail outcomes in the closeout response.
+- `find . -type f \\( -name '*.py' -o -name '*.pyi' \\) | sort | wc -l`
+- `find tests -type f \\( -name '*.py' -o -name '*.pyi' \\) | sort`
+- `cd bigclaw-go && go test ./internal/product ./internal/regression`
+- `git status --short`
 
-## Archived Closeout
+## Scope Results
+- Pre-change repo Python file count at `HEAD`: `43`
+- Post-change repo Python file count in workspace: `39`
+- Net reduction this tranche: `4` Python files
+- Pre-change in-scope `tests/` Python assets: `tests/conftest.py`, `tests/test_console_ia.py`, `tests/test_control_center.py`, `tests/test_design_system.py`, `tests/test_evaluation.py`
+- Removed in this tranche: `tests/test_console_ia.py`, `tests/test_control_center.py`, `tests/test_design_system.py`, `tests/test_evaluation.py`
+- Retained in scope: `tests/conftest.py` because the repo still has active pytest coverage under `tests/` and this shared fixture file remains live infrastructure rather than a product-surface test asset.
 
-### BIG-GO-1053
+## Validation Results
+- `find . -type f \( -name '*.py' -o -name '*.pyi' \) | sort | wc -l`
+  Result: `39`
+- `find tests -type f \( -name '*.py' -o -name '*.pyi' \) | sort`
+  Result: `tests/conftest.py`, `tests/test_live_shadow_bundle.py`, `tests/test_models.py`, `tests/test_observability.py`, `tests/test_operations.py`, `tests/test_orchestration.py`, `tests/test_planning.py`, `tests/test_queue.py`, `tests/test_repo_collaboration.py`, `tests/test_repo_links.py`, `tests/test_repo_rollout.py`, `tests/test_reports.py`, `tests/test_risk.py`, `tests/test_runtime_matrix.py`, `tests/test_scheduler.py`, `tests/test_ui_review.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+  Result: `14 passed in 0.09s`
+- `cd bigclaw-go && go test ./internal/product ./internal/regression`
+  Result: `ok   bigclaw-go/internal/product 1.645s`; `ok   bigclaw-go/internal/regression 1.963s`
 
-- Baseline code migration landed on `main` at `004de016252d6ca168a45dccda48fc9fa69e27f1`.
-- Closeout artifacts for the lane are tracked in:
-  - `reports/BIG-GO-1053-validation.md`
-  - `reports/BIG-GO-1053-closeout.md`
-  - `reports/BIG-GO-1053-status.json`
-- Additional stale Python entrypoint tests removed after closeout verification:
-  - `tests/test_parallel_validation_bundle.py`
-  - `tests/test_validation_bundle_continuation_policy_gate.py`
-- Validation recorded for `BIG-GO-1053`:
-  - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
-  - `find . -name '*.py' | wc -l` -> `43`
-  - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
-- Historical branch handoff URL:
-  - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
-- Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
-  the closeout landed on `main`.
-- Remote closeout comment posted on merged PR `#217`:
-  - `https://github.com/OpenAGIs/BigClaw/pull/217#issuecomment-4167169146`
-- No writable local tracker entry exists for `BIG-GO-1053` in `local-issues.json` or the
-  Symphony local issue store, so any remaining active state is external to this workspace.
-- Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
+## Residual Risk
+- `src/bigclaw/planning.py` still emits Python-side candidate metadata; this tranche only repointed its validation/evidence references away from deleted Python tests and did not migrate the planner module itself.
+- `tests/conftest.py` remains until a broader pytest retirement tranche removes the remaining Python test suite or replaces its shared fixture behavior.

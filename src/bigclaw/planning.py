@@ -344,10 +344,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 priority="P0",
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
-                validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py "
-                    "tests/test_console_ia.py tests/test_ui_review.py -q"
-                ),
+                validation_command="cd bigclaw-go && go test ./internal/product",
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
                 evidence_links=[
@@ -371,15 +368,15 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="ui-acceptance-tests",
-                        target="tests/test_design_system.py",
+                        target="bigclaw-go/internal/product/console_test.go",
                         capability="release-gate",
-                        note="role-permission, data accuracy, and performance audits",
+                        note="Go console design-system defaults, navigation, and home-card coverage",
                     ),
                     EvidenceLink(
                         label="console-shell-tests",
-                        target="tests/test_console_ia.py",
+                        target="bigclaw-go/internal/product/console_test.go",
                         capability="release-gate",
-                        note="console shell and interaction draft release readiness",
+                        note="Go console shell navigation and helper coverage",
                     ),
                     EvidenceLink(
                         label="review-pack-tests",
@@ -396,11 +393,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 priority="P0",
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
-                validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
-                    "tests/test_evaluation.py -q && "
-                    "(cd bigclaw-go && go test ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler)"
-                ),
+                validation_command="cd bigclaw-go && go test ./internal/reporting ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler ./cmd/bigclawctl ./internal/api",
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
                 evidence=["weekly-review", "validation-report"],
                 evidence_links=[
@@ -412,9 +405,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="command-center-tests",
-                        target="tests/test_control_center.py",
+                        target="bigclaw-go/internal/reporting/reporting_test.go",
                         capability="ops-control",
-                        note="queue control center validation",
+                        note="Go queue control center render and bundle validation",
                     ),
                     EvidenceLink(
                         label="operations-tests",
@@ -466,9 +459,15 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-tests",
-                        target="tests/test_evaluation.py",
+                        target="bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
                         capability="rollback-simulation",
-                        note="replay and benchmark validation",
+                        note="Go benchmark matrix and capacity-certification validation",
+                    ),
+                    EvidenceLink(
+                        label="run-replay-tests",
+                        target="bigclaw-go/internal/api/server_test.go",
+                        capability="rollback-simulation",
+                        note="Go replay timeline and consumer contract validation",
                     ),
                 ],
             ),
