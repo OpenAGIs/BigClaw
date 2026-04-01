@@ -19,9 +19,9 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
 - retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`
-- `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
+- retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bigclawctl workspace bootstrap`
+- retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bigclawctl workspace ...`
+- retired `scripts/ops/symphony_workspace_validate.py`; use `bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
 
@@ -56,16 +56,14 @@ The remaining compatibility layer is intentionally thin:
 
 ### Compatibility shims kept in place
 
-- `scripts/ops/bigclaw_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_validate.py`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
 These shims should remain until operator docs and external automation references are updated to
 invoke `bash scripts/ops/bigclawctl ...` directly. The GitHub sync and refill Python wrappers are
-already retired because the operator path is now Go-only for those surfaces.
+already retired because the operator path is now Go-only for those surfaces. The workspace Python
+wrappers are also retired; operators now invoke the Go CLI directly for bootstrap and validation.
 
 ## Remaining Backlog
 
@@ -85,7 +83,7 @@ already retired because the operator path is now Go-only for those surfaces.
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `bash scripts/ops/bigclawctl refill --help`
-- `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
 - `bash scripts/dev_bootstrap.sh`
 - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `bash scripts/ops/bigclawctl issue --help`

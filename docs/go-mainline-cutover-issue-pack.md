@@ -289,7 +289,6 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/parallel_refill.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
 
 Go ownership:
 - new `cmd/bigclawctl`
@@ -307,6 +306,7 @@ Dependencies:
 Current repo progress:
 - `scripts/ops/bigclawctl` now routes operators into the Go `cmd/bigclawctl` entrypoint instead of the legacy Python helpers
 - `scripts/ops/bigclaw_github_sync.py` and `scripts/ops/bigclaw_refill_queue.py` are retired; operators now invoke `bash scripts/ops/bigclawctl github-sync ...` and `bash scripts/ops/bigclawctl refill ...`
+- `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py` are retired; operators now invoke `bash scripts/ops/bigclawctl workspace ...` directly
 - `bigclaw-go/internal/bootstrap/*` now owns shared-mirror bootstrap, cleanup, and validation logic with Go tests
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic with tracker-neutral `TrackedIssue` records, while `cmd/bigclawctl refill` handles backend-specific polling and promotion
