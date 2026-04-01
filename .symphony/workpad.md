@@ -11,7 +11,7 @@
 ## Acceptance
 
 - The repository-wide `*.py` file count decreases from the starting count for this issue.
-- The deleted tranche is limited to top-level `src/bigclaw/*.py` modules already assigned to canonical Go owners, specifically the intake/DSL compatibility slice, the risk/governance/audit/execution-contract compatibility slice, the repo-governance compatibility slice, the small repo-collaboration lineage slice (`repo_links`, `repo_commits`, `repo_gateway`), the repo-platform slice (`repo_plane`, `repo_registry`, `repo_board`), the repo-triage slice (`repo_triage`), and the product-planning slice (`collaboration`, `issue_archive`, `roadmap`).
+- The deleted tranche is limited to top-level `src/bigclaw/*.py` modules already assigned to canonical Go owners, specifically the intake/DSL compatibility slice, the risk/governance/audit/execution-contract compatibility slice, the repo-governance compatibility slice, the small repo-collaboration lineage slice (`repo_links`, `repo_commits`, `repo_gateway`), the repo-platform slice (`repo_plane`, `repo_registry`, `repo_board`), the repo-triage slice (`repo_triage`), the product-planning slice (`collaboration`, `issue_archive`, `roadmap`), and the saved-views slice (`saved_views`).
 - No new Python files are added.
 - The final commit message names the deleted Python files and the added Go file(s) and Go test file(s).
 - Targeted Python compatibility checks and targeted Go tests pass for the touched surfaces.
@@ -29,7 +29,7 @@
 ## Validation Results
 
 - `find . -name "*.py" | wc -l`
-  - `63`
+  - `62`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py -q`
   - `8 passed in 0.21s`
 - `PYTHONPATH=src python3 -m pytest tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py -q`
@@ -55,6 +55,8 @@
   - `2 passed in 0.07s`
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_observability.py tests/test_repo_collaboration.py -q`
   - `42 passed in 0.10s`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py tests/test_observability.py tests/test_repo_collaboration.py tests/test_repo_triage.py tests/test_repo_registry.py tests/test_repo_board.py tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_governance.py -q`
+  - `52 passed in 0.18s`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py tests/test_repo_governance.py tests/test_repo_links.py tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_repo_board.py tests/test_repo_collaboration.py -q`
   - `75 passed in 0.12s`
 - `PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_memory.py tests/test_runtime_matrix.py tests/test_risk.py tests/test_planning.py tests/test_observability.py tests/test_reports.py tests/test_repo_governance.py tests/test_repo_links.py tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_repo_triage.py -q`
@@ -86,5 +88,7 @@
   - `ok  	bigclaw-go/internal/regression	1.127s`
 - `cd bigclaw-go && go test ./internal/regression`
   - `ok  	bigclaw-go/internal/regression	0.914s`
+- `cd bigclaw-go && go test ./internal/regression`
+  - `ok  	bigclaw-go/internal/regression	1.804s`
 - `git status --short`
   - pending final stage/commit for second tranche
