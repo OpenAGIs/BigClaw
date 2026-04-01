@@ -136,7 +136,7 @@ Result:
 - Code migration commit:
   - `06789289080b536c02beb749882bbefa25fedec8`
 - Evidence commit:
-  - pending in this report at write time; see final branch head in the status file
+  - `102585651d85481987cdb72ffd5ef5ef238fbac1`
 - Push target:
   - `origin/symphony/BIG-GO-1070`
 
