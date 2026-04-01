@@ -1,21 +1,28 @@
-# BIG-GO-1075 Workpad
+## BIG-GO-1076
 
-## Plan
-- Confirm the live git-hook execution path for GitHub sync and identify any remaining non-Go default hop in the hook/install flow.
-- Move `.githooks/post-commit` and `.githooks/post-rewrite` to invoke the Go github-sync entrypoint directly from `bigclaw-go/cmd/bigclawctl`.
-- Teach the Go github-sync installer to materialize the canonical hook scripts so the repo-default and regenerated hooks stay aligned on the same Go-only path.
-- Add regression coverage for hook installation/content so the Python-era or wrapper-era hook path does not come back.
-- Run targeted validation, capture exact commands/results, then commit and push the branch.
+### Plan
 
-## Acceptance
-- `.githooks/post-commit` and `.githooks/post-rewrite` no longer depend on a Python sync path or on `scripts/ops/bigclawctl` as their default execution hop.
-- `bigclawctl github-sync install` writes or refreshes those hook scripts with the canonical Go-only content.
-- Regression tests pin the generated hook content and install behavior.
-- Validation proves the Go-only hook path works and records the exact commands/results.
+1. Inspect the residual root `scripts/ops/*.py` wrappers and their current call sites.
+2. Delete the four root `scripts/ops/*.py` operator wrappers and route the supported operator path through `scripts/ops/bigclawctl` only.
+3. Update the minimal docs/tests that still describe these wrappers as Python entrypoints.
+4. Run targeted validation covering wrapper behavior, wrapper help/invocation, and repository `.py` count.
+5. Commit and push the scoped branch changes.
 
-## Validation
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/githubsync ./cmd/bigclawctl`
-- `bash .githooks/post-commit`
-- `bash .githooks/post-rewrite`
-- `bash scripts/ops/bigclawctl github-sync status --json`
+### Acceptance
+
+- Root `scripts/ops` no longer contains the residual wrapper Python files:
+  - `bigclaw_refill_queue.py`
+  - `bigclaw_workspace_bootstrap.py`
+  - `symphony_workspace_bootstrap.py`
+  - `symphony_workspace_validate.py`
+- The supported refill and workspace operator paths are `bash scripts/ops/bigclawctl refill ...`, `bash scripts/ops/bigclawctl workspace bootstrap ...`, and `bash scripts/ops/bigclawctl workspace validate ...`.
+- Repository Python file count decreases from the current baseline.
+
+### Validation
+
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+- `bash scripts/ops/bigclawctl refill --help`
+- `bash scripts/ops/bigclawctl workspace bootstrap --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
+- `rg --files -g '*.py' | wc -l`
+- `git status --short`
