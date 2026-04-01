@@ -25,6 +25,7 @@ from .models import (
 )
 from . import runtime as _legacy_runtime_surface
 from . import planning as _legacy_planning_surface
+from . import design_system as _legacy_design_system_surface
 
 
 def _install_compat_surface_module(
@@ -111,6 +112,33 @@ _install_compat_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
 )
+_install_compat_surface_module(
+    "console_ia",
+    _legacy_design_system_surface,
+    [
+        "ConsoleIA",
+        "ConsoleIAAudit",
+        "ConsoleIAAuditor",
+        "ConsoleInteractionAudit",
+        "ConsoleInteractionAuditor",
+        "ConsoleInteractionDraft",
+        "ConsoleSurface",
+        "FilterDefinition",
+        "GlobalAction",
+        "NavigationItem",
+        "SurfaceInteractionContract",
+        "SurfacePermissionRule",
+        "SurfaceState",
+        "build_big_4203_console_interaction_draft",
+        "render_console_interaction_report",
+        "render_console_ia_report",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "the legacy Python console IA compatibility surface remains migration-only scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/product/console.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -152,47 +180,45 @@ from .design_system import (
     ComponentLibrary,
     ComponentSpec,
     ComponentVariant,
+    ConsoleIA,
+    ConsoleIAAudit,
+    ConsoleIAAuditor,
     ConsoleChromeLibrary,
     ConsoleCommandEntry,
+    ConsoleInteractionAudit,
+    ConsoleInteractionAuditor,
+    ConsoleInteractionDraft,
+    ConsoleSurface,
     ConsoleTopBar,
     ConsoleTopBarAudit,
     DataAccuracyCheck,
     DesignSystem,
     DesignSystemAudit,
     DesignToken,
+    FilterDefinition,
+    GlobalAction,
     InformationArchitecture,
     InformationArchitectureAudit,
+    NavigationItem,
     NavigationEntry,
     NavigationNode,
     NavigationRoute,
     PerformanceBudget,
     RolePermissionScenario,
+    SurfaceInteractionContract,
+    SurfacePermissionRule,
+    SurfaceState,
     UIAcceptanceAudit,
     UIAcceptanceLibrary,
     UIAcceptanceSuite,
     UsabilityJourney,
+    build_big_4203_console_interaction_draft,
+    render_console_interaction_report,
+    render_console_ia_report,
     render_console_top_bar_report,
     render_design_system_report,
     render_information_architecture_report,
     render_ui_acceptance_report,
-)
-from .console_ia import (
-    ConsoleIA,
-    ConsoleIAAudit,
-    ConsoleIAAuditor,
-    ConsoleInteractionAudit,
-    ConsoleInteractionAuditor,
-    ConsoleInteractionDraft,
-    ConsoleSurface,
-    FilterDefinition,
-    GlobalAction,
-    NavigationItem,
-    SurfaceInteractionContract,
-    SurfacePermissionRule,
-    SurfaceState,
-    build_big_4203_console_interaction_draft,
-    render_console_interaction_report,
-    render_console_ia_report,
 )
 from .observability import (
     APPROVAL_RECORDED_EVENT,

@@ -10,6 +10,7 @@
 - Retire the remaining Python doc/regression wrapper tests for live-shadow and validation-bundle surfaces after confirming checked-in artifact coverage remains active in Go regression and API suites.
 - Retire the remaining leaf Python compatibility tests for repo collaboration and repo rollout helper formatting after confirming broader collaboration, planning, and report surfaces remain exercised by the surviving Python suites.
 - Retire the remaining queue control-center compatibility test after confirming the broader operations surface remains exercised by the surviving operations suite.
+- Fold the remaining standalone console IA compatibility surface into `design_system.py`, keep `bigclaw.console_ia` available via a package compatibility module, and delete the extra physical Python file.
 
 ## Acceptance
 - Repository physical-layer Python residuals are reduced within this issue scope.
@@ -30,6 +31,8 @@
 - `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesLiveShadowMirrorPayload|TestDebugStatusIncludesValidationBundleContinuationPayload|TestV2ControlCenterIncludesDistributedDiagnosticsLiveShadowMirrorPayload|TestV2ControlCenterIncludesValidationBundleContinuationSurface|TestV2DistributedReportIncludesValidationBundleContinuationSurface' -count=1`
 - `PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_reports.py tests/test_observability.py -q`
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q`
+- `PYTHONPATH=src python3 -m pytest tests/test_console_ia.py tests/test_design_system.py -q`
+- `python3 -m py_compile src/bigclaw/design_system.py src/bigclaw/__init__.py`
 
 ## Results
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> `ok  	bigclaw-go/internal/legacyshim	1.098s` and `ok  	bigclaw-go/cmd/bigclawctl	5.977s`
@@ -197,3 +200,7 @@
 - Deleted the redundant Python `tests/test_control_center.py` after confirming the broader operations compatibility surface remains exercised by `tests/test_operations.py`.
 - `PYTHONPATH=src python3 -m pytest tests/test_operations.py -q` -> `20 passed in 0.07s`
 - `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 21`; `go 286`; `pkg 0`
+- Folded `src/bigclaw/console_ia.py` into `src/bigclaw/design_system.py`, installed `bigclaw.console_ia` as a package compatibility module from `src/bigclaw/__init__.py`, and deleted the standalone module to reduce repository `.py` count without changing the console IA compatibility surface.
+- `PYTHONPATH=src python3 -m pytest tests/test_console_ia.py tests/test_design_system.py -q` -> `26 passed in 0.11s`
+- `python3 -m py_compile src/bigclaw/design_system.py src/bigclaw/__init__.py` -> success
+- `printf 'py '; find . -path './.git' -prune -o -name '*.py' -print | wc -l; printf 'go '; find . -path './.git' -prune -o -name '*.go' -print | wc -l; printf 'pkg '; find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name '*.egg-info' -o -name 'PKG-INFO' \) -print | wc -l` -> `py 20`; `go 286`; `pkg 0`
