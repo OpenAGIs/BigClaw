@@ -195,6 +195,107 @@ func TestNormalizeDashboardLayoutClampsDimensionsAndSortsPlacements(t *testing.T
 	}
 }
 
+func TestBuildTriageClustersGroupsActionableRunsByReason(t *testing.T) {
+	runs := []map[string]any{
+		{
+			"run_id":     "run-1",
+			"task_id":    "BIG-903-1",
+			"status":     "needs-approval",
+			"summary":    "hold",
+			"started_at": "2026-03-10T10:00:00Z",
+			"ended_at":   "2026-03-10T10:05:00Z",
+			"audits": []any{
+				map[string]any{"details": map[string]any{"reason": "requires approval for high-risk task"}},
+			},
+		},
+		{
+			"run_id":     "run-2",
+			"task_id":    "BIG-903-2",
+			"status":     "failed",
+			"summary":    "tool fail",
+			"started_at": "2026-03-10T10:00:00Z",
+			"ended_at":   "2026-03-10T10:25:00Z",
+			"audits": []any{
+				map[string]any{"details": map[string]any{"reason": "browser automation task"}},
+			},
+		},
+		{
+			"run_id":     "run-3",
+			"task_id":    "BIG-903-3",
+			"status":     "needs-approval",
+			"summary":    "hold",
+			"started_at": "2026-03-10T11:00:00Z",
+			"ended_at":   "2026-03-10T11:15:00Z",
+			"audits": []any{
+				map[string]any{"details": map[string]any{"reason": "requires approval for high-risk task"}},
+			},
+		},
+	}
+
+	clusters := BuildTriageClusters(runs)
+	if len(clusters) != 2 {
+		t.Fatalf("unexpected clusters: %+v", clusters)
+	}
+	if clusters[0].Reason != "requires approval for high-risk task" || clusters[0].Occurrences() != 2 {
+		t.Fatalf("unexpected top cluster: %+v", clusters[0])
+	}
+	if !reflect.DeepEqual(clusters[0].TaskIDs, []string{"BIG-903-1", "BIG-903-3"}) {
+		t.Fatalf("unexpected top cluster task ids: %+v", clusters[0].TaskIDs)
+	}
+	if clusters[1].Reason != "browser automation task" {
+		t.Fatalf("unexpected second cluster: %+v", clusters[1])
+	}
+}
+
+func TestBuildOperationsSnapshotTracksSLAAndSuccessRate(t *testing.T) {
+	runs := []map[string]any{
+		{
+			"run_id":     "run-1",
+			"task_id":    "BIG-901-1",
+			"status":     "approved",
+			"summary":    "ok",
+			"started_at": "2026-03-10T10:00:00Z",
+			"ended_at":   "2026-03-10T10:20:00Z",
+			"audits": []any{
+				map[string]any{"details": map[string]any{"reason": "default low risk path"}},
+			},
+		},
+		{
+			"run_id":     "run-2",
+			"task_id":    "BIG-901-2",
+			"status":     "approved",
+			"summary":    "slow",
+			"started_at": "2026-03-10T11:00:00Z",
+			"ended_at":   "2026-03-10T12:30:00Z",
+			"audits": []any{
+				map[string]any{"details": map[string]any{"reason": "browser automation task"}},
+			},
+		},
+		{
+			"run_id":     "run-3",
+			"task_id":    "BIG-901-3",
+			"status":     "needs-approval",
+			"summary":    "approval",
+			"started_at": "2026-03-10T13:00:00Z",
+			"ended_at":   "2026-03-10T13:45:00Z",
+			"audits": []any{
+				map[string]any{"details": map[string]any{"reason": "requires approval for high-risk task"}},
+			},
+		},
+	}
+
+	snapshot := BuildOperationsSnapshot(runs, 60, 3)
+	if snapshot.TotalRuns != 3 {
+		t.Fatalf("unexpected total runs: %+v", snapshot)
+	}
+	if !reflect.DeepEqual(snapshot.StatusCounts, map[string]int{"approved": 2, "needs-approval": 1}) {
+		t.Fatalf("unexpected status counts: %+v", snapshot.StatusCounts)
+	}
+	if snapshot.SuccessRate != 66.7 || snapshot.ApprovalQueueDepth != 1 || snapshot.SLABreachCount != 1 || snapshot.AverageCycleMinutes != 51.7 {
+		t.Fatalf("unexpected snapshot rollup: %+v", snapshot)
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)

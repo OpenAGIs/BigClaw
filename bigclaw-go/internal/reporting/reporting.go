@@ -119,6 +119,28 @@ type QueueControlCenter struct {
 	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
+type TriageCluster struct {
+	Reason   string   `json:"reason"`
+	RunIDs   []string `json:"run_ids,omitempty"`
+	TaskIDs  []string `json:"task_ids,omitempty"`
+	Statuses []string `json:"statuses,omitempty"`
+}
+
+func (c TriageCluster) Occurrences() int {
+	return len(c.RunIDs)
+}
+
+type OperationsSnapshot struct {
+	TotalRuns           int             `json:"total_runs"`
+	StatusCounts        map[string]int  `json:"status_counts,omitempty"`
+	SuccessRate         float64         `json:"success_rate"`
+	ApprovalQueueDepth  int             `json:"approval_queue_depth"`
+	SLATargetMinutes    int             `json:"sla_target_minutes"`
+	SLABreachCount      int             `json:"sla_breach_count"`
+	AverageCycleMinutes float64         `json:"average_cycle_minutes"`
+	TopBlockers         []TriageCluster `json:"top_blockers,omitempty"`
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -974,6 +996,106 @@ func BuildRepoCollaborationMetrics(runs []map[string]any) RepoCollaborationMetri
 	return metrics
 }
 
+func BuildTriageClusters(runs []map[string]any) []TriageCluster {
+	clusters := make(map[string]*TriageCluster)
+	for _, run := range runs {
+		status := firstNonEmpty(anyString(run["status"]), "unknown")
+		if !isActionableStatus(status) {
+			continue
+		}
+
+		reason := primaryReason(run)
+		cluster, ok := clusters[reason]
+		if !ok {
+			cluster = &TriageCluster{Reason: reason}
+			clusters[reason] = cluster
+		}
+
+		if runID := strings.TrimSpace(anyString(run["run_id"])); runID != "" && !containsString(cluster.RunIDs, runID) {
+			cluster.RunIDs = append(cluster.RunIDs, runID)
+		}
+		if taskID := strings.TrimSpace(anyString(run["task_id"])); taskID != "" && !containsString(cluster.TaskIDs, taskID) {
+			cluster.TaskIDs = append(cluster.TaskIDs, taskID)
+		}
+		if !containsString(cluster.Statuses, status) {
+			cluster.Statuses = append(cluster.Statuses, status)
+		}
+	}
+
+	out := make([]TriageCluster, 0, len(clusters))
+	for _, cluster := range clusters {
+		out = append(out, *cluster)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Occurrences() == out[j].Occurrences() {
+			return out[i].Reason < out[j].Reason
+		}
+		return out[i].Occurrences() > out[j].Occurrences()
+	})
+	return out
+}
+
+func BuildOperationsSnapshot(runs []map[string]any, slaTargetMinutes int, topNBlockers int) OperationsSnapshot {
+	if slaTargetMinutes <= 0 {
+		slaTargetMinutes = 60
+	}
+	if topNBlockers <= 0 {
+		topNBlockers = 3
+	}
+
+	statusCounts := make(map[string]int)
+	totalCycleMinutes := 0.0
+	cycleCount := 0
+	completed := 0
+	approvalQueueDepth := 0
+	slaBreachCount := 0
+
+	for _, run := range runs {
+		status := firstNonEmpty(anyString(run["status"]), "unknown")
+		statusCounts[status]++
+		if strings.EqualFold(status, "needs-approval") {
+			approvalQueueDepth++
+		}
+
+		if cycleMinutes, ok := runCycleMinutes(run); ok {
+			totalCycleMinutes += cycleMinutes
+			cycleCount++
+			if cycleMinutes > float64(slaTargetMinutes) {
+				slaBreachCount++
+			}
+		}
+
+		if isCompleteStatus(status) {
+			completed++
+		}
+	}
+
+	successRate := 0.0
+	if len(runs) > 0 {
+		successRate = roundTo((float64(completed)/float64(len(runs)))*100, 1)
+	}
+	averageCycleMinutes := 0.0
+	if cycleCount > 0 {
+		averageCycleMinutes = roundTo(totalCycleMinutes/float64(cycleCount), 1)
+	}
+
+	blockers := BuildTriageClusters(runs)
+	if topNBlockers > 0 && len(blockers) > topNBlockers {
+		blockers = blockers[:topNBlockers]
+	}
+
+	return OperationsSnapshot{
+		TotalRuns:           len(runs),
+		StatusCounts:        statusCounts,
+		SuccessRate:         successRate,
+		ApprovalQueueDepth:  approvalQueueDepth,
+		SLATargetMinutes:    slaTargetMinutes,
+		SLABreachCount:      slaBreachCount,
+		AverageCycleMinutes: averageCycleMinutes,
+		TopBlockers:         blockers,
+	}
+}
+
 func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 	center := QueueControlCenter{
 		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
@@ -1569,6 +1691,15 @@ func anyString(value any) string {
 	}
 }
 
+func containsString(items []string, needle string) bool {
+	for _, item := range items {
+		if item == needle {
+			return true
+		}
+	}
+	return false
+}
+
 func anyFloat(value any) float64 {
 	out, _ := anyFloatOK(value)
 	return out
@@ -1617,6 +1748,62 @@ func maxInt(left, right int) int {
 		return left
 	}
 	return right
+}
+
+func primaryReason(run map[string]any) string {
+	if audits, ok := run["audits"].([]any); ok {
+		for _, item := range audits {
+			audit, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			details, ok := audit["details"].(map[string]any)
+			if !ok {
+				continue
+			}
+			reason := strings.TrimSpace(anyString(details["reason"]))
+			if reason != "" {
+				return reason
+			}
+		}
+	}
+
+	if summary := strings.TrimSpace(anyString(run["summary"])); summary != "" {
+		return summary
+	}
+	return firstNonEmpty(anyString(run["status"]), "unknown")
+}
+
+func runCycleMinutes(run map[string]any) (float64, bool) {
+	startedAt := strings.TrimSpace(anyString(run["started_at"]))
+	endedAt := strings.TrimSpace(anyString(run["ended_at"]))
+	if startedAt == "" || endedAt == "" {
+		return 0, false
+	}
+	start := parseRFC3339ish(startedAt)
+	end := parseRFC3339ish(endedAt)
+	if start.IsZero() || end.IsZero() || end.Before(start) {
+		return 0, false
+	}
+	return roundTo(end.Sub(start).Minutes(), 1), true
+}
+
+func isCompleteStatus(status string) bool {
+	switch strings.TrimSpace(strings.ToLower(status)) {
+	case "approved", "accepted", "completed", "succeeded":
+		return true
+	default:
+		return false
+	}
+}
+
+func isActionableStatus(status string) bool {
+	switch strings.TrimSpace(strings.ToLower(status)) {
+	case "needs-approval", "failed", "rejected":
+		return true
+	default:
+		return false
+	}
 }
 
 func roundTo(value float64, places int) float64 {

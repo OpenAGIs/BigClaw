@@ -2157,41 +2157,6 @@ def make_versioned_artifact(
 
 
 
-def test_operations_snapshot_tracks_sla_and_success_rate() -> None:
-    analytics = OperationsAnalytics()
-    runs = [
-        make_run("run-1", "BIG-901-1", "approved", "2026-03-10T10:00:00Z", "2026-03-10T10:20:00Z", "ok", "default low risk path"),
-        make_run("run-2", "BIG-901-2", "approved", "2026-03-10T11:00:00Z", "2026-03-10T12:30:00Z", "slow", "browser automation task"),
-        make_run("run-3", "BIG-901-3", "needs-approval", "2026-03-10T13:00:00Z", "2026-03-10T13:45:00Z", "approval", "requires approval for high-risk task"),
-    ]
-
-    snapshot = analytics.summarize_runs(runs, sla_target_minutes=60)
-
-    assert snapshot.total_runs == 3
-    assert snapshot.status_counts == {"approved": 2, "needs-approval": 1}
-    assert snapshot.success_rate == 66.7
-    assert snapshot.approval_queue_depth == 1
-    assert snapshot.sla_breach_count == 1
-    assert snapshot.average_cycle_minutes == 51.7
-
-
-def test_triage_clusters_group_actionable_runs_by_reason() -> None:
-    analytics = OperationsAnalytics()
-    runs = [
-        make_run("run-1", "BIG-903-1", "needs-approval", "2026-03-10T10:00:00Z", "2026-03-10T10:05:00Z", "hold", "requires approval for high-risk task"),
-        make_run("run-2", "BIG-903-2", "failed", "2026-03-10T10:00:00Z", "2026-03-10T10:25:00Z", "tool fail", "browser automation task"),
-        make_run("run-3", "BIG-903-3", "needs-approval", "2026-03-10T11:00:00Z", "2026-03-10T11:15:00Z", "hold", "requires approval for high-risk task"),
-    ]
-
-    clusters = analytics.build_triage_clusters(runs)
-
-    assert clusters[0].reason == "requires approval for high-risk task"
-    assert clusters[0].occurrences == 2
-    assert clusters[0].task_ids == ["BIG-903-1", "BIG-903-3"]
-    assert clusters[1].reason == "browser automation task"
-
-
-
 def test_regression_analysis_flags_score_drop_and_pass_failure() -> None:
     analytics = OperationsAnalytics()
     baseline = BenchmarkSuiteResult(
