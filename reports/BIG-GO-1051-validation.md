@@ -61,7 +61,7 @@ find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1051 -name '*.py' | wc -l
 Result:
 
 ```text
-56
+46
 ```
 
 Note: the benchmark directory was already at `0` Python files in this checkout before the

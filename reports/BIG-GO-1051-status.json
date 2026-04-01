@@ -32,7 +32,7 @@
     ],
     "results": {
       "benchmark_py_count": "0",
-      "repo_py_count": "56",
+      "repo_py_count": "46",
       "bigclawctl_tests": "ok   bigclaw-go/cmd/bigclawctl  4.697s",
       "benchmark_help_commands": "all exited 0",
       "run_suite": "exited 0 and refreshed checked-in benchmark evidence",
