@@ -7,7 +7,7 @@ Refill sweep A for remaining repository-root/config/python packaging residuals.
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
-- head: `49603e7`
+- head: `c8102e6`
 
 ## Repo impact
 
@@ -25,6 +25,7 @@ Refill sweep A for remaining repository-root/config/python packaging residuals.
 - `0ef27ab` `BIG-GO-1011 remove egg-info ignore residue`
 - `57aefe0` `BIG-GO-1011 ignore root pytest cache residue`
 - `49603e7` `BIG-GO-1011 record root residue scope boundary`
+- `c8102e6` `BIG-GO-1011 add validation evidence report`
 
 ## Validation commands
 
