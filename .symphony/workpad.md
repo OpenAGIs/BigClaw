@@ -33,3 +33,7 @@
 - Removed stale `PYTHONDONTWRITEBYTECODE` exports from `.githooks/post-commit` and `.githooks/post-rewrite` because those hooks now call the Go-first `scripts/ops/bigclawctl` path only.
 - Removed the orphaned `*.egg-info/` rule from `.gitignore`; the root no longer carries Python packaging outputs.
 - Added `.pytest_cache/` to `.gitignore` so the remaining root-local pytest cache no longer appears as unmanaged Python tooling residue.
+
+### Scope Stop
+- Remaining root-level Python mentions are intentional migration-only validation surfaces (`scripts/dev_bootstrap.sh`, source-level `PYTHONPATH=src python3 -m pytest ...` guidance, and cache ignores for `__pycache__`, `*.py[cod]`, and `.pytest_cache/`).
+- No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, Python wrapper scripts, or Python-specific CI/hook config residue remains without widening beyond this issue.
