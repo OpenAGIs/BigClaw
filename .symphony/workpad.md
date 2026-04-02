@@ -22,19 +22,20 @@
 
 ## Execution Result
 - Branch pushed: `symphony/BIG-GO-1055`
-- Commit: `8c7884634b7ed5191a7aef40f11a5775b4af048c`
+- Commit: `f3a9407abf4d7814f5441253c85014218fe6cf50`
 - Removed the five repo-root Python operator shim files under `scripts/ops/`.
 - Switched root README, CI, hooks, and bootstrap guidance to Go-only entrypoints.
 - Added `bigclaw-go/internal/regression/root_entrypoint_cutover_test.go` to keep the cutover surfaces aligned.
 
 ## Validation Result
-- `printf 'before='; git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l; printf 'after='; find . -name '*.py' -type f | wc -l; printf 'deleted_in_diff='; git diff --diff-filter=D --name-only | rg '\.py$' | wc -l`
-  - passed: `before=46`, `after=41`, `deleted_in_diff=5`
+- `find . -name '*.py' -type f | wc -l`
+  - passed: `41`
 - `test ! -e pyproject.toml && test ! -e setup.py && test ! -e scripts/ops/bigclaw_github_sync.py && test ! -e scripts/ops/bigclaw_refill_queue.py && test ! -e scripts/ops/bigclaw_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_validate.py && echo removed`
   - passed: `removed`
 - `rg -n "python3 scripts/ops/bigclaw_github_sync\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|scripts/ops/\\*workspace\\*\\.py|actions/setup-python|pip install pytest|pytest --cov|BIGCLAW_ENABLE_LEGACY_PYTHON|PYTHONDONTWRITEBYTECODE" README.md .github/workflows scripts/dev_bootstrap.sh .githooks`
   - passed with exit code `1` and no matches
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
-  - passed
-- `bash scripts/dev_bootstrap.sh`
-  - passed
+  - passed:
+    - `ok  	bigclaw-go/cmd/bigclawctl	3.155s`
+    - `ok  	bigclaw-go/internal/legacyshim	(cached)`
+    - `ok  	bigclaw-go/internal/regression	(cached)`
