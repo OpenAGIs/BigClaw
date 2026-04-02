@@ -88,7 +88,7 @@ Do not use Python packaging from the repository root. When a migration-only
 Python surface must be exercised, validate it directly from source:
 
 ```bash
-PYTHONPATH=src python3 -m pytest tests
+python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/runtime.py
 ```
 
 Or use the bootstrap helper to run the supported Go smoke and bootstrap
@@ -138,8 +138,8 @@ bash scripts/dev_bootstrap.sh
 Legacy Python migration surface:
 
 ```bash
-ruff check src tests scripts
-PYTHONPATH=src python3 -m pytest tests
+ruff check src scripts
+python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/runtime.py
 pre-commit run --all-files
 ```
 
