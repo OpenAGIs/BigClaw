@@ -94,8 +94,8 @@ export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
 export BIGCLAW_KUBERNETES_NAMESPACE=ray
 export BIGCLAW_KUBERNETES_IMAGE=alpine:3.20
 export BIGCLAW_QUEUE_BACKEND=sqlite
-python3 scripts/e2e/mixed_workload_matrix.py \
-  --report-path docs/reports/mixed-workload-matrix-report.json
+go run ./cmd/bigclawctl automation e2e mixed-workload-matrix \
+  --output docs/reports/mixed-workload-matrix-report.json
 ```
 
 This validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.

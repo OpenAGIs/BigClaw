@@ -83,7 +83,7 @@ func TestRunAutomationE2EHelpIncludesContinuationCommands(t *testing.T) {
 		t.Fatalf("e2e help: %v", err)
 	}
 	text := string(output)
-	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|continuation-scorecard|continuation-policy-gate") {
+	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|mixed-workload-matrix|continuation-scorecard|continuation-policy-gate") {
 		t.Fatalf("unexpected e2e help: %s", text)
 	}
 }
@@ -173,6 +173,32 @@ func TestAutomationExternalStoreValidationRepublishesCanonicalReport(t *testing.
 		t.Fatalf("read output: %v", err)
 	}
 	if !strings.Contains(string(body), "\"backend_matrix\"") || !strings.Contains(string(body), "\"contract_only_lanes\": 1") {
+		t.Fatalf("unexpected output body: %s", string(body))
+	}
+}
+
+func TestAutomationMixedWorkloadMatrixRepublishesCanonicalReport(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	repoRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputPath := filepath.Join(t.TempDir(), "mixed-workload-matrix-report.json")
+	report, err := automationMixedWorkloadMatrix(automationMixedWorkloadMatrixOptions{
+		GoRoot:     repoRoot,
+		OutputPath: outputPath,
+	})
+	if err != nil {
+		t.Fatalf("republish mixed workload matrix: %v", err)
+	}
+	if report["all_ok"] != true {
+		t.Fatalf("unexpected report all_ok: %+v", report)
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if !strings.Contains(string(body), "\"expected_executor\": \"ray\"") || !strings.Contains(string(body), "\"routed_executor\": \"ray\"") {
 		t.Fatalf("unexpected output body: %s", string(body))
 	}
 }

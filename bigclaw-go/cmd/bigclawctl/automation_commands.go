@@ -127,6 +127,12 @@ type automationExternalStoreValidationOptions struct {
 	OutputPath       string
 }
 
+type automationMixedWorkloadMatrixOptions struct {
+	GoRoot           string
+	SourceReportPath string
+	OutputPath       string
+}
+
 type automationShadowCompareOptions struct {
 	PrimaryBaseURL       string
 	ShadowBaseURL        string
@@ -314,7 +320,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|continuation-scorecard|continuation-policy-gate> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|mixed-workload-matrix|continuation-scorecard|continuation-policy-gate> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -328,6 +334,8 @@ func runAutomationE2E(args []string) error {
 		return runAutomationBrokerFailoverStubMatrixCommand(args[1:])
 	case "external-store-validation":
 		return runAutomationExternalStoreValidationCommand(args[1:])
+	case "mixed-workload-matrix":
+		return runAutomationMixedWorkloadMatrixCommand(args[1:])
 	case "continuation-scorecard":
 		return runAutomationContinuationScorecardCommand(args[1:])
 	case "continuation-policy-gate":
@@ -647,6 +655,41 @@ func runAutomationExternalStoreValidationCommand(args []string) error {
 		return err
 	}
 	report, err := automationExternalStoreValidation(automationExternalStoreValidationOptions{
+		GoRoot:           *goRoot,
+		SourceReportPath: *sourceReport,
+		OutputPath:       *output,
+	})
+	if err != nil {
+		return err
+	}
+	if *pretty {
+		body, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = os.Stdout.Write(append(body, '\n'))
+		if !*asJSON {
+			return nil
+		}
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationMixedWorkloadMatrixCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e mixed-workload-matrix", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	sourceReport := flags.String("source-report", "bigclaw-go/docs/reports/mixed-workload-matrix-report.json", "canonical source report path")
+	output := flags.String("output", "bigclaw-go/docs/reports/mixed-workload-matrix-report.json", "output report path")
+	pretty := flags.Bool("pretty", false, "pretty-print report to stdout")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e mixed-workload-matrix [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationMixedWorkloadMatrix(automationMixedWorkloadMatrixOptions{
 		GoRoot:           *goRoot,
 		SourceReportPath: *sourceReport,
 		OutputPath:       *output,
@@ -4466,6 +4509,25 @@ func automationExternalStoreValidation(opts automationExternalStoreValidationOpt
 	}
 	if trim(opts.OutputPath) == "" {
 		opts.OutputPath = "bigclaw-go/docs/reports/external-store-validation-report.json"
+	}
+	report, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceReportPath))
+	if err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.OutputPath), report); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+func automationMixedWorkloadMatrix(opts automationMixedWorkloadMatrixOptions) (map[string]any, error) {
+	goRoot := resolveAutomationGoRoot(opts.GoRoot)
+	repoRoot := filepath.Clean(filepath.Join(goRoot, ".."))
+	if trim(opts.SourceReportPath) == "" {
+		opts.SourceReportPath = "bigclaw-go/docs/reports/mixed-workload-matrix-report.json"
+	}
+	if trim(opts.OutputPath) == "" {
+		opts.OutputPath = "bigclaw-go/docs/reports/mixed-workload-matrix-report.json"
 	}
 	report, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceReportPath))
 	if err != nil {
