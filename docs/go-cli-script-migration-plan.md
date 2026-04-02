@@ -20,7 +20,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
 - `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
 - `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
+- retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bigclawctl workspace bootstrap`
 - `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
@@ -58,7 +58,6 @@ The remaining compatibility layer is intentionally thin:
 
 - `scripts/ops/bigclaw_refill_queue.py`
 - `scripts/ops/bigclaw_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
 - `scripts/ops/symphony_workspace_validate.py`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
@@ -87,6 +86,7 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `python3 scripts/ops/bigclaw_refill_queue.py --help`
 - `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `python3 scripts/ops/bigclaw_workspace_bootstrap.py --help`
 - `bash scripts/dev_bootstrap.sh`
 - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `bash scripts/ops/bigclawctl issue --help`
@@ -107,8 +107,9 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - Local tracker shortcuts:
   `issue state/comment` positional shortcuts must still map onto the same local-issues behaviors.
 - Legacy workspace wrappers:
-  `--issues`, `--report-file`, and `--no-cleanup` still need to translate to the Go workspace
-  validation flags without changing existing automation call sites.
+  `scripts/ops/bigclaw_workspace_bootstrap.py` still injects the legacy default repo/cache flags and
+  `scripts/ops/symphony_workspace_validate.py` still needs to translate `--issues`,
+  `--report-file`, and `--no-cleanup` without changing existing automation call sites.
 - Root compatibility retirement:
   repo operators must stop invoking removed repo-root Python shims and switch to
   `bash scripts/ops/bigclawctl ...` entrypoints.

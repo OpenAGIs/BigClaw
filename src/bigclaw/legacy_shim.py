@@ -74,7 +74,3 @@ def build_workspace_validate_args(repo_root: Path, forwarded: Sequence[str]) -> 
 
 def build_refill_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
     return build_bigclawctl_exec_args(repo_root, ["refill"], list(forwarded))
-
-
-def build_workspace_runtime_bootstrap_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
-    return build_bigclawctl_exec_args(repo_root, ["workspace"], list(forwarded))

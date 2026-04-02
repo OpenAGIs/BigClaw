@@ -51,8 +51,10 @@ Use these entrypoints to keep the remaining Go-mainline migration slices moving 
 Linear issue capacity:
 
 ```bash
+bash scripts/ops/bigclawctl create-issues --json
 bash scripts/ops/bigclawctl issue list
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
+bash scripts/ops/bigclawctl workspace bootstrap --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url git@github.com:OpenAGIs/BigClaw.git --json
 bash scripts/ops/bigclawctl symphony
 bash scripts/ops/bigclawctl panel
 ```
@@ -62,10 +64,14 @@ Notes:
 - `bash scripts/ops/bigclawctl symphony` starts Symphony against [`workflow.md`](./workflow.md) and
   serves the local issue dashboard at `http://127.0.0.1:4000/`.
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
+- `bash scripts/ops/bigclawctl create-issues ...` is the supported non-Python GitHub issue bootstrap path.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/ops/bigclaw_refill_queue.py ...` and the legacy
-  `scripts/ops/*workspace*.py` helpers remain compatibility shims over the same Go CLI.
+- `bash scripts/ops/bigclawctl workspace bootstrap|cleanup|validate ...` is the supported non-Python
+  workspace bootstrap path.
+- `python3 scripts/ops/bigclaw_refill_queue.py ...`, `python3 scripts/ops/bigclaw_workspace_bootstrap.py ...`,
+  and `python3 scripts/ops/symphony_workspace_validate.py ...` remain migration-only compatibility shims
+  over the same Go CLI.
 - GitHub sync is no longer exposed through a Python wrapper; use
   `bash scripts/ops/bigclawctl github-sync ...`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,

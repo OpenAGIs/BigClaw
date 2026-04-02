@@ -65,14 +65,6 @@ func TestRefillWrapperTargetsGoShim(t *testing.T) {
 	}
 }
 
-func TestWorkspaceRuntimeWrapperTargetsGoShim(t *testing.T) {
-	got := BuildWorkspaceRuntimeBootstrapArgs("/repo", []string{"bootstrap", "--json"})
-	want := []string{"bash", "/repo/scripts/ops/bigclawctl", "workspace", "bootstrap", "--json"}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("unexpected workspace runtime args: got=%+v want=%+v", got, want)
-	}
-}
-
 func TestRepoRootFromScriptClimbsToRepositoryRoot(t *testing.T) {
 	if got := RepoRootFromScript("/repo/scripts/ops/bigclaw_refill_queue.py"); got != "/repo" {
 		t.Fatalf("unexpected repo root: %s", got)
