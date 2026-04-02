@@ -118,3 +118,23 @@ Validation
 - `PYTHONPATH=src python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/__init__.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_models.py tests/test_planning.py tests/test_risk.py tests/test_runtime_matrix.py tests/test_memory.py tests/test_repo_rollout.py tests/test_governance.py tests/test_dsl.py`
 - `rg --files src/bigclaw -g '*.py' -g '*.go'`
+
+Continuation 7
+
+Plan
+- Fold the residual `src/bigclaw/runtime.py` implementation into `src/bigclaw/__init__.py`.
+- Rewire `bigclaw.runtime` to remain import-compatible as a synthetic module backed by the package module itself.
+- Remove the standalone `runtime.py` file, leaving a single Python source file under `src/bigclaw`.
+- Run focused package-surface validation across runtime, repository, reports, observability, models, and planning compatibility imports.
+- Record final inventory counts, then commit and push if the single-file package layout is stable.
+
+Acceptance
+- `src/bigclaw/*.py` count decreases again.
+- `bigclaw.runtime` and all package compatibility imports still resolve after removing the standalone module.
+- Final report continues to include exact `py files`, `go files`, `pyproject.toml`, and `setup.py` impact.
+
+Validation
+- `PYTHONPATH=src python3 - <<'PY'` import checks for `bigclaw.runtime`, `bigclaw.repository`, `bigclaw.models`, `bigclaw.reports`, and `bigclaw.observability`
+- `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_reports.py tests/test_observability.py tests/test_models.py tests/test_planning.py tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_control_center.py tests/test_evaluation.py`
+- `rg --files src/bigclaw -g '*.py' -g '*.go'`
