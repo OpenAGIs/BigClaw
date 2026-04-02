@@ -302,7 +302,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
 			{Label: "queue-control-center", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package queue and approval command center"},
-			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
+			{Label: "saved-view-report", Target: "src/bigclaw/__init__.py", Capability: "saved-views", Note: "folded package team saved views and digest evidence"},
 		},
 	}
 
