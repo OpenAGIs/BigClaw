@@ -1,28 +1,24 @@
-# BIG-GO-1091
+# BIG-GO-1098 Workpad
 
 ## Plan
-- inspect the remaining root `scripts/ops/*.py` workspace shims and their active repo references
-- delete `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py`
-- update active documentation and regression coverage to point at `bash scripts/ops/bigclawctl workspace ...` instead of the deleted Python shims
-- run targeted validation covering reference cleanup, Go legacy shim tests, CLI help, and repository `.py` count reduction
-- commit and push the scoped change set
+- Replace residual Python test references in `bigclaw-go/internal/planning/planning.go` with Go-only validation commands and Go evidence links.
+- Update planning unit tests so the backlog contract asserts Go-native replacements instead of deleted `tests/*.py` assets.
+- Add regression coverage that blocks reintroduction of removed Python test references inside the Go planning backlog.
 
 ## Acceptance
-- the three remaining Python workspace shims under `scripts/ops` are removed from the repository
-- active repo guidance and regression coverage no longer instruct users to execute those deleted Python files
-- the repository `.py` file count decreases from the pre-change baseline
-- targeted validation records exact commands and results
+- `bigclaw-go/internal/planning/planning.go` no longer contains `pytest` commands or `tests/test_*.py` evidence targets for the v3 candidate backlog.
+- Go tests document the replacement packages that now serve as validation evidence for release control, ops hardening, and orchestration rollout.
+- Targeted Go test suites pass.
 
 ## Validation
-- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
-- `bash scripts/ops/bigclawctl workspace bootstrap --help`
-- `bash scripts/ops/bigclawctl workspace validate --help`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/bigclaw-go && go test ./internal/planning ./internal/regression`
 
-## Validation Results
-- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl (cached)`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression 0.606s`
-- `bash scripts/ops/bigclawctl workspace bootstrap --help` -> exit `0`; printed `usage: bigclawctl workspace bootstrap [flags]`
-- `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `22` in `HEAD`; `19` in the worktree after deleting the three root Python shims
+## Results
+- Updated `bigclaw-go/internal/planning/planning.go` to use Go-only validation commands and Go evidence links for the v3 candidate backlog.
+- Updated `bigclaw-go/internal/planning/planning_test.go` to assert the new Go-native backlog contract.
+- Added `bigclaw-go/internal/regression/planning_python_test_replacement_test.go` to block reintroduction of removed Python test references into the planning backlog.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/bigclaw-go && go test ./internal/planning ./internal/regression` -> exit `0`
+  - `ok  	bigclaw-go/internal/planning	0.941s`
+  - `ok  	bigclaw-go/internal/regression	2.392s`
+- `rg -n "pytest|tests/test_.*\\.py" bigclaw-go/internal/planning/planning.go bigclaw-go/internal/regression/planning_python_test_replacement_test.go` -> exit `0`
+  - matches remain only inside the regression guard that asserts removed Python test paths stay absent and disallowed in backlog validation commands.
