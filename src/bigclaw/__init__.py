@@ -8960,9 +8960,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="approval-contract",
-                        target="src/bigclaw/execution_contract.py",
+                        target="src/bigclaw/__init__.py",
                         capability="ops-control",
-                        note="approval permission and API role coverage contract",
+                        note="folded package approval permission and API role coverage contract",
                     ),
                     EvidenceLink(
                         label="approval-workflow",
@@ -8984,9 +8984,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="saved-views-src",
-                        target="src/bigclaw/saved_views.py",
+                        target="src/bigclaw/__init__.py",
                         capability="saved-views",
-                        note="saved views, digest subscriptions, and governed filters",
+                        note="folded package saved views, digest subscriptions, and governed filters",
                     ),
                     EvidenceLink(
                         label="saved-views-tests",

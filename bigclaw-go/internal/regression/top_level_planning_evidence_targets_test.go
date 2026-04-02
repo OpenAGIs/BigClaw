@@ -17,6 +17,8 @@ func TestTopLevelPlanningEvidenceTargetsAvoidDeletedPythonFiles(t *testing.T) {
 		for _, deletedTarget := range []string{
 			"src/bigclaw/workflow.py",
 			"src/bigclaw/orchestration.py",
+			"src/bigclaw/execution_contract.py",
+			"src/bigclaw/saved_views.py",
 		} {
 			if strings.Contains(contents, deletedTarget) {
 				t.Fatalf("%s should not reference deleted planning evidence target %q", relative, deletedTarget)

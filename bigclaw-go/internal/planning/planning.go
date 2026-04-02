@@ -268,11 +268,11 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				EvidenceLinks: []EvidenceLink{
 					{Label: "command-center-src", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package command center, dashboard builder, weekly review, and regression surfaces"},
 					{Label: "operations-tests", Target: "tests/test_operations.py", Capability: "ops-control", Note: "dashboard, weekly report, regression, and version-center coverage"},
-					{Label: "approval-contract", Target: "src/bigclaw/execution_contract.py", Capability: "ops-control", Note: "approval permission and API role coverage contract"},
+					{Label: "approval-contract", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package approval permission and API role coverage contract"},
 					{Label: "approval-workflow", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package approval workflow and closeout flow wiring"},
 					{Label: "workflow-tests", Target: "bigclaw-go/internal/workflow/engine_test.go", Capability: "ops-control", Note: "acceptance gate and workpad journal validation"},
 					{Label: "execution-flow-tests", Target: "bigclaw-go/internal/worker/runtime_test.go", Capability: "ops-control", Note: "execution handoff, closeout, and routed runtime evidence"},
-					{Label: "saved-views-src", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "saved views, digest subscriptions, and governed filters"},
+					{Label: "saved-views-src", Target: "src/bigclaw/__init__.py", Capability: "saved-views", Note: "folded package saved views, digest subscriptions, and governed filters"},
 					{Label: "saved-views-tests", Target: "bigclaw-go/internal/product/saved_views_test.go", Capability: "saved-views", Note: "Go-native saved-view audit coverage"},
 					{Label: "simulation-src", Target: "bigclaw-go/internal/evaluation/evaluation.go", Capability: "rollback-simulation", Note: "Go-native simulation, replay, and comparison evidence"},
 					{Label: "simulation-tests", Target: "bigclaw-go/internal/evaluation/evaluation_test.go", Capability: "rollback-simulation", Note: "Go-native replay and benchmark validation"},

@@ -437,11 +437,9 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	for _, want := range []string{
 		"src/bigclaw/__init__.py",
 		"tests/test_operations.py",
-		"src/bigclaw/execution_contract.py",
 		"bigclaw-go/internal/product/saved_views_test.go",
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
-		"src/bigclaw/saved_views.py",
 		"bigclaw-go/internal/evaluation/evaluation.go",
 		"bigclaw-go/internal/evaluation/evaluation_test.go",
 	} {
@@ -454,6 +452,12 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	}
 	if _, ok := targets["src/bigclaw/orchestration.py"]; ok {
 		t.Fatalf("deleted Python orchestration target still present in %+v", targets)
+	}
+	if _, ok := targets["src/bigclaw/execution_contract.py"]; ok {
+		t.Fatalf("deleted Python approval-contract target still present in %+v", targets)
+	}
+	if _, ok := targets["src/bigclaw/saved_views.py"]; ok {
+		t.Fatalf("deleted Python saved-views target still present in %+v", targets)
 	}
 
 	if got, want := releaseCandidate.ValidationCommand, "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning"; got != want {
