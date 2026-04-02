@@ -86,8 +86,15 @@ def test_checked_in_policy_gate_matches_expected_shape() -> None:
     assert report['failing_checks'] == []
 
 
-def test_policy_gate_cli_returns_zero_for_checked_in_go() -> None:
+def test_policy_gate_cli_returns_zero_for_checked_in_go(tmp_path: Path) -> None:
     script = Path('bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py')
-    result = subprocess.run([sys.executable, str(script)], check=False, capture_output=True, text=True)
+    output = tmp_path / 'validation-bundle-continuation-policy-gate.json'
+    result = subprocess.run(
+        [sys.executable, str(script), '--output', str(output)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
 
     assert result.returncode == 0
+    assert output.exists()

@@ -173,3 +173,18 @@ Validation
 - `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_reports.py tests/test_observability.py tests/test_models.py tests/test_planning.py tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_control_center.py tests/test_evaluation.py tests/test_repo_board.py tests/test_repo_governance.py tests/test_repo_triage.py tests/test_repo_collaboration.py tests/test_audit_events.py tests/test_event_bus.py tests/test_dsl.py tests/test_governance.py tests/test_memory.py tests/test_risk.py`
 - `PYTHONPATH=src python3 - <<'PY'` import checks for `bigclaw`, `bigclaw.runtime`, `bigclaw.repository`, `bigclaw.models`, `bigclaw.reports`, and `bigclaw.observability`
 - `printf 'src_py='; rg --files src/bigclaw -g '*.py' | wc -l`
+
+Continuation 10
+
+Plan
+- Run the full Python test suite against the final single-file package layout.
+- Capture whether the final repository form is stable across all currently tracked Python tests, not only targeted slices.
+- Record the exact command and result as terminal sweep closeout evidence.
+
+Acceptance
+- `src/bigclaw/*.py` stays at `1`.
+- Full Python test regression is either green or any failures are isolated and documented.
+- Exact command and outcome are recorded.
+
+Validation
+- `PYTHONPATH=src python3 -m pytest tests`

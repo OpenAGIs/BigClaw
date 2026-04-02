@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+BIGCLAW_GO_ROOT = Path(__file__).resolve().parents[1] / 'bigclaw-go'
+
 
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -97,16 +99,20 @@ def test_export_live_shadow_bundle_generates_index_and_rollup(tmp_path: Path) ->
         },
     )
 
-    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'migration' / 'export_live_shadow_bundle.py'
     result = subprocess.run(
         [
-            sys.executable,
-            str(script),
+            'go',
+            'run',
+            './cmd/bigclawctl',
+            'automation',
+            'migration',
+            'export-live-shadow-bundle',
             '--go-root',
             str(root),
             '--run-id',
             '20260310T100601Z',
         ],
+        cwd=BIGCLAW_GO_ROOT,
         check=False,
         capture_output=True,
         text=True,
@@ -136,7 +142,8 @@ def test_export_live_shadow_bundle_generates_index_and_rollup(tmp_path: Path) ->
     assert 'Live Shadow Mirror Index' in index_text
     assert 'docs/reports/live-shadow-runs/20260310T100601Z' in index_text
     assert 'docs/migration-shadow.md' in index_text
-    assert 'docs/reports/live-shadow-comparison-follow-up-digest.md' in index_text
+    assert 'docs/reports/migration-readiness-report.md' in index_text
+    assert 'docs/reports/migration-plan-review-notes.md' in index_text
 
     bundle_readme = (
         reports / 'live-shadow-runs' / '20260310T100601Z' / 'README.md'
@@ -219,10 +226,20 @@ def test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd(tmp_path: 
         },
     )
 
-    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'migration' / 'export_live_shadow_bundle.py'
     result = subprocess.run(
-        [sys.executable, str(script), '--run-id', '20260310T100501Z'],
-        cwd=root,
+        [
+            'go',
+            'run',
+            './cmd/bigclawctl',
+            'automation',
+            'migration',
+            'export-live-shadow-bundle',
+            '--go-root',
+            str(root),
+            '--run-id',
+            '20260310T100501Z',
+        ],
+        cwd=BIGCLAW_GO_ROOT,
         check=False,
         capture_output=True,
         text=True,

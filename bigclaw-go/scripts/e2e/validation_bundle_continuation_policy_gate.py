@@ -146,6 +146,10 @@ def build_report(
         'reviewer_path': {
             'index_path': 'docs/reports/live-validation-index.md',
             'digest_path': 'docs/reports/validation-bundle-continuation-digest.md',
+            'digest_issue': {
+                'id': 'OPE-271',
+                'slug': 'BIG-PAR-082',
+            },
         },
         'shared_queue_companion': shared_queue,
         'next_actions': next_actions,

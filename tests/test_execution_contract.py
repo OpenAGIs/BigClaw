@@ -253,15 +253,12 @@ def test_operations_api_contract_draft_is_release_ready() -> None:
 
     assert contract.contract_id == "OPE-131"
     assert audit.release_ready is True
-    assert len(contract.apis) == 12
+    assert len(contract.apis) == 5
     assert "GET /operations/dashboard" in report
     assert "GET /operations/runs/{run_id}" in report
-    assert "GET /operations/queue/control-center" in report
-    assert "GET /operations/risk/overview" in report
-    assert "GET /operations/sla/overview" in report
-    assert "GET /operations/regressions" in report
-    assert "GET /operations/flows/{run_id}" in report
-    assert "GET /operations/billing/entitlements" in report
+    assert "GET /operations/runs/{run_id}/replay" in report
+    assert "POST /operations/queue/{task_id}/actions" in report
+    assert "POST /operations/runs/{run_id}/approval" in report
 
 
 def test_operations_api_contract_permissions_cover_read_and_action_paths() -> None:
@@ -269,17 +266,17 @@ def test_operations_api_contract_permissions_cover_read_and_action_paths() -> No
     matrix = ExecutionPermissionMatrix(contract.permissions)
 
     viewer = matrix.evaluate(
-        ["operations.dashboard.read", "operations.queue.read", "operations.run.read"],
-        ["operations.dashboard.read", "operations.queue.read", "operations.run.read"],
+        ["operations.dashboard.read", "operations.queue.manage", "operations.run.read"],
+        ["operations.dashboard.read", "operations.queue.manage", "operations.run.read"],
     )
     operator = matrix.evaluate(
-        ["operations.queue.act", "operations.run.approve", "operations.billing.read"],
-        ["operations.queue.act", "operations.billing.read"],
+        ["operations.queue.manage", "operations.approval.manage", "operations.dashboard.read"],
+        ["operations.queue.manage", "operations.dashboard.read"],
     )
 
     assert viewer.allowed is True
     assert operator.allowed is False
-    assert operator.missing_permissions == ["operations.run.approve"]
+    assert operator.missing_permissions == ["operations.approval.manage"]
 
 
 def test_execution_contract_audit_requires_persona_scope_and_escalation_metadata() -> None:
