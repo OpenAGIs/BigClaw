@@ -9,6 +9,7 @@
 - retire `src/bigclaw/legacy_shim.py` and tighten the Go `legacy-python compile-check` surface to the remaining frozen entrypoint
 - retire `src/bigclaw/__main__.py` and repoint the Go `legacy-python compile-check` surface at the remaining frozen runtime module
 - retire `src/bigclaw/risk.py` by folding its frozen scoring types into `src/bigclaw/runtime.py`
+- retire `src/bigclaw/collaboration.py` by folding its frozen collaboration thread helpers into `src/bigclaw/observability.py`
 - update repo guidance and planning metadata to point at the Go-native `bigclaw-go/internal/designsystem` and `bigclaw-go/internal/uireview` surfaces instead of deleted Python sources/tests
 - add regression coverage that locks the deleted Python files out of the tree and proves the Go replacements remain present
 - run targeted validation and record the exact commands and results
@@ -28,6 +29,7 @@
 - `src/bigclaw/legacy_shim.py` is deleted
 - `src/bigclaw/__main__.py` is deleted
 - `src/bigclaw/risk.py` is deleted
+- `src/bigclaw/collaboration.py` is deleted
 - active repo guidance no longer describes those Python shims as retained compatibility entrypoints
 - planning metadata no longer points release-control evidence at deleted Python UI assets or deleted Python tests
 - regression coverage asserts those Python files stay absent and the Go replacements remain present
@@ -42,6 +44,7 @@
 - `rg -n "src/bigclaw/legacy_shim\\.py|tests/test_legacy_shim\\.py" README.md docs/go-cli-script-migration-plan.md src bigclaw-go/scripts`
 - `rg -n "src/bigclaw/__main__\\.py|python -m bigclaw" README.md docs/go-mainline-cutover-handoff.md src bigclaw-go`
 - `rg -n "from \\.risk|import \\.risk|src/bigclaw/risk\\.py" src/bigclaw/__init__.py src/bigclaw/runtime.py README.md docs/go-mainline-cutover-handoff.md bigclaw-go/internal/regression`
+- `rg -n "from \\.collaboration|import \\.collaboration|src/bigclaw/collaboration\\.py" src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/reports.py README.md docs/go-mainline-cutover-handoff.md bigclaw-go/internal/regression`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression ./internal/legacyshim`
 - `cd bigclaw-go && go test ./internal/planning ./internal/designsystem ./internal/uireview ./internal/regression`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression ./internal/legacyshim ./internal/observability`
@@ -85,3 +88,7 @@
 - `python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/planning.py src/bigclaw/evaluation.py` -> exit `0`
 - `cd bigclaw-go && go test ./internal/risk ./internal/regression` -> `ok   bigclaw-go/internal/risk 1.290s`; `ok   bigclaw-go/internal/regression 1.704s`
 - `find . -name '*.py' | wc -l` -> `9` after deleting `src/bigclaw/risk.py`
+- `rg -n "from \\.collaboration|import \\.collaboration|src/bigclaw/collaboration\\.py" src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/reports.py README.md docs/go-mainline-cutover-handoff.md bigclaw-go/internal/regression` -> exit `0`; only expected regression coverage references `src/bigclaw/collaboration.py`
+- `python3 -m py_compile src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/runtime.py src/bigclaw/__init__.py src/bigclaw/planning.py src/bigclaw/evaluation.py` -> exit `0`
+- `cd bigclaw-go && go test ./internal/collaboration ./internal/observability ./internal/regression` -> `ok   bigclaw-go/internal/collaboration 1.704s`; `ok   bigclaw-go/internal/observability (cached)`; `ok   bigclaw-go/internal/regression 1.967s`
+- `find . -name '*.py' | wc -l` -> `8` after deleting `src/bigclaw/collaboration.py`

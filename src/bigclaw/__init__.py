@@ -119,16 +119,12 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
     FLOW_HANDOFF_EVENT,
     GitSyncTelemetry,
     MANUAL_TAKEOVER_EVENT,
@@ -140,6 +136,8 @@ from .observability import (
     SCHEDULER_DECISION_EVENT,
     TaskRun,
     AuditEventSpec,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
     get_audit_event_spec,
     missing_required_fields,
 )
