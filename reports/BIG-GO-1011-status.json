@@ -5,12 +5,13 @@
   },
   "branch": {
     "name": "big-go-1011-root-config-residuals",
-    "head_sha": "c886f4ba29e5fe4bc584310043b3f86aceb0d7ea",
+    "head_sha": "ac92b675de242fe25f1847d9a0be5c230c927763",
     "remote": "https://github.com/OpenAGIs/BigClaw.git"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1011-validation.md",
     "closeout_report": "reports/BIG-GO-1011-closeout.md",
+    "status_report": "reports/BIG-GO-1011-status.json",
     "workpad": ".symphony/workpad.md"
   },
   "repo_impact": {
