@@ -266,7 +266,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Capabilities:      []string{"ops-control", "saved-views", "rollback-simulation"},
 				Evidence:          []string{"weekly-review", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
-					{Label: "command-center-src", Target: "src/bigclaw/operations.py", Capability: "ops-control", Note: "queue control center, dashboard builder, weekly review, and regression surfaces"},
+					{Label: "command-center-src", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package command center, dashboard builder, weekly review, and regression surfaces"},
 					{Label: "operations-tests", Target: "tests/test_operations.py", Capability: "ops-control", Note: "dashboard, weekly report, regression, and version-center coverage"},
 					{Label: "approval-contract", Target: "src/bigclaw/execution_contract.py", Capability: "ops-control", Note: "approval permission and API role coverage contract"},
 					{Label: "approval-workflow", Target: "src/bigclaw/workflow.py", Capability: "ops-control", Note: "approval workflow and closeout flow wiring"},

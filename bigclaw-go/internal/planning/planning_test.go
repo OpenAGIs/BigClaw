@@ -301,7 +301,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
-			{Label: "queue-control-center", Target: "src/bigclaw/operations.py", Capability: "ops-control", Note: "queue and approval command center"},
+			{Label: "queue-control-center", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package queue and approval command center"},
 			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
 		},
 	}
@@ -435,7 +435,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		targets[link.Target] = struct{}{}
 	}
 	for _, want := range []string{
-		"src/bigclaw/operations.py",
+		"src/bigclaw/__init__.py",
 		"tests/test_operations.py",
 		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/workflow.py",
@@ -512,7 +512,7 @@ func TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline(t *testing
 	}
 	for _, want := range []string{
 		"candidate-ops-hardening: Operations command-center hardening",
-		"- command-center-src -> src/bigclaw/operations.py capability=ops-control",
+		"- command-center-src -> src/bigclaw/__init__.py capability=ops-control",
 		"- report-studio-tests -> tests/test_reports.py capability=commercialization",
 	} {
 		if !strings.Contains(report, want) {
