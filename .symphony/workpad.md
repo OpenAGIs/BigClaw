@@ -51,3 +51,4 @@
 - `src/bigclaw/runtime.py`, `src/bigclaw/reports.py`, `src/bigclaw/operations.py`, and related modules still participate in the surviving Python test surface, so they remain out of scope for this tranche
 - legacy Python CLI shim files under `scripts/ops/*.py` and `src/bigclaw/legacy_shim.py` remain active compatibility wrappers and were not touched
 - the remaining top-level Python files are now either active compatibility shims (`__main__.py`, `legacy_shim.py`) or directly imported by the surviving Python tests (`models.py`, `runtime.py`, `observability.py`, `reports.py`, `operations.py`, `evaluation.py`, `console_ia.py`, `design_system.py`)
+- further file-count reduction now requires broad active-surface merges such as folding `console_ia.py` into `design_system.py` or `evaluation.py` into another live module while preserving direct `bigclaw.*` imports used by the surviving test suite; that is beyond low-risk residual sweep work
