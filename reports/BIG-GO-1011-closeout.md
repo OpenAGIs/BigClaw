@@ -7,7 +7,7 @@ Title: `Refill sweep A: remaining root/config/python packaging residuals`
 ## Final Repo State
 
 - Branch: `big-go-1011-root-config-residuals`
-- Snapshot head used for this closeout baseline: `c91b6e8de17e7d2851c49b2c94f202c4347cd34f`
+- Cleanup snapshot head used for this closeout baseline: `c91b6e8de17e7d2851c49b2c94f202c4347cd34f`
 - Remote: `https://github.com/OpenAGIs/BigClaw.git`
 - `py files`: `101`
 - `go files`: `267`
@@ -58,8 +58,8 @@ c91b6e8de17e7d2851c49b2c94f202c4347cd34f	refs/heads/big-go-1011-root-config-resi
 
 - The detailed step-by-step evidence trail remains in `reports/BIG-GO-1011-validation.md`.
 - The machine-readable snapshot remains in `reports/BIG-GO-1011-status.json`.
-- This closeout records a stable synced snapshot; later artifact-only commits may
-  advance the branch head without changing the repo-impact conclusions above.
+- This closeout records the final cleanup baseline. Later artifact-only commits
+  may advance the branch head without changing the repo-impact conclusions above.
 - The only remaining workspace modification outside this issue scope is the
   pre-existing unstaged change in
   `bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json`.

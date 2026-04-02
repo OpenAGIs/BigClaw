@@ -6,8 +6,9 @@
   "branch": {
     "name": "big-go-1011-root-config-residuals",
     "snapshot_head_sha": "c91b6e8de17e7d2851c49b2c94f202c4347cd34f",
+    "snapshot_kind": "cleanup_baseline",
     "remote": "https://github.com/OpenAGIs/BigClaw.git",
-    "note": "This status file captures a stable synced snapshot. Later artifact-only commits may advance the branch head without changing the recorded repo-impact conclusions."
+    "note": "This status file captures the final cleanup baseline. Later artifact-only commits may advance the branch head without changing the recorded repo-impact conclusions."
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1011-validation.md",

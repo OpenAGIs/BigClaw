@@ -47,6 +47,14 @@ source validation path without duplicated legacy Python verification sections.
 - closeout snapshot: `reports/BIG-GO-1011-closeout.md`
 - machine-readable status: `reports/BIG-GO-1011-status.json`
 
+## Snapshot semantics
+
+The `BIG-GO-1011` closeout and status artifacts intentionally pin the final
+cleanup baseline at `c91b6e8de17e7d2851c49b2c94f202c4347cd34f`, which is the
+last commit that changed the repository root cleanup surface itself. Later
+artifact-only refresh commits may advance the branch head without changing the
+recorded repo-impact counts or the root residue conclusions.
+
 ## Repo impact
 
 - `py files`: `101`
