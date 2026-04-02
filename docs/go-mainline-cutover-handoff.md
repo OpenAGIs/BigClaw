@@ -37,8 +37,8 @@ cutover set.
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
 - The default mainline posture is Go-first, with repo-root Python operator
-  wrappers retired and the remaining Python entrypoints limited to
-  migration-only compatibility shims.
+  wrappers retired and the remaining Python surfaces limited to
+  migration-only compatibility imports and validation paths.
 
 ## Remaining non-blocking caveats
 

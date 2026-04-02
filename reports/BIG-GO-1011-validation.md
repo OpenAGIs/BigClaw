@@ -7,6 +7,10 @@ This pass removes stale root README references to deleted Python shim files and
 replaces missing legacy file-path references with the compatibility import
 surfaces that still exist in-tree.
 
+Continuation pass: align active cutover and reviewer-facing docs so they no
+longer describe retired repo-root Python shim files as current compatibility
+surfaces.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -71,6 +75,12 @@ PY
 Result: `ok: src/bigclaw/runtime.py, src/bigclaw/__init__.py, bigclaw-go/docs/go-cli-script-migration.md, bigclaw-go/cmd/bigclawd/main.go`
 
 ```bash
+rg -n "remain available as compatibility shims|Compatibility shims now dispatch|compatibility shims during cutover" docs/go-cli-script-migration-plan.md docs/go-mainline-cutover-handoff.md reports/BIG-GO-902-closeout.md reports/BIG-GO-902-pr.md
+```
+
+Result: no matches
+
+```bash
 make build
 ```
 
@@ -115,5 +125,8 @@ Remaining root-level Python mentions are intentional migration-only validation s
 - root cache ignores for `__pycache__/`, `*.py[cod]`, and `.pytest_cache/`
 - compatibility import surfaces exposed through `src/bigclaw/__init__.py`
   and `src/bigclaw/runtime.py`
+- historical migration reports may still mention retired shim files as past
+  implementation details, but active root/cutover guidance no longer presents
+  them as current repo surfaces
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.

@@ -10,7 +10,8 @@
 
 - move the remaining repo-root script compatibility layer behind Go-owned `bigclawctl` commands
 - migrate the first `bigclaw-go/scripts/*` automation batch into `bigclawctl automation ...`
-- keep the old script file names as thin shims so automation call sites do not break during cutover
+- keep the old script file names as thin shims during cutover so automation call sites do not
+  break before the later retirement cleanup
 - refresh the migration plan, validation report, closeout index, and status artifact for reviewers
 
 ### Delivered

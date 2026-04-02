@@ -3,7 +3,9 @@
 ## Goal
 
 Move the remaining repo-level script automation entrypoints onto `bigclaw-go/cmd/bigclawctl`
-subcommands, preserving compatibility shims only where the operator cutover still requires them.
+subcommands. This document records the migration slice that originally preserved a thin
+compatibility layer during cutover; the retired Python shim files themselves are no longer
+part of the active repo-root operator path.
 
 ## This Slice
 
@@ -28,7 +30,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
 
-The remaining compatibility layer is intentionally thin:
+The remaining compatibility layer from that slice is intentionally thin:
 
 - Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
@@ -52,13 +54,13 @@ The remaining compatibility layer is intentionally thin:
 - `panel`
   - proxies `symphony panel --workflow workflow.md`
 
-### Compatibility shims kept in place
+### Compatibility wrappers kept in place
 
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
-These shims should remain until operator docs and external automation references are updated to
+These Bash wrappers should remain until operator docs and external automation references are updated to
 invoke `bash scripts/ops/bigclawctl ...` directly. The repo-root Python shims were retired
 because the root no longer carries Python packaging/bootstrap ownership.
 
@@ -71,7 +73,8 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
   first automation batch. The remaining backlog is tracked in
   `bigclaw-go/docs/go-cli-script-migration.md`.
-- Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
+- Update repo docs that still present retired Python entrypoints as a primary path instead of the
+  current Go-first operator path.
 
 ## Validation Commands
 
@@ -102,7 +105,7 @@ because the root no longer carries Python packaging/bootstrap ownership.
   `--issues`, `--report-file`, and `--no-cleanup` still need to translate to the Go workspace
   validation flags without changing existing automation call sites.
 - Root compatibility retirement:
-  repo operators must stop invoking removed repo-root Python shims and switch to
+  repo operators must stop invoking retired repo-root Python shims and switch to
   `bash scripts/ops/bigclawctl ...` entrypoints.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
@@ -111,7 +114,8 @@ because the root no longer carries Python packaging/bootstrap ownership.
   CLI discovery order and workflow binding must still prefer the repo-adjacent checkout before
   falling back to `PATH`.
 - Operator docs:
-  repo instructions must not imply that the Python scripts are still the implementation mainline.
+  repo instructions must not imply that retired Python shim files still exist as the active
+  implementation path.
 
 ## Branch and PR Suggestion
 

@@ -63,7 +63,8 @@ opened PR `#215`; they did not change the migrated Go CLI behavior summarized he
 - Repo-root automation entrypoints now resolve through Go-owned `bigclawctl` behavior.
 - The first `bigclaw-go/scripts/*` automation batch now resolves through Go-owned
   `bigclawctl automation ...` behavior.
-- Legacy Python and Bash entrypoint names remain available as compatibility shims.
+- At the time of this closeout, legacy entrypoint names still had a compatibility layer during
+  operator cutover. The repo-root Python shim files were retired in later cleanup passes.
 - The migration plan now distinguishes delivered scope from deferred follow-ups.
 - Reviewer artifacts were refreshed against the current pushed branch tip.
 
