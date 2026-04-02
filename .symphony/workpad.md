@@ -30,3 +30,4 @@
 
 ### Final Consistency Pass
 - Updated remaining cutover/handoff docs that still implied the retired repo-root Python wrappers were active compatibility shims.
+- Removed stale `PYTHONDONTWRITEBYTECODE` exports from `.githooks/post-commit` and `.githooks/post-rewrite` because those hooks now call the Go-first `scripts/ops/bigclawctl` path only.
