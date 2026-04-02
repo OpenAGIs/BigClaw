@@ -23,20 +23,23 @@
 ## Completed
 - confirmed the issue's suggested `tests/test_*.py` tranche was already absent from the repo before this turn
 - removed `src/bigclaw/governance.py`, `src/bigclaw/planning.py`, and `src/bigclaw/ui_review.py`
+- removed `src/bigclaw/audit_events.py` and `src/bigclaw/run_detail.py` by folding their compatibility helpers into surviving Python modules
 - removed the corresponding legacy exports from `src/bigclaw/__init__.py`
 - added `bigclaw-go/internal/regression/top_level_module_purge_tranche15_test.go` to pin the deletions against Go replacement paths
+- added `bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go` to pin the additional deletions against Go replacement paths
 - updated `docs/go-mainline-cutover-issue-pack.md` so the migration inventory reflects the deleted Python assets
 
 ## Validation Results
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/operations.py src/bigclaw/reports.py src/bigclaw/evaluation.py src/bigclaw/runtime.py src/bigclaw/observability.py tests/test_control_center.py tests/test_evaluation.py tests/test_console_ia.py tests/test_design_system.py` -> passed
-- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche15|TestFollowUpLaneDocsStayAligned|TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract'` -> `ok  	bigclaw-go/internal/regression	0.766s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche15|TestTopLevelModulePurgeTranche16|TestFollowUpLaneDocsStayAligned|TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract'` -> `ok  	bigclaw-go/internal/regression	1.028s`
 - `cd bigclaw-go && go test ./internal/governance ./internal/product` -> `ok  	bigclaw-go/internal/governance	0.454s`; `ok  	bigclaw-go/internal/product	(cached)`
-- `PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_evaluation.py tests/test_console_ia.py tests/test_design_system.py -q` -> `36 passed in 0.13s`
+- `cd bigclaw-go && go test ./internal/observability ./internal/product ./internal/api` -> `ok  	bigclaw-go/internal/observability	1.663s`; `ok  	bigclaw-go/internal/product	(cached)`; `ok  	bigclaw-go/internal/api	3.475s`
+- `PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_evaluation.py tests/test_console_ia.py tests/test_design_system.py -q` -> `36 passed in 0.07s`
 
 ## Python Count Impact
 - before: `28`
-- after: `25`
-- delta: `-3`
+- after: `23`
+- delta: `-5`
 
 ## Residual Risks
 - `src/bigclaw/risk.py`, `src/bigclaw/runtime.py`, `src/bigclaw/reports.py`, `src/bigclaw/operations.py`, and related modules still participate in the surviving Python test surface, so they remain out of scope for this tranche

@@ -175,7 +175,7 @@ from .collaboration import (
     build_collaboration_thread_from_audits,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .audit_events import (
+from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,

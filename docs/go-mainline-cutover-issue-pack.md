@@ -132,7 +132,7 @@ Python source:
 - `src/bigclaw/risk.py`
 - `src/bigclaw/governance.py`
 - `src/bigclaw/execution_contract.py`
-- `src/bigclaw/audit_events.py`
+- audit event surface retired; canonical spec ownership lives under Go observability packages
 
 Go ownership:
 - `bigclaw-go/internal/risk/risk.go`
@@ -149,6 +149,7 @@ Current repo progress:
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
 - `src/bigclaw/governance.py` has been deleted after the Go freeze surface took over the remaining repository contract
+- `src/bigclaw/audit_events.py` has been deleted after its constants and validation helpers were folded into the remaining observability compatibility surface
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
 - other Python migration references still remain; BigClaw is still not 100% Go
 
@@ -223,7 +224,7 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/repo_triage.py`
-- `src/bigclaw/run_detail.py`
+- run-detail compatibility surface retired; remaining run-detail ownership lives under Go API and product contracts
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/saved_views.py`
@@ -395,7 +396,7 @@ Python source:
 - `src/bigclaw/risk.py`
 - remaining active consumers of `src/bigclaw/governance.py`
 - remaining active consumers of `src/bigclaw/execution_contract.py`
-- remaining active consumers of `src/bigclaw/audit_events.py`
+- remaining active consumers of the legacy audit-event compatibility surface
 
 Go ownership:
 - `bigclaw-go/internal/risk/risk.go`
@@ -432,7 +433,7 @@ Python source:
 - `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
-- `src/bigclaw/run_detail.py`
+- run-detail compatibility surface retired; remaining run-detail/report ownership lives under Go API, product, and reporting packages
 - `src/bigclaw/dashboard_run_contract.py`
 - planning surface retired; remaining docs/report ownership lives under Go regression and reporting packages
 
