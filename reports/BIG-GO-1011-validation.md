@@ -19,6 +19,10 @@ Current continuation pass: remove the remaining active validation-doc reference
 to deleted `tests/test_service.py` so current guidance only names test files
 that still exist in the workspace.
 
+Current continuation pass: retarget the cutover issue pack away from deleted
+`src/bigclaw/service.py`, `scheduler.py`, `orchestration.py`, `workflow.py`,
+and `queue.py` file paths to the compatibility surfaces that still exist.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -133,6 +137,30 @@ PY
 Result: `ok: tests/test_repo_governance.py, tests/test_repo_triage.py, tests/test_operations.py, tests/test_repo_rollout.py`
 
 ```bash
+rg -n "src/bigclaw/service\.py|src/bigclaw/scheduler\.py|src/bigclaw/orchestration\.py|src/bigclaw/workflow\.py|src/bigclaw/queue\.py" docs/go-mainline-cutover-issue-pack.md docs README.md -g '!reports/**'
+```
+
+Result: exit `1` with no matches
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+repo = Path('.').resolve()
+paths = [
+    'src/bigclaw/__init__.py',
+    'src/bigclaw/runtime.py',
+    'src/bigclaw/__main__.py',
+]
+missing = [p for p in paths if not (repo / p).exists()]
+if missing:
+    raise SystemExit('missing: ' + ', '.join(missing))
+print('ok:', ', '.join(paths))
+PY
+```
+
+Result: `ok: src/bigclaw/__init__.py, src/bigclaw/runtime.py, src/bigclaw/__main__.py`
+
+```bash
 make build
 ```
 
@@ -183,5 +211,8 @@ Remaining root-level Python mentions are intentional migration-only validation s
 - older historical reports still contain `tests/test_service.py` as past
   evidence, but current active validation docs no longer prescribe that deleted
   file
+- active cutover docs now point at compatibility imports in `src/bigclaw/__init__.py`
+  plus `src/bigclaw/runtime.py` / `src/bigclaw/__main__.py` instead of deleted
+  `service.py`, `scheduler.py`, `orchestration.py`, `workflow.py`, and `queue.py`
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.

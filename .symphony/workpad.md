@@ -2,7 +2,7 @@
 
 ### Plan
 1. Re-scan the repository root for Python packaging/config residue and confirm the remaining cleanup surface is root-facing docs/config only.
-2. Remove stale root and active documentation that still references deleted Python files in current validation guidance.
+2. Remove stale root and active documentation that still references deleted Python files instead of the compatibility surfaces that exist today.
 3. Refresh the issue validation report with the exact repo-impact counts and targeted validation evidence for this continuation pass.
 4. Run targeted validation for the edited root surfaces, then commit and push the scoped change set.
 
@@ -14,5 +14,5 @@
 
 ### Validation
 - `find . -maxdepth 2` scan for root Python packaging/config files.
-- Targeted assertions that active docs no longer reference deleted Python files in current guidance.
+- Targeted assertions that active docs no longer reference deleted Python files instead of current compatibility surfaces.
 - `git diff --stat` and `git status --short` review before commit.

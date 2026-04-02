@@ -164,10 +164,7 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- compatibility imports `bigclaw.scheduler`, `bigclaw.orchestration`, `bigclaw.workflow`, and `bigclaw.queue` exposed through `src/bigclaw/__init__.py`
 
 Go ownership:
 - `bigclaw-go/internal/scheduler/scheduler.go`
@@ -323,7 +320,7 @@ Historical initial state:
 ### BIG-GOM-308 Python deprecation and Go-only mainline switch
 
 Python source:
-- `src/bigclaw/service.py`
+- compatibility import `bigclaw.service` exposed through `src/bigclaw/__init__.py`
 - `src/bigclaw/__main__.py`
 - any remaining active Python entrypoints not covered by earlier slices
 
@@ -409,10 +406,7 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- compatibility imports `bigclaw.scheduler`, `bigclaw.orchestration`, `bigclaw.workflow`, and `bigclaw.queue` exposed through `src/bigclaw/__init__.py`
 
 Go ownership:
 - `bigclaw-go/internal/worker/runtime.go`
@@ -478,7 +472,7 @@ Python source:
 - `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
 - `src/bigclaw/ui_review.py`
-- remaining operator-facing parts of `src/bigclaw/service.py`
+- remaining operator-facing parts of the `bigclaw.service` compatibility surface exposed through `src/bigclaw/__init__.py`
 
 Go ownership:
 - `bigclaw-go/internal/product/console.go`
@@ -497,7 +491,7 @@ Python source:
 - `src/bigclaw/workspace_bootstrap.py`
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
-- `src/bigclaw/service.py`
+- compatibility import `bigclaw.service` exposed through `src/bigclaw/__init__.py`
 - `src/bigclaw/__main__.py`
 
 Go ownership:
