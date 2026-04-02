@@ -133,7 +133,7 @@ Current tree snapshot at the start of this pass:
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark --help`
   - Result: exited `0` and printed `usage: bigclawctl automation benchmark <soak-local|run-matrix|capacity-certification> [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e --help`
-  - Result: exited `0` and printed `usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|continuation-scorecard|continuation-policy-gate> [flags]`
+  - Result: exited `0` and printed `usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|mixed-workload-matrix|multi-node-shared-queue|subscriber-takeover-harness|continuation-scorecard|continuation-policy-gate> [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help`
   - Result: exited `0` and printed the exporter flags including `--go-root`, `--run-id`, `--bundle-dir`, `--summary-path`, `--index-path`, and `--manifest-path`.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e coordination-capability-surface --help`
