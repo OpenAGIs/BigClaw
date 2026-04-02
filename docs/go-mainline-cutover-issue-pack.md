@@ -432,7 +432,6 @@ Python source:
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
-- `src/bigclaw/planning.py`
 
 Go ownership:
 - `bigclaw-go/internal/observability/*`
