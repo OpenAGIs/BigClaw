@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"bigclaw-go/internal/collaboration"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/regression"
+	"bigclaw-go/internal/workflow"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -88,27 +90,49 @@ type WeeklyArtifacts struct {
 }
 
 type OrchestrationCanvas struct {
-	RunID             string   `json:"run_id,omitempty"`
-	TaskID            string   `json:"task_id,omitempty"`
-	Source            string   `json:"source,omitempty"`
-	Summary           string   `json:"summary,omitempty"`
-	CollaborationMode string   `json:"collaboration_mode,omitempty"`
-	Departments       []string `json:"departments,omitempty"`
-	Approvals         []string `json:"approvals,omitempty"`
-	HandoffTeam       string   `json:"handoff_team,omitempty"`
+	RunID               string                `json:"run_id,omitempty"`
+	TaskID              string                `json:"task_id,omitempty"`
+	Source              string                `json:"source,omitempty"`
+	Summary             string                `json:"summary,omitempty"`
+	CollaborationMode   string                `json:"collaboration_mode,omitempty"`
+	Departments         []string              `json:"departments,omitempty"`
+	Approvals           []string              `json:"approvals,omitempty"`
+	HandoffTeam         string                `json:"handoff_team,omitempty"`
+	RequiredApprovals   []string              `json:"required_approvals,omitempty"`
+	Tier                string                `json:"tier,omitempty"`
+	UpgradeRequired     bool                  `json:"upgrade_required,omitempty"`
+	EntitlementStatus   string                `json:"entitlement_status,omitempty"`
+	BillingModel        string                `json:"billing_model,omitempty"`
+	EstimatedCostUSD    float64               `json:"estimated_cost_usd,omitempty"`
+	IncludedUsageUnits  int                   `json:"included_usage_units,omitempty"`
+	OverageUsageUnits   int                   `json:"overage_usage_units,omitempty"`
+	OverageCostUSD      float64               `json:"overage_cost_usd,omitempty"`
+	BlockedDepartments  []string              `json:"blocked_departments,omitempty"`
+	HandoffStatus       string                `json:"handoff_status,omitempty"`
+	ActiveTools         []string              `json:"active_tools,omitempty"`
+	Recommendation      string                `json:"recommendation,omitempty"`
+	Actions             []ConsoleAction       `json:"actions,omitempty"`
+	CollaborationThread *collaboration.Thread `json:"collaboration,omitempty"`
 }
 
 type TakeoverRequest struct {
-	RunID             string   `json:"run_id,omitempty"`
-	TaskID            string   `json:"task_id,omitempty"`
-	TargetTeam        string   `json:"target_team,omitempty"`
-	Reason            string   `json:"reason,omitempty"`
-	RequiredApprovals []string `json:"required_approvals,omitempty"`
+	RunID             string          `json:"run_id,omitempty"`
+	TaskID            string          `json:"task_id,omitempty"`
+	TargetTeam        string          `json:"target_team,omitempty"`
+	Reason            string          `json:"reason,omitempty"`
+	RequiredApprovals []string        `json:"required_approvals,omitempty"`
+	Status            string          `json:"status,omitempty"`
+	Actions           []ConsoleAction `json:"actions,omitempty"`
 }
 
 type TakeoverQueue struct {
-	Period   string            `json:"period,omitempty"`
-	Requests []TakeoverRequest `json:"requests,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	Period          string            `json:"period,omitempty"`
+	Requests        []TakeoverRequest `json:"requests,omitempty"`
+	PendingRequests int               `json:"pending_requests"`
+	TeamCounts      map[string]int    `json:"team_counts,omitempty"`
+	ApprovalCount   int               `json:"approval_count"`
+	Recommendation  string            `json:"recommendation,omitempty"`
 }
 
 type RepoCollaborationRun struct {
@@ -237,6 +261,8 @@ func BuildOrchestrationCanvasFromLedgerEntry(entry map[string]any) Orchestration
 		Source:  ledgerString(entry["source"]),
 		Summary: ledgerString(entry["summary"]),
 	}
+	var comments []collaboration.Comment
+	var decisions []collaboration.Decision
 	for _, audit := range ledgerMapSlice(entry["audits"]) {
 		action := ledgerString(audit["action"])
 		details := ledgerMap(audit["details"])
@@ -245,32 +271,85 @@ func BuildOrchestrationCanvasFromLedgerEntry(entry map[string]any) Orchestration
 			canvas.CollaborationMode = ledgerString(details["collaboration_mode"])
 			canvas.Departments = ledgerStringSlice(details["departments"])
 			canvas.Approvals = ledgerStringSlice(details["approvals"])
+			canvas.RequiredApprovals = append([]string(nil), canvas.Approvals...)
+		case "orchestration.policy":
+			canvas.Tier = ledgerString(details["tier"])
+			canvas.EntitlementStatus = ledgerString(details["entitlement_status"])
+			canvas.BillingModel = ledgerString(details["billing_model"])
+			canvas.UpgradeRequired = strings.Contains(ledgerString(audit["outcome"]), "upgrade")
+			canvas.EstimatedCostUSD = ledgerFloat(details["estimated_cost_usd"])
+			canvas.IncludedUsageUnits = ledgerInt(details["included_usage_units"])
+			canvas.OverageUsageUnits = ledgerInt(details["overage_usage_units"])
+			canvas.OverageCostUSD = ledgerFloat(details["overage_cost_usd"])
+			canvas.BlockedDepartments = ledgerStringSlice(details["blocked_departments"])
 		case observability.ManualTakeoverEvent:
 			canvas.HandoffTeam = ledgerString(details["target_team"])
+			canvas.HandoffStatus = ledgerString(audit["outcome"])
 			if len(canvas.Approvals) == 0 {
 				canvas.Approvals = ledgerStringSlice(details["required_approvals"])
 			}
+			if len(canvas.RequiredApprovals) == 0 {
+				canvas.RequiredApprovals = ledgerStringSlice(details["required_approvals"])
+			}
+		case "orchestration.handoff":
+			canvas.HandoffTeam = ledgerString(details["target_team"])
+			canvas.HandoffStatus = ledgerString(audit["outcome"])
+			if len(canvas.RequiredApprovals) == 0 {
+				canvas.RequiredApprovals = ledgerStringSlice(details["required_approvals"])
+			}
+		case "tool.invoke":
+			tool := ledgerString(details["tool"])
+			if tool != "" && !contains(canvas.ActiveTools, tool) {
+				canvas.ActiveTools = append(canvas.ActiveTools, tool)
+			}
+		case "collaboration.comment":
+			comments = append(comments, collaboration.Comment{CommentID: ledgerString(details["comment_id"]), Author: ledgerString(audit["actor"]), Body: ledgerString(details["body"]), CreatedAt: ledgerString(audit["timestamp"])})
+		case "collaboration.decision":
+			decisions = append(decisions, collaboration.Decision{DecisionID: ledgerString(details["decision_id"]), Author: ledgerString(audit["actor"]), Outcome: ledgerString(audit["outcome"]), Summary: ledgerString(details["summary"]), RecordedAt: ledgerString(audit["timestamp"])})
 		}
 	}
+	if len(comments) > 0 || len(decisions) > 0 {
+		canvas.CollaborationThread = collaboration.BuildThread("flow", canvas.RunID, comments, decisions)
+	}
+	canvas.Actions = orchestrationActions(canvas.RunID, &workflow.HandoffRequest{TargetTeam: canvas.HandoffTeam})
+	canvas.Recommendation = orchestrationRecommendation(canvas)
 	return canvas
 }
 
-func BuildTakeoverQueueFromLedger(entries []map[string]any, period string) TakeoverQueue {
-	queue := TakeoverQueue{Period: strings.TrimSpace(period)}
+func BuildTakeoverQueueFromLedger(entries []map[string]any, args ...string) TakeoverQueue {
+	queue := TakeoverQueue{TeamCounts: map[string]int{}}
+	if len(args) == 1 {
+		queue.Period = strings.TrimSpace(args[0])
+	}
+	if len(args) >= 2 {
+		queue.Name = strings.TrimSpace(args[0])
+		queue.Period = strings.TrimSpace(args[1])
+	}
 	for _, entry := range entries {
 		for _, audit := range ledgerMapSlice(entry["audits"]) {
-			if ledgerString(audit["action"]) != observability.ManualTakeoverEvent {
+			action := ledgerString(audit["action"])
+			if action != observability.ManualTakeoverEvent && action != "orchestration.handoff" {
 				continue
 			}
 			details := ledgerMap(audit["details"])
-			queue.Requests = append(queue.Requests, TakeoverRequest{
+			request := TakeoverRequest{
 				RunID:             firstNonEmpty(ledgerString(details["run_id"]), ledgerString(entry["run_id"])),
 				TaskID:            firstNonEmpty(ledgerString(details["task_id"]), ledgerString(entry["task_id"])),
 				TargetTeam:        ledgerString(details["target_team"]),
 				Reason:            ledgerString(details["reason"]),
 				RequiredApprovals: ledgerStringSlice(details["required_approvals"]),
-			})
+				Status:            firstNonEmpty(ledgerString(audit["outcome"]), "pending"),
+			}
+			request.Actions = takeoverActions(request)
+			queue.Requests = append(queue.Requests, request)
+			queue.TeamCounts[request.TargetTeam]++
+			queue.ApprovalCount += len(request.RequiredApprovals)
 		}
+	}
+	sort.SliceStable(queue.Requests, func(i, j int) bool { return queue.Requests[i].RunID < queue.Requests[j].RunID })
+	queue.PendingRequests = len(queue.Requests)
+	if queue.TeamCounts["security"] > 0 {
+		queue.Recommendation = "expedite-security-review"
 	}
 	return queue
 }
@@ -299,9 +378,14 @@ type SharedViewFilter struct {
 }
 
 type SharedViewContext struct {
-	Filters      []SharedViewFilter `json:"filters,omitempty"`
-	ResultCount  int                `json:"result_count"`
-	EmptyMessage string             `json:"empty_message,omitempty"`
+	Filters       []SharedViewFilter    `json:"filters,omitempty"`
+	ResultCount   int                   `json:"result_count"`
+	EmptyMessage  string                `json:"empty_message,omitempty"`
+	Loading       bool                  `json:"loading,omitempty"`
+	Errors        []string              `json:"errors,omitempty"`
+	PartialData   []string              `json:"partial_data,omitempty"`
+	LastUpdated   string                `json:"last_updated,omitempty"`
+	Collaboration *collaboration.Thread `json:"collaboration,omitempty"`
 }
 
 type EngineeringOverviewPermission struct {
