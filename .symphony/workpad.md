@@ -108,3 +108,4 @@
 - `src/bigclaw/runtime.py` depends on `src/bigclaw/observability.py`
 - `src/bigclaw/operations.py` depends on `src/bigclaw/observability.py` and on the package-installed compatibility submodules that originate from `src/bigclaw/__init__.py`
 - with the wrapper/test/entrypoint layers gone, any additional file-count reduction now requires a large-scale merge across the live compatibility core rather than another low-risk sweep
+- checked later branches that reached zero-Python states; their remaining-core deletion is not directly portable here because they depend on supporting Go surfaces absent from this branch (for example `bigclaw-go/internal/planning/planning.go`, `bigclaw-go/internal/planning/planning_test.go`, and `bigclaw-go/internal/regression/python_floor_guard_test.go`)

@@ -343,6 +343,7 @@ Current repo progress:
 - the top-level `python -m bigclaw` entrypoint has been retired and the default operator path is now `scripts/ops/bigclawctl`
 - the repository Python footprint is down to the four live compatibility modules: `src/bigclaw/__init__.py`, `src/bigclaw/observability.py`, `src/bigclaw/runtime.py`, and `src/bigclaw/operations.py`
 - those four files now form a tightly coupled frozen compatibility core: `__init__.py` installs the compatibility submodules that `operations.py` still imports, while `runtime.py` and `operations.py` both depend on `observability.py`
+- later zero-Python follow-up branches rely on additional Go planning/floor-guard surfaces that are not present in this branch, so their final-module deletion is not a clean cherry-pick here
 - further Python file-count reduction therefore requires a core-module consolidation rather than another peripheral wrapper/test/entrypoint retirement
 - finish cutover validation and release-readiness evidence
 
