@@ -1,0 +1,34 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1011",
+    "title": "Refill sweep A: remaining root/config/python packaging residuals"
+  },
+  "branch": {
+    "name": "big-go-1011-root-config-residuals",
+    "head_sha": "c886f4ba29e5fe4bc584310043b3f86aceb0d7ea",
+    "remote": "https://github.com/OpenAGIs/BigClaw.git"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1011-validation.md",
+    "closeout_report": "reports/BIG-GO-1011-closeout.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "repo_impact": {
+    "py_files": 101,
+    "go_files": 267,
+    "pyproject_toml": 0,
+    "setup_py": 0
+  },
+  "root_residue": {
+    "pyproject_related_files_present": false,
+    "root_python_cache_dirs_present": false,
+    "notes": [
+      "No repo-root pyproject.toml/setup.py/setup.cfg/MANIFEST.in/egg-info/dist-info residue remains.",
+      "No root .pytest_cache/__pycache__/egg-info/dist-info directory remains on disk."
+    ]
+  },
+  "status": {
+    "repo_cleanup_exhausted": true,
+    "remaining_out_of_scope_workspace_change": "bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json"
+  }
+}
