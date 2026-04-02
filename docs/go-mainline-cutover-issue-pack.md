@@ -286,6 +286,8 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/parallel_refill.py`
+- Historical retired-path note: the repo-root script paths listed below were migration-time
+  wrapper identifiers and no longer exist in the workspace.
 - retired `scripts/ops/bigclaw_github_sync.py`
 - retired `scripts/ops/symphony_workspace_bootstrap.py`
 - retired `scripts/ops/bigclaw_refill_queue.py`

@@ -27,6 +27,10 @@ Current continuation pass: refresh the Go CLI migration plan so its active
 validation command uses the current source-level legacy smoke suite instead of
 deleted `tests/test_legacy_shim.py` and `tests/test_deprecation.py`.
 
+Current continuation pass: mark the remaining deleted script paths in active
+planning docs as explicitly retired or historical migration identifiers so they
+no longer read like current workspace files.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -190,6 +194,33 @@ tests/test_planning.py ..............                                    [100%]
 ```
 
 ```bash
+python3 - <<'PY'
+from pathlib import Path
+import re
+repo = Path('.').resolve()
+files = [repo/'README.md', repo/'workflow.md'] + sorted((repo/'docs').rglob('*.md'))
+patterns = [
+    re.compile(r'`(scripts/[^`]+\.py)`'),
+    re.compile(r'`(bigclaw-go/scripts/[^`]+\.py)`'),
+]
+for path in files:
+    lines = path.read_text().splitlines()
+    for i, line in enumerate(lines, 1):
+        for pat in patterns:
+            for m in pat.finditer(line):
+                ref = m.group(1)
+                target = repo / ref
+                if target.exists():
+                    continue
+                context = '\n'.join(lines[max(0, i-3):min(len(lines), i+1)])
+                if 'retired' not in context.lower() and 'migration identifier' not in context.lower() and 'historical' not in context.lower():
+                    print(f"{path.relative_to(repo)}:{i}:{ref}")
+PY
+```
+
+Result: no output
+
+```bash
 make build
 ```
 
@@ -246,5 +277,7 @@ Remaining root-level Python mentions are intentional migration-only validation s
 - active migration-plan validation now uses `tests/test_workspace_bootstrap.py`
   and `tests/test_planning.py`, which both exist and passed, instead of deleted
   `tests/test_legacy_shim.py` / `tests/test_deprecation.py`
+- active planning docs now only mention deleted script paths when they are
+  explicitly marked `retired` or described as historical migration identifiers
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.

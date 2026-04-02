@@ -13,6 +13,8 @@ The implemented migration batches in this issue move these entrypoints behind th
 
 ### Repo-root entrypoints
 
+- The retired Python file paths listed in this subsection are migration identifiers for the
+  cutover map, not current files that still exist in the workspace.
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
 - retired `scripts/dev_smoke.py`; use `bigclawctl dev-smoke`
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
@@ -28,9 +30,9 @@ The implemented migration batches in this issue move these entrypoints behind th
 
 - The deleted Python script paths listed in this subsection are migration identifiers for the
   cutover map, not current files that still exist in the workspace.
-- `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `bigclawctl automation e2e run-task-smoke`
+- retired `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `bigclawctl automation e2e run-task-smoke`
 - `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
-- `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- retired `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
 
 The remaining compatibility layer from that slice is intentionally thin:
 
