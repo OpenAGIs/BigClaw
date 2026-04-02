@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from .collaboration import CollaborationComment
+from .observability import CollaborationComment
 
 
 def _now() -> str:

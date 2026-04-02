@@ -26,13 +26,17 @@ from .models import (
 from . import runtime as _legacy_runtime_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_surface_module(source_module: object, name: str, export_names: list[str], **extra_attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
+
+
+def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+    _install_surface_module(_legacy_runtime_surface, name, export_names, **extra_attrs)
 
 
 _install_legacy_surface_module(
@@ -168,12 +172,30 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .collaboration import (
+from .observability import (
+    APPROVAL_RECORDED_EVENT,
+    AuditEventSpec,
+    BUDGET_OVERRIDE_EVENT,
     CollaborationComment,
     CollaborationThread,
     DecisionNote,
+    FLOW_HANDOFF_EVENT,
+    GitSyncTelemetry,
+    MANUAL_TAKEOVER_EVENT,
+    ObservabilityLedger,
+    P0_AUDIT_EVENT_SPECS,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    SCHEDULER_DECISION_EVENT,
+    TaskRun,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
+    get_audit_event_spec,
+    missing_required_fields,
+    merge_collaboration_threads,
+    render_collaboration_lines,
+    render_collaboration_panel_html,
 )
 from .saved_views import (
     AlertDigestSubscription,
@@ -203,17 +225,6 @@ from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
-from .audit_events import (
-    APPROVAL_RECORDED_EVENT,
-    BUDGET_OVERRIDE_EVENT,
-    FLOW_HANDOFF_EVENT,
-    MANUAL_TAKEOVER_EVENT,
-    P0_AUDIT_EVENT_SPECS,
-    SCHEDULER_DECISION_EVENT,
-    AuditEventSpec,
-    get_audit_event_spec,
-    missing_required_fields,
-)
 from .event_bus import (
     CI_COMPLETED_EVENT,
     PULL_REQUEST_COMMENT_EVENT,
@@ -221,7 +232,6 @@ from .event_bus import (
     BusEvent,
     EventBus,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .execution_contract import (
     AuditPolicy,
     build_operations_api_contract,
@@ -238,19 +248,14 @@ from .execution_contract import (
     PermissionCheckResult,
     render_execution_contract_report,
 )
-from .dashboard_run_contract import (
+from .reports import (
+    AutoTriageCenter,
+    BillingEntitlementsPage,
+    BillingRunCharge,
+    ConsoleAction,
     DashboardRunContract,
     DashboardRunContractAudit,
     DashboardRunContractLibrary,
-    SchemaField,
-    SurfaceSchema,
-    render_dashboard_run_contract_report,
-)
-from .reports import (
-    AutoTriageCenter,
-    ConsoleAction,
-    BillingEntitlementsPage,
-    BillingRunCharge,
     DocumentationArtifact,
     FinalDeliveryChecklist,
     LaunchChecklist,
@@ -264,8 +269,14 @@ from .reports import (
     PilotScorecard,
     ReportStudio,
     ReportStudioArtifacts,
+    RunDetailEvent,
+    RunDetailResource,
+    RunDetailStat,
+    RunDetailTab,
+    SchemaField,
     SharedViewContext,
     SharedViewFilter,
+    SurfaceSchema,
     TakeoverQueue,
     TakeoverRequest,
     TriageFeedbackRecord,
@@ -274,9 +285,9 @@ from .reports import (
     TriageSimilarityEvidence,
     TriageSuggestion,
     build_auto_triage_center,
-    build_console_actions,
     build_billing_entitlements_page,
     build_billing_entitlements_page_from_ledger,
+    build_console_actions,
     build_final_delivery_checklist,
     build_launch_checklist,
     build_orchestration_canvas,
@@ -286,27 +297,88 @@ from .reports import (
     build_takeover_queue_from_ledger,
     evaluate_issue_closure,
     render_auto_triage_center_report,
-    render_console_actions,
     render_billing_entitlements_page,
     render_billing_entitlements_report,
+    render_console_actions,
+    render_dashboard_run_contract_report,
     render_final_delivery_checklist_report,
+    render_issue_validation_report,
     render_launch_checklist_report,
     render_orchestration_canvas,
     render_orchestration_overview_page,
     render_orchestration_portfolio_report,
-    render_issue_validation_report,
-    render_report_studio_html,
-    render_report_studio_plain_text,
-    render_report_studio_report,
-    render_takeover_queue_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
     render_repo_sync_audit_report,
+    render_report_studio_html,
+    render_report_studio_plain_text,
+    render_report_studio_report,
+    render_resource_grid,
+    render_run_detail_console,
+    render_takeover_queue_report,
     render_task_run_detail_page,
     render_task_run_report,
+    render_timeline_panel,
     validation_report_exists,
     write_report,
     write_report_studio_bundle,
+)
+from . import observability as _compat_observability_surface
+from . import reports as _compat_reports_surface
+
+_install_surface_module(
+    _compat_observability_surface,
+    "audit_events",
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "BUDGET_OVERRIDE_EVENT",
+        "FLOW_HANDOFF_EVENT",
+        "MANUAL_TAKEOVER_EVENT",
+        "P0_AUDIT_EVENT_SPECS",
+        "SCHEDULER_DECISION_EVENT",
+        "AuditEventSpec",
+        "get_audit_event_spec",
+        "missing_required_fields",
+    ],
+)
+_install_surface_module(
+    _compat_observability_surface,
+    "collaboration",
+    [
+        "CollaborationComment",
+        "CollaborationThread",
+        "DecisionNote",
+        "build_collaboration_thread",
+        "build_collaboration_thread_from_audits",
+        "merge_collaboration_threads",
+        "render_collaboration_lines",
+        "render_collaboration_panel_html",
+    ],
+)
+_install_surface_module(
+    _compat_reports_surface,
+    "run_detail",
+    [
+        "RunDetailEvent",
+        "RunDetailResource",
+        "RunDetailStat",
+        "RunDetailTab",
+        "render_resource_grid",
+        "render_run_detail_console",
+        "render_timeline_panel",
+    ],
+)
+_install_surface_module(
+    _compat_reports_surface,
+    "dashboard_run_contract",
+    [
+        "DashboardRunContract",
+        "DashboardRunContractAudit",
+        "DashboardRunContractLibrary",
+        "SchemaField",
+        "SurfaceSchema",
+        "render_dashboard_run_contract_report",
+    ],
 )
 from .operations import (
     DashboardBuilder,

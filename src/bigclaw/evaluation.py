@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from .models import Task
 from .observability import ObservabilityLedger
-from .run_detail import (
+from .reports import (
     RunDetailEvent,
     RunDetailResource,
     RunDetailStat,
