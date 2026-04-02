@@ -522,7 +522,7 @@ func TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline(t *testing
 	for _, want := range []string{
 		"candidate-ops-hardening: Operations command-center hardening",
 		"- command-center-src -> src/bigclaw/__init__.py capability=ops-control",
-		"- report-studio-tests -> tests/test_reports.py capability=commercialization",
+		"- report-studio-tests -> bigclaw-go/internal/reportstudio/reportstudio_test.go capability=commercialization",
 	} {
 		if !strings.Contains(report, want) {
 			t.Fatalf("expected report to contain %q, got %s", want, report)

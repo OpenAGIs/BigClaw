@@ -285,7 +285,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Priority:          "P0",
 				Owner:             "orchestration-office",
 				Outcome:           "Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
-				ValidationCommand: "PYTHONPATH=src python3 -m pytest tests/test_reports.py -q && (cd bigclaw-go && go test ./internal/collaboration ./internal/pilot)",
+				ValidationCommand: "cd bigclaw-go && go test ./internal/collaboration ./internal/pilot ./internal/reportstudio",
 				Capabilities:      []string{"commercialization", "handoff", "pilot-rollout"},
 				Evidence:          []string{"pilot-evidence", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
@@ -293,7 +293,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 					{Label: "orchestration-report-src", Target: "bigclaw-go/internal/reportstudio/reportstudio.go", Capability: "commercialization", Note: "Go-native orchestration canvas, portfolio rollups, and narrative exports"},
 					{Label: "collaboration-tests", Target: "bigclaw-go/internal/collaboration/thread_test.go", Capability: "handoff", Note: "Go-native thread merge and handoff validation"},
 					{Label: "pilot-rollout-tests", Target: "bigclaw-go/internal/pilot/rollout_test.go", Capability: "pilot-rollout", Note: "Go-native rollout scoring and repo narrative validation"},
-					{Label: "report-studio-tests", Target: "tests/test_reports.py", Capability: "commercialization", Note: "report exports and downstream evidence sharing"},
+					{Label: "report-studio-tests", Target: "bigclaw-go/internal/reportstudio/reportstudio_test.go", Capability: "commercialization", Note: "Go-native report exports and downstream evidence sharing"},
 				},
 			},
 		},
