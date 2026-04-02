@@ -25,3 +25,8 @@
 - `rg --files . -g '*.go' | wc -l` -> `267`
 - `find . -name 'pyproject.toml' | wc -l` -> `0`
 - `find . -name 'setup.py' | wc -l` -> `0`
+- `find .githooks .github scripts -type f | sort | xargs rg -n '\b(python|pytest|PYTHONPATH|pip|venv|requirements)\b|setup\.py|pyproject\.toml|egg-info|dist-info|editable install'` -> only the intentional migration-only `scripts/dev_bootstrap.sh` legacy validation path matched; no packaging/bootstrap ownership residue remained in root-adjacent automation files.
+
+## Scope Boundary
+- No repo-root or root-adjacent Python packaging/config ownership remains in `.githooks`, `.github`, `scripts/`, `README.md`, `Makefile`, or `.gitignore`.
+- Remaining Python mentions are intentional migration-only source validation or cache hygiene, not root packaging/build surfaces.

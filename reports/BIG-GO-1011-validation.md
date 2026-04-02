@@ -264,6 +264,24 @@ M bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json
 ```
 
 ```bash
+find .githooks .github scripts -type f | sort | xargs rg -n '\b(python|pytest|PYTHONPATH|pip|venv|requirements)\b|setup\.py|pyproject\.toml|egg-info|dist-info|editable install'
+```
+
+Result:
+
+```text
+scripts/dev_bootstrap.sh:14:  if python3 -m pytest --version >/dev/null 2>&1; then
+scripts/dev_bootstrap.sh:15:    PYTHONPATH="$repo_root/src" python3 -m pytest \
+scripts/dev_bootstrap.sh:21:    echo "Legacy Python migration validation was limited to bigclawctl dev-smoke because pytest is not installed in the active environment."
+scripts/dev_bootstrap.sh:25:  echo "Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 to validate the legacy Python migration smoke suite with PYTHONPATH only."
+```
+
+Interpretation: `.githooks`, `.github`, and `scripts/ops/` no longer carry root
+Python packaging/config ownership. The only remaining root-adjacent Python
+matches are the intentional migration-only source-validation lane in
+`scripts/dev_bootstrap.sh`.
+
+```bash
 rg -n "Legacy Python smoke verify|Legacy Python migration surface:|repo-root packaging bootstrap|editable install" README.md
 ```
 
@@ -405,6 +423,9 @@ Remaining root-level Python mentions are intentional migration-only validation s
   directory remains in the workspace after the final cleanup pass
 - the root README keeps only one concise source-level Python migration
   validation path and no longer duplicates legacy verification sections
+- `.githooks`, `.github`, and `scripts/ops/` carry no remaining root Python
+  packaging/config ownership residue; only `scripts/dev_bootstrap.sh` retains an
+  intentional migration-only source validation path
 - local and remote branch SHAs matched at each recorded sync checkpoint, most recently at `c91b6e8de17e7d2851c49b2c94f202c4347cd34f`
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.
