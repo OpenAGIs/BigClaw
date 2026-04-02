@@ -290,7 +290,6 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/parallel_refill.py`
 - `scripts/ops/bigclaw_github_sync.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
 
 Go ownership:
 - new `cmd/bigclawctl`
