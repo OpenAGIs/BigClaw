@@ -28,6 +28,9 @@ Refill sweep A for remaining repository-root/config/python packaging residuals.
 - `8de0ce9` `BIG-GO-1011 refresh validation report head`
 - `48dc372` `BIG-GO-1011 finalize validation report metadata`
 
+Report-maintenance commits after the evidence file was introduced are intentionally not tracked
+here one-by-one when they only stabilize this report's metadata.
+
 ## Validation commands
 
 ```bash
