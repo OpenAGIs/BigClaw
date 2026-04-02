@@ -102,6 +102,9 @@ from .runtime import (
     RepoGovernanceEnforcer,
     RepoGovernancePolicy,
     RepoGovernanceResult,
+    RiskFactor,
+    RiskScore,
+    RiskScorer,
     SandboxProfile,
     SandboxRouter,
     Scheduler,
@@ -174,7 +177,6 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,

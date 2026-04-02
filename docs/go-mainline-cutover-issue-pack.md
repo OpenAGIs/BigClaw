@@ -129,7 +129,7 @@ Historical initial state:
 ### BIG-GOM-302 Risk, policy, and approval semantics migration
 
 Python source:
-- `src/bigclaw/risk.py`
+- risk compatibility surface retired; remaining risk scoring ownership lives under Go risk and policy packages
 - `src/bigclaw/governance.py`
 - `src/bigclaw/execution_contract.py`
 - audit event surface retired; canonical spec ownership lives under Go observability packages
@@ -148,6 +148,7 @@ Current repo progress:
 - `bigclaw-go/internal/governance/freeze.go` now owns the Go scope-freeze backlog board and governance audit surface migrated from `src/bigclaw/governance.py`
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
+- `src/bigclaw/risk.py` has been deleted after its remaining compatibility scorer was folded into the frozen legacy runtime surface
 - `src/bigclaw/governance.py` has been deleted after the Go freeze surface took over the remaining repository contract
 - `src/bigclaw/audit_events.py` has been deleted after its constants and validation helpers were folded into the remaining observability compatibility surface
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
@@ -393,7 +394,7 @@ tracker work.
 ### 1. Close risk and policy parity on the Go mainline
 
 Python source:
-- `src/bigclaw/risk.py`
+- risk compatibility surface retired; remaining risk scoring ownership lives under Go risk and policy packages
 - remaining active consumers of `src/bigclaw/governance.py`
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of the legacy audit-event compatibility surface
