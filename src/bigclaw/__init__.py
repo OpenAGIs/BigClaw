@@ -1501,7 +1501,8 @@ class ObservabilityLedger:
 
 LEGACY_RUNTIME_GUIDANCE = (
     "bigclaw-go is the sole implementation mainline for active development; "
-    "the legacy Python runtime surface remains migration-only."
+    "the sole remaining Python compatibility file is src/bigclaw/__init__.py, "
+    "and it remains migration-only."
 )
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
 GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/worker/runtime.go"
