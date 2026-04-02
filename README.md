@@ -163,9 +163,8 @@ the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
 ops wrappers remain only as compatibility shims during migration, except
 GitHub sync which is now Go/shell-only via `scripts/ops/bigclawctl`.
 
-The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
-`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. Active runtime development belongs in
-`bigclaw-go/internal/*`; use `go run ./bigclaw-go/cmd/bigclawd` for the local
-server path.
+The legacy Python repo-materialization modules under `src/bigclaw/` have been
+removed in favor of the Go mainline in `bigclaw-go/internal/*`. The remaining
+Python compatibility surface is limited to `src/bigclaw/legacy_shim.py`; use
+`go run ./bigclaw-go/cmd/bigclawd` for the local server path and
+`scripts/ops/bigclawctl` for operator workflows.
