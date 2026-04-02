@@ -10,10 +10,6 @@ Date: `2026-04-02`
 
 `symphony/BIG-GO-982`
 
-## Latest Branch Head
-
-`192bf4afaea3b9f9d48bbe7c7782ade03879e55e`
-
 ## Delivered
 
 - retired the remaining root-level and `scripts/ops` Python shims:
@@ -74,13 +70,12 @@ Latest verified results on this branch:
 - `rg --files scripts -g '*.py'` -> no output
 - `rg --files . -g '*.py' | wc -l` -> `109`
 
-## Commits
+## Implementation Commits
 
 - `bccf69fafa95d287c384bdd792781c8867715357` `BIG-GO-982: retire root and ops Python shims`
 - `6e77fee3f55f79d8638dfb02d2957adcaa46fe28` `BIG-GO-982: refresh final sweep docs`
-- `f5e84a9ce4dcb65ab4a3ae11c95be7e959b7d6d9` `BIG-GO-982: add closeout artifact`
-- `6e90711f1f0b00dd2cc577ecf16e7583783f46db` `BIG-GO-982: add validation report`
-- `192bf4afaea3b9f9d48bbe7c7782ade03879e55e` `BIG-GO-982: add status artifact`
+
+Later branch commits add reviewer artifacts and do not change the retired-script outcome summarized here.
 
 ## Artifacts
 

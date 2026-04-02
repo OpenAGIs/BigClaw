@@ -107,15 +107,18 @@ Result:
   "detached": false,
   "dirty": false,
   "diverged": false,
-  "local_sha": "192bf4afaea3b9f9d48bbe7c7782ade03879e55e",
+  "local_sha": "<synced branch head at validation time>",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "192bf4afaea3b9f9d48bbe7c7782ade03879e55e",
+  "remote_sha": "<synced branch head at validation time>",
   "status": "ok",
   "synced": true
 }
 ```
+
+The exact SHA varies as artifact-only follow-up commits land; the required condition for this lane is
+that the branch is clean and synced when the validation command is run.
 
 Command:
 

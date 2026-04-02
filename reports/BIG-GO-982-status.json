@@ -3,10 +3,9 @@
     "identifier": "BIG-GO-982",
     "title": "Final sweep B: root scripts and ops scripts",
     "branch": "symphony/BIG-GO-982",
-    "status": "done",
-    "head_sha": "192bf4afaea3b9f9d48bbe7c7782ade03879e55e"
+    "status": "done"
   },
-  "commits": [
+  "implementation_commits": [
     {
       "sha": "bccf69fafa95d287c384bdd792781c8867715357",
       "subject": "BIG-GO-982: retire root and ops Python shims"
@@ -14,14 +13,6 @@
     {
       "sha": "6e77fee3f55f79d8638dfb02d2957adcaa46fe28",
       "subject": "BIG-GO-982: refresh final sweep docs"
-    },
-    {
-      "sha": "f5e84a9ce4dcb65ab4a3ae11c95be7e959b7d6d9",
-      "subject": "BIG-GO-982: add closeout artifact"
-    },
-    {
-      "sha": "6e90711f1f0b00dd2cc577ecf16e7583783f46db",
-      "subject": "BIG-GO-982: add validation report"
     }
   ],
   "python_count": {
