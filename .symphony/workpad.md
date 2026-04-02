@@ -70,7 +70,26 @@
   - Result: `76`
 - `git status --short`
   - Result:
-    - `M .symphony/workpad.md`
-    - `M src/bigclaw/__init__.py`
-    - `M src/bigclaw/__main__.py`
-    - `D src/bigclaw/execution_contract.py`
+    - clean with no output
+
+## Final Validation
+
+- `PYTHONPATH=src python3 -m pytest tests`
+  - Result: `251 passed in 4.39s`
+- `python3 - <<'PY'`
+  - Result:
+    - `src/bigclaw/__init__.py`
+    - `src/bigclaw/__main__.py`
+    - `count= 2`
+    - `__init__.py package_root`
+    - `__main__.py package_entrypoint`
+
+## Floor Assessment
+
+- Remaining `src/bigclaw/*.py` floor:
+  - `src/bigclaw/__init__.py`
+  - `src/bigclaw/__main__.py`
+- Why no further in-scope compression remains:
+  - `src/bigclaw/__init__.py` is required for the package root and now hosts the entire surviving legacy compatibility surface.
+  - `src/bigclaw/__main__.py` is required for `python -m bigclaw`; moving its contents would not remove the physical entrypoint file.
+  - With both package-root and module-entrypoint semantics still required, `2` files is the physical floor for `src/bigclaw` within the current Python package layout.
