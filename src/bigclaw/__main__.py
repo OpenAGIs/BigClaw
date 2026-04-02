@@ -319,7 +319,7 @@ def package_main() -> None:
         return
 
     if args.command == "repo-sync-audit":
-        from .scheduler import render_repo_sync_audit_report, write_report
+        from .execution_contract import render_repo_sync_audit_report, write_report
 
         payload = json.loads(Path(args.input).read_text())
         audit = RepoSyncAudit.from_dict(payload)

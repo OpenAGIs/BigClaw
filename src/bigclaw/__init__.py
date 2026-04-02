@@ -1,7 +1,7 @@
 import importlib
 import sys
 
-from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
+from .execution_contract import Scheduler, SchedulerDecision, ExecutionRecord
 from .execution_contract import (
     AuditRequirement,
     CommandAction,
@@ -49,7 +49,7 @@ from .execution_contract import (
     render_ui_acceptance_report,
 )
 from .__main__ import LEGACY_RUNTIME_GUIDANCE, legacy_runtime_message, warn_legacy_runtime_surface
-from .scheduler import (
+from .execution_contract import (
     AcceptanceDecision,
     AcceptanceGate,
     ClawWorkerRuntime,
@@ -165,7 +165,7 @@ from .execution_contract import (
     render_dashboard_run_contract_report,
     render_execution_contract_report,
 )
-from .scheduler import (
+from .execution_contract import (
     ArchivedIssue,
     AlertDigestSubscription,
     AutoTriageCenter,
@@ -259,7 +259,7 @@ from .scheduler import (
     write_report,
     write_report_studio_bundle,
 )
-from .scheduler import (
+from .execution_contract import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,
@@ -317,7 +317,7 @@ from .scheduler import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .scheduler import (
+from .execution_contract import (
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
@@ -780,6 +780,7 @@ def _alias_legacy_module(alias: str, target_name: str) -> None:
 
 
 for _alias, _target in (
+    ("scheduler", "execution_contract"),
     ("observability", "execution_contract"),
     ("audit_events", "execution_contract"),
     ("collaboration", "execution_contract"),
