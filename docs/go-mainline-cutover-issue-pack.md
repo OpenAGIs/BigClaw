@@ -477,8 +477,7 @@ Historical planned state:
 ### 5. Port operator console and saved-view surfaces to Go
 
 Python source:
-- console IA compatibility surface retired; remaining operator-console compatibility lives in `src/bigclaw/design_system.py` while Go ownership remains the target end-state
-- `src/bigclaw/design_system.py`
+- console and design-system compatibility surfaces retired; remaining operator-console compatibility now lives in `src/bigclaw/operations.py` while Go ownership remains the target end-state
 - `src/bigclaw/saved_views.py`
 - UI review pack surface retired; remaining operator-facing console/report ownership lives under Go product and API packages
 - remaining operator-facing parts of `src/bigclaw/service.py`
