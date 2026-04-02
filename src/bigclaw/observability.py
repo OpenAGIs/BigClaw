@@ -6,7 +6,7 @@ from html import escape
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
-from .models import Task
+from . import Task
 
 
 SCHEDULER_DECISION_EVENT = "execution.scheduler_decision"

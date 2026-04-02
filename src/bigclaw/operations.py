@@ -5,7 +5,7 @@ from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from .models import Task
+from . import Task
 from .observability import ObservabilityLedger
 from .queue import PersistentTaskQueue
 from .reports import (
