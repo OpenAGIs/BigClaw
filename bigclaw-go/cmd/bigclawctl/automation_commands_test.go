@@ -75,6 +75,19 @@ func TestRunAutomationRunTaskSmokeJSONOutput(t *testing.T) {
 	}
 }
 
+func TestRunAutomationE2EHelpIncludesContinuationCommands(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		return runAutomation([]string{"e2e", "--help"})
+	})
+	if err != nil {
+		t.Fatalf("e2e help: %v", err)
+	}
+	text := string(output)
+	if !strings.Contains(text, "run-task-smoke|continuation-scorecard|continuation-policy-gate") {
+		t.Fatalf("unexpected e2e help: %s", text)
+	}
+}
+
 func TestAutomationSoakLocalWritesReport(t *testing.T) {
 	var mu sync.Mutex
 	states := map[string]string{}
@@ -240,6 +253,125 @@ func TestAutomationCapacityCertificationMatchesCheckedInEvidence(t *testing.T) {
 	}
 	if !strings.Contains(string(markdownBody), "# Capacity Certification Report") {
 		t.Fatalf("unexpected markdown output: %s", string(markdownBody))
+	}
+}
+
+func TestAutomationContinuationScorecardMatchesCheckedInEvidence(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	goRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputPath := filepath.Join(t.TempDir(), "validation-bundle-continuation-scorecard.json")
+	report, err := automationContinuationScorecard(automationContinuationScorecardOptions{
+		GoRoot:                goRoot,
+		IndexManifestPath:     "bigclaw-go/docs/reports/live-validation-index.json",
+		BundleRootPath:        "bigclaw-go/docs/reports/live-validation-runs",
+		LatestSummaryPath:     "bigclaw-go/docs/reports/live-validation-summary.json",
+		SharedQueueReportPath: "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
+		OutputPath:            outputPath,
+		Now:                   func() time.Time { return time.Date(2026, 3, 17, 4, 32, 49, 251910000, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("build continuation scorecard: %v", err)
+	}
+	if report["ticket"] != "BIG-PAR-086-local-prework" || report["status"] != "local-continuation-scorecard" {
+		t.Fatalf("unexpected continuation scorecard identity: %+v", report)
+	}
+	evidenceInputs, _ := report["evidence_inputs"].(map[string]any)
+	if evidenceInputs["generator_script"] != "go run ./cmd/bigclawctl automation e2e continuation-scorecard" {
+		t.Fatalf("unexpected generator script: %+v", evidenceInputs)
+	}
+	summary, _ := report["summary"].(map[string]any)
+	if automationInt(summary["recent_bundle_count"], 0) != 3 ||
+		fmt.Sprint(summary["latest_run_id"]) != "20260316T140138Z" ||
+		!automationBool(summary["latest_all_executor_tracks_succeeded"]) ||
+		!automationBool(summary["recent_bundle_chain_has_no_failures"]) ||
+		!automationBool(summary["all_executor_tracks_have_repeated_recent_coverage"]) {
+		t.Fatalf("unexpected continuation scorecard summary: %+v", summary)
+	}
+	if asFloat(summary["latest_bundle_age_hours"]) <= 0 || asFloat(summary["latest_bundle_age_hours"]) >= 1 {
+		t.Fatalf("unexpected continuation scorecard age: %+v", summary)
+	}
+	sharedQueue, _ := report["shared_queue_companion"].(map[string]any)
+	if !automationBool(sharedQueue["available"]) ||
+		automationInt(sharedQueue["cross_node_completions"], 0) != 99 ||
+		automationInt(sharedQueue["duplicate_completed_tasks"], 0) != 0 ||
+		fmt.Sprint(sharedQueue["mode"]) != "bundle-companion-summary" {
+		t.Fatalf("unexpected continuation shared queue companion: %+v", sharedQueue)
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read continuation scorecard output: %v", err)
+	}
+	if !strings.Contains(string(body), "\"go run ./cmd/bigclawctl automation e2e continuation-scorecard\"") {
+		t.Fatalf("unexpected continuation scorecard output: %s", string(body))
+	}
+}
+
+func TestAutomationContinuationPolicyGateMatchesCheckedInEvidence(t *testing.T) {
+	scorecardPath := filepath.Join(t.TempDir(), "validation-bundle-continuation-scorecard.json")
+	if err := os.WriteFile(scorecardPath, []byte(`{
+  "summary": {
+    "latest_run_id": "20260316T140138Z",
+    "latest_bundle_age_hours": 0.01,
+    "recent_bundle_count": 3,
+    "latest_all_executor_tracks_succeeded": true,
+    "recent_bundle_chain_has_no_failures": true,
+    "all_executor_tracks_have_repeated_recent_coverage": true
+  },
+  "shared_queue_companion": {
+    "available": true,
+    "cross_node_completions": 99,
+    "duplicate_completed_tasks": 0,
+    "duplicate_started_tasks": 0,
+    "mode": "bundle-companion-summary"
+  }
+}`), 0o644); err != nil {
+		t.Fatalf("write scorecard fixture: %v", err)
+	}
+	outputPath := filepath.Join(t.TempDir(), "validation-bundle-continuation-policy-gate.json")
+	report, exitCode, err := automationContinuationPolicyGate(automationContinuationPolicyGateOptions{
+		GoRoot:                      filepath.Join("..", ".."),
+		ScorecardPath:               scorecardPath,
+		OutputPath:                  outputPath,
+		MaxLatestAgeHours:           72,
+		MinRecentBundles:            2,
+		RequireRepeatedLaneCoverage: true,
+		EnforcementMode:             "review",
+		Now:                         func() time.Time { return time.Date(2026, 3, 17, 4, 32, 49, 251910000, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("build continuation policy gate: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("unexpected continuation policy gate exit code: %d", exitCode)
+	}
+	if report["ticket"] != "OPE-262" || report["status"] != "policy-go" || report["recommendation"] != "go" {
+		t.Fatalf("unexpected continuation policy gate identity: %+v", report)
+	}
+	evidenceInputs, _ := report["evidence_inputs"].(map[string]any)
+	if evidenceInputs["generator_script"] != "go run ./cmd/bigclawctl automation e2e continuation-policy-gate" {
+		t.Fatalf("unexpected generator script: %+v", evidenceInputs)
+	}
+	enforcement, _ := report["enforcement"].(map[string]any)
+	if enforcement["mode"] != "review" || enforcement["outcome"] != "pass" || automationInt(enforcement["exit_code"], 0) != 0 {
+		t.Fatalf("unexpected continuation policy gate enforcement: %+v", enforcement)
+	}
+	reviewerPath, _ := report["reviewer_path"].(map[string]any)
+	digestIssue, _ := reviewerPath["digest_issue"].(map[string]any)
+	if reviewerPath["index_path"] != "docs/reports/live-validation-index.md" ||
+		reviewerPath["digest_path"] != "docs/reports/validation-bundle-continuation-digest.md" ||
+		digestIssue["id"] != "OPE-271" ||
+		digestIssue["slug"] != "BIG-PAR-082" {
+		t.Fatalf("unexpected continuation policy gate reviewer path: %+v", reviewerPath)
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read continuation policy gate output: %v", err)
+	}
+	if !strings.Contains(string(body), "\"go run ./cmd/bigclawctl automation e2e continuation-policy-gate\"") {
+		t.Fatalf("unexpected continuation policy gate output: %s", string(body))
 	}
 }
 

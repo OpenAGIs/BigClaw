@@ -18,10 +18,7 @@ type runAllExportCall struct {
 }
 
 func TestRunAllRerendersBundleAfterGateRefresh(t *testing.T) {
-	root := prepareRunAllFixture(t, runAllPolicyGateScript(`
-mode = args[args.index('--enforcement-mode') + 1]
-output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
-`))
+	root := prepareRunAllFixture(t)
 	result := runRunAll(t, root, map[string]string{
 		"BIGCLAW_E2E_RUN_KUBERNETES":     "0",
 		"BIGCLAW_E2E_RUN_RAY":            "0",
@@ -56,10 +53,7 @@ output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'en
 }
 
 func TestRunAllDefaultsToHoldMode(t *testing.T) {
-	root := prepareRunAllFixture(t, runAllPolicyGateScript(`
-mode = args[args.index('--enforcement-mode') + 1]
-output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
-`))
+	root := prepareRunAllFixture(t)
 	result := runRunAll(t, root, map[string]string{
 		"BIGCLAW_E2E_RUN_KUBERNETES": "0",
 		"BIGCLAW_E2E_RUN_RAY":        "0",
@@ -81,10 +75,7 @@ output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
 }
 
 func TestRunAllLegacyEnforceAliasMapsToFailMode(t *testing.T) {
-	root := prepareRunAllFixture(t, runAllPolicyGateScript(`
-mode = args[args.index('--enforcement-mode') + 1]
-output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
-`))
+	root := prepareRunAllFixture(t)
 	result := runRunAll(t, root, map[string]string{
 		"BIGCLAW_E2E_RUN_KUBERNETES":            "0",
 		"BIGCLAW_E2E_RUN_RAY":                   "0",
@@ -112,7 +103,7 @@ type runAllResult struct {
 	stderr     string
 }
 
-func prepareRunAllFixture(t *testing.T, policyGateScript string) string {
+func prepareRunAllFixture(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	runAllSource := filepath.Join(repoRoot(t), "scripts", "e2e", "run_all.sh")
@@ -121,8 +112,6 @@ func prepareRunAllFixture(t *testing.T, policyGateScript string) string {
 
 	writeExecutableFile(t, filepath.Join(root, "bin", "go"), runAllGoStub)
 	writeExecutableFile(t, filepath.Join(root, "scripts", "e2e", "export_validation_bundle.py"), runAllExportBundleStub)
-	writeExecutableFile(t, filepath.Join(root, "scripts", "e2e", "validation_bundle_continuation_scorecard.py"), runAllScorecardStub)
-	writeExecutableFile(t, filepath.Join(root, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py"), policyGateScript)
 	return root
 }
 
@@ -201,10 +190,6 @@ func writeExecutableFile(t *testing.T, path string, body string) {
 	}
 }
 
-func runAllPolicyGateScript(body string) string {
-	return "#!/usr/bin/env python3\nimport json\nimport pathlib\nimport sys\n\nargs = sys.argv[1:]\noutput = pathlib.Path(args[args.index('--output') + 1])\noutput.parent.mkdir(parents=True, exist_ok=True)\n" + body + "\n"
-}
-
 const runAllGoStub = `#!/usr/bin/env python3
 import json
 import pathlib
@@ -214,9 +199,27 @@ args = sys.argv[1:]
 if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (
     len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'
 ):
-    report_path = pathlib.Path(args[args.index('--report-path') + 1])
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+    subcommand = args[4]
+    if subcommand == 'run-task-smoke':
+        report_path = pathlib.Path(args[args.index('--report-path') + 1])
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+        raise SystemExit(0)
+    if subcommand == 'continuation-scorecard':
+        output = pathlib.Path(args[args.index('--output') + 1])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+        raise SystemExit(0)
+    if subcommand == 'continuation-policy-gate':
+        output = pathlib.Path(args[args.index('--output') + 1])
+        mode = args[args.index('--enforcement-mode') + 1]
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
+        raise SystemExit(0)
+    raise SystemExit(f'unexpected e2e subcommand: {subcommand}')
+if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'benchmark'] or (
+    len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'benchmark'
+):
     raise SystemExit(0)
 if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (
     len(args) >= 2 and args[0] == 'run' and args[1].endswith('/scripts/e2e/broker_bootstrap_summary.go')
@@ -248,15 +251,4 @@ payload = {
 }
 with calls_path.open('a', encoding='utf-8') as handle:
     handle.write(json.dumps(payload) + '\n')
-`
-
-const runAllScorecardStub = `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-output = pathlib.Path(args[args.index('--output') + 1])
-output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
 `
