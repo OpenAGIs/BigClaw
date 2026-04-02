@@ -5,7 +5,7 @@
   },
   "branch": {
     "name": "big-go-1011-root-config-residuals",
-    "snapshot_head_sha": "ac92b675de242fe25f1847d9a0be5c230c927763",
+    "snapshot_head_sha": "c91b6e8de17e7d2851c49b2c94f202c4347cd34f",
     "remote": "https://github.com/OpenAGIs/BigClaw.git",
     "note": "This status file captures a stable synced snapshot. Later artifact-only commits may advance the branch head without changing the recorded repo-impact conclusions."
   },
@@ -26,7 +26,8 @@
     "root_python_cache_dirs_present": false,
     "notes": [
       "No repo-root pyproject.toml/setup.py/setup.cfg/MANIFEST.in/egg-info/dist-info residue remains.",
-      "No root .pytest_cache/__pycache__/egg-info/dist-info directory remains on disk."
+      "No root .pytest_cache/__pycache__/egg-info/dist-info directory remains on disk.",
+      "The root README now carries a single concise source-level Python migration validation path instead of duplicated legacy verification sections."
     ]
   },
   "status": {

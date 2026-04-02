@@ -34,6 +34,9 @@ no longer read like current workspace files.
 Current continuation pass: remove the generated root `.pytest_cache/` directory
 so no root Python cache/package residue remains on disk after validation.
 
+Current continuation pass: trim the root README so it keeps one migration-only
+source validation path without duplicated legacy Python verification sections.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -80,6 +83,7 @@ Continuation commits in this cleanup sweep:
 - `28ca157` `BIG-GO-1011 refresh migration plan validation`
 - `0a577d0` `BIG-GO-1011 clarify retired path references`
 - `5d0e4d3` `BIG-GO-1011 clear root pytest cache residue`
+- `c91b6e8` `BIG-GO-1011 trim root python migration residue`
 
 ## Validation commands
 
@@ -252,6 +256,29 @@ M bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json
 ```
 
 ```bash
+rg -n "Legacy Python smoke verify|Legacy Python migration surface:|repo-root packaging bootstrap|editable install" README.md
+```
+
+Result: exit `1` with no matches
+
+```bash
+git rev-parse HEAD
+git ls-remote --heads origin big-go-1011-root-config-residuals
+git log -1 --stat --oneline README.md .symphony/workpad.md
+```
+
+Result:
+
+```text
+c91b6e8de17e7d2851c49b2c94f202c4347cd34f
+c91b6e8de17e7d2851c49b2c94f202c4347cd34f	refs/heads/big-go-1011-root-config-residuals
+c91b6e8 BIG-GO-1011 trim root python migration residue
+ README.md            | 18 ++++++------------
+ .symphony/workpad.md | 12 ++++++++++++
+ 2 files changed, 18 insertions(+), 12 deletions(-)
+```
+
+```bash
 git rev-parse HEAD
 git ls-remote --heads origin big-go-1011-root-config-residuals
 git log -1 --stat --oneline
@@ -368,6 +395,8 @@ Remaining root-level Python mentions are intentional migration-only validation s
   explicitly marked `retired` or described as historical migration identifiers
 - no root `.pytest_cache/`, `__pycache__/`, `*.egg-info`, or `*.dist-info`
   directory remains in the workspace after the final cleanup pass
-- local and remote branch SHAs matched at each recorded sync checkpoint, most recently at `de1809285c5921c512d3fff54ff921dd21ea7906`
+- the root README keeps only one concise source-level Python migration
+  validation path and no longer duplicates legacy verification sections
+- local and remote branch SHAs matched at each recorded sync checkpoint, most recently at `c91b6e8de17e7d2851c49b2c94f202c4347cd34f`
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.

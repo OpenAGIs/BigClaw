@@ -7,7 +7,7 @@ Title: `Refill sweep A: remaining root/config/python packaging residuals`
 ## Final Repo State
 
 - Branch: `big-go-1011-root-config-residuals`
-- Snapshot head used for this closeout baseline: `ac92b675de242fe25f1847d9a0be5c230c927763`
+- Snapshot head used for this closeout baseline: `c91b6e8de17e7d2851c49b2c94f202c4347cd34f`
 - Remote: `https://github.com/OpenAGIs/BigClaw.git`
 - `py files`: `101`
 - `go files`: `267`
@@ -23,6 +23,8 @@ Title: `Refill sweep A: remaining root/config/python packaging residuals`
 - root-facing docs now describe deleted Python paths only as `retired`,
   historical migration identifiers, or compatibility imports that still exist
 - active validation docs no longer reference deleted Python tests
+- the root README now keeps only one concise source-level legacy Python
+  validation path instead of duplicated migration-only verification sections
 - generated root Python cache residue was removed; no root `.pytest_cache/`,
   `__pycache__/`, `*.egg-info`, or `*.dist-info` directory remains on disk
 
@@ -48,8 +50,8 @@ git ls-remote --heads origin big-go-1011-root-config-residuals
 Result:
 
 ```text
-ac92b675de242fe25f1847d9a0be5c230c927763
-ac92b675de242fe25f1847d9a0be5c230c927763	refs/heads/big-go-1011-root-config-residuals
+c91b6e8de17e7d2851c49b2c94f202c4347cd34f
+c91b6e8de17e7d2851c49b2c94f202c4347cd34f	refs/heads/big-go-1011-root-config-residuals
 ```
 
 ## Notes
