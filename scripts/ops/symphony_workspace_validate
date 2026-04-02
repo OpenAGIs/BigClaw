@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(cd -- "$script_dir/../.." && pwd)
+
+translated=()
+i=1
+while [ "$i" -le "$#" ]; do
+  arg="${!i}"
+  case "$arg" in
+    --report-file)
+      i=$((i + 1))
+      if [ "$i" -le "$#" ]; then
+        translated+=(--report "${!i}")
+      else
+        translated+=(--report-file)
+      fi
+      ;;
+    --report-file=*)
+      translated+=(--report="${arg#--report-file=}")
+      ;;
+    --no-cleanup)
+      translated+=(--cleanup=false)
+      ;;
+    --issues)
+      issues=()
+      i=$((i + 1))
+      while [ "$i" -le "$#" ]; do
+        issue="${!i}"
+        case "$issue" in
+          -*)
+            i=$((i - 1))
+            break
+            ;;
+          *)
+            issues+=("$issue")
+            ;;
+        esac
+        i=$((i + 1))
+      done
+      if [ "${#issues[@]}" -eq 0 ]; then
+        translated+=(--issues)
+      else
+        joined=""
+        for issue in "${issues[@]}"; do
+          if [ -n "$joined" ]; then
+            joined+=","
+          fi
+          joined+="$issue"
+        done
+        translated+=(--issues "$joined")
+      fi
+      ;;
+    *)
+      translated+=("$arg")
+      ;;
+  esac
+  i=$((i + 1))
+done
+
+exec bash "$repo_root/scripts/ops/bigclawctl" workspace validate "${translated[@]}"
