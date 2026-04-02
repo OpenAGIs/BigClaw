@@ -198,7 +198,7 @@ Historical initial state:
 Python source:
 - `src/bigclaw/observability.py`
 - `src/bigclaw/reports.py`
-- `src/bigclaw/evaluation.py`
+- evaluation compatibility surface retired; benchmark/replay ownership now lives in the surviving operations compatibility module and Go control-plane/product surfaces
 - `src/bigclaw/operations.py`
 
 Go ownership:
@@ -433,7 +433,7 @@ Python source:
 - `src/bigclaw/observability.py`
 - `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
-- `src/bigclaw/evaluation.py`
+- evaluation compatibility surface retired; benchmark/replay ownership now lives in the surviving operations compatibility module and Go control-plane/product surfaces
 - run-detail compatibility surface retired; remaining run-detail/report ownership lives under Go API, product, and reporting packages
 - `src/bigclaw/dashboard_run_contract.py`
 - planning surface retired; remaining docs/report ownership lives under Go regression and reporting packages

@@ -35,6 +35,15 @@ def _install_legacy_surface_module(name: str, export_names: list[str], **extra_a
     globals()[name] = module
 
 
+def _install_export_surface_module(name: str, source_module: object, export_names: list[str], **extra_attrs: object) -> None:
+    module = types.ModuleType(f"{__name__}.{name}")
+    for export_name in export_names:
+        module.__dict__[export_name] = getattr(source_module, export_name)
+    module.__dict__.update(extra_attrs)
+    sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
 _install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
@@ -250,8 +259,14 @@ from .reports import (
     write_report_studio_bundle,
 )
 from .operations import (
+    BenchmarkCase,
+    BenchmarkComparison,
+    BenchmarkResult,
+    BenchmarkRunner,
+    BenchmarkSuiteResult,
     DashboardBuilder,
     DashboardBuilderAudit,
+    EvaluationCriterion,
     DashboardLayout,
     DashboardWidgetPlacement,
     DashboardWidgetSpec,
@@ -271,6 +286,8 @@ from .operations import (
     RegressionCenter,
     TriageCluster,
     QueueControlCenter,
+    ReplayOutcome,
+    ReplayRecord,
     VersionChangeSummary,
     VersionedArtifact,
     VersionedArtifactHistory,
@@ -278,28 +295,37 @@ from .operations import (
     WeeklyOperationsReport,
     render_dashboard_builder_report,
     render_engineering_overview,
+    render_benchmark_suite_report,
     render_operations_metric_spec,
     render_operations_dashboard,
     render_policy_prompt_version_center,
     render_queue_control_center,
+    render_replay_detail_page,
     render_regression_center,
+    render_run_replay_index_page,
     render_weekly_operations_report,
     write_dashboard_builder_bundle,
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .evaluation import (
-    BenchmarkCase,
-    BenchmarkComparison,
-    BenchmarkResult,
-    BenchmarkRunner,
-    BenchmarkSuiteResult,
-    EvaluationCriterion,
-    ReplayOutcome,
-    ReplayRecord,
-    render_run_replay_index_page,
-    render_replay_detail_page,
-    render_benchmark_suite_report,
+from . import operations as _operations_surface
+
+_install_export_surface_module(
+    "evaluation",
+    _operations_surface,
+    [
+        "BenchmarkCase",
+        "BenchmarkComparison",
+        "BenchmarkResult",
+        "BenchmarkRunner",
+        "BenchmarkSuiteResult",
+        "EvaluationCriterion",
+        "ReplayOutcome",
+        "ReplayRecord",
+        "render_run_replay_index_page",
+        "render_replay_detail_page",
+        "render_benchmark_suite_report",
+    ],
 )
 __all__ = [
     "Task",
