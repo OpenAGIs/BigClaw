@@ -19,7 +19,7 @@ which is not packaged from the repository root.
 - `src/bigclaw/__init__.py`: sole remaining frozen Python compatibility file for migration-only reference use
   - narrative report studio with section composing plus markdown, HTML, and plain-text export
   - v2 design-system token/component inventory with release-readiness audit reporting
-- `tests/`: unit tests
+- `bigclaw-go/internal/*/*_test.go`: active Go-native unit and integration coverage
 
 ## Root Go quick start (recommended)
 

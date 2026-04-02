@@ -13,6 +13,7 @@ func TestTopLevelPythonCompatibilityDocs(t *testing.T) {
 		"legacy Python surfaces",
 		"reduced to the frozen compatibility file `src/bigclaw/__init__.py`",
 		"`src/bigclaw/__init__.py`: sole remaining frozen Python compatibility file for migration-only reference use",
+		"`bigclaw-go/internal/*/*_test.go`: active Go-native unit and integration coverage",
 		"The sole remaining legacy Python compatibility file is",
 		"`src/bigclaw/__init__.py`",
 		"frozen for migration-only reference use",
@@ -32,6 +33,7 @@ func TestTopLevelPythonCompatibilityDocs(t *testing.T) {
 		"tests/test_planning.py",
 		"ruff check src tests scripts",
 		"legacy Python foundation modules pending staged migration to Go",
+		"`tests/`: unit tests",
 	}
 	for _, needle := range disallowedReadme {
 		if strings.Contains(readme, needle) {
