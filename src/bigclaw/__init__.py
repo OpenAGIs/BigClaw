@@ -5,6 +5,15 @@ from .models import (
     BillingInterval,
     BillingRate,
     BillingSummary,
+    CandidateBacklog,
+    CandidateEntry,
+    CandidatePlanner,
+    EntryGate,
+    EntryGateDecision,
+    EpicMilestone,
+    EvidenceLink,
+    ExecutionPackRoadmap,
+    FourWeekExecutionPlan,
     FlowRun,
     FlowRunStatus,
     FlowStepRun,
@@ -12,9 +21,12 @@ from .models import (
     FlowTemplate,
     FlowTemplateStep,
     FlowTrigger,
+    FreezeException,
     GitHubConnector,
+    GovernanceBacklogItem,
     JiraConnector,
     LinearConnector,
+    MemoryPattern,
     BudgetDecision,
     CostController,
     SourceIssue,
@@ -25,15 +37,30 @@ from .models import (
     RiskScore,
     RiskScorer,
     RiskSignal,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     Task,
+    TaskMemoryStore,
     TaskState,
     TriageLabel,
     TriageRecord,
     TriageStatus,
     UsageRecord,
+    WeeklyExecutionPlan,
+    WeeklyGoal,
+    WorkflowDefinition,
+    WorkflowStep,
+    build_big_4701_execution_plan,
+    build_execution_pack_roadmap,
+    build_v3_candidate_backlog,
+    build_v3_entry_gate,
     map_priority,
     map_source_issue_to_task,
     map_state,
+    render_candidate_backlog_report,
+    render_four_week_execution_report,
+    render_scope_freeze_report,
 )
 from . import repository as _repository_surface
 from . import runtime as _legacy_runtime_surface
@@ -55,6 +82,44 @@ def _install_surface_module(
 
 def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
     _install_surface_module(name, _legacy_runtime_surface, export_names, **extra_attrs)
+
+
+_PLANNING_EXPORT_NAMES = [
+    "REQUIRED_RUN_CLOSEOUTS",
+    "ALLOWED_SCOPE_STATUSES",
+    "FreezeException",
+    "GovernanceBacklogItem",
+    "ScopeFreezeBoard",
+    "ScopeFreezeAudit",
+    "ScopeFreezeGovernance",
+    "render_scope_freeze_report",
+    "EpicMilestone",
+    "ExecutionPackRoadmap",
+    "build_execution_pack_roadmap",
+    "MemoryPattern",
+    "TaskMemoryStore",
+    "WorkflowStep",
+    "WorkflowDefinition",
+    "PRIORITY_WEIGHTS",
+    "GOAL_STATUS_ORDER",
+    "EvidenceLink",
+    "CandidateEntry",
+    "CandidateBacklog",
+    "EntryGate",
+    "EntryGateDecision",
+    "CandidatePlanner",
+    "render_candidate_backlog_report",
+    "build_v3_candidate_backlog",
+    "build_v3_entry_gate",
+    "WeeklyGoal",
+    "WeeklyExecutionPlan",
+    "FourWeekExecutionPlan",
+    "build_big_4701_execution_plan",
+    "build_pilot_rollout_scorecard",
+    "evaluate_candidate_gate",
+    "render_pilot_rollout_gate_report",
+    "render_four_week_execution_report",
+]
 
 
 _install_legacy_surface_module(
@@ -401,7 +466,7 @@ _install_surface_module(
 )
 _install_surface_module("risk", sys.modules[f"{__name__}.models"], ["BudgetDecision", "CostController", "RiskFactor", "RiskScore", "RiskScorer"])
 _install_surface_module("cost_control", sys.modules[f"{__name__}.models"], ["BudgetDecision", "CostController"])
-from .planning import WorkflowDefinition, WorkflowStep
+_install_surface_module("planning", sys.modules[f"{__name__}.models"], _PLANNING_EXPORT_NAMES)
 _install_surface_module(
     "dsl",
     sys.modules[f"{__name__}.planning"],
@@ -683,33 +748,6 @@ _install_surface_module(
         "render_replay_detail_page",
         "render_benchmark_suite_report",
     ],
-)
-from .planning import (
-    FourWeekExecutionPlan,
-    CandidateBacklog,
-    CandidateEntry,
-    CandidatePlanner,
-    EpicMilestone,
-    EvidenceLink,
-    EntryGate,
-    EntryGateDecision,
-    ExecutionPackRoadmap,
-    FreezeException,
-    GovernanceBacklogItem,
-    MemoryPattern,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    TaskMemoryStore,
-    WeeklyExecutionPlan,
-    WeeklyGoal,
-    build_big_4701_execution_plan,
-    build_execution_pack_roadmap,
-    build_v3_candidate_backlog,
-    build_v3_entry_gate,
-    render_candidate_backlog_report,
-    render_four_week_execution_report,
-    render_scope_freeze_report,
 )
 _install_surface_module("memory", sys.modules[f"{__name__}.planning"], ["MemoryPattern", "TaskMemoryStore"])
 _install_surface_module(
