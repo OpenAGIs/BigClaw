@@ -40,7 +40,7 @@ func TestCompileCheckSkipsPyCompileWhenFrozenShimListIsEmpty(t *testing.T) {
 
 func TestCompileCheckReturnsCompilerOutputOnFailure(t *testing.T) {
 	expectedErr := errors.New("compile failed")
-	result, err := compileCheckFiles("python3", []string{"/repo/src/bigclaw/design_system.py"}, func(name string, args ...string) ([]byte, error) {
+	result, err := compileCheckFiles("python3", []string{"/repo/src/bigclaw/__init__.py"}, func(name string, args ...string) ([]byte, error) {
 		return []byte("syntax error"), expectedErr
 	})
 	if !errors.Is(err, expectedErr) {

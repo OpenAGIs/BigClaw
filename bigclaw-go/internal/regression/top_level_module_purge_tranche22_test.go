@@ -19,7 +19,7 @@ func TestTopLevelModulePurgeTranche22(t *testing.T) {
 	}
 
 	replacementFiles := []string{
-		"src/bigclaw/design_system.py",
+		"src/bigclaw/__init__.py",
 		"bigclaw-go/internal/domain/task.go",
 		"bigclaw-go/internal/workflow/model.go",
 		"bigclaw-go/internal/billing/statement.go",
