@@ -38,7 +38,7 @@ candidates remaining.
 
 - `BIG-GOM-301` through `BIG-GOM-308` are complete in the repo-native tracker.
 - `bigclaw-go` owns the active mainline surfaces covered by the cutover issue pack.
-- The remaining Python runtime entrypoints are explicitly frozen as migration-only compatibility paths.
+- The sole remaining Python compatibility file is `src/bigclaw/__init__.py`, explicitly frozen as a migration-only path.
 - `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` now reports no `In Progress` work and no refill candidates for this cutover set.
 
 ## Mainline policy

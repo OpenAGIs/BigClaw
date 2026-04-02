@@ -37,8 +37,8 @@ cutover set.
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
 - The default mainline posture is Go-first; the repo-root `python -m bigclaw`
-  entrypoint has been retired, and the remaining Python runtime surfaces are
-  frozen for migration-only reference use.
+  entrypoint has been retired, and the sole remaining Python compatibility file
+  is `src/bigclaw/__init__.py`, frozen for migration-only reference use.
 
 ## Remaining non-blocking caveats
 

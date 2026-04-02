@@ -161,9 +161,8 @@ The root Go-only build entrypoints are `make test`, `make build`, and `make run`
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; repo-root ops
 workflows are now Go/shell-only via `scripts/ops/bigclawctl`.
 
-The legacy Python execution-kernel modules in `src/bigclaw/__init__.py`,
-`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The repo-root `python -m bigclaw` entrypoint has
-been retired; use `go run ./bigclaw-go/cmd/bigclawd` for the active local
-server path. Active runtime development belongs in `bigclaw-go/internal/*`.
+The sole remaining legacy Python compatibility file is
+`src/bigclaw/__init__.py`, which is frozen for migration-only reference use.
+The repo-root `python -m bigclaw` entrypoint has been retired; use
+`go run ./bigclaw-go/cmd/bigclawd` for the active local server path. Active
+runtime development belongs in `bigclaw-go/internal/*`.
