@@ -126,14 +126,6 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .observability import (
     APPROVAL_RECORDED_EVENT,
@@ -267,6 +259,11 @@ from .evaluation import (
     render_benchmark_suite_report,
 )
 from .planning import (
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
@@ -279,6 +276,7 @@ from .planning import (
     build_big_4701_execution_plan,
     build_v3_candidate_backlog,
     build_v3_entry_gate,
+    render_scope_freeze_report,
     render_candidate_backlog_report,
     render_four_week_execution_report,
 )
