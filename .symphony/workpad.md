@@ -67,3 +67,32 @@
     - `M src/bigclaw/__init__.py`
     - `D src/bigclaw/design_system.py`
     - `M src/bigclaw/execution_contract.py`
+
+## Continuation Assessment
+
+- Remaining `src/bigclaw/*.py` floor after this batch:
+  - `src/bigclaw/__init__.py`
+  - `src/bigclaw/__main__.py`
+  - `src/bigclaw/execution_contract.py`
+  - `src/bigclaw/scheduler.py`
+- Retention rationale for the remaining floor:
+  - `src/bigclaw/__init__.py`
+    - Retain. It is the only place registering legacy module aliases such as `bigclaw.design_system`, `bigclaw.console_ia`, and `bigclaw.ui_review`; deleting it would break the migration compatibility import surface.
+  - `src/bigclaw/__main__.py`
+    - Retain. `python -m bigclaw` requires a physical `__main__.py`; moving its contents elsewhere would not reduce file count because the entrypoint shim must still exist.
+  - `src/bigclaw/execution_contract.py`
+    - Retain. It is now the consolidated shared-contract and UI-contract host; removing it would force a wider re-split rather than another compression step.
+  - `src/bigclaw/scheduler.py`
+    - Retain. It remains the consolidated runtime/orchestration host used directly by runtime-focused tests and by `__main__.py`.
+- Additional evidence:
+  - `rg -n 'from bigclaw import|import bigclaw($| )' src tests`
+    - Result: no matches
+  - No package-root imports remain that would justify expanding `__init__.py` into a full implementation host.
+  - `__main__.py` and `scheduler.py` still have direct runtime coverage and are not compatibility-only shells.
+
+## Continuation Validation
+
+- `PYTHONPATH=src python3 -m pytest tests/test_scheduler.py tests/test_runtime.py tests/test_execution_flow.py tests/test_orchestration.py`
+  - Result: `16 passed in 0.08s`
+- `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py tests/test_workspace_bootstrap.py`
+  - Result: `14 passed in 3.99s`
