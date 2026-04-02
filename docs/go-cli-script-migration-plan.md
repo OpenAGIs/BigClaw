@@ -18,10 +18,10 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
-- `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
-- `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
+- retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`
+- retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bigclawctl workspace bootstrap`
+- retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bigclawctl workspace bootstrap`
+- retired `scripts/ops/symphony_workspace_validate.py`; use `bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
 
@@ -31,9 +31,9 @@ The implemented migration batches in this issue move these entrypoints behind th
 
 The remaining compatibility layer is intentionally thin:
 
-- Python `scripts/ops/*_*.py` shims only translate legacy flags/defaults before dispatching into `scripts/ops/bigclawctl`.
 - Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
+- Operator automation should call the Go/shell entrypoints directly instead of any retired Python shim path.
 
 ## First-Batch Change List
 
@@ -56,17 +56,12 @@ The remaining compatibility layer is intentionally thin:
 
 ### Compatibility shims kept in place
 
-- `scripts/ops/bigclaw_refill_queue.py`
-- `scripts/ops/bigclaw_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_validate.py`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
-These shims should remain until operator docs and external automation references are updated to
-invoke `bash scripts/ops/bigclawctl ...` directly. The two repo-root Python shims were removed
-because the root no longer carries Python packaging/bootstrap ownership.
+The Bash ops aliases remain for operator convenience, but the Python wrappers have been retired.
+Operator docs and automation should invoke `bash scripts/ops/bigclawctl ...` directly.
 
 ## Remaining Backlog
 
@@ -85,8 +80,9 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
-- `python3 scripts/ops/bigclaw_refill_queue.py --help`
-- `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `bash scripts/ops/bigclawctl refill --help`
+- `bash scripts/ops/bigclawctl workspace bootstrap --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
 - `bash scripts/dev_bootstrap.sh`
 - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `bash scripts/ops/bigclawctl issue --help`

@@ -1,27 +1,25 @@
-# BIG-GO-1080 Workpad
+# BIG-GO-1089 Workpad
 
 ## Plan
-- Confirm the residual Python test tranche under `tests/` and map each file to the current Go-native replacement surface.
-- Add focused Go coverage where the current replacement is still implicit, especially the `BIG-4204` UI review builder/report path and the release-planning entry that still references `tests/test_ui_review.py`.
-- Remove the residual Python test files for this tranche: `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py`.
-- Update any default execution path or metadata that still points at the deleted Python files so the repo no longer advertises them as the primary validation route.
-- Run targeted Go tests plus repo-level file-count checks, then commit and push the scoped branch.
+
+1. Inspect the remaining Python operator entrypoints that still front Go-backed workflows and identify the narrowest removable tranche.
+2. Delete the selected Python shim files and update any direct references to use the existing `scripts/ops/bigclawctl ...` shell or Go entrypoints instead.
+3. Keep the e2e migration guarantees intact by avoiding any reintroduction of Python under `bigclaw-go/scripts/e2e/`.
+4. Run targeted validation for the updated operator entrypoints, plus checks that the repository `.py` count decreases and no deleted paths remain on active docs/test surfaces.
+5. Commit and push the branch-specific changes.
 
 ## Acceptance
-- `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py` are deleted.
-- Go-native tests cover the removed UI review and report-studio/reporting behaviors strongly enough that this slice is not a cosmetic deletion.
-- No default validation command or candidate metadata continues to reference the deleted Python test files.
-- Repository `.py` count decreases after the deletion.
-- The change set stays scoped to this issue.
+
+- Repository `.py` file count decreases from the baseline captured before edits.
+- Deleted Python entrypoints are no longer present in the repository.
+- Default operator guidance and validation surfaces point to `scripts/ops/bigclawctl ...` or Go-native commands instead of the deleted Python shims.
+- Existing `bigclaw-go/scripts/e2e/` remains Python-free.
 
 ## Validation
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l`
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning`
-- `git status --short`
 
-## Validation Results
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `23`
-- `find tests -maxdepth 1 -name '*.py' | sort` -> no output
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning ./internal/regression` -> first run failed in `internal/uireview` and `internal/regression` due to a sorted unresolved-question assertion mismatch and a bad regression root helper; reran after fixes and got `ok   bigclaw-go/internal/uireview 0.639s`, `ok   bigclaw-go/internal/reportstudio (cached)`, `ok   bigclaw-go/internal/planning (cached)`, `ok   bigclaw-go/internal/regression 0.974s`
-- `git status --short` -> modified workpad, planning/uireview Go files, deleted `tests/conftest.py`, `tests/reports_legacy.py`, `tests/test_ui_review.py`, added `bigclaw-go/internal/regression/python_test_tranche14_removal_test.go`, plus the in-scope Go replacement file `bigclaw-go/internal/uireview/builder.go`
+- `find . -name '*.py' | wc -l`
+- `rg -n "scripts/ops/.*\\.py|python3? .*scripts/ops/.*\\.py" README.md docs bigclaw-go .github scripts workflow.md .symphony`
+- `bash scripts/ops/bigclawctl refill --help`
+- `bash scripts/ops/bigclawctl workspace bootstrap --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
+- `cd bigclaw-go && go test ./internal/regression -run TestE2E -count=1`
