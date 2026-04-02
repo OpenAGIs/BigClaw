@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+translated=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --report-file)
+      translated+=(--report "$2")
+      shift 2
+      ;;
+    --report-file=*)
+      translated+=(--report="${1#--report-file=}")
+      shift
+      ;;
+    --no-cleanup)
+      translated+=(--cleanup=false)
+      shift
+      ;;
+    --issues)
+      shift
+      issues=()
+      while [ "$#" -gt 0 ] && [[ "$1" != -* ]]; do
+        issues+=("$1")
+        shift
+      done
+      if [ "${#issues[@]}" -gt 0 ]; then
+        joined="${issues[*]}"
+        translated+=(--issues "${joined// /,}")
+      else
+        translated+=(--issues "")
+      fi
+      ;;
+    *)
+      translated+=("$1")
+      shift
+      ;;
+  esac
+done
+
+exec bash "$script_dir/bigclawctl" workspace validate "${translated[@]}"

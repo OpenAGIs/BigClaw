@@ -319,9 +319,6 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	for _, relativePath := range []string{
 		"src/bigclaw/legacy_shim.py",
 		"scripts/ops/bigclaw_refill_queue.py",
-		"scripts/ops/symphony_workspace_bootstrap.py",
-		"scripts/ops/symphony_workspace_validate.py",
-		"scripts/ops/bigclaw_workspace_bootstrap.py",
 	} {
 		path := filepath.Join(repoRoot, relativePath)
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

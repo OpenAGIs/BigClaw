@@ -1,44 +1,21 @@
-## BIG-GO-1071
+# BIG-GO-1071
 
-### Plan
-- Remove Python packaging residue that still exposes `bigclaw` as a package execution surface.
-- Delete `src/bigclaw/__main__.py` so `python -m bigclaw` is no longer a supported default path.
-- Delete `src/bigclaw/__init__.py` so the package bootstrap and legacy surface module installation logic are no longer shipped as packaging scaffolding.
-- Update Go-side legacy shim and regression tests to reflect the reduced frozen Python surface and point users at `bigclawctl` / `bigclawd`.
+## Plan
+- Confirm whether any tracked `src/bigclaw.egg-info` or repository packaging metadata remains and identify the residual execution paths that still assume Python bootstrap behavior.
+- Replace workspace bootstrap/validate Python shims with non-Python wrappers that route directly to `scripts/ops/bigclawctl`, and remove stale packaging ignore residue tied to generated `.egg-info` artifacts if it is no longer needed.
+- Update focused docs/tests only where required to reflect the Go-only workspace path, then run targeted validation for the affected wrappers and regression checks.
+- Commit the scoped changes and push the branch.
 
-### Acceptance
-- `src/bigclaw/__main__.py` and `src/bigclaw/__init__.py` are removed.
-- No repo code or active test contract still treats `python -m bigclaw` as a maintained entrypoint.
-- Go-side validation covers the new reduced legacy Python file set.
-- Repository `.py` file count decreases from the pre-change baseline.
+## Acceptance
+- No tracked `src/bigclaw.egg-info` or related packaging residue remains in the implementation path for this issue.
+- Repository Python file count decreases because the legacy workspace bootstrap/validate Python shims are removed.
+- The default workspace bootstrap/validate path is Go-first via `scripts/ops/bigclawctl`, with no Python import/bootstrap dependency.
+- Targeted validation covers the new wrapper behavior and any regression checks touched by the change.
 
-### Validation
-- `rg -n "python -m bigclaw" README.md bigclaw-go docs src tests scripts .github`
-- `rg --files -g '*.py' . | wc -l`
-- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
-
-## Archived Closeout
-
-### BIG-GO-1053
-
-- Baseline code migration landed on `main` at `004de016252d6ca168a45dccda48fc9fa69e27f1`.
-- Closeout artifacts for the lane are tracked in:
-  - `reports/BIG-GO-1053-validation.md`
-  - `reports/BIG-GO-1053-closeout.md`
-  - `reports/BIG-GO-1053-status.json`
-- Additional stale Python entrypoint tests removed after closeout verification:
-  - `tests/test_parallel_validation_bundle.py`
-  - `tests/test_validation_bundle_continuation_policy_gate.py`
-- Validation recorded for `BIG-GO-1053`:
-  - `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
-  - `find . -name '*.py' | wc -l` -> `43`
-  - `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> passed
-- Historical branch handoff URL:
-  - `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
-- Historical evidence branch `symphony/BIG-GO-1053-validation` has been deleted after
-  the closeout landed on `main`.
-- Remote closeout comment posted on merged PR `#217`:
-  - `https://github.com/OpenAGIs/BigClaw/pull/217#issuecomment-4167169146`
-- No writable local tracker entry exists for `BIG-GO-1053` in `local-issues.json` or the
-  Symphony local issue store, so any remaining active state is external to this workspace.
-- Repo-side closeout for `BIG-GO-1053` is complete; the archived notes remain here to avoid losing lane evidence while `main` has moved on to later issues.
+## Validation
+- `find . -maxdepth 4 \( -name '*.egg-info' -o -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name 'MANIFEST.in' \) | sort`
+- `rg -n "\.egg-info|workspace_bootstrap|workspace_validate|symphony_workspace_bootstrap|symphony_workspace_validate" README.md scripts tests bigclaw-go .gitignore`
+- `bash scripts/ops/bigclaw_workspace_bootstrap.py --help`
+- `bash scripts/ops/symphony_workspace_bootstrap.py --help`
+- `bash scripts/ops/symphony_workspace_validate.py --help`
+- `go test ./bigclaw-go/cmd/bigclawctl/... ./bigclaw-go/internal/bootstrap/...`
