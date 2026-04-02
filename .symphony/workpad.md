@@ -1,27 +1,26 @@
-# BIG-GO-1080 Workpad
+# BIG-GO-1084
 
 ## Plan
-- Confirm the residual Python test tranche under `tests/` and map each file to the current Go-native replacement surface.
-- Add focused Go coverage where the current replacement is still implicit, especially the `BIG-4204` UI review builder/report path and the release-planning entry that still references `tests/test_ui_review.py`.
-- Remove the residual Python test files for this tranche: `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py`.
-- Update any default execution path or metadata that still points at the deleted Python files so the repo no longer advertises them as the primary validation route.
-- Run targeted Go tests plus repo-level file-count checks, then commit and push the scoped branch.
+- inspect the current Python shim, active repo references, and the Go replacement entrypoint
+- delete `scripts/ops/bigclaw_refill_queue.py`
+- update active documentation and tests to reference `bash scripts/ops/bigclawctl refill` instead of the deleted Python shim
+- run targeted validation covering reference cleanup, Go refill command behavior, and Python file-count reduction
+- commit and push the scoped change set
 
 ## Acceptance
-- `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py` are deleted.
-- Go-native tests cover the removed UI review and report-studio/reporting behaviors strongly enough that this slice is not a cosmetic deletion.
-- No default validation command or candidate metadata continues to reference the deleted Python test files.
-- Repository `.py` count decreases after the deletion.
-- The change set stays scoped to this issue.
+- `scripts/ops/bigclaw_refill_queue.py` is removed from the repository
+- active repo guidance no longer tells users or tests to execute `scripts/ops/bigclaw_refill_queue.py`
+- the repository `.py` file count decreases from the pre-change baseline
+- targeted validation passes and records exact commands plus results
 
 ## Validation
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l`
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning`
-- `git status --short`
+- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim`
+- `bash scripts/ops/bigclawctl refill --help`
+- `find . -name '*.py' | wc -l`
 
 ## Validation Results
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `23`
-- `find tests -maxdepth 1 -name '*.py' | sort` -> no output
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning ./internal/regression` -> first run failed in `internal/uireview` and `internal/regression` due to a sorted unresolved-question assertion mismatch and a bad regression root helper; reran after fixes and got `ok   bigclaw-go/internal/uireview 0.639s`, `ok   bigclaw-go/internal/reportstudio (cached)`, `ok   bigclaw-go/internal/planning (cached)`, `ok   bigclaw-go/internal/regression 0.974s`
-- `git status --short` -> modified workpad, planning/uireview Go files, deleted `tests/conftest.py`, `tests/reports_legacy.py`, `tests/test_ui_review.py`, added `bigclaw-go/internal/regression/python_test_tranche14_removal_test.go`, plus the in-scope Go replacement file `bigclaw-go/internal/uireview/builder.go`
+- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts` -> exit `1` with no matches
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim` -> `ok   bigclaw-go/cmd/bigclawctl 4.295s`; `ok   bigclaw-go/internal/legacyshim 1.892s`
+- `bash scripts/ops/bigclawctl refill --help` -> exit `0`; printed `usage: bigclawctl refill [flags]` and the `seed` subcommand help
+- `find . -name '*.py' | wc -l` -> `22` after deletion, down from the pre-change baseline `23`
