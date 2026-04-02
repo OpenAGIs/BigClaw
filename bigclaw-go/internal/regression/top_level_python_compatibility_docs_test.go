@@ -10,6 +10,9 @@ func TestTopLevelPythonCompatibilityDocs(t *testing.T) {
 
 	readme := readRepoFile(t, root, "README.md")
 	requiredReadme := []string{
+		"legacy Python surfaces",
+		"reduced to the frozen compatibility file `src/bigclaw/__init__.py`",
+		"`src/bigclaw/__init__.py`: sole remaining frozen Python compatibility file for migration-only reference use",
 		"The sole remaining legacy Python compatibility file is",
 		"`src/bigclaw/__init__.py`",
 		"frozen for migration-only reference use",
@@ -28,6 +31,7 @@ func TestTopLevelPythonCompatibilityDocs(t *testing.T) {
 		"PYTHONPATH=src python3 -m pytest tests",
 		"tests/test_planning.py",
 		"ruff check src tests scripts",
+		"legacy Python foundation modules pending staged migration to Go",
 	}
 	for _, needle := range disallowedReadme {
 		if strings.Contains(readme, needle) {

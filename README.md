@@ -4,7 +4,8 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 `bigclaw-go` is the current implementation mainline for new development. The
 repository root now exposes Go-only build entrypoints; legacy Python surfaces
-remain migration-only source assets and are not packaged from the root.
+have been reduced to the frozen compatibility file `src/bigclaw/__init__.py`,
+which is not packaged from the repository root.
 
 ## What is included
 
@@ -15,19 +16,7 @@ remain migration-only source assets and are not packaged from the root.
   - `docs/*`: Go control-plane validation and migration evidence
 - `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
-- `src/bigclaw`: legacy Python foundation modules pending staged migration to Go
-  - engineering operations analytics for dashboards, triage, regressions, and weekly reports
-  - `BIG-1606` Policy/Prompt Version Center with workflow/prompt/policy history, diffs, rollback targets, and bundle rendering
-  - unified task model
-  - persistent priority queue
-  - risk/tool based scheduler
-  - worker runtime with sandbox profiles and auditable tool gateway
-  - workflow DSL plus workflow engine with workpad journal, orchestration artifacts/canvas, entitlement-aware policy, and acceptance gate
-  - observability ledger with logs/trace/artifact/audit capture
-  - queue-to-scheduler execution recording with audit reports
-  - auto triage center for failed, pending-approval, and replay-needed runs, with inbox suggestions, similarity evidence, and reviewer feedback tracking
-  - benchmark runner with replay, weighted scoring, and version comparison
-  - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
+- `src/bigclaw/__init__.py`: sole remaining frozen Python compatibility file for migration-only reference use
   - narrative report studio with section composing plus markdown, HTML, and plain-text export
   - v2 design-system token/component inventory with release-readiness audit reporting
 - `tests/`: unit tests

@@ -38,6 +38,8 @@
 - add regression coverage that locks README onto the surviving single-file Python compatibility flow instead of a nonexistent `tests/` suite
 - remove stale AgentHub integration doc commands that still tell operators to run deleted repo-root Python tests
 - add regression coverage that locks that AgentHub alignment doc onto Go-first validation plus the surviving package-root compile check
+- tighten the README overview so it no longer describes `src/bigclaw` as a broad staged migration tree when only `src/bigclaw/__init__.py` remains
+- extend the Python compatibility docs regression to lock that README overview to the final single-file state
 - update repo guidance and planning metadata to point at the Go-native `bigclaw-go/internal/designsystem` and `bigclaw-go/internal/uireview` surfaces instead of deleted Python sources/tests
 - add regression coverage that locks the deleted Python files out of the tree and proves the Go replacements remain present
 - run targeted validation and record the exact commands and results
@@ -77,6 +79,7 @@
 - the surviving ops-hardening candidate no longer references deleted Python test files as active validation or evidence
 - README no longer instructs operators to run nonexistent repo-root Python tests or `tests/test_planning.py`
 - `docs/BigClaw-AgentHub-Integration-Alignment.md` no longer instructs operators to run nonexistent repo-root Python tests
+- README overview no longer describes `src/bigclaw` as a broad migration tree; it names `src/bigclaw/__init__.py` as the only remaining Python compatibility file
 - active repo guidance no longer describes those Python shims as retained compatibility entrypoints
 - planning metadata no longer points release-control evidence at deleted Python UI assets or deleted Python tests
 - regression coverage asserts those Python files stay absent and the Go replacements remain present
@@ -131,6 +134,8 @@
 - `cd bigclaw-go && go test ./internal/regression -run TestAgentHubIntegrationAlignmentDocUsesGoFirstValidation`
 - `rg -n "PYTHONPATH=src python3 -m pytest|tests/test_(repo_registry|repo_gateway|repo_links|repo_board|repo_collaboration|observability|reports|repo_governance|repo_triage|service|operations|repo_rollout)\\.py" docs/BigClaw-AgentHub-Integration-Alignment.md`
 - `cd bigclaw-go && go test ./internal/regression`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelPythonCompatibilityDocs`
+- `rg -n "legacy Python foundation modules pending staged migration to Go|src/bigclaw: legacy Python foundation modules|remain migration-only source assets" README.md`
 - `rg -n "The sole remaining legacy Python compatibility file is|remaining Python runtime surfaces are|The remaining Python runtime entrypoints are explicitly frozen as migration-only compatibility paths\\." README.md docs/go-mainline-cutover-handoff.md docs/go-mainline-cutover-issue-pack.md`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/planning.py`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py src/bigclaw/observability.py src/bigclaw/reports.py`
@@ -183,6 +188,8 @@
 - `cd bigclaw-go && go test ./internal/regression -run TestAgentHubIntegrationAlignmentDocUsesGoFirstValidation` -> `ok   bigclaw-go/internal/regression 0.888s`
 - `rg -n "PYTHONPATH=src python3 -m pytest|tests/test_(repo_registry|repo_gateway|repo_links|repo_board|repo_collaboration|observability|reports|repo_governance|repo_triage|service|operations|repo_rollout)\\.py" docs/BigClaw-AgentHub-Integration-Alignment.md` -> exit `1` with no matches
 - `cd bigclaw-go && go test ./internal/regression` -> `ok   bigclaw-go/internal/regression 0.352s`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelPythonCompatibilityDocs` -> `ok   bigclaw-go/internal/regression 1.238s`
+- `rg -n "legacy Python foundation modules pending staged migration to Go|src/bigclaw: legacy Python foundation modules|remain migration-only source assets" README.md` -> exit `1` with no matches
 - `rg -n "src/bigclaw/(execution_contract|saved_views|workflow|orchestration)\\.py" src/bigclaw/__init__.py bigclaw-go/internal/planning/planning.go` -> exit `1` with no matches
 - `rg -n "The sole remaining legacy Python compatibility file is|remaining Python runtime surfaces are|The remaining Python runtime entrypoints are explicitly frozen as migration-only compatibility paths\\." README.md docs/go-mainline-cutover-handoff.md docs/go-mainline-cutover-issue-pack.md` -> exit `0`; only expected final-state wording match is `README.md:164:The sole remaining legacy Python compatibility file is`
 - `cd bigclaw-go && go test ./internal/observability ./internal/planning ./internal/evaluation ./internal/contract` -> `ok   bigclaw-go/internal/observability (cached)`; `ok   bigclaw-go/internal/planning (cached)`; `ok   bigclaw-go/internal/evaluation (cached)`; `ok   bigclaw-go/internal/contract (cached)`
