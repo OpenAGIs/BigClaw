@@ -121,6 +121,60 @@ _PLANNING_EXPORT_NAMES = [
     "render_four_week_execution_report",
 ]
 
+_OPERATIONS_EXPORT_NAMES = [
+    "STATUS_COMPLETE",
+    "STATUS_ACTIONABLE",
+    "EvaluationCriterion",
+    "BenchmarkCase",
+    "ReplayRecord",
+    "ReplayOutcome",
+    "BenchmarkResult",
+    "BenchmarkComparison",
+    "BenchmarkSuiteResult",
+    "BenchmarkRunner",
+    "render_benchmark_suite_report",
+    "render_replay_detail_page",
+    "render_run_replay_index_page",
+    "TriageCluster",
+    "RegressionFinding",
+    "OperationsSnapshot",
+    "WeeklyOperationsReport",
+    "RegressionCenter",
+    "VersionedArtifact",
+    "VersionChangeSummary",
+    "VersionedArtifactHistory",
+    "PolicyPromptVersionCenter",
+    "WeeklyOperationsArtifacts",
+    "QueueControlCenter",
+    "EngineeringOverviewKPI",
+    "EngineeringFunnelStage",
+    "EngineeringOverviewBlocker",
+    "EngineeringActivity",
+    "EngineeringOverviewPermission",
+    "EngineeringOverview",
+    "OperationsMetricDefinition",
+    "OperationsMetricValue",
+    "OperationsMetricSpec",
+    "DashboardWidgetSpec",
+    "DashboardWidgetPlacement",
+    "DashboardLayout",
+    "DashboardBuilder",
+    "DashboardBuilderAudit",
+    "OperationsAnalytics",
+    "render_operations_dashboard",
+    "render_weekly_operations_report",
+    "render_operations_metric_spec",
+    "render_queue_control_center",
+    "render_policy_prompt_version_center",
+    "render_engineering_overview",
+    "render_dashboard_builder_report",
+    "write_engineering_overview_bundle",
+    "write_dashboard_builder_bundle",
+    "build_repo_collaboration_metrics",
+    "write_weekly_operations_bundle",
+    "render_regression_center",
+]
+
 
 _install_legacy_surface_module(
     "queue",
@@ -680,7 +734,7 @@ _install_surface_module(
     sys.modules[f"{__name__}.reports"],
     ["ValidationReportDecision", "enforce_validation_report_policy"],
 )
-from .operations import (
+from .reports import (
     DashboardBuilder,
     DashboardBuilderAudit,
     DashboardLayout,
@@ -719,7 +773,7 @@ from .operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .operations import (
+from .reports import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,
@@ -732,6 +786,7 @@ from .operations import (
     render_replay_detail_page,
     render_benchmark_suite_report,
 )
+_install_surface_module("operations", sys.modules[f"{__name__}.reports"], _OPERATIONS_EXPORT_NAMES)
 _install_surface_module(
     "evaluation",
     sys.modules[f"{__name__}.operations"],
