@@ -38,6 +38,12 @@ so no root Python cache/package residue remains on disk after validation.
 
 - branch: `big-go-1011-root-config-residuals`
 
+## Related Artifacts
+
+- validation report: `reports/BIG-GO-1011-validation.md`
+- closeout snapshot: `reports/BIG-GO-1011-closeout.md`
+- machine-readable status: `reports/BIG-GO-1011-status.json`
+
 ## Repo impact
 
 - `py files`: `101`
