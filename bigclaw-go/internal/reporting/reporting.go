@@ -86,12 +86,80 @@ type WeeklyArtifacts struct {
 	VersionCenterPath    string `json:"version_center_path,omitempty"`
 }
 
+type EntryGateDecision struct {
+	GateID string `json:"gate_id"`
+	Passed bool   `json:"passed"`
+}
+
+type PilotRolloutScorecard struct {
+	Adoption               int    `json:"adoption"`
+	ConvergenceImprovement int    `json:"convergence_improvement"`
+	ReviewEfficiency       int    `json:"review_efficiency"`
+	GovernanceIncidents    int    `json:"governance_incidents"`
+	EvidenceCompleteness   int    `json:"evidence_completeness"`
+	Recommendation         string `json:"recommendation"`
+}
+
+type CandidateGateResult struct {
+	CandidateGate  string `json:"candidate_gate"`
+	Recommendation string `json:"recommendation"`
+}
+
 type ConsoleAction struct {
 	ActionID string `json:"action_id"`
 	Label    string `json:"label"`
 	Target   string `json:"target"`
 	Enabled  bool   `json:"enabled"`
 	Reason   string `json:"reason,omitempty"`
+}
+
+func BuildPilotRolloutScorecard(adoption int, convergenceImprovement int, reviewEfficiency int, governanceIncidents int, evidenceCompleteness int) PilotRolloutScorecard {
+	recommendation := "hold"
+	if adoption >= 80 && convergenceImprovement >= 75 && reviewEfficiency >= 80 && governanceIncidents <= 1 && evidenceCompleteness >= 85 {
+		recommendation = "go"
+	}
+	return PilotRolloutScorecard{
+		Adoption:               adoption,
+		ConvergenceImprovement: convergenceImprovement,
+		ReviewEfficiency:       reviewEfficiency,
+		GovernanceIncidents:    governanceIncidents,
+		EvidenceCompleteness:   evidenceCompleteness,
+		Recommendation:         recommendation,
+	}
+}
+
+func EvaluateCandidateGate(gateDecision EntryGateDecision, rolloutScorecard PilotRolloutScorecard) CandidateGateResult {
+	candidateGate := "hold"
+	if gateDecision.Passed && rolloutScorecard.Recommendation == "go" {
+		candidateGate = "enable-by-default"
+	}
+	return CandidateGateResult{
+		CandidateGate:  candidateGate,
+		Recommendation: rolloutScorecard.Recommendation,
+	}
+}
+
+func RenderPilotRolloutGateReport(result CandidateGateResult) string {
+	return fmt.Sprintf("# Pilot Rollout Gate\n\n- Candidate gate: %s\n- Recommendation: %s\n", result.CandidateGate, result.Recommendation)
+}
+
+func RenderWeeklyRepoEvidenceSection(experimentVolume int, convergedTasks int, acceptedCommits int, hottestThreads []string) string {
+	return strings.Join([]string{
+		"## Repo Evidence Summary",
+		fmt.Sprintf("- Experiment Volume: %d", experimentVolume),
+		fmt.Sprintf("- Converged Tasks: %d", convergedTasks),
+		fmt.Sprintf("- Accepted Commits: %d", acceptedCommits),
+		fmt.Sprintf("- Hottest Threads: %s", joinOrNone(hottestThreads)),
+	}, "\n")
+}
+
+func RenderRepoNarrativeExports(experimentVolume int, convergedTasks int, acceptedCommits int, hottestThreads []string) map[string]string {
+	section := RenderWeeklyRepoEvidenceSection(experimentVolume, convergedTasks, acceptedCommits, hottestThreads)
+	return map[string]string{
+		"markdown": section,
+		"text":     strings.ReplaceAll(section, "## ", ""),
+		"html":     fmt.Sprintf("<section><h2>Repo Evidence Summary</h2><p>Experiment Volume: %d</p><p>Converged Tasks: %d</p><p>Accepted Commits: %d</p><p>Hottest Threads: %s</p></section>", experimentVolume, convergedTasks, acceptedCommits, joinOrNone(hottestThreads)),
+	}
 }
 
 func (a ConsoleAction) State() string {
