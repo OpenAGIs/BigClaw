@@ -1,32 +1,38 @@
 # BIG-GO-1036 Workpad
 
 ## Plan
-- Replace a scoped tranche of remaining Python tests with equivalent Go tests only.
-- Keep the scope limited to queue/control-center and workflow/DSL test surfaces that already exist in `bigclaw-go`.
-- Add any missing Go assertions needed to cover the deleted Python behavior.
-- Delete the matched Python test files once Go parity is explicit.
+- Replace the next scoped Python bootstrap test file with equivalent Go tests only.
+- Keep the scope limited to `bigclaw-go/internal/bootstrap`.
+- Add missing Go assertions for cache reuse, stale seed recovery, cleanup preservation, and validation report summary coverage.
+- Delete the matched Python test file once Go parity is explicit.
 - Run targeted Go tests, record exact commands and exact results here.
 - Commit and push the branch.
 
 ## Scoped Tranche
-- `tests/test_dsl.py`
+- `tests/test_workspace_bootstrap.py`
 
 ## Acceptance
-- Python test file count decreases by deleting the scoped files above.
-- Go test coverage increases under `bigclaw-go/internal/workflow`.
+- Python test file count decreases by deleting the scoped file above.
+- Go test coverage increases under `bigclaw-go/internal/bootstrap`.
 - Replacement coverage explicitly includes:
-  - workflow definition parsing/rendering
-  - workflow acceptance/manual-approval behavior
-  - invalid workflow step rejection
+  - repo cache key derivation
+  - cache root selection
+  - first bootstrap worktree creation
+  - second workspace warm-cache reuse
+  - same workspace reuse
+  - cleanup preserving shared cache
+  - stale seed recovery without remote reclone
+  - cleanup pruning bootstrap branch/worktree
+  - validation report summary for three workspaces sharing one cache
 - Changes remain scoped to this tranche only.
 
 ## Validation
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && gofmt -w bigclaw-go/internal/workflow/definition.go bigclaw-go/internal/workflow/definition_test.go`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && gofmt -w bigclaw-go/internal/bootstrap/bootstrap_test.go`
   - Passed
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/workflow`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036/bigclaw-go && go test ./internal/bootstrap`
   - Passed
   - Exact result:
-    - `ok  	bigclaw-go/internal/workflow	0.996s`
+    - `ok  	bigclaw-go/internal/bootstrap	4.312s`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1036 && git diff --stat`
   - Passed
-  - Output summary: `4 files changed, 39 insertions(+), 241 deletions(-)`
+  - Output summary: `3 files changed, 163 insertions(+), 223 deletions(-)`

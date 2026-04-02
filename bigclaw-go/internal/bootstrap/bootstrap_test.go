@@ -125,6 +125,120 @@ func TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed(t *testing.T) {
 	}
 }
 
+func TestSecondWorkspaceReusesWarmCacheWithoutFullClone(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+
+	first, err := BootstrapWorkspace(filepath.Join(root, "workspaces", "OPE-322"), "OPE-322", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := BootstrapWorkspace(filepath.Join(root, "workspaces", "OPE-323"), "OPE-323", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if first.CacheRoot != second.CacheRoot {
+		t.Fatalf("expected cache root reuse, got %q and %q", first.CacheRoot, second.CacheRoot)
+	}
+	if !second.CacheReused || !second.CloneSuppressed || second.MirrorCreated || second.SeedCreated || second.WorkspaceMode != "worktree_created" {
+		t.Fatalf("unexpected warm-cache reuse status: %+v", second)
+	}
+}
+
+func TestBootstrapWorkspaceReusesExistingIssueWorktree(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	workspace := filepath.Join(root, "workspaces", "OPE-324")
+
+	first, err := BootstrapWorkspace(workspace, "OPE-324", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := BootstrapWorkspace(workspace, "OPE-324", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if first.Reused {
+		t.Fatalf("expected fresh first bootstrap, got %+v", first)
+	}
+	if !second.Reused || second.WorkspaceMode != "workspace_reused" || !second.CacheReused || !second.CloneSuppressed || second.Branch != "symphony/OPE-324" {
+		t.Fatalf("unexpected workspace reuse status: %+v", second)
+	}
+}
+
+func TestCleanupWorkspacePreservesSharedCacheForFutureReuse(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	cacheRoot := CacheRootForRepo(remote, cacheBase, "")
+	workspace := filepath.Join(root, "workspaces", "OPE-325")
+
+	if _, err := BootstrapWorkspace(workspace, "OPE-325", remote, "main", "", cacheBase, ""); err != nil {
+		t.Fatal(err)
+	}
+	status, err := CleanupWorkspace(workspace, "OPE-325", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	followUp, err := BootstrapWorkspace(filepath.Join(root, "workspaces", "OPE-326"), "OPE-326", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !status.Removed || pathExists(workspace) {
+		t.Fatalf("expected cleanup removal, got %+v", status)
+	}
+	if !pathExists(filepath.Join(cacheRoot, "mirror.git", "HEAD")) || !pathExists(filepath.Join(cacheRoot, "seed", ".git")) {
+		t.Fatalf("expected cache assets to persist under %s", cacheRoot)
+	}
+	if !followUp.CacheReused || !followUp.CloneSuppressed || followUp.MirrorCreated || followUp.SeedCreated {
+		t.Fatalf("unexpected follow-up bootstrap reuse status: %+v", followUp)
+	}
+}
+
+func TestBootstrapRecoversFromStaleSeedDirectoryWithoutRemoteReclone(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	first, err := BootstrapWorkspace(filepath.Join(root, "workspaces", "OPE-327"), "OPE-327", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cacheRoot := first.CacheRoot
+
+	if _, err := CleanupWorkspace(filepath.Join(root, "workspaces", "OPE-327"), "OPE-327", remote, "main", "", cacheBase, ""); err != nil {
+		t.Fatal(err)
+	}
+	seedPath := filepath.Join(cacheRoot, "seed")
+	if pathExists(seedPath) {
+		if err := os.RemoveAll(seedPath); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.MkdirAll(seedPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(seedPath, "stale.txt"), []byte("stale\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	recovered, err := BootstrapWorkspace(filepath.Join(root, "workspaces", "OPE-328"), "OPE-328", remote, "main", "", cacheBase, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if recovered.CacheReused || !recovered.CloneSuppressed || recovered.MirrorCreated || !recovered.SeedCreated {
+		t.Fatalf("unexpected stale-seed recovery status: %+v", recovered)
+	}
+	if !pathExists(filepath.Join(cacheRoot, "mirror.git", "HEAD")) || !pathExists(filepath.Join(cacheRoot, "seed", ".git")) {
+		t.Fatalf("expected recovered seed and preserved mirror under %s", cacheRoot)
+	}
+}
+
 func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	root := t.TempDir()
 	remote := initRemoteWithMain(t, root)
@@ -269,5 +383,37 @@ func TestBootstrapHelpersUniqueJoinAndPathExists(t *testing.T) {
 	}
 	if pathExists(filepath.Join(root, "missing.txt")) {
 		t.Fatalf("expected missing path to stay false")
+	}
+}
+
+func TestBuildValidationReportCoversThreeWorkspacesWithOneCache(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+
+	report, err := BuildValidationReport(
+		remote,
+		filepath.Join(root, "validation-workspaces"),
+		[]string{"OPE-272", "OPE-273", "OPE-274"},
+		"main",
+		"",
+		filepath.Join(root, "repos"),
+		"",
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	summary := report.Summary
+	if summary.WorkspaceCount != 3 ||
+		!summary.SingleCacheRootReused ||
+		!summary.SingleMirrorReused ||
+		!summary.SingleSeedReused ||
+		summary.MirrorCreations != 1 ||
+		summary.SeedCreations != 1 ||
+		!summary.CloneSuppressedAfterFirst ||
+		!summary.CacheReusedAfterFirst ||
+		!summary.CleanupPreservedCache {
+		t.Fatalf("unexpected validation summary: %+v", summary)
 	}
 }
