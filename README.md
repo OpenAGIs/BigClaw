@@ -79,24 +79,23 @@ Notes:
 
 ## Legacy Python migration note
 
-Do not use Python packaging from the repository root. When a migration-only
-Python surface must be exercised, validate it directly from source:
+Do not use Python packaging from the repository root. The remaining Python
+surface is migration-only and should be exercised directly from source:
 
 ```bash
 PYTHONPATH=src python3 -m pytest tests
 ```
 
-Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface from the active environment without editable install
-or repo-root packaging bootstrap:
+For the smallest supported migration smoke path, enable the legacy lane in the
+Go-first bootstrap helper:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
-That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level smoke
-suite in `tests/test_workspace_bootstrap.py` and `tests/test_planning.py` when
-`pytest` is available.
+That helper runs `bigclawctl dev-smoke` and, when `pytest` is available, the
+targeted source-level smoke suite in `tests/test_workspace_bootstrap.py` and
+`tests/test_planning.py`.
 
 ## Go smoke verify
 
@@ -106,14 +105,6 @@ make test
 make run &
 curl localhost:8080/healthz
 bash scripts/ops/bigclawctl github-sync status --json
-```
-
-## Legacy Python smoke verify
-
-Use this only when validating a frozen migration-reference path:
-
-```bash
-bash scripts/ops/bigclawctl dev-smoke
 ```
 
 ## Quality gates
@@ -129,12 +120,6 @@ Go-first bootstrap helper:
 
 ```bash
 bash scripts/dev_bootstrap.sh
-```
-
-Legacy Python migration surface:
-
-```bash
-PYTHONPATH=src python3 -m pytest tests
 ```
 
 ## Quick verify
