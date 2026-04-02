@@ -60,6 +60,10 @@ opened PR `#215`; they did not change the migrated Go CLI behavior summarized he
 
 ## Outcome
 
+Historical note: command lines and shim file names listed in this closeout
+capture the branch state at BIG-GO-902 closeout time. Later cleanup passes
+retired the repo-root Python shim files from the active operator path.
+
 - Repo-root automation entrypoints now resolve through Go-owned `bigclawctl` behavior.
 - The first `bigclaw-go/scripts/*` automation batch now resolves through Go-owned
   `bigclawctl automation ...` behavior.

@@ -15,6 +15,10 @@ This issue now covers two delivered migration batches:
 - the first `bigclaw-go/scripts/*` automation migration batch, which moves selected e2e,
   benchmark, and migration helpers into `bigclawctl automation ...`
 
+Historical note: the Python shim file paths referenced below are part of the
+original BIG-GO-902 cutover evidence. Later cleanup passes retired those
+repo-root shim files from the active operator path.
+
 ## Delivered
 
 - Go CLI remains the implementation owner for these migrated entrypoints:

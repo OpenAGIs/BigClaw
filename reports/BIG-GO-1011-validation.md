@@ -11,6 +11,10 @@ Continuation pass: align active cutover and reviewer-facing docs so they no
 longer describe retired repo-root Python shim files as current compatibility
 surfaces.
 
+Final continuation pass: label the remaining BIG-GO-902 reviewer artifacts as
+historical cutover evidence so the repo no longer presents those retired Python
+shim paths as live operator entrypoints.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -79,6 +83,19 @@ rg -n "remain available as compatibility shims|Compatibility shims now dispatch|
 ```
 
 Result: no matches
+
+```bash
+rg -n "Historical note|historical_note" reports/BIG-GO-902-validation.md reports/BIG-GO-902-closeout.md reports/BIG-GO-902-pr.md reports/BIG-GO-902-status.json
+```
+
+Result:
+
+```text
+reports/BIG-GO-902-validation.md:16:Historical note: the Python shim file paths referenced below are part of the
+reports/BIG-GO-902-closeout.md:63:Historical note: command lines and shim file names listed in this closeout
+reports/BIG-GO-902-pr.md:20:Historical note: the Python shim file paths listed in this draft reflect the
+reports/BIG-GO-902-status.json:52:    "historical_note": "The Python shim file paths in these recorded BIG-GO-902 validation commands reflect the original cutover branch state. Later cleanup passes retired the repo-root Python shim files from the active operator path.",
+```
 
 ```bash
 make build

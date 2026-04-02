@@ -16,6 +16,10 @@
 
 ### Delivered
 
+Historical note: the Python shim file paths listed in this draft reflect the
+cutover branch state when BIG-GO-902 was prepared. Later cleanup passes retired
+the repo-root Python shim files from the active operator path.
+
 - Go CLI continues to own the behavior for:
   - `create-issues`
   - `dev-smoke`

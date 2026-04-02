@@ -48,6 +48,7 @@
     "status_observation_note": "GitHub check-runs show the single `test` run completed successfully, but the combined commit status API still reports `pending`, so the aggregate status appears temporarily stale."
   },
   "validation": {
+    "historical_note": "The Python shim file paths in these recorded BIG-GO-902 validation commands reflect the original cutover branch state. Later cleanup passes retired the repo-root Python shim files from the active operator path.",
     "commands": [
       "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill",
       "python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py",
