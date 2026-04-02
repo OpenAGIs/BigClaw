@@ -7,6 +7,7 @@
 - neutralize any remaining deleted-entrypoint warning text inside frozen Python modules
 - remove dead repo-root Python test/lint/bootstrap commands that still point at the deleted `tests/` lane
 - update active planning/backlog generators so they stop emitting deleted `tests/...` evidence targets and validation commands
+- update active docs that still prescribe deleted Python test lanes as current validation
 - run targeted validation covering reference cleanup, Go legacy-shim tests, CLI help, and repository `.py` count reduction
 - commit and push the scoped change set
 
@@ -26,6 +27,8 @@
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `rg -n "tests/test_design_system\\.py|tests/test_console_ia\\.py|tests/test_ui_review\\.py|tests/test_control_center\\.py|tests/test_operations\\.py|tests/test_evaluation\\.py|tests/test_orchestration\\.py|tests/test_reports\\.py" bigclaw-go/internal/planning/planning.go bigclaw-go/internal/planning/planning_test.go src/bigclaw/planning.py`
 - `cd bigclaw-go && go test ./internal/planning`
+- `rg -n "PYTHONPATH=src python3 -m pytest tests/test_|PYTHONPATH=src python3 -m pytest -q|python3 -m pytest tests/test_legacy_shim\\.py" docs/go-cli-script-migration-plan.md docs/BigClaw-AgentHub-Integration-Alignment.md`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/repo ./internal/collaboration ./internal/observability ./internal/reportstudio ./internal/governance ./internal/triage ./internal/product`
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l`
 
 ## Validation Results
@@ -38,6 +41,8 @@
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and the single checked file `/Users/openagi/code/bigclaw-workspaces/BIG-GO-1096/src/bigclaw/legacy_shim.py`
 - `rg -n "tests/test_design_system\\.py|tests/test_console_ia\\.py|tests/test_ui_review\\.py|tests/test_control_center\\.py|tests/test_operations\\.py|tests/test_evaluation\\.py|tests/test_orchestration\\.py|tests/test_reports\\.py" bigclaw-go/internal/planning/planning.go bigclaw-go/internal/planning/planning_test.go src/bigclaw/planning.py` -> exit `1` with no matches
 - `cd bigclaw-go && go test ./internal/planning` -> `ok   bigclaw-go/internal/planning 0.533s`
+- `rg -n "PYTHONPATH=src python3 -m pytest tests/test_|PYTHONPATH=src python3 -m pytest -q|python3 -m pytest tests/test_legacy_shim\\.py" docs/go-cli-script-migration-plan.md docs/BigClaw-AgentHub-Integration-Alignment.md` -> exit `1` with no matches
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/repo ./internal/collaboration ./internal/observability ./internal/reportstudio ./internal/governance ./internal/triage ./internal/product` -> `ok   bigclaw-go/cmd/bigclawctl (cached)`; `ok   bigclaw-go/internal/repo 0.476s`; `ok   bigclaw-go/internal/collaboration 0.904s`; `ok   bigclaw-go/internal/observability 1.333s`; `ok   bigclaw-go/internal/reportstudio 2.233s`; `ok   bigclaw-go/internal/governance 1.791s`; `ok   bigclaw-go/internal/triage 2.689s`; `ok   bigclaw-go/internal/product 3.093s`
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `19` tracked `.py` files in `HEAD`; `17` `.py` files in the worktree after deleting the packaging entrypoint residue
 - follow-up sweep: `rg -n "python -m bigclaw serve|src/bigclaw/service\\.py|src/bigclaw/__main__\\.py|python -m bigclaw\\b" README.md bigclaw-go .github scripts docs src -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json'` -> exit `1` with no matches after updating `src/bigclaw/runtime.py`
 - follow-up sweep: `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl` -> `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression (cached)`; `ok   bigclaw-go/cmd/bigclawctl 3.216s`
