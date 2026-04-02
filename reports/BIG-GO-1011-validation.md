@@ -64,6 +64,17 @@ validation-surface tightening rather than source-file deletion.
 Report-maintenance commits after the evidence file was introduced are intentionally not tracked
 here one-by-one when they only stabilize this report's metadata.
 
+Continuation commits in this cleanup sweep:
+
+- `52a101f` `BIG-GO-1011 refresh root migration residual docs`
+- `32e9771` `BIG-GO-1011 retire stale shim guidance`
+- `b9d661d` `BIG-GO-1011 label historical shim artifacts`
+- `e6d3596` `BIG-GO-1011 drop stale test path guidance`
+- `892a4b7` `BIG-GO-1011 retarget cutover legacy surfaces`
+- `28ca157` `BIG-GO-1011 refresh migration plan validation`
+- `0a577d0` `BIG-GO-1011 clarify retired path references`
+- `5d0e4d3` `BIG-GO-1011 clear root pytest cache residue`
+
 ## Validation commands
 
 ```bash
@@ -235,6 +246,23 @@ M bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json
 ```
 
 ```bash
+git rev-parse HEAD
+git ls-remote --heads origin big-go-1011-root-config-residuals
+git log -1 --stat --oneline
+```
+
+Result:
+
+```text
+5d0e4d335bdbdcaa25176acdd3dd147e7e802082
+5d0e4d335bdbdcaa25176acdd3dd147e7e802082	refs/heads/big-go-1011-root-config-residuals
+5d0e4d3 BIG-GO-1011 clear root pytest cache residue
+ .symphony/workpad.md              |  3 ++-
+ reports/BIG-GO-1011-validation.md | 16 ++++++++++++++++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+```
+
+```bash
 make build
 ```
 
@@ -295,5 +323,6 @@ Remaining root-level Python mentions are intentional migration-only validation s
   explicitly marked `retired` or described as historical migration identifiers
 - no root `.pytest_cache/`, `__pycache__/`, `*.egg-info`, or `*.dist-info`
   directory remains in the workspace after the final cleanup pass
+- local and remote branch SHAs match at `5d0e4d335bdbdcaa25176acdd3dd147e7e802082`
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.
