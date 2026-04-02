@@ -19,7 +19,7 @@ func TestTopLevelModulePurgeTranche17(t *testing.T) {
 	}
 
 	replacementFiles := []string{
-		"src/bigclaw/runtime.py",
+		"src/bigclaw/design_system.py",
 		"bigclaw-go/internal/risk/risk.go",
 		"bigclaw-go/internal/risk/risk_test.go",
 	}

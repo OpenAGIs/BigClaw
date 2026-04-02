@@ -1,7 +1,7 @@
 import sys
 import types
 
-from . import runtime as _legacy_runtime_surface
+from . import design_system as _legacy_runtime_surface
 
 
 def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
@@ -71,8 +71,10 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
+sys.modules[f"{__name__}.runtime"] = _legacy_runtime_surface
+globals()["runtime"] = _legacy_runtime_surface
 
-from .runtime import (
+from .design_system import (
     AcceptanceDecision,
     AcceptanceGate,
     ClawWorkerRuntime,
@@ -221,7 +223,7 @@ from .design_system import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .runtime import (
+from .design_system import (
     AutoTriageCenter,
     ConsoleAction,
     BillingEntitlementsPage,
@@ -283,7 +285,7 @@ from .runtime import (
     write_report,
     write_report_studio_bundle,
 )
-from . import runtime as _legacy_reports_surface
+from . import design_system as _legacy_reports_surface
 from . import design_system as _legacy_design_system_surface
 
 _install_surface_module(
@@ -592,7 +594,7 @@ _install_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/uireview/uireview.go",
 )
-from .runtime import (
+from .design_system import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,

@@ -13,6 +13,7 @@ func TestTopLevelModulePurgeTranche24(t *testing.T) {
 		"src/bigclaw/evaluation.py",
 		"src/bigclaw/operations.py",
 		"src/bigclaw/reports.py",
+		"src/bigclaw/runtime.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
@@ -21,7 +22,7 @@ func TestTopLevelModulePurgeTranche24(t *testing.T) {
 	}
 
 	replacementFiles := []string{
-		"src/bigclaw/runtime.py",
+		"src/bigclaw/design_system.py",
 		"bigclaw-go/internal/evaluation/evaluation.go",
 	}
 	for _, relativePath := range replacementFiles {

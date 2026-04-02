@@ -301,7 +301,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
-			{Label: "queue-control-center", Target: "src/bigclaw/runtime.py", Capability: "ops-control", Note: "queue and approval command center"},
+			{Label: "queue-control-center", Target: "src/bigclaw/design_system.py", Capability: "ops-control", Note: "queue and approval command center"},
 			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
 		},
 	}
@@ -435,7 +435,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		targets[link.Target] = struct{}{}
 	}
 	for _, want := range []string{
-		"src/bigclaw/runtime.py",
+		"src/bigclaw/design_system.py",
 		"tests/test_operations.py",
 		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/workflow.py",
@@ -443,7 +443,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
 		"src/bigclaw/saved_views.py",
-		"src/bigclaw/runtime.py",
+		"src/bigclaw/design_system.py",
 		"bigclaw-go/internal/evaluation/evaluation_test.go",
 	} {
 		if _, ok := targets[want]; !ok {
@@ -497,7 +497,7 @@ func TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline(t *testing
 	}
 	for _, want := range []string{
 		"candidate-ops-hardening: Operations command-center hardening",
-		"- command-center-src -> src/bigclaw/runtime.py capability=ops-control",
+		"- command-center-src -> src/bigclaw/design_system.py capability=ops-control",
 		"- report-studio-tests -> tests/test_reports.py capability=commercialization",
 	} {
 		if !strings.Contains(report, want) {
