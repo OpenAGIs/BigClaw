@@ -186,7 +186,7 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .audit_events import (
+from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
@@ -194,10 +194,15 @@ from .audit_events import (
     P0_AUDIT_EVENT_SPECS,
     SCHEDULER_DECISION_EVENT,
     AuditEventSpec,
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    TaskRun,
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
