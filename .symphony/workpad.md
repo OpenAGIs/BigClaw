@@ -156,3 +156,20 @@ Validation
 - `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py`
 - `PYTHONPATH=src python3 - <<'PY'` import checks for `bigclaw`, `bigclaw.runtime`, and `bigclaw.repository`
 - `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_governance.py tests/test_repo_triage.py tests/test_repo_collaboration.py tests/test_audit_events.py tests/test_event_bus.py tests/test_dsl.py tests/test_governance.py tests/test_memory.py tests/test_risk.py`
+
+Continuation 9
+
+Plan
+- Run a broader regression slice against the final single-file package form.
+- Reconfirm the final inventory and package-surface integrity after the last cleanup commit.
+- Record the wider validation evidence in the issue lane so the repository result is backed by more than narrow targeted slices.
+
+Acceptance
+- Keep `src/bigclaw/*.py` at `1`.
+- Broader regression validation passes against the single-file package form.
+- Record exact commands and outcomes.
+
+Validation
+- `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_reports.py tests/test_observability.py tests/test_models.py tests/test_planning.py tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_control_center.py tests/test_evaluation.py tests/test_repo_board.py tests/test_repo_governance.py tests/test_repo_triage.py tests/test_repo_collaboration.py tests/test_audit_events.py tests/test_event_bus.py tests/test_dsl.py tests/test_governance.py tests/test_memory.py tests/test_risk.py`
+- `PYTHONPATH=src python3 - <<'PY'` import checks for `bigclaw`, `bigclaw.runtime`, `bigclaw.repository`, `bigclaw.models`, `bigclaw.reports`, and `bigclaw.observability`
+- `printf 'src_py='; rg --files src/bigclaw -g '*.py' | wc -l`
