@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"bigclaw-go/internal/domain"
@@ -56,6 +57,35 @@ func TestPremiumOrchestrationPolicyConstrainsStandardTier(t *testing.T) {
 	}
 }
 
+func TestPremiumOrchestrationPolicyTracksExpandedBlockedDepartmentsAndCost(t *testing.T) {
+	policy := PremiumOrchestrationPolicy{}
+	task := domain.Task{
+		ID:            "OPE-66-standard",
+		Source:        "linear",
+		Title:         "Coordinate customer analytics rollout approval",
+		Description:   "Need stakeholder sign-off for warehouse-backed browser workflow",
+		Labels:        []string{"data", "customer"},
+		RequiredTools: []string{"browser", "sql"},
+		RiskLevel:     domain.RiskHigh,
+	}
+
+	rawPlan := CrossDepartmentOrchestrator{}.Plan(task)
+	constrained, decision := policy.Apply(task, rawPlan)
+
+	if constrained.CollaborationMode != "tier-limited" || !reflect.DeepEqual(constrained.Departments(), []string{"operations", "engineering"}) {
+		t.Fatalf("unexpected constrained plan: %+v", constrained)
+	}
+	if !decision.UpgradeRequired || decision.EntitlementStatus != "upgrade-required" || decision.BillingModel != "standard-blocked" {
+		t.Fatalf("unexpected standard-tier policy decision: %+v", decision)
+	}
+	if decision.IncludedUsageUnits != 2 || decision.OverageUsageUnits != 3 || decision.OverageCostUSD != 12.0 || decision.EstimatedCostUSD != 15.0 {
+		t.Fatalf("unexpected policy cost payload: %+v", decision)
+	}
+	if !reflect.DeepEqual(decision.BlockedDepartments, []string{"security", "data", "customer-success"}) {
+		t.Fatalf("unexpected blocked departments: %+v", decision.BlockedDepartments)
+	}
+}
+
 func TestPremiumOrchestrationPolicyKeepsPremiumPlan(t *testing.T) {
 	policy := PremiumOrchestrationPolicy{}
 	plan := OrchestrationPlan{
@@ -97,5 +127,37 @@ func TestBuildHandoffRequest(t *testing.T) {
 	}
 	if got := BuildHandoffRequest(true, plan, OrchestrationPolicyDecision{}); got != nil {
 		t.Fatalf("expected no request when execution accepted, got %+v", got)
+	}
+}
+
+func TestRenderOrchestrationPlanListsHandoffsAndPolicy(t *testing.T) {
+	task := domain.Task{
+		ID:            "OPE-66-render",
+		Source:        "jira",
+		Title:         "Warehouse rollout",
+		Description:   "Customer-ready release",
+		Labels:        []string{"data", "customer"},
+		RequiredTools: []string{"sql"},
+	}
+
+	rawPlan := CrossDepartmentOrchestrator{}.Plan(task)
+	plan, policy := PremiumOrchestrationPolicy{}.Apply(task, rawPlan)
+	content := RenderOrchestrationPlan(plan, policy)
+
+	for _, fragment := range []string{
+		"# Cross-Department Orchestration Plan",
+		"- Departments: operations, engineering",
+		"- Tier: standard",
+		"- Entitlement Status: upgrade-required",
+		"- Billing Model: standard-blocked",
+		"- Estimated Cost (USD): 11.00",
+		"- Blocked Departments: data, customer-success",
+	} {
+		if !strings.Contains(content, fragment) {
+			t.Fatalf("expected %q in rendered plan, got %s", fragment, content)
+		}
+	}
+	if strings.Contains(content, "- Human Handoff Team:") {
+		t.Fatalf("did not expect human handoff team line, got %s", content)
 	}
 }

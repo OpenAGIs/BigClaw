@@ -194,6 +194,24 @@ func BuildHandoffRequest(accepted bool, plan OrchestrationPlan, policyDecision O
 	}
 }
 
+func RenderOrchestrationPlan(plan OrchestrationPlan, policyDecision OrchestrationPolicyDecision) string {
+	lines := []string{
+		"# Cross-Department Orchestration Plan",
+		"",
+		fmt.Sprintf("- Task ID: %s", plan.TaskID),
+		fmt.Sprintf("- Collaboration Mode: %s", plan.CollaborationMode),
+		fmt.Sprintf("- Departments: %s", strings.Join(plan.Departments(), ", ")),
+		fmt.Sprintf("- Tier: %s", policyDecision.Tier),
+		fmt.Sprintf("- Entitlement Status: %s", policyDecision.EntitlementStatus),
+		fmt.Sprintf("- Billing Model: %s", policyDecision.BillingModel),
+		fmt.Sprintf("- Estimated Cost (USD): %.2f", policyDecision.EstimatedCostUSD),
+	}
+	if len(policyDecision.BlockedDepartments) > 0 {
+		lines = append(lines, fmt.Sprintf("- Blocked Departments: %s", strings.Join(policyDecision.BlockedDepartments, ", ")))
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func operationsReason(task domain.Task, labels []string, text string) string {
 	if hasAny(labels, "program", "ops", "release") || strings.Contains(text, "rollout") || matchesAny(strings.ToLower(task.Source), "linear", "jira") {
 		return "coordinates issue intake, handoffs, and completion tracking"
