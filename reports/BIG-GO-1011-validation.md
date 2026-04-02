@@ -23,6 +23,10 @@ Current continuation pass: retarget the cutover issue pack away from deleted
 `src/bigclaw/service.py`, `scheduler.py`, `orchestration.py`, `workflow.py`,
 and `queue.py` file paths to the compatibility surfaces that still exist.
 
+Current continuation pass: refresh the Go CLI migration plan so its active
+validation command uses the current source-level legacy smoke suite instead of
+deleted `tests/test_legacy_shim.py` and `tests/test_deprecation.py`.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -161,6 +165,31 @@ PY
 Result: `ok: src/bigclaw/__init__.py, src/bigclaw/runtime.py, src/bigclaw/__main__.py`
 
 ```bash
+rg -n "test_legacy_shim\.py|test_deprecation\.py" docs/go-cli-script-migration-plan.md README.md docs workflow.md
+```
+
+Result: exit `1` with no matches
+
+```bash
+PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_planning.py
+```
+
+Result:
+
+```text
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/openagi/code/bigclaw-workspaces/BIG-GO-1011
+plugins: cov-7.1.0
+collected 23 items
+
+tests/test_workspace_bootstrap.py .........                              [ 39%]
+tests/test_planning.py ..............                                    [100%]
+
+============================== 23 passed in 3.25s ==============================
+```
+
+```bash
 make build
 ```
 
@@ -214,5 +243,8 @@ Remaining root-level Python mentions are intentional migration-only validation s
 - active cutover docs now point at compatibility imports in `src/bigclaw/__init__.py`
   plus `src/bigclaw/runtime.py` / `src/bigclaw/__main__.py` instead of deleted
   `service.py`, `scheduler.py`, `orchestration.py`, `workflow.py`, and `queue.py`
+- active migration-plan validation now uses `tests/test_workspace_bootstrap.py`
+  and `tests/test_planning.py`, which both exist and passed, instead of deleted
+  `tests/test_legacy_shim.py` / `tests/test_deprecation.py`
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.

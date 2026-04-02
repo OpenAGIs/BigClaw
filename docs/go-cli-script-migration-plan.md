@@ -26,6 +26,8 @@ The implemented migration batches in this issue move these entrypoints behind th
 
 ### `bigclaw-go/scripts/*` first automation batch
 
+- The deleted Python script paths listed in this subsection are migration identifiers for the
+  cutover map, not current files that still exist in the workspace.
 - `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `bigclawctl automation e2e run-task-smoke`
 - `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
@@ -79,7 +81,7 @@ because the root no longer carries Python packaging/bootstrap ownership.
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_planning.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `bash scripts/ops/bigclawctl refill --help`
