@@ -29,3 +29,20 @@
   - `ok  	bigclaw-go/internal/regression	0.946s`
 - `rg -n "pytest|tests/test_.*\\.py" src/bigclaw/planning.py bigclaw-go/internal/planning/planning.go bigclaw-go/internal/regression/planning_python_test_replacement_test.go` -> exit `0`
   - matches remain only inside the regression guard that enumerates disallowed Python test assets.
+- Updated `scripts/dev_bootstrap.sh` so the `BIGCLAW_ENABLE_LEGACY_PYTHON=1` path runs `go test ./internal/bootstrap ./internal/planning ./internal/regression` instead of attempting to execute deleted Python test files.
+- Updated `README.md` to replace active `pytest tests` guidance with the Go-native planning/regression replacement commands.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/bigclaw-go && go test ./internal/bootstrap ./internal/planning ./internal/regression` -> exit `0`
+  - `ok  	bigclaw-go/internal/bootstrap	3.196s`
+  - `ok  	bigclaw-go/internal/planning	(cached)`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/scripts/dev_bootstrap.sh` -> exit `0`
+  - `ok  	bigclaw-go/cmd/bigclawctl	3.453s`
+  - `BigClaw Go development environment is ready.`
+  - `Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 to add the remaining Go-native migration planning coverage after the default Go smoke and bootstrap coverage.`
+- `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/scripts/dev_bootstrap.sh` -> exit `0`
+  - `ok  	bigclaw-go/cmd/bigclawctl	3.857s`
+  - `smoke_ok local`
+  - `ok  	bigclaw-go/internal/bootstrap	(cached)`
+  - `ok  	bigclaw-go/internal/planning	(cached)`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+  - `BigClaw Go environment is ready, and the remaining migration planning surface was validated with Go coverage.`
