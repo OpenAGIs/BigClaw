@@ -21,20 +21,21 @@ Current tree snapshot at the start of this pass:
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
   - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-Repository-wide Python file count at the start of this continuation: `98`
+Repository-wide Python file count at the start of this continuation: `97`
 
 ## Plan
 
-1. Migrate `cross_process_coordination_surface.py` into `bigclawctl automation e2e`.
-2. Update docs/tests to call the Go-native coordination surface command.
-3. Delete the Python coordination surface generator, then refresh batch inventory and validation results.
+1. Migrate `broker_failover_stub_matrix.py` into `bigclawctl automation e2e` as a Go-native canonical-artifact republisher.
+2. Update docs/tests to call the Go-native broker failover stub matrix command.
+3. Delete the Python broker failover stub matrix generator and its Python-only test, then refresh batch inventory and validation results.
 
 ## Acceptance
 
 - State the exact scoped Python file list for this batch after this continuation.
 - Confirm how many files were removed from `bigclaw-go/scripts/benchmark/**` and this continuation’s `scripts/e2e/**` sub-batch.
-- Record delete/replace/keep rationale for the migrated coordination surface plus the remaining selected `scripts/e2e/**` files.
-- Report repository-wide Python count impact for this lane after the coordination-surface migration.
+- Record delete/replace/keep rationale for the migrated broker failover stub matrix plus the remaining selected `scripts/e2e/**` files.
+- Report repository-wide Python count impact for this lane after the broker failover stub matrix migration.
+- Capture that the broker failover stub replacement uses checked-in canonical JSON/artifacts rather than re-simulating every scenario in Go.
 - Capture exact validation commands and results.
 
 ## Validation
@@ -48,6 +49,8 @@ Repository-wide Python file count at the start of this continuation: `98`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e coordination-capability-surface --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help`
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --output "$tmpdir/report.json" --artifact-root "$tmpdir/artifacts" --checkpoint-fencing-summary-output "$tmpdir/checkpoint.json" --retention-boundary-summary-output "$tmpdir/retention.json" >/dev/null`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
@@ -82,10 +85,13 @@ Repository-wide Python file count at the start of this continuation: `98`
     - Coverage moved into `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`
   - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
     - Replaced by `go run ./cmd/bigclawctl automation e2e coordination-capability-surface ...`
+  - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
+    - Replaced by `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`
+    - Go replacement republishes the checked-in canonical broker stub report, proof summaries, and per-scenario artifact tree instead of re-simulating every deterministic scenario in-process.
+  - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
+    - Coverage moved into `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`
 
 - Kept in this lane:
-  - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-  - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
   - `bigclaw-go/scripts/e2e/external_store_validation.py`
   - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
@@ -96,34 +102,40 @@ Repository-wide Python file count at the start of this continuation: `98`
 ### Python Count Impact
 
 - Repository Python files before the lane: `108`
-- Repository Python files now: `97`
-- Net repository reduction from this lane: `11`
+- Repository Python files now: `95`
+- Net repository reduction from this lane: `13`
 - Scoped benchmark Python files before the lane: `4`
 - Scoped benchmark Python files now: `0`
-- Remaining scoped `scripts/e2e` Python files now: `7`
+- Remaining scoped `scripts/e2e` Python files now: `5`
 
 ### Validation Record
 
 - `find . -name '*.py' | wc -l`
-  - Result: `97`
+  - Result: `95`
 - `find bigclaw-go/scripts -name '*.py' | sort`
-  - Result: returned 7 scoped `bigclaw-go/scripts/e2e/*.py` files and no `bigclaw-go/scripts/benchmark/*.py` files.
+  - Result: returned 5 scoped `bigclaw-go/scripts/e2e/*.py` files and no `bigclaw-go/scripts/benchmark/*.py` files.
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-  - Result: `ok  	bigclaw-go/cmd/bigclawctl	3.575s` and later `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.593s`
 - `cd bigclaw-go && go test ./internal/regression -run 'RunAll|Lane8ValidationBundleContinuation|RuntimeReportFollowupDocs|LiveValidationIndex'`
   - Result: `ok  	bigclaw-go/internal/regression	2.596s`
 - `cd bigclaw-go && go test ./internal/regression -run 'RunAll|LiveValidation|SharedQueueCompanion|BrokerValidationSummary|RuntimeReportFollowupDocs'`
   - Result: `ok  	bigclaw-go/internal/regression	4.165s`
 - `cd bigclaw-go && go test ./internal/regression -run 'Lane8CrossProcessCoordinationSurface|CrossProcessCoordinationReadinessDocsStayAligned|CoordinationContractSurface'`
   - Result: `ok  	bigclaw-go/internal/regression	0.642s`
+- `cd bigclaw-go && go test ./internal/regression -run 'DurabilityRollout|DurabilityReviewBundle|SequenceRetentionSurface|RunAll'`
+  - Result: `ok  	bigclaw-go/internal/regression	5.435s` and later `ok  	bigclaw-go/internal/regression	(cached)`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark --help`
   - Result: exited `0` and printed `usage: bigclawctl automation benchmark <soak-local|run-matrix|capacity-certification> [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e --help`
-  - Result: exited `0` and printed `usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate> [flags]`
+  - Result: exited `0` and printed `usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|continuation-scorecard|continuation-policy-gate> [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help`
   - Result: exited `0` and printed the exporter flags including `--go-root`, `--run-id`, `--bundle-dir`, `--summary-path`, `--index-path`, and `--manifest-path`.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e coordination-capability-surface --help`
   - Result: exited `0` and printed the coordination surface flags including `--multi-node-report`, `--takeover-report`, `--live-takeover-report`, and `--output`.
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help`
+  - Result: exited `0` and printed broker stub matrix flags including `--output`, `--artifact-root`, `--checkpoint-fencing-summary-output`, and `--retention-boundary-summary-output`.
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --output "$tmpdir/report.json" --artifact-root "$tmpdir/artifacts" --checkpoint-fencing-summary-output "$tmpdir/checkpoint.json" --retention-boundary-summary-output "$tmpdir/retention.json" >/dev/null`
+  - Result: exited `0` and wrote the broker stub report, both proof summaries, and copied artifact files including `BF-04/checkpoint-transition-log.json` under a temporary directory.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help`
   - Result: exited `0` and printed the continuation scorecard flags including `--go-root`, `--index-manifest`, `--bundle-root`, and `--output`.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help`

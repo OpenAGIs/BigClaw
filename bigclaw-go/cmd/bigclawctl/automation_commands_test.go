@@ -83,8 +83,67 @@ func TestRunAutomationE2EHelpIncludesContinuationCommands(t *testing.T) {
 		t.Fatalf("e2e help: %v", err)
 	}
 	text := string(output)
-	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|continuation-scorecard|continuation-policy-gate") {
+	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|continuation-scorecard|continuation-policy-gate") {
 		t.Fatalf("unexpected e2e help: %s", text)
+	}
+}
+
+func TestAutomationBrokerFailoverStubMatrixRepublishesCanonicalArtifacts(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	repoRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputRoot := t.TempDir()
+	reportPath := filepath.Join(outputRoot, "broker-failover-stub-report.json")
+	artifactRoot := filepath.Join(outputRoot, "broker-failover-stub-artifacts")
+	checkpointPath := filepath.Join(outputRoot, "checkpoint.json")
+	retentionPath := filepath.Join(outputRoot, "retention.json")
+
+	report, err := automationBrokerFailoverStubMatrix(automationBrokerFailoverStubMatrixOptions{
+		GoRoot:                         repoRoot,
+		OutputPath:                     reportPath,
+		ArtifactRoot:                   artifactRoot,
+		CheckpointFencingSummaryOutput: checkpointPath,
+		RetentionBoundarySummaryOutput: retentionPath,
+	})
+	if err != nil {
+		t.Fatalf("republish broker failover stub matrix: %v", err)
+	}
+	if report["ticket"] != "OPE-272" {
+		t.Fatalf("unexpected report ticket: %+v", report)
+	}
+	summary, _ := report["summary"].(map[string]any)
+	if summary["scenario_count"] != float64(8) && summary["scenario_count"] != 8 {
+		t.Fatalf("unexpected report summary: %+v", summary)
+	}
+	reportBody, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(reportBody), "\"scenario_id\": \"BF-08\"") {
+		t.Fatalf("unexpected report body: %s", string(reportBody))
+	}
+	checkpointBody, err := os.ReadFile(checkpointPath)
+	if err != nil {
+		t.Fatalf("read checkpoint summary: %v", err)
+	}
+	if !strings.Contains(string(checkpointBody), "\"proof_family\": \"checkpoint_fencing\"") {
+		t.Fatalf("unexpected checkpoint summary body: %s", string(checkpointBody))
+	}
+	retentionBody, err := os.ReadFile(retentionPath)
+	if err != nil {
+		t.Fatalf("read retention summary: %v", err)
+	}
+	if !strings.Contains(string(retentionBody), "\"proof_family\": \"retention_boundary\"") {
+		t.Fatalf("unexpected retention summary body: %s", string(retentionBody))
+	}
+	artifactBody, err := os.ReadFile(filepath.Join(artifactRoot, "BF-04", "checkpoint-transition-log.json"))
+	if err != nil {
+		t.Fatalf("read copied artifact: %v", err)
+	}
+	if !strings.Contains(string(artifactBody), "\"fence_reason\": \"stale_writer\"") {
+		t.Fatalf("unexpected copied artifact body: %s", string(artifactBody))
 	}
 }
 

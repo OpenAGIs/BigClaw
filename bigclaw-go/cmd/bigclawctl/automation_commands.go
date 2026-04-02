@@ -109,6 +109,18 @@ type automationCoordinationCapabilitySurfaceOptions struct {
 	Now                    func() time.Time
 }
 
+type automationBrokerFailoverStubMatrixOptions struct {
+	GoRoot                         string
+	SourceReportPath               string
+	SourceArtifactRoot             string
+	SourceCheckpointFencingSummary string
+	SourceRetentionBoundarySummary string
+	OutputPath                     string
+	ArtifactRoot                   string
+	CheckpointFencingSummaryOutput string
+	RetentionBoundarySummaryOutput string
+}
+
 type automationShadowCompareOptions struct {
 	PrimaryBaseURL       string
 	ShadowBaseURL        string
@@ -296,7 +308,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|continuation-scorecard|continuation-policy-gate> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|continuation-scorecard|continuation-policy-gate> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -306,6 +318,8 @@ func runAutomationE2E(args []string) error {
 		return runAutomationExportValidationBundleCommand(args[1:])
 	case "coordination-capability-surface":
 		return runAutomationCoordinationCapabilitySurfaceCommand(args[1:])
+	case "broker-failover-stub-matrix":
+		return runAutomationBrokerFailoverStubMatrixCommand(args[1:])
 	case "continuation-scorecard":
 		return runAutomationContinuationScorecardCommand(args[1:])
 	case "continuation-policy-gate":
@@ -546,6 +560,53 @@ func runAutomationCoordinationCapabilitySurfaceCommand(args []string) error {
 		TakeoverReportPath:     *takeoverReport,
 		LiveTakeoverReportPath: *liveTakeoverReport,
 		OutputPath:             *output,
+	})
+	if err != nil {
+		return err
+	}
+	if *pretty {
+		body, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = os.Stdout.Write(append(body, '\n'))
+		if !*asJSON {
+			return nil
+		}
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationBrokerFailoverStubMatrixCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e broker-failover-stub-matrix", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	sourceReport := flags.String("source-report", "bigclaw-go/docs/reports/broker-failover-stub-report.json", "canonical source report path")
+	sourceArtifactRoot := flags.String("source-artifact-root", "bigclaw-go/docs/reports/broker-failover-stub-artifacts", "canonical source artifact root")
+	sourceCheckpointSummary := flags.String("source-checkpoint-fencing-summary", "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json", "canonical checkpoint fencing summary path")
+	sourceRetentionSummary := flags.String("source-retention-boundary-summary", "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json", "canonical retention boundary summary path")
+	output := flags.String("output", "bigclaw-go/docs/reports/broker-failover-stub-report.json", "output report path")
+	artifactRoot := flags.String("artifact-root", "bigclaw-go/docs/reports/broker-failover-stub-artifacts", "output artifact root")
+	checkpointSummaryOutput := flags.String("checkpoint-fencing-summary-output", "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json", "checkpoint fencing summary output path")
+	retentionSummaryOutput := flags.String("retention-boundary-summary-output", "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json", "retention boundary summary output path")
+	pretty := flags.Bool("pretty", false, "pretty-print report to stdout")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e broker-failover-stub-matrix [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationBrokerFailoverStubMatrix(automationBrokerFailoverStubMatrixOptions{
+		GoRoot:                         *goRoot,
+		SourceReportPath:               *sourceReport,
+		SourceArtifactRoot:             *sourceArtifactRoot,
+		SourceCheckpointFencingSummary: *sourceCheckpointSummary,
+		SourceRetentionBoundarySummary: *sourceRetentionSummary,
+		OutputPath:                     *output,
+		ArtifactRoot:                   *artifactRoot,
+		CheckpointFencingSummaryOutput: *checkpointSummaryOutput,
+		RetentionBoundarySummaryOutput: *retentionSummaryOutput,
 	})
 	if err != nil {
 		return err
@@ -4296,6 +4357,64 @@ func automationRequestJSON(client *http.Client, method string, baseURL string, p
 	return json.NewDecoder(response.Body).Decode(target)
 }
 
+func automationBrokerFailoverStubMatrix(opts automationBrokerFailoverStubMatrixOptions) (map[string]any, error) {
+	goRoot := resolveAutomationGoRoot(opts.GoRoot)
+	repoRoot := filepath.Clean(filepath.Join(goRoot, ".."))
+	if trim(opts.SourceReportPath) == "" {
+		opts.SourceReportPath = "bigclaw-go/docs/reports/broker-failover-stub-report.json"
+	}
+	if trim(opts.SourceArtifactRoot) == "" {
+		opts.SourceArtifactRoot = "bigclaw-go/docs/reports/broker-failover-stub-artifacts"
+	}
+	if trim(opts.SourceCheckpointFencingSummary) == "" {
+		opts.SourceCheckpointFencingSummary = "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json"
+	}
+	if trim(opts.SourceRetentionBoundarySummary) == "" {
+		opts.SourceRetentionBoundarySummary = "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json"
+	}
+	if trim(opts.OutputPath) == "" {
+		opts.OutputPath = "bigclaw-go/docs/reports/broker-failover-stub-report.json"
+	}
+	if trim(opts.ArtifactRoot) == "" {
+		opts.ArtifactRoot = "bigclaw-go/docs/reports/broker-failover-stub-artifacts"
+	}
+	if trim(opts.CheckpointFencingSummaryOutput) == "" {
+		opts.CheckpointFencingSummaryOutput = "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json"
+	}
+	if trim(opts.RetentionBoundarySummaryOutput) == "" {
+		opts.RetentionBoundarySummaryOutput = "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json"
+	}
+	reportPath := resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceReportPath)
+	report, err := automationReadJSONReport(reportPath)
+	if err != nil {
+		return nil, err
+	}
+	checkpointSummary, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceCheckpointFencingSummary))
+	if err != nil {
+		return nil, err
+	}
+	retentionSummary, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceRetentionBoundarySummary))
+	if err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.OutputPath), report); err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.CheckpointFencingSummaryOutput), checkpointSummary); err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.RetentionBoundarySummaryOutput), retentionSummary); err != nil {
+		return nil, err
+	}
+	if err := automationCopyTree(
+		resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceArtifactRoot),
+		resolveAutomationReportPath(repoRoot, goRoot, opts.ArtifactRoot),
+	); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
 func automationWaitForHealth(client *http.Client, baseURL string, attempts int, interval time.Duration, sleep func(time.Duration)) error {
 	var lastErr error
 	for i := 0; i < attempts; i++ {
@@ -4382,6 +4501,69 @@ func automationWriteTextReport(root string, reportPath string, body string) erro
 		return err
 	}
 	return os.WriteFile(target, []byte(body), 0o644)
+}
+
+func automationCopyTree(source string, destination string) error {
+	sourceAbs, err := filepath.Abs(source)
+	if err != nil {
+		return err
+	}
+	destinationAbs, err := filepath.Abs(destination)
+	if err != nil {
+		return err
+	}
+	if sourceAbs == destinationAbs {
+		return nil
+	}
+	info, err := os.Stat(sourceAbs)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("copy tree source is not a directory: %s", source)
+	}
+	if err := os.MkdirAll(destinationAbs, 0o755); err != nil {
+		return err
+	}
+	return filepath.Walk(sourceAbs, func(path string, entry os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		relative, err := filepath.Rel(sourceAbs, path)
+		if err != nil {
+			return err
+		}
+		if relative == "." {
+			return nil
+		}
+		target := filepath.Join(destinationAbs, relative)
+		if entry.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		return automationCopyFile(path, target)
+	})
+}
+
+func automationCopyFile(source string, destination string) error {
+	sourceAbs, err := filepath.Abs(source)
+	if err != nil {
+		return err
+	}
+	destinationAbs, err := filepath.Abs(destination)
+	if err != nil {
+		return err
+	}
+	if sourceAbs == destinationAbs {
+		return nil
+	}
+	body, err := os.ReadFile(sourceAbs)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(destinationAbs), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(destinationAbs, body, 0o644)
 }
 
 func automationReadJSONReport(path string) (map[string]any, error) {
