@@ -50,11 +50,12 @@ Supporting integration:
 ## Validation command baseline
 
 - Incremental:
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_registry.py tests/test_repo_gateway.py tests/test_repo_links.py`
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_reports.py`
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py tests/test_repo_triage.py tests/test_service.py tests/test_operations.py tests/test_repo_rollout.py`
+  - `cd bigclaw-go && go test ./internal/repo ./internal/collaboration ./internal/observability`
+  - `cd bigclaw-go && go test ./internal/reportstudio ./internal/governance ./internal/planning`
+  - `python3 -m py_compile src/bigclaw/__init__.py`
 - Full:
-  - `PYTHONPATH=src python3 -m pytest -q`
+  - `cd bigclaw-go && go test ./...`
+  - `python3 -m py_compile src/bigclaw/__init__.py`
 
 ## Final execution note
 This alignment file is now the single source of truth for PRD-to-issue traceability and release acceptance in the AgentHub integration stream.
