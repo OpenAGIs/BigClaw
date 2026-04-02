@@ -134,9 +134,7 @@ bash scripts/dev_bootstrap.sh
 Legacy Python migration surface:
 
 ```bash
-ruff check src tests scripts
 PYTHONPATH=src python3 -m pytest tests
-pre-commit run --all-files
 ```
 
 ## Quick verify
