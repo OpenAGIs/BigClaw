@@ -18,6 +18,7 @@
 - retire `src/bigclaw/operations.py` by folding its command-center surface into `src/bigclaw/__init__.py` and repointing active ops evidence to the folded package surface
 - retire `src/bigclaw/runtime.py` by folding the remaining runtime surface into `src/bigclaw/__init__.py` and repointing legacy compile-check/docs to the package root
 - add a final-state regression that locks `src/bigclaw/__init__.py` as the sole remaining Python file and verifies the legacy compile-check targets the same surface
+- add an import-surface regression that proves isolated `import bigclaw` still resolves concrete frozen exports from `src/bigclaw/__init__.py`
 - update repo guidance and planning metadata to point at the Go-native `bigclaw-go/internal/designsystem` and `bigclaw-go/internal/uireview` surfaces instead of deleted Python sources/tests
 - add regression coverage that locks the deleted Python files out of the tree and proves the Go replacements remain present
 - run targeted validation and record the exact commands and results
@@ -46,6 +47,7 @@
 - `src/bigclaw/operations.py` is deleted
 - `src/bigclaw/runtime.py` is deleted
 - regression coverage asserts `src/bigclaw/__init__.py` is the only remaining `.py` file and matches the legacy compile-check target list
+- regression coverage proves isolated `import bigclaw` still exposes concrete frozen exports from `src/bigclaw/__init__.py`
 - active repo guidance no longer describes those Python shims as retained compatibility entrypoints
 - planning metadata no longer points release-control evidence at deleted Python UI assets or deleted Python tests
 - regression coverage asserts those Python files stay absent and the Go replacements remain present
@@ -76,6 +78,7 @@
 - `cd bigclaw-go && go test ./internal/regression ./internal/evaluation ./internal/contract`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/observability ./internal/planning`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche30`
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/planning.py`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py src/bigclaw/observability.py src/bigclaw/reports.py`
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py`
@@ -101,10 +104,13 @@
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> pending
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl 5.489s`; `ok   bigclaw-go/internal/legacyshim 2.520s`; `ok   bigclaw-go/internal/regression 1.497s`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl 4.123s`; `ok   bigclaw-go/internal/legacyshim 1.397s`; `ok   bigclaw-go/internal/regression 0.974s`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche30` -> `ok   bigclaw-go/internal/regression 0.534s`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression 0.526s`
 - `cd bigclaw-go && go test ./internal/observability ./internal/planning ./internal/evaluation ./internal/contract` -> `ok   bigclaw-go/internal/observability (cached)`; `ok   bigclaw-go/internal/planning (cached)`; `ok   bigclaw-go/internal/evaluation (cached)`; `ok   bigclaw-go/internal/contract (cached)`
 - `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py src/bigclaw/observability.py src/bigclaw/reports.py` -> exit `0`
 - `python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/planning.py src/bigclaw/evaluation.py src/bigclaw/__init__.py` -> exit `0`
 - `python3 -m py_compile src/bigclaw/reports.py src/bigclaw/evaluation.py` -> exit `0`
+- `python3 -m py_compile src/bigclaw/__init__.py` -> exit `0`
 - `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]` with the expected Go flags including `-issues`, `-report`, and `-cleanup`
 - `find . -name '*.py' | wc -l` -> `11` after the legacy-shim tranche, before the `__main__.py` tranche
 - `find . -name '*.py' | wc -l` -> `10` after deleting `src/bigclaw/__main__.py`
@@ -145,3 +151,4 @@
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/planning ./internal/reportstudio ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl 4.341s`; `ok   bigclaw-go/internal/legacyshim 0.581s`; `ok   bigclaw-go/internal/planning (cached)`; `ok   bigclaw-go/internal/reportstudio (cached)`; `ok   bigclaw-go/internal/regression 1.129s`
 - `find . -name '*.py' | wc -l` -> `1` after deleting `src/bigclaw/runtime.py`
 - `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression 1.080s`
+- `find . -name '*.py' | wc -l` -> `1`
