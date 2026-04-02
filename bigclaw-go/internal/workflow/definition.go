@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"bigclaw-go/internal/domain"
@@ -93,8 +94,15 @@ func (d *Definition) UnmarshalJSON(data []byte) error {
 
 func ParseDefinition(text string) (Definition, error) {
 	var definition Definition
-	err := json.Unmarshal([]byte(text), &definition)
-	return definition, err
+	if err := json.Unmarshal([]byte(text), &definition); err != nil {
+		return Definition{}, err
+	}
+	for _, step := range definition.Steps {
+		if !validStepKind(step.Kind) {
+			return Definition{}, fmt.Errorf("invalid workflow step kind: %s", step.Kind)
+		}
+	}
+	return definition, nil
 }
 
 func (d Definition) RenderPath(template string, task domain.Task, runID string) string {
@@ -142,4 +150,13 @@ func stepsOrEmpty(values []Step) []Step {
 		return []Step{}
 	}
 	return values
+}
+
+func validStepKind(kind string) bool {
+	switch strings.TrimSpace(kind) {
+	case "approval", "batch", "connectivity", "inventory", "policy", "report", "review", "scheduler":
+		return true
+	default:
+		return false
+	}
 }

@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"bigclaw-go/internal/domain"
@@ -52,6 +53,12 @@ func TestDefinitionDefaultsMissingCollectionsToEmpty(t *testing.T) {
 	}
 	if definition.Steps[0].Metadata == nil {
 		t.Fatalf("expected non-nil step metadata, got %+v", definition.Steps[0])
+	}
+}
+
+func TestDefinitionRejectsUnknownStepKind(t *testing.T) {
+	if _, err := ParseDefinition(`{"name":"broken-flow","steps":[{"name":"hack","kind":"unknown-kind"}]}`); err == nil || !strings.Contains(err.Error(), "invalid workflow step kind") {
+		t.Fatalf("expected invalid workflow step kind error, got %v", err)
 	}
 }
 
