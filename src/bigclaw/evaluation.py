@@ -3,8 +3,7 @@ from html import escape
 from pathlib import Path
 from typing import List, Optional
 
-from .models import Task
-from .observability import ObservabilityLedger
+from .observability import ObservabilityLedger, Task
 from .reports import (
     RunDetailEvent,
     RunDetailResource,

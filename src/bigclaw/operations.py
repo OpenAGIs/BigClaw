@@ -4,10 +4,8 @@ from difflib import unified_diff
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from .models import Task
-from .queue import PersistentTaskQueue
-
 from .evaluation import BenchmarkSuiteResult
+from .observability import Task
 from .reports import (
     SharedViewContext,
     build_console_actions,
@@ -15,6 +13,7 @@ from .reports import (
     render_shared_view_context,
     write_report,
 )
+from .queue import PersistentTaskQueue
 
 
 STATUS_COMPLETE = {"approved", "accepted", "completed", "succeeded"}
