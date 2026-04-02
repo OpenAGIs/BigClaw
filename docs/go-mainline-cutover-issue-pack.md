@@ -327,7 +327,7 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- top-level `python -m bigclaw` entrypoint retired; only importable compatibility modules remain under `src/bigclaw/*`
 - any remaining active Python entrypoints not covered by earlier slices
 
 Go ownership:
@@ -500,7 +500,7 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- top-level `python -m bigclaw` entrypoint
 
 Go ownership:
 - `bigclaw-go/cmd/bigclawctl`

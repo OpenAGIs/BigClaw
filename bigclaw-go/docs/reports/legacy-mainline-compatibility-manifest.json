@@ -2,9 +2,9 @@
   "status": "go-mainline-compatibility-manifest",
   "guidance": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only.",
   "runtime_warning": {
-    "surface": "python -m bigclaw",
+    "surface": "python -m bigclaw (retired)",
     "replacement": "bash scripts/ops/bigclawctl",
-    "message": "python -m bigclaw is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl instead."
+    "message": "python -m bigclaw has been retired. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl instead."
   },
   "service_warning": {
     "surface": "python -m bigclaw serve",

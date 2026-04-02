@@ -88,7 +88,7 @@ Do not use Python packaging from the repository root. When a migration-only
 Python surface must be exercised, validate it directly from source:
 
 ```bash
-python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/runtime.py
+python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/runtime.py
 ```
 
 Or use the bootstrap helper to run the supported Go smoke and bootstrap
@@ -139,7 +139,7 @@ Legacy Python migration surface:
 
 ```bash
 ruff check src scripts
-python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/runtime.py
+python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/runtime.py
 pre-commit run --all-files
 ```
 
@@ -158,14 +158,13 @@ Repository: https://github.com/OpenAGIs/BigClaw
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
-the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
-ops wrappers remain only as compatibility shims during migration, except
-GitHub sync which is now Go/shell-only via `scripts/ops/bigclawctl`.
+the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the legacy Python
+ops wrappers have been retired in favor of that Go/shell path.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
 `src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
+migration-only reference use. The legacy `python -m bigclaw` entrypoint has
+been retired; use `bash scripts/ops/bigclawctl` for operator workflows and
+`go run ./bigclaw-go/cmd/bigclawd` for the active local server path. Active runtime development belongs in
 `bigclaw-go/internal/*`.
