@@ -21,7 +21,7 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
 - `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
 - `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
+- retired `scripts/ops/symphony_workspace_validate.py`; use `bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
 
@@ -59,7 +59,6 @@ The remaining compatibility layer is intentionally thin:
 - `scripts/ops/bigclaw_refill_queue.py`
 - `scripts/ops/bigclaw_workspace_bootstrap.py`
 - `scripts/ops/symphony_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_validate.py`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
@@ -86,7 +85,7 @@ because the root no longer carries Python packaging/bootstrap ownership.
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `python3 scripts/ops/bigclaw_refill_queue.py --help`
-- `python3 scripts/ops/symphony_workspace_validate.py --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
 - `bash scripts/dev_bootstrap.sh`
 - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 - `bash scripts/ops/bigclawctl issue --help`
