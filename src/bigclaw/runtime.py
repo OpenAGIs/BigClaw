@@ -1329,7 +1329,7 @@ class WorkflowEngine:
         )
 
 
-def warn_legacy_service_surface(surface: str = "python -m bigclaw serve") -> str:
+def warn_legacy_service_surface(surface: str = "bigclaw.runtime.run_server") -> str:
     from .deprecation import warn_legacy_runtime_surface
 
     return warn_legacy_runtime_surface(surface, "go run ./bigclaw-go/cmd/bigclawd")
