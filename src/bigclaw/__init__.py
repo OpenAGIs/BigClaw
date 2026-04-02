@@ -126,7 +126,6 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -144,6 +143,7 @@ from .observability import (
     get_audit_event_spec,
     missing_required_fields,
 )
+from .runtime import RiskFactor, RiskScore, RiskScorer
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,

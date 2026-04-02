@@ -8,6 +8,7 @@
 - retire `src/bigclaw/run_detail.py` by folding the frozen run-detail presentation helpers into `src/bigclaw/reports.py`
 - retire `src/bigclaw/legacy_shim.py` and tighten the Go `legacy-python compile-check` surface to the remaining frozen entrypoint
 - retire `src/bigclaw/__main__.py` and repoint the Go `legacy-python compile-check` surface at the remaining frozen runtime module
+- retire `src/bigclaw/risk.py` by folding its frozen scoring types into `src/bigclaw/runtime.py`
 - update repo guidance and planning metadata to point at the Go-native `bigclaw-go/internal/designsystem` and `bigclaw-go/internal/uireview` surfaces instead of deleted Python sources/tests
 - add regression coverage that locks the deleted Python files out of the tree and proves the Go replacements remain present
 - run targeted validation and record the exact commands and results
@@ -26,6 +27,7 @@
 - `src/bigclaw/run_detail.py` is deleted
 - `src/bigclaw/legacy_shim.py` is deleted
 - `src/bigclaw/__main__.py` is deleted
+- `src/bigclaw/risk.py` is deleted
 - active repo guidance no longer describes those Python shims as retained compatibility entrypoints
 - planning metadata no longer points release-control evidence at deleted Python UI assets or deleted Python tests
 - regression coverage asserts those Python files stay absent and the Go replacements remain present
@@ -39,6 +41,7 @@
 - `rg -n "from \\.run_detail|import \\.run_detail|src/bigclaw/run_detail\\.py" src/bigclaw/reports.py src/bigclaw/evaluation.py src/bigclaw/__init__.py README.md workflow.md`
 - `rg -n "src/bigclaw/legacy_shim\\.py|tests/test_legacy_shim\\.py" README.md docs/go-cli-script-migration-plan.md src bigclaw-go/scripts`
 - `rg -n "src/bigclaw/__main__\\.py|python -m bigclaw" README.md docs/go-mainline-cutover-handoff.md src bigclaw-go`
+- `rg -n "from \\.risk|import \\.risk|src/bigclaw/risk\\.py" src/bigclaw/__init__.py src/bigclaw/runtime.py README.md docs/go-mainline-cutover-handoff.md bigclaw-go/internal/regression`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression ./internal/legacyshim`
 - `cd bigclaw-go && go test ./internal/planning ./internal/designsystem ./internal/uireview ./internal/regression`
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression ./internal/legacyshim ./internal/observability`
@@ -78,3 +81,7 @@
 - `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]` with the expected Go flags including `-issues`, `-report`, and `-cleanup`
 - `find . -name '*.py' | wc -l` -> `11` after the legacy-shim tranche, before the `__main__.py` tranche
 - `find . -name '*.py' | wc -l` -> `10` after deleting `src/bigclaw/__main__.py`
+- `rg -n "from \\.risk|import \\.risk|src/bigclaw/risk\\.py" src/bigclaw/__init__.py src/bigclaw/runtime.py README.md docs/go-mainline-cutover-handoff.md bigclaw-go/internal/regression` -> exit `0`; only expected regression coverage references `src/bigclaw/risk.py`
+- `python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/planning.py src/bigclaw/evaluation.py` -> exit `0`
+- `cd bigclaw-go && go test ./internal/risk ./internal/regression` -> `ok   bigclaw-go/internal/risk 1.290s`; `ok   bigclaw-go/internal/regression 1.704s`
+- `find . -name '*.py' | wc -l` -> `9` after deleting `src/bigclaw/risk.py`
