@@ -1,5 +1,10 @@
 # BIG-GO-1071
 
+## Status
+- Completed on branch `symphony/BIG-GO-1071`.
+- Python workspace bootstrap/validate shims were removed and replaced with shell wrappers that dispatch to `scripts/ops/bigclawctl`.
+- Current implementation commit: `bb1d0b56f59eeb40779b09632b930201600042e5`.
+
 ## Plan
 - Confirm whether any tracked `src/bigclaw.egg-info` or repository packaging metadata remains and identify the residual execution paths that still assume Python bootstrap behavior.
 - Replace workspace bootstrap/validate Python shims with non-Python wrappers that route directly to `scripts/ops/bigclawctl`, and remove stale packaging ignore residue tied to generated `.egg-info` artifacts if it is no longer needed.
@@ -14,8 +19,23 @@
 
 ## Validation
 - `find . -maxdepth 4 \( -name '*.egg-info' -o -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name 'MANIFEST.in' \) | sort`
-- `rg -n "\.egg-info|workspace_bootstrap|workspace_validate|symphony_workspace_bootstrap|symphony_workspace_validate" README.md scripts tests bigclaw-go .gitignore`
-- `bash scripts/ops/bigclaw_workspace_bootstrap.py --help`
-- `bash scripts/ops/symphony_workspace_bootstrap.py --help`
-- `bash scripts/ops/symphony_workspace_validate.py --help`
-- `go test ./bigclaw-go/cmd/bigclawctl/... ./bigclaw-go/internal/bootstrap/...`
+- Result: no output
+- `rg --files | rg '\.py$' | wc -l`
+- Result: `38`
+- `rg -n "\.egg-info|bigclaw_workspace_bootstrap\.py|symphony_workspace_bootstrap\.py|symphony_workspace_validate\.py" README.md docs bigclaw-go src tests scripts .gitignore`
+- Result: no output
+- `bash scripts/ops/bigclaw_workspace_bootstrap --help`
+- Result: passed; emitted `bigclawctl workspace bootstrap` usage
+- `bash scripts/ops/symphony_workspace_bootstrap --help`
+- Result: passed; emitted `bigclawctl workspace <bootstrap|cleanup|validate>` usage
+- `bash scripts/ops/symphony_workspace_validate --help`
+- Result: passed; emitted `bigclawctl workspace validate` usage
+- `go test ./bigclaw-go/cmd/bigclawctl/... ./bigclaw-go/internal/bootstrap/... ./bigclaw-go/internal/legacyshim/...`
+- Result: failed from repo root with Go module path error
+- `go test ./cmd/bigclawctl/... ./internal/bootstrap/... ./internal/legacyshim/...`
+  run from `bigclaw-go/`
+- Result: passed
+
+## Notes
+- Removed `.gitignore` entry `*.egg-info/` because the repository no longer carries packaging outputs for this path.
+- Removed deleted-workspace-shim references from the legacy Python compile-check list so regression coverage now matches the reduced Python shim surface.
