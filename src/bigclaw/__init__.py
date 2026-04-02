@@ -102,6 +102,9 @@ from .runtime import (
     RepoGovernanceEnforcer,
     RepoGovernancePolicy,
     RepoGovernanceResult,
+    RiskFactor,
+    RiskScore,
+    RiskScorer,
     SandboxProfile,
     SandboxRouter,
     Scheduler,
@@ -117,6 +120,7 @@ from .runtime import (
     create_server,
     render_orchestration_plan,
     run_server,
+    warn_legacy_runtime_surface,
     warn_legacy_service_surface,
 )
 from .design_system import (
@@ -182,7 +186,6 @@ from .governance import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
