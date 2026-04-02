@@ -16,3 +16,14 @@
 - Re-scan root inventory for `pyproject.toml`, `setup.py`, `*.egg-info`, and related root config.
 - Run targeted validation for the edited root automation/docs surfaces.
 - Verify git diff is limited to this issue's changes, then commit and push to the remote branch.
+
+### Continuation Notes
+- Retired the remaining repo-root `scripts/ops/*.py` compatibility wrappers now that `scripts/ops/bigclawctl` is the supported operator path.
+- Updated migration/cutover docs so they describe those Python wrappers as retired rather than active shims.
+
+### Validation Results
+- `find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup.cfg' -o -name 'MANIFEST.in' -o -name '.pre-commit-config.yaml' -o -name 'requirements*.txt' -o -name 'tox.ini' -o -name 'pytest.ini' -o -name '.python-version' -o -name '.coveragerc' -o -name '*.egg-info' -o -name '*.dist-info' \) | sort` -> no matches
+- `bash scripts/ops/bigclawctl github-sync --help` -> exit 0
+- `bash scripts/ops/bigclawctl refill --help` -> exit 0
+- `bash scripts/ops/bigclawctl workspace validate --help` -> exit 0
+- `make build` -> exit 0
