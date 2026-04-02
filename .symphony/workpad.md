@@ -1,27 +1,30 @@
-# BIG-GO-1080 Workpad
+# BIG-GO-1086
 
 ## Plan
-- Confirm the residual Python test tranche under `tests/` and map each file to the current Go-native replacement surface.
-- Add focused Go coverage where the current replacement is still implicit, especially the `BIG-4204` UI review builder/report path and the release-planning entry that still references `tests/test_ui_review.py`.
-- Remove the residual Python test files for this tranche: `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py`.
-- Update any default execution path or metadata that still points at the deleted Python files so the repo no longer advertises them as the primary validation route.
-- Run targeted Go tests plus repo-level file-count checks, then commit and push the scoped branch.
+- Confirm how `scripts/ops/symphony_workspace_bootstrap.py` is still referenced and whether any default runtime path still depends on it.
+- Delete the Python wrapper and keep the Go-first workspace bootstrap path through `scripts/ops/bigclawctl workspace ...` as the only active entrypoint.
+- Update only the focused regression/documentation surface that should no longer claim the deleted wrapper exists.
+- Run targeted validation for the Go workspace command and verify the repository `.py` count decreases.
+- Commit and push the scoped branch.
 
 ## Acceptance
-- `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py` are deleted.
-- Go-native tests cover the removed UI review and report-studio/reporting behaviors strongly enough that this slice is not a cosmetic deletion.
-- No default validation command or candidate metadata continues to reference the deleted Python test files.
-- Repository `.py` count decreases after the deletion.
-- The change set stays scoped to this issue.
+- `scripts/ops/symphony_workspace_bootstrap.py` is deleted or no longer reachable through a default execution path.
+- The remaining bootstrap entrypoint is the Go-first `scripts/ops/bigclawctl workspace ...` path.
+- Repository `.py` count decreases from the pre-change baseline.
+- Validation covers the surviving Go workspace command path and any targeted regression touched by the removal.
+- Changes stay scoped to this issue.
 
 ## Validation
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l`
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning`
+- `find . -name '*.py' | wc -l`
+- `rg -n "symphony_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_bootstrap" --glob '!reports/**' --glob '!local-issues.json' .`
+- `bash scripts/ops/bigclawctl workspace --help`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
 - `git status --short`
 
 ## Validation Results
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `23`
-- `find tests -maxdepth 1 -name '*.py' | sort` -> no output
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning ./internal/regression` -> first run failed in `internal/uireview` and `internal/regression` due to a sorted unresolved-question assertion mismatch and a bad regression root helper; reran after fixes and got `ok   bigclaw-go/internal/uireview 0.639s`, `ok   bigclaw-go/internal/reportstudio (cached)`, `ok   bigclaw-go/internal/planning (cached)`, `ok   bigclaw-go/internal/regression 0.974s`
-- `git status --short` -> modified workpad, planning/uireview Go files, deleted `tests/conftest.py`, `tests/reports_legacy.py`, `tests/test_ui_review.py`, added `bigclaw-go/internal/regression/python_test_tranche14_removal_test.go`, plus the in-scope Go replacement file `bigclaw-go/internal/uireview/builder.go`
+- Pre-change `find . -name '*.py' | wc -l` -> `23`
+- Post-change `find . -name '*.py' | wc -l` -> `22`
+- `rg -n "symphony_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_bootstrap" --glob '!reports/**' --glob '!local-issues.json' .` -> remaining matches are the historical retirement note in `docs/go-mainline-cutover-issue-pack.md` and the new absence regression `bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go`
+- `bash scripts/ops/bigclawctl workspace --help` -> `usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl 5.798s`, `ok   bigclaw-go/internal/legacyshim 2.348s`, `ok   bigclaw-go/internal/regression 2.829s`
+- `git status --short` -> `M .symphony/workpad.md`, `M docs/go-cli-script-migration-plan.md`, `M docs/go-mainline-cutover-issue-pack.md`, `D scripts/ops/symphony_workspace_bootstrap.py`, `?? bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go`

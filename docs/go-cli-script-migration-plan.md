@@ -20,7 +20,6 @@ The implemented migration batches in this issue move these entrypoints behind th
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
 - `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
 - `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
-- `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
 - `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
@@ -58,7 +57,6 @@ The remaining compatibility layer is intentionally thin:
 
 - `scripts/ops/bigclaw_refill_queue.py`
 - `scripts/ops/bigclaw_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
 - `scripts/ops/symphony_workspace_validate.py`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
