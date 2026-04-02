@@ -37,3 +37,4 @@
 ### Scope Stop
 - Remaining root-level Python mentions are intentional migration-only validation surfaces (`scripts/dev_bootstrap.sh`, source-level `PYTHONPATH=src python3 -m pytest ...` guidance, and cache ignores for `__pycache__`, `*.py[cod]`, and `.pytest_cache/`).
 - No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, Python wrapper scripts, or Python-specific CI/hook config residue remains without widening beyond this issue.
+- Validation evidence is recorded in `reports/BIG-GO-1011-validation.md`.
