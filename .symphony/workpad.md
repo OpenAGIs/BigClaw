@@ -14,6 +14,8 @@
   and delete `src/bigclaw/collaboration.py`
 - inline the governance helper surface into `src/bigclaw/planning.py` and
   delete `src/bigclaw/governance.py`
+- inline the run-detail rendering surface into `src/bigclaw/reports.py` and
+  delete `src/bigclaw/run_detail.py`
 - update Go-side compile-check and regression coverage so the repo documents the
   wrappers as retired instead of frozen shims
 - refresh active Go-mainline migration docs and README language that still
@@ -37,6 +39,8 @@
   `src/bigclaw/observability.py`
 - `src/bigclaw/governance.py` is removed with its helper logic preserved in
   `src/bigclaw/planning.py`
+- `src/bigclaw/run_detail.py` is removed with its helper logic preserved in
+  `src/bigclaw/reports.py`
 - active code, tests, and docs no longer describe those two files as retained
   compatibility shims
 - targeted Go validation covering `legacy-python` and regression guardrails
