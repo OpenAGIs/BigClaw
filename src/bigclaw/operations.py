@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Sequence
 from . import Task
 from . import ObservabilityLedger
 from .queue import PersistentTaskQueue
-from .reports import (
+from . import (
     RunDetailEvent,
     RunDetailResource,
     RunDetailStat,
