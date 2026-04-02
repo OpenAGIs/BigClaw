@@ -36,8 +36,9 @@ cutover set.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
-- The default mainline posture is Go-first, with remaining Python entrypoints
-  marked as migration-only compatibility shims.
+- The default mainline posture is Go-first; the repo-root `python -m bigclaw`
+  entrypoint has been retired, and the remaining Python runtime surfaces are
+  frozen for migration-only reference use.
 
 ## Remaining non-blocking caveats
 
