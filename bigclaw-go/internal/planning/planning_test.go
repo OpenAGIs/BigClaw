@@ -301,7 +301,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
-			{Label: "queue-control-center", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "queue and approval command center"},
+			{Label: "queue-control-center", Target: "bigclaw-go/internal/worker/runtime.go", Capability: "ops-control", Note: "queue and approval command center"},
 			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
 		},
 	}
@@ -435,7 +435,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		targets[link.Target] = struct{}{}
 	}
 	for _, want := range []string{
-		"src/bigclaw/__init__.py",
+		"bigclaw-go/internal/worker/runtime.go",
 		"tests/test_operations.py",
 		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/workflow.py",
@@ -443,7 +443,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
 		"src/bigclaw/saved_views.py",
-		"src/bigclaw/__init__.py",
+		"bigclaw-go/internal/evaluation/evaluation.go",
 		"bigclaw-go/internal/evaluation/evaluation_test.go",
 	} {
 		if _, ok := targets[want]; !ok {
@@ -461,8 +461,11 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	if _, ok := releaseTargets["bigclaw-go/internal/uireview/uireview_test.go"]; !ok {
 		t.Fatalf("missing Go-native review pack evidence target in %+v", releaseTargets)
 	}
-	if _, ok := releaseTargets["src/bigclaw/__init__.py"]; !ok {
-		t.Fatalf("missing consolidated design system evidence target in %+v", releaseTargets)
+	if _, ok := releaseTargets["bigclaw-go/internal/uireview/uireview.go"]; !ok {
+		t.Fatalf("missing Go-native design system evidence target in %+v", releaseTargets)
+	}
+	if _, ok := releaseTargets["bigclaw-go/internal/consoleia/consoleia.go"]; !ok {
+		t.Fatalf("missing Go-native console IA evidence target in %+v", releaseTargets)
 	}
 	if _, ok := releaseTargets["src/bigclaw/console_ia.py"]; ok {
 		t.Fatalf("deleted console IA target still present in %+v", releaseTargets)
@@ -497,7 +500,7 @@ func TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline(t *testing
 	}
 	for _, want := range []string{
 		"candidate-ops-hardening: Operations command-center hardening",
-		"- command-center-src -> src/bigclaw/__init__.py capability=ops-control",
+		"- command-center-src -> bigclaw-go/internal/worker/runtime.go capability=ops-control",
 		"- report-studio-tests -> tests/test_reports.py capability=commercialization",
 	} {
 		if !strings.Contains(report, want) {

@@ -247,8 +247,8 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Capabilities:      []string{"release-gate", "console-shell", "reporting"},
 				Evidence:          []string{"acceptance-suite", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
-					{Label: "design-system-audit", Target: "src/bigclaw/__init__.py", Capability: "release-gate", Note: "component inventory, accessibility, and UI acceptance coverage"},
-					{Label: "console-ia-contract", Target: "src/bigclaw/__init__.py", Capability: "release-gate", Note: "design system plus global navigation, top bar, filters, and state contracts"},
+					{Label: "design-system-audit", Target: "bigclaw-go/internal/uireview/uireview.go", Capability: "release-gate", Note: "component inventory, accessibility, and UI acceptance coverage"},
+					{Label: "console-ia-contract", Target: "bigclaw-go/internal/consoleia/consoleia.go", Capability: "release-gate", Note: "design system plus global navigation, top bar, filters, and state contracts"},
 					{Label: "ui-review-pack", Target: "src/bigclaw/ui_review.py", Capability: "release-gate", Note: "review objectives, wireframes, interaction coverage, and open questions"},
 					{Label: "ui-acceptance-tests", Target: "tests/test_design_system.py", Capability: "release-gate", Note: "role-permission, data accuracy, and performance audits"},
 					{Label: "console-shell-tests", Target: "tests/test_console_ia.py", Capability: "release-gate", Note: "console shell and interaction draft release readiness"},
@@ -266,7 +266,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Capabilities:      []string{"ops-control", "saved-views", "rollback-simulation"},
 				Evidence:          []string{"weekly-review", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
-					{Label: "command-center-src", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "queue control center, dashboard builder, weekly review, and regression surfaces"},
+					{Label: "command-center-src", Target: "bigclaw-go/internal/worker/runtime.go", Capability: "ops-control", Note: "queue control center, dashboard builder, weekly review, and regression surfaces"},
 					{Label: "operations-tests", Target: "tests/test_operations.py", Capability: "ops-control", Note: "dashboard, weekly report, regression, and version-center coverage"},
 					{Label: "approval-contract", Target: "src/bigclaw/execution_contract.py", Capability: "ops-control", Note: "approval permission and API role coverage contract"},
 					{Label: "approval-workflow", Target: "src/bigclaw/workflow.py", Capability: "ops-control", Note: "approval workflow and closeout flow wiring"},
@@ -274,7 +274,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 					{Label: "execution-flow-tests", Target: "bigclaw-go/internal/worker/runtime_test.go", Capability: "ops-control", Note: "execution handoff, closeout, and routed runtime evidence"},
 					{Label: "saved-views-src", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "saved views, digest subscriptions, and governed filters"},
 					{Label: "saved-views-tests", Target: "bigclaw-go/internal/product/saved_views_test.go", Capability: "saved-views", Note: "Go-native saved-view audit coverage"},
-					{Label: "simulation-src", Target: "src/bigclaw/__init__.py", Capability: "rollback-simulation", Note: "simulation, replay, comparison evidence, and operator dashboard context"},
+					{Label: "simulation-src", Target: "bigclaw-go/internal/evaluation/evaluation.go", Capability: "rollback-simulation", Note: "simulation, replay, comparison evidence, and operator dashboard context"},
 					{Label: "simulation-tests", Target: "bigclaw-go/internal/evaluation/evaluation_test.go", Capability: "rollback-simulation", Note: "Go-native replay and benchmark validation"},
 				},
 			},
@@ -290,7 +290,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Evidence:          []string{"pilot-evidence", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
 					{Label: "orchestration-plan-src", Target: "src/bigclaw/orchestration.py", Capability: "commercialization", Note: "cross-team orchestration, entitlement-aware policy, and handoff decisions"},
-					{Label: "orchestration-report-src", Target: "src/bigclaw/__init__.py", Capability: "commercialization", Note: "orchestration canvas, portfolio rollups, and narrative exports"},
+					{Label: "orchestration-report-src", Target: "bigclaw-go/internal/reportstudio/reportstudio.go", Capability: "commercialization", Note: "orchestration canvas, portfolio rollups, and narrative exports"},
 					{Label: "collaboration-tests", Target: "bigclaw-go/internal/collaboration/thread_test.go", Capability: "handoff", Note: "Go-native thread merge and handoff validation"},
 					{Label: "pilot-rollout-tests", Target: "bigclaw-go/internal/pilot/rollout_test.go", Capability: "pilot-rollout", Note: "Go-native rollout scoring and repo narrative validation"},
 					{Label: "report-studio-tests", Target: "tests/test_reports.py", Capability: "commercialization", Note: "report exports and downstream evidence sharing"},

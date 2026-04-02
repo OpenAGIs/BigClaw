@@ -2,23 +2,25 @@
 
 ## Plan
 
-- add a regression guard that locks the tracked Python floor at the current
-  single-file package-root surface
-- assert that `src/bigclaw/__init__.py` is the only tracked `.py` file left in
-  the repository
-- run targeted regression validation for the new guardrail and record the exact
-  count evidence
+- remove the final tracked Python file at `src/bigclaw/__init__.py`
+- update Go regression coverage that still hard-codes `src/bigclaw/__init__.py`
+  as the residual Python surface so the repo-wide floor becomes zero
+- validate the legacy shim compile check still short-circuits cleanly with no
+  Python files present
+- run targeted regression validation and record exact command results
 - commit and push the branch
 
 ## Acceptance
 
-- repo regression coverage fails if any additional tracked `.py` file is added
-- regression coverage documents that `src/bigclaw/__init__.py` is the only
-  remaining tracked Python file
-- tracked repository `.py` count remains `1`
+- `git ls-files '*.py'` returns no tracked Python files
+- repo regression coverage fails if any tracked `.py` file is reintroduced
+- removal of `src/bigclaw/__init__.py` is covered by targeted Go regression
+  tests
+- tracked repository `.py` count becomes `0`
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/regression`
+- `go test ./bigclaw-go/internal/regression ./bigclaw-go/internal/legacyshim`
+- `git ls-files '*.py'`
 - `git ls-files '*.py' | wc -l`
 - `git ls-files '*.py'`

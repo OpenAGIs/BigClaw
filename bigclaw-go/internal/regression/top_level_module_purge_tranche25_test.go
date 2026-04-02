@@ -10,6 +10,7 @@ func TestTopLevelModulePurgeTranche25(t *testing.T) {
 	repoRoot := regressionRepoRoot(t)
 
 	deletedPythonFiles := []string{
+		"src/bigclaw/__init__.py",
 		"src/bigclaw/planning.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
@@ -19,7 +20,6 @@ func TestTopLevelModulePurgeTranche25(t *testing.T) {
 	}
 
 	replacementFiles := []string{
-		"src/bigclaw/__init__.py",
 		"bigclaw-go/internal/planning/planning.go",
 		"bigclaw-go/internal/governance/freeze.go",
 	}

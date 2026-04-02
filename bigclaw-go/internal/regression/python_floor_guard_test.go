@@ -1,26 +1,38 @@
 package regression
 
 import (
-	"os/exec"
-	"strings"
+	"io/fs"
+	"path/filepath"
 	"testing"
 )
 
-func TestTrackedPythonFloorLockedToPackageRoot(t *testing.T) {
+func TestPhysicalPythonFloorLockedToZero(t *testing.T) {
 	repoRoot := regressionRepoRoot(t)
-
-	cmd := exec.Command("git", "ls-files", "*.py")
-	cmd.Dir = repoRoot
-	output, err := cmd.Output()
+	var pythonFiles []string
+	err := filepath.WalkDir(repoRoot, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case ".git", ".symphony":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if filepath.Ext(path) == ".py" {
+			relativePath, err := filepath.Rel(repoRoot, path)
+			if err != nil {
+				return err
+			}
+			pythonFiles = append(pythonFiles, relativePath)
+		}
+		return nil
+	})
 	if err != nil {
-		t.Fatalf("git ls-files failed: %v", err)
+		t.Fatalf("walk repo for python files: %v", err)
 	}
-
-	lines := strings.Fields(string(output))
-	if len(lines) != 1 {
-		t.Fatalf("expected exactly one tracked Python file, got %d: %v", len(lines), lines)
-	}
-	if lines[0] != "src/bigclaw/__init__.py" {
-		t.Fatalf("unexpected tracked Python file: %v", lines)
+	if len(pythonFiles) != 0 {
+		t.Fatalf("expected zero physical Python files, got %d: %v", len(pythonFiles), pythonFiles)
 	}
 }

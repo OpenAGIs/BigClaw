@@ -19,7 +19,6 @@ func TestTopLevelModulePurgeTranche21(t *testing.T) {
 	}
 
 	replacementFiles := []string{
-		"src/bigclaw/__init__.py",
 		"bigclaw-go/internal/reportstudio/reportstudio.go",
 		"bigclaw-go/internal/reportstudio/reportstudio_test.go",
 	}

@@ -19,7 +19,6 @@ func TestTopLevelModulePurgeTranche23(t *testing.T) {
 	}
 
 	replacementFiles := []string{
-		"src/bigclaw/__init__.py",
 		"bigclaw-go/internal/consoleia/consoleia.go",
 	}
 	for _, relativePath := range replacementFiles {

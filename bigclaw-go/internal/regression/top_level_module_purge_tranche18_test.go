@@ -19,7 +19,6 @@ func TestTopLevelModulePurgeTranche18(t *testing.T) {
 	}
 
 	replacementFiles := []string{
-		"src/bigclaw/__init__.py",
 		"bigclaw-go/internal/observability/audit_spec.go",
 		"bigclaw-go/internal/observability/audit_spec_test.go",
 	}
