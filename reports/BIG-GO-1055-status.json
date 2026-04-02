@@ -1,0 +1,44 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1055",
+    "title": "Go-replacement Y: remove root packaging entrypoints",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1055",
+    "latest_code_migration_commit": "8c788463",
+    "latest_evidence_refresh_commit": "0f2e2eab"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1055-closeout.md",
+    "validation_report": "reports/BIG-GO-1055-validation.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw"
+  },
+  "validation": {
+    "commands": [
+      "find . -name '*.py' -type f | wc -l",
+      "test ! -e pyproject.toml && test ! -e setup.py && test ! -e scripts/ops/bigclaw_github_sync.py && test ! -e scripts/ops/bigclaw_refill_queue.py && test ! -e scripts/ops/bigclaw_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_bootstrap.py && test ! -e scripts/ops/symphony_workspace_validate.py && echo removed",
+      "rg -n \"python3 scripts/ops/bigclaw_github_sync\\\\.py|python3 scripts/ops/bigclaw_refill_queue\\\\.py|scripts/ops/\\\\*workspace\\\\*\\\\.py|actions/setup-python|pip install pytest|pytest --cov|BIGCLAW_ENABLE_LEGACY_PYTHON|PYTHONDONTWRITEBYTECODE\" README.md .github/workflows scripts/dev_bootstrap.sh .githooks",
+      "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression"
+    ],
+    "results": {
+      "repo_py_count": "41",
+      "repo_py_count_origin_main": "46",
+      "removed_python_files_vs_origin_main": "5",
+      "removed_entrypoints": "pyproject.toml, setup.py, scripts/ops/bigclaw_github_sync.py, scripts/ops/bigclaw_refill_queue.py, scripts/ops/bigclaw_workspace_bootstrap.py, scripts/ops/symphony_workspace_bootstrap.py, scripts/ops/symphony_workspace_validate.py",
+      "stale_reference_scan": "exit 1 with no matches",
+      "targeted_go_tests": "ok bigclaw-go/cmd/bigclawctl 3.155s; ok bigclaw-go/internal/legacyshim (cached); ok bigclaw-go/internal/regression (cached)"
+    }
+  },
+  "blocker": {
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1055."
+  },
+  "notes": [
+    "This lane achieved an actual repository .py count reduction relative to origin/main by deleting five root Python operator shim files.",
+    "The root packaging files pyproject.toml and setup.py were already absent in this checkout; this lane kept them absent and enforced that state with regression coverage and Go-only docs or CI paths."
+  ]
+}
