@@ -2,9 +2,9 @@ import argparse
 import json
 from pathlib import Path
 
-from .deprecation import warn_legacy_runtime_surface
 from .observability import RepoSyncAudit
 from .reports import render_repo_sync_audit_report, write_report
+from .runtime import warn_legacy_runtime_surface
 from .service import run_server
 
 
