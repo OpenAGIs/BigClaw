@@ -23,11 +23,11 @@ The implemented migration batches in this issue move these entrypoints behind th
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_validate.py`; use `bigclawctl workspace validate`
 
-### `bigclaw-go/scripts/*` first automation batch
+### `bigclaw-go/scripts/*` automation surface
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
-- retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
-- `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- benchmark automation is Go-owned via `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
+- migration automation is Go-owned via `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
@@ -68,9 +68,6 @@ have been retired in favor of direct `bash scripts/ops/bigclawctl ...` entrypoin
   does not reintroduce Python environment management at the repository root.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
-- Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
-  first automation batch. The remaining backlog is tracked in
-  `bigclaw-go/docs/go-cli-script-migration.md`.
 - Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
 
 ## Validation Commands
@@ -122,7 +119,7 @@ have been retired in favor of direct `bash scripts/ops/bigclawctl ...` entrypoin
 - PR description focus:
   - migrated entrypoints and retained shims
   - exact validation commands and results
-  - explicit note that `bigclaw-go/scripts/*` is deferred to a follow-up migration lane
+  - explicit note that `bigclaw-go/scripts/*` is now Python-free and Go-owned
 
 ## Risks
 

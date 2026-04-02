@@ -4,9 +4,9 @@ Issue: `BIG-GO-902`
 
 ## Current Go-Only Entrypoints
 
-`bigclaw-go/scripts/e2e/` is now a Python-free operator surface. Use the
-Go-native `bigclawctl automation ...` subcommands directly, or the retained
-shell wrappers when you need the bundled live-validation workflow.
+`bigclaw-go/scripts/` is now a Python-free operator surface. Use the Go-native
+`bigclawctl automation ...` subcommands directly, or the retained shell
+wrappers when you need the bundled live-validation workflow.
 
 | Active entrypoint | Backing command | Purpose |
 | --- | --- | --- |
@@ -59,9 +59,9 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - Report serialization compatibility for JSON consumers that previously read the Python script output
 ## Compatibility Layer Plan
 
-- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/e2e/`.
+- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers anywhere under `bigclaw-go/scripts/`.
 - Preserve the retained shell wrappers only where they add operator convenience over direct `bigclawctl automation ...` invocation.
-- Continue the remaining non-e2e script migrations in follow-up batches without expanding the e2e compatibility layer again.
+- Keep benchmark, migration, and e2e automation ownership in Go rather than recreating per-lane Python compatibility shims.
 
 ## Branch And PR Suggestion
 

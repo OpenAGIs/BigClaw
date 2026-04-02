@@ -7,21 +7,28 @@ import (
 	"testing"
 )
 
-func TestE2EScriptDirectoryStaysPythonFree(t *testing.T) {
+func TestScriptDirectoryStaysPythonFree(t *testing.T) {
 	repoRoot := repoRoot(t)
-	e2eDir := filepath.Join(repoRoot, "scripts", "e2e")
+	scriptsDir := filepath.Join(repoRoot, "scripts")
 
-	entries, err := os.ReadDir(e2eDir)
+	err := filepath.WalkDir(scriptsDir, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(d.Name(), ".py") {
+			relPath, err := filepath.Rel(repoRoot, path)
+			if err != nil {
+				return err
+			}
+			t.Fatalf("expected no Python helper in scripts tree, found %s", relPath)
+		}
+		return nil
+	})
 	if err != nil {
-		t.Fatalf("read e2e script directory: %v", err)
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if strings.HasSuffix(entry.Name(), ".py") {
-			t.Fatalf("expected no Python helper in scripts/e2e, found %s", entry.Name())
-		}
+		t.Fatalf("walk scripts directory: %v", err)
 	}
 }
 
@@ -57,6 +64,42 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 	for _, needle := range disallowed {
 		if strings.Contains(contents, needle) {
 			t.Fatalf("docs/go-cli-script-migration.md should not reference removed Python helper %q", needle)
+		}
+	}
+
+	disallowedPhrases := []string{
+		"Continue the remaining non-e2e script migrations in follow-up batches",
+		"Python helpers under `bigclaw-go/scripts/e2e/`",
+	}
+	for _, needle := range disallowedPhrases {
+		if strings.Contains(contents, needle) {
+			t.Fatalf("docs/go-cli-script-migration.md should not describe the scripts migration as unfinished: %q", needle)
+		}
+	}
+}
+
+func TestScriptMigrationPlanDoesNotAdvertiseDeletedPythonHelpers(t *testing.T) {
+	repoRoot := repoRoot(t)
+	contents := readRepoFile(t, repoRoot, "../docs/go-cli-script-migration-plan.md")
+
+	disallowed := []string{
+		"bigclaw-go/scripts/migration/shadow_compare.py",
+		"Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities",
+		"`bigclaw-go/scripts/*` is deferred to a follow-up migration lane",
+	}
+	for _, needle := range disallowed {
+		if strings.Contains(contents, needle) {
+			t.Fatalf("docs/go-cli-script-migration-plan.md should not advertise stale script migration state: %q", needle)
+		}
+	}
+
+	required := []string{
+		"`bigclaw-go/scripts/*` automation surface",
+		"`bigclaw-go/scripts/*` is now Python-free and Go-owned",
+	}
+	for _, needle := range required {
+		if !strings.Contains(contents, needle) {
+			t.Fatalf("docs/go-cli-script-migration-plan.md missing updated scripts migration wording %q", needle)
 		}
 	}
 }
