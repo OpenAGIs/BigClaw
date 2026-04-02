@@ -1,26 +1,26 @@
-# BIG-GO-1084
+# BIG-GO-1094
 
 ## Plan
-- inspect the current Python shim, active repo references, and the Go replacement entrypoint
-- delete `scripts/ops/bigclaw_refill_queue.py`
-- update active documentation and tests to reference `bash scripts/ops/bigclawctl refill` instead of the deleted Python shim
-- run targeted validation covering reference cleanup, Go refill command behavior, and Python file-count reduction
-- commit and push the scoped change set
+- inspect the remaining Python planning/test references and the existing Go-native planning replacement
+- remove the legacy Python planning module that still carries deleted `tests/*.py` validation metadata
+- update Python package exports plus Go planning backlog/tests so release and rollout evidence is Go-only for this tranche
+- add or adjust regression coverage proving the removed Python planning surface stays absent and the Go replacements remain wired
+- run targeted validation for planning/regression packages and record exact commands plus results
+- commit the scoped change set and push the issue branch to remote
 
 ## Acceptance
-- `scripts/ops/bigclaw_refill_queue.py` is removed from the repository
-- active repo guidance no longer tells users or tests to execute `scripts/ops/bigclaw_refill_queue.py`
 - the repository `.py` file count decreases from the pre-change baseline
-- targeted validation passes and records exact commands plus results
+- `src/bigclaw/planning.py` is removed and its Python export surface is retired cleanly
+- `bigclaw-go/internal/planning` no longer validates against deleted `tests/*.py` targets for this tranche
+- Go regression coverage proves the removed Python planning surface stays absent and Go replacement files remain present
+- targeted validation passes and exact commands plus results are recorded
 
 ## Validation
-- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim`
-- `bash scripts/ops/bigclawctl refill --help`
 - `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test ./internal/planning ./internal/regression`
+- `rg -n "tests/test_design_system.py|tests/test_console_ia.py|tests/test_operations.py|tests/test_reports.py|tests/test_ui_review.py" bigclaw-go/internal/planning src/bigclaw`
 
 ## Validation Results
-- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim` -> `ok   bigclaw-go/cmd/bigclawctl 4.295s`; `ok   bigclaw-go/internal/legacyshim 1.892s`
-- `bash scripts/ops/bigclawctl refill --help` -> exit `0`; printed `usage: bigclawctl refill [flags]` and the `seed` subcommand help
-- `find . -name '*.py' | wc -l` -> `22` after deletion, down from the pre-change baseline `23`
+- `find . -name '*.py' | wc -l` -> `21` after deletion, down from the pre-change baseline `22`
+- `cd bigclaw-go && go test ./internal/planning ./internal/regression` -> `ok   bigclaw-go/internal/planning 0.642s`; `ok   bigclaw-go/internal/regression 0.993s`
+- `rg -n "tests/test_design_system.py|tests/test_console_ia.py|tests/test_operations.py|tests/test_reports.py|tests/test_ui_review.py" bigclaw-go/internal/planning src/bigclaw` -> exit `1` with no matches
