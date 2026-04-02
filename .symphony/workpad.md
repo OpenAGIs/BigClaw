@@ -101,3 +101,10 @@
 - `src/bigclaw/legacy_shim.py` helper behavior still remains embedded in the surviving compatibility surfaces even though the four `scripts/ops/*.py` wrappers are now gone
 - the remaining top-level Python files are now only live compatibility surfaces (`runtime.py`, `observability.py`, `operations.py`, `__init__.py`)
 - further file-count reduction now requires merging one of the remaining core live modules (`runtime.py`, `observability.py`, or `operations.py`); that is beyond low-risk residual sweep work
+
+## Terminal Blocker
+- remaining Python footprint: `src/bigclaw/__init__.py` (`727` lines), `src/bigclaw/observability.py` (`1482` lines), `src/bigclaw/runtime.py` (`1829` lines), `src/bigclaw/operations.py` (`7334` lines)
+- `src/bigclaw/__init__.py` is not a removable stub: it installs the compatibility submodules (`queue`, `scheduler`, `workflow`, `orchestration`, `service`, `evaluation`, `design_system`, `console_ia`, `legacy_shim`, `models`, `reports`) that the surviving Python modules still import
+- `src/bigclaw/runtime.py` depends on `src/bigclaw/observability.py`
+- `src/bigclaw/operations.py` depends on `src/bigclaw/observability.py` and on the package-installed compatibility submodules that originate from `src/bigclaw/__init__.py`
+- with the wrapper/test/entrypoint layers gone, any additional file-count reduction now requires a large-scale merge across the live compatibility core rather than another low-risk sweep

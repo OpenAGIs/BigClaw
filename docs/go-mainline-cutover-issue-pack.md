@@ -338,6 +338,12 @@ Go ownership:
 Acceptance focus:
 - remove Python from the default developer and runtime path
 - leave legacy markers or archival notes where Python code is intentionally retained
+
+Current repo progress:
+- the top-level `python -m bigclaw` entrypoint has been retired and the default operator path is now `scripts/ops/bigclawctl`
+- the repository Python footprint is down to the four live compatibility modules: `src/bigclaw/__init__.py`, `src/bigclaw/observability.py`, `src/bigclaw/runtime.py`, and `src/bigclaw/operations.py`
+- those four files now form a tightly coupled frozen compatibility core: `__init__.py` installs the compatibility submodules that `operations.py` still imports, while `runtime.py` and `operations.py` both depend on `observability.py`
+- further Python file-count reduction therefore requires a core-module consolidation rather than another peripheral wrapper/test/entrypoint retirement
 - finish cutover validation and release-readiness evidence
 
 Dependencies:
