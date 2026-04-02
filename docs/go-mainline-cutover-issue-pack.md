@@ -148,8 +148,9 @@ Current repo progress:
 - `bigclaw-go/internal/governance/freeze.go` now owns the Go scope-freeze backlog board and governance audit surface migrated from `src/bigclaw/governance.py`
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
+- `src/bigclaw/governance.py` has been deleted after the Go freeze surface took over the remaining repository contract
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
-- Python source files remain in place as migration references; BigClaw is still not 100% Go
+- other Python migration references still remain; BigClaw is still not 100% Go
 
 Dependencies:
 - depends on `BIG-GOM-301`
@@ -433,7 +434,7 @@ Python source:
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
-- `src/bigclaw/planning.py`
+- planning surface retired; remaining docs/report ownership lives under Go regression and reporting packages
 
 Go ownership:
 - `bigclaw-go/internal/observability/*`
@@ -477,7 +478,7 @@ Python source:
 - `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
+- UI review pack surface retired; remaining operator-facing console/report ownership lives under Go product and API packages
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:
