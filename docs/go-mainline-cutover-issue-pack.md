@@ -197,7 +197,7 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
+- report compatibility surface retired; the residual Python reporting shim now lives in `src/bigclaw/operations.py` while Go ownership remains in reporting, pilot, and product packages
 - evaluation compatibility surface retired; benchmark/replay ownership now lives in the surviving operations compatibility module and Go control-plane/product surfaces
 - `src/bigclaw/operations.py`
 
@@ -431,7 +431,7 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
+- report compatibility surface retired; the residual Python reporting shim now lives in `src/bigclaw/operations.py` while Go ownership remains in reporting, pilot, and product packages
 - `src/bigclaw/operations.py`
 - evaluation compatibility surface retired; benchmark/replay ownership now lives in the surviving operations compatibility module and Go control-plane/product surfaces
 - run-detail compatibility surface retired; remaining run-detail/report ownership lives under Go API, product, and reporting packages

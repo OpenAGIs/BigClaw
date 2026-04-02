@@ -32,6 +32,7 @@
 - removed `src/bigclaw/design_system.py` by folding its remaining compatibility surface into `src/bigclaw/operations.py` and preserving both `bigclaw.design_system` and `bigclaw.console_ia` through package-installed compatibility submodules
 - removed `src/bigclaw/legacy_shim.py` by folding its wrapper helpers into `src/bigclaw/runtime.py`, preserving `bigclaw.legacy_shim` through a package-installed compatibility submodule, and updating the Go-side frozen compile-check list to target `runtime.py`
 - removed `src/bigclaw/models.py` by folding its remaining compatibility structs into `src/bigclaw/observability.py` and preserving `bigclaw.models` through a package-installed compatibility submodule
+- removed `src/bigclaw/reports.py` by folding its remaining compatibility/report surface into `src/bigclaw/operations.py` and preserving `bigclaw.reports` through a package-installed compatibility submodule
 - removed the corresponding legacy exports from `src/bigclaw/__init__.py`
 - added `bigclaw-go/internal/regression/top_level_module_purge_tranche15_test.go` to pin the deletions against Go replacement paths
 - added `bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go` to pin the additional deletions against Go replacement paths
@@ -43,6 +44,7 @@
 - added `bigclaw-go/internal/regression/top_level_module_purge_tranche22_test.go` to pin the design-system deletion against Go replacement paths
 - added `bigclaw-go/internal/regression/top_level_module_purge_tranche23_test.go` to pin the legacy-shim deletion against Go replacement paths
 - added `bigclaw-go/internal/regression/top_level_module_purge_tranche24_test.go` to pin the model-surface deletion against Go replacement paths
+- added `bigclaw-go/internal/regression/top_level_module_purge_tranche25_test.go` to pin the report-surface deletion against Go replacement paths
 - updated `docs/go-mainline-cutover-issue-pack.md` so the migration inventory reflects the deleted Python assets
 
 ## Validation Results
@@ -64,14 +66,18 @@
 - `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/runtime.py src/bigclaw/operations.py src/bigclaw/reports.py src/bigclaw/__main__.py tests/test_design_system.py tests/test_console_ia.py tests/test_control_center.py tests/test_evaluation.py` -> passed
 - `PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_console_ia.py tests/test_control_center.py tests/test_evaluation.py -q` -> `36 passed in 0.07s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche20|TestTopLevelModulePurgeTranche21|TestTopLevelModulePurgeTranche22|TestTopLevelModulePurgeTranche23|TestTopLevelModulePurgeTranche24|TestFollowUpLaneDocsStayAligned|TestExecutionPackRoadmapDocsStayAligned|TestExecutionPackRoadmapUniqueOwnersContract'` -> `ok  	bigclaw-go/internal/regression	1.049s`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/runtime.py tests/test_design_system.py tests/test_console_ia.py tests/test_control_center.py tests/test_evaluation.py` -> passed
+- `PYTHONPATH=src python3 - <<'PY' ... PY` -> `compat-surface-ok`
+- `PYTHONPATH=src python3 -m pytest tests/test_design_system.py tests/test_console_ia.py tests/test_control_center.py tests/test_evaluation.py -q` -> `36 passed in 0.06s`
+- `PYTHONPATH=src python3 -m bigclaw --help` -> passed with the expected migration-only deprecation warning and rendered `serve` / `repo-sync-audit` help text
 
 ## Python Count Impact
 - before: `28`
-- after: `15`
-- delta: `-13`
+- after: `14`
+- delta: `-14`
 
 ## Residual Risks
-- `src/bigclaw/runtime.py`, `src/bigclaw/reports.py`, `src/bigclaw/operations.py`, and related modules still participate in the surviving Python test surface, so they remain out of scope for this tranche
+- `src/bigclaw/runtime.py`, `src/bigclaw/operations.py`, and related modules still participate in the surviving Python test surface, so they remain higher-risk merge targets even though `reports.py` has now been absorbed
 - legacy Python CLI shim files under `scripts/ops/*.py` and `src/bigclaw/legacy_shim.py` remain active compatibility wrappers and were not touched
-- the remaining top-level Python files are now either active compatibility entrypoints (`__main__.py`) or directly imported by the surviving Python tests (`runtime.py`, `observability.py`, `reports.py`, `operations.py`)
-- further file-count reduction now requires merging one of the remaining core live modules (`runtime.py`, `observability.py`, `reports.py`, or `operations.py`) or retiring the remaining Python test suite outright; that is beyond low-risk residual sweep work
+- the remaining top-level Python files are now either active compatibility entrypoints (`__main__.py`) or directly imported by the surviving Python tests (`runtime.py`, `observability.py`, `operations.py`)
+- further file-count reduction now requires merging one of the remaining core live modules (`runtime.py`, `observability.py`, or `operations.py`) or retiring the remaining Python test suite outright; that is beyond low-risk residual sweep work

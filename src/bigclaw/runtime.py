@@ -893,7 +893,7 @@ class Scheduler:
         report_path: Optional[str] = None,
         actor: str = "scheduler",
     ) -> ExecutionRecord:
-        from .reports import render_task_run_detail_page, render_task_run_report, write_report
+        from .operations import render_task_run_detail_page, render_task_run_report, write_report
 
         risk_score = self.risk_scorer.score_task(task)
         decision = self.decide(task, risk_score=risk_score)
@@ -1289,7 +1289,7 @@ class WorkflowEngine:
         git_push_output: str = "",
         git_log_stat_output: str = "",
     ) -> WorkflowRunResult:
-        from .reports import (
+        from .operations import (
             build_orchestration_canvas,
             render_orchestration_canvas,
             render_pilot_scorecard,
