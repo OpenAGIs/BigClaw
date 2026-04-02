@@ -20,6 +20,11 @@
 
 - `cd bigclaw-go && go test ./internal/governance ./internal/repo ./internal/reporting ./internal/risk ./internal/intake ./internal/events ./internal/observability ./internal/api`
 - Additional narrower `go test` package commands if new tests are added outside the packages above.
-- `python3 -m py_compile tests/test_reports.py tests/test_observability.py`
 - `cd bigclaw-go && go test ./internal/observability ./internal/reporting`
 - `git status --short`
+
+## Status
+
+- Lane migration completed.
+- `tests/test_reports.py` and `tests/test_observability.py` were deleted after Go parity landed.
+- Branch `BIG-GO-947` is pushed and aligned with `origin/BIG-GO-947`.
