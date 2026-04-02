@@ -2,7 +2,7 @@ import importlib
 import sys
 
 from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
-from .design_system import (
+from .execution_contract import (
     AuditRequirement,
     CommandAction,
     ComponentLibrary,
@@ -342,7 +342,7 @@ from .scheduler import (
     render_four_week_execution_report,
     render_scope_freeze_report,
 )
-from .design_system import (
+from .execution_contract import (
     InteractionFlow,
     OpenQuestion,
     ReviewBlocker,
@@ -783,6 +783,7 @@ for _alias, _target in (
     ("observability", "execution_contract"),
     ("audit_events", "execution_contract"),
     ("collaboration", "execution_contract"),
+    ("design_system", "execution_contract"),
     ("console_ia", "design_system"),
     ("ui_review", "design_system"),
     ("operations", "scheduler"),
