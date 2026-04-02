@@ -397,6 +397,23 @@ _install_export_surface_module(
         "render_console_ia_report",
     ],
 )
+
+_install_export_surface_module(
+    "legacy_shim",
+    _legacy_runtime_surface,
+    [
+        "LEGACY_PYTHON_WRAPPER_NOTICE",
+        "append_missing_flag",
+        "build_bigclawctl_exec_args",
+        "repo_root_from_script",
+        "run_bigclawctl_shim",
+        "build_workspace_bootstrap_args",
+        "translate_workspace_validate_args",
+        "build_workspace_validate_args",
+        "build_refill_args",
+        "build_workspace_runtime_bootstrap_args",
+    ],
+)
 __all__ = [
     "Task",
     "TaskState",
