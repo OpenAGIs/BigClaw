@@ -1,26 +1,28 @@
-# BIG-GO-1084
+# BIG-GO-1091
 
 ## Plan
-- inspect the current Python shim, active repo references, and the Go replacement entrypoint
-- delete `scripts/ops/bigclaw_refill_queue.py`
-- update active documentation and tests to reference `bash scripts/ops/bigclawctl refill` instead of the deleted Python shim
-- run targeted validation covering reference cleanup, Go refill command behavior, and Python file-count reduction
+- inspect the remaining root `scripts/ops/*.py` workspace shims and their active repo references
+- delete `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py`
+- update active documentation and regression coverage to point at `bash scripts/ops/bigclawctl workspace ...` instead of the deleted Python shims
+- run targeted validation covering reference cleanup, Go legacy shim tests, CLI help, and repository `.py` count reduction
 - commit and push the scoped change set
 
 ## Acceptance
-- `scripts/ops/bigclaw_refill_queue.py` is removed from the repository
-- active repo guidance no longer tells users or tests to execute `scripts/ops/bigclaw_refill_queue.py`
+- the three remaining Python workspace shims under `scripts/ops` are removed from the repository
+- active repo guidance and regression coverage no longer instruct users to execute those deleted Python files
 - the repository `.py` file count decreases from the pre-change baseline
-- targeted validation passes and records exact commands plus results
+- targeted validation records exact commands and results
 
 ## Validation
-- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim`
-- `bash scripts/ops/bigclawctl refill --help`
-- `find . -name '*.py' | wc -l`
+- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
+- `bash scripts/ops/bigclawctl workspace bootstrap --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
+- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l`
 
 ## Validation Results
-- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim` -> `ok   bigclaw-go/cmd/bigclawctl 4.295s`; `ok   bigclaw-go/internal/legacyshim 1.892s`
-- `bash scripts/ops/bigclawctl refill --help` -> exit `0`; printed `usage: bigclawctl refill [flags]` and the `seed` subcommand help
-- `find . -name '*.py' | wc -l` -> `22` after deletion, down from the pre-change baseline `23`
+- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'` -> exit `1` with no matches
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl (cached)`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression 0.606s`
+- `bash scripts/ops/bigclawctl workspace bootstrap --help` -> exit `0`; printed `usage: bigclawctl workspace bootstrap [flags]`
+- `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]`
+- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `22` in `HEAD`; `19` in the worktree after deleting the three root Python shims

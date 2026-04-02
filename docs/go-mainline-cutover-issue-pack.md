@@ -290,7 +290,7 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/parallel_refill.py`
 - `scripts/ops/bigclaw_github_sync.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
+- retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 
 Go ownership:
 - new `cmd/bigclawctl`
@@ -311,7 +311,7 @@ Current repo progress:
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic with tracker-neutral `TrackedIssue` records, while `cmd/bigclawctl refill` handles backend-specific polling and promotion
 - `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` invoke the Go-first toolchain by default, and the legacy `scripts/ops/bigclaw_github_sync.py` wrapper has been removed
-- at the time this slice was defined, the remaining Python wrappers still existed as migration shims and `BIG-GOM-308` was the planned follow-on slice to remove Python from the default operator path
+- the final root workspace Python wrappers have since been removed, so the default operator path is now Go-only under `bash scripts/ops/bigclawctl`
 
 Milestone:
 - `Python Retirement & Cutover Validation`
