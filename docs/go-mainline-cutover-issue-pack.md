@@ -323,13 +323,13 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- the removed package CLI entrypoint
 - any remaining active Python entrypoints not covered by earlier slices
 
 Go ownership:
 - `bigclaw-go/cmd/bigclawd/main.go`
 - `bigclaw-go/internal/api/server.go`
-- new `cmd/bigclawctl`
+- `bigclaw-go/cmd/bigclawctl`
 
 Acceptance focus:
 - remove Python from the default developer and runtime path
@@ -497,13 +497,14 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- the removed package CLI entrypoint
 
 Go ownership:
 - `bigclaw-go/cmd/bigclawctl`
 - `bigclaw-go/cmd/bigclawd`
 - `bigclaw-go/internal/bootstrap/*`
 - `bigclaw-go/internal/githubsync/*`
+- `bigclaw-go/internal/observability/task_run.go`
 - `bigclaw-go/internal/refill/*`
 - `bigclaw-go/internal/api/server.go`
 

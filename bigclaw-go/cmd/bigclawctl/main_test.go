@@ -317,8 +317,6 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "repo->")
 	for _, relativePath := range []string{
-		"src/bigclaw/service.py",
-		"src/bigclaw/__main__.py",
 		"src/bigclaw/legacy_shim.py",
 	} {
 		path := filepath.Join(repoRoot, relativePath)
@@ -354,11 +352,63 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	if !bytes.Contains(output, []byte(repoRoot)) {
 		t.Fatalf("expected raw arrow token in legacy-python repo path, got %s", string(output))
 	}
-	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/service.py"))) {
+	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/legacy_shim.py"))) {
 		t.Fatalf("expected raw arrow token in legacy-python file list, got %s", string(output))
 	}
 	if bytes.Contains(output, []byte(`\u003e`)) {
 		t.Fatalf("expected no HTML escaping in legacy-python JSON output, got %s", string(output))
+	}
+}
+
+func TestRunRepoSyncAuditWritesMarkdownReport(t *testing.T) {
+	tempDir := t.TempDir()
+	inputPath := "audit.json"
+	outputPath := filepath.Join("reports", "repo-sync-audit.md")
+	if err := os.WriteFile(filepath.Join(tempDir, inputPath), []byte(`{
+  "sync": {
+    "status": "dirty",
+    "failure_category": "dirty",
+    "summary": "worktree has pending changes",
+    "branch": "symphony/BIG-GO-1093",
+    "remote": "origin",
+    "remote_ref": "origin/symphony/BIG-GO-1093",
+    "ahead_by": 1,
+    "dirty_paths": ["src/bigclaw/__main__.py"],
+    "timestamp": "2026-04-02T15:12:00Z"
+  },
+  "pull_request": {
+    "pr_number": 188,
+    "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/188",
+    "branch_state": "aligned",
+    "body_state": "fresh",
+    "branch_head_sha": "abc123",
+    "pr_head_sha": "abc123",
+    "expected_body_digest": "expected",
+    "actual_body_digest": "actual",
+    "checked_at": "2026-04-02T15:13:00Z"
+  }
+}`), 0o644); err != nil {
+		t.Fatalf("write input: %v", err)
+	}
+
+	if err := runRepoSyncAudit([]string{"--repo", tempDir, "--input", inputPath, "--output", outputPath}); err != nil {
+		t.Fatalf("run repo-sync-audit: %v", err)
+	}
+
+	body, err := os.ReadFile(filepath.Join(tempDir, outputPath))
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	text := string(body)
+	for _, needle := range []string{
+		"# Repo Sync Audit",
+		"- Status: dirty",
+		"- PR Number: 188",
+		"- sync=dirty, failure=dirty, pr-branch=aligned, pr-body=fresh",
+	} {
+		if !strings.Contains(text, needle) {
+			t.Fatalf("expected report to contain %q, got %s", needle, text)
+		}
 	}
 }
 
@@ -879,7 +929,7 @@ func TestRunHelpAtRootPrintsUsageAndExitsZero(t *testing.T) {
 	if !strings.Contains(string(output), "usage: bigclawctl") {
 		t.Fatalf("expected usage in help output, got %s", string(output))
 	}
-	if !strings.Contains(string(output), "github-sync") || !strings.Contains(string(output), "refill") || !strings.Contains(string(output), "automation") {
+	if !strings.Contains(string(output), "github-sync") || !strings.Contains(string(output), "refill") || !strings.Contains(string(output), "automation") || !strings.Contains(string(output), "repo-sync-audit") {
 		t.Fatalf("expected command list in help output, got %s", string(output))
 	}
 }

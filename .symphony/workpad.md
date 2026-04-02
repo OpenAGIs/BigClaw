@@ -1,26 +1,28 @@
-# BIG-GO-1084
+# BIG-GO-1093
 
 ## Plan
-- inspect the current Python shim, active repo references, and the Go replacement entrypoint
-- delete `scripts/ops/bigclaw_refill_queue.py`
-- update active documentation and tests to reference `bash scripts/ops/bigclawctl refill` instead of the deleted Python shim
-- run targeted validation covering reference cleanup, Go refill command behavior, and Python file-count reduction
-- commit and push the scoped change set
+- inspect the remaining `src/bigclaw/*.py` package entrypoints and confirm the smallest Go-only replacement slice that reduces the residual Python count without breaking the retained shim scripts
+- add a Go-native `bigclawctl repo-sync-audit` command backed by the existing Go observability renderer so the frozen `python -m bigclaw repo-sync-audit` path has a direct replacement
+- update docs and regression/compile-check coverage to point at the Go command instead of the removed Python package entrypoint
+- delete the obsolete Python package entrypoint and warning helper once the Go replacement and references are in place
+- run targeted validation, record exact commands and results here, then commit and push the issue branch
 
 ## Acceptance
-- `scripts/ops/bigclaw_refill_queue.py` is removed from the repository
-- active repo guidance no longer tells users or tests to execute `scripts/ops/bigclaw_refill_queue.py`
-- the repository `.py` file count decreases from the pre-change baseline
-- targeted validation passes and records exact commands plus results
+- `bigclawctl` exposes a Go-native repo sync audit rendering command that accepts the legacy JSON payload and writes the markdown report
+- `src/bigclaw/__main__.py` and `src/bigclaw/deprecation.py` are removed from the repository
+- frozen-compatibility checks and docs no longer require or mention `python -m bigclaw` as an active path
+- the repository `src/bigclaw/*.py` count decreases from the pre-change baseline of `19`
 
 ## Validation
-- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim`
-- `bash scripts/ops/bigclawctl refill --help`
-- `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression ./internal/observability`
+- `tmpdir=$(mktemp -d) && cat >"$tmpdir/audit.json" <<'EOF' ... EOF && bash scripts/ops/bigclawctl repo-sync-audit --input "$tmpdir/audit.json" --output "$tmpdir/report.md" && test -s "$tmpdir/report.md"`
+- `rg -n "python -m bigclaw|src/bigclaw/__main__\\.py|src/bigclaw/deprecation\\.py" README.md docs bigclaw-go scripts -g '!bigclaw-go/docs/reports/**' -g '!**/*_test.go'`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- `find src/bigclaw -maxdepth 1 -type f -name '*.py' | wc -l`
 
 ## Validation Results
-- `rg -n "scripts/ops/bigclaw_refill_queue\\.py|python3 scripts/ops/bigclaw_refill_queue\\.py|bigclaw_refill_queue" README.md docs bigclaw-go scripts` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim` -> `ok   bigclaw-go/cmd/bigclawctl 4.295s`; `ok   bigclaw-go/internal/legacyshim 1.892s`
-- `bash scripts/ops/bigclawctl refill --help` -> exit `0`; printed `usage: bigclawctl refill [flags]` and the `seed` subcommand help
-- `find . -name '*.py' | wc -l` -> `22` after deletion, down from the pre-change baseline `23`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression ./internal/observability` -> `ok   bigclaw-go/cmd/bigclawctl 4.385s`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression 1.243s`; `ok   bigclaw-go/internal/observability (cached)`
+- `tmpdir=$(mktemp -d) && cat >"$tmpdir/audit.json" <<'EOF' ... EOF && bash scripts/ops/bigclawctl repo-sync-audit --input "$tmpdir/audit.json" --output "$tmpdir/report.md" && test -s "$tmpdir/report.md"` -> exit `0`; wrote a markdown report beginning with `# Repo Sync Audit`, `- Status: dirty`, and `- PR Number: 188`
+- `rg -n "python -m bigclaw|src/bigclaw/__main__\\.py|src/bigclaw/deprecation\\.py" README.md docs bigclaw-go scripts -g '!bigclaw-go/docs/reports/**' -g '!**/*_test.go'` -> exit `1` with no matches
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; reported only `/Users/openagi/code/bigclaw-workspaces/BIG-GO-1093/src/bigclaw/legacy_shim.py` in the frozen shim list with `status: ok`
+- `find src/bigclaw -maxdepth 1 -type f -name '*.py' | wc -l` -> `17`, down from the pre-change baseline `19`

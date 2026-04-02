@@ -2,14 +2,14 @@
   "status": "go-mainline-compatibility-manifest",
   "guidance": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only.",
   "runtime_warning": {
-    "surface": "python -m bigclaw",
-    "replacement": "bash scripts/ops/bigclawctl",
-    "message": "python -m bigclaw is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl instead."
+    "surface": "python -m bigclaw repo-sync-audit",
+    "replacement": "bash scripts/ops/bigclawctl repo-sync-audit",
+    "message": "python -m bigclaw repo-sync-audit has been removed from the repository. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl repo-sync-audit instead."
   },
   "service_warning": {
     "surface": "python -m bigclaw serve",
     "replacement": "go run ./bigclaw-go/cmd/bigclawd",
-    "message": "python -m bigclaw serve is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use go run ./bigclaw-go/cmd/bigclawd instead."
+    "message": "python -m bigclaw serve has been removed from the repository. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use go run ./bigclaw-go/cmd/bigclawd instead."
   },
   "modules": {
     "runtime": {

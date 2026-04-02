@@ -81,9 +81,10 @@ because the root no longer carries Python packaging/bootstrap ownership.
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
+- `bash scripts/ops/bigclawctl repo-sync-audit --help`
 - `bash scripts/ops/bigclawctl refill --help`
 - `python3 scripts/ops/symphony_workspace_validate.py --help`
 - `bash scripts/dev_bootstrap.sh`

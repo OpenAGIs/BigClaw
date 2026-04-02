@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/scheduler"
 )
 
@@ -105,6 +106,45 @@ func runDevSmoke(args []string) error {
 	}
 	_, err := fmt.Fprintf(os.Stdout, "smoke_ok %s\n", decision.Assignment.Executor)
 	return err
+}
+
+func runRepoSyncAudit(args []string) error {
+	flags := flag.NewFlagSet("repo-sync-audit", flag.ContinueOnError)
+	repoRoot := flags.String("repo", "..", "repo root")
+	inputPath := flags.String("input", "", "path to repo sync audit JSON payload")
+	outputPath := flags.String("output", "", "path to markdown report output")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl repo-sync-audit --input <path> --output <path>", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	if trim(*inputPath) == "" {
+		return errors.New("input is required")
+	}
+	if trim(*outputPath) == "" {
+		return errors.New("output is required")
+	}
+
+	resolvedRepoRoot := absPath(*repoRoot)
+	resolvedInputPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *inputPath)
+	resolvedOutputPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *outputPath)
+
+	var audit observability.RepoSyncAudit
+	payload, err := os.ReadFile(resolvedInputPath)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(payload, &audit); err != nil {
+		return fmt.Errorf("decode repo sync audit: %w", err)
+	}
+
+	report := observability.RenderRepoSyncAuditReport(audit)
+	if err := os.MkdirAll(filepath.Dir(resolvedOutputPath), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(resolvedOutputPath, []byte(report), 0o644)
 }
 
 func runCreateIssues(args []string) error {

@@ -15,7 +15,7 @@ remain migration-only source assets and are not packaged from the root.
   - `docs/*`: Go control-plane validation and migration evidence
 - `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
-- `src/bigclaw`: legacy Python foundation modules pending staged migration to Go
+- `src/bigclaw`: legacy Python foundation modules still awaiting final removal
   - engineering operations analytics for dashboards, triage, regressions, and weekly reports
   - `BIG-1606` Policy/Prompt Version Center with workflow/prompt/policy history, diffs, rollback targets, and bundle rendering
   - unified task model
@@ -166,7 +166,7 @@ GitHub sync which is now Go/shell-only via `scripts/ops/bigclawctl`.
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
 `src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+migration-only reference use. The old package-level Python entrypoint has been
+removed; use `bash scripts/ops/bigclawctl repo-sync-audit` for repo
+sync report rendering and `go run ./bigclaw-go/cmd/bigclawd` for the active
+local server path. Active runtime development belongs in `bigclaw-go/internal/*`.

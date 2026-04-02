@@ -130,6 +130,8 @@ func run(args []string) int {
 		err = runIssue(args[1:])
 	case "panel":
 		err = runPanel(args[1:])
+	case "repo-sync-audit":
+		err = runRepoSyncAudit(args[1:])
 	case "legacy-python":
 		err = runLegacyPython(args[1:])
 	default:
@@ -1432,7 +1434,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel|repo-sync-audit|legacy-python> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1445,6 +1447,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
 	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
 	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
+	fmt.Fprintln(w, "  repo-sync-audit render the repo sync and PR freshness markdown report")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 }
 
