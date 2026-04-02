@@ -262,6 +262,24 @@ Result:
  2 files changed, 18 insertions(+), 1 deletion(-)
 ```
 
+Final sync check after recording the branch evidence:
+
+```bash
+git rev-parse HEAD
+git ls-remote --heads origin big-go-1011-root-config-residuals
+git log -1 --stat --oneline
+```
+
+Result:
+
+```text
+d71b08b6eae4518d1b0b46d6b4d943785b301eef
+d71b08b6eae4518d1b0b46d6b4d943785b301eef	refs/heads/big-go-1011-root-config-residuals
+d71b08b BIG-GO-1011 record branch sync evidence
+ reports/BIG-GO-1011-validation.md | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+```
+
 ```bash
 make build
 ```
@@ -323,6 +341,6 @@ Remaining root-level Python mentions are intentional migration-only validation s
   explicitly marked `retired` or described as historical migration identifiers
 - no root `.pytest_cache/`, `__pycache__/`, `*.egg-info`, or `*.dist-info`
   directory remains in the workspace after the final cleanup pass
-- local and remote branch SHAs match at `5d0e4d335bdbdcaa25176acdd3dd147e7e802082`
+- local and remote branch SHAs match at `d71b08b6eae4518d1b0b46d6b4d943785b301eef`
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.
