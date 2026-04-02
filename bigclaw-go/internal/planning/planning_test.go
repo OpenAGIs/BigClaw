@@ -114,7 +114,7 @@ func TestEntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence(t *te
 				Priority:          "P0",
 				Owner:             "ops-platform",
 				Outcome:           "Package the command-center rollout with weekly review evidence.",
-				ValidationCommand: "python3 -m pytest tests/test_operations.py -q",
+				ValidationCommand: "cd bigclaw-go && go test ./internal/product",
 				Capabilities:      []string{"ops-control"},
 				Evidence:          []string{"weekly-review"},
 			},
@@ -176,7 +176,7 @@ func TestEntryGateHoldsWhenV2BaselineIsMissingOrNotReady(t *testing.T) {
 		Version: "v4.0-v3",
 		Candidates: []CandidateEntry{
 			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning", Capabilities: []string{"release-gate"}, Evidence: []string{"acceptance-suite", "validation-report"}},
-			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "python3 -m pytest tests/test_operations.py -q", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
+			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/product", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
 			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "cd bigclaw-go && go test ./internal/collaboration ./internal/pilot", Capabilities: []string{"commercialization"}, Evidence: []string{"pilot-evidence"}},
 		},
 	}
@@ -297,7 +297,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Priority:          "P0",
 		Owner:             "ops-platform",
 		Outcome:           "Package command-center and approval surfaces with linked evidence.",
-		ValidationCommand: "python3 -m pytest tests/test_operations.py -q && (cd bigclaw-go && go test ./internal/product)",
+		ValidationCommand: "cd bigclaw-go && go test ./internal/product",
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
@@ -436,7 +436,8 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	}
 	for _, want := range []string{
 		"src/bigclaw/__init__.py",
-		"tests/test_operations.py",
+		"bigclaw-go/internal/product/console_test.go",
+		"bigclaw-go/internal/product/dashboard_run_contract_test.go",
 		"bigclaw-go/internal/product/saved_views_test.go",
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
@@ -458,6 +459,15 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	}
 	if _, ok := targets["src/bigclaw/saved_views.py"]; ok {
 		t.Fatalf("deleted Python saved-views target still present in %+v", targets)
+	}
+	if _, ok := targets["tests/test_control_center.py"]; ok {
+		t.Fatalf("deleted Python command-center test target still present in %+v", targets)
+	}
+	if _, ok := targets["tests/test_operations.py"]; ok {
+		t.Fatalf("deleted Python operations test target still present in %+v", targets)
+	}
+	if _, ok := targets["tests/test_evaluation.py"]; ok {
+		t.Fatalf("deleted Python evaluation test target still present in %+v", targets)
 	}
 
 	if got, want := releaseCandidate.ValidationCommand, "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning"; got != want {

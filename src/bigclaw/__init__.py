@@ -8934,9 +8934,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
-                    "tests/test_evaluation.py -q && "
-                    "(cd bigclaw-go && go test ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler)"
+                    "cd bigclaw-go && go test ./internal/evaluation ./internal/product ./internal/worker "
+                    "./internal/workflow ./internal/scheduler"
                 ),
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
                 evidence=["weekly-review", "validation-report"],
@@ -8949,15 +8948,15 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="command-center-tests",
-                        target="tests/test_control_center.py",
+                        target="bigclaw-go/internal/product/console_test.go",
                         capability="ops-control",
-                        note="queue control center validation",
+                        note="Go-native queue control center and console validation",
                     ),
                     EvidenceLink(
                         label="operations-tests",
-                        target="tests/test_operations.py",
+                        target="bigclaw-go/internal/product/dashboard_run_contract_test.go",
                         capability="ops-control",
-                        note="dashboard, weekly report, regression, and version-center coverage",
+                        note="Go-native dashboard, weekly report, regression, and version-center coverage",
                     ),
                     EvidenceLink(
                         label="approval-contract",
@@ -9003,9 +9002,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-tests",
-                        target="tests/test_evaluation.py",
+                        target="bigclaw-go/internal/evaluation/evaluation_test.go",
                         capability="rollback-simulation",
-                        note="replay and benchmark validation",
+                        note="Go-native replay and benchmark validation",
                     ),
                 ],
             ),
