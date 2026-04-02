@@ -94,7 +94,7 @@ current runnable work.
 ### BIG-GOM-301 Unified domain model and intake contract migration
 
 Python source:
-- `src/bigclaw/models.py`
+- unified domain-model compatibility surface retired; remaining Python contract compatibility now lives in `src/bigclaw/observability.py` while Go ownership remains split across domain, risk, triage, billing, and workflow packages
 - `src/bigclaw/connectors.py`
 - `src/bigclaw/mapping.py`
 - `src/bigclaw/dsl.py`
@@ -118,7 +118,7 @@ Current repo progress:
 - `bigclaw-go/internal/risk/assessment.go` and `bigclaw-go/internal/triage/record.go` now own the migrated Python assessment / triage contract surface
 - `bigclaw-go/internal/billing/statement.go` remains the canonical Go billing contract, with parity coverage expanded to preserve Python usage metadata during round trips
 - `/v2/intake/connectors/...`, `/v2/intake/issues/map`, and `/v2/workflows/definitions/render` now expose Go-owned intake / mapping / workflow-definition endpoints for downstream tooling
-- remaining `models.py` contract structs still need to be folded into the existing Go runtime / orchestration packages instead of copied into one compatibility file
+- `src/bigclaw/models.py` has been deleted after the remaining Python compatibility structs were folded into `src/bigclaw/observability.py`
 
 Milestone:
 - `Control/Workflow Surface Migration`

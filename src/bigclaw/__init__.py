@@ -1,7 +1,7 @@
 import sys
 import types
 
-from .models import (
+from .observability import (
     BillingInterval,
     BillingRate,
     BillingSummary,
@@ -412,6 +412,33 @@ _install_export_surface_module(
         "build_workspace_validate_args",
         "build_refill_args",
         "build_workspace_runtime_bootstrap_args",
+    ],
+)
+
+_install_export_surface_module(
+    "models",
+    sys.modules[f"{__name__}.observability"],
+    [
+        "BillingInterval",
+        "BillingRate",
+        "BillingSummary",
+        "FlowRun",
+        "FlowRunStatus",
+        "FlowStepRun",
+        "FlowStepStatus",
+        "FlowTemplate",
+        "FlowTemplateStep",
+        "FlowTrigger",
+        "Priority",
+        "RiskAssessment",
+        "RiskLevel",
+        "RiskSignal",
+        "Task",
+        "TaskState",
+        "TriageLabel",
+        "TriageRecord",
+        "TriageStatus",
+        "UsageRecord",
     ],
 )
 __all__ = [

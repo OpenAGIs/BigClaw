@@ -22,12 +22,14 @@ from .observability import (
     FLOW_HANDOFF_EVENT,
     MANUAL_TAKEOVER_EVENT,
     ObservabilityLedger,
+    Priority,
     RepoSyncAudit,
+    RiskLevel,
     SCHEDULER_DECISION_EVENT,
+    Task,
     TaskRun,
     utc_now,
 )
-from .models import Priority, RiskLevel, Task
 
 
 LEGACY_RUNTIME_GUIDANCE = (
