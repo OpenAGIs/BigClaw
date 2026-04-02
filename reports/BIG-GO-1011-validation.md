@@ -15,6 +15,10 @@ Final continuation pass: label the remaining BIG-GO-902 reviewer artifacts as
 historical cutover evidence so the repo no longer presents those retired Python
 shim paths as live operator entrypoints.
 
+Current continuation pass: remove the remaining active validation-doc reference
+to deleted `tests/test_service.py` so current guidance only names test files
+that still exist in the workspace.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -98,6 +102,37 @@ reports/BIG-GO-902-status.json:52:    "historical_note": "The Python shim file p
 ```
 
 ```bash
+rg -n "test_service\.py" docs/BigClaw-AgentHub-Integration-Alignment.md docs README.md reports
+```
+
+Result:
+
+```text
+reports/BIG-GO-948-validation.md:16:- `tests/test_service.py`
+reports/OPE-148-150-validation.md:19:  - `tests/test_service.py`
+reports/OPE-151-153-validation.md:12:  - `tests/test_service.py`
+```
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+repo = Path('.').resolve()
+paths = [
+    'tests/test_repo_governance.py',
+    'tests/test_repo_triage.py',
+    'tests/test_operations.py',
+    'tests/test_repo_rollout.py',
+]
+missing = [p for p in paths if not (repo / p).exists()]
+if missing:
+    raise SystemExit('missing: ' + ', '.join(missing))
+print('ok:', ', '.join(paths))
+PY
+```
+
+Result: `ok: tests/test_repo_governance.py, tests/test_repo_triage.py, tests/test_operations.py, tests/test_repo_rollout.py`
+
+```bash
 make build
 ```
 
@@ -145,5 +180,8 @@ Remaining root-level Python mentions are intentional migration-only validation s
 - historical migration reports may still mention retired shim files as past
   implementation details, but active root/cutover guidance no longer presents
   them as current repo surfaces
+- older historical reports still contain `tests/test_service.py` as past
+  evidence, but current active validation docs no longer prescribe that deleted
+  file
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.
