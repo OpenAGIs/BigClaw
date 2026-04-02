@@ -25,3 +25,7 @@
 - `rg --files -g '*.py' src/bigclaw` -> `src/bigclaw/legacy_shim.py`
 - `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.600s`
 - `git status --short` -> modified `.symphony/workpad.md`, `README.md`; deleted 16 `src/bigclaw/*.py` files; added `bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go`
+- Follow-up planner cleanup: rewired `bigclaw-go/internal/planning` candidate validation commands and evidence links away from deleted Python modules/tests to the current Go-native owners.
+- `cd bigclaw-go && go test ./internal/planning ./internal/regression` -> `ok  	bigclaw-go/internal/planning	0.406s`; `ok  	bigclaw-go/internal/regression	0.901s`
+- `find . -name '*.py' | sort | wc -l` -> `1`
+- `rg -n "src/bigclaw/(audit_events|collaboration|console_ia|deprecation|design_system|evaluation|governance|models|observability|operations|planning|reports|risk|run_detail|runtime|ui_review)\\.py|tests/test_(design_system|console_ia|operations|reports|ui_review)\\.py|python3 -m pytest tests/test_(design_system|operations|reports)" bigclaw-go/internal/planning docs/go-mainline-cutover-handoff.md README.md -g '*.go' -g '*.md'` -> only intentional historical/assertion matches remain
