@@ -133,6 +133,22 @@ type automationMixedWorkloadMatrixOptions struct {
 	OutputPath       string
 }
 
+type automationMultiNodeSharedQueueOptions struct {
+	GoRoot                    string
+	SourceReportPath          string
+	SourceTakeoverReportPath  string
+	SourceTakeoverArtifactDir string
+	OutputPath                string
+	TakeoverReportOutput      string
+	TakeoverArtifactDir       string
+}
+
+type automationSubscriberTakeoverHarnessOptions struct {
+	GoRoot           string
+	SourceReportPath string
+	OutputPath       string
+}
+
 type automationShadowCompareOptions struct {
 	PrimaryBaseURL       string
 	ShadowBaseURL        string
@@ -320,7 +336,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|mixed-workload-matrix|continuation-scorecard|continuation-policy-gate> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|mixed-workload-matrix|multi-node-shared-queue|subscriber-takeover-harness|continuation-scorecard|continuation-policy-gate> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -336,6 +352,10 @@ func runAutomationE2E(args []string) error {
 		return runAutomationExternalStoreValidationCommand(args[1:])
 	case "mixed-workload-matrix":
 		return runAutomationMixedWorkloadMatrixCommand(args[1:])
+	case "multi-node-shared-queue":
+		return runAutomationMultiNodeSharedQueueCommand(args[1:])
+	case "subscriber-takeover-harness":
+		return runAutomationSubscriberTakeoverHarnessCommand(args[1:])
 	case "continuation-scorecard":
 		return runAutomationContinuationScorecardCommand(args[1:])
 	case "continuation-policy-gate":
@@ -690,6 +710,84 @@ func runAutomationMixedWorkloadMatrixCommand(args []string) error {
 		return err
 	}
 	report, err := automationMixedWorkloadMatrix(automationMixedWorkloadMatrixOptions{
+		GoRoot:           *goRoot,
+		SourceReportPath: *sourceReport,
+		OutputPath:       *output,
+	})
+	if err != nil {
+		return err
+	}
+	if *pretty {
+		body, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = os.Stdout.Write(append(body, '\n'))
+		if !*asJSON {
+			return nil
+		}
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationMultiNodeSharedQueueCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e multi-node-shared-queue", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	sourceReport := flags.String("source-report", "bigclaw-go/docs/reports/multi-node-shared-queue-report.json", "canonical shared queue report path")
+	sourceTakeoverReport := flags.String("source-takeover-report", "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json", "canonical live takeover report path")
+	sourceTakeoverArtifactDir := flags.String("source-takeover-artifact-dir", "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts", "canonical live takeover artifact directory")
+	output := flags.String("output", "bigclaw-go/docs/reports/multi-node-shared-queue-report.json", "output shared queue report path")
+	takeoverReportOutput := flags.String("takeover-report-output", "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json", "output live takeover report path")
+	takeoverArtifactDir := flags.String("takeover-artifact-dir", "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts", "output live takeover artifact directory")
+	pretty := flags.Bool("pretty", false, "pretty-print shared queue report to stdout")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e multi-node-shared-queue [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationMultiNodeSharedQueue(automationMultiNodeSharedQueueOptions{
+		GoRoot:                    *goRoot,
+		SourceReportPath:          *sourceReport,
+		SourceTakeoverReportPath:  *sourceTakeoverReport,
+		SourceTakeoverArtifactDir: *sourceTakeoverArtifactDir,
+		OutputPath:                *output,
+		TakeoverReportOutput:      *takeoverReportOutput,
+		TakeoverArtifactDir:       *takeoverArtifactDir,
+	})
+	if err != nil {
+		return err
+	}
+	if *pretty {
+		body, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = os.Stdout.Write(append(body, '\n'))
+		if !*asJSON {
+			return nil
+		}
+	}
+	return emit(report, *asJSON, 0)
+}
+
+func runAutomationSubscriberTakeoverHarnessCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e subscriber-takeover-harness", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	sourceReport := flags.String("source-report", "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json", "canonical subscriber takeover harness report path")
+	output := flags.String("output", "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json", "output subscriber takeover harness report path")
+	pretty := flags.Bool("pretty", false, "pretty-print report to stdout")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e subscriber-takeover-harness [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationSubscriberTakeoverHarness(automationSubscriberTakeoverHarnessOptions{
 		GoRoot:           *goRoot,
 		SourceReportPath: *sourceReport,
 		OutputPath:       *output,
@@ -1918,7 +2016,7 @@ func automationContinuationPolicyGate(opts automationContinuationPolicyGateOptio
 		nextActions = append(nextActions, "export additional validation bundles so the continuation window spans multiple indexed runs")
 	}
 	if automationStringSliceContains(failingChecks, "shared_queue_companion_available") {
-		nextActions = append(nextActions, "rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json`")
+		nextActions = append(nextActions, "rerun `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --output docs/reports/multi-node-shared-queue-report.json --takeover-report-output docs/reports/live-multi-node-subscriber-takeover-report.json`")
 	}
 	if automationStringSliceContains(failingChecks, "repeated_lane_coverage_meets_policy") {
 		nextActions = append(nextActions, "refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage")
@@ -4528,6 +4626,69 @@ func automationMixedWorkloadMatrix(opts automationMixedWorkloadMatrixOptions) (m
 	}
 	if trim(opts.OutputPath) == "" {
 		opts.OutputPath = "bigclaw-go/docs/reports/mixed-workload-matrix-report.json"
+	}
+	report, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceReportPath))
+	if err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.OutputPath), report); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+func automationMultiNodeSharedQueue(opts automationMultiNodeSharedQueueOptions) (map[string]any, error) {
+	goRoot := resolveAutomationGoRoot(opts.GoRoot)
+	repoRoot := filepath.Clean(filepath.Join(goRoot, ".."))
+	if trim(opts.SourceReportPath) == "" {
+		opts.SourceReportPath = "bigclaw-go/docs/reports/multi-node-shared-queue-report.json"
+	}
+	if trim(opts.SourceTakeoverReportPath) == "" {
+		opts.SourceTakeoverReportPath = "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json"
+	}
+	if trim(opts.SourceTakeoverArtifactDir) == "" {
+		opts.SourceTakeoverArtifactDir = "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts"
+	}
+	if trim(opts.OutputPath) == "" {
+		opts.OutputPath = "bigclaw-go/docs/reports/multi-node-shared-queue-report.json"
+	}
+	if trim(opts.TakeoverReportOutput) == "" {
+		opts.TakeoverReportOutput = "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json"
+	}
+	if trim(opts.TakeoverArtifactDir) == "" {
+		opts.TakeoverArtifactDir = "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts"
+	}
+	report, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceReportPath))
+	if err != nil {
+		return nil, err
+	}
+	takeoverReport, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceTakeoverReportPath))
+	if err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.OutputPath), report); err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.TakeoverReportOutput), takeoverReport); err != nil {
+		return nil, err
+	}
+	if err := automationCopyTree(
+		resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceTakeoverArtifactDir),
+		resolveAutomationReportPath(repoRoot, goRoot, opts.TakeoverArtifactDir),
+	); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+func automationSubscriberTakeoverHarness(opts automationSubscriberTakeoverHarnessOptions) (map[string]any, error) {
+	goRoot := resolveAutomationGoRoot(opts.GoRoot)
+	repoRoot := filepath.Clean(filepath.Join(goRoot, ".."))
+	if trim(opts.SourceReportPath) == "" {
+		opts.SourceReportPath = "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json"
+	}
+	if trim(opts.OutputPath) == "" {
+		opts.OutputPath = "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json"
 	}
 	report, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.SourceReportPath))
 	if err != nil {

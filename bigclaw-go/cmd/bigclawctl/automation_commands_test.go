@@ -83,7 +83,7 @@ func TestRunAutomationE2EHelpIncludesContinuationCommands(t *testing.T) {
 		t.Fatalf("e2e help: %v", err)
 	}
 	text := string(output)
-	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|mixed-workload-matrix|continuation-scorecard|continuation-policy-gate") {
+	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|mixed-workload-matrix|multi-node-shared-queue|subscriber-takeover-harness|continuation-scorecard|continuation-policy-gate") {
 		t.Fatalf("unexpected e2e help: %s", text)
 	}
 }
@@ -200,6 +200,77 @@ func TestAutomationMixedWorkloadMatrixRepublishesCanonicalReport(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "\"expected_executor\": \"ray\"") || !strings.Contains(string(body), "\"routed_executor\": \"ray\"") {
 		t.Fatalf("unexpected output body: %s", string(body))
+	}
+}
+
+func TestAutomationMultiNodeSharedQueueRepublishesCanonicalReportsAndArtifacts(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	repoRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputRoot := t.TempDir()
+	reportPath := filepath.Join(outputRoot, "multi-node-shared-queue-report.json")
+	takeoverPath := filepath.Join(outputRoot, "live-multi-node-subscriber-takeover-report.json")
+	artifactDir := filepath.Join(outputRoot, "live-multi-node-subscriber-takeover-artifacts")
+	report, err := automationMultiNodeSharedQueue(automationMultiNodeSharedQueueOptions{
+		GoRoot:               repoRoot,
+		OutputPath:           reportPath,
+		TakeoverReportOutput: takeoverPath,
+		TakeoverArtifactDir:  artifactDir,
+	})
+	if err != nil {
+		t.Fatalf("republish multi-node shared queue: %v", err)
+	}
+	if report["count"] != float64(200) && report["count"] != 200 {
+		t.Fatalf("unexpected shared queue report: %+v", report)
+	}
+	reportBody, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read shared queue output: %v", err)
+	}
+	if !strings.Contains(string(reportBody), "\"cross_node_completions\": 99") {
+		t.Fatalf("unexpected shared queue body: %s", string(reportBody))
+	}
+	takeoverBody, err := os.ReadFile(takeoverPath)
+	if err != nil {
+		t.Fatalf("read takeover output: %v", err)
+	}
+	if !strings.Contains(string(takeoverBody), "\"status\": \"live-multi-node-proof\"") {
+		t.Fatalf("unexpected takeover body: %s", string(takeoverBody))
+	}
+	artifactBody, err := os.ReadFile(filepath.Join(artifactDir, "lease-expiry-stale-writer-rejected-live", "node-a-audit.jsonl"))
+	if err != nil {
+		t.Fatalf("read copied takeover artifact: %v", err)
+	}
+	if !strings.Contains(string(artifactBody), "subscriber.") || !strings.Contains(string(artifactBody), "\"_node\": \"node-a\"") {
+		t.Fatalf("unexpected copied takeover artifact: %s", string(artifactBody))
+	}
+}
+
+func TestAutomationSubscriberTakeoverHarnessRepublishesCanonicalReport(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	repoRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputPath := filepath.Join(t.TempDir(), "multi-subscriber-takeover-validation-report.json")
+	report, err := automationSubscriberTakeoverHarness(automationSubscriberTakeoverHarnessOptions{
+		GoRoot:     repoRoot,
+		OutputPath: outputPath,
+	})
+	if err != nil {
+		t.Fatalf("republish subscriber takeover harness: %v", err)
+	}
+	if report["status"] != "local-executable" {
+		t.Fatalf("unexpected takeover harness report: %+v", report)
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read harness output: %v", err)
+	}
+	if !strings.Contains(string(body), "\"stale_write_rejections\": 2") {
+		t.Fatalf("unexpected harness output body: %s", string(body))
 	}
 }
 

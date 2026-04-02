@@ -13,26 +13,22 @@ This lane is limited to the benchmark batch and the adjacent `scripts/e2e` lefto
 Current tree snapshot at the start of this pass:
 
 - `bigclaw-go/scripts/benchmark/**` contains no Python files.
-- The only Python files still in the scoped area are:
-  - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-  - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-  - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-  - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-Repository-wide Python file count at the start of this continuation: `94`
+- The scoped `bigclaw-go/scripts/benchmark/**` and selected `bigclaw-go/scripts/e2e/**` batch now contains no Python files.
+- Repository-wide Python file count at the start of the final cleanup sub-batch: `93`
 
 ## Plan
 
-1. Migrate `mixed_workload_matrix.py` into `bigclawctl automation e2e` as a Go-native canonical-report republisher.
-2. Update docs/tests to call the Go-native mixed workload matrix command.
-3. Delete the Python mixed workload matrix generator, then refresh batch inventory and validation results.
+1. Migrate the remaining shared-queue and subscriber-takeover Python generators into `bigclawctl automation e2e`.
+2. Update docs/tests and checked-in evidence metadata to point at Go-native ownership instead of deleted Python paths.
+3. Delete the remaining Python generators/tests in the scoped batch, then refresh inventory and validation results.
 
 ## Acceptance
 
 - State the exact scoped Python file list for this batch after this continuation.
 - Confirm how many files were removed from `bigclaw-go/scripts/benchmark/**` and this continuation’s `scripts/e2e/**` sub-batch.
-- Record delete/replace/keep rationale for the migrated mixed workload matrix generator plus the remaining selected `scripts/e2e/**` files.
-- Report repository-wide Python count impact for this lane after the mixed workload matrix migration.
-- Capture that the mixed workload matrix replacement uses the checked-in canonical JSON report rather than re-running the old mixed-executor routing harness in Go.
+- Record delete/replace/keep rationale for the final shared-queue and takeover generators.
+- Report repository-wide Python count impact for the full lane after the final migration sub-batch.
+- Capture that the final shared-queue and takeover replacements use checked-in canonical reports/artifacts rather than re-running the old Python harnesses in Go.
 - Capture exact validation commands and results.
 
 ## Validation
@@ -97,30 +93,35 @@ Repository-wide Python file count at the start of this continuation: `94`
   - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
     - Replaced by `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`
     - Go replacement republishes the checked-in canonical mixed workload matrix report instead of re-running the old mixed-executor routing harness in Go.
+  - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
+    - Replaced by `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`
+    - Go replacement republishes the checked-in shared-queue report, live takeover report, and live takeover artifact tree instead of re-running the old two-node Python harness.
+  - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
+    - Coverage moved into `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`
+  - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
+    - Replaced by `go run ./cmd/bigclawctl automation e2e subscriber-takeover-harness ...`
+    - Go replacement republishes the checked-in deterministic takeover harness report instead of re-running the old Python local simulation.
 
 - Kept in this lane:
-  - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-  - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-  - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-    - Reason: these files still own active report-generation or scenario-surface logic in the checked-in tree, and this issue did not add Go-native replacements for them.
+  - None in the scoped batch.
 
 ### Python Count Impact
 
 - Repository Python files before the lane: `108`
-- Repository Python files now: `93`
-- Net repository reduction from this lane: `15`
+- Repository Python files now: `90`
+- Net repository reduction from this lane: `18`
 - Scoped benchmark Python files before the lane: `4`
 - Scoped benchmark Python files now: `0`
-- Remaining scoped `scripts/e2e` Python files now: `3`
+- Remaining scoped `scripts/e2e` Python files now: `0`
 
 ### Validation Record
 
 - `find . -name '*.py' | wc -l`
-  - Result: `93`
+  - Result: `90`
 - `find bigclaw-go/scripts -name '*.py' | sort`
-  - Result: returned 3 scoped `bigclaw-go/scripts/e2e/*.py` files and no `bigclaw-go/scripts/benchmark/*.py` files.
+  - Result: returned no Python files under `bigclaw-go/scripts`.
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-  - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.593s`, later `ok  	bigclaw-go/cmd/bigclawctl	4.374s`, and later `ok  	bigclaw-go/cmd/bigclawctl	3.978s`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.593s`, later `ok  	bigclaw-go/cmd/bigclawctl	4.374s`, later `ok  	bigclaw-go/cmd/bigclawctl	3.978s`, and finally `ok  	bigclaw-go/cmd/bigclawctl	2.340s`
 - `cd bigclaw-go && go test ./internal/regression -run 'RunAll|Lane8ValidationBundleContinuation|RuntimeReportFollowupDocs|LiveValidationIndex'`
   - Result: `ok  	bigclaw-go/internal/regression	2.596s`
 - `cd bigclaw-go && go test ./internal/regression -run 'RunAll|LiveValidation|SharedQueueCompanion|BrokerValidationSummary|RuntimeReportFollowupDocs'`
@@ -143,8 +144,14 @@ Repository-wide Python file count at the start of this continuation: `94`
   - Result: exited `0` and printed external-store validation flags including `--source-report` and `--output`.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help`
   - Result: exited `0` and printed mixed-workload matrix flags including `--source-report` and `--output`.
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
+  - Result: exited `0` and printed shared queue republisher flags including `--output`, `--takeover-report-output`, and `--takeover-artifact-dir`.
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e subscriber-takeover-harness --help`
+  - Result: exited `0` and printed takeover harness republisher flags including `--source-report` and `--output`.
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --output "$tmpdir/mixed-workload-matrix-report.json" >/dev/null`
   - Result: exited `0` and wrote `mixed-workload-matrix-report.json` into a temporary directory.
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --output "$tmpdir/multi-node-shared-queue-report.json" --takeover-report-output "$tmpdir/live-multi-node-subscriber-takeover-report.json" --takeover-artifact-dir "$tmpdir/live-multi-node-subscriber-takeover-artifacts" >/dev/null && go run ./cmd/bigclawctl automation e2e subscriber-takeover-harness --output "$tmpdir/multi-subscriber-takeover-validation-report.json" >/dev/null`
+  - Result: exited `0` and wrote the shared queue report, live takeover report, deterministic takeover report, and copied live takeover audit artifacts into a temporary directory.
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e external-store-validation --output "$tmpdir/external-store-validation-report.json" >/dev/null`
   - Result: exited `0` and wrote `external-store-validation-report.json` into a temporary directory.
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --output "$tmpdir/report.json" --artifact-root "$tmpdir/artifacts" --checkpoint-fencing-summary-output "$tmpdir/checkpoint.json" --retention-boundary-summary-output "$tmpdir/retention.json" >/dev/null`
@@ -157,6 +164,8 @@ Repository-wide Python file count at the start of this continuation: `94`
   - Result: `ok  	bigclaw-go/internal/regression	0.879s`
 - `cd bigclaw-go && go test ./internal/regression -run 'IssueCoverage|BenchmarkReadiness|EpicClosure|RuntimeReportFollowupDocs'`
   - Result: `ok  	bigclaw-go/internal/regression	1.635s [no tests to run]`
+- `cd bigclaw-go && go test ./internal/regression -run 'SharedQueueReport|TakeoverProof|PythonLane8Remaining|RuntimeReportFollowupDocs|FollowupLaneDocs|LiveMultinodeTakeoverProof|ValidationBundleContinuation'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.866s`
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && ... && go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`
   - Result: command returned `0` against a temporary evidence fixture and wrote `live-validation-summary.json` plus `live-validation-index.md` with local, kubernetes, ray, broker, and validation-matrix sections.
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e continuation-scorecard --output "$tmpdir/scorecard.json" >/dev/null && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --scorecard "$tmpdir/scorecard.json" --enforcement-mode review --output "$tmpdir/gate.json" >/dev/null`

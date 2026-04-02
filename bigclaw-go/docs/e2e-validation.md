@@ -116,10 +116,9 @@ The checked-in output lives at `docs/reports/external-store-validation-report.js
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
-  --count 200 \
-  --submit-workers 8 \
-  --report-path docs/reports/multi-node-shared-queue-report.json
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue \
+  --output docs/reports/multi-node-shared-queue-report.json \
+  --takeover-report-output docs/reports/live-multi-node-subscriber-takeover-report.json
 ```
 
 This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
@@ -152,7 +151,7 @@ Use this to regenerate the executable local takeover harness report for lease-aw
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
+go run ./cmd/bigclawctl automation e2e subscriber-takeover-harness --pretty
 ```
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
@@ -161,11 +160,9 @@ For the live proof path, run the shared-queue harness:
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
-  --count 200 \
-  --submit-workers 8 \
-  --report-path docs/reports/multi-node-shared-queue-report.json \
-  --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue \
+  --output docs/reports/multi-node-shared-queue-report.json \
+  --takeover-report-output docs/reports/live-multi-node-subscriber-takeover-report.json
 ```
 
 This starts the same two-node cluster, drives live lease acquisition and checkpoint takeover through the subscriber-group API on both nodes against one shared SQLite-backed lease store, and exports runtime-emitted subscriber transition events into per-scenario takeover audit artifacts. The live proof upgrades ownership to a shared durable scaffold while keeping broker-backed and replicated ownership caveats explicit.
