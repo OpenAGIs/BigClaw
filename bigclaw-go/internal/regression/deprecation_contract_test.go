@@ -69,5 +69,13 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 		if !strings.Contains(got.LegacyMainlineStatus, "sole implementation mainline") {
 			t.Fatalf("module %s legacy status missing mainline guidance: %+v", module, got)
 		}
+		if module == "service" {
+			if strings.Contains(got.LegacyMainlineStatus, "service.py remains migration-only compatibility scaffolding") {
+				t.Fatalf("module %s legacy status still references deleted service.py: %+v", module, got)
+			}
+			if !strings.Contains(got.LegacyMainlineStatus, "package-root service compatibility surface remains migration-only") {
+				t.Fatalf("module %s legacy status missing package-root compatibility guidance: %+v", module, got)
+			}
+		}
 	}
 }
