@@ -5,7 +5,7 @@ from html import escape
 from pathlib import Path
 from typing import List, Optional
 
-from .observability import (
+from . import (
     FLOW_HANDOFF_EVENT,
     MANUAL_TAKEOVER_EVENT,
     CollaborationThread,

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
 from . import Task
-from .observability import ObservabilityLedger
+from . import ObservabilityLedger
 from .queue import PersistentTaskQueue
 from .reports import (
     RunDetailEvent,
