@@ -188,3 +188,39 @@ Acceptance
 
 Validation
 - `PYTHONPATH=src python3 -m pytest tests`
+
+Results
+
+- Residual reduction:
+  - `src/bigclaw` Python files: `8 -> 1`
+  - `src/bigclaw` Go files: `0 -> 0`
+  - root `pyproject.toml`: absent
+  - root `setup.py`: absent
+- Final retained package file:
+  - `src/bigclaw/__init__.py`
+- Compatibility surfaces preserved from the single-file package:
+  - `bigclaw.runtime`
+  - `bigclaw.repository`
+  - `bigclaw.models`
+  - `bigclaw.reports`
+  - `bigclaw.observability`
+  - `bigclaw.planning`
+  - `bigclaw.risk`
+  - `bigclaw.operations`
+  - `bigclaw.evaluation`
+- Final validation evidence:
+  - `PYTHONPATH=src python3 -m pytest tests`
+    - Result: `229 passed in 4.76s`
+  - `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py`
+    - Result: success
+  - `PYTHONPATH=src python3 - <<'PY' ... import bigclaw/runtime/repository/models/reports/observability ... PY`
+    - Result: success
+- Final branch commits in this lane:
+  - `54cd8d1` `BIG-GO-1014 fold planning surface into models`
+  - `163eacd` `BIG-GO-1014 fold operations surface into reports`
+  - `00d55d9` `BIG-GO-1014 fold report and observability surfaces into runtime`
+  - `661ee96` `BIG-GO-1014 fold repository and models into runtime`
+  - `6d1db07` `BIG-GO-1014 fold runtime into package init`
+  - `312c001` `BIG-GO-1014 polish single-file package layout`
+  - `1e64c5a` `BIG-GO-1014 record broader final validation`
+  - `8510e33` `BIG-GO-1014 harden final regression coverage`
