@@ -71,3 +71,5 @@
 - `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/reports/BIG-GO-1098-status.json >/dev/null` -> exit `0`
 - Baseline `.py` tree count before the branch (`261a43fe14a0f801f71d49ebe7be4a6d6f26d5ce`): `19`
 - Current worktree `.py` count: `19`
+- Normalized `reports/BIG-GO-1098-status.json` to the richer repo-local issue status schema used by adjacent `BIG-GO-*` closeout records.
+- Revalidated `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/reports/BIG-GO-1098-status.json >/dev/null` -> exit `0`

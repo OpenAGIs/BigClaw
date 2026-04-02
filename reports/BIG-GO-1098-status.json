@@ -1,50 +1,57 @@
 {
-  "identifier": "BIG-GO-1098",
-  "title": "Go-replacement BF: Go-test replacement tranche for residual Python tests",
-  "status": "done",
-  "summary": "Replaced the remaining live references to deleted Python tests with Go-native validation commands, Go evidence targets, and regression enforcement across planning, bootstrap, and repo-managed documentation surfaces.",
+  "issue": {
+    "identifier": "BIG-GO-1098",
+    "title": "Go-replacement BF: Go-test replacement tranche for residual Python tests",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1098",
+    "latest_code_migration_commit": "562b7366"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1098-closeout.md",
+    "validation_report": "reports/BIG-GO-1098-validation.md",
+    "status_record": "reports/BIG-GO-1098-status.json",
+    "regression_guard": "bigclaw-go/internal/regression/planning_python_test_replacement_test.go",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw"
+  },
+  "validation": {
+    "commands": [
+      "cd bigclaw-go && go test ./internal/planning ./internal/regression",
+      "cd bigclaw-go && go test ./internal/bootstrap ./internal/planning ./internal/regression",
+      "bash scripts/dev_bootstrap.sh",
+      "BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh",
+      "cd bigclaw-go && go test ./internal/repo ./internal/collaboration ./internal/observability ./internal/reportstudio ./internal/governance ./internal/triage ./internal/service ./internal/product ./internal/legacyshim ./internal/regression",
+      "rg -n \"pytest|tests/test_.*\\\\.py\" README.md docs scripts src bigclaw-go --glob '!bigclaw-go/internal/regression/**' --glob '!bigclaw-go/internal/planning/planning_test.go' --glob '!bigclaw-go/internal/workflow/**' --glob '!bigclaw-go/internal/policy/**' --glob '!bigclaw-go/internal/observability/**' --glob '!bigclaw-go/internal/events/**'",
+      "python3 -m json.tool reports/BIG-GO-1098-status.json >/dev/null",
+      "find . -path '*/.git' -prune -o -name '*.py' -print | wc -l"
+    ],
+    "results": {
+      "planning_and_regression": "ok   bigclaw-go/internal/planning  0.941s; ok   bigclaw-go/internal/regression  2.392s",
+      "bootstrap_planning_regression": "ok   bigclaw-go/internal/bootstrap  3.196s; ok   bigclaw-go/internal/planning  (cached); ok   bigclaw-go/internal/regression  (cached)",
+      "default_bootstrap": "ok   bigclaw-go/cmd/bigclawctl  3.453s; exited 0",
+      "go_native_legacy_bootstrap": "ok   bigclaw-go/cmd/bigclawctl  3.857s; smoke_ok local; ok   bigclaw-go/internal/bootstrap  (cached); ok   bigclaw-go/internal/planning  (cached); ok   bigclaw-go/internal/regression  (cached)",
+      "docs_and_runtime_suite": "ok   bigclaw-go/internal/repo  0.874s; ok   bigclaw-go/internal/collaboration  1.323s; ok   bigclaw-go/internal/observability  1.743s; ok   bigclaw-go/internal/reportstudio  2.227s; ok   bigclaw-go/internal/governance  2.687s; ok   bigclaw-go/internal/triage  3.128s; ok   bigclaw-go/internal/service  3.581s; ok   bigclaw-go/internal/product  3.960s; ok   bigclaw-go/internal/legacyshim  4.378s; ok   bigclaw-go/internal/regression  (cached)",
+      "stale_reference_scan": "no live pytest/tests/test_*.py matches outside intentional regression fixtures",
+      "status_json": "valid JSON",
+      "repo_py_count": "19"
+    }
+  },
   "python_file_count": {
     "before": 19,
     "after": 19,
     "delta": 0
   },
-  "go_replacements": [
-    "go test ./internal/designsystem ./internal/consoleia ./internal/uireview",
-    "go test ./internal/contract ./internal/evaluation ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler",
-    "go test ./internal/collaboration ./internal/pilot ./internal/reportstudio",
-    "go test ./internal/bootstrap ./internal/planning ./internal/regression"
-  ],
-  "validation": [
-    {
-      "command": "cd bigclaw-go && go test ./internal/planning ./internal/regression",
-      "result": "passed"
-    },
-    {
-      "command": "cd bigclaw-go && go test ./internal/bootstrap ./internal/planning ./internal/regression",
-      "result": "passed"
-    },
-    {
-      "command": "bash scripts/dev_bootstrap.sh",
-      "result": "passed"
-    },
-    {
-      "command": "BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh",
-      "result": "passed"
-    },
-    {
-      "command": "cd bigclaw-go && go test ./internal/repo ./internal/collaboration ./internal/observability ./internal/reportstudio ./internal/governance ./internal/triage ./internal/service ./internal/product ./internal/legacyshim ./internal/regression",
-      "result": "passed"
-    },
-    {
-      "command": "rg -n \"pytest|tests/test_.*\\\\.py\" README.md docs scripts src bigclaw-go --glob '!bigclaw-go/internal/regression/**' --glob '!bigclaw-go/internal/planning/planning_test.go' --glob '!bigclaw-go/internal/workflow/**' --glob '!bigclaw-go/internal/policy/**' --glob '!bigclaw-go/internal/observability/**' --glob '!bigclaw-go/internal/events/**'",
-      "result": "no matches"
-    }
-  ],
-  "commits": [
-    "87f8c46e",
-    "e01f74d9",
-    "ed415734",
-    "2831f96d",
-    "562b7366"
+  "blocker": {
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1098."
+  },
+  "notes": [
+    "The residual physical Python tests had already been removed before this branch; the delivered value is Go-only replacement of the remaining live planning, bootstrap, and documentation surfaces plus regression enforcement that keeps them clean.",
+    "src/bigclaw/planning.py remains part of the exported Python compatibility surface via src/bigclaw/__init__.py, so this lane intentionally converted its validation/evidence paths to Go without deleting the module.",
+    "No BIG-GO-1098 record exists in local-issues.json or the Symphony local issue store in this workspace, so any remaining active state is external to this repository."
   ]
 }
