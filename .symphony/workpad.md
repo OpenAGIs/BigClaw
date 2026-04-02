@@ -131,3 +131,9 @@ Current in-scope Python file count before this lane: `7`
 - `reports/BIG-GO-982-closeout.md`
   - Repo-native closeout note summarizing the final sweep, replacement map, validation commands,
     and resulting Python file count reduction.
+- `reports/BIG-GO-982-validation.md`
+  - Validation report with exact commands and recorded results for the final sweep.
+- `reports/BIG-GO-982-status.json`
+  - Machine-readable issue status, replacement map, validation command list, and count impact.
+- `reports/BIG-GO-982-pr.md`
+  - Reviewer-facing PR summary covering scope, replacement commands, validation, and artifact links.

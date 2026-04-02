@@ -35,6 +35,8 @@
     "workpad": ".symphony/workpad.md",
     "closeout": "reports/BIG-GO-982-closeout.md",
     "validation": "reports/BIG-GO-982-validation.md",
+    "status": "reports/BIG-GO-982-status.json",
+    "pr_draft": "reports/BIG-GO-982-pr.md",
     "migration_plan": "docs/go-cli-script-migration-plan.md"
   },
   "validation": {

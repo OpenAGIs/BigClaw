@@ -84,3 +84,6 @@ Later branch commits add reviewer artifacts and do not change the retired-script
 - `docs/go-mainline-cutover-issue-pack.md`
 - `README.md`
 - `reports/BIG-GO-982-closeout.md`
+- `reports/BIG-GO-982-validation.md`
+- `reports/BIG-GO-982-status.json`
+- `reports/BIG-GO-982-pr.md`
