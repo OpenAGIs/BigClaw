@@ -64,3 +64,10 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/bigclaw-go && go test ./internal/regression` -> exit `0`
   - `ok  	bigclaw-go/internal/regression	1.300s`
 - `rg -n "pytest|tests/test_.*\\.py" README.md docs scripts src bigclaw-go --glob '!bigclaw-go/internal/regression/**' --glob '!bigclaw-go/internal/planning/planning_test.go' --glob '!bigclaw-go/internal/workflow/**' --glob '!bigclaw-go/internal/policy/**' --glob '!bigclaw-go/internal/observability/**' --glob '!bigclaw-go/internal/events/**'` -> exit `1` with no matches
+- Added repo-native issue artifacts:
+  - `reports/BIG-GO-1098-validation.md`
+  - `reports/BIG-GO-1098-closeout.md`
+  - `reports/BIG-GO-1098-status.json`
+- `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/reports/BIG-GO-1098-status.json >/dev/null` -> exit `0`
+- Baseline `.py` tree count before the branch (`261a43fe14a0f801f71d49ebe7be4a6d6f26d5ce`): `19`
+- Current worktree `.py` count: `19`

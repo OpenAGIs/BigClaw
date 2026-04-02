@@ -1,0 +1,50 @@
+{
+  "identifier": "BIG-GO-1098",
+  "title": "Go-replacement BF: Go-test replacement tranche for residual Python tests",
+  "status": "done",
+  "summary": "Replaced the remaining live references to deleted Python tests with Go-native validation commands, Go evidence targets, and regression enforcement across planning, bootstrap, and repo-managed documentation surfaces.",
+  "python_file_count": {
+    "before": 19,
+    "after": 19,
+    "delta": 0
+  },
+  "go_replacements": [
+    "go test ./internal/designsystem ./internal/consoleia ./internal/uireview",
+    "go test ./internal/contract ./internal/evaluation ./internal/product ./internal/worker ./internal/workflow ./internal/scheduler",
+    "go test ./internal/collaboration ./internal/pilot ./internal/reportstudio",
+    "go test ./internal/bootstrap ./internal/planning ./internal/regression"
+  ],
+  "validation": [
+    {
+      "command": "cd bigclaw-go && go test ./internal/planning ./internal/regression",
+      "result": "passed"
+    },
+    {
+      "command": "cd bigclaw-go && go test ./internal/bootstrap ./internal/planning ./internal/regression",
+      "result": "passed"
+    },
+    {
+      "command": "bash scripts/dev_bootstrap.sh",
+      "result": "passed"
+    },
+    {
+      "command": "BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh",
+      "result": "passed"
+    },
+    {
+      "command": "cd bigclaw-go && go test ./internal/repo ./internal/collaboration ./internal/observability ./internal/reportstudio ./internal/governance ./internal/triage ./internal/service ./internal/product ./internal/legacyshim ./internal/regression",
+      "result": "passed"
+    },
+    {
+      "command": "rg -n \"pytest|tests/test_.*\\\\.py\" README.md docs scripts src bigclaw-go --glob '!bigclaw-go/internal/regression/**' --glob '!bigclaw-go/internal/planning/planning_test.go' --glob '!bigclaw-go/internal/workflow/**' --glob '!bigclaw-go/internal/policy/**' --glob '!bigclaw-go/internal/observability/**' --glob '!bigclaw-go/internal/events/**'",
+      "result": "no matches"
+    }
+  ],
+  "commits": [
+    "87f8c46e",
+    "e01f74d9",
+    "ed415734",
+    "2831f96d",
+    "562b7366"
+  ]
+}
