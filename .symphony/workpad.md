@@ -39,3 +39,11 @@
 ## Notes
 - Removed `.gitignore` entry `*.egg-info/` because the repository no longer carries packaging outputs for this path.
 - Removed deleted-workspace-shim references from the legacy Python compile-check list so regression coverage now matches the reduced Python shim surface.
+- Added automated Go regression coverage in `bigclaw-go/internal/legacyshim/shellwrappers_test.go` to execute the retained shell wrappers and verify their `bigclawctl` help surfaces.
+
+## Follow-up Validation
+- `go test ./internal/legacyshim/...`
+- Result: passed
+- `go test ./cmd/bigclawctl/... ./internal/bootstrap/... ./internal/legacyshim/...`
+  run from `bigclaw-go/`
+- Result: passed
