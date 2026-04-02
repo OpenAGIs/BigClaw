@@ -78,7 +78,7 @@ operator docs and external automation references finish the direct cutover to
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `bash scripts/ops/bigclawctl refill --help`

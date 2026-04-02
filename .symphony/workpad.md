@@ -46,3 +46,17 @@
   - `ok  	bigclaw-go/internal/planning	(cached)`
   - `ok  	bigclaw-go/internal/regression	(cached)`
   - `BigClaw Go environment is ready, and the remaining migration planning surface was validated with Go coverage.`
+- Updated `docs/BigClaw-AgentHub-Integration-Alignment.md` to replace deleted Python test commands with the corresponding Go-native repo/collaboration/observability/reportstudio/governance/triage/service/product suites.
+- Updated `docs/go-cli-script-migration-plan.md` to replace the deleted Python legacy-shim/deprecation test command with `go test ./internal/legacyshim ./internal/regression`.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/bigclaw-go && go test ./internal/repo ./internal/collaboration ./internal/observability ./internal/reportstudio ./internal/governance ./internal/triage ./internal/service ./internal/product ./internal/legacyshim ./internal/regression` -> exit `0`
+  - `ok  	bigclaw-go/internal/repo	0.874s`
+  - `ok  	bigclaw-go/internal/collaboration	1.323s`
+  - `ok  	bigclaw-go/internal/observability	1.743s`
+  - `ok  	bigclaw-go/internal/reportstudio	2.227s`
+  - `ok  	bigclaw-go/internal/governance	2.687s`
+  - `ok  	bigclaw-go/internal/triage	3.128s`
+  - `ok  	bigclaw-go/internal/service	3.581s`
+  - `ok  	bigclaw-go/internal/product	3.960s`
+  - `ok  	bigclaw-go/internal/legacyshim	4.378s`
+  - `ok  	bigclaw-go/internal/regression	(cached)`
+- `rg -n "pytest|tests/test_.*\\.py" /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/docs/BigClaw-AgentHub-Integration-Alignment.md /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/docs/go-cli-script-migration-plan.md` -> exit `1` with no matches
