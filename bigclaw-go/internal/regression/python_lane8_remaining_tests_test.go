@@ -10,30 +10,9 @@ import (
 
 func TestLane8PythonReplacementTrancheRemoved(t *testing.T) {
 	repoRoot := repoRoot(t)
-	for _, path := range []string{
-		"tests/test_control_center.py",
-		"tests/test_live_shadow_bundle.py",
-		"tests/test_orchestration.py",
-		"tests/test_queue.py",
-		"tests/test_repo_links.py",
-		"tests/test_repo_collaboration.py",
-		"tests/test_repo_rollout.py",
-		"tests/test_models.py",
-		"tests/test_planning.py",
-		"tests/test_operations.py",
-		"tests/test_observability.py",
-		"tests/test_reports.py",
-		"tests/test_design_system.py",
-		"tests/test_console_ia.py",
-		"tests/test_evaluation.py",
-		"tests/test_risk.py",
-		"tests/test_runtime_matrix.py",
-		"tests/test_scheduler.py",
-	} {
-		_, err := os.Stat(filepath.Join(repoRoot, path))
-		if !errors.Is(err, os.ErrNotExist) {
-			t.Fatalf("expected %s to stay removed, stat err=%v", path, err)
-		}
+	_, err := os.Stat(filepath.Join(repoRoot, "tests"))
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected root tests directory to stay removed, stat err=%v", err)
 	}
 }
 

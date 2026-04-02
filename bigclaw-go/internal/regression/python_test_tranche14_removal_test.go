@@ -9,15 +9,8 @@ import (
 func TestPythonTestTranche14Removed(t *testing.T) {
 	repoRoot := regressionRepoRoot(t)
 
-	deletedPythonFiles := []string{
-		"tests/test_ui_review.py",
-		"tests/reports_legacy.py",
-		"tests/conftest.py",
-	}
-	for _, relativePath := range deletedPythonFiles {
-		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
-			t.Fatalf("expected deleted Python test file to stay absent: %s", relativePath)
-		}
+	if _, err := os.Stat(filepath.Join(repoRoot, "tests")); !os.IsNotExist(err) {
+		t.Fatalf("expected deleted Python tests directory to stay absent: %v", err)
 	}
 
 	goReplacementFiles := []string{
