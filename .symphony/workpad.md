@@ -45,12 +45,17 @@
 
 ## Validation
 
+- `python3 -m pytest tests/test_planning.py -q`
 - `cd bigclaw-go && go test ./internal/worker ./internal/api ./internal/scheduler ./internal/workflow ./internal/queue ./internal/repo`
+- `cd bigclaw-go && go test ./internal/workflow ./internal/api ./internal/worker`
 - Additional focused `go test` commands for any specific package touched during parity work.
 - `git status --short`
 
 ## Validation Results
 
+- `python3 -m pytest tests/test_planning.py -q`
+  - Result: pass
+  - Output: `.............. [100%]`
 - `cd bigclaw-go && go test ./internal/worker ./internal/api ./internal/scheduler ./internal/workflow ./internal/queue ./internal/repo`
   - Result: pass
   - Package results:
@@ -60,6 +65,12 @@
     - `ok  	bigclaw-go/internal/workflow	(cached)`
     - `ok  	bigclaw-go/internal/queue	(cached)`
     - `ok  	bigclaw-go/internal/repo	(cached)`
+- `cd bigclaw-go && go test ./internal/workflow ./internal/api ./internal/worker`
+  - Result: pass
+  - Package results:
+    - `ok  	bigclaw-go/internal/workflow	(cached)`
+    - `ok  	bigclaw-go/internal/api	(cached)`
+    - `ok  	bigclaw-go/internal/worker	(cached)`
 
 ## Residual Risks
 

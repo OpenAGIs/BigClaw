@@ -38,13 +38,23 @@
 
 - Added Go service endpoint coverage for `/healthz` and JSON `/metrics`.
 - Removed lane-specific Python tests once matching Go coverage already existed.
+- Updated active planning and validation manifests that still referenced the deleted Python lane tests.
 - Left `tests/conftest.py` in place with an explicit delete plan because it is still shared by unrelated Python assets outside this lane.
 
 ## Validation Commands
 
 ```bash
+python3 -m pytest tests/test_planning.py -q
 cd bigclaw-go && go test ./internal/worker ./internal/api ./internal/scheduler ./internal/workflow ./internal/queue ./internal/repo
 ```
+
+## Validation Results
+
+- `python3 -m pytest tests/test_planning.py -q`
+  - Result: pass (`.............. [100%]`)
+- `cd bigclaw-go && go test ./internal/worker ./internal/api ./internal/scheduler ./internal/workflow ./internal/queue ./internal/repo`
+  - Result: pass
+  - Packages: `internal/worker`, `internal/api`, `internal/scheduler`, `internal/workflow`, `internal/queue`, `internal/repo`
 
 ## Residual Risks
 
