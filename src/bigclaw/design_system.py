@@ -3072,7 +3072,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 evidence_links=[
                     EvidenceLink(
                         label="command-center-src",
-                        target="src/bigclaw/operations.py",
+                        target="src/bigclaw/runtime.py",
                         capability="ops-control",
                         note="queue control center, dashboard builder, weekly review, and regression surfaces",
                     ),
@@ -3126,7 +3126,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-src",
-                        target="src/bigclaw/operations.py",
+                        target="src/bigclaw/runtime.py",
                         capability="rollback-simulation",
                         note="simulation, replay, comparison evidence, and operator dashboard context",
                     ),
@@ -3159,7 +3159,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="orchestration-report-src",
-                        target="src/bigclaw/reports.py",
+                        target="src/bigclaw/runtime.py",
                         capability="commercialization",
                         note="orchestration canvas, portfolio rollups, and narrative exports",
                     ),
