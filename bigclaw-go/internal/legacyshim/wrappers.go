@@ -73,5 +73,5 @@ func BuildRefillArgs(repoRoot string, forwarded []string) []string {
 }
 
 func BuildWorkspaceRuntimeBootstrapArgs(repoRoot string, forwarded []string) []string {
-	return BuildBigclawctlExecArgs(repoRoot, []string{"workspace"}, forwarded)
+	return BuildBigclawctlExecArgs(repoRoot, []string{"workspace", "bootstrap"}, forwarded)
 }

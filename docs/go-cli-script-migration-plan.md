@@ -18,10 +18,10 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
 - shell `scripts/ops/bigclawctl github-sync` is the only supported GitHub sync operator path
-- shell `scripts/ops/bigclaw_refill_queue` or `bigclawctl refill` is the supported refill path
-- shell `scripts/ops/bigclaw_workspace_bootstrap` or `bigclawctl workspace bootstrap` is the supported BigClaw workspace bootstrap path
-- shell `scripts/ops/symphony_workspace_bootstrap` or `bigclawctl workspace bootstrap` is the supported Symphony workspace bootstrap path
-- shell `scripts/ops/symphony_workspace_validate` or `bigclawctl workspace validate` is the supported workspace validation path
+- `bigclawctl refill` is the supported refill path; `scripts/ops/bigclaw_refill_queue` is a shell alias
+- `bigclawctl workspace bootstrap` is the supported BigClaw workspace bootstrap path; `scripts/ops/bigclaw_workspace_bootstrap` is a shell alias
+- `bigclawctl workspace bootstrap` is the supported Symphony workspace bootstrap path; `scripts/ops/symphony_workspace_bootstrap` is a shell alias
+- `bigclawctl workspace validate` is the supported workspace validation path; `scripts/ops/symphony_workspace_validate` is a shell alias
 
 ### `bigclaw-go/scripts/*` first automation batch
 

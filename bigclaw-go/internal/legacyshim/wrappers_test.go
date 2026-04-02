@@ -66,7 +66,7 @@ func TestRefillWrapperTargetsGoShim(t *testing.T) {
 }
 
 func TestWorkspaceRuntimeWrapperTargetsGoShim(t *testing.T) {
-	got := BuildWorkspaceRuntimeBootstrapArgs("/repo", []string{"bootstrap", "--json"})
+	got := BuildWorkspaceRuntimeBootstrapArgs("/repo", []string{"--json"})
 	want := []string{"bash", "/repo/scripts/ops/bigclawctl", "workspace", "bootstrap", "--json"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected workspace runtime args: got=%+v want=%+v", got, want)

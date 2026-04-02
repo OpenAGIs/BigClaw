@@ -26,4 +26,4 @@ if ! has_flag --cache-key "${args[@]}"; then
   args+=(--cache-key "$cache_key")
 fi
 
-exec bash "$script_dir/bigclawctl" workspace "${args[@]}"
+exec bash "$script_dir/bigclawctl" workspace bootstrap "${args[@]}"

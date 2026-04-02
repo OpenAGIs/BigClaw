@@ -48,6 +48,20 @@ func TestTopLevelModulePurgeTranche14(t *testing.T) {
 		if strings.Contains(text, "python") || strings.Contains(text, ".py") {
 			t.Fatalf("expected wrapper to stay shell/Go-only with no Python path references: %s", relativePath)
 		}
+		switch relativePath {
+		case "scripts/ops/bigclaw_refill_queue":
+			if !strings.Contains(text, `exec bash "$script_dir/bigclawctl" refill "$@"`) {
+				t.Fatalf("expected refill wrapper to dispatch directly to bigclawctl refill: %s", relativePath)
+			}
+		case "scripts/ops/bigclaw_workspace_bootstrap", "scripts/ops/symphony_workspace_bootstrap":
+			if !strings.Contains(text, `exec bash "$script_dir/bigclawctl" workspace bootstrap`) {
+				t.Fatalf("expected bootstrap wrapper to dispatch directly to bigclawctl workspace bootstrap: %s", relativePath)
+			}
+		case "scripts/ops/symphony_workspace_validate":
+			if !strings.Contains(text, `exec bash "$script_dir/bigclawctl" workspace validate`) {
+				t.Fatalf("expected validate wrapper to dispatch directly to bigclawctl workspace validate: %s", relativePath)
+			}
+		}
 	}
 }
 
@@ -60,10 +74,10 @@ func TestTopLevelModulePurgeTranche14DocsListOnlyShellOrGoEntrypoints(t *testing
 	text := string(contents)
 
 	required := []string{
-		"`scripts/ops/bigclaw_refill_queue` or `bigclawctl refill`",
-		"`scripts/ops/bigclaw_workspace_bootstrap` or `bigclawctl workspace bootstrap`",
-		"`scripts/ops/symphony_workspace_bootstrap` or `bigclawctl workspace bootstrap`",
-		"`scripts/ops/symphony_workspace_validate` or `bigclawctl workspace validate`",
+		"`bigclawctl refill` is the supported refill path; `scripts/ops/bigclaw_refill_queue` is a shell alias",
+		"`bigclawctl workspace bootstrap` is the supported BigClaw workspace bootstrap path; `scripts/ops/bigclaw_workspace_bootstrap` is a shell alias",
+		"`bigclawctl workspace bootstrap` is the supported Symphony workspace bootstrap path; `scripts/ops/symphony_workspace_bootstrap` is a shell alias",
+		"`bigclawctl workspace validate` is the supported workspace validation path; `scripts/ops/symphony_workspace_validate` is a shell alias",
 	}
 	for _, needle := range required {
 		if !strings.Contains(text, needle) {
