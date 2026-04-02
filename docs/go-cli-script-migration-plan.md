@@ -77,8 +77,9 @@ operator docs and external automation references finish the direct cutover to
 
 ## Validation Commands
 
+- `make test`
+- `make build`
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `bash scripts/ops/bigclawctl refill --help`
@@ -95,6 +96,10 @@ operator docs and external automation references finish the direct cutover to
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
+
+Legacy Python spot checks remain optional migration-only coverage and should be
+run through `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
+rather than as a default repo-root validation lane.
 
 ## Regression Surface
 

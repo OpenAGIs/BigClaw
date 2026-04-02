@@ -83,16 +83,17 @@ Notes:
 
 ## Legacy Python migration note
 
-Do not use Python packaging from the repository root. When a migration-only
-Python surface must be exercised, validate it directly from source:
+Do not use Python packaging from the repository root. The default repository
+validation path is Go-only:
 
 ```bash
-PYTHONPATH=src python3 -m pytest tests
+make test
+bash scripts/ops/bigclawctl dev-smoke
 ```
 
-Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface from the active environment without editable install
-or repo-root packaging bootstrap:
+Use the bootstrap helper when you need the Go-first validation flow plus the
+remaining legacy source-level Python migration coverage from the active
+environment without editable install or repo-root packaging bootstrap:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
@@ -123,20 +124,21 @@ bash scripts/ops/bigclawctl dev-smoke
 
 ## Quality gates
 
-Go mainline:
+Default root quality gates:
 
 ```bash
 make test
 make build
+bash scripts/ops/bigclawctl dev-smoke
 ```
 
-Go-first bootstrap helper:
+Go-first bootstrap helper with optional legacy migration coverage:
 
 ```bash
 bash scripts/dev_bootstrap.sh
 ```
 
-Legacy Python migration surface:
+Legacy Python migration-only surface:
 
 ```bash
 ruff check src tests scripts

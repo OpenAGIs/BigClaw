@@ -49,12 +49,11 @@ Supporting integration:
 
 ## Validation command baseline
 
-- Incremental:
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_registry.py tests/test_repo_gateway.py tests/test_repo_links.py`
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_collaboration.py tests/test_observability.py tests/test_reports.py`
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py tests/test_repo_triage.py tests/test_service.py tests/test_operations.py tests/test_repo_rollout.py`
-- Full:
-  - `PYTHONPATH=src python3 -m pytest -q`
+- Default repo validation:
+  - `make test`
+  - `make build`
+- Legacy migration-only spot checks:
+  - `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh`
 
 ## Final execution note
 This alignment file is now the single source of truth for PRD-to-issue traceability and release acceptance in the AgentHub integration stream.

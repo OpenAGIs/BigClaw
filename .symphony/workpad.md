@@ -1,28 +1,34 @@
-# BIG-GO-1091
+# BIG-GO-1097
 
 ## Plan
-- inspect the remaining root `scripts/ops/*.py` workspace shims and their active repo references
-- delete `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py`
-- update active documentation and regression coverage to point at `bash scripts/ops/bigclawctl workspace ...` instead of the deleted Python shims
-- run targeted validation covering reference cleanup, Go legacy shim tests, CLI help, and repository `.py` count reduction
-- commit and push the scoped change set
+
+1. Audit root README, workflow CI, and migration docs for Python references that still present active or default repo entrypoints.
+2. Replace those references with the current Go-first commands already implemented in `bigclawctl` and the Go test/build flow.
+3. Preserve historical inventory references where the docs are explicitly describing migrated Python assets or completed cutover evidence.
+4. Run targeted validation on the affected Go CLI/workflow surfaces, then record exact commands and results.
+5. Commit and push the scoped sweep to the workspace branch.
 
 ## Acceptance
-- the three remaining Python workspace shims under `scripts/ops` are removed from the repository
-- active repo guidance and regression coverage no longer instruct users to execute those deleted Python files
-- the repository `.py` file count decreases from the pre-change baseline
-- targeted validation records exact commands and results
+
+- README and repo docs no longer present Python as the default root validation or operator path where Go equivalents already exist.
+- `.github/workflows/ci.yml` validates the repo through Go-first commands instead of Python setup/test steps.
+- Historical migration docs still keep Python file/path mentions only when they are describing completed migration inventory or evidence.
+- The sweep provides clear Go replacement evidence for each removed default Python entrypoint reference.
 
 ## Validation
-- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
-- `bash scripts/ops/bigclawctl workspace bootstrap --help`
+
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...`
+- `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl workspace validate --help`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l`
+- `make test`
+- `make build`
+- `rg -n "python|\\.py\\b|python3|pip install|pytest" README.md docs .github/workflows`
 
 ## Validation Results
-- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl (cached)`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression 0.606s`
-- `bash scripts/ops/bigclawctl workspace bootstrap --help` -> exit `0`; printed `usage: bigclawctl workspace bootstrap [flags]`
+
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...` -> exit `0`; `ok bigclaw-go/cmd/bigclawctl 5.129s`
+- `bash scripts/ops/bigclawctl dev-smoke` -> exit `0`; `smoke_ok local`
 - `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `22` in `HEAD`; `19` in the worktree after deleting the three root Python shims
+- `make test` -> exit `0`; `go test ./...` passed across `bigclaw-go`, including `internal/queue 31.959s`, `internal/regression 6.447s`, `internal/service 6.572s`, and `internal/workflow 4.045s`
+- `make build` -> exit `0`; built `./cmd/bigclawd` and `./cmd/bigclawctl`
+- `rg -n "python|\\.py\\b|python3|pip install|pytest" README.md docs .github/workflows` -> no workflow hits remain; remaining matches are limited to legacy-marked README notes and historical migration inventory docs such as `docs/go-mainline-cutover-issue-pack.md` and `docs/go-mainline-cutover-handoff.md`
