@@ -121,6 +121,8 @@ Use this to verify the root dev smoke path:
 bash scripts/ops/bigclawctl dev-smoke
 ```
 
+`scripts/dev_smoke.py` is removed; do not use a Python fallback for root smoke validation.
+
 ## Quality gates
 
 Go mainline:

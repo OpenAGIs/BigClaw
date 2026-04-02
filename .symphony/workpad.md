@@ -1,27 +1,30 @@
-# BIG-GO-1080 Workpad
+# BIG-GO-1082 Workpad
 
 ## Plan
-- Confirm the residual Python test tranche under `tests/` and map each file to the current Go-native replacement surface.
-- Add focused Go coverage where the current replacement is still implicit, especially the `BIG-4204` UI review builder/report path and the release-planning entry that still references `tests/test_ui_review.py`.
-- Remove the residual Python test files for this tranche: `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py`.
-- Update any default execution path or metadata that still points at the deleted Python files so the repo no longer advertises them as the primary validation route.
-- Run targeted Go tests plus repo-level file-count checks, then commit and push the scoped branch.
+- Confirm the current repo state for `scripts/dev_smoke.py`, root smoke references, and the current `.py` count before edits.
+- Keep the root smoke path on `bash scripts/ops/bigclawctl dev-smoke` and remove any remaining live references that would suggest a Python dev-smoke entrypoint.
+- Because `scripts/dev_smoke.py` is already absent in this worktree, delete the remaining standalone Python deprecation helper tied to the frozen legacy wrapper surface and inline its logic at the only remaining call sites so the repository `.py` count still drops for this issue.
+- Add a focused Go regression check that keeps the root smoke docs on the Go entrypoint and prevents `scripts/dev_smoke.py` from reappearing in live docs.
+- Run targeted verification, record exact commands/results, then commit and push the scoped branch.
 
 ## Acceptance
-- `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py` are deleted.
-- Go-native tests cover the removed UI review and report-studio/reporting behaviors strongly enough that this slice is not a cosmetic deletion.
-- No default validation command or candidate metadata continues to reference the deleted Python test files.
-- Repository `.py` count decreases after the deletion.
-- The change set stays scoped to this issue.
+- `scripts/dev_smoke.py` remains absent.
+- The supported root dev-smoke path is `bash scripts/ops/bigclawctl dev-smoke`.
+- No live README/docs surface reintroduces `scripts/dev_smoke.py` as an active command.
+- The standalone Python helper `src/bigclaw/deprecation.py` is removed and its remaining behavior is preserved inline.
+- Repository `.py` count drops from the pre-change baseline.
 
 ## Validation
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l`
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning`
+- `find . -name '*.py' | sort | wc -l`
+- `rg -n "scripts/dev_smoke\\.py|python3 scripts/dev_smoke\\.py|dev_smoke\\.py" README.md docs .github scripts bigclaw-go src -g '!reports/**' -g '!.symphony/**'`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression`
+- `bash scripts/ops/bigclawctl dev-smoke`
 - `git status --short`
 
 ## Validation Results
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `23`
-- `find tests -maxdepth 1 -name '*.py' | sort` -> no output
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning ./internal/regression` -> first run failed in `internal/uireview` and `internal/regression` due to a sorted unresolved-question assertion mismatch and a bad regression root helper; reran after fixes and got `ok   bigclaw-go/internal/uireview 0.639s`, `ok   bigclaw-go/internal/reportstudio (cached)`, `ok   bigclaw-go/internal/planning (cached)`, `ok   bigclaw-go/internal/regression 0.974s`
-- `git status --short` -> modified workpad, planning/uireview Go files, deleted `tests/conftest.py`, `tests/reports_legacy.py`, `tests/test_ui_review.py`, added `bigclaw-go/internal/regression/python_test_tranche14_removal_test.go`, plus the in-scope Go replacement file `bigclaw-go/internal/uireview/builder.go`
+- `find . -name '*.py' | sort | wc -l` -> `22`
+- `rg -n "scripts/dev_smoke\\.py|python3 scripts/dev_smoke\\.py|dev_smoke\\.py" README.md docs .github scripts bigclaw-go src -g '!reports/**' -g '!.symphony/**'` -> hits only the explicit README removal note and the new regression guard; no live command path advertises `python3 scripts/dev_smoke.py`
+- `python3 -m py_compile src/bigclaw/__main__.py src/bigclaw/runtime.py` -> exited `0`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl 3.874s`; `ok   bigclaw-go/internal/regression 1.990s`
+- `bash scripts/ops/bigclawctl dev-smoke` -> `smoke_ok local`
+- `git status --short` -> `M .symphony/workpad.md`; `M README.md`; `M src/bigclaw/__main__.py`; `D src/bigclaw/deprecation.py`; `M src/bigclaw/runtime.py`; `?? bigclaw-go/internal/regression/dev_smoke_entrypoint_migration_test.go`

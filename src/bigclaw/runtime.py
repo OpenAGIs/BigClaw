@@ -7,6 +7,7 @@ import json
 import os
 import threading
 import time
+import warnings
 from collections import deque
 from dataclasses import dataclass, field
 from http import HTTPStatus
@@ -21,14 +22,24 @@ from .audit_events import (
     MANUAL_TAKEOVER_EVENT,
     SCHEDULER_DECISION_EVENT,
 )
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, RepoSyncAudit, TaskRun, utc_now
 from .risk import RiskScore, RiskScorer
 
 
+LEGACY_RUNTIME_GUIDANCE = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "the legacy Python runtime surface remains migration-only."
+)
+
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
 GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/worker/runtime.go"
+
+
+def warn_legacy_runtime_surface(surface: str, replacement: str) -> str:
+    message = f"{surface} is frozen for migration-only use. {LEGACY_RUNTIME_GUIDANCE} Use {replacement} instead."
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return message
 
 
 @dataclass
@@ -1330,8 +1341,6 @@ class WorkflowEngine:
 
 
 def warn_legacy_service_surface(surface: str = "python -m bigclaw serve") -> str:
-    from .deprecation import warn_legacy_runtime_surface
-
     return warn_legacy_runtime_surface(surface, "go run ./bigclaw-go/cmd/bigclawd")
 
 
