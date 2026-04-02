@@ -32,6 +32,7 @@ Current in-scope Python file count before this lane: `7`
 6. Record exact file disposition, replacement basis, and repository Python file
    count impact.
 7. Commit and push the scoped lane changes.
+8. Publish a repo-native closeout artifact for reviewers.
 
 ## Acceptance
 
@@ -124,3 +125,9 @@ Current in-scope Python file count before this lane: `7`
   - Result: only expected migration-plan/workpad references plus a repo-root helper-path
     fixture in `bigclaw-go/internal/legacyshim/wrappers_test.go`; no active operator docs
     still point to the removed Python wrappers.
+
+### Artifacts
+
+- `reports/BIG-GO-982-closeout.md`
+  - Repo-native closeout note summarizing the final sweep, replacement map, validation commands,
+    and resulting Python file count reduction.
