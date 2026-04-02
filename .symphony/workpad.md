@@ -138,3 +138,21 @@ Validation
 - `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_runtime_matrix.py tests/test_reports.py tests/test_observability.py tests/test_models.py tests/test_planning.py tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_control_center.py tests/test_evaluation.py`
 - `rg --files src/bigclaw -g '*.py' -g '*.go'`
+
+Continuation 8
+
+Plan
+- Do final quality cleanup on the single-file package form.
+- Fix any structural issues introduced by the package-init merge that do not affect file-count reduction scope.
+- Re-run compile/import checks plus a broader regression slice to confirm the final layout is stable.
+- Commit and push the cleanup if it changes repository state.
+
+Acceptance
+- Keep `src/bigclaw/*.py` at the single-file minimum.
+- Preserve package compatibility imports after the cleanup.
+- Record the exact validation commands and outcomes.
+
+Validation
+- `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 - <<'PY'` import checks for `bigclaw`, `bigclaw.runtime`, and `bigclaw.repository`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_board.py tests/test_repo_governance.py tests/test_repo_triage.py tests/test_repo_collaboration.py tests/test_audit_events.py tests/test_event_bus.py tests/test_dsl.py tests/test_governance.py tests/test_memory.py tests/test_risk.py`

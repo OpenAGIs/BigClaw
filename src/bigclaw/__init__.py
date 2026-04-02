@@ -1,9 +1,9 @@
+"""Legacy Python runtime and workflow surfaces frozen after Go mainline cutover."""
+
 from __future__ import annotations
 
 import sys
 import types
-
-"""Legacy Python runtime and workflow surfaces frozen after Go mainline cutover."""
 
 import heapq
 import json
