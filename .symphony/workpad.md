@@ -10,6 +10,7 @@
 - update active docs that still prescribe deleted Python test lanes as current validation
 - simplify regression checks so they assert the removed `tests/` directory rather than carrying long deleted-file manifests
 - remove the last active `tests/` mentions from root README/current planning assertions
+- tighten the remaining README bootstrap wording so it no longer uses the old migration-surface packaging phrasing
 - run targeted validation covering reference cleanup, Go legacy-shim tests, CLI help, and repository `.py` count reduction
 - commit and push the scoped change set
 
@@ -35,6 +36,8 @@
 - `cd bigclaw-go && go test ./internal/regression`
 - `rg -n "tests/|python -m bigclaw|src/bigclaw/__main__\\.py|src/bigclaw/service\\.py" README.md bigclaw-go/internal/planning/planning_test.go -g '!bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json'`
 - `cd bigclaw-go && go test ./internal/planning`
+- `rg -n "legacy Python migration surface|repo-root packaging|python -m bigclaw|src/bigclaw/__main__\\.py|src/bigclaw/service\\.py|tests/" README.md -g '!bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json'`
+- `bash scripts/dev_bootstrap.sh`
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l`
 
 ## Validation Results
@@ -53,6 +56,8 @@
 - `cd bigclaw-go && go test ./internal/regression` -> `ok   bigclaw-go/internal/regression 0.602s`
 - `rg -n "tests/|python -m bigclaw|src/bigclaw/__main__\\.py|src/bigclaw/service\\.py" README.md bigclaw-go/internal/planning/planning_test.go -g '!bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json'` -> exit `1` with no matches
 - `cd bigclaw-go && go test ./internal/planning` -> `ok   bigclaw-go/internal/planning 0.823s`
+- `rg -n "legacy Python migration surface|repo-root packaging|python -m bigclaw|src/bigclaw/__main__\\.py|src/bigclaw/service\\.py|tests/" README.md -g '!bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json'` -> exit `1` with no matches
+- `bash scripts/dev_bootstrap.sh` -> exit `0`; `ok   bigclaw-go/cmd/bigclawctl (cached)` followed by `BigClaw Go development environment is ready.`
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `19` tracked `.py` files in `HEAD`; `17` `.py` files in the worktree after deleting the packaging entrypoint residue
 - follow-up sweep: `rg -n "python -m bigclaw serve|src/bigclaw/service\\.py|src/bigclaw/__main__\\.py|python -m bigclaw\\b" README.md bigclaw-go .github scripts docs src -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json'` -> exit `1` with no matches after updating `src/bigclaw/runtime.py`
 - follow-up sweep: `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl` -> `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression (cached)`; `ok   bigclaw-go/cmd/bigclawctl 3.216s`

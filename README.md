@@ -89,9 +89,9 @@ Python surface must be exercised, validate it directly from source:
 bash scripts/ops/bigclawctl legacy-python compile-check --json
 ```
 
-Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface from the active environment without editable install
-or repo-root packaging bootstrap:
+Or use the bootstrap helper to validate Go first and then run the remaining
+legacy Python shim check from the active environment without a repo-root
+packaging bootstrap:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
