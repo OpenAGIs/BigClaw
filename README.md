@@ -87,7 +87,7 @@ Do not use Python packaging from the repository root. When a migration-only
 Python surface must be exercised, validate it directly from source:
 
 ```bash
-PYTHONPATH=src python3 -m pytest tests
+bash scripts/ops/bigclawctl legacy-python compile-check --json
 ```
 
 Or use the bootstrap helper to validate Go first and then run the legacy
@@ -100,8 +100,7 @@ BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 
 That helper always runs the Go `bigclawctl dev-smoke` replacement first, then
 `cd bigclaw-go && go test ./internal/bootstrap`, and finally the remaining
-targeted source-level Python migration suite in `tests/test_planning.py` when
-`pytest` is available.
+legacy Python shim compile-check when `python3` is available.
 
 ## Go smoke verify
 
@@ -139,8 +138,7 @@ bash scripts/dev_bootstrap.sh
 Legacy Python migration surface:
 
 ```bash
-ruff check src tests scripts
-PYTHONPATH=src python3 -m pytest tests
+bash scripts/ops/bigclawctl legacy-python compile-check --json
 pre-commit run --all-files
 ```
 
