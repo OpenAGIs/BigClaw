@@ -5,6 +5,8 @@ import sys
 import hashlib
 import heapq
 import json
+import types
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -20474,7 +20476,14 @@ def render_four_week_execution_report(plan: FourWeekExecutionPlan) -> str:
             )
     return "\n".join(lines)
 
-from .__main__ import legacy_runtime_message, warn_legacy_runtime_surface
+def legacy_runtime_message(surface: str, replacement: str) -> str:
+    return f"{surface} is frozen for migration-only use. {LEGACY_RUNTIME_GUIDANCE} Use {replacement} instead."
+
+
+def warn_legacy_runtime_surface(surface: str, replacement: str) -> str:
+    message = legacy_runtime_message(surface, replacement)
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return message
 
 __all__ = [
     "Task",
@@ -20855,11 +20864,36 @@ __all__ = [
 sys.modules[f"{__name__}.execution_contract"] = sys.modules[__name__]
 setattr(sys.modules[__name__], "execution_contract", sys.modules[__name__])
 
+class _LazyAliasModule(types.ModuleType):
+    def __init__(self, alias: str, target_name: str) -> None:
+        super().__init__(f"{__name__}.{alias}")
+        self._alias = alias
+        self._target_name = target_name
+
+    def _load(self):
+        module = importlib.import_module(f".{self._target_name}", __name__)
+        sys.modules[self.__name__] = module
+        setattr(sys.modules[__name__], self._alias, module)
+        return module
+
+    def __getattr__(self, item: str):
+        return getattr(self._load(), item)
+
+    def __dir__(self):
+        return dir(self._load())
+
+
 def _alias_legacy_module(alias: str, target_name: str) -> None:
     module = sys.modules.get(f"{__name__}.{target_name}")
     if module is None:
         module = importlib.import_module(f".{target_name}", __name__)
     sys.modules[f"{__name__}.{alias}"] = module
+    setattr(sys.modules[__name__], alias, module)
+
+
+def _alias_lazy_main_module(alias: str) -> None:
+    module = _LazyAliasModule(alias, "__main__")
+    sys.modules[module.__name__] = module
     setattr(sys.modules[__name__], alias, module)
 
 
@@ -20912,6 +20946,9 @@ for _alias, _target in (
     ("workspace_bootstrap_cli", "workspace_bootstrap"),
     ("workspace_bootstrap_validation", "workspace_bootstrap"),
 ):
+    if _target == "__main__":
+        _alias_lazy_main_module(_alias)
+        continue
     _alias_legacy_module(_alias, _target)
 
 del _alias

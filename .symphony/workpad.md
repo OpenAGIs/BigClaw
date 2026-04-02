@@ -86,6 +86,15 @@
     - `count= 2`
     - `__init__.py package_root`
     - `__main__.py package_entrypoint`
+- `PYTHONPATH=src python3 -m bigclaw --help`
+  - Result:
+    - no `runpy` runtime warning after replacing eager `__main__` aliases with lazy compatibility modules
+    - expected migration `DeprecationWarning` still emitted
+    - CLI help rendered successfully
+- `PYTHONPATH=src python3 -m bigclaw repo-sync-audit --help`
+  - Result: command help rendered successfully
+- `PYTHONPATH=src python3 -m pytest tests/test_workspace_bootstrap.py tests/test_github_sync.py tests/test_execution_contract.py`
+  - Result: `21 passed in 4.15s`
 
 ## Floor Assessment
 
@@ -98,3 +107,15 @@
   - With both package-root and module-entrypoint semantics still required, `2` files is the physical floor for `src/bigclaw` within the current Python package layout.
 - Final repository state:
   - `git status --short` returned no output after restoring the unrelated generated artifact.
+
+## Follow-up Fix
+
+- Post-compression CLI smoke testing exposed a `runpy` warning because package import eagerly registered `__main__` compatibility aliases.
+- Fixed by replacing eager `__main__` alias imports in `src/bigclaw/__init__.py` with lazy proxy modules for:
+  - `workspace_bootstrap`
+  - `deprecation`
+  - `github_sync`
+  - `legacy_shim`
+  - `service`
+  - `workspace_bootstrap_cli`
+  - `workspace_bootstrap_validation`
