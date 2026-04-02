@@ -443,7 +443,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
 		"src/bigclaw/saved_views.py",
-		"src/bigclaw/evaluation.py",
+		"src/bigclaw/operations.py",
 		"bigclaw-go/internal/evaluation/evaluation_test.go",
 	} {
 		if _, ok := targets[want]; !ok {
@@ -469,6 +469,9 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	}
 	if _, ok := releaseTargets["tests/test_ui_review.py"]; ok {
 		t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
+	}
+	if _, ok := targets["src/bigclaw/evaluation.py"]; ok {
+		t.Fatalf("deleted evaluation target still present in %+v", targets)
 	}
 }
 

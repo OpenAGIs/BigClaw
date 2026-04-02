@@ -775,9 +775,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-src",
-                        target="src/bigclaw/evaluation.py",
+                        target="src/bigclaw/operations.py",
                         capability="rollback-simulation",
-                        note="simulation, replay, and comparison evidence",
+                        note="simulation, replay, comparison evidence, and operator dashboard context",
                     ),
                     EvidenceLink(
                         label="simulation-tests",

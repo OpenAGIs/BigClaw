@@ -20,6 +20,8 @@
   and delete `src/bigclaw/models.py`
 - inline the console information-architecture surface into
   `src/bigclaw/design_system.py` and delete `src/bigclaw/console_ia.py`
+- inline the benchmark and replay evaluation surface into
+  `src/bigclaw/operations.py` and delete `src/bigclaw/evaluation.py`
 - update Go-side compile-check and regression coverage so the repo documents the
   wrappers as retired instead of frozen shims
 - refresh active Go-mainline migration docs and README language that still
@@ -49,6 +51,8 @@
   `src/bigclaw/observability.py`
 - `src/bigclaw/console_ia.py` is removed with its console shell contract logic
   preserved in `src/bigclaw/design_system.py`
+- `src/bigclaw/evaluation.py` is removed with its benchmark and replay logic
+  preserved in `src/bigclaw/operations.py`
 - active code, tests, and docs no longer describe those two files as retained
   compatibility shims
 - targeted Go validation covering `legacy-python` and regression guardrails

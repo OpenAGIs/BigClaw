@@ -13,6 +13,15 @@ def _install_legacy_surface_module(name: str, export_names: list[str], **extra_a
     globals()[name] = module
 
 
+def _install_surface_module(name: str, source_module: object, export_names: list[str], **extra_attrs: object) -> None:
+    module = types.ModuleType(f"{__name__}.{name}")
+    for export_name in export_names:
+        module.__dict__[export_name] = getattr(source_module, export_name)
+    module.__dict__.update(extra_attrs)
+    sys.modules[module.__name__] = module
+    globals()[name] = module
+
+
 _install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
@@ -259,7 +268,36 @@ from .reports import (
     write_report,
     write_report_studio_bundle,
 )
+from . import operations as _legacy_operations_surface
+
+_install_surface_module(
+    "evaluation",
+    _legacy_operations_surface,
+    [
+        "BenchmarkCase",
+        "BenchmarkComparison",
+        "BenchmarkResult",
+        "BenchmarkRunner",
+        "BenchmarkSuiteResult",
+        "EvaluationCriterion",
+        "ReplayOutcome",
+        "ReplayRecord",
+        "render_benchmark_suite_report",
+        "render_replay_detail_page",
+        "render_run_replay_index_page",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "evaluation.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/evaluation/evaluation.go",
+)
 from .operations import (
+    BenchmarkCase,
+    BenchmarkComparison,
+    BenchmarkResult,
+    BenchmarkRunner,
+    BenchmarkSuiteResult,
     DashboardBuilder,
     DashboardBuilderAudit,
     DashboardLayout,
@@ -271,6 +309,7 @@ from .operations import (
     EngineeringOverviewBlocker,
     EngineeringOverviewKPI,
     EngineeringOverviewPermission,
+    EvaluationCriterion,
     OperationsAnalytics,
     OperationsMetricDefinition,
     OperationsMetricSpec,
@@ -279,6 +318,8 @@ from .operations import (
     PolicyPromptVersionCenter,
     RegressionFinding,
     RegressionCenter,
+    ReplayOutcome,
+    ReplayRecord,
     TriageCluster,
     QueueControlCenter,
     VersionChangeSummary,
@@ -287,29 +328,19 @@ from .operations import (
     WeeklyOperationsArtifacts,
     WeeklyOperationsReport,
     render_dashboard_builder_report,
+    render_benchmark_suite_report,
     render_engineering_overview,
     render_operations_metric_spec,
     render_operations_dashboard,
     render_policy_prompt_version_center,
     render_queue_control_center,
+    render_replay_detail_page,
+    render_run_replay_index_page,
     render_regression_center,
     render_weekly_operations_report,
     write_dashboard_builder_bundle,
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
-)
-from .evaluation import (
-    BenchmarkCase,
-    BenchmarkComparison,
-    BenchmarkResult,
-    BenchmarkRunner,
-    BenchmarkSuiteResult,
-    EvaluationCriterion,
-    ReplayOutcome,
-    ReplayRecord,
-    render_run_replay_index_page,
-    render_replay_detail_page,
-    render_benchmark_suite_report,
 )
 from .planning import (
     FourWeekExecutionPlan,
