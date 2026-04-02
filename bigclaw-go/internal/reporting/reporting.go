@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/regression"
 	"github.com/pmezard/go-difflib/difflib"
 )
@@ -84,6 +85,30 @@ type WeeklyArtifacts struct {
 	RegressionCenterPath string `json:"regression_center_path,omitempty"`
 	QueueControlPath     string `json:"queue_control_path,omitempty"`
 	VersionCenterPath    string `json:"version_center_path,omitempty"`
+}
+
+type OrchestrationCanvas struct {
+	RunID             string   `json:"run_id,omitempty"`
+	TaskID            string   `json:"task_id,omitempty"`
+	Source            string   `json:"source,omitempty"`
+	Summary           string   `json:"summary,omitempty"`
+	CollaborationMode string   `json:"collaboration_mode,omitempty"`
+	Departments       []string `json:"departments,omitempty"`
+	Approvals         []string `json:"approvals,omitempty"`
+	HandoffTeam       string   `json:"handoff_team,omitempty"`
+}
+
+type TakeoverRequest struct {
+	RunID             string   `json:"run_id,omitempty"`
+	TaskID            string   `json:"task_id,omitempty"`
+	TargetTeam        string   `json:"target_team,omitempty"`
+	Reason            string   `json:"reason,omitempty"`
+	RequiredApprovals []string `json:"required_approvals,omitempty"`
+}
+
+type TakeoverQueue struct {
+	Period   string            `json:"period,omitempty"`
+	Requests []TakeoverRequest `json:"requests,omitempty"`
 }
 
 type RepoCollaborationRun struct {
@@ -203,6 +228,51 @@ func BuildRepoCollaborationMetrics(runs []RepoCollaborationRun) RepoCollaboratio
 		DiscussionDensity:       roundTenth(float64(discussionPosts) / total),
 		AcceptedLineageDepthAvg: roundTenth(float64(lineageDepth) / total),
 	}
+}
+
+func BuildOrchestrationCanvasFromLedgerEntry(entry map[string]any) OrchestrationCanvas {
+	canvas := OrchestrationCanvas{
+		RunID:   ledgerString(entry["run_id"]),
+		TaskID:  ledgerString(entry["task_id"]),
+		Source:  ledgerString(entry["source"]),
+		Summary: ledgerString(entry["summary"]),
+	}
+	for _, audit := range ledgerMapSlice(entry["audits"]) {
+		action := ledgerString(audit["action"])
+		details := ledgerMap(audit["details"])
+		switch action {
+		case "orchestration.plan":
+			canvas.CollaborationMode = ledgerString(details["collaboration_mode"])
+			canvas.Departments = ledgerStringSlice(details["departments"])
+			canvas.Approvals = ledgerStringSlice(details["approvals"])
+		case observability.ManualTakeoverEvent:
+			canvas.HandoffTeam = ledgerString(details["target_team"])
+			if len(canvas.Approvals) == 0 {
+				canvas.Approvals = ledgerStringSlice(details["required_approvals"])
+			}
+		}
+	}
+	return canvas
+}
+
+func BuildTakeoverQueueFromLedger(entries []map[string]any, period string) TakeoverQueue {
+	queue := TakeoverQueue{Period: strings.TrimSpace(period)}
+	for _, entry := range entries {
+		for _, audit := range ledgerMapSlice(entry["audits"]) {
+			if ledgerString(audit["action"]) != observability.ManualTakeoverEvent {
+				continue
+			}
+			details := ledgerMap(audit["details"])
+			queue.Requests = append(queue.Requests, TakeoverRequest{
+				RunID:             firstNonEmpty(ledgerString(details["run_id"]), ledgerString(entry["run_id"])),
+				TaskID:            firstNonEmpty(ledgerString(details["task_id"]), ledgerString(entry["task_id"])),
+				TargetTeam:        ledgerString(details["target_team"]),
+				Reason:            ledgerString(details["reason"]),
+				RequiredApprovals: ledgerStringSlice(details["required_approvals"]),
+			})
+		}
+	}
+	return queue
 }
 
 func (a ConsoleAction) State() string {
@@ -1337,6 +1407,67 @@ func joinOrNone(values []string) string {
 		return "none"
 	}
 	return strings.Join(values, ", ")
+}
+
+func ledgerMap(value any) map[string]any {
+	switch typed := value.(type) {
+	case map[string]any:
+		return typed
+	case map[string]string:
+		out := make(map[string]any, len(typed))
+		for key, item := range typed {
+			out[key] = item
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func ledgerMapSlice(value any) []map[string]any {
+	switch typed := value.(type) {
+	case []map[string]any:
+		return typed
+	case []any:
+		out := make([]map[string]any, 0, len(typed))
+		for _, item := range typed {
+			if mapped := ledgerMap(item); mapped != nil {
+				out = append(out, mapped)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func ledgerString(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return ""
+	case string:
+		return strings.TrimSpace(typed)
+	default:
+		return strings.TrimSpace(fmt.Sprint(value))
+	}
+}
+
+func ledgerStringSlice(value any) []string {
+	switch typed := value.(type) {
+	case []string:
+		return append([]string(nil), typed...)
+	case []any:
+		out := make([]string, 0, len(typed))
+		for _, item := range typed {
+			trimmed := ledgerString(item)
+			if trimmed != "" && trimmed != "<nil>" {
+				out = append(out, trimmed)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
 }
 
 func sortedMapKeys(values map[string]int) []string {

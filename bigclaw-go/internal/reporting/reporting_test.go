@@ -236,6 +236,50 @@ func TestRepoWeeklyNarrativeExportsRemainConsistent(t *testing.T) {
 	}
 }
 
+func TestReportsAcceptCanonicalHandoffAndTakeoverEvents(t *testing.T) {
+	entry := map[string]any{
+		"run_id":  "run-ope-134-canvas",
+		"task_id": "OPE-134-canvas",
+		"source":  "linear",
+		"summary": "handoff requested",
+		"audits": []map[string]any{
+			{
+				"action":  "orchestration.plan",
+				"actor":   "scheduler",
+				"outcome": "ready",
+				"details": map[string]any{
+					"collaboration_mode": "cross-functional",
+					"departments":        []any{"operations", "engineering"},
+					"approvals":          []any{"security-review"},
+				},
+			},
+			{
+				"action":  "execution.manual_takeover",
+				"actor":   "scheduler",
+				"outcome": "pending",
+				"details": map[string]any{
+					"task_id":            "OPE-134-canvas",
+					"run_id":             "run-ope-134-canvas",
+					"target_team":        "security",
+					"reason":             "manual review required",
+					"requested_by":       "scheduler",
+					"required_approvals": []any{"security-review"},
+				},
+			},
+		},
+	}
+
+	canvas := BuildOrchestrationCanvasFromLedgerEntry(entry)
+	queue := BuildTakeoverQueueFromLedger([]map[string]any{entry}, "2026-03-11")
+
+	if canvas.HandoffTeam != "security" {
+		t.Fatalf("expected security handoff team, got %+v", canvas)
+	}
+	if len(queue.Requests) != 1 || !reflect.DeepEqual(queue.Requests[0].RequiredApprovals, []string{"security-review"}) {
+		t.Fatalf("expected takeover queue approvals, got %+v", queue)
+	}
+}
+
 func TestBuildRepoCollaborationMetrics(t *testing.T) {
 	metrics := BuildRepoCollaborationMetrics([]RepoCollaborationRun{
 		{HasRepoLink: true, AcceptedCommitHash: "abc123", RepoDiscussionPosts: 3, AcceptedLineageDepth: 2},
