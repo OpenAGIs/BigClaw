@@ -14,6 +14,7 @@ func TestTopLevelPythonCompatibilityDocs(t *testing.T) {
 		"`src/bigclaw/__init__.py`",
 		"frozen for migration-only reference use",
 		"`python -m bigclaw` entrypoint has been retired",
+		"`python3 -m py_compile src/bigclaw/__init__.py`",
 	}
 	for _, needle := range requiredReadme {
 		if !strings.Contains(readme, needle) {
@@ -22,6 +23,16 @@ func TestTopLevelPythonCompatibilityDocs(t *testing.T) {
 	}
 	if strings.Contains(readme, "The legacy Python execution-kernel modules in") {
 		t.Fatal("README.md should not describe multiple legacy Python execution-kernel modules as retained compatibility surfaces")
+	}
+	disallowedReadme := []string{
+		"PYTHONPATH=src python3 -m pytest tests",
+		"tests/test_planning.py",
+		"ruff check src tests scripts",
+	}
+	for _, needle := range disallowedReadme {
+		if strings.Contains(readme, needle) {
+			t.Fatalf("README.md should not reference deleted repo-root Python test flow %q", needle)
+		}
 	}
 
 	handoff := readRepoFile(t, root, "docs/go-mainline-cutover-handoff.md")
