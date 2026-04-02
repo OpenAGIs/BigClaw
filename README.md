@@ -66,13 +66,12 @@ Notes:
   issue creation and state changes stay pinned to this repository's tracker file.
 - `bash scripts/ops/bigclawctl github-sync ...`,
   `bash scripts/ops/bigclawctl refill ...`, and
-  `bash scripts/ops/bigclawctl workspace ...` are the supported operator paths for the
-  former repo-root Python helper scripts.
-- `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
-  `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
-  `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
-  `bigclawctl automation ...`; the migration matrix lives in
+  `bash scripts/ops/bigclawctl workspace ...` are the supported operator paths after
+  the repo-root Python helper scripts were retired.
+- The active automation migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
+  Use `go run ./bigclaw-go/cmd/bigclawctl automation ...` directly for migrated
+  flows rather than any retired Python shim path.
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
@@ -156,10 +155,10 @@ The root Go-only build entrypoints are `make test`, `make build`, and `make run`
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the retired
 repo-root Python ops wrappers have been removed from the default operator path.
 
-The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
-`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+The legacy Python execution-kernel import surfaces `bigclaw.runtime`,
+`bigclaw.scheduler`, `bigclaw.workflow`, `bigclaw.orchestration`, and
+`bigclaw.queue` are now frozen for migration-only reference use via
+`src/bigclaw/runtime.py` and the compatibility exports in `src/bigclaw/__init__.py`.
+The legacy `python -m bigclaw serve` / `bigclaw.service` surface is also frozen;
+use `go run ./bigclaw-go/cmd/bigclawd` for the active local server path. Active
+runtime development belongs in `bigclaw-go/internal/*`.

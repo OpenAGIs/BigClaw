@@ -3,6 +3,9 @@
 ## Scope
 
 Refill sweep A for remaining repository-root/config/python packaging residuals.
+This pass removes stale root README references to deleted Python shim files and
+replaces missing legacy file-path references with the compatibility import
+surfaces that still exist in-tree.
 
 ## Branch
 
@@ -15,7 +18,10 @@ Refill sweep A for remaining repository-root/config/python packaging residuals.
 - `pyproject.toml`: `0`
 - `setup.py`: `0`
 
-## Committed cleanup
+Counts were unchanged in this pass; the repo-root cleanup was documentation and
+validation-surface tightening rather than source-file deletion.
+
+## Cleanup history
 
 - `cd902ee` `BIG-GO-1011 remove root python config residuals`
 - `63f6db5` `BIG-GO-1011 retire root python wrapper scripts`
@@ -38,6 +44,31 @@ find . -maxdepth 2 \( -name 'pyproject.toml' -o -name 'setup.py' -o -name 'setup
 ```
 
 Result: no matches
+
+```bash
+rg -n "run_task_smoke\.py|shadow_compare\.py|src/bigclaw/scheduler\.py|src/bigclaw/workflow\.py|src/bigclaw/orchestration\.py|src/bigclaw/queue\.py|src/bigclaw/service\.py" README.md
+```
+
+Result: exit `1` with no matches
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+repo = Path('.').resolve()
+paths = [
+    repo / 'src/bigclaw/runtime.py',
+    repo / 'src/bigclaw/__init__.py',
+    repo / 'bigclaw-go/docs/go-cli-script-migration.md',
+    repo / 'bigclaw-go/cmd/bigclawd/main.go',
+]
+missing = [str(p.relative_to(repo)) for p in paths if not p.exists()]
+if missing:
+    raise SystemExit('missing: ' + ', '.join(missing))
+print('ok:', ', '.join(str(p.relative_to(repo)) for p in paths))
+PY
+```
+
+Result: `ok: src/bigclaw/runtime.py, src/bigclaw/__init__.py, bigclaw-go/docs/go-cli-script-migration.md, bigclaw-go/cmd/bigclawd/main.go`
 
 ```bash
 make build
@@ -82,5 +113,7 @@ Remaining root-level Python mentions are intentional migration-only validation s
 - `scripts/dev_bootstrap.sh`
 - source-level `PYTHONPATH=src python3 -m pytest ...` guidance
 - root cache ignores for `__pycache__/`, `*.py[cod]`, and `.pytest_cache/`
+- compatibility import surfaces exposed through `src/bigclaw/__init__.py`
+  and `src/bigclaw/runtime.py`
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.
