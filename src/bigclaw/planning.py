@@ -761,9 +761,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="simulation-src",
-                        target="src/bigclaw/evaluation.py",
+                        target="bigclaw-go/internal/evaluation/evaluation.go",
                         capability="rollback-simulation",
-                        note="simulation, replay, and comparison evidence",
+                        note="Go-native simulation, replay, and comparison evidence",
                     ),
                     EvidenceLink(
                         label="simulation-tests",

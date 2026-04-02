@@ -443,7 +443,7 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
 		"src/bigclaw/saved_views.py",
-		"src/bigclaw/evaluation.py",
+		"bigclaw-go/internal/evaluation/evaluation.go",
 		"bigclaw-go/internal/evaluation/evaluation_test.go",
 	} {
 		if _, ok := targets[want]; !ok {

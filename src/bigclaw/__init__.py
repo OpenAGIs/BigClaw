@@ -243,7 +243,7 @@ from .operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .evaluation import (
+from .operations import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,

@@ -274,7 +274,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 					{Label: "execution-flow-tests", Target: "bigclaw-go/internal/worker/runtime_test.go", Capability: "ops-control", Note: "execution handoff, closeout, and routed runtime evidence"},
 					{Label: "saved-views-src", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "saved views, digest subscriptions, and governed filters"},
 					{Label: "saved-views-tests", Target: "bigclaw-go/internal/product/saved_views_test.go", Capability: "saved-views", Note: "Go-native saved-view audit coverage"},
-					{Label: "simulation-src", Target: "src/bigclaw/evaluation.py", Capability: "rollback-simulation", Note: "simulation, replay, and comparison evidence"},
+					{Label: "simulation-src", Target: "bigclaw-go/internal/evaluation/evaluation.go", Capability: "rollback-simulation", Note: "Go-native simulation, replay, and comparison evidence"},
 					{Label: "simulation-tests", Target: "bigclaw-go/internal/evaluation/evaluation_test.go", Capability: "rollback-simulation", Note: "Go-native replay and benchmark validation"},
 				},
 			},
