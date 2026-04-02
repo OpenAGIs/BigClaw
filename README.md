@@ -30,7 +30,6 @@ remain migration-only source assets and are not packaged from the root.
   - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
   - narrative report studio with section composing plus markdown, HTML, and plain-text export
   - v2 design-system token/component inventory with release-readiness audit reporting
-- `tests/`: unit tests
 
 ## Root Go quick start (recommended)
 

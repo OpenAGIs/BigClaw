@@ -462,7 +462,8 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		t.Fatalf("missing Go-native review pack evidence target in %+v", releaseTargets)
 	}
 	for target := range releaseTargets {
-		if strings.HasPrefix(target, "tests/") {
+		prefix, _, _ := strings.Cut(target, "/")
+		if prefix == "tests" {
 			t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
 		}
 	}
