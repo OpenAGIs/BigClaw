@@ -137,3 +137,9 @@ Current in-scope Python file count before this lane: `7`
   - Machine-readable issue status, replacement map, validation command list, and count impact.
 - `reports/BIG-GO-982-pr.md`
   - Reviewer-facing PR summary covering scope, replacement commands, validation, and artifact links.
+
+### Remaining External Follow-Up
+
+- GitHub-side issue or PR state was not mutated from this environment.
+  - Basis: `gh` is unauthenticated here, and there is no matching `BIG-GO-982` record in the local
+    repo tracker files to close in-repo.

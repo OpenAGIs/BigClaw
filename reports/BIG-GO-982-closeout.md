@@ -87,3 +87,9 @@ Later branch commits add reviewer artifacts and do not change the retired-script
 - `reports/BIG-GO-982-validation.md`
 - `reports/BIG-GO-982-status.json`
 - `reports/BIG-GO-982-pr.md`
+
+## Remaining External Follow-Up
+
+- The repository branch work is complete and pushed.
+- GitHub-side issue/PR state still must be updated outside this environment because `gh` is
+  unauthenticated here and no `BIG-GO-982` entry exists in the repo-local tracker files.

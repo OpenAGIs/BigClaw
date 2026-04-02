@@ -53,5 +53,7 @@
       "rg --files . -g '*.py' | wc -l"
     ]
   },
-  "blockers": []
+  "blockers": [
+    "GitHub-side issue/PR state was not mutated from this environment because gh is unauthenticated and no matching BIG-GO-982 record exists in the repo-local tracker files."
+  ]
 }
