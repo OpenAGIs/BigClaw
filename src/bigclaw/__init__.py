@@ -112,6 +112,9 @@ from .runtime import (
 )
 from .design_system import (
     AuditRequirement,
+    CandidateBacklog,
+    CandidateEntry,
+    CandidatePlanner,
     CommandAction,
     ComponentLibrary,
     ComponentSpec,
@@ -131,7 +134,13 @@ from .design_system import (
     DesignSystem,
     DesignSystemAudit,
     DesignToken,
+    EntryGate,
+    EntryGateDecision,
+    EvidenceLink,
+    FourWeekExecutionPlan,
+    FreezeException,
     FilterDefinition,
+    GovernanceBacklogItem,
     GlobalAction,
     InformationArchitecture,
     InformationArchitectureAudit,
@@ -141,6 +150,9 @@ from .design_system import (
     NavigationRoute,
     PerformanceBudget,
     RolePermissionScenario,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     SurfaceInteractionContract,
     SurfacePermissionRule,
     SurfaceState,
@@ -148,21 +160,24 @@ from .design_system import (
     UIAcceptanceLibrary,
     UIAcceptanceSuite,
     UsabilityJourney,
+    WeeklyExecutionPlan,
+    WeeklyGoal,
+    build_big_4701_execution_plan,
     build_big_4203_console_interaction_draft,
+    build_v3_candidate_backlog,
+    build_v3_entry_gate,
+    evaluate_candidate_gate,
+    build_pilot_rollout_scorecard,
+    render_candidate_backlog_report,
     render_console_interaction_report,
     render_console_ia_report,
     render_console_top_bar_report,
     render_design_system_report,
+    render_four_week_execution_report,
     render_information_architecture_report,
-    render_ui_acceptance_report,
-)
-from .planning import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
+    render_pilot_rollout_gate_report,
     render_scope_freeze_report,
+    render_ui_acceptance_report,
 )
 from .observability import (
     APPROVAL_RECORDED_EVENT,
@@ -269,6 +284,7 @@ from .reports import (
     write_report_studio_bundle,
 )
 from . import operations as _legacy_operations_surface
+from . import design_system as _legacy_design_system_surface
 
 _install_surface_module(
     "evaluation",
@@ -291,6 +307,40 @@ _install_surface_module(
         "evaluation.py remains migration-only compatibility scaffolding."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/evaluation/evaluation.go",
+)
+_install_surface_module(
+    "planning",
+    _legacy_design_system_surface,
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+        "CandidateBacklog",
+        "CandidateEntry",
+        "CandidatePlanner",
+        "EvidenceLink",
+        "EntryGate",
+        "EntryGateDecision",
+        "FourWeekExecutionPlan",
+        "WeeklyExecutionPlan",
+        "WeeklyGoal",
+        "build_big_4701_execution_plan",
+        "build_v3_candidate_backlog",
+        "build_v3_entry_gate",
+        "render_candidate_backlog_report",
+        "render_four_week_execution_report",
+        "build_pilot_rollout_scorecard",
+        "evaluate_candidate_gate",
+        "render_pilot_rollout_gate_report",
+    ],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "planning.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/planning/planning.go",
 )
 from .operations import (
     BenchmarkCase,
@@ -341,22 +391,6 @@ from .operations import (
     write_dashboard_builder_bundle,
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
-)
-from .planning import (
-    FourWeekExecutionPlan,
-    CandidateBacklog,
-    CandidateEntry,
-    CandidatePlanner,
-    EvidenceLink,
-    EntryGate,
-    EntryGateDecision,
-    WeeklyExecutionPlan,
-    WeeklyGoal,
-    build_big_4701_execution_plan,
-    build_v3_candidate_backlog,
-    build_v3_entry_gate,
-    render_candidate_backlog_report,
-    render_four_week_execution_report,
 )
 from .ui_review import (
     InteractionFlow,

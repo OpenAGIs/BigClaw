@@ -6,11 +6,11 @@ import (
 	"testing"
 )
 
-func TestTopLevelModulePurgeTranche20(t *testing.T) {
+func TestTopLevelModulePurgeTranche25(t *testing.T) {
 	repoRoot := regressionRepoRoot(t)
 
 	deletedPythonFiles := []string{
-		"src/bigclaw/governance.py",
+		"src/bigclaw/planning.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
@@ -20,8 +20,8 @@ func TestTopLevelModulePurgeTranche20(t *testing.T) {
 
 	replacementFiles := []string{
 		"src/bigclaw/design_system.py",
+		"bigclaw-go/internal/planning/planning.go",
 		"bigclaw-go/internal/governance/freeze.go",
-		"bigclaw-go/internal/governance/freeze_test.go",
 	}
 	for _, relativePath := range replacementFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); err != nil {

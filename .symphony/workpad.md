@@ -22,6 +22,8 @@
   `src/bigclaw/design_system.py` and delete `src/bigclaw/console_ia.py`
 - inline the benchmark and replay evaluation surface into
   `src/bigclaw/operations.py` and delete `src/bigclaw/evaluation.py`
+- inline the planning, freeze-governance, and execution-plan surface into
+  `src/bigclaw/design_system.py` and delete `src/bigclaw/planning.py`
 - update Go-side compile-check and regression coverage so the repo documents the
   wrappers as retired instead of frozen shims
 - refresh active Go-mainline migration docs and README language that still
@@ -53,6 +55,8 @@
   preserved in `src/bigclaw/design_system.py`
 - `src/bigclaw/evaluation.py` is removed with its benchmark and replay logic
   preserved in `src/bigclaw/operations.py`
+- `src/bigclaw/planning.py` is removed with its planning and governance logic
+  preserved in `src/bigclaw/design_system.py`
 - active code, tests, and docs no longer describe those two files as retained
   compatibility shims
 - targeted Go validation covering `legacy-python` and regression guardrails

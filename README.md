@@ -99,9 +99,8 @@ BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
 That helper always runs the Go `bigclawctl dev-smoke` replacement first, then
-`cd bigclaw-go && go test ./internal/bootstrap`, and finally the remaining
-targeted source-level Python migration suite in `tests/test_planning.py` when
-`pytest` is available.
+`cd bigclaw-go && go test ./internal/bootstrap`, and finally any remaining
+targeted source-level Python migration suites when `pytest` is available.
 
 ## Go smoke verify
 
