@@ -248,7 +248,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Evidence:          []string{"acceptance-suite", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
 					{Label: "design-system-audit", Target: "src/bigclaw/design_system.py", Capability: "release-gate", Note: "component inventory, accessibility, and UI acceptance coverage"},
-					{Label: "console-ia-contract", Target: "src/bigclaw/console_ia.py", Capability: "release-gate", Note: "global navigation, top bar, filters, and state contracts"},
+					{Label: "console-ia-contract", Target: "src/bigclaw/design_system.py", Capability: "release-gate", Note: "design system plus global navigation, top bar, filters, and state contracts"},
 					{Label: "ui-review-pack", Target: "src/bigclaw/ui_review.py", Capability: "release-gate", Note: "review objectives, wireframes, interaction coverage, and open questions"},
 					{Label: "ui-acceptance-tests", Target: "tests/test_design_system.py", Capability: "release-gate", Note: "role-permission, data accuracy, and performance audits"},
 					{Label: "console-shell-tests", Target: "tests/test_console_ia.py", Capability: "release-gate", Note: "console shell and interaction draft release readiness"},

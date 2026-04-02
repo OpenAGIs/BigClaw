@@ -674,9 +674,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="console-ia-contract",
-                        target="src/bigclaw/console_ia.py",
+                        target="src/bigclaw/design_system.py",
                         capability="release-gate",
-                        note="global navigation, top bar, filters, and state contracts",
+                        note="design system plus global navigation, top bar, filters, and state contracts",
                     ),
                     EvidenceLink(
                         label="ui-review-pack",

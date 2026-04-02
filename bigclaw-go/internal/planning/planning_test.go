@@ -461,6 +461,12 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	if _, ok := releaseTargets["bigclaw-go/internal/uireview/uireview_test.go"]; !ok {
 		t.Fatalf("missing Go-native review pack evidence target in %+v", releaseTargets)
 	}
+	if _, ok := releaseTargets["src/bigclaw/design_system.py"]; !ok {
+		t.Fatalf("missing consolidated design system evidence target in %+v", releaseTargets)
+	}
+	if _, ok := releaseTargets["src/bigclaw/console_ia.py"]; ok {
+		t.Fatalf("deleted console IA target still present in %+v", releaseTargets)
+	}
 	if _, ok := releaseTargets["tests/test_ui_review.py"]; ok {
 		t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
 	}
