@@ -18,6 +18,9 @@
   - `tests/test_orchestration.py`
   - `tests/test_queue.py`
 - Each Python test file has a Go replacement target or a clear delete plan.
+- In-scope Python asset reduction is explicit:
+  - deleted: `tests/test_runtime.py`, `tests/test_service.py`, `tests/test_scheduler.py`, `tests/test_workflow.py`, `tests/test_orchestration.py`, `tests/test_queue.py`
+  - retained with delete plan: `tests/conftest.py`
 - Validation commands and exact results are recorded after implementation.
 - Remaining Python or non-Go assets in this lane are removed where replacement coverage exists.
 
@@ -77,3 +80,9 @@
 - The Python `test_service.py` governance helper may not map 1:1 to the current Go repo/service architecture; if no production Go equivalent exists, the lane must document that the Python helper is being retired rather than mechanically reimplemented.
 - `tests/conftest.py` remains a cross-lane dependency until the rest of the Python test suite stops importing modules from `src/bigclaw`.
 - The repository report `reports/go-migration-lanes-2026-03-29.md` was not present at the workspace root, so lane scoping is derived from the issue description and the repo contents in this branch.
+
+## Asset Impact
+
+- In-scope Python test files: `7`
+- Deleted in this lane: `6`
+- Retained in this lane: `1` (`tests/conftest.py`, shared bootstrap helper)

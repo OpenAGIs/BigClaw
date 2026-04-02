@@ -41,6 +41,12 @@
 - Updated active planning and validation manifests that still referenced the deleted Python lane tests.
 - Left `tests/conftest.py` in place with an explicit delete plan because it is still shared by unrelated Python assets outside this lane.
 
+## Python Asset Impact
+
+- In-scope Python files: `7`
+- Deleted Python test files in this lane: `6`
+- Retained Python file in this lane: `1` (`tests/conftest.py`)
+
 ## Validation Commands
 
 ```bash
