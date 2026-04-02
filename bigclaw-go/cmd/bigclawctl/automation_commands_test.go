@@ -83,7 +83,7 @@ func TestRunAutomationE2EHelpIncludesContinuationCommands(t *testing.T) {
 		t.Fatalf("e2e help: %v", err)
 	}
 	text := string(output)
-	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate") {
+	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|continuation-scorecard|continuation-policy-gate") {
 		t.Fatalf("unexpected e2e help: %s", text)
 	}
 }
@@ -549,6 +549,49 @@ func TestAutomationBuildValidationComponentSectionEmitsK8SMatrixAndFailureRootCa
 		rootCause["message"] != "lease lost during replay" ||
 		rootCause["location"] != "docs/reports/live-validation-runs/run-k8s/kubernetes.stderr.log" {
 		t.Fatalf("unexpected component section: %+v", section)
+	}
+}
+
+func TestAutomationCoordinationCapabilitySurfaceMatchesCheckedInEvidence(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	goRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputPath := filepath.Join(t.TempDir(), "cross-process-coordination-capability-surface.json")
+	report, err := automationCoordinationCapabilitySurface(automationCoordinationCapabilitySurfaceOptions{
+		GoRoot:                 goRoot,
+		MultiNodeReportPath:    "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
+		TakeoverReportPath:     "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json",
+		LiveTakeoverReportPath: "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json",
+		OutputPath:             outputPath,
+		Now:                    func() time.Time { return time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("build coordination capability surface: %v", err)
+	}
+	if report["ticket"] != "BIG-PAR-085-local-prework" || report["status"] != "local-capability-surface" {
+		t.Fatalf("unexpected coordination capability surface identity: %+v", report)
+	}
+	summary, _ := report["summary"].(map[string]any)
+	if automationInt(summary["shared_queue_cross_node_completions"], 0) != 99 ||
+		automationInt(summary["takeover_passing_scenarios"], 0) != 3 ||
+		automationInt(summary["takeover_stale_write_rejections"], 0) != 2 ||
+		automationInt(summary["shared_queue_duplicate_completed_tasks"], 0) != 0 {
+		t.Fatalf("unexpected coordination summary: %+v", summary)
+	}
+	readinessLevels, _ := report["runtime_readiness_levels"].(map[string]any)
+	for _, level := range []string{"live_proven", "harness_proven", "contract_only", "supporting_surface"} {
+		if strings.TrimSpace(fmt.Sprint(readinessLevels[level])) == "" {
+			t.Fatalf("missing runtime_readiness_levels[%q]: %+v", level, readinessLevels)
+		}
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read coordination output: %v", err)
+	}
+	if !strings.Contains(string(body), "\"cross_process_replay_coordination\"") {
+		t.Fatalf("unexpected coordination output: %s", string(body))
 	}
 }
 

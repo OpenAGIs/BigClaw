@@ -176,7 +176,7 @@ Use this to regenerate the machine-readable coordination surface that ties toget
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/cross_process_coordination_surface.py --pretty
+go run ./cmd/bigclawctl automation e2e coordination-capability-surface --pretty
 ```
 
 This refreshes `docs/reports/cross-process-coordination-capability-surface.json` with the current live local proof metrics, takeover harness summary, capability-by-capability state, and the next runtime hooks for a real distributed coordination proof.

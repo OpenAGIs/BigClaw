@@ -100,6 +100,15 @@ type automationExportValidationBundleOptions struct {
 	Now                        func() time.Time
 }
 
+type automationCoordinationCapabilitySurfaceOptions struct {
+	GoRoot                 string
+	MultiNodeReportPath    string
+	TakeoverReportPath     string
+	LiveTakeoverReportPath string
+	OutputPath             string
+	Now                    func() time.Time
+}
+
 type automationShadowCompareOptions struct {
 	PrimaryBaseURL       string
 	ShadowBaseURL        string
@@ -287,7 +296,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|coordination-capability-surface|continuation-scorecard|continuation-policy-gate> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -295,6 +304,8 @@ func runAutomationE2E(args []string) error {
 		return runAutomationRunTaskSmokeCommand(args[1:])
 	case "export-validation-bundle":
 		return runAutomationExportValidationBundleCommand(args[1:])
+	case "coordination-capability-surface":
+		return runAutomationCoordinationCapabilitySurfaceCommand(args[1:])
 	case "continuation-scorecard":
 		return runAutomationContinuationScorecardCommand(args[1:])
 	case "continuation-policy-gate":
@@ -511,6 +522,45 @@ func runAutomationExportValidationBundleCommand(args []string) error {
 		return err
 	}
 	return emit(report, *asJSON, exitCode)
+}
+
+func runAutomationCoordinationCapabilitySurfaceCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e coordination-capability-surface", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	multiNodeReport := flags.String("multi-node-report", "bigclaw-go/docs/reports/multi-node-shared-queue-report.json", "multi-node shared queue report path")
+	takeoverReport := flags.String("takeover-report", "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json", "subscriber takeover harness report path")
+	liveTakeoverReport := flags.String("live-takeover-report", "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json", "live takeover report path")
+	output := flags.String("output", "bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json", "output path")
+	pretty := flags.Bool("pretty", false, "pretty-print report to stdout")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e coordination-capability-surface [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	report, err := automationCoordinationCapabilitySurface(automationCoordinationCapabilitySurfaceOptions{
+		GoRoot:                 *goRoot,
+		MultiNodeReportPath:    *multiNodeReport,
+		TakeoverReportPath:     *takeoverReport,
+		LiveTakeoverReportPath: *liveTakeoverReport,
+		OutputPath:             *output,
+	})
+	if err != nil {
+		return err
+	}
+	if *pretty {
+		body, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = os.Stdout.Write(append(body, '\n'))
+		if !*asJSON {
+			return nil
+		}
+	}
+	return emit(report, *asJSON, 0)
 }
 
 func runAutomationContinuationPolicyGateCommand(args []string) error {
@@ -2545,6 +2595,129 @@ func automationBuildFollowupDigests(root string) []map[string]string {
 	return items
 }
 
+func automationCoordinationCapabilitySurface(opts automationCoordinationCapabilitySurfaceOptions) (map[string]any, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	goRoot := resolveAutomationGoRoot(opts.GoRoot)
+	repoRoot := filepath.Dir(goRoot)
+	multiNode, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.MultiNodeReportPath))
+	if err != nil {
+		return nil, err
+	}
+	takeover, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.TakeoverReportPath))
+	if err != nil {
+		return nil, err
+	}
+	liveTakeover, err := automationReadJSONReport(resolveAutomationEvidencePath(repoRoot, goRoot, opts.LiveTakeoverReportPath))
+	if err != nil {
+		return nil, err
+	}
+	targetContracts := []map[string]any{
+		{
+			"capability":      "partitioned_topic_routing",
+			"contract_anchor": "events.SubscriptionRequest.PartitionRoute",
+			"runtime_status":  "contract_only",
+			"partitioning": map[string]any{
+				"topic":                    "provider-defined shared event stream",
+				"supported_partition_keys": []string{"trace_id", "task_id", "event_type"},
+				"ordering_scope":           "sequence remains portable within the selected partition route",
+				"filter_alignment":         "ReplayRequest task_id/trace_id filters must remain valid when a backend introduces partition routing.",
+			},
+			"ownership":  map[string]any{},
+			"guarantees": []string{"Partition keys are provider-neutral and map to existing trace/task/event_type selectors.", "Partition metadata may vary by backend, but portable replay ordering still uses Position.Sequence.", "No runtime implementation is shipped yet; this row defines the future adapter contract only."},
+		},
+		{
+			"capability":      "broker_backed_subscriber_ownership",
+			"contract_anchor": "events.SubscriptionRequest.OwnershipContract",
+			"runtime_status":  "contract_only",
+			"partitioning":    map[string]any{},
+			"ownership": map[string]any{
+				"subscriber_group": "shared durable consumer identity",
+				"mode":             "exclusive",
+				"lease_fields":     []string{"epoch", "lease_token"},
+				"partition_hints":  "optional partition affinity for future broker-backed consumers",
+			},
+			"guarantees": []string{"Checkpoint commits remain fenced by epoch plus lease token after ownership transfer.", "Ownership metadata travels through the neutral subscription contract instead of provider-specific APIs.", "No broker-backed runtime implementation is shipped yet; this row defines the future ownership contract only."},
+		},
+	}
+	capabilities := []map[string]any{
+		automationCoordinationCapabilityRow("shared_queue_task_coordination", "implemented", "live_proven", true, false, true, []string{"Two independent bigclawd processes share one SQLite-backed queue without duplicate terminal execution.", "Current proof is local and SQLite-backed rather than broker-backed or replicated."}),
+		automationCoordinationCapabilityRow("subscriber_takeover_semantics", "implemented_with_shared_durable_scaffold", "live_proven", true, true, true, []string{"Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by both the deterministic harness and the live two-node companion proof.", "The live proof now drives both nodes against one shared SQLite lease backend, but the provider-neutral broker-backed ownership contract is still not runtime-proven."}),
+		automationCoordinationCapabilityRow("cross_process_replay_coordination", "contract_defined", "harness_proven", false, true, true, []string{"Replay cursor and checkpoint expectations are codified across the local takeover harness and durability rollout contract.", "No broker-backed or partitioned live replay proof exists yet."}),
+		automationCoordinationCapabilityRow("stale_writer_fencing", "implemented_with_shared_durable_scaffold", "live_proven", true, true, true, []string{"The local takeover harness and the live two-node companion proof both show stale checkpoint writers being fenced after ownership transfer.", "The shared durable scaffold is SQLite-backed today, so the broker-backed ownership contract remains future work beyond the current local proof."}),
+		automationCoordinationCapabilityRow("partitioned_topic_routing", "not_available", "contract_only", false, false, true, []string{"No partitioned topic model exists yet in the runtime.", "Broker-backed target docs reserve partition or quorum log ordering as the future coordination scope."}),
+		automationCoordinationCapabilityRow("broker_backed_subscriber_ownership", "not_available", "contract_only", false, false, true, []string{"No broker-backed cross-process subscriber ownership model exists yet.", "The durability rollout contract defines the expected checkpoint fencing and failover guarantees before rollout-safe claims."}),
+		automationCoordinationCapabilityRow("operator_capability_surface", "implemented", "supporting_surface", false, false, true, []string{"The repo exposes provider-neutral durability and rollout metadata through docs and runtime-facing event_durability surfaces.", "This report adds a coordination-specific surface tying together live local proof, deterministic local harnesses, and future targets."}),
+	}
+	report := map[string]any{
+		"generated_at":                    utcISOTime(now().UTC()),
+		"ticket":                          "BIG-PAR-085-local-prework",
+		"title":                           "Cross-process coordination capability surface",
+		"status":                          "local-capability-surface",
+		"target_contract_surface_version": "2026-03-17",
+		"runtime_readiness_levels": map[string]any{
+			"live_proven":        "Shipped runtime behavior with checked-in live cross-process proof.",
+			"harness_proven":     "Deterministic executable harness coverage exists, but no live multi-node proof is checked in.",
+			"contract_only":      "Only target contracts or rollout docs define the expected semantics today.",
+			"supporting_surface": "The repo exposes reporting or metadata surfaces that describe runtime readiness without proving the coordination behavior itself.",
+		},
+		"evidence_inputs": map[string]any{
+			"shared_queue_report":     opts.MultiNodeReportPath,
+			"takeover_harness_report": opts.TakeoverReportPath,
+			"live_takeover_report":    opts.LiveTakeoverReportPath,
+			"supporting_docs": []string{
+				"bigclaw-go/docs/reports/event-bus-reliability-report.md",
+				"bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
+				"bigclaw-go/docs/reports/broker-event-log-adapter-contract.md",
+				"go run ./cmd/bigclawctl automation e2e coordination-capability-surface",
+			},
+		},
+		"target_contracts": targetContracts,
+		"summary": map[string]any{
+			"shared_queue_total_tasks":               automationInt(multiNode["count"], 0),
+			"shared_queue_cross_node_completions":    automationInt(multiNode["cross_node_completions"], 0),
+			"shared_queue_duplicate_completed_tasks": automationAnySliceLen(multiNode["duplicate_completed_tasks"]),
+			"shared_queue_duplicate_started_tasks":   automationAnySliceLen(multiNode["duplicate_started_tasks"]),
+			"takeover_scenario_count":                automationInt(lookupMap(takeover, "summary", "scenario_count"), 0),
+			"takeover_passing_scenarios":             automationInt(lookupMap(takeover, "summary", "passing_scenarios"), 0),
+			"takeover_duplicate_delivery_count":      automationInt(lookupMap(takeover, "summary", "duplicate_delivery_count"), 0),
+			"takeover_stale_write_rejections":        automationInt(lookupMap(takeover, "summary", "stale_write_rejections"), 0),
+			"live_takeover_scenario_count":           automationInt(lookupMap(liveTakeover, "summary", "scenario_count"), 0),
+			"live_takeover_passing_scenarios":        automationInt(lookupMap(liveTakeover, "summary", "passing_scenarios"), 0),
+			"live_takeover_stale_write_rejections":   automationInt(lookupMap(liveTakeover, "summary", "stale_write_rejections"), 0),
+		},
+		"capabilities": capabilities,
+		"current_ceiling": []string{
+			"no partitioned topic model",
+			"no broker-backed cross-process subscriber coordination",
+			"no broker-backed or replicated subscriber ownership backend",
+		},
+		"next_runtime_hooks": []string{
+			"emit native takeover transition audit events from the runtime instead of harness-authored artifacts",
+			"validate broker-backed replay and ownership semantics against the same report schema",
+			"replace the SQLite shared durable scaffold with a broker-backed or replicated ownership backend",
+		},
+	}
+	if err := automationWriteReport(".", resolveAutomationReportPath(repoRoot, goRoot, opts.OutputPath), report); err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+func automationCoordinationCapabilityRow(capability string, currentState string, runtimeReadiness string, liveLocalProof bool, deterministicLocalHarness bool, contractDefinedTarget bool, notes []string) map[string]any {
+	return map[string]any{
+		"capability":                  capability,
+		"current_state":               currentState,
+		"runtime_readiness":           runtimeReadiness,
+		"live_local_proof":            liveLocalProof,
+		"deterministic_local_harness": deterministicLocalHarness,
+		"contract_defined_target":     contractDefinedTarget,
+		"notes":                       notes,
+	}
+}
+
 func automationRenderValidationIndex(summary map[string]any, recentRuns []map[string]any, continuationGate map[string]any, continuationArtifacts []map[string]string, followupDigests []map[string]string) string {
 	lines := []string{
 		"# Live Validation Index",
@@ -4409,6 +4582,17 @@ func automationStringSliceContains(items []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+func automationAnySliceLen(value any) int {
+	switch typed := value.(type) {
+	case []any:
+		return len(typed)
+	case []string:
+		return len(typed)
+	default:
+		return 0
+	}
 }
 
 func automationStringSlice(value any) []string {
