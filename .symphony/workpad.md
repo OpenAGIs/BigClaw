@@ -26,10 +26,12 @@ Current in-scope Python file count before this lane: `7`
 3. Update repo docs that still present these Python paths as supported
    compatibility entrypoints so they point at `bash scripts/ops/bigclawctl ...`
    instead.
-4. Run targeted Go CLI validation that covers the replaced entrypoints.
-5. Record exact file disposition, replacement basis, and repository Python file
+4. Sweep for any remaining non-historical docs that still imply the retired
+   Python shims remain active and correct them.
+5. Run targeted Go CLI validation that covers the replaced entrypoints.
+6. Record exact file disposition, replacement basis, and repository Python file
    count impact.
-6. Commit and push the scoped lane changes.
+7. Commit and push the scoped lane changes.
 
 ## Acceptance
 
@@ -85,6 +87,10 @@ Current in-scope Python file count before this lane: `7`
   - Deleted.
   - Replaced by `bash scripts/ops/bigclawctl workspace validate`.
   - Basis: file only translated legacy validate flags before dispatching to the Go command.
+- `docs/go-mainline-cutover-issue-pack.md`
+  - Updated.
+  - Basis: the slice history still said the Python wrappers remained as compatibility
+    shims, which was no longer true after this sweep removed them.
 
 ### Python File Count Impact
 
@@ -114,3 +120,7 @@ Current in-scope Python file count before this lane: `7`
   - Result: no output; there are no remaining Python files under `scripts/`.
 - `rg --files . -g '*.py' | wc -l`
   - Result: `109`.
+- `rg -n "scripts/(create_issues|dev_smoke)\\.py|scripts/ops/(bigclaw_github_sync|bigclaw_refill_queue|bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py" docs README.md .symphony src tests bigclaw-go`
+  - Result: only expected migration-plan/workpad references plus a repo-root helper-path
+    fixture in `bigclaw-go/internal/legacyshim/wrappers_test.go`; no active operator docs
+    still point to the removed Python wrappers.
