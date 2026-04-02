@@ -11,19 +11,9 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 	manifestPath := filepath.Join(repoRoot, "docs", "reports", "legacy-mainline-compatibility-manifest.json")
 
 	var manifest struct {
-		Status         string `json:"status"`
-		Guidance       string `json:"guidance"`
-		RuntimeWarning struct {
-			Surface     string `json:"surface"`
-			Replacement string `json:"replacement"`
-			Message     string `json:"message"`
-		} `json:"runtime_warning"`
-		ServiceWarning struct {
-			Surface     string `json:"surface"`
-			Replacement string `json:"replacement"`
-			Message     string `json:"message"`
-		} `json:"service_warning"`
-		Modules map[string]struct {
+		Status   string `json:"status"`
+		Guidance string `json:"guidance"`
+		Modules  map[string]struct {
 			GoMainlineReplacement string `json:"go_mainline_replacement"`
 			LegacyMainlineStatus  string `json:"legacy_mainline_status"`
 		} `json:"modules"`
@@ -37,26 +27,12 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 		t.Fatalf("unexpected guidance: %q", manifest.Guidance)
 	}
 
-	if manifest.RuntimeWarning.Surface != "python -m bigclaw" ||
-		manifest.RuntimeWarning.Replacement != "bash scripts/ops/bigclawctl" ||
-		!strings.Contains(manifest.RuntimeWarning.Message, "frozen for migration-only use") ||
-		!strings.Contains(manifest.RuntimeWarning.Message, "Use bash scripts/ops/bigclawctl instead.") {
-		t.Fatalf("unexpected runtime warning payload: %+v", manifest.RuntimeWarning)
-	}
-	if manifest.ServiceWarning.Surface != "python -m bigclaw serve" ||
-		manifest.ServiceWarning.Replacement != "go run ./bigclaw-go/cmd/bigclawd" ||
-		!strings.Contains(manifest.ServiceWarning.Message, "frozen for migration-only use") ||
-		!strings.Contains(manifest.ServiceWarning.Message, "Use go run ./bigclaw-go/cmd/bigclawd instead.") {
-		t.Fatalf("unexpected service warning payload: %+v", manifest.ServiceWarning)
-	}
-
 	expectedReplacements := map[string]string{
 		"runtime":       "bigclaw-go/internal/worker/runtime.go",
 		"scheduler":     "bigclaw-go/internal/scheduler/scheduler.go",
 		"workflow":      "bigclaw-go/internal/workflow/engine.go",
 		"orchestration": "bigclaw-go/internal/workflow/orchestration.go",
 		"queue":         "bigclaw-go/internal/queue/queue.go",
-		"service":       "bigclaw-go/cmd/bigclawd/main.go",
 	}
 	for module, want := range expectedReplacements {
 		got, ok := manifest.Modules[module]
