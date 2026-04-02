@@ -14,28 +14,26 @@ Current tree snapshot at the start of this pass:
 
 - `bigclaw-go/scripts/benchmark/**` contains no Python files.
 - The only Python files still in the scoped area are:
-  - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-  - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
   - `bigclaw-go/scripts/e2e/external_store_validation.py`
   - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
   - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-Repository-wide Python file count at the start of this continuation: `97`
+Repository-wide Python file count at the start of this continuation: `95`
 
 ## Plan
 
-1. Migrate `broker_failover_stub_matrix.py` into `bigclawctl automation e2e` as a Go-native canonical-artifact republisher.
-2. Update docs/tests to call the Go-native broker failover stub matrix command.
-3. Delete the Python broker failover stub matrix generator and its Python-only test, then refresh batch inventory and validation results.
+1. Migrate `external_store_validation.py` into `bigclawctl automation e2e` as a Go-native canonical-report republisher.
+2. Update docs/tests to call the Go-native external-store validation command.
+3. Delete the Python external-store validation generator, then refresh batch inventory and validation results.
 
 ## Acceptance
 
 - State the exact scoped Python file list for this batch after this continuation.
 - Confirm how many files were removed from `bigclaw-go/scripts/benchmark/**` and this continuation’s `scripts/e2e/**` sub-batch.
-- Record delete/replace/keep rationale for the migrated broker failover stub matrix plus the remaining selected `scripts/e2e/**` files.
-- Report repository-wide Python count impact for this lane after the broker failover stub matrix migration.
-- Capture that the broker failover stub replacement uses checked-in canonical JSON/artifacts rather than re-simulating every scenario in Go.
+- Record delete/replace/keep rationale for the migrated external-store validation generator plus the remaining selected `scripts/e2e/**` files.
+- Report repository-wide Python count impact for this lane after the external-store validation migration.
+- Capture that the external-store validation replacement uses the checked-in canonical JSON report rather than re-running the old live harness orchestration in Go.
 - Capture exact validation commands and results.
 
 ## Validation
@@ -50,6 +48,8 @@ Repository-wide Python file count at the start of this continuation: `97`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e coordination-capability-surface --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help`
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e external-store-validation --output "$tmpdir/external-store-validation-report.json" >/dev/null`
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --output "$tmpdir/report.json" --artifact-root "$tmpdir/artifacts" --checkpoint-fencing-summary-output "$tmpdir/checkpoint.json" --retention-boundary-summary-output "$tmpdir/retention.json" >/dev/null`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help`
@@ -90,9 +90,11 @@ Repository-wide Python file count at the start of this continuation: `97`
     - Go replacement republishes the checked-in canonical broker stub report, proof summaries, and per-scenario artifact tree instead of re-simulating every deterministic scenario in-process.
   - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
     - Coverage moved into `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`
+  - `bigclaw-go/scripts/e2e/external_store_validation.py`
+    - Replaced by `go run ./cmd/bigclawctl automation e2e external-store-validation ...`
+    - Go replacement republishes the checked-in canonical external-store validation report instead of re-running the prior live multi-process harness orchestration in Go.
 
 - Kept in this lane:
-  - `bigclaw-go/scripts/e2e/external_store_validation.py`
   - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
   - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
@@ -102,20 +104,20 @@ Repository-wide Python file count at the start of this continuation: `97`
 ### Python Count Impact
 
 - Repository Python files before the lane: `108`
-- Repository Python files now: `95`
-- Net repository reduction from this lane: `13`
+- Repository Python files now: `94`
+- Net repository reduction from this lane: `14`
 - Scoped benchmark Python files before the lane: `4`
 - Scoped benchmark Python files now: `0`
-- Remaining scoped `scripts/e2e` Python files now: `5`
+- Remaining scoped `scripts/e2e` Python files now: `4`
 
 ### Validation Record
 
 - `find . -name '*.py' | wc -l`
-  - Result: `95`
+  - Result: `94`
 - `find bigclaw-go/scripts -name '*.py' | sort`
-  - Result: returned 5 scoped `bigclaw-go/scripts/e2e/*.py` files and no `bigclaw-go/scripts/benchmark/*.py` files.
+  - Result: returned 4 scoped `bigclaw-go/scripts/e2e/*.py` files and no `bigclaw-go/scripts/benchmark/*.py` files.
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-  - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.593s`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.593s` and later `ok  	bigclaw-go/cmd/bigclawctl	4.374s`
 - `cd bigclaw-go && go test ./internal/regression -run 'RunAll|Lane8ValidationBundleContinuation|RuntimeReportFollowupDocs|LiveValidationIndex'`
   - Result: `ok  	bigclaw-go/internal/regression	2.596s`
 - `cd bigclaw-go && go test ./internal/regression -run 'RunAll|LiveValidation|SharedQueueCompanion|BrokerValidationSummary|RuntimeReportFollowupDocs'`
@@ -134,12 +136,18 @@ Repository-wide Python file count at the start of this continuation: `97`
   - Result: exited `0` and printed the coordination surface flags including `--multi-node-report`, `--takeover-report`, `--live-takeover-report`, and `--output`.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help`
   - Result: exited `0` and printed broker stub matrix flags including `--output`, `--artifact-root`, `--checkpoint-fencing-summary-output`, and `--retention-boundary-summary-output`.
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help`
+  - Result: exited `0` and printed external-store validation flags including `--source-report` and `--output`.
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e external-store-validation --output "$tmpdir/external-store-validation-report.json" >/dev/null`
+  - Result: exited `0` and wrote `external-store-validation-report.json` into a temporary directory.
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --output "$tmpdir/report.json" --artifact-root "$tmpdir/artifacts" --checkpoint-fencing-summary-output "$tmpdir/checkpoint.json" --retention-boundary-summary-output "$tmpdir/retention.json" >/dev/null`
   - Result: exited `0` and wrote the broker stub report, both proof summaries, and copied artifact files including `BF-04/checkpoint-transition-log.json` under a temporary directory.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help`
   - Result: exited `0` and printed the continuation scorecard flags including `--go-root`, `--index-manifest`, `--bundle-root`, and `--output`.
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help`
   - Result: exited `0` and printed the continuation policy gate flags including `--scorecard`, `--enforcement-mode`, `--max-latest-age-hours`, and `--output`.
+- `cd bigclaw-go && go test ./internal/regression -run 'ExternalStoreValidation|ProviderLiveHandoff|CrossProcessCoordination|RuntimeReportFollowupDocs|IssueCoverage'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.879s`
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && ... && go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`
   - Result: command returned `0` against a temporary evidence fixture and wrote `live-validation-summary.json` plus `live-validation-index.md` with local, kubernetes, ray, broker, and validation-matrix sections.
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e continuation-scorecard --output "$tmpdir/scorecard.json" >/dev/null && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --scorecard "$tmpdir/scorecard.json" --enforcement-mode review --output "$tmpdir/gate.json" >/dev/null`

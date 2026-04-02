@@ -83,7 +83,7 @@ func TestRunAutomationE2EHelpIncludesContinuationCommands(t *testing.T) {
 		t.Fatalf("e2e help: %v", err)
 	}
 	text := string(output)
-	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|continuation-scorecard|continuation-policy-gate") {
+	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|coordination-capability-surface|broker-failover-stub-matrix|external-store-validation|continuation-scorecard|continuation-policy-gate") {
 		t.Fatalf("unexpected e2e help: %s", text)
 	}
 }
@@ -144,6 +144,36 @@ func TestAutomationBrokerFailoverStubMatrixRepublishesCanonicalArtifacts(t *test
 	}
 	if !strings.Contains(string(artifactBody), "\"fence_reason\": \"stale_writer\"") {
 		t.Fatalf("unexpected copied artifact body: %s", string(artifactBody))
+	}
+}
+
+func TestAutomationExternalStoreValidationRepublishesCanonicalReport(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	repoRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	outputPath := filepath.Join(t.TempDir(), "external-store-validation-report.json")
+	report, err := automationExternalStoreValidation(automationExternalStoreValidationOptions{
+		GoRoot:     repoRoot,
+		OutputPath: outputPath,
+	})
+	if err != nil {
+		t.Fatalf("republish external-store validation: %v", err)
+	}
+	if report["ticket"] != "BIG-PAR-102" || report["status"] != "validated" {
+		t.Fatalf("unexpected report metadata: %+v", report)
+	}
+	summary, _ := report["summary"].(map[string]any)
+	if summary["remote_replay_backend"] != "http" || summary["takeover_conflict_rejected"] != true {
+		t.Fatalf("unexpected report summary: %+v", summary)
+	}
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if !strings.Contains(string(body), "\"backend_matrix\"") || !strings.Contains(string(body), "\"contract_only_lanes\": 1") {
+		t.Fatalf("unexpected output body: %s", string(body))
 	}
 }
 

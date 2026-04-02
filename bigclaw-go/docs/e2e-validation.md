@@ -104,8 +104,8 @@ This validates one control-plane instance against a more production-like mix of 
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/external_store_validation.py \
-  --report-path docs/reports/external-store-validation-report.json
+go run ./cmd/bigclawctl automation e2e external-store-validation \
+  --output docs/reports/external-store-validation-report.json
 ```
 
 This lane starts one repo-native SQLite-backed event-log service node plus two client `bigclawd` nodes configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`. It validates that replay, checkpoint reset history, persisted retention boundaries, and lease-backed takeover behavior remain reviewable when the event log moves behind a remote HTTP service boundary.

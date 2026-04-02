@@ -39,17 +39,17 @@ func TestExternalStoreValidationReportStaysAligned(t *testing.T) {
 				ContractOnlyLanes  int `json:"contract_only_lanes"`
 			} `json:"summary"`
 			Lanes []struct {
-				Backend                 string   `json:"backend"`
-				Role                    string   `json:"role"`
-				ValidationStatus        string   `json:"validation_status"`
-				ConfigurationState      string   `json:"configuration_state"`
-				ProofKind               string   `json:"proof_kind"`
-				ReplayBackend           string   `json:"replay_backend"`
-				CheckpointBackend       string   `json:"checkpoint_backend"`
-				RetentionBoundaryVisible bool    `json:"retention_boundary_visible"`
-				TakeoverBackend         string   `json:"takeover_backend"`
-				Reason                  string   `json:"reason"`
-				ReportLinks             []string `json:"report_links"`
+				Backend                  string   `json:"backend"`
+				Role                     string   `json:"role"`
+				ValidationStatus         string   `json:"validation_status"`
+				ConfigurationState       string   `json:"configuration_state"`
+				ProofKind                string   `json:"proof_kind"`
+				ReplayBackend            string   `json:"replay_backend"`
+				CheckpointBackend        string   `json:"checkpoint_backend"`
+				RetentionBoundaryVisible bool     `json:"retention_boundary_visible"`
+				TakeoverBackend          string   `json:"takeover_backend"`
+				Reason                   string   `json:"reason"`
+				ReportLinks              []string `json:"report_links"`
 			} `json:"lanes"`
 		} `json:"backend_matrix"`
 		ReplayValidation struct {
@@ -119,23 +119,23 @@ func TestExternalStoreValidationReportStaysAligned(t *testing.T) {
 		substrings []string
 	}{
 		{
-			path: "docs/e2e-validation.md",
-			substrings: []string{"external_store_validation.py", "external-store-validation-report.json", "backend_matrix", "not_configured", "contract_only"},
+			path:       "docs/e2e-validation.md",
+			substrings: []string{"go run ./cmd/bigclawctl automation e2e external-store-validation", "external-store-validation-report.json", "backend_matrix", "not_configured", "contract_only"},
 		},
 		{
-			path: "docs/reports/replay-retention-semantics-report.md",
+			path:       "docs/reports/replay-retention-semantics-report.md",
 			substrings: []string{"external-store-validation-report.json", "backend matrix", "http_remote_service"},
 		},
 		{
-			path: "docs/reports/epic-closure-readiness-report.md",
+			path:       "docs/reports/epic-closure-readiness-report.md",
 			substrings: []string{"external-store-validation-report.json", "backend matrix", "broker_replicated"},
 		},
 		{
-			path: "docs/reports/review-readiness.md",
+			path:       "docs/reports/review-readiness.md",
 			substrings: []string{"external-store-validation-report.json", "backend matrix", "contract_only"},
 		},
 		{
-			path: "docs/reports/issue-coverage.md",
+			path:       "docs/reports/issue-coverage.md",
 			substrings: []string{"external-store-validation-report.json", "backend matrix", "not_configured"},
 		},
 	} {
