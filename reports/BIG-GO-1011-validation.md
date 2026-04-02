@@ -31,6 +31,9 @@ Current continuation pass: mark the remaining deleted script paths in active
 planning docs as explicitly retired or historical migration identifiers so they
 no longer read like current workspace files.
 
+Current continuation pass: remove the generated root `.pytest_cache/` directory
+so no root Python cache/package residue remains on disk after validation.
+
 ## Branch
 
 - branch: `big-go-1011-root-config-residuals`
@@ -221,6 +224,17 @@ PY
 Result: no output
 
 ```bash
+find . -maxdepth 1 \( -name '.pytest_cache' -o -name '__pycache__' -o -name '*.egg-info' -o -name '*.dist-info' \) | sort
+git status --ignored --short | sed -n '1,50p'
+```
+
+Result:
+
+```text
+M bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json
+```
+
+```bash
 make build
 ```
 
@@ -279,5 +293,7 @@ Remaining root-level Python mentions are intentional migration-only validation s
   `tests/test_legacy_shim.py` / `tests/test_deprecation.py`
 - active planning docs now only mention deleted script paths when they are
   explicitly marked `retired` or described as historical migration identifiers
+- no root `.pytest_cache/`, `__pycache__/`, `*.egg-info`, or `*.dist-info`
+  directory remains in the workspace after the final cleanup pass
 
 No additional root `pyproject.toml`, `setup.py`, `*.egg-info`, repo-root Python wrapper scripts, or Python-specific CI/hook config residue remains.
