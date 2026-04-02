@@ -153,8 +153,8 @@ Repository: https://github.com/OpenAGIs/BigClaw
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
-the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
-ops wrappers remain only as compatibility shims during migration.
+the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the retired
+repo-root Python ops wrappers have been removed from the default operator path.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,

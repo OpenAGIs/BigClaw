@@ -27,3 +27,6 @@
 - `bash scripts/ops/bigclawctl refill --help` -> exit 0
 - `bash scripts/ops/bigclawctl workspace validate --help` -> exit 0
 - `make build` -> exit 0
+
+### Final Consistency Pass
+- Updated remaining cutover/handoff docs that still implied the retired repo-root Python wrappers were active compatibility shims.

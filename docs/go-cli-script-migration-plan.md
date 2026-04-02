@@ -3,8 +3,7 @@
 ## Goal
 
 Move the remaining repo-level script automation entrypoints onto `bigclaw-go/cmd/bigclawctl`
-subcommands, while preserving the existing file names as compatibility shims during the
-operator cutover window.
+subcommands, preserving compatibility shims only where the operator cutover still requires them.
 
 ## This Slice
 
