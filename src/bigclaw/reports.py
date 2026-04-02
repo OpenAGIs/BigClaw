@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-from .observability import (
+from .design_system import (
     FLOW_HANDOFF_EVENT,
     MANUAL_TAKEOVER_EVENT,
     CollaborationThread,

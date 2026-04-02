@@ -5,7 +5,7 @@ from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from .observability import ObservabilityLedger, Task
+from .design_system import ObservabilityLedger, Task
 from .reports import (
     RunDetailEvent,
     RunDetailResource,

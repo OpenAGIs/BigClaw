@@ -2,68 +2,31 @@
 
 ## Plan
 
-- retire the dead Python wrapper entrypoints `src/bigclaw/__main__.py` and
-  `src/bigclaw/legacy_shim.py`
-- inline the tiny deprecation helper into `src/bigclaw/runtime.py` and delete
-  `src/bigclaw/deprecation.py`
-- inline the small legacy risk scorer into `src/bigclaw/runtime.py` and delete
-  `src/bigclaw/risk.py`
-- inline the small audit-event registry into `src/bigclaw/observability.py` and
-  delete `src/bigclaw/audit_events.py`
-- inline the collaboration helper surface into `src/bigclaw/observability.py`
-  and delete `src/bigclaw/collaboration.py`
-- inline the governance helper surface into `src/bigclaw/planning.py` and
-  delete `src/bigclaw/governance.py`
-- inline the run-detail rendering surface into `src/bigclaw/reports.py` and
-  delete `src/bigclaw/run_detail.py`
-- inline the legacy model contract surface into `src/bigclaw/observability.py`
-  and delete `src/bigclaw/models.py`
-- inline the console information-architecture surface into
-  `src/bigclaw/design_system.py` and delete `src/bigclaw/console_ia.py`
-- inline the benchmark and replay evaluation surface into
-  `src/bigclaw/operations.py` and delete `src/bigclaw/evaluation.py`
-- inline the planning, freeze-governance, and execution-plan surface into
-  `src/bigclaw/design_system.py` and delete `src/bigclaw/planning.py`
-- update Go-side compile-check and regression coverage so the repo documents the
-  wrappers as retired instead of frozen shims
-- refresh active Go-mainline migration docs and README language that still
-  reference the removed Python wrappers or the deleted helper file
-- run targeted validation for the changed Go packages and capture exact `.py`
-  count reduction evidence
-- commit and push the issue branch
+- inline the legacy observability/task/audit surface from
+  `src/bigclaw/observability.py` into `src/bigclaw/design_system.py`
+- inline the legacy UI review surface from `src/bigclaw/ui_review.py` into
+  `src/bigclaw/design_system.py`
+- update internal imports and package exports so the removed modules continue to
+  resolve through compatibility shims
+- delete `src/bigclaw/observability.py` and `src/bigclaw/ui_review.py`
+- run targeted regression checks for the touched Go mirrors and capture exact
+  `.py` count evidence
+- commit and push the branch
 
 ## Acceptance
 
-- the tracked repository `.py` count decreases from the pre-change baseline
-- `src/bigclaw/__main__.py` and `src/bigclaw/legacy_shim.py` are removed from
-  the repo
-- `src/bigclaw/deprecation.py` is removed with its helper logic preserved in
-  `src/bigclaw/runtime.py`
-- `src/bigclaw/risk.py` is removed with its legacy scorer logic preserved in
-  `src/bigclaw/runtime.py`
-- `src/bigclaw/audit_events.py` is removed with its event-spec logic preserved
-  in `src/bigclaw/observability.py`
-- `src/bigclaw/collaboration.py` is removed with its helper logic preserved in
-  `src/bigclaw/observability.py`
-- `src/bigclaw/governance.py` is removed with its helper logic preserved in
-  `src/bigclaw/planning.py`
-- `src/bigclaw/run_detail.py` is removed with its helper logic preserved in
-  `src/bigclaw/reports.py`
-- `src/bigclaw/models.py` is removed with its contract logic preserved in
-  `src/bigclaw/observability.py`
-- `src/bigclaw/console_ia.py` is removed with its console shell contract logic
-  preserved in `src/bigclaw/design_system.py`
-- `src/bigclaw/evaluation.py` is removed with its benchmark and replay logic
-  preserved in `src/bigclaw/operations.py`
-- `src/bigclaw/planning.py` is removed with its planning and governance logic
-  preserved in `src/bigclaw/design_system.py`
-- active code, tests, and docs no longer describe those two files as retained
-  compatibility shims
-- targeted Go validation covering `legacy-python` and regression guardrails
-  passes
+- tracked repository `.py` count decreases from the pre-change baseline of `7`
+- `src/bigclaw/observability.py` is removed and its exported surface remains
+  reachable from the package
+- `src/bigclaw/ui_review.py` is removed and its exported surface remains
+  reachable from the package
+- `src/bigclaw/design_system.py` owns the migrated observability and UI review
+  legacy Python surface
+- package-level compatibility for `bigclaw.observability` and
+  `bigclaw.ui_review` remains intact
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l`
-- `find src -name '*.py' | wc -l`
+- `go test ./internal/designsystem ./internal/observability ./internal/uireview`
+- `git ls-files '*.py' | wc -l`
+- `git diff --stat`
