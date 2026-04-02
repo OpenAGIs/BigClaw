@@ -17,11 +17,11 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
-- retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
-- retired `scripts/ops/bigclaw_refill_queue.py`; use `scripts/ops/bigclaw_refill_queue` or `bigclawctl refill`
-- retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `scripts/ops/bigclaw_workspace_bootstrap` or `bigclawctl workspace ...`
-- retired `scripts/ops/symphony_workspace_bootstrap.py`; use `scripts/ops/symphony_workspace_bootstrap` or `bigclawctl workspace ...`
-- retired `scripts/ops/symphony_workspace_validate.py`; use `scripts/ops/symphony_workspace_validate` or `bigclawctl workspace validate`
+- shell `scripts/ops/bigclawctl github-sync` is the only supported GitHub sync operator path
+- shell `scripts/ops/bigclaw_refill_queue` or `bigclawctl refill` is the supported refill path
+- shell `scripts/ops/bigclaw_workspace_bootstrap` or `bigclawctl workspace bootstrap` is the supported BigClaw workspace bootstrap path
+- shell `scripts/ops/symphony_workspace_bootstrap` or `bigclawctl workspace bootstrap` is the supported Symphony workspace bootstrap path
+- shell `scripts/ops/symphony_workspace_validate` or `bigclawctl workspace validate` is the supported workspace validation path
 
 ### `bigclaw-go/scripts/*` first automation batch
 
