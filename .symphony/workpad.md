@@ -18,3 +18,7 @@
 - JSON status artifact matches the current branch head and residue counts.
 - Root cache scan for `.pytest_cache`, `__pycache__`, `*.egg-info`, and `*.dist-info`.
 - `git diff --stat` and `git status --short` review before commit.
+
+### Scope Exhausted
+- No additional in-scope root/config/python packaging residue remains in the repo workspace.
+- Remaining unstaged modification is pre-existing and out of scope: `bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json`.
