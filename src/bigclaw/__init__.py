@@ -171,7 +171,7 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .governance import (
+from .planning import (
     FreezeException,
     GovernanceBacklogItem,
     ScopeFreezeAudit,
