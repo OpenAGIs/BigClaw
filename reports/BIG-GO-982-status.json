@@ -1,0 +1,63 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-982",
+    "title": "Final sweep B: root scripts and ops scripts",
+    "branch": "symphony/BIG-GO-982",
+    "status": "done"
+  },
+  "commits": [
+    {
+      "sha": "bccf69fafa95d287c384bdd792781c8867715357",
+      "subject": "BIG-GO-982: retire root and ops Python shims"
+    },
+    {
+      "sha": "6e77fee3f55f79d8638dfb02d2957adcaa46fe28",
+      "subject": "BIG-GO-982: refresh final sweep docs"
+    },
+    {
+      "sha": "f5e84a9ce4dcb65ab4a3ae11c95be7e959b7d6d9",
+      "subject": "BIG-GO-982: add closeout artifact"
+    },
+    {
+      "sha": "6e90711f1f0b00dd2cc577ecf16e7583783f46db",
+      "subject": "BIG-GO-982: add validation report"
+    }
+  ],
+  "python_count": {
+    "repo_before": 116,
+    "repo_after": 109,
+    "root_ops_before": 7,
+    "root_ops_after": 0,
+    "net_reduction": 7
+  },
+  "replacements": {
+    "scripts/create_issues.py": "bash scripts/ops/bigclawctl create-issues",
+    "scripts/dev_smoke.py": "bash scripts/ops/bigclawctl dev-smoke",
+    "scripts/ops/bigclaw_github_sync.py": "bash scripts/ops/bigclawctl github-sync",
+    "scripts/ops/bigclaw_refill_queue.py": "bash scripts/ops/bigclawctl refill",
+    "scripts/ops/bigclaw_workspace_bootstrap.py": "bash scripts/ops/bigclawctl workspace",
+    "scripts/ops/symphony_workspace_bootstrap.py": "bash scripts/ops/bigclawctl workspace",
+    "scripts/ops/symphony_workspace_validate.py": "bash scripts/ops/bigclawctl workspace validate"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "closeout": "reports/BIG-GO-982-closeout.md",
+    "validation": "reports/BIG-GO-982-validation.md",
+    "migration_plan": "docs/go-cli-script-migration-plan.md"
+  },
+  "validation": {
+    "commands": [
+      "cd bigclaw-go && go test ./cmd/bigclawctl",
+      "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim",
+      "bash scripts/ops/bigclawctl create-issues --help",
+      "bash scripts/ops/bigclawctl dev-smoke",
+      "bash scripts/ops/bigclawctl github-sync status --json",
+      "bash scripts/ops/bigclawctl refill --help",
+      "bash scripts/ops/bigclawctl workspace --help",
+      "bash scripts/ops/bigclawctl workspace validate --help",
+      "rg --files scripts -g '*.py'",
+      "rg --files . -g '*.py' | wc -l"
+    ]
+  },
+  "blockers": []
+}
