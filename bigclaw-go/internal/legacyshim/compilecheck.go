@@ -2,7 +2,6 @@ package legacyshim
 
 import (
 	"os/exec"
-	"path/filepath"
 )
 
 type CompileCheckResult struct {
@@ -14,16 +13,7 @@ type CompileCheckResult struct {
 type runner func(name string, args ...string) ([]byte, error)
 
 func FrozenCompileCheckFiles(repoRoot string) []string {
-	relative := []string{
-		"src/bigclaw/service.py",
-		"src/bigclaw/__main__.py",
-		"src/bigclaw/legacy_shim.py",
-	}
-	files := make([]string, 0, len(relative))
-	for _, item := range relative {
-		files = append(files, filepath.Join(repoRoot, item))
-	}
-	return files
+	return []string{}
 }
 
 func CompileCheck(repoRoot string, pythonBin string) (CompileCheckResult, error) {
@@ -34,6 +24,16 @@ func CompileCheck(repoRoot string, pythonBin string) (CompileCheckResult, error)
 
 func compileCheck(repoRoot string, pythonBin string, run runner) (CompileCheckResult, error) {
 	files := FrozenCompileCheckFiles(repoRoot)
+	return compileCheckFiles(pythonBin, files, run)
+}
+
+func compileCheckFiles(pythonBin string, files []string, run runner) (CompileCheckResult, error) {
+	if len(files) == 0 {
+		return CompileCheckResult{
+			Python: pythonBin,
+			Files:  files,
+		}, nil
+	}
 	args := make([]string, 0, len(files)+2)
 	args = append(args, "-m", "py_compile")
 	args = append(args, files...)

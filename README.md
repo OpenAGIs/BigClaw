@@ -159,14 +159,15 @@ Repository: https://github.com/OpenAGIs/BigClaw
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
-the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
-ops wrappers remain only as compatibility shims during migration, except
-GitHub sync which is now Go/shell-only via `scripts/ops/bigclawctl`.
+the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the remaining
+root workspace wrappers are transitional shell entrypoints over the same Go
+CLI.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` remain frozen for
+migration-only reference use. Historical `python -m bigclaw` and
+`python -m bigclaw serve` wrapper entrypoints have been retired from the repo;
+use `bash scripts/ops/bigclawctl` and `go run ./bigclaw-go/cmd/bigclawd` for
+the active operator and local server paths. Active runtime development belongs
+in `bigclaw-go/internal/*`.

@@ -1,28 +1,29 @@
-# BIG-GO-1091
+# BIG-GO-1099
 
 ## Plan
-- inspect the remaining root `scripts/ops/*.py` workspace shims and their active repo references
-- delete `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py`
-- update active documentation and regression coverage to point at `bash scripts/ops/bigclawctl workspace ...` instead of the deleted Python shims
-- run targeted validation covering reference cleanup, Go legacy shim tests, CLI help, and repository `.py` count reduction
-- commit and push the scoped change set
+
+- retire the dead Python wrapper entrypoints `src/bigclaw/__main__.py` and
+  `src/bigclaw/legacy_shim.py`
+- update Go-side compile-check and regression coverage so the repo documents the
+  wrappers as retired instead of frozen shims
+- refresh Go-mainline migration docs and README language that still reference
+  the removed Python wrappers
+- run targeted validation for the changed Go packages and capture exact `.py`
+  count reduction evidence
+- commit and push the issue branch
 
 ## Acceptance
-- the three remaining Python workspace shims under `scripts/ops` are removed from the repository
-- active repo guidance and regression coverage no longer instruct users to execute those deleted Python files
-- the repository `.py` file count decreases from the pre-change baseline
-- targeted validation records exact commands and results
+
+- the tracked repository `.py` count decreases from the pre-change baseline
+- `src/bigclaw/__main__.py` and `src/bigclaw/legacy_shim.py` are removed from
+  the repo
+- active code, tests, and docs no longer describe those two files as retained
+  compatibility shims
+- targeted Go validation covering `legacy-python` and regression guardrails
+  passes
 
 ## Validation
-- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression`
-- `bash scripts/ops/bigclawctl workspace bootstrap --help`
-- `bash scripts/ops/bigclawctl workspace validate --help`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l`
 
-## Validation Results
-- `rg -n "python3 scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py --help|scripts/ops/(bigclaw_workspace_bootstrap|symphony_workspace_bootstrap|symphony_workspace_validate)\\.py\\b" README.md docs scripts bigclaw-go -g '!docs/go-cli-script-migration-plan.md' -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go'` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/legacyshim ./internal/regression` -> `ok   bigclaw-go/cmd/bigclawctl (cached)`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression 0.606s`
-- `bash scripts/ops/bigclawctl workspace bootstrap --help` -> exit `0`; printed `usage: bigclawctl workspace bootstrap [flags]`
-- `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `22` in `HEAD`; `19` in the worktree after deleting the three root Python shims
+- `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl`
+- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l`
+- `find src -name '*.py' | wc -l`

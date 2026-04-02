@@ -1,15 +1,15 @@
 {
   "status": "go-mainline-compatibility-manifest",
-  "guidance": "bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only.",
+  "guidance": "bigclaw-go is the sole implementation mainline for active development; the legacy Python wrapper entrypoints have been retired from the repo.",
   "runtime_warning": {
     "surface": "python -m bigclaw",
     "replacement": "bash scripts/ops/bigclawctl",
-    "message": "python -m bigclaw is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl instead."
+    "message": "python -m bigclaw has been retired from the repo. bigclaw-go is the sole implementation mainline for active development. Use bash scripts/ops/bigclawctl instead."
   },
   "service_warning": {
     "surface": "python -m bigclaw serve",
     "replacement": "go run ./bigclaw-go/cmd/bigclawd",
-    "message": "python -m bigclaw serve is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use go run ./bigclaw-go/cmd/bigclawd instead."
+    "message": "python -m bigclaw serve has been retired from the repo. bigclaw-go is the sole implementation mainline for active development. Use go run ./bigclaw-go/cmd/bigclawd instead."
   },
   "modules": {
     "runtime": {
@@ -34,7 +34,7 @@
     },
     "service": {
       "go_mainline_replacement": "bigclaw-go/cmd/bigclawd/main.go",
-      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; service.py remains migration-only compatibility scaffolding."
+      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the historical service wrapper has been retired from the repo."
     }
   }
 }

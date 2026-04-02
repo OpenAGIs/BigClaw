@@ -1445,7 +1445,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
 	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
 	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
-	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
+	fmt.Fprintln(w, "  legacy-python   validate retired Python wrapper state")
 }
 
 func absPath(path string) string {
