@@ -344,6 +344,7 @@ Current repo progress:
 - the repository Python footprint is down to the four live compatibility modules: `src/bigclaw/__init__.py`, `src/bigclaw/observability.py`, `src/bigclaw/runtime.py`, and `src/bigclaw/operations.py`
 - those four files now form a tightly coupled frozen compatibility core: `__init__.py` installs the compatibility submodules that `operations.py` still imports, while `runtime.py` and `operations.py` both depend on `observability.py`
 - later zero-Python follow-up branches rely on additional Go planning/floor-guard surfaces that are not present in this branch, so their final-module deletion is not a clean cherry-pick here
+- an attempted `__init__.py` removal on this branch was also reverted because turning `bigclaw` into a namespace package caused `PYTHONPATH=src python3` to resolve `bigclaw.runtime` from another local checkout rather than this worktree; the explicit package root still serves as an isolation boundary in this environment
 - further Python file-count reduction therefore requires a core-module consolidation rather than another peripheral wrapper/test/entrypoint retirement
 - finish cutover validation and release-readiness evidence
 
