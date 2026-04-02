@@ -43,6 +43,26 @@ func TestV3PlanningBacklogUsesGoReplacementsForRemovedPythonTests(t *testing.T) 
 		}
 	}
 
+	pythonPlanningSource, err := os.ReadFile(filepath.Join(repoRoot, "src", "bigclaw", "planning.py"))
+	if err != nil {
+		t.Fatalf("read src/bigclaw/planning.py: %v", err)
+	}
+	for _, disallowed := range []string{
+		"pytest",
+		"tests/test_design_system.py",
+		"tests/test_console_ia.py",
+		"tests/test_ui_review.py",
+		"tests/test_control_center.py",
+		"tests/test_operations.py",
+		"tests/test_evaluation.py",
+		"tests/test_orchestration.py",
+		"tests/test_reports.py",
+	} {
+		if strings.Contains(string(pythonPlanningSource), disallowed) {
+			t.Fatalf("src/bigclaw/planning.py still references removed Python test asset %q", disallowed)
+		}
+	}
+
 	for _, candidate := range backlog.Candidates {
 		if strings.Contains(candidate.ValidationCommand, "pytest") || strings.Contains(candidate.ValidationCommand, "tests/test_") {
 			t.Fatalf("candidate %s still references removed Python tests in validation command: %s", candidate.CandidateID, candidate.ValidationCommand)

@@ -22,3 +22,10 @@
   - `ok  	bigclaw-go/internal/regression	2.392s`
 - `rg -n "pytest|tests/test_.*\\.py" bigclaw-go/internal/planning/planning.go bigclaw-go/internal/regression/planning_python_test_replacement_test.go` -> exit `0`
   - matches remain only inside the regression guard that asserts removed Python test paths stay absent and disallowed in backlog validation commands.
+- Updated `src/bigclaw/planning.py` so the Python-side v3 candidate backlog now points at Go-native validation commands and Go evidence targets instead of deleted Python tests.
+- Extended `bigclaw-go/internal/regression/planning_python_test_replacement_test.go` to scan `src/bigclaw/planning.py` and fail if removed Python test assets reappear there.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/bigclaw-go && go test ./internal/planning ./internal/regression` -> exit `0`
+  - `ok  	bigclaw-go/internal/planning	(cached)`
+  - `ok  	bigclaw-go/internal/regression	0.946s`
+- `rg -n "pytest|tests/test_.*\\.py" src/bigclaw/planning.py bigclaw-go/internal/planning/planning.go bigclaw-go/internal/regression/planning_python_test_replacement_test.go` -> exit `0`
+  - matches remain only inside the regression guard that enumerates disallowed Python test assets.
