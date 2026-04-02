@@ -1,33 +1,33 @@
 # BIG-GO-1036 Workpad
 
 ## Plan
-- Replace the next scoped Python memory test file with Go coverage.
-- Keep the scope limited to a small Go memory store surface.
-- Add minimal persistence plus rule suggestion behavior that merges prior successful task patterns.
+- Replace the next scoped Python operations test file with Go coverage.
+- Keep the scope limited to `bigclaw-go/internal/reporting`.
+- Close the remaining parity gaps around repo-collaboration metrics and view-permission rendering while reusing the Go reporting surface already added in earlier tranches.
 - Delete the matched Python test file once Go parity is explicit.
 - Run targeted Go tests, record exact commands and exact results here.
 - Commit and push the branch.
 
 ## Scoped Tranche
-- `tests/test_memory.py`
+- `tests/test_operations.py`
 
 ## Acceptance
 - Python test file count decreases by deleting the scoped file above.
-- Go test coverage increases under `bigclaw-go/internal/memory`.
+- Go test coverage increases under `bigclaw-go/internal/reporting`.
 - Replacement coverage explicitly includes:
-  - remembering a successful task pattern
-  - matching prior successful tasks by overlap
-  - injecting matched acceptance criteria into the current suggestion
-  - injecting matched validation plan steps into the current suggestion
+  - repo collaboration metric aggregation
+  - operations metric spec rendering/bundling
+  - engineering overview permissions and bundle rendering
+  - existing dashboard, queue, regression, and version-center coverage remains in Go
 - Changes remain scoped to this tranche only.
 
 ## Validation
-- `gofmt -w bigclaw-go/internal/memory/store.go bigclaw-go/internal/memory/store_test.go`
+- `gofmt -w bigclaw-go/internal/reporting/reporting.go bigclaw-go/internal/reporting/reporting_test.go`
   - Result: exit 0
-- `cd bigclaw-go && go test ./internal/memory`
-  - Result: `ok  	bigclaw-go/internal/memory	0.513s`
+- `cd bigclaw-go && go test ./internal/reporting`
+  - Result: `ok  	bigclaw-go/internal/reporting	0.922s`
 
 ## Completed
-- Added `bigclaw-go/internal/memory/store.go` with a minimal JSON-backed task memory store for successful task patterns.
-- Added `bigclaw-go/internal/memory/store_test.go` covering history reuse and rule suggestion merging.
-- Deleted `tests/test_memory.py`.
+- Added repo-collaboration aggregation helpers to `bigclaw-go/internal/reporting/reporting.go`.
+- Added Go tests in `bigclaw-go/internal/reporting/reporting_test.go` for repo collaboration metrics and engineering-overview permission filtering, alongside the existing reporting coverage that already replaced the rest of the operations surface.
+- Deleted `tests/test_operations.py`.

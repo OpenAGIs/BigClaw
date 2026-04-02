@@ -236,6 +236,20 @@ func TestRepoWeeklyNarrativeExportsRemainConsistent(t *testing.T) {
 	}
 }
 
+func TestBuildRepoCollaborationMetrics(t *testing.T) {
+	metrics := BuildRepoCollaborationMetrics([]RepoCollaborationRun{
+		{HasRepoLink: true, AcceptedCommitHash: "abc123", RepoDiscussionPosts: 3, AcceptedLineageDepth: 2},
+		{HasRepoLink: false, RepoDiscussionPosts: 1, AcceptedLineageDepth: 4},
+	})
+
+	if metrics.RepoLinkCoverage != 50.0 || metrics.AcceptedCommitRate != 50.0 {
+		t.Fatalf("unexpected repo link metrics: %+v", metrics)
+	}
+	if metrics.DiscussionDensity != 2.0 || metrics.AcceptedLineageDepthAvg != 3.0 {
+		t.Fatalf("unexpected repo collaboration averages: %+v", metrics)
+	}
+}
+
 func TestAuditDashboardBuilderFlagsGovernanceGaps(t *testing.T) {
 	dashboard := DashboardBuilder{
 		Name:   "Ops Console",
@@ -488,6 +502,49 @@ func TestRenderAndWriteEngineeringOverviewBundle(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "## Activity Modules") || !strings.Contains(string(body), "approval pending for prod rollout") {
 		t.Fatalf("unexpected overview bundle content: %s", string(body))
+	}
+}
+
+func TestRenderEngineeringOverviewHidesModulesWithoutPermission(t *testing.T) {
+	executive := EngineeringOverview{
+		Name:   "Executive View",
+		Period: "2026-W11",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "executive",
+			AllowedModules: []string{"kpis", "funnel", "blockers"},
+		},
+		KPIs:       []EngineeringOverviewKPI{{Name: "success-rate", Value: 95, Target: 90, Unit: "%", Direction: "up"}},
+		Funnel:     []EngineeringFunnelStage{{Name: "completed", Count: 1, Share: 100}},
+		Blockers:   []EngineeringOverviewBlocker{{Summary: "requires approval for prod deploy", Owner: "operations", Severity: "medium", AffectedRuns: 1, AffectedTasks: []string{"BIG-1401-2"}}},
+		Activities: []EngineeringActivity{{Timestamp: "2026-03-10T10:25:00Z", RunID: "run-2", TaskID: "BIG-1401-2", Status: "blocked", Summary: "requires approval for prod deploy"}},
+	}
+	contributor := EngineeringOverview{
+		Name:   "Contributor View",
+		Period: "2026-W11",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "contributor",
+			AllowedModules: []string{"kpis", "activity"},
+		},
+		KPIs:       executive.KPIs,
+		Funnel:     executive.Funnel,
+		Blockers:   executive.Blockers,
+		Activities: executive.Activities,
+	}
+
+	executiveReport := RenderEngineeringOverview(executive)
+	contributorReport := RenderEngineeringOverview(contributor)
+
+	if !strings.Contains(executiveReport, "## KPI Modules") || !strings.Contains(executiveReport, "## Funnel Modules") || !strings.Contains(executiveReport, "## Blocker Modules") {
+		t.Fatalf("expected executive report modules, got %s", executiveReport)
+	}
+	if strings.Contains(executiveReport, "## Activity Modules") {
+		t.Fatalf("expected executive report to hide activity, got %s", executiveReport)
+	}
+	if !strings.Contains(contributorReport, "## KPI Modules") || !strings.Contains(contributorReport, "## Activity Modules") {
+		t.Fatalf("expected contributor report modules, got %s", contributorReport)
+	}
+	if strings.Contains(contributorReport, "## Funnel Modules") || strings.Contains(contributorReport, "## Blocker Modules") {
+		t.Fatalf("expected contributor report to hide funnel/blockers, got %s", contributorReport)
 	}
 }
 

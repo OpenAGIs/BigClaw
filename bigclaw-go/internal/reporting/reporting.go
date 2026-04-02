@@ -86,6 +86,20 @@ type WeeklyArtifacts struct {
 	VersionCenterPath    string `json:"version_center_path,omitempty"`
 }
 
+type RepoCollaborationRun struct {
+	HasRepoLink          bool   `json:"has_repo_link"`
+	AcceptedCommitHash   string `json:"accepted_commit_hash,omitempty"`
+	RepoDiscussionPosts  int    `json:"repo_discussion_posts,omitempty"`
+	AcceptedLineageDepth int    `json:"accepted_lineage_depth,omitempty"`
+}
+
+type RepoCollaborationMetrics struct {
+	RepoLinkCoverage        float64 `json:"repo_link_coverage"`
+	AcceptedCommitRate      float64 `json:"accepted_commit_rate"`
+	DiscussionDensity       float64 `json:"discussion_density"`
+	AcceptedLineageDepthAvg float64 `json:"accepted_lineage_depth_avg"`
+}
+
 type EntryGateDecision struct {
 	GateID string `json:"gate_id"`
 	Passed bool   `json:"passed"`
@@ -159,6 +173,35 @@ func RenderRepoNarrativeExports(experimentVolume int, convergedTasks int, accept
 		"markdown": section,
 		"text":     strings.ReplaceAll(section, "## ", ""),
 		"html":     fmt.Sprintf("<section><h2>Repo Evidence Summary</h2><p>Experiment Volume: %d</p><p>Converged Tasks: %d</p><p>Accepted Commits: %d</p><p>Hottest Threads: %s</p></section>", experimentVolume, convergedTasks, acceptedCommits, joinOrNone(hottestThreads)),
+	}
+}
+
+func BuildRepoCollaborationMetrics(runs []RepoCollaborationRun) RepoCollaborationMetrics {
+	if len(runs) == 0 {
+		return RepoCollaborationMetrics{}
+	}
+
+	withLinks := 0
+	withAcceptedCommits := 0
+	discussionPosts := 0
+	lineageDepth := 0
+	for _, run := range runs {
+		if run.HasRepoLink {
+			withLinks++
+		}
+		if strings.TrimSpace(run.AcceptedCommitHash) != "" {
+			withAcceptedCommits++
+		}
+		discussionPosts += run.RepoDiscussionPosts
+		lineageDepth += run.AcceptedLineageDepth
+	}
+
+	total := float64(len(runs))
+	return RepoCollaborationMetrics{
+		RepoLinkCoverage:        roundTenth((float64(withLinks) / total) * 100),
+		AcceptedCommitRate:      roundTenth((float64(withAcceptedCommits) / total) * 100),
+		DiscussionDensity:       roundTenth(float64(discussionPosts) / total),
+		AcceptedLineageDepthAvg: roundTenth(float64(lineageDepth) / total),
 	}
 }
 
