@@ -390,8 +390,8 @@ def build_broker_section(
     backend: str,
     root: Path,
     bundle_dir: Path,
-    bootstrap_summary_path: Path | None,
-    report_path: Path | None,
+    bootstrap_summary_path: Optional[Path],
+    report_path: Optional[Path],
 ) -> dict[str, Any]:
     bundle_summary_path = bundle_dir / 'broker-validation-summary.json'
     bundle_bootstrap_summary_path = bundle_dir / 'broker-bootstrap-review-summary.json'
@@ -507,9 +507,9 @@ def build_followup_digests(root: Path) -> list[tuple[str, str]]:
 def render_index(
     summary: dict[str, Any],
     recent_runs: list[dict[str, Any]],
-    continuation_gate: dict[str, Any] | None = None,
-    continuation_artifacts: list[tuple[str, str]] | None = None,
-    followup_digests: list[tuple[str, str]] | None = None,
+    continuation_gate: Optional[dict[str, Any]] = None,
+    continuation_artifacts: Optional[list[tuple[str, str]]] = None,
+    followup_digests: Optional[list[tuple[str, str]]] = None,
 ) -> str:
     lines = [
         '# Live Validation Index',

@@ -96,3 +96,22 @@
   - Result: `16 passed in 0.08s`
 - `PYTHONPATH=src python3 -m pytest tests/test_github_sync.py tests/test_workspace_bootstrap.py`
   - Result: `14 passed in 3.99s`
+
+## Full Validation Follow-up
+
+- Full-suite validation initially exposed one unrelated Python 3.9 compatibility failure in `bigclaw-go/scripts/e2e/export_validation_bundle.py`, where `Path | None` / `dict[...] | None` annotations were evaluated at import time.
+- Applied the smallest fix by converting those annotations to `Optional[...]` so the script imports under the workspace interpreter (`Python 3.9.6`).
+- Additional touched file for this follow-up:
+  - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
+
+## Full Validation Results
+
+- `PYTHONPATH=src python3 -m pytest tests`
+  - First result: `1 failed, 250 passed in 4.40s`
+  - Failure: `tests/test_parallel_validation_bundle.py::test_export_validation_bundle_generates_latest_reports_and_index`
+- `PYTHONPATH=src python3 -m pytest tests/test_parallel_validation_bundle.py`
+  - Result after fix: `1 passed in 0.04s`
+- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py`
+  - Result: passed with no output
+- `PYTHONPATH=src python3 -m pytest tests`
+  - Final result: `251 passed in 4.43s`
