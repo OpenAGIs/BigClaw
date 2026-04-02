@@ -78,3 +78,43 @@ Validation
 - `PYTHONPATH=src python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/__init__.py src/bigclaw/models.py src/bigclaw/repository.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_audit_events.py tests/test_event_bus.py tests/test_reports.py tests/test_evaluation.py tests/test_runtime_matrix.py`
 - `rg --files src/bigclaw -g '*.py' -g '*.go'`
+
+Continuation 5
+
+Plan
+- Fold the residual `src/bigclaw/repository.py` implementation into `src/bigclaw/runtime.py`.
+- Rewire `src/bigclaw/__init__.py` so `bigclaw.repository` and all repository-backed synthetic submodules continue to resolve from the merged runtime surface.
+- Remove the standalone `repository.py` file and keep runtime/repository import compatibility stable.
+- Run focused repository, runtime, observability, and report-facing validation against the merged surface.
+- Record updated inventory counts, then commit and push if the merged package remains coherent.
+
+Acceptance
+- `src/bigclaw/*.py` count decreases again.
+- `bigclaw.repository` and repository-backed package surfaces still resolve after removing the standalone module.
+- Final report continues to include exact `py files`, `go files`, `pyproject.toml`, and `setup.py` impact.
+
+Validation
+- `PYTHONPATH=src python3 - <<'PY'` import checks for `bigclaw.repository`, `bigclaw.repo_registry`, and `bigclaw.repo_gateway`
+- `PYTHONPATH=src python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/__init__.py src/bigclaw/models.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_registry.py tests/test_repo_gateway.py tests/test_repo_links.py tests/test_repo_board.py tests/test_repo_governance.py tests/test_repo_triage.py tests/test_repo_collaboration.py tests/test_reports.py tests/test_observability.py tests/test_runtime_matrix.py`
+- `rg --files src/bigclaw -g '*.py' -g '*.go'`
+
+Continuation 6
+
+Plan
+- Fold the residual `src/bigclaw/models.py` implementation into `src/bigclaw/runtime.py`.
+- Rewire `src/bigclaw/__init__.py` so `bigclaw.models` and all model-backed compatibility surfaces resolve from the merged runtime surface.
+- Remove the standalone `models.py` file, leaving only the core package init plus one merged implementation module under `src/bigclaw`.
+- Run focused models/planning/risk/runtime/package-surface validation to catch any import-order regressions.
+- Record updated inventory counts, then commit and push if the two-file package layout is stable.
+
+Acceptance
+- `src/bigclaw/*.py` count decreases again.
+- `bigclaw.models` and model-backed compatibility imports still resolve after removing the standalone module.
+- Final report continues to include exact `py files`, `go files`, `pyproject.toml`, and `setup.py` impact.
+
+Validation
+- `PYTHONPATH=src python3 - <<'PY'` import checks for `bigclaw.models`, `bigclaw.planning`, and `bigclaw.risk`
+- `PYTHONPATH=src python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/__init__.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_models.py tests/test_planning.py tests/test_risk.py tests/test_runtime_matrix.py tests/test_memory.py tests/test_repo_rollout.py tests/test_governance.py tests/test_dsl.py`
+- `rg --files src/bigclaw -g '*.py' -g '*.go'`
