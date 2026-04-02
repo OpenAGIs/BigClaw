@@ -3,7 +3,8 @@
     "identifier": "BIG-GO-982",
     "title": "Final sweep B: root scripts and ops scripts",
     "branch": "symphony/BIG-GO-982",
-    "status": "done"
+    "status": "done",
+    "head_sha": "192bf4afaea3b9f9d48bbe7c7782ade03879e55e"
   },
   "commits": [
     {
