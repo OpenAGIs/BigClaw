@@ -111,7 +111,6 @@ func prepareRunAllFixture(t *testing.T) string {
 	copyExecutableFile(t, runAllSource, runAllTarget)
 
 	writeExecutableFile(t, filepath.Join(root, "bin", "go"), runAllGoStub)
-	writeExecutableFile(t, filepath.Join(root, "scripts", "e2e", "export_validation_bundle.py"), runAllExportBundleStub)
 	return root
 }
 
@@ -216,6 +215,30 @@ if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
         raise SystemExit(0)
+    if subcommand == 'export-validation-bundle':
+        root = pathlib.Path(args[args.index('--go-root') + 1])
+        bundle_dir = root / args[args.index('--bundle-dir') + 1]
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+        calls_path = root / 'calls.jsonl'
+        gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
+        run_broker = '0'
+        for arg in args:
+            if arg == '--run-broker':
+                run_broker = '1'
+            elif arg == '--run-broker=true':
+                run_broker = '1'
+            elif arg == '--run-broker=false':
+                run_broker = '0'
+        payload = {
+            'gate_exists': gate_path.exists(),
+            'run_broker': run_broker,
+            'broker_backend': args[args.index('--broker-backend') + 1],
+            'broker_report_path': args[args.index('--broker-report-path') + 1],
+            'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
+        }
+        with calls_path.open('a', encoding='utf-8') as handle:
+            handle.write(json.dumps(payload) + '\n')
+        raise SystemExit(0)
     raise SystemExit(f'unexpected e2e subcommand: {subcommand}')
 if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'benchmark'] or (
     len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'benchmark'
@@ -229,26 +252,4 @@ if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (
     output.write_text('{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\n', encoding='utf-8')
     raise SystemExit(0)
 raise SystemExit(f'unexpected go args: {args}')
-`
-
-const runAllExportBundleStub = `#!/usr/bin/env python3
-import json
-import pathlib
-import sys
-
-args = sys.argv[1:]
-root = pathlib.Path(args[args.index('--go-root') + 1])
-bundle_dir = root / args[args.index('--bundle-dir') + 1]
-bundle_dir.mkdir(parents=True, exist_ok=True)
-calls_path = root / 'calls.jsonl'
-gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
-payload = {
-    'gate_exists': gate_path.exists(),
-    'run_broker': args[args.index('--run-broker') + 1],
-    'broker_backend': args[args.index('--broker-backend') + 1],
-    'broker_report_path': args[args.index('--broker-report-path') + 1],
-    'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
-}
-with calls_path.open('a', encoding='utf-8') as handle:
-    handle.write(json.dumps(payload) + '\n')
 `

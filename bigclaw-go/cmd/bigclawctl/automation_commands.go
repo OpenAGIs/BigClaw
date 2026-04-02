@@ -73,6 +73,33 @@ type automationContinuationPolicyGateOptions struct {
 	Now                           func() time.Time
 }
 
+type automationExportValidationBundleOptions struct {
+	GoRoot                     string
+	RunID                      string
+	BundleDir                  string
+	SummaryPath                string
+	IndexPath                  string
+	ManifestPath               string
+	RunLocal                   bool
+	RunKubernetes              bool
+	RunRay                     bool
+	ValidationStatus           int
+	RunBroker                  bool
+	BrokerBackend              string
+	BrokerReportPath           string
+	BrokerBootstrapSummaryPath string
+	LocalReportPath            string
+	LocalStdoutPath            string
+	LocalStderrPath            string
+	KubernetesReportPath       string
+	KubernetesStdoutPath       string
+	KubernetesStderrPath       string
+	RayReportPath              string
+	RayStdoutPath              string
+	RayStderrPath              string
+	Now                        func() time.Time
+}
+
 type automationShadowCompareOptions struct {
 	PrimaryBaseURL       string
 	ShadowBaseURL        string
@@ -260,12 +287,14 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|continuation-scorecard|continuation-policy-gate> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate> [flags]\n")
 		return nil
 	}
 	switch args[0] {
 	case "run-task-smoke":
 		return runAutomationRunTaskSmokeCommand(args[1:])
+	case "export-validation-bundle":
+		return runAutomationExportValidationBundleCommand(args[1:])
 	case "continuation-scorecard":
 		return runAutomationContinuationScorecardCommand(args[1:])
 	case "continuation-policy-gate":
@@ -399,6 +428,89 @@ func runAutomationContinuationScorecardCommand(args []string) error {
 		}
 	}
 	return emit(report, *asJSON, 0)
+}
+
+func runAutomationExportValidationBundleCommand(args []string) error {
+	flags := flag.NewFlagSet("automation e2e export-validation-bundle", flag.ContinueOnError)
+	goRoot := flags.String("go-root", "", "bigclaw-go repo root")
+	runID := flags.String("run-id", "", "bundle run id")
+	bundleDir := flags.String("bundle-dir", "", "bundle directory path relative to repo root")
+	summaryPath := flags.String("summary-path", "docs/reports/live-validation-summary.json", "summary output path")
+	indexPath := flags.String("index-path", "docs/reports/live-validation-index.md", "index markdown path")
+	manifestPath := flags.String("manifest-path", "docs/reports/live-validation-index.json", "manifest json path")
+	runLocal := flags.Bool("run-local", true, "include local lane")
+	runKubernetes := flags.Bool("run-kubernetes", true, "include kubernetes lane")
+	runRay := flags.Bool("run-ray", true, "include ray lane")
+	validationStatus := flags.Int("validation-status", 0, "workflow status code")
+	runBroker := flags.Bool("run-broker", false, "include broker lane")
+	brokerBackend := flags.String("broker-backend", "", "broker backend name")
+	brokerReportPath := flags.String("broker-report-path", "", "broker report path")
+	brokerBootstrapSummaryPath := flags.String("broker-bootstrap-summary-path", "", "broker bootstrap summary path")
+	localReportPath := flags.String("local-report-path", "", "local report path")
+	localStdoutPath := flags.String("local-stdout-path", "", "local stdout path")
+	localStderrPath := flags.String("local-stderr-path", "", "local stderr path")
+	k8sReportPath := flags.String("kubernetes-report-path", "", "kubernetes report path")
+	k8sStdoutPath := flags.String("kubernetes-stdout-path", "", "kubernetes stdout path")
+	k8sStderrPath := flags.String("kubernetes-stderr-path", "", "kubernetes stderr path")
+	rayReportPath := flags.String("ray-report-path", "", "ray report path")
+	rayStdoutPath := flags.String("ray-stdout-path", "", "ray stdout path")
+	rayStderrPath := flags.String("ray-stderr-path", "", "ray stderr path")
+	asJSON := flags.Bool("json", true, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl automation e2e export-validation-bundle [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	if trim(*goRoot) == "" || trim(*runID) == "" || trim(*bundleDir) == "" {
+		return errors.New("--go-root, --run-id, and --bundle-dir are required")
+	}
+	requiredPaths := map[string]string{
+		"--local-report-path":      *localReportPath,
+		"--local-stdout-path":      *localStdoutPath,
+		"--local-stderr-path":      *localStderrPath,
+		"--kubernetes-report-path": *k8sReportPath,
+		"--kubernetes-stdout-path": *k8sStdoutPath,
+		"--kubernetes-stderr-path": *k8sStderrPath,
+		"--ray-report-path":        *rayReportPath,
+		"--ray-stdout-path":        *rayStdoutPath,
+		"--ray-stderr-path":        *rayStderrPath,
+	}
+	for name, value := range requiredPaths {
+		if trim(value) == "" {
+			return fmt.Errorf("%s is required", name)
+		}
+	}
+	report, exitCode, err := automationExportValidationBundle(automationExportValidationBundleOptions{
+		GoRoot:                     *goRoot,
+		RunID:                      *runID,
+		BundleDir:                  *bundleDir,
+		SummaryPath:                *summaryPath,
+		IndexPath:                  *indexPath,
+		ManifestPath:               *manifestPath,
+		RunLocal:                   *runLocal,
+		RunKubernetes:              *runKubernetes,
+		RunRay:                     *runRay,
+		ValidationStatus:           *validationStatus,
+		RunBroker:                  *runBroker,
+		BrokerBackend:              *brokerBackend,
+		BrokerReportPath:           *brokerReportPath,
+		BrokerBootstrapSummaryPath: *brokerBootstrapSummaryPath,
+		LocalReportPath:            *localReportPath,
+		LocalStdoutPath:            *localStdoutPath,
+		LocalStderrPath:            *localStderrPath,
+		KubernetesReportPath:       *k8sReportPath,
+		KubernetesStdoutPath:       *k8sStdoutPath,
+		KubernetesStderrPath:       *k8sStderrPath,
+		RayReportPath:              *rayReportPath,
+		RayStdoutPath:              *rayStdoutPath,
+		RayStderrPath:              *rayStderrPath,
+	})
+	if err != nil {
+		return err
+	}
+	return emit(report, *asJSON, exitCode)
 }
 
 func runAutomationContinuationPolicyGateCommand(args []string) error {
@@ -1696,6 +1808,915 @@ func automationContinuationEnforcementSummary(recommendation string, mode string
 	default:
 		return map[string]any{"mode": mode, "outcome": "fail", "exit_code": 1}
 	}
+}
+
+var validationLatestReports = map[string]string{
+	"local":      "docs/reports/sqlite-smoke-report.json",
+	"kubernetes": "docs/reports/kubernetes-live-smoke-report.json",
+	"ray":        "docs/reports/ray-live-smoke-report.json",
+}
+
+const (
+	validationBrokerSummaryPath          = "docs/reports/broker-validation-summary.json"
+	validationBrokerBootstrapSummaryPath = "docs/reports/broker-bootstrap-review-summary.json"
+	validationBrokerValidationPackPath   = "docs/reports/broker-failover-fault-injection-validation-pack.md"
+	validationSharedQueueReportPath      = "docs/reports/multi-node-shared-queue-report.json"
+	validationSharedQueueSummaryPath     = "docs/reports/shared-queue-companion-summary.json"
+)
+
+var validationContinuationArtifacts = []struct {
+	Path        string
+	Description string
+}{
+	{
+		Path:        "docs/reports/validation-bundle-continuation-scorecard.json",
+		Description: "summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.",
+	},
+	{
+		Path:        "docs/reports/validation-bundle-continuation-policy-gate.json",
+		Description: "records the current policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.",
+	},
+}
+
+var validationFollowupDigests = []struct {
+	Path        string
+	Description string
+}{
+	{
+		Path:        "docs/reports/validation-bundle-continuation-digest.md",
+		Description: "Validation bundle continuation caveats are consolidated here.",
+	},
+}
+
+var validationLaneAliases = map[string]string{
+	"local":      "local",
+	"kubernetes": "k8s",
+	"ray":        "ray",
+}
+
+var validationFailureEventTypes = map[string]bool{
+	"task.cancelled":   true,
+	"task.dead_letter": true,
+	"task.failed":      true,
+	"task.retried":     true,
+}
+
+func automationExportValidationBundle(opts automationExportValidationBundleOptions) (map[string]any, int, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	root := resolveAutomationGoRoot(opts.GoRoot)
+	bundleDir := filepath.Join(root, opts.BundleDir)
+	if err := os.MkdirAll(bundleDir, 0o755); err != nil {
+		return nil, 0, err
+	}
+
+	summary := map[string]any{
+		"run_id":       opts.RunID,
+		"generated_at": now().UTC().Format(time.RFC3339Nano),
+		"status":       ternaryString(opts.ValidationStatus == 0, "succeeded", "failed"),
+		"bundle_path":  relAutomationPath(bundleDir, root),
+		"closeout_commands": []string{
+			"cd bigclaw-go && ./scripts/e2e/run_all.sh",
+			"cd bigclaw-go && go test ./...",
+			"git push origin <branch> && git log -1 --stat",
+		},
+	}
+
+	local, err := automationBuildValidationComponentSection("local", opts.RunLocal, root, bundleDir, opts.LocalReportPath, opts.LocalStdoutPath, opts.LocalStderrPath)
+	if err != nil {
+		return nil, 0, err
+	}
+	summary["local"] = local
+	kubernetes, err := automationBuildValidationComponentSection("kubernetes", opts.RunKubernetes, root, bundleDir, opts.KubernetesReportPath, opts.KubernetesStdoutPath, opts.KubernetesStderrPath)
+	if err != nil {
+		return nil, 0, err
+	}
+	summary["kubernetes"] = kubernetes
+	ray, err := automationBuildValidationComponentSection("ray", opts.RunRay, root, bundleDir, opts.RayReportPath, opts.RayStdoutPath, opts.RayStderrPath)
+	if err != nil {
+		return nil, 0, err
+	}
+	summary["ray"] = ray
+
+	broker, err := automationBuildBrokerSection(root, bundleDir, opts.RunBroker, trim(opts.BrokerBackend), opts.BrokerBootstrapSummaryPath, opts.BrokerReportPath)
+	if err != nil {
+		return nil, 0, err
+	}
+	summary["broker"] = broker
+	sharedQueue, err := automationBuildSharedQueueCompanion(root, bundleDir)
+	if err != nil {
+		return nil, 0, err
+	}
+	summary["shared_queue_companion"] = sharedQueue
+	summary["validation_matrix"] = automationBuildValidationMatrix(summary)
+
+	continuationGate := automationBuildContinuationGateSummary(root)
+	if continuationGate != nil {
+		summary["continuation_gate"] = continuationGate
+	}
+
+	bundleSummaryPath := filepath.Join(bundleDir, "summary.json")
+	summary["summary_path"] = relAutomationPath(bundleSummaryPath, root)
+	if err := automationWriteReport(".", bundleSummaryPath, summary); err != nil {
+		return nil, 0, err
+	}
+	if err := automationWriteReport(".", filepath.Join(root, opts.SummaryPath), summary); err != nil {
+		return nil, 0, err
+	}
+
+	recentRuns, err := automationBuildRecentValidationRuns(filepath.Dir(bundleDir), root, 8)
+	if err != nil {
+		return nil, 0, err
+	}
+	manifest := map[string]any{"latest": summary, "recent_runs": recentRuns}
+	if continuationGate != nil {
+		manifest["continuation_gate"] = continuationGate
+	}
+	if err := automationWriteReport(".", filepath.Join(root, opts.ManifestPath), manifest); err != nil {
+		return nil, 0, err
+	}
+
+	indexText := automationRenderValidationIndex(summary, recentRuns, continuationGate, automationBuildContinuationArtifacts(root), automationBuildFollowupDigests(root))
+	if err := automationWriteTextReport(".", filepath.Join(root, opts.IndexPath), indexText); err != nil {
+		return nil, 0, err
+	}
+	if err := automationWriteTextReport(".", filepath.Join(bundleDir, "README.md"), indexText); err != nil {
+		return nil, 0, err
+	}
+
+	exitCode := 0
+	if summary["status"] != "succeeded" {
+		exitCode = 1
+	}
+	return summary, exitCode, nil
+}
+
+func automationBuildContinuationGateSummary(root string) map[string]any {
+	gate, err := automationReadJSONReportOptional(filepath.Join(root, "docs/reports/validation-bundle-continuation-policy-gate.json"))
+	if err != nil || gate == nil {
+		return nil
+	}
+	enforcement, _ := gate["enforcement"].(map[string]any)
+	summary, _ := gate["summary"].(map[string]any)
+	reviewerPath, _ := gate["reviewer_path"].(map[string]any)
+	nextActions := automationStringSlice(gate["next_actions"])
+	return map[string]any{
+		"path":           "docs/reports/validation-bundle-continuation-policy-gate.json",
+		"status":         stringOrDefault(fmt.Sprint(gate["status"]), "unknown"),
+		"recommendation": stringOrDefault(fmt.Sprint(gate["recommendation"]), "unknown"),
+		"failing_checks": automationStringSlice(gate["failing_checks"]),
+		"enforcement":    cloneMap(enforcement),
+		"summary":        cloneMap(summary),
+		"reviewer_path":  cloneMap(reviewerPath),
+		"next_actions":   nextActions,
+	}
+}
+
+func automationReadJSONReportOptional(path string) (map[string]any, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if info.Size() == 0 {
+		return nil, nil
+	}
+	return automationReadJSONReport(path)
+}
+
+func automationCopyTextArtifact(source string, destination string) (string, error) {
+	if trim(source) == "" {
+		return "", nil
+	}
+	info, err := os.Stat(source)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	if info.IsDir() {
+		return "", nil
+	}
+	sourceAbs, _ := filepath.Abs(source)
+	destAbs, _ := filepath.Abs(destination)
+	if sourceAbs == destAbs {
+		return destination, nil
+	}
+	body, err := os.ReadFile(source)
+	if err != nil {
+		return "", err
+	}
+	if err := automationWriteTextReport(".", destination, string(body)); err != nil {
+		return "", err
+	}
+	return destination, nil
+}
+
+func automationCopyJSONArtifact(source string, destination string) (string, error) {
+	if trim(source) == "" {
+		return "", nil
+	}
+	payload, err := automationReadJSONReportOptional(source)
+	if err != nil || payload == nil {
+		return "", err
+	}
+	sourceAbs, _ := filepath.Abs(source)
+	destAbs, _ := filepath.Abs(destination)
+	if sourceAbs == destAbs {
+		return destination, nil
+	}
+	if err := automationWriteReport(".", destination, payload); err != nil {
+		return "", err
+	}
+	return destination, nil
+}
+
+func automationCollectReportEvents(report map[string]any) []map[string]any {
+	events := []map[string]any{}
+	if status, ok := report["status"].(map[string]any); ok {
+		if statusEvents, ok := status["events"].([]any); ok {
+			for _, raw := range statusEvents {
+				if event, ok := raw.(map[string]any); ok {
+					events = append(events, event)
+				}
+			}
+		}
+		if latestEvent, ok := status["latest_event"].(map[string]any); ok {
+			latestID := fmt.Sprint(latestEvent["id"])
+			duplicate := false
+			for _, event := range events {
+				if fmt.Sprint(event["id"]) == latestID && latestID != "" {
+					duplicate = true
+					break
+				}
+			}
+			if !duplicate {
+				events = append(events, latestEvent)
+			}
+		}
+	}
+	if reportEvents, ok := report["events"].([]any); ok {
+		for _, raw := range reportEvents {
+			event, ok := raw.(map[string]any)
+			if !ok {
+				continue
+			}
+			eventID := fmt.Sprint(event["id"])
+			duplicate := false
+			for _, existing := range events {
+				if fmt.Sprint(existing["id"]) == eventID && eventID != "" {
+					duplicate = true
+					break
+				}
+			}
+			if !duplicate {
+				events = append(events, event)
+			}
+		}
+	}
+	return events
+}
+
+func automationEventPayloadText(event map[string]any, key string) string {
+	payload, _ := event["payload"].(map[string]any)
+	return stringOrDefault(fmt.Sprint(payload[key]), "")
+}
+
+func automationLatestReportEvent(report map[string]any) map[string]any {
+	events := automationCollectReportEvents(report)
+	if len(events) == 0 {
+		return nil
+	}
+	return events[len(events)-1]
+}
+
+func automationFindRoutingReason(report map[string]any) string {
+	events := automationCollectReportEvents(report)
+	for i := len(events) - 1; i >= 0; i-- {
+		if fmt.Sprint(events[i]["type"]) == "scheduler.routed" {
+			return automationEventPayloadText(events[i], "reason")
+		}
+	}
+	return ""
+}
+
+func automationValidationComponentStatus(report map[string]any) string {
+	if report == nil {
+		return "missing_report"
+	}
+	switch status := report["status"].(type) {
+	case map[string]any:
+		return stringOrDefault(fmt.Sprint(status["state"]), "unknown")
+	case string:
+		return status
+	default:
+		if automationBool(report["all_ok"]) {
+			return "succeeded"
+		}
+		if report["all_ok"] == false {
+			return "failed"
+		}
+		return "unknown"
+	}
+}
+
+func automationBuildFailureRootCause(section map[string]any, report map[string]any) map[string]any {
+	events := automationCollectReportEvents(report)
+	latestEvent := automationLatestReportEvent(report)
+	latestStatus := ""
+	if status, ok := report["status"].(map[string]any); ok {
+		latestStatus = stringOrDefault(fmt.Sprint(status["state"]), latestStatus)
+	}
+	if task, ok := report["task"].(map[string]any); ok {
+		latestStatus = stringOrDefault(fmt.Sprint(task["state"]), latestStatus)
+	}
+	if latestStatus == "" {
+		latestStatus = automationValidationComponentStatus(report)
+	}
+	var causeEvent map[string]any
+	for i := len(events) - 1; i >= 0; i-- {
+		if validationFailureEventTypes[fmt.Sprint(events[i]["type"])] {
+			causeEvent = events[i]
+			break
+		}
+	}
+	if causeEvent == nil && latestStatus != "" && latestStatus != "succeeded" {
+		causeEvent = latestEvent
+	}
+	location := stringOrDefault(fmt.Sprint(section["stderr_path"]), "")
+	if location == "" {
+		location = stringOrDefault(fmt.Sprint(section["service_log_path"]), "")
+	}
+	if location == "" {
+		location = stringOrDefault(fmt.Sprint(section["audit_log_path"]), "")
+	}
+	if location == "" {
+		location = stringOrDefault(fmt.Sprint(section["bundle_report_path"]), "")
+	}
+	if causeEvent == nil {
+		eventType := ""
+		if latestEvent != nil {
+			eventType = stringOrDefault(fmt.Sprint(latestEvent["type"]), "")
+		}
+		return map[string]any{
+			"status":     "not_triggered",
+			"event_type": eventType,
+			"message":    "",
+			"location":   location,
+			"event_id":   "",
+			"timestamp":  "",
+		}
+	}
+	message := automationEventPayloadText(causeEvent, "message")
+	if message == "" {
+		message = automationEventPayloadText(causeEvent, "reason")
+	}
+	if message == "" {
+		message = stringOrDefault(fmt.Sprint(report["error"]), "")
+	}
+	if message == "" {
+		message = stringOrDefault(fmt.Sprint(report["failure_reason"]), "")
+	}
+	return map[string]any{
+		"status":     "captured",
+		"event_type": stringOrDefault(fmt.Sprint(causeEvent["type"]), ""),
+		"message":    message,
+		"location":   location,
+		"event_id":   stringOrDefault(fmt.Sprint(causeEvent["id"]), ""),
+		"timestamp":  stringOrDefault(fmt.Sprint(causeEvent["timestamp"]), ""),
+	}
+}
+
+func automationBuildValidationMatrixEntry(name string, section map[string]any, report map[string]any) map[string]any {
+	var taskID any
+	executor := name
+	if report != nil {
+		if task, ok := report["task"].(map[string]any); ok {
+			taskID = task["id"]
+			if requiredExecutor := stringOrDefault(fmt.Sprint(task["required_executor"]), ""); requiredExecutor != "" {
+				executor = requiredExecutor
+			}
+		}
+	}
+	if taskID == nil {
+		taskID = section["task_id"]
+	}
+	rootCause, _ := section["failure_root_cause"].(map[string]any)
+	return map[string]any{
+		"lane":                  stringOrDefault(validationLaneAliases[name], name),
+		"executor":              executor,
+		"enabled":               automationBool(section["enabled"]),
+		"status":                stringOrDefault(fmt.Sprint(section["status"]), "unknown"),
+		"task_id":               taskID,
+		"canonical_report_path": stringOrDefault(fmt.Sprint(section["canonical_report_path"]), ""),
+		"bundle_report_path":    stringOrDefault(fmt.Sprint(section["bundle_report_path"]), ""),
+		"latest_event_type":     stringOrDefault(fmt.Sprint(section["latest_event_type"]), ""),
+		"routing_reason":        stringOrDefault(fmt.Sprint(section["routing_reason"]), ""),
+		"root_cause_event_type": stringOrDefault(fmt.Sprint(rootCause["event_type"]), ""),
+		"root_cause_location":   stringOrDefault(fmt.Sprint(rootCause["location"]), ""),
+		"root_cause_message":    stringOrDefault(fmt.Sprint(rootCause["message"]), ""),
+	}
+}
+
+func automationBuildValidationMatrix(summary map[string]any) []map[string]any {
+	rows := []map[string]any{}
+	for _, name := range []string{"local", "kubernetes", "ray"} {
+		section, _ := summary[name].(map[string]any)
+		if row, ok := section["validation_matrix"].(map[string]any); ok {
+			rows = append(rows, row)
+		}
+	}
+	return rows
+}
+
+func automationBuildSharedQueueCompanion(root string, bundleDir string) (map[string]any, error) {
+	canonicalReportPath := filepath.Join(root, validationSharedQueueReportPath)
+	canonicalSummaryPath := filepath.Join(root, validationSharedQueueSummaryPath)
+	bundleReportPath := filepath.Join(bundleDir, "multi-node-shared-queue-report.json")
+	bundleSummaryPath := filepath.Join(bundleDir, "shared-queue-companion-summary.json")
+	report, err := automationReadJSONReportOptional(canonicalReportPath)
+	if err != nil {
+		return nil, err
+	}
+	summary := map[string]any{
+		"available":              report != nil,
+		"canonical_report_path":  validationSharedQueueReportPath,
+		"canonical_summary_path": validationSharedQueueSummaryPath,
+		"bundle_report_path":     relAutomationPath(bundleReportPath, root),
+		"bundle_summary_path":    relAutomationPath(bundleSummaryPath, root),
+	}
+	if report == nil {
+		summary["status"] = "missing_report"
+		return summary, nil
+	}
+	if copied, err := automationCopyJSONArtifact(canonicalReportPath, bundleReportPath); err != nil {
+		return nil, err
+	} else if copied != "" {
+		summary["bundle_report_path"] = relAutomationPath(copied, root)
+	}
+	summary["status"] = ternaryString(automationBool(report["all_ok"]), "succeeded", "failed")
+	summary["generated_at"] = report["generated_at"]
+	summary["count"] = report["count"]
+	summary["cross_node_completions"] = report["cross_node_completions"]
+	if items, ok := report["duplicate_started_tasks"].([]any); ok {
+		summary["duplicate_started_tasks"] = len(items)
+	}
+	if items, ok := report["duplicate_completed_tasks"].([]any); ok {
+		summary["duplicate_completed_tasks"] = len(items)
+	}
+	if items, ok := report["missing_completed_tasks"].([]any); ok {
+		summary["missing_completed_tasks"] = len(items)
+	}
+	summary["submitted_by_node"] = report["submitted_by_node"]
+	summary["completed_by_node"] = report["completed_by_node"]
+	if nodes, ok := report["nodes"].([]any); ok {
+		names := []string{}
+		for _, raw := range nodes {
+			node, _ := raw.(map[string]any)
+			if name := stringOrDefault(fmt.Sprint(node["name"]), ""); name != "" {
+				names = append(names, name)
+			}
+		}
+		summary["nodes"] = names
+	}
+	if err := automationWriteReport(".", bundleSummaryPath, summary); err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", canonicalSummaryPath, summary); err != nil {
+		return nil, err
+	}
+	return summary, nil
+}
+
+func automationBuildValidationComponentSection(name string, enabled bool, root string, bundleDir string, reportPath string, stdoutPath string, stderrPath string) (map[string]any, error) {
+	latestReportPath := filepath.Join(root, validationLatestReports[name])
+	section := map[string]any{
+		"enabled":               enabled,
+		"bundle_report_path":    relAutomationPath(filepath.Join(root, reportPath), root),
+		"canonical_report_path": validationLatestReports[name],
+	}
+	if !enabled {
+		section["status"] = "skipped"
+		return section, nil
+	}
+	report, err := automationReadJSONReportOptional(filepath.Join(root, reportPath))
+	if err != nil {
+		return nil, err
+	}
+	section["report"] = report
+	section["status"] = automationValidationComponentStatus(report)
+	if copied, err := automationCopyJSONArtifact(filepath.Join(root, reportPath), latestReportPath); err != nil {
+		return nil, err
+	} else if copied != "" {
+		section["canonical_report_path"] = relAutomationPath(copied, root)
+	}
+	if copied, err := automationCopyTextArtifact(stdoutPath, filepath.Join(bundleDir, name+".stdout.log")); err != nil {
+		return nil, err
+	} else if copied != "" {
+		section["stdout_path"] = relAutomationPath(copied, root)
+	}
+	if copied, err := automationCopyTextArtifact(stderrPath, filepath.Join(bundleDir, name+".stderr.log")); err != nil {
+		return nil, err
+	} else if copied != "" {
+		section["stderr_path"] = relAutomationPath(copied, root)
+	}
+	if report != nil {
+		if task, ok := report["task"].(map[string]any); ok {
+			if taskID := stringOrDefault(fmt.Sprint(task["id"]), ""); taskID != "" {
+				section["task_id"] = taskID
+			}
+		}
+		if baseURL := stringOrDefault(fmt.Sprint(report["base_url"]), ""); baseURL != "" {
+			section["base_url"] = baseURL
+		}
+		if stateDir := stringOrDefault(fmt.Sprint(report["state_dir"]), ""); stateDir != "" {
+			section["state_dir"] = stateDir
+			if copied, err := automationCopyTextArtifact(filepath.Join(stateDir, "audit.jsonl"), filepath.Join(bundleDir, name+".audit.jsonl")); err != nil {
+				return nil, err
+			} else if copied != "" {
+				section["audit_log_path"] = relAutomationPath(copied, root)
+			}
+		}
+		if serviceLog := stringOrDefault(fmt.Sprint(report["service_log"]), ""); serviceLog != "" {
+			if copied, err := automationCopyTextArtifact(serviceLog, filepath.Join(bundleDir, name+".service.log")); err != nil {
+				return nil, err
+			} else if copied != "" {
+				section["service_log_path"] = relAutomationPath(copied, root)
+			}
+		}
+		if latestEvent := automationLatestReportEvent(report); latestEvent != nil {
+			section["latest_event_type"] = stringOrDefault(fmt.Sprint(latestEvent["type"]), "")
+			section["latest_event_timestamp"] = stringOrDefault(fmt.Sprint(latestEvent["timestamp"]), "")
+			if payload, ok := latestEvent["payload"].(map[string]any); ok {
+				if artifacts, ok := payload["artifacts"].([]any); ok {
+					values := []string{}
+					for _, raw := range artifacts {
+						if item, ok := raw.(string); ok {
+							values = append(values, item)
+						}
+					}
+					section["artifact_paths"] = values
+				}
+			}
+		}
+		if routingReason := automationFindRoutingReason(report); routingReason != "" {
+			section["routing_reason"] = routingReason
+		}
+		section["failure_root_cause"] = automationBuildFailureRootCause(section, report)
+		section["validation_matrix"] = automationBuildValidationMatrixEntry(name, section, report)
+	} else {
+		section["failure_root_cause"] = map[string]any{
+			"status":     "missing_report",
+			"event_type": "",
+			"message":    "",
+			"location":   section["bundle_report_path"],
+			"event_id":   "",
+			"timestamp":  "",
+		}
+		section["validation_matrix"] = automationBuildValidationMatrixEntry(name, section, nil)
+	}
+	return section, nil
+}
+
+func automationBuildBrokerSection(root string, bundleDir string, enabled bool, backend string, bootstrapSummaryPath string, reportPath string) (map[string]any, error) {
+	bundleSummaryPath := filepath.Join(bundleDir, "broker-validation-summary.json")
+	bundleBootstrapSummaryPath := filepath.Join(bundleDir, "broker-bootstrap-review-summary.json")
+	section := map[string]any{
+		"enabled":                          enabled,
+		"backend":                          stringOrNil(backend),
+		"bundle_summary_path":              relAutomationPath(bundleSummaryPath, root),
+		"canonical_summary_path":           validationBrokerSummaryPath,
+		"bundle_bootstrap_summary_path":    relAutomationPath(bundleBootstrapSummaryPath, root),
+		"canonical_bootstrap_summary_path": validationBrokerBootstrapSummaryPath,
+		"validation_pack_path":             validationBrokerValidationPackPath,
+	}
+	if enabled && backend != "" {
+		section["configuration_state"] = "configured"
+	} else {
+		section["configuration_state"] = "not_configured"
+	}
+	if bootstrapSummaryPath != "" {
+		bootstrapSummary, err := automationReadJSONReportOptional(filepath.Join(root, bootstrapSummaryPath))
+		if err != nil {
+			return nil, err
+		}
+		if bootstrapSummary != nil {
+			if copied, err := automationCopyJSONArtifact(filepath.Join(root, bootstrapSummaryPath), bundleBootstrapSummaryPath); err != nil {
+				return nil, err
+			} else if copied != "" {
+				section["bundle_bootstrap_summary_path"] = relAutomationPath(copied, root)
+			}
+			if copied, err := automationCopyJSONArtifact(filepath.Join(root, bootstrapSummaryPath), filepath.Join(root, validationBrokerBootstrapSummaryPath)); err != nil {
+				return nil, err
+			} else if copied != "" {
+				section["canonical_bootstrap_summary_path"] = relAutomationPath(copied, root)
+			}
+			section["bootstrap_summary"] = bootstrapSummary
+			section["bootstrap_ready"] = automationBool(bootstrapSummary["ready"])
+			section["runtime_posture"] = bootstrapSummary["runtime_posture"]
+			section["live_adapter_implemented"] = automationBool(bootstrapSummary["live_adapter_implemented"])
+			section["proof_boundary"] = bootstrapSummary["proof_boundary"]
+			section["validation_errors"] = bootstrapSummary["validation_errors"]
+			section["config_completeness"] = bootstrapSummary["config_completeness"]
+		}
+	}
+	if !enabled || backend == "" {
+		section["status"] = "skipped"
+		section["reason"] = "not_configured"
+		if err := automationWriteReport(".", bundleSummaryPath, section); err != nil {
+			return nil, err
+		}
+		if err := automationWriteReport(".", filepath.Join(root, validationBrokerSummaryPath), section); err != nil {
+			return nil, err
+		}
+		return section, nil
+	}
+	if reportPath == "" {
+		section["status"] = "skipped"
+		section["reason"] = "missing_report_path"
+		if err := automationWriteReport(".", bundleSummaryPath, section); err != nil {
+			return nil, err
+		}
+		if err := automationWriteReport(".", filepath.Join(root, validationBrokerSummaryPath), section); err != nil {
+			return nil, err
+		}
+		return section, nil
+	}
+	report, err := automationReadJSONReportOptional(filepath.Join(root, reportPath))
+	if err != nil {
+		return nil, err
+	}
+	section["canonical_report_path"] = reportPath
+	section["bundle_report_path"] = relAutomationPath(filepath.Join(bundleDir, filepath.Base(reportPath)), root)
+	if report == nil {
+		section["status"] = "skipped"
+		section["reason"] = "not_configured"
+		if err := automationWriteReport(".", bundleSummaryPath, section); err != nil {
+			return nil, err
+		}
+		if err := automationWriteReport(".", filepath.Join(root, validationBrokerSummaryPath), section); err != nil {
+			return nil, err
+		}
+		return section, nil
+	}
+	if copied, err := automationCopyJSONArtifact(filepath.Join(root, reportPath), filepath.Join(bundleDir, filepath.Base(reportPath))); err != nil {
+		return nil, err
+	} else if copied != "" {
+		section["bundle_report_path"] = relAutomationPath(copied, root)
+	}
+	section["report"] = report
+	section["status"] = automationValidationComponentStatus(report)
+	if err := automationWriteReport(".", bundleSummaryPath, section); err != nil {
+		return nil, err
+	}
+	if err := automationWriteReport(".", filepath.Join(root, validationBrokerSummaryPath), section); err != nil {
+		return nil, err
+	}
+	return section, nil
+}
+
+func automationBuildRecentValidationRuns(bundleRoot string, root string, limit int) ([]map[string]any, error) {
+	entries, err := os.ReadDir(bundleRoot)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	type runItem struct {
+		generatedAt string
+		summary     map[string]any
+	}
+	runs := []runItem{}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		summary, err := automationReadJSONReportOptional(filepath.Join(bundleRoot, entry.Name(), "summary.json"))
+		if err != nil {
+			return nil, err
+		}
+		if summary == nil {
+			continue
+		}
+		runs = append(runs, runItem{generatedAt: fmt.Sprint(summary["generated_at"]), summary: summary})
+	}
+	sort.Slice(runs, func(i, j int) bool {
+		return runs[i].generatedAt > runs[j].generatedAt
+	})
+	if len(runs) > limit {
+		runs = runs[:limit]
+	}
+	items := make([]map[string]any, 0, len(runs))
+	for _, run := range runs {
+		items = append(items, map[string]any{
+			"run_id":       run.summary["run_id"],
+			"generated_at": run.summary["generated_at"],
+			"status":       stringOrDefault(fmt.Sprint(run.summary["status"]), "unknown"),
+			"bundle_path":  run.summary["bundle_path"],
+			"summary_path": run.summary["summary_path"],
+		})
+	}
+	return items, nil
+}
+
+func automationBuildContinuationArtifacts(root string) []map[string]string {
+	items := []map[string]string{}
+	for _, item := range validationContinuationArtifacts {
+		if automationPathExists(filepath.Join(root, item.Path)) {
+			items = append(items, map[string]string{"path": item.Path, "description": item.Description})
+		}
+	}
+	return items
+}
+
+func automationBuildFollowupDigests(root string) []map[string]string {
+	items := []map[string]string{}
+	for _, item := range validationFollowupDigests {
+		if automationPathExists(filepath.Join(root, item.Path)) {
+			items = append(items, map[string]string{"path": item.Path, "description": item.Description})
+		}
+	}
+	return items
+}
+
+func automationRenderValidationIndex(summary map[string]any, recentRuns []map[string]any, continuationGate map[string]any, continuationArtifacts []map[string]string, followupDigests []map[string]string) string {
+	lines := []string{
+		"# Live Validation Index",
+		"",
+		fmt.Sprintf("- Latest run: `%v`", summary["run_id"]),
+		fmt.Sprintf("- Generated at: `%v`", summary["generated_at"]),
+		fmt.Sprintf("- Status: `%v`", summary["status"]),
+		fmt.Sprintf("- Bundle: `%v`", summary["bundle_path"]),
+		fmt.Sprintf("- Summary JSON: `%v`", summary["summary_path"]),
+		"",
+		"## Latest bundle artifacts",
+		"",
+	}
+	for _, name := range []string{"local", "kubernetes", "ray"} {
+		section, _ := summary[name].(map[string]any)
+		matrix, _ := section["validation_matrix"].(map[string]any)
+		lines = append(lines, "### "+name)
+		lines = append(lines, fmt.Sprintf("- Enabled: `%v`", section["enabled"]))
+		lines = append(lines, fmt.Sprintf("- Status: `%v`", section["status"]))
+		if matrix["lane"] != nil {
+			lines = append(lines, fmt.Sprintf("- Validation lane: `%v`", matrix["lane"]))
+		}
+		lines = append(lines, fmt.Sprintf("- Bundle report: `%v`", section["bundle_report_path"]))
+		lines = append(lines, fmt.Sprintf("- Latest report: `%v`", section["canonical_report_path"]))
+		for _, keyLabel := range []struct{ Key, Label string }{
+			{"stdout_path", "Stdout log"},
+			{"stderr_path", "Stderr log"},
+			{"service_log_path", "Service log"},
+			{"audit_log_path", "Audit log"},
+			{"task_id", "Task ID"},
+			{"latest_event_type", "Latest event"},
+			{"routing_reason", "Routing reason"},
+		} {
+			if value := stringOrDefault(fmt.Sprint(section[keyLabel.Key]), ""); value != "" {
+				lines = append(lines, fmt.Sprintf("- %s: `%v`", keyLabel.Label, value))
+			}
+		}
+		if rootCause, ok := section["failure_root_cause"].(map[string]any); ok {
+			lines = append(lines, fmt.Sprintf("- Failure root cause: status=`%v` event=`%v` location=`%v`", rootCause["status"], rootCause["event_type"], rootCause["location"]))
+			if message := stringOrDefault(fmt.Sprint(rootCause["message"]), ""); message != "" {
+				lines = append(lines, fmt.Sprintf("- Failure detail: `%v`", message))
+			}
+		}
+		lines = append(lines, "")
+	}
+	if validationMatrix, ok := summary["validation_matrix"].([]map[string]any); ok && len(validationMatrix) > 0 {
+		lines = append(lines, "## Validation matrix", "")
+		for _, row := range validationMatrix {
+			lines = append(lines, fmt.Sprintf("- Lane `%v` executor=`%v` status=`%v` enabled=`%v` report=`%v`", row["lane"], row["executor"], row["status"], row["enabled"], row["bundle_report_path"]))
+			if row["root_cause_event_type"] != nil || row["root_cause_message"] != nil {
+				lines = append(lines, fmt.Sprintf("- Lane `%v` root cause: event=`%v` location=`%v` message=`%v`", row["lane"], row["root_cause_event_type"], row["root_cause_location"], row["root_cause_message"]))
+			}
+		}
+		lines = append(lines, "")
+	}
+	if broker, ok := summary["broker"].(map[string]any); ok {
+		lines = append(lines, "### broker")
+		for _, keyLabel := range []struct{ Key, Label string }{
+			{"enabled", "Enabled"},
+			{"status", "Status"},
+			{"configuration_state", "Configuration state"},
+			{"bundle_summary_path", "Bundle summary"},
+			{"canonical_summary_path", "Canonical summary"},
+			{"bundle_bootstrap_summary_path", "Bundle bootstrap summary"},
+			{"canonical_bootstrap_summary_path", "Canonical bootstrap summary"},
+			{"validation_pack_path", "Validation pack"},
+			{"backend", "Backend"},
+			{"bootstrap_ready", "Bootstrap ready"},
+			{"runtime_posture", "Runtime posture"},
+			{"live_adapter_implemented", "Live adapter implemented"},
+			{"proof_boundary", "Proof boundary"},
+			{"bundle_report_path", "Bundle report"},
+			{"canonical_report_path", "Canonical report"},
+			{"reason", "Reason"},
+		} {
+			if value := broker[keyLabel.Key]; value != nil && fmt.Sprint(value) != "" && fmt.Sprint(value) != "<nil>" {
+				lines = append(lines, fmt.Sprintf("- %s: `%v`", keyLabel.Label, value))
+			}
+		}
+		if completeness, ok := broker["config_completeness"].(map[string]any); ok {
+			lines = append(lines, fmt.Sprintf("- Config completeness: driver=`%v` urls=`%v` topic=`%v` consumer_group=`%v`", completeness["driver"], completeness["urls"], completeness["topic"], completeness["consumer_group"]))
+		}
+		for _, errText := range automationStringSlice(broker["validation_errors"]) {
+			lines = append(lines, fmt.Sprintf("- Validation error: `%s`", errText))
+		}
+		lines = append(lines, "")
+	}
+	if sharedQueue, ok := summary["shared_queue_companion"].(map[string]any); ok {
+		lines = append(lines, "### shared-queue companion")
+		for _, keyLabel := range []struct{ Key, Label string }{
+			{"available", "Available"},
+			{"status", "Status"},
+			{"bundle_summary_path", "Bundle summary"},
+			{"canonical_summary_path", "Canonical summary"},
+			{"bundle_report_path", "Bundle report"},
+			{"canonical_report_path", "Canonical report"},
+			{"cross_node_completions", "Cross-node completions"},
+			{"duplicate_started_tasks", "Duplicate `task.started`"},
+			{"duplicate_completed_tasks", "Duplicate `task.completed`"},
+			{"missing_completed_tasks", "Missing terminal completions"},
+		} {
+			if value := sharedQueue[keyLabel.Key]; value != nil && fmt.Sprint(value) != "" {
+				lines = append(lines, fmt.Sprintf("- %s: `%v`", keyLabel.Label, value))
+			}
+		}
+		lines = append(lines, "")
+	}
+	lines = append(lines, "## Workflow closeout commands", "")
+	for _, command := range automationStringSlice(summary["closeout_commands"]) {
+		lines = append(lines, fmt.Sprintf("- `%s`", command))
+	}
+	lines = append(lines, "", "## Recent bundles", "")
+	if len(recentRuns) == 0 {
+		lines = append(lines, "- No previous bundles found")
+	} else {
+		for _, run := range recentRuns {
+			lines = append(lines, fmt.Sprintf("- `%v` · `%v` · `%v` · `%v`", run["run_id"], run["status"], run["generated_at"], run["bundle_path"]))
+		}
+	}
+	lines = append(lines, "")
+	if continuationGate != nil {
+		lines = append(lines, "## Continuation gate", "")
+		lines = append(lines, fmt.Sprintf("- Status: `%v`", continuationGate["status"]))
+		lines = append(lines, fmt.Sprintf("- Recommendation: `%v`", continuationGate["recommendation"]))
+		lines = append(lines, fmt.Sprintf("- Report: `%v`", continuationGate["path"]))
+		if enforcement, ok := continuationGate["enforcement"].(map[string]any); ok {
+			if enforcement["mode"] != nil {
+				lines = append(lines, fmt.Sprintf("- Workflow mode: `%v`", enforcement["mode"]))
+			}
+			if enforcement["outcome"] != nil {
+				lines = append(lines, fmt.Sprintf("- Workflow outcome: `%v`", enforcement["outcome"]))
+			}
+		}
+		if gateSummary, ok := continuationGate["summary"].(map[string]any); ok {
+			if gateSummary["latest_run_id"] != nil {
+				lines = append(lines, fmt.Sprintf("- Latest reviewed run: `%v`", gateSummary["latest_run_id"]))
+			}
+			if gateSummary["failing_check_count"] != nil {
+				lines = append(lines, fmt.Sprintf("- Failing checks: `%v`", gateSummary["failing_check_count"]))
+			}
+			if gateSummary["workflow_exit_code"] != nil {
+				lines = append(lines, fmt.Sprintf("- Workflow exit code on current evidence: `%v`", gateSummary["workflow_exit_code"]))
+			}
+		}
+		if reviewerPath, ok := continuationGate["reviewer_path"].(map[string]any); ok {
+			if reviewerPath["digest_path"] != nil {
+				lines = append(lines, fmt.Sprintf("- Reviewer digest: `%v`", reviewerPath["digest_path"]))
+			}
+			if reviewerPath["index_path"] != nil {
+				lines = append(lines, fmt.Sprintf("- Reviewer index: `%v`", reviewerPath["index_path"]))
+			}
+		}
+		for _, action := range automationStringSlice(continuationGate["next_actions"]) {
+			lines = append(lines, fmt.Sprintf("- Next action: `%s`", action))
+		}
+		lines = append(lines, "")
+	}
+	if len(continuationArtifacts) > 0 {
+		lines = append(lines, "## Continuation artifacts", "")
+		for _, item := range continuationArtifacts {
+			lines = append(lines, fmt.Sprintf("- `%s` %s", item["path"], item["description"]))
+		}
+		lines = append(lines, "")
+	}
+	if len(followupDigests) > 0 {
+		lines = append(lines, "## Parallel follow-up digests", "")
+		for _, item := range followupDigests {
+			lines = append(lines, fmt.Sprintf("- `%s` %s", item["path"], item["description"]))
+		}
+		lines = append(lines, "")
+	}
+	return strings.Join(lines, "\n")
 }
 
 func automationLiveShadowScorecard(opts automationLiveShadowScorecardOptions) (map[string]any, error) {

@@ -83,7 +83,7 @@ func TestRunAutomationE2EHelpIncludesContinuationCommands(t *testing.T) {
 		t.Fatalf("e2e help: %v", err)
 	}
 	text := string(output)
-	if !strings.Contains(text, "run-task-smoke|continuation-scorecard|continuation-policy-gate") {
+	if !strings.Contains(text, "run-task-smoke|export-validation-bundle|continuation-scorecard|continuation-policy-gate") {
 		t.Fatalf("unexpected e2e help: %s", text)
 	}
 }
@@ -372,6 +372,183 @@ func TestAutomationContinuationPolicyGateMatchesCheckedInEvidence(t *testing.T) 
 	}
 	if !strings.Contains(string(body), "\"go run ./cmd/bigclawctl automation e2e continuation-policy-gate\"") {
 		t.Fatalf("unexpected continuation policy gate output: %s", string(body))
+	}
+}
+
+func TestAutomationRenderValidationIndexSurfacesContinuationWorkflowModeAndOutcome(t *testing.T) {
+	summary := map[string]any{
+		"run_id":       "20260316T140138Z",
+		"generated_at": "2026-03-16T14:48:42.581505+00:00",
+		"status":       "succeeded",
+		"bundle_path":  "docs/reports/live-validation-runs/20260316T140138Z",
+		"summary_path": "docs/reports/live-validation-runs/20260316T140138Z/summary.json",
+		"closeout_commands": []string{
+			"cd bigclaw-go && ./scripts/e2e/run_all.sh",
+		},
+		"local": map[string]any{
+			"enabled":               true,
+			"status":                "succeeded",
+			"bundle_report_path":    "docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json",
+			"canonical_report_path": "docs/reports/sqlite-smoke-report.json",
+		},
+		"kubernetes": map[string]any{
+			"enabled":               false,
+			"status":                "skipped",
+			"bundle_report_path":    "docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json",
+			"canonical_report_path": "docs/reports/kubernetes-live-smoke-report.json",
+		},
+		"ray": map[string]any{
+			"enabled":               false,
+			"status":                "skipped",
+			"bundle_report_path":    "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
+			"canonical_report_path": "docs/reports/ray-live-smoke-report.json",
+		},
+		"broker": map[string]any{
+			"enabled":                          false,
+			"status":                           "skipped",
+			"configuration_state":              "not_configured",
+			"reason":                           "not_configured",
+			"bundle_summary_path":              "docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json",
+			"canonical_summary_path":           "docs/reports/broker-validation-summary.json",
+			"bundle_bootstrap_summary_path":    "docs/reports/live-validation-runs/20260316T140138Z/broker-bootstrap-review-summary.json",
+			"canonical_bootstrap_summary_path": "docs/reports/broker-bootstrap-review-summary.json",
+			"validation_pack_path":             "docs/reports/broker-failover-fault-injection-validation-pack.md",
+			"backend":                          nil,
+			"bootstrap_ready":                  false,
+			"runtime_posture":                  "contract_only",
+			"live_adapter_implemented":         false,
+			"proof_boundary":                   "broker bootstrap readiness is a pre-adapter contract surface, not live broker durability proof",
+			"config_completeness":              map[string]any{"driver": false, "urls": false, "topic": false, "consumer_group": false},
+			"validation_errors":                []string{"broker event log config missing driver, urls, topic"},
+		},
+	}
+	continuationGate := map[string]any{
+		"path":           "docs/reports/validation-bundle-continuation-policy-gate.json",
+		"status":         "policy-hold",
+		"recommendation": "hold",
+		"enforcement":    map[string]any{"mode": "hold", "outcome": "hold", "exit_code": 2},
+		"summary":        map[string]any{"latest_run_id": "20260316T140138Z", "failing_check_count": 2, "workflow_exit_code": 2},
+		"reviewer_path":  map[string]any{"digest_path": "docs/reports/validation-bundle-continuation-digest.md"},
+		"next_actions":   []string{"rerun `cd bigclaw-go && ./scripts/e2e/run_all.sh` to refresh the latest validation bundle"},
+	}
+
+	indexText := automationRenderValidationIndex(summary, nil, continuationGate, nil, nil)
+
+	if !strings.Contains(indexText, "- Workflow mode: `hold`") ||
+		!strings.Contains(indexText, "- Workflow outcome: `hold`") ||
+		!strings.Contains(indexText, "- Workflow exit code on current evidence: `2`") ||
+		!strings.Contains(indexText, "### broker") ||
+		!strings.Contains(indexText, "- Configuration state: `not_configured`") ||
+		!strings.Contains(indexText, "- Runtime posture: `contract_only`") ||
+		!strings.Contains(indexText, "- Live adapter implemented: `false`") ||
+		!strings.Contains(indexText, "- Validation error: `broker event log config missing driver, urls, topic`") ||
+		!strings.Contains(indexText, "- Reason: `not_configured`") {
+		t.Fatalf("unexpected validation index text:\n%s", indexText)
+	}
+}
+
+func TestAutomationBuildBrokerSectionWritesNotConfiguredSummaryWhenDisabled(t *testing.T) {
+	root := t.TempDir()
+	bundleDir := filepath.Join(root, "docs", "reports", "live-validation-runs", "run-1")
+	if err := os.MkdirAll(bundleDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	bootstrapSummaryPath := filepath.Join(root, "docs", "reports", "broker-bootstrap-review-summary-source.json")
+	if err := os.MkdirAll(filepath.Dir(bootstrapSummaryPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(bootstrapSummaryPath, []byte(`{"ready": false, "runtime_posture": "contract_only", "live_adapter_implemented": false, "proof_boundary": "broker bootstrap readiness is a pre-adapter contract surface, not live broker durability proof", "config_completeness": {"driver": false, "urls": false, "topic": false, "consumer_group": false}, "validation_errors": ["broker event log config missing driver, urls, topic"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	section, err := automationBuildBrokerSection(root, bundleDir, false, "", strings.TrimPrefix(bootstrapSummaryPath, root+"/"), "")
+	if err != nil {
+		t.Fatalf("build broker section: %v", err)
+	}
+	if section["status"] != "skipped" ||
+		section["configuration_state"] != "not_configured" ||
+		section["reason"] != "not_configured" ||
+		section["runtime_posture"] != "contract_only" ||
+		automationBool(section["live_adapter_implemented"]) ||
+		!automationPathExists(filepath.Join(bundleDir, "broker-validation-summary.json")) ||
+		!automationPathExists(filepath.Join(root, "docs/reports/broker-validation-summary.json")) ||
+		!automationPathExists(filepath.Join(bundleDir, "broker-bootstrap-review-summary.json")) ||
+		!automationPathExists(filepath.Join(root, "docs/reports/broker-bootstrap-review-summary.json")) {
+		t.Fatalf("unexpected broker section: %+v", section)
+	}
+}
+
+func TestAutomationBuildValidationComponentSectionEmitsK8SMatrixAndFailureRootCause(t *testing.T) {
+	root := t.TempDir()
+	bundleDir := filepath.Join(root, "docs", "reports", "live-validation-runs", "run-k8s")
+	if err := os.MkdirAll(bundleDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	reportPath := filepath.Join(root, "tmp", "kubernetes-smoke-report.json")
+	if err := os.MkdirAll(filepath.Dir(reportPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(reportPath, []byte(`{
+  "task": {
+    "id": "kubernetes-smoke-failed",
+    "required_executor": "kubernetes"
+  },
+  "status": {
+    "state": "dead_letter",
+    "latest_event": {
+      "id": "evt-dead",
+      "type": "task.dead_letter",
+      "timestamp": "2026-03-23T11:02:00Z",
+      "payload": {
+        "message": "lease lost during replay"
+      }
+    }
+  },
+  "events": [
+    {
+      "id": "evt-routed",
+      "type": "scheduler.routed",
+      "timestamp": "2026-03-23T11:00:00Z",
+      "payload": {
+        "reason": "browser workloads default to kubernetes executor"
+      }
+    },
+    {
+      "id": "evt-dead",
+      "type": "task.dead_letter",
+      "timestamp": "2026-03-23T11:02:00Z",
+      "payload": {
+        "message": "lease lost during replay"
+      }
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stdoutPath := filepath.Join(root, "tmp", "kubernetes.stdout.log")
+	stderrPath := filepath.Join(root, "tmp", "kubernetes.stderr.log")
+	if err := os.WriteFile(stdoutPath, []byte("starting kubernetes smoke\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(stderrPath, []byte("lease lost during replay\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	section, err := automationBuildValidationComponentSection("kubernetes", true, root, bundleDir, strings.TrimPrefix(reportPath, root+"/"), stdoutPath, stderrPath)
+	if err != nil {
+		t.Fatalf("build component section: %v", err)
+	}
+	matrix, _ := section["validation_matrix"].(map[string]any)
+	rootCause, _ := section["failure_root_cause"].(map[string]any)
+	if section["status"] != "dead_letter" ||
+		matrix["lane"] != "k8s" ||
+		matrix["executor"] != "kubernetes" ||
+		section["routing_reason"] != "browser workloads default to kubernetes executor" ||
+		rootCause["status"] != "captured" ||
+		rootCause["event_type"] != "task.dead_letter" ||
+		rootCause["message"] != "lease lost during replay" ||
+		rootCause["location"] != "docs/reports/live-validation-runs/run-k8s/kubernetes.stderr.log" {
+		t.Fatalf("unexpected component section: %+v", section)
 	}
 }
 

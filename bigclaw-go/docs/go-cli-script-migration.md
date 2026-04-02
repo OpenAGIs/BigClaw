@@ -19,7 +19,6 @@ Issue: `BIG-GO-902`
 
 ## Remaining Python Script Backlog
 
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
@@ -33,6 +32,7 @@ cd bigclaw-go
 go test ./cmd/bigclawctl/...
 go run ./cmd/bigclawctl automation --help
 go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
 go run ./cmd/bigclawctl automation e2e continuation-scorecard --help
 go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help

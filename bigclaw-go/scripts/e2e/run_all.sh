@@ -82,17 +82,17 @@ fi
 export_bundle() {
   go run "$ROOT/scripts/e2e/broker_bootstrap_summary.go" \
     --output "$ROOT/$BROKER_BOOTSTRAP_SUMMARY_PATH"
-  python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
+  go run "$ROOT/cmd/bigclawctl" automation e2e export-validation-bundle \
     --go-root "$ROOT" \
     --run-id "$RUN_ID" \
     --bundle-dir "$BUNDLE_DIR_REL" \
     --summary-path "$SUMMARY_REPORT_PATH" \
     --index-path "$INDEX_REPORT_PATH" \
     --manifest-path "$MANIFEST_REPORT_PATH" \
-    --run-local "$RUN_LOCAL" \
-    --run-kubernetes "$RUN_KUBERNETES" \
-    --run-ray "$RUN_RAY" \
-    --run-broker "$RUN_BROKER" \
+    --run-local="$([[ "$RUN_LOCAL" == "1" ]] && echo true || echo false)" \
+    --run-kubernetes="$([[ "$RUN_KUBERNETES" == "1" ]] && echo true || echo false)" \
+    --run-ray="$([[ "$RUN_RAY" == "1" ]] && echo true || echo false)" \
+    --run-broker="$([[ "$RUN_BROKER" == "1" ]] && echo true || echo false)" \
     --broker-backend "$BROKER_BACKEND" \
     --broker-report-path "$BROKER_REPORT_PATH" \
     --broker-bootstrap-summary-path "$BROKER_BOOTSTRAP_SUMMARY_PATH" \
