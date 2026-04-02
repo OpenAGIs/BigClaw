@@ -112,6 +112,17 @@ type QueueControlCenter struct {
 	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
+type SharedViewFilter struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type SharedViewContext struct {
+	Filters      []SharedViewFilter `json:"filters,omitempty"`
+	ResultCount  int                `json:"result_count"`
+	EmptyMessage string             `json:"empty_message,omitempty"`
+}
+
 type EngineeringOverviewPermission struct {
 	ViewerRole     string   `json:"viewer_role"`
 	AllowedModules []string `json:"allowed_modules,omitempty"`
@@ -883,11 +894,11 @@ func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 			center.WaitingApprovalRuns++
 			center.BlockedTasks = append(center.BlockedTasks, task.ID)
 		}
-		if task.State == domain.TaskQueued || task.State == domain.TaskLeased || task.State == domain.TaskRetrying {
+		if task.State == domain.TaskQueued || task.State == domain.TaskLeased || task.State == domain.TaskRetrying || task.State == domain.TaskBlocked {
 			center.QueuedTasks = append(center.QueuedTasks, task.ID)
 			center.QueuedByPriority[priorityBucket(task.Priority)]++
 			center.QueuedByRisk[riskBucket(task.RiskLevel)]++
-			medium := firstNonEmpty(string(task.RequiredExecutor), task.Metadata["medium"], "unknown")
+			medium := firstNonEmpty(task.Metadata["medium"], string(task.RequiredExecutor), "unknown")
 			center.ExecutionMedia[medium]++
 			center.Actions[task.ID] = buildConsoleActions(task.ID, task.State == domain.TaskBlocked, task.State != domain.TaskBlocked, task.State == domain.TaskBlocked)
 		}
@@ -897,7 +908,7 @@ func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
 	return center
 }
 
-func RenderQueueControlCenter(center QueueControlCenter) string {
+func RenderQueueControlCenter(center QueueControlCenter, view ...SharedViewContext) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Queue Control Center\n\n")
 	builder.WriteString(fmt.Sprintf("- Queue Depth: %d\n", center.QueueDepth))
@@ -934,6 +945,20 @@ func RenderQueueControlCenter(center QueueControlCenter) string {
 	}
 	for _, taskID := range center.QueuedTasks {
 		builder.WriteString(fmt.Sprintf("- %s: %s\n", taskID, RenderConsoleActions(center.Actions[taskID])))
+	}
+	if len(view) > 0 {
+		builder.WriteString("\n## View State\n\n")
+		state := "loaded"
+		summary := fmt.Sprintf("%d results", view[0].ResultCount)
+		if view[0].ResultCount == 0 {
+			state = "empty"
+			summary = firstNonEmpty(view[0].EmptyMessage, "No records match the current filters.")
+		}
+		builder.WriteString(fmt.Sprintf("- State: %s\n", state))
+		builder.WriteString(fmt.Sprintf("- Summary: %s\n", summary))
+		for _, filter := range view[0].Filters {
+			builder.WriteString(fmt.Sprintf("- %s: %s\n", strings.TrimSpace(filter.Label), strings.TrimSpace(filter.Value)))
+		}
 	}
 	return builder.String()
 }
@@ -1220,6 +1245,7 @@ func buildConsoleActions(target string, allowRetry, allowPause, allowEscalate bo
 		{ActionID: "escalate", Label: "Escalate", Target: target, Enabled: allowEscalate, Reason: disabledReason(allowEscalate, "escalate is reserved for blocked queue items")},
 		{ActionID: "retry", Label: "Retry", Target: target, Enabled: allowRetry, Reason: disabledReason(allowRetry, "retry is reserved for blocked queue items")},
 		{ActionID: "pause", Label: "Pause", Target: target, Enabled: allowPause, Reason: disabledReason(allowPause, "approval-blocked tasks should be escalated instead of paused")},
+		{ActionID: "reassign", Label: "Reassign", Target: target, Enabled: true},
 		{ActionID: "audit", Label: "Audit Trail", Target: target, Enabled: true},
 	}
 }

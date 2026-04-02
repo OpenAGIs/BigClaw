@@ -3,6 +3,7 @@ package reporting
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -463,7 +464,7 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 			State:            domain.TaskQueued,
 			RiskLevel:        domain.RiskHigh,
 			RequiredExecutor: domain.ExecutorRay,
-			Metadata:         map[string]string{},
+			Metadata:         map[string]string{"medium": "browser"},
 		},
 		{
 			ID:               "task-blocked",
@@ -473,6 +474,7 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 			RequiredExecutor: domain.ExecutorLocal,
 			Metadata: map[string]string{
 				"approval_status": "needs-approval",
+				"medium":          "vm",
 			},
 		},
 		{
@@ -481,7 +483,7 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 			State:            domain.TaskRetrying,
 			RiskLevel:        domain.RiskLow,
 			RequiredExecutor: domain.ExecutorKubernetes,
-			Metadata:         map[string]string{},
+			Metadata:         map[string]string{"medium": "docker"},
 		},
 	}
 
@@ -492,20 +494,35 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	if len(center.BlockedTasks) != 1 || center.BlockedTasks[0] != "task-blocked" {
 		t.Fatalf("unexpected blocked tasks: %+v", center.BlockedTasks)
 	}
-	if strings.Join(center.QueuedTasks, ",") != "task-queued,task-retrying" {
+	if strings.Join(center.QueuedTasks, ",") != "task-blocked,task-queued,task-retrying" {
 		t.Fatalf("unexpected queued tasks: %+v", center.QueuedTasks)
 	}
-	if center.QueuedByPriority["P0"] != 1 || center.QueuedByPriority["P2"] != 1 {
+	if center.QueuedByPriority["P0"] != 1 || center.QueuedByPriority["P1"] != 1 || center.QueuedByPriority["P2"] != 1 {
 		t.Fatalf("unexpected queued by priority: %+v", center.QueuedByPriority)
 	}
-	if center.QueuedByRisk["high"] != 1 || center.QueuedByRisk["low"] != 1 {
+	if center.QueuedByRisk["high"] != 1 || center.QueuedByRisk["medium"] != 1 || center.QueuedByRisk["low"] != 1 {
 		t.Fatalf("unexpected queued by risk: %+v", center.QueuedByRisk)
 	}
-	if center.ExecutionMedia["ray"] != 1 || center.ExecutionMedia["kubernetes"] != 1 {
+	if center.ExecutionMedia["vm"] != 1 || center.ExecutionMedia["browser"] != 1 || center.ExecutionMedia["docker"] != 1 {
 		t.Fatalf("unexpected execution media: %+v", center.ExecutionMedia)
 	}
-	if len(center.Actions["task-queued"]) == 0 || len(center.Actions["task-retrying"]) == 0 {
+	if len(center.Actions["task-queued"]) == 0 || len(center.Actions["task-retrying"]) == 0 || len(center.Actions["task-blocked"]) == 0 {
 		t.Fatalf("expected actions for queued tasks, got %+v", center.Actions)
+	}
+	if got := []string{
+		center.Actions["task-blocked"][0].ActionID,
+		center.Actions["task-blocked"][1].ActionID,
+		center.Actions["task-blocked"][2].ActionID,
+		center.Actions["task-blocked"][3].ActionID,
+		center.Actions["task-blocked"][4].ActionID,
+		center.Actions["task-blocked"][5].ActionID,
+		center.Actions["task-blocked"][6].ActionID,
+		center.Actions["task-blocked"][7].ActionID,
+	}; !reflect.DeepEqual(got, []string{"drill-down", "export", "add-note", "escalate", "retry", "pause", "reassign", "audit"}) {
+		t.Fatalf("unexpected blocked task actions: %+v", got)
+	}
+	if !center.Actions["task-blocked"][3].Enabled || !center.Actions["task-blocked"][4].Enabled || center.Actions["task-blocked"][5].Enabled {
+		t.Fatalf("unexpected blocked task action states: %+v", center.Actions["task-blocked"])
 	}
 
 	rendered := RenderQueueControlCenter(center)
@@ -513,12 +530,33 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 		"# Queue Control Center",
 		"- Queue Depth: 3",
 		"- Waiting Approval Runs: 1",
-		"- ray: 1",
+		"- browser: 1",
+		"- vm: 1",
+		"- docker: 1",
 		"- task-blocked",
+		"task-blocked: Drill Down [drill-down]",
+		"Escalate [escalate] state=enabled",
+		"Pause [pause] state=disabled target=task-blocked reason=approval-blocked tasks should be escalated instead of paused",
 		"Retry [retry] state=disabled target=task-queued",
 	} {
 		if !strings.Contains(rendered, fragment) {
 			t.Fatalf("expected %q in rendered queue center, got %s", fragment, rendered)
+		}
+	}
+
+	emptyView := RenderQueueControlCenter(center, SharedViewContext{
+		Filters:      []SharedViewFilter{{Label: "Team", Value: "operations"}},
+		ResultCount:  0,
+		EmptyMessage: "No queued work for the selected team.",
+	})
+	for _, fragment := range []string{
+		"## View State",
+		"- State: empty",
+		"- Summary: No queued work for the selected team.",
+		"- Team: operations",
+	} {
+		if !strings.Contains(emptyView, fragment) {
+			t.Fatalf("expected %q in rendered empty-state queue center, got %s", fragment, emptyView)
 		}
 	}
 
