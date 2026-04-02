@@ -438,7 +438,6 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		"src/bigclaw/__init__.py",
 		"tests/test_operations.py",
 		"src/bigclaw/execution_contract.py",
-		"src/bigclaw/workflow.py",
 		"bigclaw-go/internal/product/saved_views_test.go",
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
@@ -449,6 +448,12 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		if _, ok := targets[want]; !ok {
 			t.Fatalf("missing ops evidence target %q in %+v", want, targets)
 		}
+	}
+	if _, ok := targets["src/bigclaw/workflow.py"]; ok {
+		t.Fatalf("deleted Python workflow target still present in %+v", targets)
+	}
+	if _, ok := targets["src/bigclaw/orchestration.py"]; ok {
+		t.Fatalf("deleted Python orchestration target still present in %+v", targets)
 	}
 
 	if got, want := releaseCandidate.ValidationCommand, "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning"; got != want {

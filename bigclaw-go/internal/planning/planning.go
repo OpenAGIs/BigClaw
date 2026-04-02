@@ -269,7 +269,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 					{Label: "command-center-src", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package command center, dashboard builder, weekly review, and regression surfaces"},
 					{Label: "operations-tests", Target: "tests/test_operations.py", Capability: "ops-control", Note: "dashboard, weekly report, regression, and version-center coverage"},
 					{Label: "approval-contract", Target: "src/bigclaw/execution_contract.py", Capability: "ops-control", Note: "approval permission and API role coverage contract"},
-					{Label: "approval-workflow", Target: "src/bigclaw/workflow.py", Capability: "ops-control", Note: "approval workflow and closeout flow wiring"},
+					{Label: "approval-workflow", Target: "src/bigclaw/__init__.py", Capability: "ops-control", Note: "folded package approval workflow and closeout flow wiring"},
 					{Label: "workflow-tests", Target: "bigclaw-go/internal/workflow/engine_test.go", Capability: "ops-control", Note: "acceptance gate and workpad journal validation"},
 					{Label: "execution-flow-tests", Target: "bigclaw-go/internal/worker/runtime_test.go", Capability: "ops-control", Note: "execution handoff, closeout, and routed runtime evidence"},
 					{Label: "saved-views-src", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "saved views, digest subscriptions, and governed filters"},
@@ -289,7 +289,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Capabilities:      []string{"commercialization", "handoff", "pilot-rollout"},
 				Evidence:          []string{"pilot-evidence", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
-					{Label: "orchestration-plan-src", Target: "src/bigclaw/orchestration.py", Capability: "commercialization", Note: "cross-team orchestration, entitlement-aware policy, and handoff decisions"},
+					{Label: "orchestration-plan-src", Target: "src/bigclaw/__init__.py", Capability: "commercialization", Note: "folded package orchestration, entitlement-aware policy, and handoff decisions"},
 					{Label: "orchestration-report-src", Target: "bigclaw-go/internal/reportstudio/reportstudio.go", Capability: "commercialization", Note: "Go-native orchestration canvas, portfolio rollups, and narrative exports"},
 					{Label: "collaboration-tests", Target: "bigclaw-go/internal/collaboration/thread_test.go", Capability: "handoff", Note: "Go-native thread merge and handoff validation"},
 					{Label: "pilot-rollout-tests", Target: "bigclaw-go/internal/pilot/rollout_test.go", Capability: "pilot-rollout", Note: "Go-native rollout scoring and repo narrative validation"},

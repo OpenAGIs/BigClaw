@@ -8966,9 +8966,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="approval-workflow",
-                        target="src/bigclaw/workflow.py",
+                        target="src/bigclaw/__init__.py",
                         capability="ops-control",
-                        note="approval workflow and closeout flow wiring",
+                        note="folded package approval workflow and closeout flow wiring",
                     ),
                     EvidenceLink(
                         label="workflow-tests",
@@ -9023,9 +9023,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 evidence_links=[
                     EvidenceLink(
                         label="orchestration-plan-src",
-                        target="src/bigclaw/orchestration.py",
+                        target="src/bigclaw/__init__.py",
                         capability="commercialization",
-                        note="cross-team orchestration, entitlement-aware policy, and handoff decisions",
+                        note="folded package orchestration, entitlement-aware policy, and handoff decisions",
                     ),
                     EvidenceLink(
                         label="orchestration-report-src",
