@@ -43,11 +43,7 @@ func TestV3PlanningBacklogUsesGoReplacementsForRemovedPythonTests(t *testing.T) 
 		}
 	}
 
-	pythonPlanningSource, err := os.ReadFile(filepath.Join(repoRoot, "src", "bigclaw", "planning.py"))
-	if err != nil {
-		t.Fatalf("read src/bigclaw/planning.py: %v", err)
-	}
-	for _, disallowed := range []string{
+	disallowedSnippets := []string{
 		"pytest",
 		"tests/test_design_system.py",
 		"tests/test_console_ia.py",
@@ -57,7 +53,13 @@ func TestV3PlanningBacklogUsesGoReplacementsForRemovedPythonTests(t *testing.T) 
 		"tests/test_evaluation.py",
 		"tests/test_orchestration.py",
 		"tests/test_reports.py",
-	} {
+	}
+
+	pythonPlanningSource, err := os.ReadFile(filepath.Join(repoRoot, "src", "bigclaw", "planning.py"))
+	if err != nil {
+		t.Fatalf("read src/bigclaw/planning.py: %v", err)
+	}
+	for _, disallowed := range disallowedSnippets {
 		if strings.Contains(string(pythonPlanningSource), disallowed) {
 			t.Fatalf("src/bigclaw/planning.py still references removed Python test asset %q", disallowed)
 		}
@@ -73,6 +75,41 @@ func TestV3PlanningBacklogUsesGoReplacementsForRemovedPythonTests(t *testing.T) 
 		for _, link := range candidate.EvidenceLinks {
 			if strings.Contains(link.Target, "tests/test_") {
 				t.Fatalf("candidate %s still references removed Python test evidence target: %+v", candidate.CandidateID, link)
+			}
+		}
+	}
+}
+
+func TestActiveRepoManagedSurfacesDoNotReintroduceRemovedPythonTestCommands(t *testing.T) {
+	repoRoot := regressionRepoRoot(t)
+	disallowedSnippets := []string{
+		"pytest",
+		"tests/test_design_system.py",
+		"tests/test_console_ia.py",
+		"tests/test_ui_review.py",
+		"tests/test_control_center.py",
+		"tests/test_operations.py",
+		"tests/test_evaluation.py",
+		"tests/test_orchestration.py",
+		"tests/test_reports.py",
+		"tests/test_planning.py",
+		"python3 -m pytest tests",
+	}
+
+	for _, relativePath := range []string{
+		"README.md",
+		"scripts/dev_bootstrap.sh",
+		"src/bigclaw/planning.py",
+		"docs/BigClaw-AgentHub-Integration-Alignment.md",
+		"docs/go-cli-script-migration-plan.md",
+	} {
+		payload, err := os.ReadFile(filepath.Join(repoRoot, relativePath))
+		if err != nil {
+			t.Fatalf("read %s: %v", relativePath, err)
+		}
+		for _, disallowed := range disallowedSnippets {
+			if strings.Contains(string(payload), disallowed) {
+				t.Fatalf("%s still references removed Python test asset %q", relativePath, disallowed)
 			}
 		}
 	}

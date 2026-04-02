@@ -60,3 +60,7 @@
   - `ok  	bigclaw-go/internal/legacyshim	4.378s`
   - `ok  	bigclaw-go/internal/regression	(cached)`
 - `rg -n "pytest|tests/test_.*\\.py" /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/docs/BigClaw-AgentHub-Integration-Alignment.md /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/docs/go-cli-script-migration-plan.md` -> exit `1` with no matches
+- Extended `bigclaw-go/internal/regression/planning_python_test_replacement_test.go` to scan the cleaned repo-managed surfaces (`README.md`, `scripts/dev_bootstrap.sh`, `src/bigclaw/planning.py`, and the active docs) so deleted Python test commands cannot reappear outside archival fixtures.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1098/bigclaw-go && go test ./internal/regression` -> exit `0`
+  - `ok  	bigclaw-go/internal/regression	1.300s`
+- `rg -n "pytest|tests/test_.*\\.py" README.md docs scripts src bigclaw-go --glob '!bigclaw-go/internal/regression/**' --glob '!bigclaw-go/internal/planning/planning_test.go' --glob '!bigclaw-go/internal/workflow/**' --glob '!bigclaw-go/internal/policy/**' --glob '!bigclaw-go/internal/observability/**' --glob '!bigclaw-go/internal/events/**'` -> exit `1` with no matches
