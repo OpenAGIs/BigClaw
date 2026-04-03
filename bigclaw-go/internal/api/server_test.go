@@ -1951,6 +1951,7 @@ type regressionCenterResponse struct {
 type controlCenterAuditResponse struct {
 	Filters struct {
 		TaskID   string `json:"task_id"`
+		BatchID  string `json:"batch_id"`
 		Team     string `json:"team"`
 		Action   string `json:"action"`
 		Actor    string `json:"actor"`
@@ -1977,6 +1978,9 @@ type controlCenterAuditResponse struct {
 	} `json:"audit_summary"`
 	Audit []struct {
 		OperationID      string `json:"operation_id"`
+		BatchID          string `json:"batch_id"`
+		BatchIndex       int    `json:"batch_index"`
+		BatchSize        int    `json:"batch_size"`
 		Action           string `json:"action"`
 		Scope            string `json:"scope"`
 		TaskID           string `json:"task_id"`
@@ -1987,6 +1991,10 @@ type controlCenterAuditResponse struct {
 		PreviousReviewer string `json:"previous_reviewer"`
 		Reviewer         string `json:"reviewer"`
 		Note             string `json:"note"`
+		RollbackAction   string `json:"rollback_action"`
+		RollbackURL      string `json:"rollback_url"`
+		RollbackBatchID  string `json:"rollback_batch_id"`
+		RollbackSourceID string `json:"rollback_source_operation_id"`
 	} `json:"audit"`
 }
 
@@ -3865,6 +3873,146 @@ func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 	entry := decoded.Audit[0]
 	if entry.Action != "assign_reviewer" || entry.Scope != "collaboration" || entry.TaskID != "task-audit-1" || entry.TaskStateBefore != string(domain.TaskBlocked) || entry.TaskStateAfter != string(domain.TaskBlocked) || entry.PreviousOwner != "carol" || entry.Owner != "carol" || entry.PreviousReviewer != "bob" || entry.Reviewer != "dave" || entry.Note != "handoff reviewer" || entry.OperationID == "" {
 		t.Fatalf("unexpected filtered audit entry: %+v", entry)
+	}
+}
+
+func TestV2ControlCenterBatchTakeoverAuditAndRollback(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	controller := control.New()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Control: controller, Now: func() time.Time { return time.Unix(1700003600, 0) }}
+	handler := server.Handler()
+
+	for _, id := range []string{"task-batch-1", "task-batch-2"} {
+		body := mustJSON(map[string]any{"id": id, "title": id, "priority": 1, "metadata": map[string]any{"team": "platform", "project": "alpha"}})
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+		if response.Code != http.StatusAccepted {
+			t.Fatalf("expected task create 202, got %d %s", response.Code, response.Body.String())
+		}
+	}
+
+	batchBody := mustJSON(map[string]any{
+		"action":      "takeover",
+		"task_ids":    []string{"task-batch-1", "task-batch-2"},
+		"actor":       "lead-1",
+		"role":        "eng_lead",
+		"viewer_team": "platform",
+		"reviewer":    "reviewer-1",
+		"note":        "batch governance review",
+	})
+	batchResponse := httptest.NewRecorder()
+	handler.ServeHTTP(batchResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(batchBody)))
+	if batchResponse.Code != http.StatusOK {
+		t.Fatalf("expected batch takeover 200, got %d %s", batchResponse.Code, batchResponse.Body.String())
+	}
+	var batchDecoded struct {
+		Action string `json:"action"`
+		Batch  struct {
+			ID             string `json:"id"`
+			Size           int    `json:"size"`
+			AuditURL       string `json:"audit_url"`
+			RollbackAction string `json:"rollback_action"`
+			RollbackURL    string `json:"rollback_url"`
+		} `json:"batch"`
+		Operations []struct {
+			ID             string `json:"id"`
+			BatchID        string `json:"batch_id"`
+			BatchIndex     int    `json:"batch_index"`
+			BatchSize      int    `json:"batch_size"`
+			TaskID         string `json:"task_id"`
+			RollbackAction string `json:"rollback_action"`
+			RollbackURL    string `json:"rollback_url"`
+		} `json:"operations"`
+	}
+	if err := json.Unmarshal(batchResponse.Body.Bytes(), &batchDecoded); err != nil {
+		t.Fatalf("decode batch takeover response: %v", err)
+	}
+	if batchDecoded.Action != "takeover" || batchDecoded.Batch.ID == "" || batchDecoded.Batch.Size != 2 || batchDecoded.Batch.AuditURL != "/v2/control-center/audit?batch_id="+batchDecoded.Batch.ID+"&audit_limit=20" || batchDecoded.Batch.RollbackAction != "rollback_batch" || batchDecoded.Batch.RollbackURL != "/v2/control-center/actions" {
+		t.Fatalf("unexpected batch payload: %+v", batchDecoded.Batch)
+	}
+	if len(batchDecoded.Operations) != 2 || batchDecoded.Operations[0].BatchID != batchDecoded.Batch.ID || batchDecoded.Operations[0].BatchIndex != 1 || batchDecoded.Operations[1].BatchIndex != 2 || batchDecoded.Operations[0].RollbackAction != "rollback_batch" || batchDecoded.Operations[0].RollbackURL != "/v2/control-center/actions" {
+		t.Fatalf("unexpected batch operations payload: %+v", batchDecoded.Operations)
+	}
+
+	auditResponse := httptest.NewRecorder()
+	auditRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/audit?batch_id="+url.QueryEscape(batchDecoded.Batch.ID)+"&audit_limit=10", nil)
+	auditRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	auditRequest.Header.Set("X-BigClaw-Actor", "ops-1")
+	handler.ServeHTTP(auditResponse, auditRequest)
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected batch audit 200, got %d %s", auditResponse.Code, auditResponse.Body.String())
+	}
+	var auditDecoded controlCenterAuditResponse
+	if err := json.Unmarshal(auditResponse.Body.Bytes(), &auditDecoded); err != nil {
+		t.Fatalf("decode batch audit response: %v", err)
+	}
+	if auditDecoded.Filters.BatchID != batchDecoded.Batch.ID || auditDecoded.AuditSummary.Total != 2 || len(auditDecoded.Audit) != 2 {
+		t.Fatalf("unexpected batch audit envelope: %+v", auditDecoded)
+	}
+	if auditDecoded.Audit[0].BatchID != batchDecoded.Batch.ID || auditDecoded.Audit[0].BatchSize != 2 || auditDecoded.Audit[0].RollbackAction != "rollback_batch" || auditDecoded.Audit[0].RollbackURL != "/v2/control-center/actions" {
+		t.Fatalf("unexpected batch audit entry: %+v", auditDecoded.Audit[0])
+	}
+
+	rollbackBody := mustJSON(map[string]any{
+		"action":            "rollback_batch",
+		"rollback_batch_id": batchDecoded.Batch.ID,
+		"actor":             "lead-1",
+		"role":              "eng_lead",
+		"viewer_team":       "platform",
+		"note":              "undo batch governance review",
+	})
+	rollbackResponse := httptest.NewRecorder()
+	handler.ServeHTTP(rollbackResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(rollbackBody)))
+	if rollbackResponse.Code != http.StatusOK {
+		t.Fatalf("expected batch rollback 200, got %d %s", rollbackResponse.Code, rollbackResponse.Body.String())
+	}
+	var rollbackDecoded struct {
+		Action           string `json:"action"`
+		RollbackBatchID  string `json:"rollback_batch_id"`
+		RollbackSourceID string `json:"rollback_source_id"`
+		AuditURL         string `json:"audit_url"`
+		Operations       []struct {
+			Action           string `json:"action"`
+			BatchID          string `json:"batch_id"`
+			RollbackBatchID  string `json:"rollback_batch_id"`
+			RollbackSourceID string `json:"rollback_source_operation_id"`
+			TaskID           string `json:"task_id"`
+		} `json:"operations"`
+	}
+	if err := json.Unmarshal(rollbackResponse.Body.Bytes(), &rollbackDecoded); err != nil {
+		t.Fatalf("decode batch rollback response: %v", err)
+	}
+	if rollbackDecoded.Action != "rollback_batch" || rollbackDecoded.RollbackBatchID == "" || rollbackDecoded.RollbackSourceID != batchDecoded.Batch.ID || rollbackDecoded.AuditURL != "/v2/control-center/audit?batch_id="+rollbackDecoded.RollbackBatchID+"&audit_limit=20" || len(rollbackDecoded.Operations) != 2 || rollbackDecoded.Operations[0].Action != "rollback_batch" || rollbackDecoded.Operations[0].RollbackBatchID != batchDecoded.Batch.ID || rollbackDecoded.Operations[0].RollbackSourceID == "" {
+		t.Fatalf("unexpected batch rollback payload: %+v", rollbackDecoded)
+	}
+
+	rollbackAuditResponse := httptest.NewRecorder()
+	rollbackAuditRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/audit?batch_id="+url.QueryEscape(rollbackDecoded.RollbackBatchID)+"&audit_limit=10", nil)
+	rollbackAuditRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	rollbackAuditRequest.Header.Set("X-BigClaw-Actor", "ops-1")
+	handler.ServeHTTP(rollbackAuditResponse, rollbackAuditRequest)
+	if rollbackAuditResponse.Code != http.StatusOK {
+		t.Fatalf("expected rollback audit 200, got %d %s", rollbackAuditResponse.Code, rollbackAuditResponse.Body.String())
+	}
+	var rollbackAuditDecoded controlCenterAuditResponse
+	if err := json.Unmarshal(rollbackAuditResponse.Body.Bytes(), &rollbackAuditDecoded); err != nil {
+		t.Fatalf("decode rollback audit response: %v", err)
+	}
+	if rollbackAuditDecoded.AuditSummary.Total != 2 || rollbackAuditDecoded.Audit[0].Action != "rollback_batch" || rollbackAuditDecoded.Audit[0].RollbackBatchID != batchDecoded.Batch.ID || rollbackAuditDecoded.Audit[0].RollbackSourceID == "" {
+		t.Fatalf("unexpected rollback audit payload: %+v", rollbackAuditDecoded)
+	}
+
+	for _, id := range []string{"task-batch-1", "task-batch-2"} {
+		task, ok := recorder.Task(id)
+		if !ok || task.State != domain.TaskQueued {
+			t.Fatalf("expected task %s to return to queued, got %+v ok=%v", id, task, ok)
+		}
+		takeover, ok := controller.TakeoverStatus(id)
+		if !ok || takeover.Active {
+			t.Fatalf("expected inactive takeover after rollback for %s, got %+v ok=%v", id, takeover, ok)
+		}
 	}
 }
 

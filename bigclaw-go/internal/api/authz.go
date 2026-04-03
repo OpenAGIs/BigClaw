@@ -87,11 +87,11 @@ func allowedControlActions(role ControlRole) []string {
 	var actions []string
 	switch role {
 	case RolePlatformAdmin:
-		actions = []string{"annotate", "assign_owner", "assign_reviewer", "cancel", "pause", "release_takeover", "resume", "retry", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "cancel", "pause", "release_takeover", "resume", "retry", "rollback_batch", "takeover", "transfer_to_human"}
 	case RoleCrossTeamOperator:
-		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "retry", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "retry", "rollback_batch", "takeover", "transfer_to_human"}
 	case RoleEngLead:
-		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "rollback_batch", "takeover", "transfer_to_human"}
 	default:
 		actions = []string{}
 	}

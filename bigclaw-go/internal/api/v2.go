@@ -237,6 +237,9 @@ type workerPoolHealthSummary struct {
 
 type controlActionAuditEntry struct {
 	OperationID      string       `json:"operation_id,omitempty"`
+	BatchID          string       `json:"batch_id,omitempty"`
+	BatchIndex       int          `json:"batch_index,omitempty"`
+	BatchSize        int          `json:"batch_size,omitempty"`
 	Action           string       `json:"action"`
 	Scope            string       `json:"scope,omitempty"`
 	Actor            string       `json:"actor,omitempty"`
@@ -253,6 +256,10 @@ type controlActionAuditEntry struct {
 	Timestamp        time.Time    `json:"timestamp"`
 	Reason           string       `json:"reason,omitempty"`
 	Note             string       `json:"note,omitempty"`
+	RollbackAction   string       `json:"rollback_action,omitempty"`
+	RollbackURL      string       `json:"rollback_url,omitempty"`
+	RollbackBatchID  string       `json:"rollback_batch_id,omitempty"`
+	RollbackSourceID string       `json:"rollback_source_operation_id,omitempty"`
 	Event            domain.Event `json:"event"`
 }
 
@@ -278,6 +285,7 @@ type controlCenterFilters struct {
 	Team       string
 	Project    string
 	TaskID     string
+	BatchID    string
 	State      string
 	RiskLevel  string
 	Since      time.Time
@@ -387,6 +395,9 @@ type runDetailResponse struct {
 
 type controlActionOperation struct {
 	ID               string    `json:"id"`
+	BatchID          string    `json:"batch_id,omitempty"`
+	BatchIndex       int       `json:"batch_index,omitempty"`
+	BatchSize        int       `json:"batch_size,omitempty"`
 	Action           string    `json:"action"`
 	Scope            string    `json:"scope"`
 	TaskID           string    `json:"task_id,omitempty"`
@@ -402,18 +413,41 @@ type controlActionOperation struct {
 	Note             string    `json:"note,omitempty"`
 	Timestamp        time.Time `json:"timestamp"`
 	AuditURL         string    `json:"audit_url,omitempty"`
+	RollbackAction   string    `json:"rollback_action,omitempty"`
+	RollbackURL      string    `json:"rollback_url,omitempty"`
+	RollbackBatchID  string    `json:"rollback_batch_id,omitempty"`
+	RollbackSourceID string    `json:"rollback_source_operation_id,omitempty"`
 }
 
 type controlActionRequest struct {
-	Action     string `json:"action"`
-	TaskID     string `json:"task_id,omitempty"`
-	Actor      string `json:"actor,omitempty"`
-	Role       string `json:"role,omitempty"`
-	ViewerTeam string `json:"viewer_team,omitempty"`
-	Owner      string `json:"owner,omitempty"`
-	Reviewer   string `json:"reviewer,omitempty"`
-	Reason     string `json:"reason,omitempty"`
-	Note       string `json:"note,omitempty"`
+	Action          string   `json:"action"`
+	TaskID          string   `json:"task_id,omitempty"`
+	TaskIDs         []string `json:"task_ids,omitempty"`
+	Actor           string   `json:"actor,omitempty"`
+	Role            string   `json:"role,omitempty"`
+	ViewerTeam      string   `json:"viewer_team,omitempty"`
+	Owner           string   `json:"owner,omitempty"`
+	Reviewer        string   `json:"reviewer,omitempty"`
+	Reason          string   `json:"reason,omitempty"`
+	Note            string   `json:"note,omitempty"`
+	RollbackBatchID string   `json:"rollback_batch_id,omitempty"`
+}
+
+type controlActionBatchContext struct {
+	ID             string
+	Index          int
+	Size           int
+	RollbackAction string
+	RollbackURL    string
+}
+
+type controlActionResult struct {
+	Operation controlActionOperation
+	Takeover  *control.Takeover
+	Task      *domain.Task
+	QueueTask any
+	EventType domain.EventType
+	Payload   map[string]any
 }
 
 func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Request) {
@@ -1219,6 +1253,7 @@ func controlCenterFiltersPayload(filters controlCenterFilters) map[string]any {
 		"team":        filters.Team,
 		"project":     filters.Project,
 		"task_id":     filters.TaskID,
+		"batch_id":    filters.BatchID,
 		"state":       filters.State,
 		"risk_level":  filters.RiskLevel,
 		"since":       filters.Since,
@@ -1351,6 +1386,7 @@ func (s *Server) handleV2ControlCenterAudit(w http.ResponseWriter, r *http.Reque
 		"authorization": authorization,
 		"filters": map[string]any{
 			"task_id":    filters.TaskID,
+			"batch_id":   filters.BatchID,
 			"team":       filters.Team,
 			"project":    filters.Project,
 			"state":      filters.State,
@@ -1401,6 +1437,63 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 	reason := strings.TrimSpace(request.Reason)
 	owner := strings.TrimSpace(request.Owner)
 	reviewer := strings.TrimSpace(request.Reviewer)
+	taskIDs := normalizedTaskIDs(request.TaskID, request.TaskIDs)
+	if request.TaskID == "" && len(taskIDs) == 1 {
+		request.TaskID = taskIDs[0]
+	}
+	if len(taskIDs) > 1 {
+		if !supportsBatchControlAction(action) {
+			http.Error(w, "batch mode is only supported for collaboration actions", http.StatusBadRequest)
+			return
+		}
+		rollbackAction := ""
+		rollbackURL := ""
+		batchID := fmt.Sprintf("batch-%d", now.UnixNano())
+		if supportsBatchRollback(action) {
+			rollbackAction = "rollback_batch"
+			rollbackURL = controlActionRollbackURL(batchID)
+		}
+		operations := make([]controlActionOperation, 0, len(taskIDs))
+		takeovers := make([]control.Takeover, 0, len(taskIDs))
+		for index, taskID := range taskIDs {
+			result, status, err := s.executeCollaborationAction(
+				action,
+				actor,
+				authorization,
+				taskID,
+				owner,
+				reviewer,
+				reason,
+				note,
+				now.Add(time.Duration(index)*time.Nanosecond),
+				&controlActionBatchContext{ID: batchID, Index: index + 1, Size: len(taskIDs), RollbackAction: rollbackAction, RollbackURL: rollbackURL},
+				"",
+				"",
+			)
+			if err != nil {
+				http.Error(w, err.Error(), status)
+				return
+			}
+			s.publishControlActionEvent(result)
+			operations = append(operations, result.Operation)
+			if result.Takeover != nil {
+				takeovers = append(takeovers, *result.Takeover)
+			}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"action": action,
+			"batch": map[string]any{
+				"id":              batchID,
+				"size":            len(taskIDs),
+				"audit_url":       controlActionBatchAuditURL(batchID),
+				"rollback_action": rollbackAction,
+				"rollback_url":    rollbackURL,
+			},
+			"operations": operations,
+			"takeovers":  takeovers,
+		})
+		return
+	}
 	switch action {
 	case "pause":
 		before := s.Control.Snapshot()
@@ -1473,125 +1566,297 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		traceID := s.traceIDForTask(request.TaskID)
 		s.publish(domain.Event{ID: fmt.Sprintf("%s-cancel-%d", request.TaskID, now.UnixNano()), Type: domain.EventTaskCancelled, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
 		writeJSON(w, http.StatusOK, map[string]any{"action": action, "task": task, "queue_task": snapshot, "cancelled": true, "operation": operation})
-	case "takeover":
-		if request.TaskID == "" {
-			http.Error(w, "missing task_id", http.StatusBadRequest)
+	case "takeover", "release_takeover", "annotate", "assign_owner", "assign_reviewer":
+		result, status, err := s.executeCollaborationAction(action, actor, authorization, request.TaskID, owner, reviewer, reason, note, now, nil, "", "")
+		if err != nil {
+			http.Error(w, err.Error(), status)
 			return
 		}
-		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
+		s.publishControlActionEvent(result)
+		response := map[string]any{"action": action, "operation": result.Operation}
+		if result.Takeover != nil {
+			response["takeover"] = *result.Takeover
+		}
+		if result.Task != nil {
+			response["task"] = *result.Task
+		}
+		if result.QueueTask != nil {
+			response["queue_task"] = result.QueueTask
+		}
+		writeJSON(w, http.StatusOK, response)
+	case "rollback_batch":
+		if request.RollbackBatchID == "" {
+			http.Error(w, "missing rollback_batch_id", http.StatusBadRequest)
 			return
 		}
-		beforeTask, _ := s.taskSnapshot(request.TaskID)
-		beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(request.TaskID)
-		note = firstNonEmpty(note, reason)
-		takeover := s.Control.Takeover(request.TaskID, actor, reviewer, note, now)
-		s.syncTaskState(request.TaskID, domain.TaskBlocked, now)
-		task, _ := s.Recorder.Task(request.TaskID)
-		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, task.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(takeover, true))
-		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-takeover-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunTakeover, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
-		writeJSON(w, http.StatusOK, map[string]any{"action": action, "takeover": takeover, "operation": operation})
-	case "release_takeover":
-		if request.TaskID == "" {
-			http.Error(w, "missing task_id", http.StatusBadRequest)
+		results, status, err := s.rollbackControlActionBatch(actor, authorization, request.RollbackBatchID, reason, note, now)
+		if err != nil {
+			http.Error(w, err.Error(), status)
 			return
 		}
-		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
+		operations := make([]controlActionOperation, 0, len(results))
+		takeovers := make([]control.Takeover, 0, len(results))
+		rollbackBatchID := ""
+		for _, result := range results {
+			s.publishControlActionEvent(result)
+			operations = append(operations, result.Operation)
+			if rollbackBatchID == "" {
+				rollbackBatchID = result.Operation.BatchID
+			}
+			if result.Takeover != nil {
+				takeovers = append(takeovers, *result.Takeover)
+			}
 		}
-		beforeTask, _ := s.taskSnapshot(request.TaskID)
-		beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(request.TaskID)
-		note = firstNonEmpty(note, reason)
-		takeover, ok := s.Control.Release(request.TaskID, actor, note, now)
-		if !ok {
-			http.Error(w, "takeover not found", http.StatusNotFound)
-			return
-		}
-		s.syncTaskState(request.TaskID, domain.TaskQueued, now)
-		task, _ := s.Recorder.Task(request.TaskID)
-		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, task.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(takeover, true))
-		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-release-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunReleased, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
-		writeJSON(w, http.StatusOK, map[string]any{"action": action, "takeover": takeover, "operation": operation})
-	case "annotate":
-		if request.TaskID == "" {
-			http.Error(w, "missing task_id", http.StatusBadRequest)
-			return
-		}
-		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-		beforeTask, _ := s.taskSnapshot(request.TaskID)
-		beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(request.TaskID)
-		note = firstNonEmpty(note, reason)
-		takeover := s.Control.Annotate(request.TaskID, actor, note, now)
-		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, beforeTask.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(takeover, true))
-		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-annotate-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
-		writeJSON(w, http.StatusOK, map[string]any{"action": action, "takeover": takeover, "operation": operation})
-	case "assign_owner":
-		if request.TaskID == "" {
-			http.Error(w, "missing task_id", http.StatusBadRequest)
-			return
-		}
-		if owner == "" {
-			http.Error(w, "missing owner", http.StatusBadRequest)
-			return
-		}
-		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-		beforeTask, _ := s.taskSnapshot(request.TaskID)
-		beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(request.TaskID)
-		if !beforeTakeoverOK || !beforeTakeover.Active {
-			http.Error(w, "active takeover not found", http.StatusConflict)
-			return
-		}
-		note = firstNonEmpty(note, reason)
-		takeover, ok := s.Control.Reassign(request.TaskID, owner, "", actor, note, now)
-		if !ok {
-			http.Error(w, "active takeover not found", http.StatusConflict)
-			return
-		}
-		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, beforeTask.State, takeoverRef(beforeTakeover, true), takeoverRef(takeover, true))
-		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-assign-owner-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
-		writeJSON(w, http.StatusOK, map[string]any{"action": action, "takeover": takeover, "operation": operation})
-	case "assign_reviewer":
-		if request.TaskID == "" {
-			http.Error(w, "missing task_id", http.StatusBadRequest)
-			return
-		}
-		if reviewer == "" {
-			http.Error(w, "missing reviewer", http.StatusBadRequest)
-			return
-		}
-		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-		beforeTask, _ := s.taskSnapshot(request.TaskID)
-		beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(request.TaskID)
-		if !beforeTakeoverOK || !beforeTakeover.Active {
-			http.Error(w, "active takeover not found", http.StatusConflict)
-			return
-		}
-		note = firstNonEmpty(note, reason)
-		takeover, ok := s.Control.Reassign(request.TaskID, "", reviewer, actor, note, now)
-		if !ok {
-			http.Error(w, "active takeover not found", http.StatusConflict)
-			return
-		}
-		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, beforeTask.State, takeoverRef(beforeTakeover, true), takeoverRef(takeover, true))
-		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-assign-reviewer-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
-		writeJSON(w, http.StatusOK, map[string]any{"action": action, "takeover": takeover, "operation": operation})
+		writeJSON(w, http.StatusOK, map[string]any{
+			"action":             action,
+			"rollback_batch_id":  rollbackBatchID,
+			"rollback_source_id": request.RollbackBatchID,
+			"audit_url":          controlActionBatchAuditURL(rollbackBatchID),
+			"operations":         operations,
+			"takeovers":          takeovers,
+		})
 	default:
 		http.Error(w, "unsupported action", http.StatusBadRequest)
+	}
+}
+
+func normalizedTaskIDs(primary string, values []string) []string {
+	out := make([]string, 0, len(values)+1)
+	seen := make(map[string]struct{}, len(values)+1)
+	appendID := func(value string) {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return
+		}
+		if _, ok := seen[value]; ok {
+			return
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	appendID(primary)
+	for _, value := range values {
+		appendID(value)
+	}
+	return out
+}
+
+func supportsBatchControlAction(action string) bool {
+	switch action {
+	case "takeover", "release_takeover", "annotate", "assign_owner", "assign_reviewer":
+		return true
+	default:
+		return false
+	}
+}
+
+func supportsBatchRollback(action string) bool {
+	switch action {
+	case "takeover", "release_takeover", "assign_owner", "assign_reviewer":
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *Server) executeCollaborationAction(action string, actor string, authorization ControlAuthorization, taskID string, owner string, reviewer string, reason string, note string, now time.Time, batch *controlActionBatchContext, rollbackBatchID string, rollbackSourceID string) (controlActionResult, int, error) {
+	if taskID == "" {
+		return controlActionResult{}, http.StatusBadRequest, fmt.Errorf("missing task_id")
+	}
+	if err := s.authorizeTaskIDAccess(authorization, taskID); err != nil {
+		return controlActionResult{}, http.StatusForbidden, err
+	}
+	beforeTask, _ := s.taskSnapshot(taskID)
+	beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(taskID)
+	trimmedNote := strings.TrimSpace(note)
+	trimmedReason := strings.TrimSpace(reason)
+	if action != "assign_owner" && action != "assign_reviewer" {
+		trimmedNote = firstNonEmpty(trimmedNote, trimmedReason)
+	}
+	result := controlActionResult{}
+	var takeover control.Takeover
+	var ok bool
+	switch action {
+	case "takeover":
+		takeover = s.Control.Takeover(taskID, actor, reviewer, trimmedNote, now)
+		s.syncTaskState(taskID, domain.TaskBlocked, now)
+		result.EventType = domain.EventRunTakeover
+	case "release_takeover":
+		takeover, ok = s.Control.Release(taskID, actor, trimmedNote, now)
+		if !ok {
+			return controlActionResult{}, http.StatusNotFound, fmt.Errorf("takeover not found")
+		}
+		s.syncTaskState(taskID, domain.TaskQueued, now)
+		result.EventType = domain.EventRunReleased
+	case "annotate":
+		takeover = s.Control.Annotate(taskID, actor, trimmedNote, now)
+		result.EventType = domain.EventRunAnnotated
+	case "assign_owner":
+		if owner == "" {
+			return controlActionResult{}, http.StatusBadRequest, fmt.Errorf("missing owner")
+		}
+		if !beforeTakeoverOK || !beforeTakeover.Active {
+			return controlActionResult{}, http.StatusConflict, fmt.Errorf("active takeover not found")
+		}
+		takeover, ok = s.Control.Reassign(taskID, owner, "", actor, firstNonEmpty(trimmedNote, trimmedReason), now)
+		if !ok {
+			return controlActionResult{}, http.StatusConflict, fmt.Errorf("active takeover not found")
+		}
+		result.EventType = domain.EventRunAnnotated
+	case "assign_reviewer":
+		if reviewer == "" {
+			return controlActionResult{}, http.StatusBadRequest, fmt.Errorf("missing reviewer")
+		}
+		if !beforeTakeoverOK || !beforeTakeover.Active {
+			return controlActionResult{}, http.StatusConflict, fmt.Errorf("active takeover not found")
+		}
+		takeover, ok = s.Control.Reassign(taskID, "", reviewer, actor, firstNonEmpty(trimmedNote, trimmedReason), now)
+		if !ok {
+			return controlActionResult{}, http.StatusConflict, fmt.Errorf("active takeover not found")
+		}
+		result.EventType = domain.EventRunAnnotated
+	default:
+		return controlActionResult{}, http.StatusBadRequest, fmt.Errorf("unsupported action")
+	}
+	task, _ := s.Recorder.Task(taskID)
+	operation := buildControlActionOperation(action, actor, authorization, taskID, trimmedReason, trimmedNote, now, beforeTask.State, task.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(takeover, true))
+	applyControlActionBatch(&operation, batch)
+	if rollbackBatchID != "" {
+		operation.RollbackBatchID = rollbackBatchID
+	}
+	if rollbackSourceID != "" {
+		operation.RollbackSourceID = rollbackSourceID
+	}
+	result.Operation = operation
+	result.Takeover = takeoverRef(takeover, true)
+	result.Task = &task
+	result.Payload = buildControlActionPayload(operation, s.taskTeam(taskID), s.taskProject(taskID))
+	return result, http.StatusOK, nil
+}
+
+func (s *Server) publishControlActionEvent(result controlActionResult) {
+	taskID := result.Operation.TaskID
+	traceID := s.traceIDForTask(taskID)
+	eventID := fmt.Sprintf("%s-%s-%d", firstNonEmpty(taskID, "control"), result.Operation.Action, result.Operation.Timestamp.UnixNano())
+	s.publish(domain.Event{
+		ID:        eventID,
+		Type:      result.EventType,
+		TaskID:    taskID,
+		TraceID:   traceID,
+		Timestamp: result.Operation.Timestamp,
+		Payload:   result.Payload,
+	})
+}
+
+func (s *Server) rollbackControlActionBatch(actor string, authorization ControlAuthorization, sourceBatchID string, reason string, note string, now time.Time) ([]controlActionResult, int, error) {
+	entries := s.controlActionAuditEntries(controlCenterFilters{BatchID: sourceBatchID}, authorization)
+	if len(entries) == 0 {
+		return nil, http.StatusNotFound, fmt.Errorf("batch audit not found")
+	}
+	rollbackBatchID := fmt.Sprintf("rollback-%d", now.UnixNano())
+	results := make([]controlActionResult, 0, len(entries))
+	for index, entry := range entries {
+		result, status, err := s.rollbackControlAuditEntry(actor, authorization, entry, firstNonEmpty(strings.TrimSpace(note), fmt.Sprintf("rollback batch %s", sourceBatchID)), strings.TrimSpace(reason), now.Add(time.Duration(index)*time.Nanosecond), rollbackBatchID, sourceBatchID)
+		if err != nil {
+			return nil, status, err
+		}
+		results = append(results, result)
+	}
+	return results, http.StatusOK, nil
+}
+
+func (s *Server) rollbackControlAuditEntry(actor string, authorization ControlAuthorization, entry controlActionAuditEntry, note string, reason string, now time.Time, rollbackBatchID string, sourceBatchID string) (controlActionResult, int, error) {
+	switch entry.Action {
+	case "assign_owner":
+		if entry.PreviousOwner == "" {
+			return controlActionResult{}, http.StatusConflict, fmt.Errorf("batch action %s cannot be rolled back without previous_owner", entry.OperationID)
+		}
+		result, status, err := s.executeCollaborationAction("assign_owner", actor, authorization, entry.TaskID, entry.PreviousOwner, "", reason, note, now, &controlActionBatchContext{ID: rollbackBatchID, Index: entry.BatchIndex, Size: entry.BatchSize}, sourceBatchID, entry.OperationID)
+		if err != nil {
+			return controlActionResult{}, status, err
+		}
+		markResultAsBatchRollback(&result, rollbackBatchID, sourceBatchID, entry.OperationID)
+		return result, http.StatusOK, nil
+	case "assign_reviewer":
+		if entry.PreviousReviewer == "" {
+			return controlActionResult{}, http.StatusConflict, fmt.Errorf("batch action %s cannot be rolled back without previous_reviewer", entry.OperationID)
+		}
+		result, status, err := s.executeCollaborationAction("assign_reviewer", actor, authorization, entry.TaskID, "", entry.PreviousReviewer, reason, note, now, &controlActionBatchContext{ID: rollbackBatchID, Index: entry.BatchIndex, Size: entry.BatchSize}, sourceBatchID, entry.OperationID)
+		if err != nil {
+			return controlActionResult{}, status, err
+		}
+		markResultAsBatchRollback(&result, rollbackBatchID, sourceBatchID, entry.OperationID)
+		return result, http.StatusOK, nil
+	case "takeover":
+		result, status, err := s.executeCollaborationAction("release_takeover", actor, authorization, entry.TaskID, "", "", reason, note, now, &controlActionBatchContext{ID: rollbackBatchID, Index: entry.BatchIndex, Size: entry.BatchSize}, sourceBatchID, entry.OperationID)
+		if err != nil {
+			return controlActionResult{}, status, err
+		}
+		markResultAsBatchRollback(&result, rollbackBatchID, sourceBatchID, entry.OperationID)
+		return result, http.StatusOK, nil
+	case "release_takeover":
+		result, status, err := s.restoreReleasedTakeover(actor, authorization, entry, note, reason, now, rollbackBatchID, sourceBatchID)
+		if err != nil {
+			return controlActionResult{}, status, err
+		}
+		markResultAsBatchRollback(&result, rollbackBatchID, sourceBatchID, entry.OperationID)
+		return result, http.StatusOK, nil
+	default:
+		return controlActionResult{}, http.StatusBadRequest, fmt.Errorf("batch action %s does not support rollback", entry.Action)
+	}
+}
+
+func (s *Server) restoreReleasedTakeover(actor string, authorization ControlAuthorization, entry controlActionAuditEntry, note string, reason string, now time.Time, rollbackBatchID string, sourceBatchID string) (controlActionResult, int, error) {
+	if entry.TaskID == "" {
+		return controlActionResult{}, http.StatusBadRequest, fmt.Errorf("missing task_id")
+	}
+	if err := s.authorizeTaskIDAccess(authorization, entry.TaskID); err != nil {
+		return controlActionResult{}, http.StatusForbidden, err
+	}
+	beforeTask, _ := s.taskSnapshot(entry.TaskID)
+	beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(entry.TaskID)
+	restored := s.Control.Takeover(entry.TaskID, firstNonEmpty(entry.PreviousOwner, actor), entry.PreviousReviewer, note, now)
+	if entry.PreviousOwner != "" || entry.PreviousReviewer != "" {
+		reassigned, ok := s.Control.Reassign(entry.TaskID, entry.PreviousOwner, entry.PreviousReviewer, actor, note, now)
+		if ok {
+			restored = reassigned
+		}
+	}
+	s.syncTaskState(entry.TaskID, domain.TaskBlocked, now)
+	task, _ := s.Recorder.Task(entry.TaskID)
+	operation := buildControlActionOperation("takeover", actor, authorization, entry.TaskID, reason, note, now, beforeTask.State, task.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(restored, true))
+	applyControlActionBatch(&operation, &controlActionBatchContext{ID: rollbackBatchID, Index: entry.BatchIndex, Size: entry.BatchSize})
+	operation.RollbackBatchID = sourceBatchID
+	operation.RollbackSourceID = entry.OperationID
+	return controlActionResult{
+		Operation: operation,
+		Takeover:  takeoverRef(restored, true),
+		Task:      &task,
+		EventType: domain.EventRunTakeover,
+		Payload:   buildControlActionPayload(operation, s.taskTeam(entry.TaskID), s.taskProject(entry.TaskID)),
+	}, http.StatusOK, nil
+}
+
+func markResultAsBatchRollback(result *controlActionResult, rollbackBatchID string, sourceBatchID string, sourceOperationID string) {
+	result.Operation.Action = "rollback_batch"
+	result.Operation.Scope = controlActionScope("rollback_batch")
+	result.Operation.AuditURL = controlActionBatchAuditURL(rollbackBatchID)
+	result.Operation.RollbackBatchID = sourceBatchID
+	result.Operation.RollbackSourceID = sourceOperationID
+	result.Payload = buildControlActionPayload(result.Operation, result.Payload["team"].(string), result.Payload["project"].(string))
+}
+
+func applyControlActionBatch(operation *controlActionOperation, batch *controlActionBatchContext) {
+	if batch == nil {
+		return
+	}
+	operation.BatchID = batch.ID
+	operation.BatchIndex = batch.Index
+	operation.BatchSize = batch.Size
+	operation.AuditURL = controlActionBatchAuditURL(batch.ID)
+	if batch.RollbackAction != "" {
+		operation.RollbackAction = batch.RollbackAction
+		operation.RollbackURL = batch.RollbackURL
 	}
 }
 
@@ -1632,6 +1897,9 @@ func buildControlActionPayload(operation controlActionOperation, team string, pr
 		"scope":        operation.Scope,
 		"actor":        operation.Actor,
 		"role":         operation.Role,
+		"batch_id":     operation.BatchID,
+		"batch_index":  operation.BatchIndex,
+		"batch_size":   operation.BatchSize,
 		"team":         team,
 		"project":      project,
 	}
@@ -1659,6 +1927,18 @@ func buildControlActionPayload(operation controlActionOperation, team string, pr
 	if operation.PreviousReviewer != "" {
 		payload["previous_reviewer"] = operation.PreviousReviewer
 	}
+	if operation.RollbackAction != "" {
+		payload["rollback_action"] = operation.RollbackAction
+	}
+	if operation.RollbackURL != "" {
+		payload["rollback_url"] = operation.RollbackURL
+	}
+	if operation.RollbackBatchID != "" {
+		payload["rollback_batch_id"] = operation.RollbackBatchID
+	}
+	if operation.RollbackSourceID != "" {
+		payload["rollback_source_operation_id"] = operation.RollbackSourceID
+	}
 	return payload
 }
 
@@ -1668,6 +1948,8 @@ func controlActionScope(action string) string {
 		return "system"
 	case "retry", "cancel":
 		return "queue"
+	case "rollback_batch":
+		return "collaboration"
 	default:
 		return "collaboration"
 	}
@@ -1678,6 +1960,15 @@ func controlActionAuditURL(taskID string, action string) string {
 		return fmt.Sprintf("/v2/control-center/audit?task_id=%s&action=%s&audit_limit=20", taskID, action)
 	}
 	return fmt.Sprintf("/v2/control-center/audit?action=%s&audit_limit=20", action)
+}
+
+func controlActionBatchAuditURL(batchID string) string {
+	return fmt.Sprintf("/v2/control-center/audit?batch_id=%s&audit_limit=20", batchID)
+}
+
+func controlActionRollbackURL(batchID string) string {
+	_ = batchID
+	return "/v2/control-center/actions"
 }
 
 func takeoverRef(takeover control.Takeover, ok bool) *control.Takeover {
@@ -2024,6 +2315,28 @@ func eventStringValue(payload map[string]any, key string) string {
 		return ""
 	}
 	return stringValue(payload[key])
+}
+
+func eventIntValue(payload map[string]any, key string) int {
+	if payload == nil {
+		return 0
+	}
+	switch typed := payload[key].(type) {
+	case int:
+		return typed
+	case int64:
+		return int(typed)
+	case float64:
+		return int(typed)
+	case json.Number:
+		value, _ := typed.Int64()
+		return int(value)
+	case string:
+		value, _ := strconv.Atoi(strings.TrimSpace(typed))
+		return value
+	default:
+		return 0
+	}
 }
 
 func stringValue(value any) string {
@@ -2490,6 +2803,7 @@ func parseControlCenterFilters(r *http.Request) (controlCenterFilters, error) {
 		Team:       strings.TrimSpace(r.URL.Query().Get("team")),
 		Project:    strings.TrimSpace(r.URL.Query().Get("project")),
 		TaskID:     strings.TrimSpace(r.URL.Query().Get("task_id")),
+		BatchID:    strings.TrimSpace(r.URL.Query().Get("batch_id")),
 		State:      strings.ToLower(strings.TrimSpace(r.URL.Query().Get("state"))),
 		RiskLevel:  strings.ToLower(strings.TrimSpace(r.URL.Query().Get("risk_level"))),
 		Since:      since,
@@ -2637,6 +2951,9 @@ func (s *Server) controlActionAuditEntries(filters controlCenterFilters, authori
 		if filters.TaskID != "" && entry.TaskID != filters.TaskID {
 			continue
 		}
+		if filters.BatchID != "" && entry.BatchID != filters.BatchID {
+			continue
+		}
 		if filters.Action != "" && entry.Action != filters.Action {
 			continue
 		}
@@ -2700,6 +3017,9 @@ func controlActionEntry(event domain.Event) (controlActionAuditEntry, bool) {
 	}
 	return controlActionAuditEntry{
 		OperationID:      eventStringValue(event.Payload, "operation_id"),
+		BatchID:          eventStringValue(event.Payload, "batch_id"),
+		BatchIndex:       eventIntValue(event.Payload, "batch_index"),
+		BatchSize:        eventIntValue(event.Payload, "batch_size"),
 		Action:           action,
 		Scope:            scope,
 		Actor:            actor,
@@ -2716,6 +3036,10 @@ func controlActionEntry(event domain.Event) (controlActionAuditEntry, bool) {
 		Timestamp:        event.Timestamp,
 		Reason:           reason,
 		Note:             note,
+		RollbackAction:   eventStringValue(event.Payload, "rollback_action"),
+		RollbackURL:      eventStringValue(event.Payload, "rollback_url"),
+		RollbackBatchID:  eventStringValue(event.Payload, "rollback_batch_id"),
+		RollbackSourceID: eventStringValue(event.Payload, "rollback_source_operation_id"),
 		Event:            event,
 	}, true
 }
@@ -2723,7 +3047,7 @@ func controlActionEntry(event domain.Event) (controlActionAuditEntry, bool) {
 func controlActionName(event domain.Event) (string, bool) {
 	if action := normalizeActionName(eventStringValue(event.Payload, "action")); action != "" {
 		switch action {
-		case "pause", "resume", "retry", "cancel", "takeover", "release_takeover", "annotate", "assign_owner", "assign_reviewer":
+		case "pause", "resume", "retry", "cancel", "takeover", "release_takeover", "annotate", "assign_owner", "assign_reviewer", "rollback_batch":
 			return action, true
 		}
 	}
