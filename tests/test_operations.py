@@ -29,6 +29,7 @@ from bigclaw.operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
+from bigclaw.queue import PersistentTaskQueue
 from bigclaw.reports import SharedViewContext, SharedViewFilter
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
 
@@ -705,6 +706,9 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
         make_run("run-1", "BIG-905-1", "approved", "2026-03-10T10:00:00Z", "2026-03-10T10:20:00Z", "ok", "default low risk path"),
         make_run("run-2", "BIG-905-2", "needs-approval", "2026-03-10T11:00:00Z", "2026-03-10T11:50:00Z", "hold", "requires approval for high-risk task"),
     ]
+    queue = PersistentTaskQueue(str(tmp_path / "queue.json"))
+    queue.enqueue(Task(task_id="BIG-905-2", source="linear", title="approval", description="needs review"))
+    queue.enqueue(Task(task_id="BIG-905-3", source="linear", title="repo sync", description="manual fix"))
     baseline = BenchmarkSuiteResult(version="v0.1", results=[make_result("case-drop", 100, True)])
     current = BenchmarkSuiteResult(version="v0.2", results=[make_result("case-drop", 70, False)])
 
@@ -736,10 +740,24 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
             ),
         ]
     )
+    queue_control_center = analytics.build_queue_control_center(
+        queue,
+        runs=[
+            {"task_id": "BIG-905-2", "status": "needs-approval", "medium": "vm"},
+            {
+                "task_id": "BIG-905-3",
+                "status": "failed",
+                "medium": "docker",
+                "repo_sync_audit": {"sync": {"failure_category": "repo-sync"}},
+                "retry_count": 2,
+            },
+        ],
+    )
     artifacts = write_weekly_operations_bundle(
         str(tmp_path / "weekly"),
         weekly_report,
         regression_center=regression_center,
+        queue_control_center=queue_control_center,
         version_center=version_center,
     )
 
@@ -747,11 +765,18 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
     assert Path(artifacts.dashboard_path).exists()
     assert artifacts.regression_center_path is not None
     assert Path(artifacts.regression_center_path).exists()
+    assert artifacts.queue_control_path is not None
+    assert Path(artifacts.queue_control_path).exists()
     assert artifacts.version_center_path is not None
     assert Path(artifacts.version_center_path).exists()
     assert "# Weekly Operations Report" in Path(artifacts.weekly_report_path).read_text()
     assert "# Operations Dashboard" in Path(artifacts.dashboard_path).read_text()
     assert "# Regression Analysis Center" in Path(artifacts.regression_center_path).read_text()
+    queue_report = Path(artifacts.queue_control_path).read_text()
+    assert "## Bulk Retry" in queue_report
+    assert "## Failure Attribution" in queue_report
+    assert "## Manual Takeover" in queue_report
+    assert "Manual Takeover [manual-takeover]" in queue_report
     assert "# Policy/Prompt Version Center" in Path(artifacts.version_center_path).read_text()
 
 
