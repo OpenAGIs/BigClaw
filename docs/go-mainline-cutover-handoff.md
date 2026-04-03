@@ -36,8 +36,8 @@ cutover set.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
-- The default mainline posture is Go-first, with remaining Python entrypoints
-  marked as migration-only compatibility shims.
+- The default mainline posture is Go-first, with only
+  `src/bigclaw/legacy_shim.py` retained as a migration-only compatibility shim.
 
 ## Remaining non-blocking caveats
 

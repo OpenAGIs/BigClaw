@@ -38,13 +38,13 @@ candidates remaining.
 
 - `BIG-GOM-301` through `BIG-GOM-308` are complete in the repo-native tracker.
 - `bigclaw-go` owns the active mainline surfaces covered by the cutover issue pack.
-- The remaining Python runtime entrypoints are explicitly frozen as migration-only compatibility paths.
+- The remaining Python runtime entrypoints have since been retired; only `src/bigclaw/legacy_shim.py` remains as a migration-only compatibility path.
 - `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` now reports no `In Progress` work and no refill candidates for this cutover set.
 
 ## Mainline policy
 
 - `BigClaw/bigclaw-go` is the sole implementation mainline for new development.
-- `BigClaw/src/bigclaw` should only be touched to migrate required surfaces to Go or to mark legacy Python paths as frozen/deprecated.
+- `BigClaw/src/bigclaw` should only be touched to maintain the retained legacy shim or to delete newly discovered Python residue.
 - Do not port historical Python helpers blindly; only migrate the surfaces required for active workflow, operator, reporting, and release paths.
 - Keep `2-4` slices runnable in parallel once issue creation is available again.
 
@@ -149,7 +149,7 @@ Current repo progress:
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
-- Python source files remain in place as migration references; BigClaw is still not 100% Go
+- the historical Python source files from this tranche have since been retired from `src/bigclaw`; the cutover no longer depends on them remaining in-tree
 
 Dependencies:
 - depends on `BIG-GOM-301`

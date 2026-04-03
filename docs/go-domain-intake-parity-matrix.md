@@ -4,7 +4,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 
 ## Current status
 
-- `BigClaw` is not yet `100%` Go.
+- `BigClaw` now retains only one Python compatibility shim under `src/bigclaw/legacy_shim.py`.
 - `BigClaw/bigclaw-go` is the only implementation mainline for new work.
 - The Python domain/intake/DSL layer is now partially ported into dedicated Go ownership areas instead of a monolithic `models.go`.
 
@@ -68,11 +68,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 
 ## Remaining gaps
 
-- Legacy Python modules under `src/bigclaw` still exist and are not yet fully retired.
-- Python tests under `BigClaw/tests` still remain as migration references.
-- Follow-on `BIG-GOM-302` migration work has started in Go with:
-  - `bigclaw-go/internal/governance/freeze.go`
-  - `bigclaw-go/internal/contract/execution.go`
-  - `bigclaw-go/internal/observability/audit_spec.go`
-  but the broader Python runtime/reporting/orchestration surface still remains.
-- The workflow execution engine and broader runtime/reporting surfaces still need follow-on Go migrations from the `BIG-GOM-302` to `BIG-GOM-306` slices.
+- The legacy domain/intake source modules covered here have been physically removed from `src/bigclaw`; only `legacy_shim.py` remains for operator-wrapper compatibility.
+- Python tests under `BigClaw/tests` have already been retired in earlier sweeps.
+- Repo tooling still carries a small number of Python wrapper scripts outside `src/bigclaw`; those wrappers remain migration compatibility surfaces.
+- Follow-up work now lives in Go-native hardening lanes rather than Python ownership migration for the domain/intake surfaces captured in this matrix.
