@@ -46,6 +46,61 @@ func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
 	}
 }
 
+func TestAutomationUsageListsBIGGO1160GoReplacements(t *testing.T) {
+	cases := []struct {
+		args    []string
+		needles []string
+	}{
+		{
+			args: []string{"e2e"},
+			needles: []string{
+				"run-task-smoke",
+				"export-validation-bundle",
+				"continuation-scorecard",
+				"continuation-policy-gate",
+				"broker-failover-stub-matrix",
+				"mixed-workload-matrix",
+				"cross-process-coordination-surface",
+				"subscriber-takeover-fault-matrix",
+				"external-store-validation",
+				"multi-node-shared-queue",
+			},
+		},
+		{
+			args: []string{"benchmark"},
+			needles: []string{
+				"soak-local",
+				"run-matrix",
+				"capacity-certification",
+			},
+		},
+		{
+			args: []string{"migration"},
+			needles: []string{
+				"shadow-compare",
+				"shadow-matrix",
+				"live-shadow-scorecard",
+				"export-live-shadow-bundle",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		output, err := captureStdout(t, func() error {
+			return runAutomation(tc.args)
+		})
+		if err != nil {
+			t.Fatalf("run automation usage for %v: %v", tc.args, err)
+		}
+		usage := string(output)
+		for _, needle := range tc.needles {
+			if !strings.Contains(usage, needle) {
+				t.Fatalf("automation usage for %v missing %q: %s", tc.args, needle, usage)
+			}
+		}
+	}
+}
+
 func TestRunAutomationRunTaskSmokeJSONOutput(t *testing.T) {
 	var mu sync.Mutex
 	statusCalls := 0
