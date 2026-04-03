@@ -560,37 +560,6 @@ def test_render_task_run_report(tmp_path: Path):
     assert "Approved release after manual review." in report
 
 
-def test_render_repo_sync_audit_report():
-    audit = RepoSyncAudit(
-        sync=GitSyncTelemetry(
-            status="failed",
-            failure_category="auth",
-            summary="github token expired",
-            branch="dcjcloud/ope-219",
-            remote_ref="origin/dcjcloud/ope-219",
-            auth_target="github.com/OpenAGIs/BigClaw.git",
-        ),
-        pull_request=PullRequestFreshness(
-            pr_number=219,
-            pr_url="https://github.com/OpenAGIs/BigClaw/pull/219",
-            branch_state="in-sync",
-            body_state="drifted",
-            branch_head_sha="abc123",
-            pr_head_sha="abc123",
-            expected_body_digest="expected",
-            actual_body_digest="actual",
-        ),
-    )
-
-    report = render_repo_sync_audit_report(audit)
-
-    assert "# Repo Sync Audit" in report
-    assert "Failure Category: auth" in report
-    assert "Branch State: in-sync" in report
-    assert "Body State: drifted" in report
-    assert "sync=failed, failure=auth, pr-branch=in-sync, pr-body=drifted" in report
-
-
 def test_render_task_run_detail_page(tmp_path: Path):
     artifact = tmp_path / "artifact.txt"
     artifact.write_text("audit trail")

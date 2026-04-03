@@ -350,6 +350,47 @@ type ReportStudioArtifacts struct {
 	TextPath     string `json:"text_path"`
 }
 
+type GitSyncTelemetry struct {
+	Status          string   `json:"status"`
+	FailureCategory string   `json:"failure_category,omitempty"`
+	Summary         string   `json:"summary,omitempty"`
+	Branch          string   `json:"branch,omitempty"`
+	Remote          string   `json:"remote"`
+	RemoteRef       string   `json:"remote_ref,omitempty"`
+	AheadBy         int      `json:"ahead_by"`
+	BehindBy        int      `json:"behind_by"`
+	DirtyPaths      []string `json:"dirty_paths,omitempty"`
+	AuthTarget      string   `json:"auth_target,omitempty"`
+	Timestamp       string   `json:"timestamp,omitempty"`
+}
+
+type PullRequestFreshness struct {
+	PRNumber           *int   `json:"pr_number,omitempty"`
+	PRURL              string `json:"pr_url,omitempty"`
+	BranchState        string `json:"branch_state"`
+	BodyState          string `json:"body_state"`
+	BranchHeadSHA      string `json:"branch_head_sha,omitempty"`
+	PRHeadSHA          string `json:"pr_head_sha,omitempty"`
+	ExpectedBodyDigest string `json:"expected_body_digest,omitempty"`
+	ActualBodyDigest   string `json:"actual_body_digest,omitempty"`
+	CheckedAt          string `json:"checked_at,omitempty"`
+}
+
+type RepoSyncAudit struct {
+	Sync        GitSyncTelemetry     `json:"sync"`
+	PullRequest PullRequestFreshness `json:"pull_request"`
+}
+
+func (a RepoSyncAudit) Summary() string {
+	parts := []string{fmt.Sprintf("sync=%s", a.Sync.Status)}
+	if a.Sync.FailureCategory != "" {
+		parts = append(parts, fmt.Sprintf("failure=%s", a.Sync.FailureCategory))
+	}
+	parts = append(parts, fmt.Sprintf("pr-branch=%s", a.PullRequest.BranchState))
+	parts = append(parts, fmt.Sprintf("pr-body=%s", a.PullRequest.BodyState))
+	return strings.Join(parts, ", ")
+}
+
 type TeamBreakdown struct {
 	Key                string `json:"key"`
 	TotalRuns          int    `json:"total_runs"`
@@ -1965,6 +2006,96 @@ func WriteReportStudioBundle(rootDir string, studio ReportStudio) (ReportStudioA
 		return ReportStudioArtifacts{}, err
 	}
 	return artifacts, nil
+}
+
+func RenderRepoSyncAuditReport(audit RepoSyncAudit) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Repo Sync Audit\n\n")
+	builder.WriteString("## Sync Status\n\n")
+	builder.WriteString(fmt.Sprintf("- Status: %s\n", audit.Sync.Status))
+	failureCategory := audit.Sync.FailureCategory
+	if failureCategory == "" {
+		failureCategory = "none"
+	}
+	builder.WriteString(fmt.Sprintf("- Failure Category: %s\n", failureCategory))
+	summary := audit.Sync.Summary
+	if summary == "" {
+		summary = "none"
+	}
+	builder.WriteString(fmt.Sprintf("- Summary: %s\n", summary))
+	branch := audit.Sync.Branch
+	if branch == "" {
+		branch = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- Branch: %s\n", branch))
+	remote := audit.Sync.Remote
+	if remote == "" {
+		remote = "origin"
+	}
+	builder.WriteString(fmt.Sprintf("- Remote: %s\n", remote))
+	remoteRef := audit.Sync.RemoteRef
+	if remoteRef == "" {
+		remoteRef = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- Remote Ref: %s\n", remoteRef))
+	builder.WriteString(fmt.Sprintf("- Ahead By: %d\n", audit.Sync.AheadBy))
+	builder.WriteString(fmt.Sprintf("- Behind By: %d\n", audit.Sync.BehindBy))
+	dirtyPaths := "none"
+	if len(audit.Sync.DirtyPaths) > 0 {
+		dirtyPaths = strings.Join(audit.Sync.DirtyPaths, ", ")
+	}
+	builder.WriteString(fmt.Sprintf("- Dirty Paths: %s\n", dirtyPaths))
+	authTarget := audit.Sync.AuthTarget
+	if authTarget == "" {
+		authTarget = "none"
+	}
+	builder.WriteString(fmt.Sprintf("- Auth Target: %s\n", authTarget))
+	checkedAt := audit.Sync.Timestamp
+	if checkedAt == "" {
+		checkedAt = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- Checked At: %s\n", checkedAt))
+	builder.WriteString("\n## Pull Request Freshness\n\n")
+	prNumber := "unknown"
+	if audit.PullRequest.PRNumber != nil {
+		prNumber = strconv.Itoa(*audit.PullRequest.PRNumber)
+	}
+	builder.WriteString(fmt.Sprintf("- PR Number: %s\n", prNumber))
+	prURL := audit.PullRequest.PRURL
+	if prURL == "" {
+		prURL = "none"
+	}
+	builder.WriteString(fmt.Sprintf("- PR URL: %s\n", prURL))
+	builder.WriteString(fmt.Sprintf("- Branch State: %s\n", audit.PullRequest.BranchState))
+	builder.WriteString(fmt.Sprintf("- Body State: %s\n", audit.PullRequest.BodyState))
+	branchHead := audit.PullRequest.BranchHeadSHA
+	if branchHead == "" {
+		branchHead = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- Branch Head SHA: %s\n", branchHead))
+	prHead := audit.PullRequest.PRHeadSHA
+	if prHead == "" {
+		prHead = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- PR Head SHA: %s\n", prHead))
+	expectedDigest := audit.PullRequest.ExpectedBodyDigest
+	if expectedDigest == "" {
+		expectedDigest = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- Expected Body Digest: %s\n", expectedDigest))
+	actualDigest := audit.PullRequest.ActualBodyDigest
+	if actualDigest == "" {
+		actualDigest = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- Actual Body Digest: %s\n", actualDigest))
+	prCheckedAt := audit.PullRequest.CheckedAt
+	if prCheckedAt == "" {
+		prCheckedAt = "unknown"
+	}
+	builder.WriteString(fmt.Sprintf("- Checked At: %s\n", prCheckedAt))
+	builder.WriteString("\n## Summary\n\n")
+	builder.WriteString(fmt.Sprintf("- %s\n", audit.Summary()))
+	return builder.String()
 }
 
 func EvaluateIssueClosure(issueID, reportPath string, validationPassed bool, launchChecklist *LaunchChecklist, finalDeliveryChecklist *FinalDeliveryChecklist) IssueClosureDecision {
