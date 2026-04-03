@@ -54,16 +54,15 @@
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
-- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l` -> pending
+- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l` -> `0`
 - `rg -n "bigclaw-go/scripts/e2e/.*\.py|scripts/dev_smoke\.py" bigclaw-go/docs/go-cli-script-migration.md` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./internal/regression -run TestPhysicalPythonResidualSweep5LaneStaysMigrated` -> pending
 - `cd bigclaw-go && go test ./internal/regression -run TestPhysicalPythonResidualSweep5` -> `ok  	bigclaw-go/internal/regression	0.829s`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help | head -n 1` -> `usage: bigclawctl automation benchmark capacity-certification [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help | head -n 1` -> `usage: bigclawctl automation e2e run-task-smoke [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help | head -n 1` -> `usage: bigclawctl automation migration shadow-compare [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl create-issues --help | head -n 1` -> `usage: bigclawctl create-issues [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl dev-smoke --help | head -n 1` -> `usage: bigclawctl dev-smoke [flags]`
-- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/physical_python_residual_sweep5_test.go`, `reports/BIG-GO-1135-closeout.md`, `reports/BIG-GO-1135-status.json`, and `reports/BIG-GO-1135-validation.md`
+- `git status --short --branch` -> clean on `symphony/BIG-GO-1135...origin/symphony/BIG-GO-1135`
 
 ## Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement and refresh evidence for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
