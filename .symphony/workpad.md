@@ -18,16 +18,16 @@
 ## Validation
 - `find . -name '*.py' | wc -l`
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17`
 - `cd bigclaw-go && go test ./internal/regression`
 - `git status --short`
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l` -> `0`
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16` -> `ok  	bigclaw-go/internal/regression	0.480s`
-- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.892s`
-- `git status --short` -> modified `.symphony/workpad.md`, `docs/go-mainline-cutover-handoff.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17` -> `ok  	bigclaw-go/internal/regression	0.443s`
+- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.837s`
+- `git status --short` -> modified `.symphony/workpad.md`, `bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go`; modified `docs/go-mainline-cutover-handoff.md`
 
 ## Residual Risk
 - the repository already materialized to a zero-`.py` baseline before this change, so BIG-GO-1131 can harden deletion enforcement and Go ownership evidence but cannot make the Python file count numerically lower in this checkout

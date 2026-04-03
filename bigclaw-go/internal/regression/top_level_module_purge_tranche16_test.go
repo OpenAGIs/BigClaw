@@ -10,15 +10,13 @@ func TestTopLevelModulePurgeTranche16(t *testing.T) {
 	repoRoot := regressionRepoRoot(t)
 
 	deletedPythonFiles := []string{
-		"src/bigclaw/__init__.py",
-		"src/bigclaw/__main__.py",
-		"src/bigclaw/audit_events.py",
-		"src/bigclaw/collaboration.py",
-		"src/bigclaw/console_ia.py",
-		"src/bigclaw/design_system.py",
-		"src/bigclaw/evaluation.py",
-		"src/bigclaw/run_detail.py",
-		"src/bigclaw/runtime.py",
+		"scripts/create_issues.py",
+		"scripts/dev_smoke.py",
+		"scripts/ops/bigclaw_github_sync.py",
+		"scripts/ops/bigclaw_refill_queue.py",
+		"scripts/ops/bigclaw_workspace_bootstrap.py",
+		"scripts/ops/symphony_workspace_bootstrap.py",
+		"scripts/ops/symphony_workspace_validate.py",
 	}
 	for _, relativePath := range deletedPythonFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
@@ -28,15 +26,13 @@ func TestTopLevelModulePurgeTranche16(t *testing.T) {
 
 	goReplacementFiles := []string{
 		"bigclaw-go/cmd/bigclawctl/main.go",
-		"bigclaw-go/cmd/bigclawd/main.go",
-		"bigclaw-go/internal/observability/audit_spec.go",
-		"bigclaw-go/internal/collaboration/thread.go",
-		"bigclaw-go/internal/consoleia/consoleia.go",
-		"bigclaw-go/internal/designsystem/designsystem.go",
-		"bigclaw-go/internal/evaluation/evaluation.go",
-		"bigclaw-go/internal/product/console.go",
-		"bigclaw-go/internal/service/server.go",
-		"bigclaw-go/internal/worker/runtime.go",
+		"bigclaw-go/cmd/bigclawctl/migration_commands.go",
+		"bigclaw-go/internal/githubsync/sync.go",
+		"bigclaw-go/internal/refill/queue.go",
+		"bigclaw-go/internal/bootstrap/bootstrap.go",
+		"scripts/ops/bigclawctl",
+		"scripts/ops/bigclaw-symphony",
+		"scripts/dev_bootstrap.sh",
 	}
 	for _, relativePath := range goReplacementFiles {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); err != nil {
