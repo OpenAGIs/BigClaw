@@ -350,19 +350,19 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 evidence_links=[
                     EvidenceLink(
                         label="design-system-audit",
-                        target="src/bigclaw/design_system.py",
+                        target="bigclaw-go/internal/designsystem/designsystem.go",
                         capability="release-gate",
                         note="component inventory, accessibility, and UI acceptance coverage",
                     ),
                     EvidenceLink(
                         label="console-ia-contract",
-                        target="src/bigclaw/console_ia.py",
+                        target="bigclaw-go/internal/consoleia/consoleia.go",
                         capability="release-gate",
                         note="global navigation, top bar, filters, and state contracts",
                     ),
                     EvidenceLink(
                         label="ui-review-pack",
-                        target="src/bigclaw/ui_review.py",
+                        target="bigclaw-go/internal/uireview/uireview.go",
                         capability="release-gate",
                         note="review objectives, wireframes, interaction coverage, and open questions",
                     ),
