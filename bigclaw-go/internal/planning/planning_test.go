@@ -301,8 +301,8 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
-			{Label: "queue-control-center", Target: "src/bigclaw/operations.py", Capability: "ops-control", Note: "queue and approval command center"},
-			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
+			{Label: "queue-control-center", Target: "bigclaw-go/internal/product/dashboard_run_contract.go", Capability: "ops-control", Note: "queue and approval command center"},
+			{Label: "saved-view-report", Target: "bigclaw-go/internal/product/saved_views.go", Capability: "saved-views", Note: "team saved views and digest evidence"},
 		},
 	}
 
@@ -435,15 +435,15 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		targets[link.Target] = struct{}{}
 	}
 	for _, want := range []string{
-		"src/bigclaw/operations.py",
+		"bigclaw-go/internal/product/dashboard_run_contract.go",
 		"bigclaw-go/internal/product/dashboard_run_contract_test.go",
-		"src/bigclaw/execution_contract.py",
-		"src/bigclaw/workflow.py",
+		"bigclaw-go/internal/contract/execution.go",
+		"bigclaw-go/internal/workflow/engine.go",
 		"bigclaw-go/internal/product/saved_views_test.go",
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
-		"src/bigclaw/saved_views.py",
-		"src/bigclaw/evaluation.py",
+		"bigclaw-go/internal/product/saved_views.go",
+		"bigclaw-go/internal/evaluation/evaluation.go",
 		"bigclaw-go/internal/evaluation/evaluation_test.go",
 	} {
 		if _, ok := targets[want]; !ok {
@@ -491,7 +491,7 @@ func TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline(t *testing
 	}
 	for _, want := range []string{
 		"candidate-ops-hardening: Operations command-center hardening",
-		"- command-center-src -> src/bigclaw/operations.py capability=ops-control",
+		"- command-center-src -> bigclaw-go/internal/product/dashboard_run_contract.go capability=ops-control",
 		"- report-studio-tests -> bigclaw-go/internal/reportstudio/reportstudio_test.go capability=commercialization",
 	} {
 		if !strings.Contains(report, want) {

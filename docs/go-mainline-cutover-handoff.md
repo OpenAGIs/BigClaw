@@ -28,7 +28,7 @@ cutover set.
 
 ## Completed scope
 
-- Canonical Go owners now cover the `src/bigclaw/models.py`,
+- Canonical Go owners now cover the former `src/bigclaw/models.py`,
   `src/bigclaw/connectors.py`, `src/bigclaw/mapping.py`, and `src/bigclaw/dsl.py`
   contract surfaces required by the cutover plan.
 - Risk, policy, orchestration, reporting, control-center, repo collaboration,
@@ -36,8 +36,9 @@ cutover set.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
-- The default mainline posture is Go-first, with remaining Python entrypoints
-  marked as migration-only compatibility shims.
+- The default mainline posture is Go-first, with only the frozen
+  `src/bigclaw/legacy_shim.py` compatibility shim still retained under
+  `src/bigclaw`.
 
 ## Remaining non-blocking caveats
 

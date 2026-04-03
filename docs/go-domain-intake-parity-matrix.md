@@ -68,11 +68,13 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 
 ## Remaining gaps
 
-- Legacy Python modules under `src/bigclaw` still exist and are not yet fully retired.
-- Python tests under `BigClaw/tests` still remain as migration references.
+- The frozen compatibility shim `src/bigclaw/legacy_shim.py` remains for
+  Go-driven compile-check coverage.
+- Historical reports and migration notes still mention retired Python assets as
+  evidence from earlier slices.
 - Follow-on `BIG-GOM-302` migration work has started in Go with:
   - `bigclaw-go/internal/governance/freeze.go`
   - `bigclaw-go/internal/contract/execution.go`
   - `bigclaw-go/internal/observability/audit_spec.go`
-  but the broader Python runtime/reporting/orchestration surface still remains.
-- The workflow execution engine and broader runtime/reporting surfaces still need follow-on Go migrations from the `BIG-GOM-302` to `BIG-GOM-306` slices.
+  and the previously live Python runtime/reporting/orchestration modules have
+  now been physically retired from `src/bigclaw`.
