@@ -39,3 +39,8 @@
   `?    bigclaw-go/scripts/e2e    [no test files]`
   `ok   bigclaw-go/internal/events  1.011s`
   `ok   bigclaw-go/internal/config  1.214s`
+
+### Delivery
+- Branch: `BIG-GO-1127`
+- Commit: `479e0f8d` (`BIG-GO-1127: audit zero-python script lane`)
+- Push: `git push -u origin BIG-GO-1127`
