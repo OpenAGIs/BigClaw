@@ -44,6 +44,18 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1163` keeps the root residual sweep closed for the repo-materialized
+workspace. The root candidate set for `scripts/create_issues.py`,
+`scripts/dev_smoke.py`, `scripts/ops/bigclaw_github_sync.py`,
+`scripts/ops/bigclaw_refill_queue.py`,
+`scripts/ops/bigclaw_workspace_bootstrap.py`,
+`scripts/ops/symphony_workspace_bootstrap.py`, and
+`scripts/ops/symphony_workspace_validate.py` remains deleted, while the
+supported Go or shell replacements stay pinned through regression coverage.
+`find . -name '*.py' | wc -l` already returns `0` in the current materialized
+branch baseline, so this lane records and enforces the zero-count state rather
+than claiming a further numerical drop that this workspace cannot realize.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`

@@ -46,6 +46,9 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 
 	migrationPlan := readRepoFile(t, repoRoot, "docs/go-cli-script-migration-plan.md")
 	requiredPlanEntries := []string{
+		"`BIG-GO-1163` keeps the root residual sweep closed",
+		"`find . -name '*.py' | wc -l` already returns `0`",
+		"branch baseline, so this lane records and enforces the zero-count state",
 		"retired `scripts/create_issues.py`; use `bigclawctl create-issues`",
 		"root dev smoke path is Go-only: use `bigclawctl dev-smoke`",
 		"retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`",
@@ -70,5 +73,37 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		if !strings.Contains(readme, needle) {
 			t.Fatalf("README.md missing active root script replacement guidance %q", needle)
 		}
+	}
+}
+
+func TestRootScriptResidualSweepRepoWidePythonCountZero(t *testing.T) {
+	repoRoot := regressionRepoRoot(t)
+
+	var pythonFiles []string
+	err := filepath.WalkDir(repoRoot, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case ".git":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasSuffix(d.Name(), ".py") {
+			relativePath, relErr := filepath.Rel(repoRoot, path)
+			if relErr != nil {
+				return relErr
+			}
+			pythonFiles = append(pythonFiles, filepath.ToSlash(relativePath))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk repo for python files: %v", err)
+	}
+	if len(pythonFiles) != 0 {
+		t.Fatalf("expected repo-wide Python file count to remain zero, found %d: %v", len(pythonFiles), pythonFiles)
 	}
 }
