@@ -262,6 +262,26 @@ type CollaborationThread struct {
 	Decisions []DecisionNote         `json:"decisions,omitempty"`
 }
 
+type TriageFeedbackRecord struct {
+	RunID     string `json:"run_id"`
+	Action    string `json:"action"`
+	Decision  string `json:"decision"`
+	Actor     string `json:"actor"`
+	Notes     string `json:"notes,omitempty"`
+	Timestamp string `json:"timestamp"`
+}
+
+func NewTriageFeedbackRecord(runID, action, decision, actor, notes string) TriageFeedbackRecord {
+	return TriageFeedbackRecord{
+		RunID:     runID,
+		Action:    action,
+		Decision:  decision,
+		Actor:     actor,
+		Notes:     notes,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}
+}
+
 type SharedViewContext struct {
 	Filters       []SharedViewFilter   `json:"filters,omitempty"`
 	ResultCount   *int                 `json:"result_count,omitempty"`

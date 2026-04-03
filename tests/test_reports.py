@@ -1500,15 +1500,6 @@ def test_build_billing_entitlements_page_from_ledger_extracts_upgrade_signals():
     assert page.charges[1].handoff_team == "operations"
 
 
-def test_triage_feedback_record_uses_timezone_aware_utc_timestamp():
-    record = TriageFeedbackRecord(run_id="run-1", action="classify", decision="accepted", actor="ops")
-
-    assert record.timestamp.endswith("Z")
-    parsed = __import__("datetime").datetime.fromisoformat(record.timestamp.replace("Z", "+00:00"))
-    assert parsed.tzinfo is not None
-    assert parsed.utcoffset().total_seconds() == 0
-
-
 def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Path) -> None:
     ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
     task = Task(

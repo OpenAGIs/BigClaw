@@ -542,6 +542,20 @@ func TestRenderSharedViewContextIncludesCollaborationAnnotations(t *testing.T) {
 	}
 }
 
+func TestTriageFeedbackRecordUsesTimezoneAwareUTCTimestamp(t *testing.T) {
+	record := NewTriageFeedbackRecord("run-1", "classify", "accepted", "ops", "")
+	if !strings.HasSuffix(record.Timestamp, "Z") {
+		t.Fatalf("expected UTC timestamp suffix, got %q", record.Timestamp)
+	}
+	parsed, err := time.Parse(time.RFC3339, record.Timestamp)
+	if err != nil {
+		t.Fatalf("parse timestamp: %v", err)
+	}
+	if parsed.UTC() != parsed {
+		t.Fatalf("expected UTC timestamp, got %v", parsed)
+	}
+}
+
 func TestRenderPolicyPromptVersionCenterShowsSharedViewContext(t *testing.T) {
 	resultCount := 1
 	view := &SharedViewContext{
