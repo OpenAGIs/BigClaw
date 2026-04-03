@@ -163,11 +163,11 @@ Historical initial state:
 ### BIG-GOM-303 Workflow orchestration and scheduler loop migration
 
 Python source:
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- removed `src/bigclaw/runtime.py`
+- removed `src/bigclaw/scheduler.py`
+- removed `src/bigclaw/orchestration.py`
+- removed `src/bigclaw/workflow.py`
+- removed `src/bigclaw/queue.py`
 
 Go ownership:
 - `bigclaw-go/internal/scheduler/scheduler.go`
@@ -183,6 +183,10 @@ Acceptance focus:
 Dependencies:
 - depends on `BIG-GOM-301`
 - depends on `BIG-GOM-302`
+
+Current repo progress:
+- `bigclaw-go/internal/worker/runtime.go`, `bigclaw-go/internal/scheduler/scheduler.go`, `bigclaw-go/internal/orchestrator/loop.go`, `bigclaw-go/internal/workflow/*`, and `bigclaw-go/internal/queue/*` now own the active execution path
+- the historical Python execution-kernel modules are no longer present in the repository tree and are guarded by top-level purge regression coverage
 
 Milestone:
 - `Control/Workflow Surface Migration`
@@ -222,10 +226,10 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/repo_triage.py`
-- `src/bigclaw/run_detail.py`
+- removed `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
-- `src/bigclaw/saved_views.py`
+- removed `src/bigclaw/saved_views.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/server.go`
@@ -239,6 +243,10 @@ Acceptance focus:
 Dependencies:
 - depends on `BIG-GOM-303`
 - depends on `BIG-GOM-304`
+
+Current repo progress:
+- `src/bigclaw/run_detail.py`, `src/bigclaw/dashboard_run_contract.py`, and `src/bigclaw/saved_views.py` have already been removed from the repo tree
+- `bigclaw-go/internal/product/dashboard_run_contract.go`, `bigclaw-go/internal/product/saved_views.go`, `bigclaw-go/internal/product/console.go`, and `bigclaw-go/internal/triage/*` hold the Go-owned surface area
 
 Milestone:
 - `Governance/Reporting Surface Migration`
@@ -322,7 +330,7 @@ Historical initial state:
 ### BIG-GOM-308 Python deprecation and Go-only mainline switch
 
 Python source:
-- `src/bigclaw/service.py`
+- removed `src/bigclaw/service.py`
 - `src/bigclaw/__main__.py`
 - any remaining active Python entrypoints not covered by earlier slices
 
@@ -335,6 +343,10 @@ Acceptance focus:
 - remove Python from the default developer and runtime path
 - leave legacy markers or archival notes where Python code is intentionally retained
 - finish cutover validation and release-readiness evidence
+
+Current repo progress:
+- `src/bigclaw/service.py` has already been removed from the repo tree, while `src/bigclaw/__main__.py` remains the compatibility entrypoint covered by the Go-first legacy shim path
+- `bigclaw-go/internal/service/server.go` and `bigclaw-go/cmd/bigclawd/main.go` own the active service mainline
 
 Dependencies:
 - depends on `BIG-GOM-301` through `BIG-GOM-307`
@@ -407,11 +419,11 @@ Historical planned state:
 ### 2. Port the workflow, scheduler, runtime, and orchestration loop to Go
 
 Python source:
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- removed `src/bigclaw/runtime.py`
+- removed `src/bigclaw/scheduler.py`
+- removed `src/bigclaw/orchestration.py`
+- removed `src/bigclaw/workflow.py`
+- removed `src/bigclaw/queue.py`
 
 Go ownership:
 - `bigclaw-go/internal/worker/runtime.go`
@@ -430,8 +442,8 @@ Python source:
 - `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
-- `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
+- removed `src/bigclaw/run_detail.py`
+- removed `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/planning.py`
 
 Go ownership:
@@ -475,15 +487,17 @@ Historical planned state:
 Python source:
 - `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
-- `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
-- remaining operator-facing parts of `src/bigclaw/service.py`
+- removed `src/bigclaw/saved_views.py`
+- removed `src/bigclaw/ui_review.py`
+- removed `src/bigclaw/service.py`
 
 Go ownership:
 - `bigclaw-go/internal/product/console.go`
 - `bigclaw-go/internal/api/v2.go`
 - `bigclaw-go/internal/api/server.go`
-- optional new `bigclaw-go/internal/product/views.go`
+- `bigclaw-go/internal/product/saved_views.go`
+- `bigclaw-go/internal/uireview/uireview.go`
+- `bigclaw-go/internal/service/server.go`
 
 Historical planned state:
 - `Backlog`
@@ -493,10 +507,10 @@ Historical planned state:
 Python source:
 - `src/bigclaw/github_sync.py`
 - `src/bigclaw/parallel_refill.py`
-- `src/bigclaw/workspace_bootstrap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `src/bigclaw/workspace_bootstrap_validation.py`
-- `src/bigclaw/service.py`
+- removed `src/bigclaw/workspace_bootstrap.py`
+- removed `src/bigclaw/workspace_bootstrap_cli.py`
+- removed `src/bigclaw/workspace_bootstrap_validation.py`
+- removed `src/bigclaw/service.py`
 - `src/bigclaw/__main__.py`
 
 Go ownership:
