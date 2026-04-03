@@ -18,9 +18,11 @@
 
 - [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenter(BatchTakeoverAuditAndRollback|AuditFiltersOwnerReviewerAndScope|AuditIncludesCheckpointResetSummary)'` -> `ok  	bigclaw-go/internal/api	1.401s`
 - [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenter(ActionsAndRunDetail|AuthorizationEnforcedByRole|AuditFiltersOwnerReviewerAndScope|AuditIncludesCheckpointResetSummary|BatchTakeoverAuditAndRollback)'` -> `ok  	bigclaw-go/internal/api	0.601s`
+- [x] `cd bigclaw-go && go test ./internal/api` -> `ok  	bigclaw-go/internal/api	4.738s`
 
 ### Notes
 
 - Keep the implementation scoped to the Go control-center API and its tests.
 - Record exact validation commands and outcomes in the final closeout.
 - Batch support is intentionally constrained to collaboration actions so queue/system control semantics stay unchanged in this issue slice.
+- `git push -u origin bigclaw-186` succeeded; automatic PR creation remains blocked in this environment because `gh` is installed but not authenticated.
