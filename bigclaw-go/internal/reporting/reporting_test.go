@@ -63,6 +63,68 @@ func TestBuildWeeklyReportRendersExpandedMarkdown(t *testing.T) {
 	}
 }
 
+func TestRenderPilotPortfolioReportSummarizesCommercialReadiness(t *testing.T) {
+	benchmarkA := 97
+	benchmarkB := 88
+	passed := true
+	portfolio := PilotPortfolio{
+		Name:   "Design Partners",
+		Period: "2026-H1",
+		Scorecards: []PilotScorecard{
+			{
+				IssueID:  "OPE-60",
+				Customer: "Partner A",
+				Period:   "2026-Q2",
+				Metrics: []PilotMetric{
+					{Name: "Coverage", Baseline: 40, Current: 85, Target: 80, Unit: "%", HigherIsBetter: true},
+				},
+				MonthlyBenefit:     15000,
+				MonthlyCost:        3000,
+				ImplementationCost: 18000,
+				BenchmarkScore:     &benchmarkA,
+				BenchmarkPassed:    &passed,
+			},
+			{
+				IssueID:  "OPE-61",
+				Customer: "Partner B",
+				Period:   "2026-Q2",
+				Metrics: []PilotMetric{
+					{Name: "Cycle time", Baseline: 12, Current: 7, Target: 5, Unit: "h", HigherIsBetter: false},
+				},
+				MonthlyBenefit:     9000,
+				MonthlyCost:        2500,
+				ImplementationCost: 12000,
+				BenchmarkScore:     &benchmarkB,
+				BenchmarkPassed:    &passed,
+			},
+		},
+	}
+
+	content := RenderPilotPortfolioReport(portfolio)
+
+	if portfolio.TotalMonthlyNetValue() != 18500 {
+		t.Fatalf("unexpected monthly net value: %+v", portfolio)
+	}
+	if portfolio.AverageROI() != 195.2 {
+		t.Fatalf("unexpected average ROI: %+v", portfolio)
+	}
+	if !reflect.DeepEqual(portfolio.RecommendationCounts(), map[string]int{"go": 1, "iterate": 1, "hold": 0}) {
+		t.Fatalf("unexpected recommendation counts: %+v", portfolio.RecommendationCounts())
+	}
+	if portfolio.Recommendation() != "continue" {
+		t.Fatalf("unexpected portfolio recommendation: %s", portfolio.Recommendation())
+	}
+	for _, fragment := range []string{
+		"Recommendation Mix: go=1 iterate=1 hold=0",
+		"Partner A: recommendation=go",
+		"Partner B: recommendation=iterate",
+	} {
+		if !strings.Contains(content, fragment) {
+			t.Fatalf("expected %q in pilot portfolio report, got %s", fragment, content)
+		}
+	}
+}
+
 func TestWriteReportWritesContentToDisk(t *testing.T) {
 	output := filepath.Join(t.TempDir(), "report.md")
 	content := RenderIssueValidationReport("BIG-101", "v0.1", "sandbox", "pass")

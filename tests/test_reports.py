@@ -667,47 +667,6 @@ def test_issue_closure_allows_when_linked_launch_checklist_is_ready(tmp_path: Pa
     assert decision.reason == "validation report and launch checklist requirements satisfied; issue can be closed"
 
 
-def test_render_pilot_portfolio_report_summarizes_commercial_readiness():
-    portfolio = PilotPortfolio(
-        name="Design Partners",
-        period="2026-H1",
-        scorecards=[
-            PilotScorecard(
-                issue_id="OPE-60",
-                customer="Partner A",
-                period="2026-Q2",
-                metrics=[PilotMetric(name="Coverage", baseline=40, current=85, target=80, unit="%")],
-                monthly_benefit=15000,
-                monthly_cost=3000,
-                implementation_cost=18000,
-                benchmark_score=97,
-                benchmark_passed=True,
-            ),
-            PilotScorecard(
-                issue_id="OPE-61",
-                customer="Partner B",
-                period="2026-Q2",
-                metrics=[PilotMetric(name="Cycle time", baseline=12, current=7, target=5, unit="h", higher_is_better=False)],
-                monthly_benefit=9000,
-                monthly_cost=2500,
-                implementation_cost=12000,
-                benchmark_score=88,
-                benchmark_passed=True,
-            ),
-        ],
-    )
-
-    content = render_pilot_portfolio_report(portfolio)
-
-    assert portfolio.total_monthly_net_value == 18500
-    assert portfolio.average_roi == 195.2
-    assert portfolio.recommendation_counts == {"go": 1, "iterate": 1, "hold": 0}
-    assert portfolio.recommendation == "continue"
-    assert "Recommendation Mix: go=1 iterate=1 hold=0" in content
-    assert "Partner A: recommendation=go" in content
-    assert "Partner B: recommendation=iterate" in content
-
-
 def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Path) -> None:
     ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
     task = Task(

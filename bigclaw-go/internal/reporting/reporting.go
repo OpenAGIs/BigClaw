@@ -27,6 +27,128 @@ type Summary struct {
 	PremiumRuns        int   `json:"premium_runs"`
 }
 
+type PilotMetric struct {
+	Name           string  `json:"name"`
+	Baseline       float64 `json:"baseline"`
+	Current        float64 `json:"current"`
+	Target         float64 `json:"target"`
+	Unit           string  `json:"unit,omitempty"`
+	HigherIsBetter bool    `json:"higher_is_better"`
+}
+
+func (m PilotMetric) Delta() float64 {
+	return m.Current - m.Baseline
+}
+
+func (m PilotMetric) MetTarget() bool {
+	if m.HigherIsBetter {
+		return m.Current >= m.Target
+	}
+	return m.Current <= m.Target
+}
+
+type PilotScorecard struct {
+	IssueID            string        `json:"issue_id"`
+	Customer           string        `json:"customer"`
+	Period             string        `json:"period"`
+	Metrics            []PilotMetric `json:"metrics,omitempty"`
+	MonthlyBenefit     float64       `json:"monthly_benefit"`
+	MonthlyCost        float64       `json:"monthly_cost"`
+	ImplementationCost float64       `json:"implementation_cost"`
+	BenchmarkScore     *int          `json:"benchmark_score,omitempty"`
+	BenchmarkPassed    *bool         `json:"benchmark_passed,omitempty"`
+}
+
+func (s PilotScorecard) MonthlyNetValue() float64 {
+	return s.MonthlyBenefit - s.MonthlyCost
+}
+
+func (s PilotScorecard) AnnualizedROI() float64 {
+	totalCost := s.ImplementationCost + (s.MonthlyCost * 12)
+	if totalCost <= 0 {
+		return 0
+	}
+	annualGain := (s.MonthlyBenefit * 12) - totalCost
+	return (annualGain / totalCost) * 100
+}
+
+func (s PilotScorecard) PaybackMonths() *float64 {
+	if s.MonthlyNetValue() <= 0 {
+		return nil
+	}
+	if s.ImplementationCost <= 0 {
+		zero := 0.0
+		return &zero
+	}
+	value := math.Round((s.ImplementationCost/s.MonthlyNetValue())*10) / 10
+	return &value
+}
+
+func (s PilotScorecard) MetricsMet() int {
+	total := 0
+	for _, metric := range s.Metrics {
+		if metric.MetTarget() {
+			total++
+		}
+	}
+	return total
+}
+
+func (s PilotScorecard) Recommendation() string {
+	benchmarkOK := s.BenchmarkPassed == nil || *s.BenchmarkPassed
+	if len(s.Metrics) > 0 && s.MetricsMet() == len(s.Metrics) && s.AnnualizedROI() > 0 && benchmarkOK {
+		return "go"
+	}
+	if s.AnnualizedROI() > 0 || s.MetricsMet() > 0 {
+		return "iterate"
+	}
+	return "hold"
+}
+
+type PilotPortfolio struct {
+	Name       string           `json:"name"`
+	Period     string           `json:"period"`
+	Scorecards []PilotScorecard `json:"scorecards,omitempty"`
+}
+
+func (p PilotPortfolio) TotalMonthlyNetValue() float64 {
+	total := 0.0
+	for _, scorecard := range p.Scorecards {
+		total += scorecard.MonthlyNetValue()
+	}
+	return total
+}
+
+func (p PilotPortfolio) AverageROI() float64 {
+	if len(p.Scorecards) == 0 {
+		return 0
+	}
+	total := 0.0
+	for _, scorecard := range p.Scorecards {
+		total += scorecard.AnnualizedROI()
+	}
+	return math.Round((total/float64(len(p.Scorecards)))*10) / 10
+}
+
+func (p PilotPortfolio) RecommendationCounts() map[string]int {
+	counts := map[string]int{"go": 0, "iterate": 0, "hold": 0}
+	for _, scorecard := range p.Scorecards {
+		counts[scorecard.Recommendation()]++
+	}
+	return counts
+}
+
+func (p PilotPortfolio) Recommendation() string {
+	counts := p.RecommendationCounts()
+	if len(p.Scorecards) > 0 && counts["go"] == len(p.Scorecards) {
+		return "scale"
+	}
+	if counts["go"] > 0 || counts["iterate"] > 0 {
+		return "continue"
+	}
+	return "stop"
+}
+
 type TeamBreakdown struct {
 	Key                string `json:"key"`
 	TotalRuns          int    `json:"total_runs"`
@@ -1832,6 +1954,32 @@ func RenderAutoTriageCenterReport(center AutoTriageCenter, totalRuns *int, view 
 			}
 			builder.WriteString(fmt.Sprintf("- %s: severity=%s owner=%s status=%s summary=%s suggestions=%s similar=%s\n", item.RunID, item.Severity, item.Owner, item.Status, item.Summary, suggestionSummary, evidenceSummary))
 		}
+	}
+	return builder.String() + "\n"
+}
+
+func RenderPilotPortfolioReport(portfolio PilotPortfolio) string {
+	counts := portfolio.RecommendationCounts()
+	builder := strings.Builder{}
+	builder.WriteString("# Pilot Portfolio Report\n\n")
+	builder.WriteString(fmt.Sprintf("- Portfolio: %s\n", portfolio.Name))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", portfolio.Period))
+	builder.WriteString(fmt.Sprintf("- Scorecards: %d\n", len(portfolio.Scorecards)))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n", portfolio.Recommendation()))
+	builder.WriteString(fmt.Sprintf("- Total Monthly Net Value: %.2f\n", portfolio.TotalMonthlyNetValue()))
+	builder.WriteString(fmt.Sprintf("- Average ROI: %.1f%%\n", portfolio.AverageROI()))
+	builder.WriteString(fmt.Sprintf("- Recommendation Mix: go=%d iterate=%d hold=%d\n\n", counts["go"], counts["iterate"], counts["hold"]))
+	builder.WriteString("## Customers\n\n")
+	if len(portfolio.Scorecards) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String() + "\n"
+	}
+	for _, scorecard := range portfolio.Scorecards {
+		benchmark := "n/a"
+		if scorecard.BenchmarkScore != nil {
+			benchmark = strconv.Itoa(*scorecard.BenchmarkScore)
+		}
+		builder.WriteString(fmt.Sprintf("- %s: recommendation=%s roi=%.1f%% monthly-net=%.2f benchmark=%s\n", scorecard.Customer, scorecard.Recommendation(), scorecard.AnnualizedROI(), scorecard.MonthlyNetValue(), benchmark))
 	}
 	return builder.String() + "\n"
 }
