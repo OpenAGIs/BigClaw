@@ -39,5 +39,3 @@
   - no output
 - `git status --short`
   - ` M docs/BigClaw-AgentHub-Integration-Alignment.md`
-  - ` D tests/test_ui_review.py`
-  - `?? bigclaw-go/internal/uireview/`
