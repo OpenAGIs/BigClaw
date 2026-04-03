@@ -42,7 +42,6 @@ func TestRepoPythonInventoryStaysOnPackageOnlySurface(t *testing.T) {
 	sort.Strings(got)
 	want := []string{
 		"src/bigclaw/__init__.py",
-		"src/bigclaw/evaluation.py",
 		"src/bigclaw/models.py",
 		"src/bigclaw/observability.py",
 		"src/bigclaw/operations.py",

@@ -252,6 +252,11 @@ _run_detail_module.__dict__["GO_MAINLINE_REPLACEMENT"] = "bigclaw-go/internal/ap
 sys.modules[_run_detail_module.__name__] = _run_detail_module
 globals()["run_detail"] = _run_detail_module
 from .operations import (
+    BenchmarkCase,
+    BenchmarkComparison,
+    BenchmarkResult,
+    BenchmarkRunner,
+    BenchmarkSuiteResult,
     DashboardBuilder,
     DashboardBuilderAudit,
     DashboardLayout,
@@ -269,40 +274,52 @@ from .operations import (
     OperationsMetricValue,
     OperationsSnapshot,
     PolicyPromptVersionCenter,
+    EvaluationCriterion,
     RegressionFinding,
     RegressionCenter,
     TriageCluster,
     QueueControlCenter,
+    ReplayOutcome,
+    ReplayRecord,
     VersionChangeSummary,
     VersionedArtifact,
     VersionedArtifactHistory,
     WeeklyOperationsArtifacts,
     WeeklyOperationsReport,
+    render_benchmark_suite_report,
     render_dashboard_builder_report,
     render_engineering_overview,
     render_operations_metric_spec,
     render_operations_dashboard,
     render_policy_prompt_version_center,
     render_queue_control_center,
+    render_replay_detail_page,
     render_regression_center,
+    render_run_replay_index_page,
     render_weekly_operations_report,
     write_dashboard_builder_bundle,
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from .evaluation import (
-    BenchmarkCase,
-    BenchmarkComparison,
-    BenchmarkResult,
-    BenchmarkRunner,
-    BenchmarkSuiteResult,
-    EvaluationCriterion,
-    ReplayOutcome,
-    ReplayRecord,
-    render_run_replay_index_page,
-    render_replay_detail_page,
-    render_benchmark_suite_report,
-)
+_evaluation_module = types.ModuleType(f"{__name__}.evaluation")
+for _export_name in [
+    "BenchmarkCase",
+    "BenchmarkComparison",
+    "BenchmarkResult",
+    "BenchmarkRunner",
+    "BenchmarkSuiteResult",
+    "EvaluationCriterion",
+    "ReplayOutcome",
+    "ReplayRecord",
+    "render_benchmark_suite_report",
+    "render_replay_detail_page",
+    "render_run_replay_index_page",
+]:
+    _evaluation_module.__dict__[_export_name] = globals()[_export_name]
+_evaluation_module.__dict__["LEGACY_MAINLINE_STATUS"] = _legacy_runtime_surface.LEGACY_MAINLINE_STATUS
+_evaluation_module.__dict__["GO_MAINLINE_REPLACEMENT"] = "bigclaw-go/internal/regression/python_inventory_evaluation_cutover_test.go"
+sys.modules[_evaluation_module.__name__] = _evaluation_module
+globals()["evaluation"] = _evaluation_module
 __all__ = [
     "Task",
     "TaskState",
