@@ -1,27 +1,21 @@
-## Codex Workpad
+# BIG-GO-1165 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+- Inventory the issue candidate Python files and map each one to an existing Go command, Go package surface, or a new Go compatibility entrypoint that can replace it.
+- Retire a large sweep of real Python assets in scope by deleting migrated Python files and updating regression coverage so the repo tracks the new Go-only surface.
+- Validate the Go replacement and compatibility path with targeted `go test` runs plus repo-level residual checks, then commit and push the lane branch.
 
-### Plan
+## Acceptance
+- The issue candidate set is covered by this sweep, with real Python files retired from the repository rather than left as wrappers.
+- Each retired Python entrypoint has a verified Go replacement or an updated regression/compatibility surface proving the repo-native Go path.
+- `find . -name '*.py' | wc -l` decreases compared with the pre-change baseline of `138`.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Validation
+- `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test ./...`
+- Additional targeted `go test` commands for any new or modified command/regression packages touched by this sweep.
+- `git status --short`
 
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Results
+- `find . -name '*.py' | wc -l` -> `123` after the sweep, down from the pre-change baseline of `138`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.490s`

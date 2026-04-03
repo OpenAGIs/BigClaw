@@ -30,32 +30,25 @@
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/run_matrix.py \
-  --scenario 50:8 \
-  --scenario 100:12 \
-  --report-path docs/reports/benchmark-matrix-report.json
+go test -bench . ./internal/queue ./internal/scheduler
 ```
+
+Use the checked-in matrix at `docs/reports/benchmark-matrix-report.json` for the
+repo-native benchmark slice documented by this plan.
 
 
 ## Long-duration soak helper
 
 ```bash
-cd bigclaw-go
-python3 scripts/benchmark/soak_local.py \
-  --autostart \
-  --count 2000 \
-  --workers 24 \
-  --timeout-seconds 480 \
-  --report-path docs/reports/soak-local-2000x24.json
+cat bigclaw-go/docs/reports/soak-local-2000x24.json
 ```
+
+The active evidence path is the checked-in soak corpus under `docs/reports/`.
 
 ## Capacity certification helper
 
 ```bash
-cd bigclaw-go
-python3 scripts/benchmark/capacity_certification.py \
-  --output docs/reports/capacity-certification-matrix.json \
-  --markdown-output docs/reports/capacity-certification-report.md
+cat bigclaw-go/docs/reports/capacity-certification-matrix.json
 ```
 
 This helper converts the checked-in benchmark, soak, and mixed-workload artifacts into

@@ -107,10 +107,12 @@ bash ../scripts/ops/bigclawctl github-sync status --json
 
 ## Legacy Python smoke verify
 
-Use this only when validating a frozen migration-reference path:
+The legacy Python smoke shim has been retired. Use the Go-native path:
 
 ```bash
-PYTHONPATH=src python3 scripts/dev_smoke.py
+cd BigClaw/bigclaw-go
+go test ./...
+go run ./cmd/bigclawd
 ```
 
 ## Quality gates

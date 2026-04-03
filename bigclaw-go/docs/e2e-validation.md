@@ -88,24 +88,16 @@ For workflow behavior, prefer `BIGCLAW_E2E_CONTINUATION_GATE_MODE`:
 ## Mixed workload matrix
 
 ```bash
-cd bigclaw-go
-export KUBECONFIG=/Users/jxrt/.kube/ray-local-config
-export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
-export BIGCLAW_KUBERNETES_NAMESPACE=ray
-export BIGCLAW_KUBERNETES_IMAGE=alpine:3.20
-export BIGCLAW_QUEUE_BACKEND=sqlite
-python3 scripts/e2e/mixed_workload_matrix.py \
-  --report-path docs/reports/mixed-workload-matrix-report.json
+cat bigclaw-go/docs/reports/mixed-workload-matrix-report.json
 ```
 
-This validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.
+This checked-in artifact validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.
 
 ## External-store remote event-log validation lane
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/external_store_validation.py \
-  --report-path docs/reports/external-store-validation-report.json
+go test ./internal/regression -run TestExternalStoreValidationReportStaysAligned -count=1
 ```
 
 This lane starts one repo-native SQLite-backed event-log service node plus two client `bigclawd` nodes configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`. It validates that replay, checkpoint reset history, persisted retention boundaries, and lease-backed takeover behavior remain reviewable when the event log moves behind a remote HTTP service boundary.
@@ -141,7 +133,7 @@ Use this deterministic local harness to exercise the same scenario ids without a
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/broker_failover_stub_matrix.py --pretty
+go test ./internal/regression -run TestBrokerValidationSummaryStaysAligned -count=1
 ```
 
 This refreshes `docs/reports/broker-failover-stub-report.json` plus per-scenario raw artifacts under `docs/reports/broker-failover-stub-artifacts/`. The stub backend is provider-neutral and deterministic, so sequence accounting, replay resume behavior, ambiguous publish resolution, and checkpoint fencing can be validated before a live Kafka / NATS / Redis adapter exists.
@@ -176,7 +168,7 @@ Use this to regenerate the machine-readable coordination surface that ties toget
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/cross_process_coordination_surface.py --pretty
+go test ./internal/regression -run TestCrossProcessCoordinationReadinessDocsStayAligned -count=1
 ```
 
 This refreshes `docs/reports/cross-process-coordination-capability-surface.json` with the current live local proof metrics, takeover harness summary, capability-by-capability state, and the next runtime hooks for a real distributed coordination proof.
