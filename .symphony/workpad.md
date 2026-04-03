@@ -1,27 +1,34 @@
-# BIG-GO-1133
+# BIG-GO-1141
 
 ## Plan
-- confirm the lane-owned candidate root script paths from the issue against the actual worktree
-- record the repo's pre-change zero-`.py` baseline so the acceptance limitation is explicit before implementation
-- add scoped regression coverage for the retired Python script paths still named by this lane:
-- `scripts/create_issues.py`
-- `scripts/dev_smoke.py`
-- `scripts/ops/bigclaw_github_sync.py`
-- `scripts/ops/bigclaw_refill_queue.py`
-- `scripts/ops/bigclaw_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `scripts/ops/symphony_workspace_validate.py`
-- verify each retired path still has a live Go-backed replacement or compatibility wrapper in the repo
-- run targeted validation for the Python-file count baseline, the new regression tranche, and the active Go replacement entrypoints
+- confirm the `src/bigclaw` lane candidate paths named by this issue against the actual worktree and record the pre-change Python baseline
+- update stale repo guidance that still implies a live `src/bigclaw` tree exists, so the repo narrative matches the current Go-only materialized state
+- add one scoped regression tranche for issue-owned candidate paths that are already absent from disk but not yet explicitly enforced in `bigclaw-go/internal/regression`
+- verify the tranche against live Go ownership files for the retired lane
+- run targeted validation and record exact commands plus outcomes
 - commit and push the scoped change set
 
 ## Acceptance
-- the lane candidate root script paths are explicitly covered and remain absent from disk
-- Go replacements or compatibility wrappers are asserted for the lane:
-- `bigclaw-go/cmd/bigclawctl/main.go`
-- `scripts/ops/bigclawctl`
-- `scripts/ops/bigclaw-symphony`
-- `scripts/dev_bootstrap.sh`
+- `BIG-GO-1141` candidate paths covered by the new tranche remain absent from disk:
+- `src/bigclaw/__init__.py`
+- `src/bigclaw/__main__.py`
+- `src/bigclaw/audit_events.py`
+- `src/bigclaw/collaboration.py`
+- `src/bigclaw/console_ia.py`
+- `src/bigclaw/design_system.py`
+- `src/bigclaw/evaluation.py`
+- `src/bigclaw/run_detail.py`
+- `src/bigclaw/runtime.py`
+- the repo docs stop claiming `src/bigclaw` is still an active included tree
+- live Go replacement surfaces are asserted for the lane:
+- `bigclaw-go/cmd/bigclawd/main.go`
+- `bigclaw-go/internal/observability/audit_spec.go`
+- `bigclaw-go/internal/collaboration/thread.go`
+- `bigclaw-go/internal/consoleia/consoleia.go`
+- `bigclaw-go/internal/designsystem/designsystem.go`
+- `bigclaw-go/internal/evaluation/evaluation.go`
+- `bigclaw-go/internal/worker/runtime.go`
+- `bigclaw-go/internal/api/server.go`
 - the repository remains at zero live `.py` files in the worktree
 - exact validation commands and outcomes are recorded below
 - residual risk explicitly notes that the issue goal of lowering the Python-file count further is blocked by the pre-change zero baseline in this workspace
@@ -29,31 +36,25 @@
 ## Validation
 - `find . -name '*.py' | wc -l`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'`
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16`
-- `bash scripts/ops/bigclawctl create-issues --help`
-- `bash scripts/ops/bigclawctl dev-smoke --help`
-- `bash scripts/ops/bigclawctl github-sync --help`
-- `bash scripts/ops/bigclawctl refill --help`
-- `bash scripts/ops/bigclawctl workspace validate --help`
-- `bash scripts/ops/bigclaw-symphony --help`
-- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17`
+- `cd bigclaw-go && go test ./internal/regression`
+- `rg -n --fixed-strings 'pending staged migration to Go' README.md workflow.md`
+- `rg -n --fixed-strings 'this repo currently carries no live \`src/bigclaw\` tree' workflow.md`
+- `rg -n --fixed-strings 'retired \`src/bigclaw\` Python foundations' README.md`
 - `git status --short`
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16` -> `ok  	bigclaw-go/internal/regression	0.442s`
-- `bash scripts/ops/bigclawctl create-issues --help` -> exit `0`; printed `usage: bigclawctl create-issues [flags]`
-- `bash scripts/ops/bigclawctl dev-smoke --help` -> exit `0`; printed `usage: bigclawctl dev-smoke [flags]`
-- `bash scripts/ops/bigclawctl github-sync --help` -> exit `0`; printed `usage: bigclawctl github-sync <install|status|sync> [flags]`
-- `bash scripts/ops/bigclawctl refill --help` -> exit `0`; printed `usage: bigclawctl refill [flags]` and `bigclawctl refill seed [flags]`
-- `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]`
-- `bash scripts/ops/bigclaw-symphony --help` -> exit `0`; printed `usage: bigclawctl symphony [flags] [args...]`
-- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
-- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17` -> `ok  	bigclaw-go/internal/regression	0.682s`
+- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.508s`
+- `rg -n --fixed-strings 'pending staged migration to Go' README.md workflow.md` -> exit `1` with no stale pending-migration claim in the touched docs
+- `rg -n --fixed-strings 'this repo currently carries no live \`src/bigclaw\` tree' workflow.md` -> exit `0`; matched `workflow.md:73`
+- `rg -n --fixed-strings 'retired \`src/bigclaw\` Python foundations' README.md` -> exit `0`; matched `README.md:18`
+- `git status --short` -> modified `.symphony/workpad.md`, `README.md`, `workflow.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go`
 
 ## Residual Risk
-- the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
+- the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement and retire stale narrative residue; it cannot make the Python file count numerically lower from the current baseline
 
 ## Archived Workpads
 ### BIG-GO-1115
