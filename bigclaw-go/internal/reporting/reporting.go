@@ -149,6 +149,152 @@ func (p PilotPortfolio) Recommendation() string {
 	return "stop"
 }
 
+type IssueClosureDecision struct {
+	IssueID    string `json:"issue_id"`
+	Allowed    bool   `json:"allowed"`
+	Reason     string `json:"reason"`
+	ReportPath string `json:"report_path,omitempty"`
+}
+
+type DocumentationArtifact struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+}
+
+func (a DocumentationArtifact) Available() bool {
+	return ValidationReportExists(a.Path)
+}
+
+type LaunchChecklistItem struct {
+	Name     string   `json:"name"`
+	Evidence []string `json:"evidence,omitempty"`
+}
+
+type LaunchChecklist struct {
+	IssueID       string                  `json:"issue_id"`
+	Documentation []DocumentationArtifact `json:"documentation,omitempty"`
+	Items         []LaunchChecklistItem   `json:"items,omitempty"`
+}
+
+func (c LaunchChecklist) DocumentationStatus() map[string]bool {
+	status := make(map[string]bool, len(c.Documentation))
+	for _, artifact := range c.Documentation {
+		status[artifact.Name] = artifact.Available()
+	}
+	return status
+}
+
+func (c LaunchChecklist) ItemCompleted(item LaunchChecklistItem) bool {
+	status := c.DocumentationStatus()
+	if len(item.Evidence) == 0 {
+		return true
+	}
+	for _, name := range item.Evidence {
+		if !status[name] {
+			return false
+		}
+	}
+	return true
+}
+
+func (c LaunchChecklist) CompletedItems() int {
+	total := 0
+	for _, item := range c.Items {
+		if c.ItemCompleted(item) {
+			total++
+		}
+	}
+	return total
+}
+
+func (c LaunchChecklist) MissingDocumentation() []string {
+	missing := []string{}
+	for _, artifact := range c.Documentation {
+		if !artifact.Available() {
+			missing = append(missing, artifact.Name)
+		}
+	}
+	return missing
+}
+
+func (c LaunchChecklist) Ready() bool {
+	if len(c.MissingDocumentation()) > 0 {
+		return false
+	}
+	for _, item := range c.Items {
+		if !c.ItemCompleted(item) {
+			return false
+		}
+	}
+	return true
+}
+
+type FinalDeliveryChecklist struct {
+	IssueID                  string                  `json:"issue_id"`
+	RequiredOutputs          []DocumentationArtifact `json:"required_outputs,omitempty"`
+	RecommendedDocumentation []DocumentationArtifact `json:"recommended_documentation,omitempty"`
+}
+
+func (c FinalDeliveryChecklist) RequiredOutputStatus() map[string]bool {
+	status := make(map[string]bool, len(c.RequiredOutputs))
+	for _, artifact := range c.RequiredOutputs {
+		status[artifact.Name] = artifact.Available()
+	}
+	return status
+}
+
+func (c FinalDeliveryChecklist) RecommendedDocumentationStatus() map[string]bool {
+	status := make(map[string]bool, len(c.RecommendedDocumentation))
+	for _, artifact := range c.RecommendedDocumentation {
+		status[artifact.Name] = artifact.Available()
+	}
+	return status
+}
+
+func (c FinalDeliveryChecklist) GeneratedRequiredOutputs() int {
+	total := 0
+	for _, artifact := range c.RequiredOutputs {
+		if artifact.Available() {
+			total++
+		}
+	}
+	return total
+}
+
+func (c FinalDeliveryChecklist) GeneratedRecommendedDocumentation() int {
+	total := 0
+	for _, artifact := range c.RecommendedDocumentation {
+		if artifact.Available() {
+			total++
+		}
+	}
+	return total
+}
+
+func (c FinalDeliveryChecklist) MissingRequiredOutputs() []string {
+	missing := []string{}
+	for _, artifact := range c.RequiredOutputs {
+		if !artifact.Available() {
+			missing = append(missing, artifact.Name)
+		}
+	}
+	return missing
+}
+
+func (c FinalDeliveryChecklist) MissingRecommendedDocumentation() []string {
+	missing := []string{}
+	for _, artifact := range c.RecommendedDocumentation {
+		if !artifact.Available() {
+			missing = append(missing, artifact.Name)
+		}
+	}
+	return missing
+}
+
+func (c FinalDeliveryChecklist) Ready() bool {
+	return len(c.MissingRequiredOutputs()) == 0
+}
+
 type TeamBreakdown struct {
 	Key                string `json:"key"`
 	TotalRuns          int    `json:"total_runs"`
@@ -1481,6 +1627,142 @@ func WriteReport(path string, content string) error {
 		return err
 	}
 	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+func BuildLaunchChecklist(issueID string, documentation []DocumentationArtifact, items []LaunchChecklistItem) LaunchChecklist {
+	return LaunchChecklist{
+		IssueID:       issueID,
+		Documentation: documentation,
+		Items:         items,
+	}
+}
+
+func BuildFinalDeliveryChecklist(issueID string, requiredOutputs, recommendedDocumentation []DocumentationArtifact) FinalDeliveryChecklist {
+	return FinalDeliveryChecklist{
+		IssueID:                  issueID,
+		RequiredOutputs:          requiredOutputs,
+		RecommendedDocumentation: recommendedDocumentation,
+	}
+}
+
+func RenderLaunchChecklistReport(checklist LaunchChecklist) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Launch Checklist\n\n")
+	builder.WriteString(fmt.Sprintf("- Issue ID: %s\n", checklist.IssueID))
+	builder.WriteString(fmt.Sprintf("- Linked Documentation: %d\n", len(checklist.Documentation)))
+	builder.WriteString(fmt.Sprintf("- Completed Items: %d/%d\n", checklist.CompletedItems(), len(checklist.Items)))
+	builder.WriteString(fmt.Sprintf("- Ready: %t\n\n", checklist.Ready()))
+	builder.WriteString("## Documentation\n\n")
+	if len(checklist.Documentation) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, artifact := range checklist.Documentation {
+			builder.WriteString(fmt.Sprintf("- %s: available=%t path=%s\n", artifact.Name, artifact.Available(), artifact.Path))
+		}
+	}
+	builder.WriteString("\n## Checklist\n\n")
+	if len(checklist.Items) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, item := range checklist.Items {
+			evidence := "none"
+			if len(item.Evidence) > 0 {
+				evidence = strings.Join(item.Evidence, ", ")
+			}
+			builder.WriteString(fmt.Sprintf("- %s: completed=%t evidence=%s\n", item.Name, checklist.ItemCompleted(item), evidence))
+		}
+	}
+	return builder.String() + "\n"
+}
+
+func RenderFinalDeliveryChecklistReport(checklist FinalDeliveryChecklist) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Final Delivery Checklist\n\n")
+	builder.WriteString(fmt.Sprintf("- Issue ID: %s\n", checklist.IssueID))
+	builder.WriteString(fmt.Sprintf("- Required Outputs Generated: %d/%d\n", checklist.GeneratedRequiredOutputs(), len(checklist.RequiredOutputs)))
+	builder.WriteString(fmt.Sprintf("- Recommended Docs Generated: %d/%d\n", checklist.GeneratedRecommendedDocumentation(), len(checklist.RecommendedDocumentation)))
+	builder.WriteString(fmt.Sprintf("- Ready: %t\n\n", checklist.Ready()))
+	builder.WriteString("## Required Outputs\n\n")
+	if len(checklist.RequiredOutputs) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, artifact := range checklist.RequiredOutputs {
+			builder.WriteString(fmt.Sprintf("- %s: available=%t path=%s\n", artifact.Name, artifact.Available(), artifact.Path))
+		}
+	}
+	builder.WriteString("\n## Recommended Documentation\n\n")
+	if len(checklist.RecommendedDocumentation) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, artifact := range checklist.RecommendedDocumentation {
+			builder.WriteString(fmt.Sprintf("- %s: available=%t path=%s\n", artifact.Name, artifact.Available(), artifact.Path))
+		}
+	}
+	return builder.String() + "\n"
+}
+
+func ValidationReportExists(reportPath string) bool {
+	if strings.TrimSpace(reportPath) == "" {
+		return false
+	}
+	body, err := os.ReadFile(reportPath)
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(body)) != ""
+}
+
+func EvaluateIssueClosure(issueID, reportPath string, validationPassed bool, launchChecklist *LaunchChecklist, finalDeliveryChecklist *FinalDeliveryChecklist) IssueClosureDecision {
+	resolvedPath := ""
+	if strings.TrimSpace(reportPath) != "" {
+		resolvedPath = filepath.Clean(reportPath)
+	}
+	if !ValidationReportExists(reportPath) {
+		return IssueClosureDecision{
+			IssueID:    issueID,
+			Allowed:    false,
+			Reason:     "validation report required before closing issue",
+			ReportPath: resolvedPath,
+		}
+	}
+	if !validationPassed {
+		return IssueClosureDecision{
+			IssueID:    issueID,
+			Allowed:    false,
+			Reason:     "validation failed; issue must remain open",
+			ReportPath: resolvedPath,
+		}
+	}
+	if finalDeliveryChecklist != nil && !finalDeliveryChecklist.Ready() {
+		return IssueClosureDecision{
+			IssueID:    issueID,
+			Allowed:    false,
+			Reason:     "final delivery checklist incomplete; required outputs missing",
+			ReportPath: resolvedPath,
+		}
+	}
+	if launchChecklist != nil && !launchChecklist.Ready() {
+		return IssueClosureDecision{
+			IssueID:    issueID,
+			Allowed:    false,
+			Reason:     "launch checklist incomplete; linked documentation missing or empty",
+			ReportPath: resolvedPath,
+		}
+	}
+	if finalDeliveryChecklist != nil {
+		return IssueClosureDecision{
+			IssueID:    issueID,
+			Allowed:    true,
+			Reason:     "validation report and final delivery checklist requirements satisfied; issue can be closed",
+			ReportPath: resolvedPath,
+		}
+	}
+	return IssueClosureDecision{
+		IssueID:    issueID,
+		Allowed:    true,
+		Reason:     "validation report and launch checklist requirements satisfied; issue can be closed",
+		ReportPath: resolvedPath,
+	}
 }
 
 func RenderIssueValidationReport(issueID, version, environment, summary string) string {

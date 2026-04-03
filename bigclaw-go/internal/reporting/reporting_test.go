@@ -191,6 +191,254 @@ func TestPilotScorecardReturnsHoldWhenValueIsNegative(t *testing.T) {
 	}
 }
 
+func TestLaunchChecklistTracksDocumentationAvailability(t *testing.T) {
+	runbook := filepath.Join(t.TempDir(), "runbook.md")
+	faq := filepath.Join(t.TempDir(), "faq.md")
+	if err := WriteReport(runbook, "# Runbook\n\nready"); err != nil {
+		t.Fatalf("write runbook: %v", err)
+	}
+
+	checklist := BuildLaunchChecklist(
+		"BIG-1003",
+		[]DocumentationArtifact{
+			{Name: "runbook", Path: runbook},
+			{Name: "faq", Path: faq},
+		},
+		[]LaunchChecklistItem{
+			{Name: "Operations handoff", Evidence: []string{"runbook"}},
+			{Name: "Support handoff", Evidence: []string{"faq"}},
+		},
+	)
+
+	report := RenderLaunchChecklistReport(checklist)
+
+	if !reflect.DeepEqual(checklist.DocumentationStatus(), map[string]bool{"runbook": true, "faq": false}) {
+		t.Fatalf("unexpected documentation status: %+v", checklist.DocumentationStatus())
+	}
+	if checklist.CompletedItems() != 1 {
+		t.Fatalf("unexpected completed items: %d", checklist.CompletedItems())
+	}
+	if !reflect.DeepEqual(checklist.MissingDocumentation(), []string{"faq"}) {
+		t.Fatalf("unexpected missing documentation: %+v", checklist.MissingDocumentation())
+	}
+	if checklist.Ready() {
+		t.Fatalf("expected checklist to be incomplete")
+	}
+	for _, fragment := range []string{
+		"runbook: available=true",
+		"faq: available=false",
+		"Support handoff: completed=false evidence=faq",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in launch checklist report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestFinalDeliveryChecklistTracksRequiredAndRecommendedArtifacts(t *testing.T) {
+	root := t.TempDir()
+	validationBundle := filepath.Join(root, "validation-bundle.md")
+	releaseNotes := filepath.Join(root, "release-notes.md")
+	if err := WriteReport(validationBundle, "# Validation Bundle\n\nready"); err != nil {
+		t.Fatalf("write validation bundle: %v", err)
+	}
+
+	checklist := BuildFinalDeliveryChecklist(
+		"BIG-4702",
+		[]DocumentationArtifact{
+			{Name: "validation-bundle", Path: validationBundle},
+			{Name: "release-notes", Path: releaseNotes},
+		},
+		[]DocumentationArtifact{
+			{Name: "runbook", Path: filepath.Join(root, "runbook.md")},
+			{Name: "faq", Path: filepath.Join(root, "faq.md")},
+		},
+	)
+
+	report := RenderFinalDeliveryChecklistReport(checklist)
+
+	if !reflect.DeepEqual(checklist.RequiredOutputStatus(), map[string]bool{"validation-bundle": true, "release-notes": false}) {
+		t.Fatalf("unexpected required output status: %+v", checklist.RequiredOutputStatus())
+	}
+	if !reflect.DeepEqual(checklist.RecommendedDocumentationStatus(), map[string]bool{"runbook": false, "faq": false}) {
+		t.Fatalf("unexpected recommended documentation status: %+v", checklist.RecommendedDocumentationStatus())
+	}
+	if checklist.GeneratedRequiredOutputs() != 1 || checklist.GeneratedRecommendedDocumentation() != 0 {
+		t.Fatalf("unexpected generated counts: required=%d recommended=%d", checklist.GeneratedRequiredOutputs(), checklist.GeneratedRecommendedDocumentation())
+	}
+	if !reflect.DeepEqual(checklist.MissingRequiredOutputs(), []string{"release-notes"}) {
+		t.Fatalf("unexpected missing required outputs: %+v", checklist.MissingRequiredOutputs())
+	}
+	if !reflect.DeepEqual(checklist.MissingRecommendedDocumentation(), []string{"runbook", "faq"}) {
+		t.Fatalf("unexpected missing recommended documentation: %+v", checklist.MissingRecommendedDocumentation())
+	}
+	if checklist.Ready() {
+		t.Fatalf("expected final delivery checklist to be incomplete")
+	}
+	for _, fragment := range []string{
+		"Required Outputs Generated: 1/2",
+		"Recommended Docs Generated: 0/2",
+		"release-notes: available=false",
+		"runbook: available=false",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in final delivery checklist report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestEvaluateIssueClosureValidatesReportAndChecklistRequirements(t *testing.T) {
+	root := t.TempDir()
+	reportPath := filepath.Join(root, "validation.md")
+
+	decision := EvaluateIssueClosure("BIG-602", reportPath, true, nil, nil)
+	if decision.Allowed {
+		t.Fatalf("expected missing report to block issue closure")
+	}
+	if decision.Reason != "validation report required before closing issue" {
+		t.Fatalf("unexpected reason: %s", decision.Reason)
+	}
+	if ValidationReportExists(reportPath) {
+		t.Fatalf("expected missing report to be unavailable")
+	}
+
+	if err := WriteReport(reportPath, "# Validation\n\nfailed"); err != nil {
+		t.Fatalf("write failed report: %v", err)
+	}
+	decision = EvaluateIssueClosure("BIG-602", reportPath, false, nil, nil)
+	if decision.Allowed {
+		t.Fatalf("expected failed validation to block issue closure")
+	}
+	if decision.Reason != "validation failed; issue must remain open" {
+		t.Fatalf("unexpected failed-validation reason: %s", decision.Reason)
+	}
+	if !ValidationReportExists(reportPath) {
+		t.Fatalf("expected written report to exist")
+	}
+
+	if err := WriteReport(reportPath, RenderIssueValidationReport("BIG-602", "v0.1", "sandbox", "pass")); err != nil {
+		t.Fatalf("write passing report: %v", err)
+	}
+	decision = EvaluateIssueClosure("BIG-602", reportPath, true, nil, nil)
+	if !decision.Allowed {
+		t.Fatalf("expected completed validation report to allow closure")
+	}
+	if decision.Reason != "validation report and launch checklist requirements satisfied; issue can be closed" {
+		t.Fatalf("unexpected ready reason: %s", decision.Reason)
+	}
+	if decision.ReportPath != reportPath {
+		t.Fatalf("unexpected report path: %s", decision.ReportPath)
+	}
+}
+
+func TestEvaluateIssueClosureBlocksIncompleteLaunchChecklist(t *testing.T) {
+	root := t.TempDir()
+	reportPath := filepath.Join(root, "validation.md")
+	runbook := filepath.Join(root, "runbook.md")
+	if err := WriteReport(reportPath, RenderIssueValidationReport("BIG-1003", "v0.2", "staging", "pass")); err != nil {
+		t.Fatalf("write validation report: %v", err)
+	}
+	if err := WriteReport(runbook, "# Runbook\n\nready"); err != nil {
+		t.Fatalf("write runbook: %v", err)
+	}
+
+	checklist := BuildLaunchChecklist(
+		"BIG-1003",
+		[]DocumentationArtifact{
+			{Name: "runbook", Path: runbook},
+			{Name: "launch-faq", Path: filepath.Join(root, "launch-faq.md")},
+		},
+		[]LaunchChecklistItem{{Name: "Launch comms", Evidence: []string{"runbook", "launch-faq"}}},
+	)
+
+	decision := EvaluateIssueClosure("BIG-1003", reportPath, true, &checklist, nil)
+	if decision.Allowed {
+		t.Fatalf("expected incomplete launch checklist to block issue closure")
+	}
+	if decision.Reason != "launch checklist incomplete; linked documentation missing or empty" {
+		t.Fatalf("unexpected reason: %s", decision.Reason)
+	}
+}
+
+func TestEvaluateIssueClosureHandlesFinalDeliveryAndReadyLaunchChecklist(t *testing.T) {
+	root := t.TempDir()
+
+	finalReportPath := filepath.Join(root, "final-validation.md")
+	if err := WriteReport(finalReportPath, RenderIssueValidationReport("BIG-4702", "v0.3", "staging", "pass")); err != nil {
+		t.Fatalf("write final validation report: %v", err)
+	}
+	finalChecklist := BuildFinalDeliveryChecklist(
+		"BIG-4702",
+		[]DocumentationArtifact{
+			{Name: "validation-bundle", Path: filepath.Join(root, "validation-bundle.md")},
+		},
+		[]DocumentationArtifact{
+			{Name: "runbook", Path: filepath.Join(root, "runbook.md")},
+		},
+	)
+	decision := EvaluateIssueClosure("BIG-4702", finalReportPath, true, nil, &finalChecklist)
+	if decision.Allowed {
+		t.Fatalf("expected missing required final outputs to block issue closure")
+	}
+	if decision.Reason != "final delivery checklist incomplete; required outputs missing" {
+		t.Fatalf("unexpected final delivery block reason: %s", decision.Reason)
+	}
+
+	validationBundle := filepath.Join(root, "validation-bundle.md")
+	releaseNotes := filepath.Join(root, "release-notes.md")
+	if err := WriteReport(validationBundle, "# Validation Bundle\n\nready"); err != nil {
+		t.Fatalf("write validation bundle: %v", err)
+	}
+	if err := WriteReport(releaseNotes, "# Release Notes\n\nready"); err != nil {
+		t.Fatalf("write release notes: %v", err)
+	}
+	finalChecklist = BuildFinalDeliveryChecklist(
+		"BIG-4702",
+		[]DocumentationArtifact{
+			{Name: "validation-bundle", Path: validationBundle},
+			{Name: "release-notes", Path: releaseNotes},
+		},
+		[]DocumentationArtifact{
+			{Name: "runbook", Path: filepath.Join(root, "runbook.md")},
+		},
+	)
+	decision = EvaluateIssueClosure("BIG-4702", finalReportPath, true, nil, &finalChecklist)
+	if !decision.Allowed {
+		t.Fatalf("expected final delivery checklist to allow closure when required outputs exist")
+	}
+	if decision.Reason != "validation report and final delivery checklist requirements satisfied; issue can be closed" {
+		t.Fatalf("unexpected final delivery ready reason: %s", decision.Reason)
+	}
+
+	launchReportPath := filepath.Join(root, "launch-validation.md")
+	runbook := filepath.Join(root, "launch-runbook.md")
+	faq := filepath.Join(root, "launch-faq.md")
+	if err := WriteReport(launchReportPath, RenderIssueValidationReport("BIG-1003", "v0.2", "staging", "pass")); err != nil {
+		t.Fatalf("write launch validation report: %v", err)
+	}
+	if err := WriteReport(runbook, "# Runbook\n\nready"); err != nil {
+		t.Fatalf("write launch runbook: %v", err)
+	}
+	if err := WriteReport(faq, "# FAQ\n\nready"); err != nil {
+		t.Fatalf("write launch faq: %v", err)
+	}
+	launchChecklist := BuildLaunchChecklist(
+		"BIG-1003",
+		[]DocumentationArtifact{
+			{Name: "runbook", Path: runbook},
+			{Name: "launch-faq", Path: faq},
+		},
+		[]LaunchChecklistItem{{Name: "Launch comms", Evidence: []string{"runbook", "launch-faq"}}},
+	)
+	decision = EvaluateIssueClosure("BIG-1003", launchReportPath, true, &launchChecklist, nil)
+	if !decision.Allowed {
+		t.Fatalf("expected ready launch checklist to allow issue closure")
+	}
+	if decision.Reason != "validation report and launch checklist requirements satisfied; issue can be closed" {
+		t.Fatalf("unexpected launch ready reason: %s", decision.Reason)
+	}
+}
+
 func TestWriteReportWritesContentToDisk(t *testing.T) {
 	output := filepath.Join(t.TempDir(), "report.md")
 	content := RenderIssueValidationReport("BIG-101", "v0.1", "sandbox", "pass")

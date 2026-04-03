@@ -1,17 +1,17 @@
 # BIG-GO-1026 Workpad
 
 ## Plan
-- Extend `bigclaw-go/internal/reporting` with the remaining pilot scorecard renderer contract still covered only in Python.
-- Reuse the existing Go pilot types to add the markdown scorecard renderer and focused assertions around payoff/recommendation behavior.
-- Add focused Go coverage for the remaining pilot scorecard tests in `tests/test_reports.py`.
-- Remove only the matching Python pilot scorecard tests from `tests/test_reports.py`.
+- Extend `bigclaw-go/internal/reporting` with the remaining checklist and issue-closure reporting contracts still covered only in Python.
+- Port the launch checklist, final delivery checklist, documentation artifact, and issue closure decision/evaluation logic into Go without broadening into scheduler or other domains.
+- Add focused Go coverage for the matching checklist and issue-closure tests in `tests/test_reports.py`.
+- Remove only the matching Python checklist and issue-closure tests from `tests/test_reports.py`.
 - Re-run the targeted reports pytest file and the Go tests for `./internal/reporting`.
 - Capture the updated repo inventory and confirm `pyproject.toml` / `setup.py` / `setup.cfg` remain unchanged.
 - Commit and push the follow-up reduction on `BIG-GO-1026`.
 
 ## Acceptance
-- Scope stays limited to the remaining pilot scorecard reporting contracts currently exercised by the matching `tests/test_reports.py` cases.
-- Go-native coverage in `bigclaw-go/internal/reporting` becomes the source of truth for those pilot scorecard contracts.
+- Scope stays limited to the remaining checklist and issue-closure reporting contracts currently exercised by the matching `tests/test_reports.py` cases.
+- Go-native coverage in `bigclaw-go/internal/reporting` becomes the source of truth for those checklist and issue-closure contracts.
 - `tests/test_reports.py` shrinks while the consolidated suite still passes.
 - Report includes `.py` / `.go` file-count impact and confirms whether `pyproject.toml` / `setup.py` / `setup.cfg` changed.
 
@@ -26,13 +26,13 @@
 
 ## Validation Results
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
-  `42 passed in 0.15s`
+  `33 passed in 0.13s`
 - `go test ./internal/reporting` (run from `bigclaw-go/`)
-  `ok  	bigclaw-go/internal/reporting	1.387s`
+  `ok  	bigclaw-go/internal/reporting	0.945s`
 - `wc -l tests/test_reports.py`
-  `1740 tests/test_reports.py`
+  `1532 tests/test_reports.py`
 - `git diff --stat`
-  `.symphony/workpad.md | 12 ++---\n  bigclaw-go/internal/reporting/reporting.go | 40 +++++++++++++++\n  bigclaw-go/internal/reporting/reporting_test.go | 66 +++++++++++++++++++++++++\n  tests/test_reports.py | 57 ---------------------\n  4 files changed, 112 insertions(+), 63 deletions(-)`
+  `.symphony/workpad.md | 27 +--\n  bigclaw-go/internal/reporting/reporting.go | 282 ++++++++++++++++++++++++\n  bigclaw-go/internal/reporting/reporting_test.go | 248 +++++++++++++++++++++\n  tests/test_reports.py | 208 -----------------\n  4 files changed, 537 insertions(+), 228 deletions(-)`
 - `rg --files | rg '\.py$' | wc -l`
   `51`
 - `rg --files | rg '\.go$' | wc -l`
