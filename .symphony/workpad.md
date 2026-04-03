@@ -28,4 +28,8 @@
 
 ## Blockers
 - The repository already materialized to a zero-`.py` baseline before this issue branch started, so the acceptance target to make the raw Python-file count numerically decrease is not achievable from the current state. This change hardens the migrated benchmark, migration, and repo-root script surfaces against Python reintroduction instead.
-- `git push` failed twice with `LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443`; SSH fallback to `git@github.com` also failed with `Permission denied (publickey)`, so the latest local commit is not yet on the remote branch.
+
+## Push Resolution
+- Default environment proxy settings (`HTTP_PROXY`/`HTTPS_PROXY` -> `127.0.0.1:7890`) caused `LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443`.
+- Direct push succeeded with proxy variables unset:
+  `env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u http_proxy -u https_proxy -u all_proxy git push`
