@@ -11,6 +11,11 @@ from bigclaw.planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
@@ -21,13 +26,6 @@ from bigclaw.planning import (
     render_candidate_backlog_report,
     render_four_week_execution_report,
     render_pilot_rollout_gate_report,
-)
-from bigclaw.governance import ScopeFreezeAudit
-from bigclaw.governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
 from bigclaw.workspace_bootstrap import (

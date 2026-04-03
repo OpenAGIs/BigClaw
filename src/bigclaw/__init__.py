@@ -30,6 +30,7 @@ from .models import (
     WorkflowStep,
 )
 from . import models as _legacy_model_surface
+from . import planning as _legacy_planning_surface
 from . import runtime as _legacy_runtime_surface
 
 
@@ -156,6 +157,23 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/plane.go",
 )
+_install_legacy_surface_module(
+    "governance",
+    [
+        "FreezeException",
+        "GovernanceBacklogItem",
+        "ScopeFreezeAudit",
+        "ScopeFreezeBoard",
+        "ScopeFreezeGovernance",
+        "render_scope_freeze_report",
+    ],
+    source_module=_legacy_planning_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "governance.py has been folded into planning.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/governance/freeze.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -249,7 +267,7 @@ from .collaboration import (
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
 )
-from .governance import (
+from .planning import (
     FreezeException,
     GovernanceBacklogItem,
     ScopeFreezeAudit,
