@@ -27,8 +27,8 @@ retired the final root Python workspace shims.
 ### `bigclaw-go/scripts/*` first automation batch
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
-- retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
-- `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- retired benchmark Python helpers; use `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
+- retired migration Python helpers; use `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
@@ -70,9 +70,8 @@ operator docs and external automation references finish the direct cutover to
   does not reintroduce Python environment management at the repository root.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
-- Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
-  first automation batch. The remaining backlog is tracked in
-  `bigclaw-go/docs/go-cli-script-migration.md`.
+- Keep the `bigclaw-go/scripts/*` automation surface Python-free and aligned with the
+  Go-native command set documented in `bigclaw-go/docs/go-cli-script-migration.md`.
 - Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
 
 ## Validation Commands
@@ -95,6 +94,9 @@ operator docs and external automation references finish the direct cutover to
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help`
 
 ## Regression Surface
 
@@ -124,7 +126,7 @@ operator docs and external automation references finish the direct cutover to
 - PR description focus:
   - migrated entrypoints and retained shims
   - exact validation commands and results
-  - explicit note that `bigclaw-go/scripts/*` is deferred to a follow-up migration lane
+  - explicit note that `bigclaw-go/scripts/*` stays Go-native and Python-free
 
 ## Risks
 
