@@ -41,4 +41,4 @@
 ### Status
 
 - Branch: `bigclaw-182-control-center`
-- Latest commit: `8ad543feea0b14bd845ff35ddf2cc3079212efa6`
+- Commit resolution: use `git rev-parse HEAD` on `bigclaw-182-control-center` for the current pushed SHA.
