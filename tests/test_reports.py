@@ -3008,23 +3008,6 @@ def test_render_ui_review_dependency_workload_and_density_boards() -> None:
     assert "checklist=2 decisions=1 assignments=2 signoffs=1 blockers=1 timeline=2 blocks=4 notes=2" in audit_density
 
 
-def test_render_ui_review_owner_review_queue_groups_actionable_items() -> None:
-    pack = build_big_4204_review_pack()
-
-    owner_queue = render_ui_review_owner_review_queue(pack)
-
-    assert "# UI Review Owner Review Queue" in owner_queue
-    assert "- Owners: 5" in owner_queue
-    assert "- Queue items: 6" in owner_queue
-    assert "- engineering-operations: blockers=0 checklist=1 decisions=0 signoffs=0 total=1" in owner_queue
-    assert "- product-experience: blockers=1 checklist=1 decisions=0 signoffs=0 total=2" in owner_queue
-    assert "- queue-chk-queue-role-density: owner=product-experience type=checklist source=chk-queue-role-density surface=wf-queue status=open" in owner_queue
-    assert "- queue-dec-queue-vp-summary: owner=VP Eng type=decision source=dec-queue-vp-summary surface=wf-queue status=proposed" in owner_queue
-    assert "- queue-sig-run-detail-eng-lead: owner=Eng Lead type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending" in owner_queue
-    assert "- queue-blk-run-detail-copy-final: owner=product-experience type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open" in owner_queue
-
-
-
 def test_render_ui_review_exception_log_and_timeline_summary() -> None:
     pack = build_big_4204_review_pack()
 

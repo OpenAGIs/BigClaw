@@ -863,6 +863,27 @@ func TestRenderUIReviewExceptionAndFreezeBoards(t *testing.T) {
 	}
 }
 
+func TestRenderUIReviewOwnerReviewQueue(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+
+	ownerQueue := RenderUIReviewOwnerReviewQueue(pack)
+	for _, fragment := range []string{
+		"# UI Review Owner Review Queue",
+		"- Owners: 5",
+		"- Queue items: 6",
+		"- engineering-operations: blockers=0 checklist=1 decisions=0 signoffs=0 total=1",
+		"- product-experience: blockers=1 checklist=1 decisions=0 signoffs=0 total=2",
+		"- queue-chk-queue-role-density: owner=product-experience type=checklist source=chk-queue-role-density surface=wf-queue status=open",
+		"- queue-dec-queue-vp-summary: owner=VP Eng type=decision source=dec-queue-vp-summary surface=wf-queue status=proposed",
+		"- queue-sig-run-detail-eng-lead: owner=Eng Lead type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending",
+		"- queue-blk-run-detail-copy-final: owner=product-experience type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open",
+	} {
+		if !strings.Contains(ownerQueue, fragment) {
+			t.Fatalf("expected %q in report, got %s", fragment, ownerQueue)
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{

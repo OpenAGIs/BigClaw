@@ -3261,6 +3261,124 @@ func RenderUIReviewExceptionMatrix(pack UIReviewPack) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func RenderUIReviewOwnerReviewQueue(pack UIReviewPack) string {
+	type entry struct {
+		QueueID    string
+		Owner      string
+		ItemType   string
+		SourceID   string
+		SurfaceID  string
+		Status     string
+		Summary    string
+		NextAction string
+	}
+	checklistReadyStatuses := map[string]bool{"ready": true, "approved": true, "accepted": true, "resolved": true, "done": true}
+	decisionReadyStatuses := map[string]bool{"accepted": true, "approved": true, "resolved": true, "waived": true}
+	signoffReadyStatuses := map[string]bool{"approved": true, "accepted": true, "resolved": true}
+	blockerDoneStatuses := map[string]bool{"resolved": true, "closed": true}
+	var entries []entry
+	for _, item := range pack.ReviewerChecklist {
+		if checklistReadyStatuses[strings.ToLower(item.Status)] {
+			continue
+		}
+		entries = append(entries, entry{
+			QueueID:    "queue-" + item.ItemID,
+			Owner:      item.Owner,
+			ItemType:   "checklist",
+			SourceID:   item.ItemID,
+			SurfaceID:  item.SurfaceID,
+			Status:     item.Status,
+			Summary:    item.Prompt,
+			NextAction: fallback(item.Notes, joinCSVOrNone(item.EvidenceLinks)),
+		})
+	}
+	for _, decision := range pack.DecisionLog {
+		if decisionReadyStatuses[strings.ToLower(decision.Status)] {
+			continue
+		}
+		entries = append(entries, entry{
+			QueueID:    "queue-" + decision.DecisionID,
+			Owner:      decision.Owner,
+			ItemType:   "decision",
+			SourceID:   decision.DecisionID,
+			SurfaceID:  decision.SurfaceID,
+			Status:     decision.Status,
+			Summary:    decision.Summary,
+			NextAction: fallback(decision.FollowUp, decision.Rationale),
+		})
+	}
+	for _, signoff := range pack.SignoffLog {
+		s := signoff.normalized()
+		if signoffReadyStatuses[strings.ToLower(s.Status)] {
+			continue
+		}
+		entries = append(entries, entry{
+			QueueID:    "queue-" + s.SignoffID,
+			Owner:      fallback(s.WaiverOwner, s.Role),
+			ItemType:   "signoff",
+			SourceID:   s.SignoffID,
+			SurfaceID:  s.SurfaceID,
+			Status:     s.Status,
+			Summary:    fallback(s.Notes, fallback(s.WaiverReason, s.Role)),
+			NextAction: fallback(s.WaiverReason, fallback(s.Notes, fallback(s.DueAt, joinCSVOrNone(s.EvidenceLinks)))),
+		})
+	}
+	for _, blocker := range pack.BlockerLog {
+		b := blocker.normalized()
+		if blockerDoneStatuses[strings.ToLower(b.Status)] {
+			continue
+		}
+		entries = append(entries, entry{
+			QueueID:    "queue-" + b.BlockerID,
+			Owner:      b.Owner,
+			ItemType:   "blocker",
+			SourceID:   b.BlockerID,
+			SurfaceID:  b.SurfaceID,
+			Status:     b.Status,
+			Summary:    b.Summary,
+			NextAction: fallback(b.NextAction, "none"),
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Owner != entries[j].Owner {
+			return entries[i].Owner < entries[j].Owner
+		}
+		if entries[i].ItemType != entries[j].ItemType {
+			return entries[i].ItemType < entries[j].ItemType
+		}
+		if entries[i].SurfaceID != entries[j].SurfaceID {
+			return entries[i].SurfaceID < entries[j].SurfaceID
+		}
+		return entries[i].SourceID < entries[j].SourceID
+	})
+	ownerCounts := map[string]map[string]int{}
+	for _, e := range entries {
+		if _, ok := ownerCounts[e.Owner]; !ok {
+			ownerCounts[e.Owner] = map[string]int{"blocker": 0, "checklist": 0, "decision": 0, "signoff": 0, "total": 0}
+		}
+		ownerCounts[e.Owner][e.ItemType]++
+		ownerCounts[e.Owner]["total"]++
+	}
+	var lines []string
+	lines = append(lines, "# UI Review Owner Review Queue", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Owners: "+itoa(len(ownerCounts)), "- Queue items: "+itoa(len(entries)), "", "## Owners")
+	for _, k := range sortedNestedMapKeys(ownerCounts) {
+		c := ownerCounts[k]
+		lines = append(lines, "- "+k+": blockers="+itoa(c["blocker"])+" checklist="+itoa(c["checklist"])+" decisions="+itoa(c["decision"])+" signoffs="+itoa(c["signoff"])+" total="+itoa(c["total"]))
+	}
+	if len(ownerCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Items")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.QueueID+": owner="+e.Owner+" type="+e.ItemType+" source="+e.SourceID+" surface="+e.SurfaceID+" status="+e.Status)
+		lines = append(lines, "  summary="+e.Summary+" next_action="+e.NextAction)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func BuildBIG4204ReviewPack() UIReviewPack {
 	return UIReviewPack{
 		IssueID:                   "BIG-4204",
