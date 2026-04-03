@@ -1984,23 +1984,6 @@ def test_event_bus_task_failed_marks_run_failed(tmp_path: Path) -> None:
     )
 
 
-def test_task_run_audit_spec_event_requires_required_fields() -> None:
-    run = TaskRun.from_task(
-        Task(task_id="OPE-134-spec", source="linear", title="Validate audit fields", description=""),
-        run_id="run-ope-134-spec",
-        medium="docker",
-    )
-
-    with pytest.raises(ValueError, match="missing required fields"):
-        run.audit_spec_event(
-            MANUAL_TAKEOVER_EVENT,
-            "scheduler",
-            "pending",
-            task_id="OPE-134-spec",
-            run_id="run-ope-134-spec",
-            target_team="security",
-        )
-
 def make_run(
     run_id: str,
     task_id: str,

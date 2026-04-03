@@ -61,6 +61,21 @@ func TestMissingRequiredFieldsForEventReturnsSpecGaps(t *testing.T) {
 	}
 }
 
+func TestMissingRequiredFieldsForManualTakeoverReturnsRequiredFieldGaps(t *testing.T) {
+	missing := MissingRequiredFieldsForEvent(domain.Event{
+		ID:     "evt-manual-takeover-1",
+		Type:   domain.EventType(ManualTakeoverEvent),
+		TaskID: "OPE-134-spec",
+		RunID:  "run-ope-134-spec",
+		Payload: map[string]any{
+			"target_team": "security",
+		},
+	})
+	if !reflect.DeepEqual(missing, []string{"reason", "requested_by", "required_approvals"}) {
+		t.Fatalf("unexpected missing fields: %+v", missing)
+	}
+}
+
 func TestJSONLAuditSinkRejectsMalformedKnownAuditEvent(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "audit.jsonl")
 	sink, err := NewJSONLAuditSink(path)
