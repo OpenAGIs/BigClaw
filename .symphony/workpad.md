@@ -888,3 +888,31 @@ Validation
 - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
 - `find . -name '*.py' | sort | wc -l`
 - `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+
+## BIG-GO-1040 Tranche 2026-04-03B
+
+Plan
+1. Remove the final repo-root Python test file, `tests/test_reports.py`, so the remaining Python surface is limited to package compatibility modules under `src/bigclaw/`.
+2. Add a Go regression test that freezes the allowed repo Python inventory and fails if repo-root Python tests or Python packaging files reappear.
+3. Validate the touched Go packages and repo file-count acceptance, then commit and push the tranche.
+
+Acceptance
+- Repository `.py` count decreases from `8` to `7`.
+- `tests/test_reports.py` is absent and no repo-root Python tests remain.
+- The remaining Python inventory is limited to:
+  - `src/bigclaw/__init__.py`
+  - `src/bigclaw/evaluation.py`
+  - `src/bigclaw/models.py`
+  - `src/bigclaw/observability.py`
+  - `src/bigclaw/operations.py`
+  - `src/bigclaw/reports.py`
+  - `src/bigclaw/runtime.py`
+- `pyproject.toml` and `setup.py` remain absent.
+- Go test coverage increases with a repo-state regression test that enforces the reduced Python inventory.
+
+Validation
+- `cd bigclaw-go && go test ./internal/regression ./internal/legacyshim ./cmd/bigclawctl`
+- `find . -name '*.py' | sort`
+- `find . -name '*.py' | sort | wc -l`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
