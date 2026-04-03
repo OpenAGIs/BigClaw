@@ -1,0 +1,149 @@
+{
+  "bundle_path": "docs/reports/live-validation-runs/20260316T140138Z",
+  "evidence_inputs": {
+    "executors": [
+      "local",
+      "kubernetes",
+      "ray"
+    ],
+    "live_validation_index": "docs/reports/live-validation-index.md",
+    "live_validation_summary": "docs/reports/live-validation-runs/20260316T140138Z/summary.json"
+  },
+  "generated_at": "2026-03-17T04:32:13.251910+00:00",
+  "lanes": [
+    {
+      "audit_log_path": "",
+      "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json",
+      "canonical_report_path": "docs/reports/sqlite-smoke-report.json",
+      "enabled": true,
+      "executor": "local",
+      "failure_root_cause": {
+        "event_id": "",
+        "event_type": "task.completed",
+        "location": "docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json",
+        "message": "",
+        "status": "not_triggered",
+        "timestamp": ""
+      },
+      "lane": "local",
+      "latest_event_type": "task.completed",
+      "routing_reason": "required executor=local",
+      "service_log_path": "",
+      "status": "succeeded",
+      "stderr_path": "",
+      "stdout_path": "",
+      "task_id": "local-smoke-1773669703"
+    },
+    {
+      "audit_log_path": "",
+      "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json",
+      "canonical_report_path": "docs/reports/kubernetes-live-smoke-report.json",
+      "enabled": true,
+      "executor": "kubernetes",
+      "failure_root_cause": {
+        "event_id": "",
+        "event_type": "task.completed",
+        "location": "docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json",
+        "message": "",
+        "status": "not_triggered",
+        "timestamp": ""
+      },
+      "lane": "k8s",
+      "latest_event_type": "task.completed",
+      "routing_reason": "required executor=kubernetes",
+      "service_log_path": "",
+      "status": "succeeded",
+      "stderr_path": "",
+      "stdout_path": "",
+      "task_id": "kubernetes-smoke-1773669703"
+    },
+    {
+      "audit_log_path": "",
+      "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
+      "canonical_report_path": "docs/reports/ray-live-smoke-report.json",
+      "enabled": true,
+      "executor": "ray",
+      "failure_root_cause": {
+        "event_id": "",
+        "event_type": "task.completed",
+        "location": "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
+        "message": "",
+        "status": "not_triggered",
+        "timestamp": ""
+      },
+      "lane": "ray",
+      "latest_event_type": "task.completed",
+      "routing_reason": "required executor=ray",
+      "service_log_path": "",
+      "status": "succeeded",
+      "stderr_path": "",
+      "stdout_path": "",
+      "task_id": "ray-smoke-1773669703"
+    }
+  ],
+  "run_id": "20260316T140138Z",
+  "status": "succeeded",
+  "summary": {
+    "enabled_lane_count": 3,
+    "failing_lane_count": 0,
+    "lane_count": 3,
+    "root_cause_count": 3,
+    "skipped_lane_count": 0,
+    "succeeded_lane_count": 3
+  },
+  "ticket": "BIGCLAW-173",
+  "title": "Parallel validation evidence bundle",
+  "validation_matrix": [
+    {
+      "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json",
+      "canonical_report_path": "docs/reports/sqlite-smoke-report.json",
+      "enabled": true,
+      "executor": "local",
+      "lane": "local",
+      "latest_event_type": "task.completed",
+      "root_cause_event_id": "",
+      "root_cause_event_type": "task.completed",
+      "root_cause_location": "docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json",
+      "root_cause_message": "",
+      "root_cause_status": "not_triggered",
+      "root_cause_timestamp": "",
+      "routing_reason": "required executor=local",
+      "status": "succeeded",
+      "task_id": "local-smoke-1773669703"
+    },
+    {
+      "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json",
+      "canonical_report_path": "docs/reports/kubernetes-live-smoke-report.json",
+      "enabled": true,
+      "executor": "kubernetes",
+      "lane": "k8s",
+      "latest_event_type": "task.completed",
+      "root_cause_event_id": "",
+      "root_cause_event_type": "task.completed",
+      "root_cause_location": "docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json",
+      "root_cause_message": "",
+      "root_cause_status": "not_triggered",
+      "root_cause_timestamp": "",
+      "routing_reason": "required executor=kubernetes",
+      "status": "succeeded",
+      "task_id": "kubernetes-smoke-1773669703"
+    },
+    {
+      "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
+      "canonical_report_path": "docs/reports/ray-live-smoke-report.json",
+      "enabled": true,
+      "executor": "ray",
+      "lane": "ray",
+      "latest_event_type": "task.completed",
+      "root_cause_event_id": "",
+      "root_cause_event_type": "task.completed",
+      "root_cause_location": "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
+      "root_cause_message": "",
+      "root_cause_status": "not_triggered",
+      "root_cause_timestamp": "",
+      "routing_reason": "required executor=ray",
+      "status": "succeeded",
+      "task_id": "ray-smoke-1773669703"
+    }
+  ]
+}

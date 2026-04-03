@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAutomationContinuationPolicyGateReturnsPolicyGoWhenInputsPass(t *testing.T) {
@@ -202,6 +203,12 @@ func TestAutomationExportValidationBundleBuildComponentSectionCapturesRootCause(
 	if rootCause["event_type"] != "task.dead_letter" || rootCause["message"] != "lease lost during replay" {
 		t.Fatalf("unexpected root cause: %+v", rootCause)
 	}
+	if rootCause["event_id"] != "evt-dead" || rootCause["timestamp"] != "2026-03-23T11:02:00Z" || rootCause["status"] != "captured" {
+		t.Fatalf("unexpected root cause locator fields: %+v", rootCause)
+	}
+	if matrix["root_cause_event_id"] != "evt-dead" || matrix["root_cause_timestamp"] != "2026-03-23T11:02:00Z" || matrix["root_cause_status"] != "captured" {
+		t.Fatalf("unexpected matrix root cause locator fields: %+v", matrix)
+	}
 }
 
 func TestAutomationExportValidationBundleRenderIndexShowsContinuationGate(t *testing.T) {
@@ -246,6 +253,13 @@ func TestAutomationExportValidationBundleRenderIndexShowsContinuationGate(t *tes
 			"bundle_report_path":     "z",
 			"canonical_report_path":  "r",
 		},
+		"parallel_validation_evidence_bundle": map[string]any{
+			"status":                  "failed",
+			"canonical_json_path":     "docs/reports/parallel-validation-evidence-bundle.json",
+			"canonical_markdown_path": "docs/reports/parallel-validation-evidence-bundle.md",
+			"bundle_json_path":        "docs/reports/live-validation-runs/20260316T140138Z/parallel-validation-evidence-bundle.json",
+			"bundle_markdown_path":    "docs/reports/live-validation-runs/20260316T140138Z/parallel-validation-evidence-bundle.md",
+		},
 	}
 	continuationGate := map[string]any{
 		"path":           "docs/reports/validation-bundle-continuation-policy-gate.json",
@@ -256,9 +270,169 @@ func TestAutomationExportValidationBundleRenderIndexShowsContinuationGate(t *tes
 	}
 
 	indexText := e2eRenderIndex(summary, nil, continuationGate, nil, nil)
-	for _, needle := range []string{"- Workflow mode: `hold`", "- Workflow outcome: `hold`", "- Workflow exit code on current evidence: `2`", "### broker", "- Runtime posture: `contract_only`"} {
+	for _, needle := range []string{"- Workflow mode: `hold`", "- Workflow outcome: `hold`", "- Workflow exit code on current evidence: `2`", "## Parallel evidence bundle", "- Canonical JSON: `docs/reports/parallel-validation-evidence-bundle.json`", "### broker", "- Runtime posture: `contract_only`"} {
 		if !strings.Contains(indexText, needle) {
 			t.Fatalf("expected %q in index text:\n%s", needle, indexText)
+		}
+	}
+}
+
+func TestAutomationExportValidationBundleWritesParallelEvidenceBundle(t *testing.T) {
+	root := t.TempDir()
+	for _, rel := range []string{
+		"tmp/local-report.json",
+		"tmp/kubernetes-report.json",
+		"tmp/ray-report.json",
+		"tmp/local.stdout.log",
+		"tmp/local.stderr.log",
+		"tmp/kubernetes.stdout.log",
+		"tmp/kubernetes.stderr.log",
+		"tmp/ray.stdout.log",
+		"tmp/ray.stderr.log",
+		"docs/reports/multi-node-shared-queue-report.json",
+		"docs/reports/broker-bootstrap-review-summary.json",
+	} {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(root, rel)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(root, "tmp/local-report.json"), []byte(`{
+  "task": {"id": "local-ok", "required_executor": "local"},
+  "status": {"state": "succeeded", "latest_event": {"id": "evt-local-done", "type": "task.completed", "timestamp": "2026-03-30T12:00:05Z", "payload": {"message": "local execution completed"}}},
+  "events": [
+    {"id": "evt-local-route", "type": "scheduler.routed", "timestamp": "2026-03-30T12:00:01Z", "payload": {"reason": "required executor=local"}},
+    {"id": "evt-local-done", "type": "task.completed", "timestamp": "2026-03-30T12:00:05Z", "payload": {"message": "local execution completed"}}
+  ]
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "tmp/kubernetes-report.json"), []byte(`{
+  "task": {"id": "k8s-failed", "required_executor": "kubernetes"},
+  "status": {"state": "dead_letter", "latest_event": {"id": "evt-k8s-dead", "type": "task.dead_letter", "timestamp": "2026-03-30T12:01:05Z", "payload": {"message": "lease lost during replay"}}},
+  "events": [
+    {"id": "evt-k8s-route", "type": "scheduler.routed", "timestamp": "2026-03-30T12:01:01Z", "payload": {"reason": "required executor=kubernetes"}},
+    {"id": "evt-k8s-dead", "type": "task.dead_letter", "timestamp": "2026-03-30T12:01:05Z", "payload": {"message": "lease lost during replay"}}
+  ]
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "tmp/ray-report.json"), []byte(`{
+  "task": {"id": "ray-ok", "required_executor": "ray"},
+  "status": {"state": "succeeded", "latest_event": {"id": "evt-ray-done", "type": "task.completed", "timestamp": "2026-03-30T12:02:05Z", "payload": {"message": "ray execution completed"}}},
+  "events": [
+    {"id": "evt-ray-route", "type": "scheduler.routed", "timestamp": "2026-03-30T12:02:01Z", "payload": {"reason": "required executor=ray"}},
+    {"id": "evt-ray-done", "type": "task.completed", "timestamp": "2026-03-30T12:02:05Z", "payload": {"message": "ray execution completed"}}
+  ]
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, rel := range []string{
+		"tmp/local.stdout.log",
+		"tmp/local.stderr.log",
+		"tmp/kubernetes.stdout.log",
+		"tmp/kubernetes.stderr.log",
+		"tmp/ray.stdout.log",
+		"tmp/ray.stderr.log",
+	} {
+		if err := os.WriteFile(filepath.Join(root, rel), []byte(rel+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs/reports/multi-node-shared-queue-report.json"), []byte(`{"all_ok": true, "generated_at": "2026-03-30T12:10:00Z", "count": 2, "cross_node_completions": 1, "duplicate_started_tasks": [], "duplicate_completed_tasks": [], "missing_completed_tasks": [], "submitted_by_node": {"node-a": 1, "node-b": 1}, "completed_by_node": {"node-a": 1, "node-b": 1}, "nodes": [{"name": "node-a"}, {"name": "node-b"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs/reports/broker-bootstrap-review-summary.json"), []byte(`{"ready": false, "runtime_posture": "contract_only", "live_adapter_implemented": false}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, exitCode, err := automationExportValidationBundle(automationExportValidationBundleOptions{
+		GoRoot:                     root,
+		RunID:                      "20260330T120000Z",
+		BundleDir:                  "docs/reports/live-validation-runs/20260330T120000Z",
+		SummaryPath:                "docs/reports/live-validation-summary.json",
+		IndexPath:                  "docs/reports/live-validation-index.md",
+		ManifestPath:               "docs/reports/live-validation-index.json",
+		RunLocal:                   true,
+		RunKubernetes:              true,
+		RunRay:                     true,
+		RunBroker:                  false,
+		BrokerBootstrapSummaryPath: "docs/reports/broker-bootstrap-review-summary.json",
+		ValidationStatus:           1,
+		LocalReportPath:            "tmp/local-report.json",
+		LocalStdoutPath:            "tmp/local.stdout.log",
+		LocalStderrPath:            "tmp/local.stderr.log",
+		KubernetesReportPath:       "tmp/kubernetes-report.json",
+		KubernetesStdoutPath:       "tmp/kubernetes.stdout.log",
+		KubernetesStderrPath:       "tmp/kubernetes.stderr.log",
+		RayReportPath:              "tmp/ray-report.json",
+		RayStdoutPath:              "tmp/ray.stdout.log",
+		RayStderrPath:              "tmp/ray.stderr.log",
+		Now:                        func() time.Time { return time.Date(2026, 3, 30, 12, 15, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("export validation bundle: %v", err)
+	}
+	if exitCode != 1 || report["status"] != "failed" {
+		t.Fatalf("unexpected export result: exit=%d report=%+v", exitCode, report)
+	}
+	evidence, _ := report["parallel_validation_evidence_bundle"].(map[string]any)
+	if evidence["canonical_json_path"] != "docs/reports/parallel-validation-evidence-bundle.json" || evidence["canonical_markdown_path"] != "docs/reports/parallel-validation-evidence-bundle.md" {
+		t.Fatalf("unexpected evidence metadata: %+v", evidence)
+	}
+
+	var bundle struct {
+		Ticket  string `json:"ticket"`
+		Status  string `json:"status"`
+		Summary struct {
+			LaneCount        int `json:"lane_count"`
+			EnabledLaneCount int `json:"enabled_lane_count"`
+			SucceededCount   int `json:"succeeded_lane_count"`
+			FailingCount     int `json:"failing_lane_count"`
+		} `json:"summary"`
+		ValidationMatrix []struct {
+			Lane               string `json:"lane"`
+			RootCauseEventType string `json:"root_cause_event_type"`
+			RootCauseLocation  string `json:"root_cause_location"`
+			RootCauseMessage   string `json:"root_cause_message"`
+		} `json:"validation_matrix"`
+		Lanes []struct {
+			Lane             string `json:"lane"`
+			Status           string `json:"status"`
+			FailureRootCause struct {
+				Status    string `json:"status"`
+				EventType string `json:"event_type"`
+				Location  string `json:"location"`
+				Message   string `json:"message"`
+			} `json:"failure_root_cause"`
+		} `json:"lanes"`
+	}
+	readJSONFileFromPath(t, filepath.Join(root, "docs/reports/parallel-validation-evidence-bundle.json"), &bundle)
+	if bundle.Ticket != "BIGCLAW-173" || bundle.Status != "failed" {
+		t.Fatalf("unexpected parallel evidence bundle metadata: %+v", bundle)
+	}
+	if bundle.Summary.LaneCount != 3 || bundle.Summary.EnabledLaneCount != 3 || bundle.Summary.SucceededCount != 2 || bundle.Summary.FailingCount != 1 {
+		t.Fatalf("unexpected parallel evidence summary: %+v", bundle.Summary)
+	}
+	if len(bundle.ValidationMatrix) != 3 || bundle.ValidationMatrix[1].Lane != "k8s" || bundle.ValidationMatrix[1].RootCauseEventType != "task.dead_letter" || bundle.ValidationMatrix[1].RootCauseMessage != "lease lost during replay" {
+		t.Fatalf("unexpected validation matrix rows: %+v", bundle.ValidationMatrix)
+	}
+	if bundle.Lanes[1].FailureRootCause.Location == "" || bundle.Lanes[1].FailureRootCause.EventType != "task.dead_letter" {
+		t.Fatalf("unexpected lane root cause: %+v", bundle.Lanes[1].FailureRootCause)
+	}
+
+	markdownBody, err := os.ReadFile(filepath.Join(root, "docs/reports/parallel-validation-evidence-bundle.md"))
+	if err != nil {
+		t.Fatalf("read evidence markdown: %v", err)
+	}
+	markdown := string(markdownBody)
+	for _, needle := range []string{
+		"# Parallel Validation Evidence Bundle",
+		"Lane `k8s` executor=`kubernetes` status=`dead_letter` enabled=`true`",
+		"Lane `k8s` root cause: event=`task.dead_letter`",
+		"Failure root cause: status=`captured` event=`task.dead_letter`",
+	} {
+		if !strings.Contains(markdown, needle) {
+			t.Fatalf("expected %q in evidence markdown:\n%s", needle, markdown)
 		}
 	}
 }
@@ -378,4 +552,15 @@ func mustReadSourceRunAll(t *testing.T) []byte {
 		t.Fatalf("read source run_all.sh: %v", err)
 	}
 	return body
+}
+
+func readJSONFileFromPath(t *testing.T, path string, target any) {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read json file %s: %v", path, err)
+	}
+	if err := json.Unmarshal(body, target); err != nil {
+		t.Fatalf("decode json file %s: %v", path, err)
+	}
 }

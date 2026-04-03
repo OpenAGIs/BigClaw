@@ -61,6 +61,8 @@ const (
 	e2eBrokerValidationPack   = "docs/reports/broker-failover-fault-injection-validation-pack.md"
 	e2eSharedQueueReport      = "docs/reports/multi-node-shared-queue-report.json"
 	e2eSharedQueueSummary     = "docs/reports/shared-queue-companion-summary.json"
+	e2eParallelEvidenceJSON   = "docs/reports/parallel-validation-evidence-bundle.json"
+	e2eParallelEvidenceMD     = "docs/reports/parallel-validation-evidence-bundle.md"
 )
 
 type automationExportValidationBundleOptions struct {
@@ -302,6 +304,13 @@ func automationExportValidationBundle(opts automationExportValidationBundleOptio
 		return nil, 0, err
 	}
 	summary["validation_matrix"] = e2eBuildValidationMatrix(summary)
+	bundleSummaryPath := filepath.Join(bundleDir, "summary.json")
+	canonicalSummaryPath := e2eResolvePath(root, opts.SummaryPath)
+	summary["summary_path"] = e2eRelPath(root, bundleSummaryPath)
+	summary["parallel_validation_evidence_bundle"], err = e2eWriteParallelEvidenceBundle(root, bundleDir, summary)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	continuationGate, err := e2eBuildContinuationGateSummary(root)
 	if err != nil {
@@ -311,9 +320,6 @@ func automationExportValidationBundle(opts automationExportValidationBundleOptio
 		summary["continuation_gate"] = continuationGate
 	}
 
-	bundleSummaryPath := filepath.Join(bundleDir, "summary.json")
-	canonicalSummaryPath := e2eResolvePath(root, opts.SummaryPath)
-	summary["summary_path"] = e2eRelPath(root, bundleSummaryPath)
 	if err := e2eWriteJSON(bundleSummaryPath, summary); err != nil {
 		return nil, 0, err
 	}
@@ -901,6 +907,9 @@ func e2eBuildValidationMatrixEntry(name string, section, report map[string]any) 
 		"root_cause_event_type": firstNonEmpty(rootCause["event_type"]),
 		"root_cause_location":   firstNonEmpty(rootCause["location"]),
 		"root_cause_message":    firstNonEmpty(rootCause["message"]),
+		"root_cause_event_id":   firstNonEmpty(rootCause["event_id"]),
+		"root_cause_timestamp":  firstNonEmpty(rootCause["timestamp"]),
+		"root_cause_status":     firstNonEmpty(rootCause["status"]),
 	}
 }
 
@@ -942,6 +951,169 @@ func e2eBuildFailureRootCause(section, report map[string]any) map[string]any {
 		"event_id":  firstNonEmpty(causeEvent["id"]),
 		"timestamp": firstNonEmpty(causeEvent["timestamp"]),
 	}
+}
+
+func e2eWriteParallelEvidenceBundle(root, bundleDir string, summary map[string]any) (map[string]any, error) {
+	bundleJSONPath := filepath.Join(bundleDir, "parallel-validation-evidence-bundle.json")
+	bundleMDPath := filepath.Join(bundleDir, "parallel-validation-evidence-bundle.md")
+	canonicalJSONPath := e2eResolvePath(root, e2eParallelEvidenceJSON)
+	canonicalMDPath := e2eResolvePath(root, e2eParallelEvidenceMD)
+
+	report := e2eBuildParallelEvidenceBundle(root, bundleDir, summary)
+	markdown := e2eRenderParallelEvidenceBundle(report)
+
+	if err := e2eWriteJSON(bundleJSONPath, report); err != nil {
+		return nil, err
+	}
+	if err := e2eWriteJSON(canonicalJSONPath, report); err != nil {
+		return nil, err
+	}
+	if err := e2eWriteText(bundleMDPath, markdown); err != nil {
+		return nil, err
+	}
+	if err := e2eWriteText(canonicalMDPath, markdown); err != nil {
+		return nil, err
+	}
+
+	reportSummary, _ := report["summary"].(map[string]any)
+	return map[string]any{
+		"status":                  report["status"],
+		"lane_count":              reportSummary["lane_count"],
+		"enabled_lane_count":      reportSummary["enabled_lane_count"],
+		"succeeded_lane_count":    reportSummary["succeeded_lane_count"],
+		"failing_lane_count":      reportSummary["failing_lane_count"],
+		"canonical_json_path":     e2eParallelEvidenceJSON,
+		"canonical_markdown_path": e2eParallelEvidenceMD,
+		"bundle_json_path":        e2eRelPath(root, bundleJSONPath),
+		"bundle_markdown_path":    e2eRelPath(root, bundleMDPath),
+	}, nil
+}
+
+func e2eBuildParallelEvidenceBundle(root, bundleDir string, summary map[string]any) map[string]any {
+	lanes := make([]any, 0, 3)
+	validationMatrix, _ := summary["validation_matrix"].([]any)
+	enabledLaneCount := 0
+	succeededLaneCount := 0
+	failingLaneCount := 0
+	skippedLaneCount := 0
+	rootCauseCount := 0
+	for _, name := range []string{"local", "kubernetes", "ray"} {
+		section, _ := summary[name].(map[string]any)
+		matrixRow, _ := section["validation_matrix"].(map[string]any)
+		rootCause, _ := section["failure_root_cause"].(map[string]any)
+		status := firstNonEmpty(section["status"], "unknown")
+		if automationBool(section["enabled"]) {
+			enabledLaneCount++
+		}
+		switch status {
+		case "succeeded":
+			succeededLaneCount++
+		case "skipped":
+			skippedLaneCount++
+		default:
+			failingLaneCount++
+		}
+		if stringValue(rootCause["location"]) != "" {
+			rootCauseCount++
+		}
+		lanes = append(lanes, map[string]any{
+			"lane":                  firstNonEmpty(matrixRow["lane"], e2eLaneAliases[name]),
+			"executor":              firstNonEmpty(matrixRow["executor"], name),
+			"enabled":               automationBool(section["enabled"]),
+			"status":                status,
+			"task_id":               firstNonEmpty(section["task_id"]),
+			"routing_reason":        firstNonEmpty(section["routing_reason"]),
+			"latest_event_type":     firstNonEmpty(section["latest_event_type"]),
+			"canonical_report_path": firstNonEmpty(section["canonical_report_path"]),
+			"bundle_report_path":    firstNonEmpty(section["bundle_report_path"]),
+			"stdout_path":           firstNonEmpty(section["stdout_path"]),
+			"stderr_path":           firstNonEmpty(section["stderr_path"]),
+			"audit_log_path":        firstNonEmpty(section["audit_log_path"]),
+			"service_log_path":      firstNonEmpty(section["service_log_path"]),
+			"failure_root_cause":    rootCause,
+		})
+	}
+
+	return map[string]any{
+		"generated_at": e2eFirstText(summary["generated_at"], e2eUTCISO(time.Now().UTC())),
+		"ticket":       "BIGCLAW-173",
+		"title":        "Parallel validation evidence bundle",
+		"status":       firstNonEmpty(summary["status"], "unknown"),
+		"run_id":       firstNonEmpty(summary["run_id"]),
+		"bundle_path":  firstNonEmpty(summary["bundle_path"], e2eRelPath(root, bundleDir)),
+		"evidence_inputs": map[string]any{
+			"live_validation_summary": firstNonEmpty(summary["summary_path"], "docs/reports/live-validation-summary.json"),
+			"live_validation_index":   "docs/reports/live-validation-index.md",
+			"executors":               []any{"local", "kubernetes", "ray"},
+		},
+		"summary": map[string]any{
+			"lane_count":           len(lanes),
+			"enabled_lane_count":   enabledLaneCount,
+			"succeeded_lane_count": succeededLaneCount,
+			"failing_lane_count":   failingLaneCount,
+			"skipped_lane_count":   skippedLaneCount,
+			"root_cause_count":     rootCauseCount,
+		},
+		"validation_matrix": validationMatrix,
+		"lanes":             lanes,
+	}
+}
+
+func e2eRenderParallelEvidenceBundle(report map[string]any) string {
+	lines := []string{
+		"# Parallel Validation Evidence Bundle",
+		"",
+		fmt.Sprintf("- Run ID: `%s`", report["run_id"]),
+		fmt.Sprintf("- Generated at: `%s`", report["generated_at"]),
+		fmt.Sprintf("- Status: `%s`", report["status"]),
+		"",
+		"## Matrix",
+		"",
+	}
+	if summary, ok := report["summary"].(map[string]any); ok {
+		lines = append(lines,
+			fmt.Sprintf("- Lane count: `%v`", summary["lane_count"]),
+			fmt.Sprintf("- Enabled lanes: `%v`", summary["enabled_lane_count"]),
+			fmt.Sprintf("- Succeeded lanes: `%v`", summary["succeeded_lane_count"]),
+			fmt.Sprintf("- Failing lanes: `%v`", summary["failing_lane_count"]),
+			fmt.Sprintf("- Root causes localized: `%v`", summary["root_cause_count"]),
+			"",
+		)
+	}
+	if rows, ok := report["validation_matrix"].([]any); ok {
+		for _, raw := range rows {
+			row, _ := raw.(map[string]any)
+			lines = append(lines, fmt.Sprintf("- Lane `%s` executor=`%s` status=`%s` enabled=`%v` report=`%s`", row["lane"], row["executor"], row["status"], row["enabled"], row["bundle_report_path"]))
+			lines = append(lines, fmt.Sprintf("- Lane `%s` root cause: event=`%s` location=`%s` message=`%s`", row["lane"], firstNonEmpty(row["root_cause_event_type"], "not_triggered"), firstNonEmpty(row["root_cause_location"], "n/a"), firstNonEmpty(row["root_cause_message"], "")))
+		}
+		lines = append(lines, "")
+	}
+	lines = append(lines, "## Lane Details", "")
+	if lanes, ok := report["lanes"].([]any); ok {
+		for _, raw := range lanes {
+			lane, _ := raw.(map[string]any)
+			rootCause, _ := lane["failure_root_cause"].(map[string]any)
+			lines = append(lines, "### "+firstNonEmpty(lane["lane"], "unknown"))
+			lines = append(lines, fmt.Sprintf("- Executor: `%s`", firstNonEmpty(lane["executor"], "unknown")))
+			lines = append(lines, fmt.Sprintf("- Enabled: `%v`", lane["enabled"]))
+			lines = append(lines, fmt.Sprintf("- Status: `%s`", firstNonEmpty(lane["status"], "unknown")))
+			if stringValue(lane["task_id"]) != "" {
+				lines = append(lines, fmt.Sprintf("- Task ID: `%s`", lane["task_id"]))
+			}
+			if stringValue(lane["bundle_report_path"]) != "" {
+				lines = append(lines, fmt.Sprintf("- Bundle report: `%s`", lane["bundle_report_path"]))
+			}
+			if stringValue(lane["canonical_report_path"]) != "" {
+				lines = append(lines, fmt.Sprintf("- Canonical report: `%s`", lane["canonical_report_path"]))
+			}
+			lines = append(lines, fmt.Sprintf("- Failure root cause: status=`%s` event=`%s` location=`%s`", firstNonEmpty(rootCause["status"], "unknown"), firstNonEmpty(rootCause["event_type"], "not_triggered"), firstNonEmpty(rootCause["location"], "n/a")))
+			if stringValue(rootCause["message"]) != "" {
+				lines = append(lines, fmt.Sprintf("- Failure detail: `%s`", rootCause["message"]))
+			}
+			lines = append(lines, "")
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func e2eBuildRecentRuns(bundleRoot, root string, limit int) ([]any, error) {
@@ -1069,6 +1241,15 @@ func e2eRenderIndex(summary map[string]any, recentRuns []any, continuationGate m
 				lines = append(lines, fmt.Sprintf("- Lane `%s` root cause: event=`%s` location=`%s` message=`%s`", row["lane"], row["root_cause_event_type"], row["root_cause_location"], row["root_cause_message"]))
 			}
 		}
+		lines = append(lines, "")
+	}
+	if evidence, ok := summary["parallel_validation_evidence_bundle"].(map[string]any); ok && len(evidence) > 0 {
+		lines = append(lines, "## Parallel evidence bundle", "")
+		lines = append(lines, fmt.Sprintf("- Status: `%s`", firstNonEmpty(evidence["status"], "unknown")))
+		lines = append(lines, fmt.Sprintf("- Canonical JSON: `%s`", firstNonEmpty(evidence["canonical_json_path"])))
+		lines = append(lines, fmt.Sprintf("- Canonical Markdown: `%s`", firstNonEmpty(evidence["canonical_markdown_path"])))
+		lines = append(lines, fmt.Sprintf("- Bundle JSON: `%s`", firstNonEmpty(evidence["bundle_json_path"])))
+		lines = append(lines, fmt.Sprintf("- Bundle Markdown: `%s`", firstNonEmpty(evidence["bundle_markdown_path"])))
 		lines = append(lines, "")
 	}
 	if broker, ok := summary["broker"].(map[string]any); ok {
