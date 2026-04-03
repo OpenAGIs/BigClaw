@@ -13,8 +13,8 @@ retired the final root Python workspace shims.
 
 ### Repo-root entrypoints
 
-- retired `scripts/create_issues.py`; use `bigclawctl create-issues`
-- root dev smoke path is Go-only: use `bigclawctl dev-smoke`
+- retired the root Python issue/bootstrap shim surface; use `bigclawctl create-issues`
+- retired the root Python smoke shim surface; use `bigclawctl dev-smoke`
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
@@ -28,7 +28,7 @@ retired the final root Python workspace shims.
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
 - retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
-- `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- retired live-shadow migration Python helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
