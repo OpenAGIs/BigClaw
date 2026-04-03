@@ -206,6 +206,26 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workspace/bootstrap.go",
 )
+_install_legacy_surface_module(
+    "collaboration",
+    [
+        "CollaborationComment",
+        "CollaborationThread",
+        "DecisionNote",
+        "build_collaboration_thread",
+        "build_collaboration_thread_from_audits",
+        "collaboration_now",
+        "merge_collaboration_threads",
+        "render_collaboration_lines",
+        "render_collaboration_panel_html",
+    ],
+    source_module=sys.modules[f"{__name__}.observability"],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "collaboration.py has been folded into observability.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/collaboration.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -292,21 +312,6 @@ from .console_ia import (
     render_console_interaction_report,
     render_console_ia_report,
 )
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
-from .planning import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -321,8 +326,25 @@ from .observability import (
     SCHEDULER_DECISION_EVENT,
     TaskRun,
     AuditEventSpec,
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
+    collaboration_now,
     get_audit_event_spec,
+    merge_collaboration_threads,
     missing_required_fields,
+    render_collaboration_lines,
+    render_collaboration_panel_html,
+)
+from .planning import (
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
+    render_scope_freeze_report,
 )
 from .execution_contract import (
     AuditPolicy,
@@ -627,6 +649,10 @@ __all__ = [
     "DecisionNote",
     "build_collaboration_thread",
     "build_collaboration_thread_from_audits",
+    "collaboration_now",
+    "merge_collaboration_threads",
+    "render_collaboration_lines",
+    "render_collaboration_panel_html",
     "WorkflowDefinition",
     "WorkflowStep",
     "APPROVAL_RECORDED_EVENT",
