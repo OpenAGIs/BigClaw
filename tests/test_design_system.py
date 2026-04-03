@@ -535,9 +535,9 @@ def test_ui_acceptance_suite_round_trip_preserves_acceptance_manifest():
         ],
         usability_journeys=[
             UsabilityJourney(
-                journey_id="approve-high-risk-run",
+                journey_id="bulk-retry-failed-run",
                 personas=["operator"],
-                critical_steps=["open queue", "inspect run", "approve"],
+                critical_steps=["open queue", "inspect failure attribution", "bulk retry"],
                 expected_max_steps=4,
                 observed_steps=3,
                 keyboard_accessible=True,
@@ -672,9 +672,9 @@ def test_render_ui_acceptance_report_summarizes_release_readiness():
         ],
         usability_journeys=[
             UsabilityJourney(
-                journey_id="approve-high-risk-run",
+                journey_id="bulk-retry-failed-run",
                 personas=["operator"],
-                critical_steps=["open queue", "inspect run", "approve"],
+                critical_steps=["open queue", "inspect failure attribution", "bulk retry"],
                 expected_max_steps=4,
                 observed_steps=3,
                 keyboard_accessible=True,
@@ -703,5 +703,5 @@ def test_render_ui_acceptance_report_summarizes_release_readiness():
     assert "- Role/Permission run-detail: allow=admin, operator deny=viewer audit_event=ui.access.denied" in report
     assert "- Data Accuracy sla-dashboard.breach-count: delta=0.0 tolerance=0.0 freshness=120/300s" in report
     assert "- Performance triage-center.initial-load: p95=980/1200ms tti=1400/1800ms" in report
-    assert "- Usability approve-high-risk-run: steps=3/4 keyboard=True empty_state=True recovery=True" in report
+    assert "- Usability bulk-retry-failed-run: steps=3/4 keyboard=True empty_state=True recovery=True" in report
     assert "- Audit completeness gaps: none" in report
