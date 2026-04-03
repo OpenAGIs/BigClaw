@@ -2,6 +2,7 @@ package regression
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -95,5 +96,37 @@ func TestBIGGO1166MigrationDocsListGoReplacements(t *testing.T) {
 		if !strings.Contains(rootDoc, needle) {
 			t.Fatalf("docs/go-cli-script-migration-plan.md missing BIG-GO-1166 coverage %q", needle)
 		}
+	}
+}
+
+func TestBIGGO1166RepositoryPythonCountRemainsZero(t *testing.T) {
+	rootRepo := filepath.Clean(filepath.Join(repoRoot(t), ".."))
+
+	pythonFiles := make([]string, 0)
+	err := filepath.WalkDir(rootRepo, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			if entry.Name() == ".git" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if filepath.Ext(path) != ".py" {
+			return nil
+		}
+		relativePath, err := filepath.Rel(rootRepo, path)
+		if err != nil {
+			return err
+		}
+		pythonFiles = append(pythonFiles, filepath.ToSlash(relativePath))
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk repository for python files: %v", err)
+	}
+	if len(pythonFiles) != 0 {
+		t.Fatalf("expected repository to remain python-free for BIG-GO-1166, found: %v", pythonFiles)
 	}
 }

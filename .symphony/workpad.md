@@ -12,15 +12,15 @@
 
 ## Validation
 - `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run 'Test(BIGGO1166CandidatePythonFilesRemainDeleted|BIGGO1166MigrationDocsListGoReplacements|E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints)$'`
+- `cd bigclaw-go && go test ./internal/regression -run 'Test(BIGGO1166CandidatePythonFilesRemainDeleted|BIGGO1166MigrationDocsListGoReplacements|BIGGO1166RepositoryPythonCountRemainsZero|E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints)$'`
 - `cd bigclaw-go && go test ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|AutomationUsageListsBIGGO1160GoReplacements|RunAutomationRunTaskSmokeJSONOutput|AutomationSoakLocalWritesReport|AutomationShadowCompareDetectsMismatch|AutomationShadowMatrixBuildsCorpusCoverage|AutomationLiveShadowScorecardBuildsReport|AutomationExportLiveShadowBundleBuildsManifest|AutomationBenchmarkRunMatrixBuildsReport|AutomationBenchmarkCapacityCertificationBuildsReport|RunDevSmokeJSONOutput|RunCreateIssuesCreatesOnlyMissing)$'`
 - `git status --short`
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
-- `cd bigclaw-go && go test ./internal/regression -run 'Test(BIGGO1166CandidatePythonFilesRemainDeleted|BIGGO1166MigrationDocsListGoReplacements|E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints)$'` -> `ok  	bigclaw-go/internal/regression	0.548s`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|AutomationUsageListsBIGGO1160GoReplacements|AutomationUsageListsBIGGO1166GoReplacements|RunAutomationRunTaskSmokeJSONOutput|AutomationSoakLocalWritesReport|AutomationShadowCompareDetectsMismatch|AutomationShadowMatrixBuildsCorpusCoverage|AutomationLiveShadowScorecardBuildsReport|AutomationExportLiveShadowBundleBuildsManifest|AutomationBenchmarkRunMatrixBuildsReport|AutomationBenchmarkCapacityCertificationBuildsReport|RunDevSmokeJSONOutput|RunCreateIssuesCreatesOnlyMissing)$'` -> `ok  	bigclaw-go/cmd/bigclawctl	0.706s`
-- `git status --short` -> `.symphony/workpad.md`, `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`, `bigclaw-go/docs/go-cli-script-migration.md`, `docs/go-cli-script-migration-plan.md`, `bigclaw-go/internal/regression/big_go_1166_script_migration_test.go`
+- `cd bigclaw-go && go test ./internal/regression -run 'Test(BIGGO1166CandidatePythonFilesRemainDeleted|BIGGO1166MigrationDocsListGoReplacements|BIGGO1166RepositoryPythonCountRemainsZero|E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints)$'` -> `ok  	bigclaw-go/internal/regression	0.890s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|AutomationUsageListsBIGGO1160GoReplacements|AutomationUsageListsBIGGO1166GoReplacements|RunAutomationRunTaskSmokeJSONOutput|AutomationSoakLocalWritesReport|AutomationShadowCompareDetectsMismatch|AutomationShadowMatrixBuildsCorpusCoverage|AutomationLiveShadowScorecardBuildsReport|AutomationExportLiveShadowBundleBuildsManifest|AutomationBenchmarkRunMatrixBuildsReport|AutomationBenchmarkCapacityCertificationBuildsReport|RunDevSmokeJSONOutput|RunCreateIssuesCreatesOnlyMissing)$'` -> `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+- `git status --short` -> pending final commit for repo-wide zero-count coverage and workpad refresh
 
 ## Residual Risk
 - The branch baseline already has zero tracked `.py` files, so this issue can harden deletion coverage and Go replacement guidance but cannot reduce the Python file count below zero from the current starting point.
