@@ -1,16 +1,16 @@
 # BIG-GO-1026 Workpad
 
 ## Plan
-- Extend `bigclaw-go/internal/uigovernance` with the next `UIReviewPack` rendering tranche for the remaining exception-log/timeline-summary companion surfaces.
-- Port the Go helpers and renderers needed for `checklist_traceability_board`, `decision_followup_tracker`, `reminder_cadence_board`, `role_coverage_board`, `handoff_ack_ledger`, `freeze_renewal_tracker`, `exception_log`, and `blocker_timeline_summary`.
+- Extend `bigclaw-go/internal/uigovernance` with the next `UIReviewPack` rendering tranche for objective, wireframe, and open-question coverage surfaces.
+- Port the Go helpers and renderers needed for `objective_coverage_board`, `wireframe_readiness_board`, and `open_question_tracker`.
 - Reuse the existing Go-native `BuildBIG4204ReviewPack` fixture.
-- Remove only the matching Python mixed review-surface test from `tests/test_reports.py` after the Go-native coverage is in place.
+- Remove only the matching Python objective/wireframe/question test from `tests/test_reports.py` after the Go-native coverage is in place.
 - Re-run the targeted reports pytest file and the Go tests for `./internal/uigovernance`.
 - Capture the updated repo inventory and confirm `pyproject.toml` / `setup.py` / `setup.cfg` remain unchanged.
 - Commit and push the follow-up reduction on `BIG-GO-1026`.
 
 ## Acceptance
-- Scope stays limited to the next `UIReviewPack` mixed review-surface rendering tranche currently covered by the matching Python tests in `tests/test_reports.py`.
+- Scope stays limited to the next `UIReviewPack` objective/wireframe/question rendering tranche currently covered by the matching Python tests in `tests/test_reports.py`.
 - Go-native coverage in `bigclaw-go/internal/uigovernance` becomes the source of truth for those review-pack contracts.
 - `tests/test_reports.py` shrinks while the consolidated suite still passes.
 - Report includes `.py` / `.go` file-count impact and confirms whether `pyproject.toml` / `setup.py` / `setup.cfg` changed.
@@ -26,10 +26,10 @@
 
 ## Validation Results
 - `gofmt -w bigclaw-go/internal/uigovernance/uigovernance.go bigclaw-go/internal/uigovernance/uigovernance_test.go` -> completed
-- `go test ./internal/uigovernance` (run from `bigclaw-go/`) -> `ok  	bigclaw-go/internal/uigovernance	0.128s`
-- `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `73 passed in 0.29s`
-- `wc -l tests/test_reports.py` -> `3242 tests/test_reports.py`
-- `git diff --stat -- .symphony/workpad.md bigclaw-go/internal/uigovernance/uigovernance.go bigclaw-go/internal/uigovernance/uigovernance_test.go tests/test_reports.py` -> `.symphony/workpad.md | 17 +-, bigclaw-go/internal/uigovernance/uigovernance.go | 648 +++++++++++++++++++++, bigclaw-go/internal/uigovernance/uigovernance_test.go | 99 ++++, tests/test_reports.py | 73 ---`
+- `go test ./internal/uigovernance` (run from `bigclaw-go/`) -> `ok  	bigclaw-go/internal/uigovernance	1.121s`
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q` -> `72 passed in 0.13s`
+- `wc -l tests/test_reports.py` -> `3213 tests/test_reports.py`
+- `git diff --stat -- .symphony/workpad.md bigclaw-go/internal/uigovernance/uigovernance.go bigclaw-go/internal/uigovernance/uigovernance_test.go tests/test_reports.py` -> `.symphony/workpad.md | 17 +-, bigclaw-go/internal/uigovernance/uigovernance.go | 438 +++++++++++++++++++++, bigclaw-go/internal/uigovernance/uigovernance_test.go | 59 +++, tests/test_reports.py | 29 --`
 - `rg --files | rg '\\.py$' | wc -l` -> `51`
 - `rg --files | rg '\\.go$' | wc -l` -> `288`
 - `rg --files | rg '(^|/)(pyproject\\.toml|setup\\.py|setup\\.cfg)$' || true` -> no matches; no `pyproject.toml`, `setup.py`, or `setup.cfg` files were touched in this change

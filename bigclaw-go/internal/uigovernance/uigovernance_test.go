@@ -983,6 +983,65 @@ func TestRenderUIReviewMixedReviewSurfaces(t *testing.T) {
 	}
 }
 
+func TestRenderUIReviewObjectiveWireframeAndQuestionBoards(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+
+	objectiveCoverage := RenderUIReviewObjectiveCoverageBoard(pack)
+	wireframeReadiness := RenderUIReviewWireframeReadinessBoard(pack)
+	questionTracker := RenderUIReviewOpenQuestionTracker(pack)
+
+	for _, tc := range []struct {
+		name      string
+		body      string
+		fragments []string
+	}{
+		{
+			name: "objective coverage",
+			body: objectiveCoverage,
+			fragments: []string{
+				"# UI Review Objective Coverage Board",
+				"- Objectives: 4",
+				"- Personas: 4",
+				"- blocked: 1",
+				"- covered: 2",
+				"objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail",
+				"dependency_ids=BIG-4203,OPE-72,OPE-73 assignments=role-run-detail-eng-lead checklist=chk-run-replay-context decisions=dec-run-detail-audit-rail signoffs=sig-run-detail-eng-lead blockers=blk-run-detail-copy-final",
+			},
+		},
+		{
+			name: "wireframe readiness",
+			body: wireframeReadiness,
+			fragments: []string{
+				"# UI Review Wireframe Readiness Board",
+				"- Wireframes: 4",
+				"- Devices: 1",
+				"- at-risk: 2",
+				"- blocked: 1",
+				"- ready: 1",
+				"wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail",
+				"checklist_open=1 decisions_open=0 assignments_open=1 signoffs_open=1 blockers_open=1 signoffs=sig-run-detail-eng-lead blockers=blk-run-detail-copy-final blocks=4 notes=2",
+			},
+		},
+		{
+			name: "question tracker",
+			body: questionTracker,
+			fragments: []string{
+				"# UI Review Open Question Tracker",
+				"- Questions: 3",
+				"- Owners: 3",
+				"qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue",
+				"checklist=chk-queue-role-density flows=none impact=Changes denial-path copy, button placement, and review criteria for queue and triage pages.",
+			},
+		},
+	} {
+		for _, fragment := range tc.fragments {
+			if !strings.Contains(tc.body, fragment) {
+				t.Fatalf("%s: expected %q in report, got %s", tc.name, fragment, tc.body)
+			}
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{
