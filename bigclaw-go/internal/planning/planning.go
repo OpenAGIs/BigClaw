@@ -289,7 +289,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Capabilities:      []string{"commercialization", "handoff", "pilot-rollout"},
 				Evidence:          []string{"pilot-evidence", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
-					{Label: "orchestration-plan-src", Target: "src/bigclaw/orchestration.py", Capability: "commercialization", Note: "cross-team orchestration, entitlement-aware policy, and handoff decisions"},
+					{Label: "orchestration-plan-src", Target: "bigclaw-go/internal/workflow/orchestration.go", Capability: "commercialization", Note: "cross-team orchestration, entitlement-aware policy, and handoff decisions"},
 					{Label: "orchestration-report-src", Target: "src/bigclaw/reports.py", Capability: "commercialization", Note: "orchestration canvas, portfolio rollups, and narrative exports"},
 					{Label: "collaboration-tests", Target: "bigclaw-go/internal/collaboration/thread_test.go", Capability: "handoff", Note: "Go-native thread merge and handoff validation"},
 					{Label: "pilot-rollout-tests", Target: "bigclaw-go/internal/pilot/rollout_test.go", Capability: "pilot-rollout", Note: "Go-native rollout scoring and repo narrative validation"},

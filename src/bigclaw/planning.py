@@ -472,7 +472,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 evidence_links=[
                     EvidenceLink(
                         label="orchestration-plan-src",
-                        target="src/bigclaw/orchestration.py",
+                        target="bigclaw-go/internal/workflow/orchestration.go",
                         capability="commercialization",
                         note="cross-team orchestration, entitlement-aware policy, and handoff decisions",
                     ),
