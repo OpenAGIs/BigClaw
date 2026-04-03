@@ -18,3 +18,14 @@
 
 - `pytest tests/test_control_center.py`
 - If contract coverage changes: `pytest tests/test_execution_contract.py`
+
+### Validation Results
+
+- `pytest tests/test_control_center.py` -> failed in workspace because `pytest` executable was unavailable: `zsh:1: command not found: pytest`
+- `python3 -m pytest tests/test_control_center.py` -> passed: `3 passed in 0.07s`
+- `python3 -m pytest tests/test_execution_contract.py` -> passed: `7 passed in 0.07s`
+
+### Status
+
+- Branch: `bigclaw-182-control-center`
+- Latest commit: `f2a0306bb41bc37743e148812ade04d3e8fe0986`
