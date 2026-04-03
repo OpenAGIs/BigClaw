@@ -22,7 +22,7 @@ func TestCandidateBacklogRoundTripPreservesManifestShape(t *testing.T) {
 				Priority:          "P0",
 				Owner:             "platform-ui",
 				Outcome:           "Unify console release gates and promotion evidence.",
-				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem",
+				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning",
 				Capabilities:      []string{"release-gate", "reporting"},
 				Evidence:          []string{"acceptance-suite", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
@@ -75,7 +75,7 @@ func TestCandidateBacklogRanksReadyItemsAheadOfBlockedWork(t *testing.T) {
 				Priority:          "P1",
 				Owner:             "platform-ui",
 				Outcome:           "Unify console release gates and promotion evidence.",
-				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem",
+				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning",
 				Capabilities:      []string{"release-gate", "reporting"},
 				Evidence:          []string{"acceptance-suite", "validation-report"},
 			},
@@ -103,7 +103,7 @@ func TestEntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence(t *te
 				Priority:          "P0",
 				Owner:             "platform-ui",
 				Outcome:           "Unify console release gates and promotion evidence.",
-				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem",
+				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning",
 				Capabilities:      []string{"release-gate", "reporting"},
 				Evidence:          []string{"acceptance-suite", "validation-report"},
 			},
@@ -175,7 +175,7 @@ func TestEntryGateHoldsWhenV2BaselineIsMissingOrNotReady(t *testing.T) {
 		Title:   "v4.0 v3候选与进入条件",
 		Version: "v4.0-v3",
 		Candidates: []CandidateEntry{
-			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem", Capabilities: []string{"release-gate"}, Evidence: []string{"acceptance-suite", "validation-report"}},
+			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning", Capabilities: []string{"release-gate"}, Evidence: []string{"acceptance-suite", "validation-report"}},
 			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "cd bigclaw-go && go test ./internal/product", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
 			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "cd bigclaw-go && go test ./internal/collaboration ./internal/pilot", Capabilities: []string{"commercialization"}, Evidence: []string{"pilot-evidence"}},
 		},
@@ -250,7 +250,7 @@ func TestRenderCandidateBacklogReportSummarizesBacklogAndGateFindings(t *testing
 				Priority:          "P0",
 				Owner:             "platform-ui",
 				Outcome:           "Unify console release gates and promotion evidence.",
-				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem",
+				ValidationCommand: "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning",
 				Capabilities:      []string{"release-gate", "reporting"},
 				Evidence:          []string{"acceptance-suite", "validation-report"},
 				EvidenceLinks:     []EvidenceLink{{Label: "ui-acceptance", Target: "bigclaw-go/internal/designsystem/designsystem_test.go", Capability: "release-gate"}},
@@ -277,7 +277,7 @@ func TestRenderCandidateBacklogReportSummarizesBacklogAndGateFindings(t *testing
 		"- Epic: BIG-EPIC-20 v4.0 v3候选与进入条件",
 		"- Decision: PASS: ready=1 blocked=0 missing_capabilities=0 missing_evidence=0 baseline_findings=0",
 		"- candidate-release-control: Release control center priority=P0 owner=platform-ui score=100 ready=True",
-		"validation=cd bigclaw-go && go test ./internal/designsystem",
+		"validation=cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning",
 		"- ui-acceptance -> bigclaw-go/internal/designsystem/designsystem_test.go capability=release-gate",
 		"- Missing evidence: none",
 		"- Baseline ready: True",
@@ -451,20 +451,38 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		}
 	}
 
-	if got, want := releaseCandidate.ValidationCommand, "(cd bigclaw-go && go test ./internal/designsystem ./internal/consoleia ./internal/uireview)"; got != want {
+	if got, want := releaseCandidate.ValidationCommand, "cd bigclaw-go && go test ./internal/designsystem ./internal/uireview ./internal/planning"; got != want {
 		t.Fatalf("release-control validation command mismatch: got %q want %q", got, want)
 	}
 	releaseTargets := map[string]struct{}{}
 	for _, link := range releaseCandidate.EvidenceLinks {
 		releaseTargets[link.Target] = struct{}{}
 	}
-	if _, ok := releaseTargets["bigclaw-go/internal/uireview/uireview_test.go"]; !ok {
-		t.Fatalf("missing Go-native review pack evidence target in %+v", releaseTargets)
+	for _, want := range []string{
+		"bigclaw-go/internal/designsystem/designsystem.go",
+		"bigclaw-go/internal/designsystem/designsystem_test.go",
+		"bigclaw-go/internal/uireview/uireview.go",
+		"bigclaw-go/internal/uireview/render.go",
+		"bigclaw-go/internal/uireview/uireview_test.go",
+		"bigclaw-go/internal/planning/planning_test.go",
+	} {
+		if _, ok := releaseTargets[want]; !ok {
+			t.Fatalf("missing Go-native release-control evidence target %q in %+v", want, releaseTargets)
+		}
 	}
 	for target := range releaseTargets {
 		prefix, _, _ := strings.Cut(target, "/")
 		if prefix == "tests" {
 			t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
+		}
+	}
+	for _, removed := range []string{
+		"src/bigclaw/design_system.py",
+		"src/bigclaw/console_ia.py",
+		"src/bigclaw/ui_review.py",
+	} {
+		if _, ok := releaseTargets[removed]; ok {
+			t.Fatalf("deleted Python UI target still present in %+v", releaseTargets)
 		}
 	}
 }
