@@ -1,45 +1,74 @@
-# BIG-GO-1115
+# BIG-GO-1132
 
 ## Plan
-- confirm the lane-owned candidate files from the issue context against the actual worktree
-- document the zero-`.py` baseline in this branch so the acceptance risk is explicit before any code change
-- add missing regression coverage for the still-uncovered candidate modules `src/bigclaw/planning.py`, `src/bigclaw/queue.py`, `src/bigclaw/reports.py`, and `src/bigclaw/risk.py`
-- keep the existing `repo_*` candidate coverage unchanged because `top_level_module_purge_tranche2_test.go` and `top_level_module_purge_tranche10_test.go` already enforce those deletions
-- run targeted validation for the new regression tranche plus repo-wide `.py` baseline checks
+- confirm the issue candidate `tests/*.py` tranche against the actual materialized worktree
+- record the pre-change zero-`.py` baseline so the acceptance limit is explicit before any code change
+- add one regression test that keeps the removed root `tests/` tree absent and verifies representative Go replacement coverage exists for this issue lane
+- keep the change set scoped to regression coverage plus the required workpad update
+- run targeted validation for the new regression test and repo-wide Python-baseline checks
 - commit and push the scoped change set
 
 ## Acceptance
 - lane file list is explicit:
-- `src/bigclaw/planning.py`
-- `src/bigclaw/queue.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_governance.py`
-- `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_triage.py`
-- `src/bigclaw/reports.py`
-- `src/bigclaw/risk.py`
-- the implementation stays scoped to the uncovered tranche for `planning.py`, `queue.py`, `reports.py`, and `risk.py`
+- `tests/conftest.py`
+- `tests/test_audit_events.py`
+- `tests/test_connectors.py`
+- `tests/test_console_ia.py`
+- `tests/test_control_center.py`
+- `tests/test_cost_control.py`
+- `tests/test_cross_process_coordination_surface.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_design_system.py`
+- `tests/test_dsl.py`
+- `tests/test_evaluation.py`
+- `tests/test_event_bus.py`
+- `tests/test_execution_contract.py`
+- `tests/test_execution_flow.py`
+- `tests/test_followup_digests.py`
+- `tests/test_github_sync.py`
+- `tests/test_governance.py`
+- `tests/test_issue_archive.py`
+- `tests/test_live_shadow_bundle.py`
+- `tests/test_live_shadow_scorecard.py`
+- `tests/test_mapping.py`
+- `tests/test_memory.py`
+- `tests/test_models.py`
+- `tests/test_observability.py`
+- `tests/test_operations.py`
+- `tests/test_orchestration.py`
+- `tests/test_parallel_refill.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_pilot.py`
+- `tests/test_planning.py`
+- `tests/test_queue.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_links.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_rollout.py`
+- `tests/test_repo_triage.py`
+- `tests/test_reports.py`
+- the repo root `tests/` directory remains absent
+- representative Go replacement coverage exists for the removed Python test tranche
 - the repository continues to have no live `.py` files in the worktree
 - exact validation commands and outcomes are recorded below
 - residual risk explicitly notes that the issue goal of reducing Python file count further is already blocked by the pre-change zero baseline in this workspace
 
 ## Validation
 - `find . -name '*.py' | wc -l`
-- `git ls-tree -r --name-only HEAD | rg '\.py$'`
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14`
+- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l`
+- `cd bigclaw-go && go test ./internal/regression -run TestPythonTestTranche15Removed`
 - `cd bigclaw-go && go test ./internal/regression`
 - `git status --short`
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
-- `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14` -> `ok  	bigclaw-go/internal/regression	0.459s`
-- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.653s`
-- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go`
+- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l` -> `0`
+- `cd bigclaw-go && go test ./internal/regression -run TestPythonTestTranche15Removed` -> `ok  	bigclaw-go/internal/regression	1.537s`
+- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	1.171s`
+- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/python_test_tranche15_removal_test.go`
 
 ## Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
