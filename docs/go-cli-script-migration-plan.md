@@ -24,11 +24,12 @@ retired the final root Python workspace shims.
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`
 
-### `bigclaw-go/scripts/*` first automation batch
+### `bigclaw-go/scripts/*` automation lane
 
-- `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
+- `bigclaw-go/scripts/{benchmark,e2e,migration}/` is now Python-free and Go-owned.
 - retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
-- `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- retired E2E Python helpers -> `bigclawctl automation e2e ...` plus the retained `run_all.sh`, `kubernetes_smoke.sh`, and `ray_smoke.sh` wrappers
+- retired migration Python helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
@@ -70,9 +71,8 @@ operator docs and external automation references finish the direct cutover to
   does not reintroduce Python environment management at the repository root.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
-- Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
-  first automation batch. The remaining backlog is tracked in
-  `bigclaw-go/docs/go-cli-script-migration.md`.
+- Keep `bigclaw-go/scripts/*` Python-free; any new automation surface in this area should land as
+  Go-owned `bigclawctl automation ...` behavior or a minimal shell wrapper only.
 - Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
 
 ## Validation Commands
@@ -124,7 +124,7 @@ operator docs and external automation references finish the direct cutover to
 - PR description focus:
   - migrated entrypoints and retained shims
   - exact validation commands and results
-  - explicit note that `bigclaw-go/scripts/*` is deferred to a follow-up migration lane
+  - explicit note that `bigclaw-go/scripts/{benchmark,e2e,migration}` is fully retired as a Python lane
 
 ## Risks
 

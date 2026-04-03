@@ -1,13 +1,40 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1112`
 
 ## Current Go-Only Entrypoints
 
-`bigclaw-go/scripts/e2e/` is now a Python-free operator surface. `BIG-GO-1053`
-completed the tranche-2 cleanup by keeping only Go-native
-`bigclawctl automation ...` subcommands plus the retained shell wrappers needed
-for the bundled live-validation workflow.
+`BIG-GO-1112` closes the residual `bigclaw-go/scripts/{benchmark,e2e,migration}`
+lane sweep: those directories are now a Python-free operator surface. The retired
+candidate Python files covered by this lane were:
+
+- `bigclaw-go/scripts/benchmark/capacity_certification.py`
+- `bigclaw-go/scripts/benchmark/capacity_certification_test.py`
+- `bigclaw-go/scripts/benchmark/run_matrix.py`
+- `bigclaw-go/scripts/benchmark/soak_local.py`
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
+- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
+- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+- `bigclaw-go/scripts/e2e/external_store_validation.py`
+- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
+- `bigclaw-go/scripts/e2e/run_all_test.py`
+- `bigclaw-go/scripts/e2e/run_task_smoke.py`
+- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
+- `bigclaw-go/scripts/migration/shadow_compare.py`
+- `bigclaw-go/scripts/migration/shadow_matrix.py`
+
+Behavioral ownership now stays with Go-native `bigclawctl automation ...`
+subcommands plus the retained shell wrappers needed for the bundled
+live-validation workflow.
 
 | Active entrypoint | Backing command | Purpose |
 | --- | --- | --- |
@@ -60,9 +87,9 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - Report serialization compatibility for JSON consumers that previously read the Python script output
 ## Compatibility Layer Plan
 
-- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/e2e/`.
+- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/{benchmark,e2e,migration}/`.
 - Preserve the retained shell wrappers only where they add operator convenience over direct `bigclawctl automation ...` invocation.
-- Continue the remaining non-e2e script migrations in follow-up batches without expanding the e2e compatibility layer again.
+- Treat the candidate Python lane as fully retired; follow-up issues should add Go surfaces directly instead of reviving script-level Python compatibility.
 
 ## Branch And PR Suggestion
 
