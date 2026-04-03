@@ -87,16 +87,15 @@ PYTHONPATH=src python3 -m pytest tests
 ```
 
 Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface from the active environment without editable install
-or repo-root packaging bootstrap:
+Python migration smoke path from the active environment without editable
+install or repo-root packaging bootstrap:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
-That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level smoke
-suite in `tests/test_reports.py` when
-`pytest` is available.
+That legacy path runs `bigclawctl dev-smoke`. The repo-root Python `tests/`
+smoke tranche has been retired in favor of repo-native Go coverage.
 
 ## Go smoke verify
 

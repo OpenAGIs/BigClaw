@@ -51,10 +51,10 @@ Supporting integration:
 
 - Incremental:
   - `(cd bigclaw-go && go test ./internal/repo)`
-  - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_reports.py`
-  - `PYTHONPATH=src python3 -m pytest tests/test_service.py tests/test_operations.py tests/test_planning.py`
+  - `(cd bigclaw-go && go test ./internal/reporting ./internal/pilot ./internal/runtimecompat ./internal/scheduler)`
+  - `(cd bigclaw-go && go test ./internal/product ./internal/worker ./internal/workflow)`
 - Full:
-  - `PYTHONPATH=src python3 -m pytest -q`
+  - `(cd bigclaw-go && go test ./...)`
 
 ## Final execution note
 This alignment file is now the single source of truth for PRD-to-issue traceability and release acceptance in the AgentHub integration stream.
