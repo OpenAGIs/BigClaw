@@ -1,4 +1,76 @@
-# BIG-GO-1115
+# BIG-GO-1122
+
+## Plan
+- confirm the `BIG-GO-1122` candidate Python test tranche against the current worktree and note the repo-wide zero-`.py` baseline before code changes
+- add Go regression coverage that keeps the deleted `tests/*.py` tranche absent and asserts representative Go replacement tests/packages remain present
+- keep the change scoped to regression enforcement and issue documentation only
+- run targeted validation for the new regression test plus the repo-wide `.py` count check
+- record exact commands and outcomes, then commit and push the issue branch
+
+## Acceptance
+- lane coverage is explicit for the candidate Python test tranche:
+- `tests/conftest.py`
+- `tests/test_audit_events.py`
+- `tests/test_connectors.py`
+- `tests/test_console_ia.py`
+- `tests/test_control_center.py`
+- `tests/test_cost_control.py`
+- `tests/test_cross_process_coordination_surface.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_design_system.py`
+- `tests/test_dsl.py`
+- `tests/test_evaluation.py`
+- `tests/test_event_bus.py`
+- `tests/test_execution_contract.py`
+- `tests/test_execution_flow.py`
+- `tests/test_followup_digests.py`
+- `tests/test_github_sync.py`
+- `tests/test_governance.py`
+- `tests/test_issue_archive.py`
+- `tests/test_live_shadow_bundle.py`
+- `tests/test_live_shadow_scorecard.py`
+- `tests/test_mapping.py`
+- `tests/test_memory.py`
+- `tests/test_models.py`
+- `tests/test_observability.py`
+- `tests/test_operations.py`
+- `tests/test_orchestration.py`
+- `tests/test_parallel_refill.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_pilot.py`
+- `tests/test_planning.py`
+- `tests/test_queue.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_links.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_rollout.py`
+- `tests/test_repo_triage.py`
+- `tests/test_reports.py`
+- regression coverage asserts the deleted `tests` directory stays absent
+- regression coverage asserts representative Go replacements for this tranche stay present
+- exact validation commands and outcomes are recorded below
+- residual risk explicitly notes that the repo already starts at `find . -name '*.py' | wc -l == 0`, so this issue can only harden the migration state rather than reduce the count further from this workspace baseline
+
+## Validation
+- `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test ./internal/regression -run TestPythonTestResidualSweepA`
+- `cd bigclaw-go && go test ./internal/regression`
+- `git status --short`
+
+## Validation Results
+- `find . -name '*.py' | wc -l` -> `0`
+- `cd bigclaw-go && go test ./internal/regression -run TestPythonTestResidualSweepA` -> `ok  	bigclaw-go/internal/regression	0.690s`
+- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.517s`
+- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/python_test_residual_sweep_a_test.go`
+
+## Residual Risk
+- the repository already has a zero-`.py` baseline in this workspace, so the numerical “count goes down” acceptance condition cannot move further here; this issue enforces the removed tranche and its Go ownership instead
+
+## Archived Workpads
+### BIG-GO-1115
 
 ## Plan
 - confirm the lane-owned candidate files from the issue context against the actual worktree
