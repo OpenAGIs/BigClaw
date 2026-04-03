@@ -7,21 +7,40 @@ import (
 	"testing"
 )
 
-func TestE2EScriptDirectoryStaysPythonFree(t *testing.T) {
-	repoRoot := repoRoot(t)
-	e2eDir := filepath.Join(repoRoot, "scripts", "e2e")
+func assertDirectoryHasNoPythonFiles(t *testing.T, dir string) {
+	t.Helper()
 
-	entries, err := os.ReadDir(e2eDir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		t.Fatalf("read e2e script directory: %v", err)
+		if os.IsNotExist(err) {
+			return
+		}
+		t.Fatalf("read script directory %s: %v", dir, err)
 	}
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
 		if strings.HasSuffix(entry.Name(), ".py") {
-			t.Fatalf("expected no Python helper in scripts/e2e, found %s", entry.Name())
+			t.Fatalf("expected no Python helper in %s, found %s", dir, entry.Name())
 		}
+	}
+}
+
+func TestE2EScriptDirectoryStaysPythonFree(t *testing.T) {
+	repoRoot := repoRoot(t)
+	e2eDir := filepath.Join(repoRoot, "scripts", "e2e")
+	assertDirectoryHasNoPythonFiles(t, e2eDir)
+}
+
+func TestBigClawGoScriptDirectoriesStayPythonFree(t *testing.T) {
+	repoRoot := filepath.Clean(filepath.Join(repoRoot(t), ".."))
+	for _, relativeDir := range []string{
+		"bigclaw-go/scripts/benchmark",
+		"bigclaw-go/scripts/e2e",
+		"bigclaw-go/scripts/migration",
+	} {
+		assertDirectoryHasNoPythonFiles(t, filepath.Join(repoRoot, relativeDir))
 	}
 }
 
