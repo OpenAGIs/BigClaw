@@ -20,6 +20,8 @@
 - `python3 -m pytest tests/test_console_ia.py`
 - `python3 -m pytest tests/test_operations.py`
 - `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_console_ia.py tests/test_operations.py`
+- `python3 -m pytest tests/test_ui_review.py`
+- `python3 -m pytest tests/test_design_system.py tests/test_planning.py`
 
 ### Validation Results
 
@@ -27,6 +29,8 @@
 - `python3 -m pytest tests/test_console_ia.py` -> passed: `11 passed in 0.06s`
 - `python3 -m pytest tests/test_operations.py` -> passed: `20 passed in 0.10s`
 - `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_console_ia.py tests/test_operations.py` -> passed: `44 passed in 0.10s`
+- `python3 -m pytest tests/test_ui_review.py` -> passed: `28 passed in 0.08s`
+- `python3 -m pytest tests/test_design_system.py tests/test_planning.py` -> passed: `30 passed in 0.07s`
 
 ### Status
 
