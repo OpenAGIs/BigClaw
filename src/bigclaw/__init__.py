@@ -1,7 +1,7 @@
 import sys
 import types
 
-from .observability import (
+from .reports import (
     BillingInterval,
     BillingRate,
     BillingSummary,
@@ -66,8 +66,8 @@ from .observability import (
     warn_legacy_service_surface,
 )
 
-_legacy_model_surface = sys.modules[f"{__name__}.observability"]
-_legacy_runtime_surface = sys.modules[f"{__name__}.observability"]
+_legacy_model_surface = sys.modules[f"{__name__}.reports"]
+_legacy_runtime_surface = sys.modules[f"{__name__}.reports"]
 
 
 def _install_legacy_surface_module(
@@ -118,9 +118,105 @@ _install_legacy_surface_module(
     source_module=_legacy_model_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "models.py has been folded into observability.py for compatibility-only imports."
+        "models.py has been folded into reports.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/models.go",
+)
+_install_legacy_surface_module(
+    "observability",
+    [
+        "APPROVAL_RECORDED_EVENT",
+        "AcceptanceDecision",
+        "AcceptanceGate",
+        "AuditEventSpec",
+        "BUDGET_OVERRIDE_EVENT",
+        "BillingInterval",
+        "BillingRate",
+        "BillingSummary",
+        "ClawWorkerRuntime",
+        "CollaborationComment",
+        "CollaborationThread",
+        "CrossDepartmentOrchestrator",
+        "DeadLetterEntry",
+        "DecisionNote",
+        "DepartmentHandoff",
+        "ExecutionRecord",
+        "FLOW_HANDOFF_EVENT",
+        "FlowRun",
+        "FlowRunStatus",
+        "FlowStepRun",
+        "FlowStepStatus",
+        "FlowTemplate",
+        "FlowTemplateStep",
+        "FlowTrigger",
+        "GitHubConnector",
+        "GitSyncTelemetry",
+        "HandoffRequest",
+        "JiraConnector",
+        "JournalEntry",
+        "LEGACY_MAINLINE_STATUS",
+        "LinearConnector",
+        "MANUAL_TAKEOVER_EVENT",
+        "ObservabilityLedger",
+        "P0_AUDIT_EVENT_SPECS",
+        "PersistentTaskQueue",
+        "PremiumOrchestrationPolicy",
+        "Priority",
+        "PullRequestFreshness",
+        "RepoGovernanceEnforcer",
+        "RepoGovernancePolicy",
+        "RepoGovernanceResult",
+        "RepoSpace",
+        "RepoSyncAudit",
+        "RiskAssessment",
+        "RiskFactor",
+        "RiskLevel",
+        "RiskScore",
+        "RiskScorer",
+        "RiskSignal",
+        "RunCloseout",
+        "SCHEDULER_DECISION_EVENT",
+        "SandboxProfile",
+        "SandboxRouter",
+        "Scheduler",
+        "SchedulerDecision",
+        "ServerMonitoring",
+        "SourceIssue",
+        "Task",
+        "TaskRun",
+        "TaskState",
+        "ToolCallResult",
+        "ToolPolicy",
+        "ToolRuntime",
+        "TriageLabel",
+        "TriageRecord",
+        "TriageStatus",
+        "UsageRecord",
+        "WorkerExecutionResult",
+        "WorkflowDefinition",
+        "WorkflowEngine",
+        "WorkflowRunResult",
+        "WorkflowStep",
+        "WorkpadJournal",
+        "build_collaboration_thread",
+        "build_collaboration_thread_from_audits",
+        "collaboration_now",
+        "create_server",
+        "get_audit_event_spec",
+        "merge_collaboration_threads",
+        "missing_required_fields",
+        "render_collaboration_lines",
+        "render_collaboration_panel_html",
+        "render_orchestration_plan",
+        "run_server",
+        "warn_legacy_service_surface",
+    ],
+    source_module=_legacy_runtime_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "observability.py has been folded into reports.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/ledger.go",
 )
 _install_legacy_surface_module(
     "runtime",
@@ -164,7 +260,7 @@ _install_legacy_surface_module(
     source_module=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "runtime.py has been folded into observability.py for compatibility-only imports."
+        "runtime.py has been folded into reports.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/worker/runtime.go",
 )
@@ -223,7 +319,7 @@ _install_legacy_surface_module(
     source_module=_legacy_model_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "connectors.py has been folded into observability.py for compatibility-only imports."
+        "connectors.py has been folded into reports.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/connector.go",
 )
@@ -233,7 +329,7 @@ _install_legacy_surface_module(
     source_module=_legacy_model_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "dsl.py has been folded into observability.py for compatibility-only imports."
+        "dsl.py has been folded into reports.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
 )
@@ -250,10 +346,10 @@ _install_legacy_surface_module(
         "get_audit_event_spec",
         "missing_required_fields",
     ],
-    source_module=sys.modules[f"{__name__}.observability"],
+    source_module=sys.modules[f"{__name__}.reports"],
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "audit_events.py has been folded into observability.py for compatibility-only imports."
+        "audit_events.py has been folded into reports.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/audit_spec.go",
 )
@@ -269,10 +365,10 @@ _install_legacy_surface_module(
 _install_legacy_surface_module(
     "repo_plane",
     ["RepoAgent", "RepoSpace", "RunCommitLink"],
-    source_module=sys.modules[f"{__name__}.observability"],
+    source_module=sys.modules[f"{__name__}.reports"],
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "repo_plane.py has been folded into observability.py for compatibility-only imports."
+        "repo_plane.py has been folded into reports.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/repo/plane.go",
 )
@@ -289,15 +385,15 @@ _install_legacy_surface_module(
         "render_collaboration_lines",
         "render_collaboration_panel_html",
     ],
-    source_module=sys.modules[f"{__name__}.observability"],
+    source_module=sys.modules[f"{__name__}.reports"],
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "collaboration.py has been folded into observability.py for compatibility-only imports."
+        "collaboration.py has been folded into reports.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/collaboration.go",
 )
 
-from .observability import (
+from .reports import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
