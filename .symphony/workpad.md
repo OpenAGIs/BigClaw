@@ -1,13 +1,69 @@
-# BIG-GO-1153
+# BIG-GO-1155
 
 ## Plan
+- Verify the repository-wide Python file count.
+- Check whether the issue's candidate Python paths still exist in this workspace.
+- Confirm the available Go or shell execution paths in the affected script areas.
+- Keep the change scoped to this issue by recording the audit and validation only if the lane is already complete.
+- Commit and push the resulting issue-scoped artifact.
+
+## Acceptance
+- Real Python files in this lane are covered or confirmed absent.
+- Go replacement or compatible non-Python execution paths are verified for the relevant script areas.
+- `find . -name '*.py' | wc -l` is confirmed and does not regress.
+
+## Validation
+- `find . -name '*.py' | wc -l`
+- `find bigclaw-go/scripts -maxdepth 3 -type f | sort`
+- `find scripts -maxdepth 2 -type f | sort`
+- `go test ./internal/regression -run 'TestTopLevelModulePurgeTranche16|TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'`
+- `git status --short`
+
+## Notes
+- Initial inspection in this workspace shows zero Python files repository-wide.
+- The candidate Python files listed in the issue are not present in this checkout.
+- Existing compatible paths observed during inspection:
+  - `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`
+  - `bigclaw-go/scripts/e2e/run_all.sh`
+  - `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
+  - `bigclaw-go/scripts/e2e/ray_smoke.sh`
+  - `bigclaw-go/scripts/benchmark/run_suite.sh`
+  - `scripts/dev_bootstrap.sh`
+
+## Results
+- `find . -name '*.py' | wc -l`
+  - Result: `0`
+- `find bigclaw-go/scripts -maxdepth 3 -type f | sort`
+  - Result:
+    - `bigclaw-go/scripts/benchmark/run_suite.sh`
+    - `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`
+    - `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
+    - `bigclaw-go/scripts/e2e/ray_smoke.sh`
+    - `bigclaw-go/scripts/e2e/run_all.sh`
+- `find scripts -maxdepth 2 -type f | sort`
+  - Result:
+    - `scripts/dev_bootstrap.sh`
+    - `scripts/ops/bigclaw-issue`
+    - `scripts/ops/bigclaw-panel`
+    - `scripts/ops/bigclaw-symphony`
+    - `scripts/ops/bigclawctl`
+- `go test ./internal/regression -run 'TestTopLevelModulePurgeTranche16|TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'`
+  - Result: `ok  	bigclaw-go/internal/regression	3.211s`
+
+## Residual Risk
+- The repository already starts from a zero-`.py` baseline in this workspace, so this issue can only document and validate the completed lane state; it cannot make the Python file count numerically lower from the current baseline.
+
+## Archived Workpads
+### BIG-GO-1153
+
+#### Plan
 - confirm the root-script candidate list against the actual worktree and record the pre-change Python-file baseline
 - replace the stale active workpad section with this issue's scoped plan before any code changes
 - add a regression tranche that locks the retired root Python script paths to absent-on-disk and asserts the documented Go or shell compatibility entrypoints for the same lane
 - validate the new tranche plus repo-wide Python-count checks and targeted `bigclawctl` help/compatibility commands
 - record exact commands and outcomes, then commit and push the scoped change set
 
-## Acceptance
+#### Acceptance
 - the lane candidate Python files are explicitly covered and remain absent from disk:
 - `scripts/create_issues.py`
 - `scripts/dev_smoke.py`
@@ -21,7 +77,7 @@
 - exact validation commands and outcomes are recorded below
 - residual risk explicitly notes that this workspace already starts at a zero-`.py` baseline, so the count cannot numerically decrease further here
 
-## Validation
+#### Validation
 - `find . -name '*.py' | wc -l`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'`
 - `cd bigclaw-go && go test ./internal/regression -run TestRootScriptResidualSweep`
@@ -33,7 +89,7 @@
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `git status --short`
 
-## Validation Results
+#### Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
 - `cd bigclaw-go && go test ./internal/regression -run TestRootScriptResidualSweep` -> `ok  	bigclaw-go/internal/regression	0.499s`
@@ -45,10 +101,9 @@
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
 - `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/root_script_residual_sweep_test.go`
 
-## Residual Risk
+#### Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
 
-## Archived Workpads
 ### BIG-GO-1115
 
 #### Plan
