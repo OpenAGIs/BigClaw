@@ -15,14 +15,18 @@
 - exact validation commands and results are recorded below
 
 ## Validation
+- `find bigclaw-go/scripts -name '*.py' | sort`
 - `find . -name '*.py' | wc -l`
-- `rg -n "bigclaw-go/scripts/.+\\.py|scripts/e2e/.+\\.py|scripts/benchmark/.+\\.py|scripts/migration/.+\\.py|run_task_smoke\\.py|export_validation_bundle\\.py|validation_bundle_continuation_scorecard\\.py|validation_bundle_continuation_policy_gate\\.py|broker_failover_stub_matrix\\.py|mixed_workload_matrix\\.py|cross_process_coordination_surface\\.py|subscriber_takeover_fault_matrix\\.py|external_store_validation\\.py|multi_node_shared_queue\\.py|capacity_certification\\.py|run_matrix\\.py|soak_local\\.py|shadow_compare\\.py|shadow_matrix\\.py|live_shadow_scorecard\\.py|export_live_shadow_bundle\\.py" bigclaw-go README.md docs workflow.md -g '!**/*.json' -g '!docs/go-cli-script-migration-plan.md' -g '!bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go'`
-- `cd bigclaw-go && go test ./internal/regression ./internal/planning`
+- `rg -n "src/bigclaw/(runtime|deprecation)\\.py|bigclaw-go/scripts/(benchmark|e2e|migration)/[A-Za-z0-9_./-]+\\.py|scripts/(benchmark|e2e|migration)/[A-Za-z0-9_./-]+\\.py" README.md bigclaw-go/docs docs scripts .github -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/*.go'`
+- `cd bigclaw-go && go test ./internal/regression ./internal/legacyshim ./cmd/bigclawctl`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `git status --short`
 
 ## Validation Results
 - pre-change `find . -name '*.py' | wc -l` -> `17`
+- `find bigclaw-go/scripts -name '*.py' | sort` -> exit `0` with no output
 - post-change `find . -name '*.py' | wc -l` -> `12`
-- `rg -n "bigclaw-go/scripts/.+\\.py|scripts/e2e/.+\\.py|scripts/benchmark/.+\\.py|scripts/migration/.+\\.py|run_task_smoke\\.py|export_validation_bundle\\.py|validation_bundle_continuation_scorecard\\.py|validation_bundle_continuation_policy_gate\\.py|broker_failover_stub_matrix\\.py|mixed_workload_matrix\\.py|cross_process_coordination_surface\\.py|subscriber_takeover_fault_matrix\\.py|external_store_validation\\.py|multi_node_shared_queue\\.py|capacity_certification\\.py|run_matrix\\.py|soak_local\\.py|shadow_compare\\.py|shadow_matrix\\.py|live_shadow_scorecard\\.py|export_live_shadow_bundle\\.py" bigclaw-go README.md docs workflow.md -g '!**/*.json' -g '!docs/go-cli-script-migration-plan.md' -g '!bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go'` -> one intentional documentation match in `bigclaw-go/docs/go-cli-script-migration.md` noting that the removed candidate `.py` entrypoints stay absent; no live README/workflow/runtime references remained
-- `cd bigclaw-go && go test ./internal/regression ./internal/planning` -> `ok   bigclaw-go/internal/regression 3.202s`; `ok   bigclaw-go/internal/planning 3.270s`
-- `git status --short` -> scoped issue edits are present, and unrelated concurrent worktree changes also exist outside this issue slice (`README.md`, `src/bigclaw/runtime.py`, `src/bigclaw/deprecation.py`, `bigclaw-go/docs/go-cli-script-migration.md`, `bigclaw-go/internal/regression/runtime_residue_purge_test.go`)
+- `rg -n "src/bigclaw/(runtime|deprecation)\\.py|bigclaw-go/scripts/(benchmark|e2e|migration)/[A-Za-z0-9_./-]+\\.py|scripts/(benchmark|e2e|migration)/[A-Za-z0-9_./-]+\\.py" README.md bigclaw-go/docs docs scripts .github -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/internal/regression/*.go'` -> exit `1` with no matches
+- `cd bigclaw-go && go test ./internal/regression ./internal/legacyshim ./cmd/bigclawctl` -> `ok   bigclaw-go/internal/regression (cached)`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/cmd/bigclawctl (cached)`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and the single checked file `/Users/openagi/code/bigclaw-workspaces/BIG-GO-1102/src/bigclaw/legacy_shim.py`
+- `git status --short` after the pushed base commit showed only the follow-up issue edits in `.symphony/workpad.md`, `README.md`, `docs/go-cli-script-migration-plan.md`, `src/bigclaw/deprecation.py`, `src/bigclaw/runtime.py`, and `bigclaw-go/internal/regression/runtime_residue_purge_test.go`
