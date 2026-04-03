@@ -776,7 +776,10 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
     assert "## Bulk Retry" in queue_report
     assert "## Failure Attribution" in queue_report
     assert "## Manual Takeover" in queue_report
-    assert "Manual Takeover [manual-takeover]" in queue_report
+    assert "- Blocked: BIG-905-3 reason=manual takeover required before retry" in queue_report
+    assert "- approval: count=1 tasks=BIG-905-2" in queue_report
+    assert "- repo-sync: count=1 tasks=BIG-905-3" in queue_report
+    assert "- BIG-905-3: Manual Takeover [manual-takeover] reason=retry budget exhausted and requires human ownership" in queue_report
     assert "# Policy/Prompt Version Center" in Path(artifacts.version_center_path).read_text()
 
 

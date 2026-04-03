@@ -18,11 +18,15 @@
 
 - `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py`
 - `python3 -m pytest tests/test_console_ia.py`
+- `python3 -m pytest tests/test_operations.py`
+- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_console_ia.py tests/test_operations.py`
 
 ### Validation Results
 
 - `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py` -> passed: `13 passed in 0.10s`
 - `python3 -m pytest tests/test_console_ia.py` -> passed: `11 passed in 0.06s`
+- `python3 -m pytest tests/test_operations.py` -> passed: `20 passed in 0.10s`
+- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_console_ia.py tests/test_operations.py` -> passed: `44 passed in 0.10s`
 
 ### Status
 
