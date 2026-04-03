@@ -95,3 +95,7 @@
 
 ## Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the lane and confirm the Go replacements; it cannot make the Python file count numerically lower from the current baseline
+
+## External Blocker
+- `BIG-GO-1143` does not exist in the reachable local tracker artifacts for this workspace (`local-issues.json`, `docs/parallel-refill-queue.json`, `docs/parallel-refill-queue.md`, or `docs/go-mainline-cutover-issue-pack.md`), so the implementation branch is complete but the issue state cannot be transitioned from here
+- the only remaining stale root-script references are historical tracker comments in `local-issues.json`; rewriting prior issue history is out of scope for this lane
