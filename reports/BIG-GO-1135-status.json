@@ -1,0 +1,51 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1135",
+    "title": "physical Python residual sweep 5",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1135"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1135-closeout.md",
+    "validation_report": "reports/BIG-GO-1135-validation.md",
+    "regression_guard": "bigclaw-go/internal/regression/physical_python_residual_sweep5_test.go",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw"
+  },
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "git ls-tree -r --name-only HEAD | rg '\\.py$' | wc -l",
+      "rg -n \"bigclaw-go/scripts/e2e/.*\\.py|scripts/dev_smoke\\.py\" bigclaw-go/docs/go-cli-script-migration.md",
+      "cd bigclaw-go && go test ./internal/regression -run TestPhysicalPythonResidualSweep5",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help | head -n 1",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help | head -n 1",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help | head -n 1",
+      "cd bigclaw-go && go run ./cmd/bigclawctl create-issues --help | head -n 1",
+      "cd bigclaw-go && go run ./cmd/bigclawctl dev-smoke --help | head -n 1"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "tracked_py_count": "0",
+      "candidate_reference_scan": "exit 1 with no matches in bigclaw-go/docs/go-cli-script-migration.md",
+      "targeted_regression_tests": "ok   bigclaw-go/internal/regression  0.829s",
+      "benchmark_help": "usage: bigclawctl automation benchmark capacity-certification [flags]",
+      "e2e_help": "usage: bigclawctl automation e2e run-task-smoke [flags]",
+      "migration_help": "usage: bigclawctl automation migration shadow-compare [flags]",
+      "create_issues_help": "usage: bigclawctl create-issues [flags]",
+      "dev_smoke_help": "usage: bigclawctl dev-smoke [flags]"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repo already starts at a zero-.py baseline, so the lane can only preserve and enforce the migrated state."
+  },
+  "notes": [
+    "The listed BIG-GO-1135 candidate Python files are already absent in this checkout.",
+    "Benchmark, e2e, migration, and root-script replacement entrypoints already exist in Go or shell form, so this lane adds issue-scoped enforcement and refreshed evidence rather than new runtime migration code."
+  ]
+}
