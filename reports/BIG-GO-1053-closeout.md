@@ -16,7 +16,7 @@ Date: `2026-04-01`
 
 ## Final Closeout Tip
 
-`44ad4ffe`
+`d4b7bd6f`
 
 ## In-Repo Artifacts
 
@@ -84,7 +84,7 @@ two stale Python tests that preserved the deleted entrypoint contract in active 
 - `git status --short --branch` is clean on `main` after the closeout artifacts are
   committed.
 - Stable closeout tag: `BIG-GO-1053-closeout` retargeted to the final landed `main` tip
-  `44ad4ffe`.
+  `d4b7bd6f`.
 - No `BIG-GO-1053` entry exists in `local-issues.json` or the Symphony local issue store,
   so there is no remaining writable in-workspace tracker state to transition.
 - Historical PR seed URL from the now-deleted evidence branch:
