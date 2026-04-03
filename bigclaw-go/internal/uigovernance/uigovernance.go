@@ -2970,6 +2970,297 @@ func RenderUIReviewOwnerEscalationDigest(pack UIReviewPack) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func RenderUIReviewFreezeApprovalTrail(pack UIReviewPack) string {
+	type entry struct {
+		EntryID          string
+		BlockerID        string
+		SurfaceID        string
+		Status           string
+		FreezeOwner      string
+		FreezeUntil      string
+		FreezeApprovedBy string
+		FreezeApprovedAt string
+		Summary          string
+		LatestEvent      string
+		NextAction       string
+	}
+	var entries []entry
+	approverCounts := map[string]int{}
+	statusCounts := map[string]int{}
+	for _, blocker := range pack.BlockerLog {
+		b := blocker.normalized()
+		if !b.FreezeException {
+			continue
+		}
+		e := entry{
+			EntryID:          "freeze-approval-" + b.BlockerID,
+			BlockerID:        b.BlockerID,
+			SurfaceID:        b.SurfaceID,
+			Status:           b.Status,
+			FreezeOwner:      fallback(b.FreezeOwner, b.Owner),
+			FreezeUntil:      fallback(b.FreezeUntil, "none"),
+			FreezeApprovedBy: fallback(b.FreezeApprovedBy, "none"),
+			FreezeApprovedAt: fallback(b.FreezeApprovedAt, "none"),
+			Summary:          fallback(b.FreezeReason, b.Summary),
+			LatestEvent:      latestBlockerEventLabel(pack.BlockerTimeline, b.BlockerID),
+			NextAction:       fallback(b.NextAction, "none"),
+		}
+		entries = append(entries, e)
+		approverCounts[e.FreezeApprovedBy]++
+		statusCounts[e.Status]++
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].EntryID < entries[j].EntryID })
+	var lines []string
+	lines = append(lines, "# UI Review Freeze Approval Trail", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Approvals: "+itoa(len(entries)), "- Approvers: "+itoa(len(approverCounts)), "", "## By Approver")
+	for _, k := range sortedStringMapKeys(intStringMap(approverCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(approverCounts[k]))
+	}
+	if len(approverCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": blocker="+e.BlockerID+" surface="+e.SurfaceID+" status="+e.Status+" owner="+e.FreezeOwner+" approved_by="+e.FreezeApprovedBy+" approved_at="+e.FreezeApprovedAt+" window="+e.FreezeUntil)
+		lines = append(lines, "  summary="+e.Summary+" latest_event="+e.LatestEvent+" next_action="+e.NextAction)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewFreezeExceptionBoard(pack UIReviewPack) string {
+	type entry struct {
+		EntryID    string
+		ItemType   string
+		SourceID   string
+		SurfaceID  string
+		Owner      string
+		Status     string
+		Window     string
+		Summary    string
+		Evidence   string
+		NextAction string
+	}
+	var entries []entry
+	ownerCounts := map[string]map[string]int{}
+	surfaceCounts := map[string]map[string]int{}
+	for _, signoff := range pack.SignoffLog {
+		s := signoff.normalized()
+		status := strings.ToLower(s.Status)
+		if status != "waived" && status != "deferred" {
+			continue
+		}
+		entries = append(entries, entry{
+			EntryID:    "freeze-" + s.SignoffID,
+			ItemType:   "signoff",
+			SourceID:   s.SignoffID,
+			SurfaceID:  s.SurfaceID,
+			Owner:      fallback(s.WaiverOwner, s.Role),
+			Status:     s.Status,
+			Window:     "none",
+			Summary:    fallback(s.WaiverReason, fallback(s.Notes, "none")),
+			Evidence:   joinCSVOrNone(s.EvidenceLinks),
+			NextAction: fallback(s.Notes, fallback(s.WaiverReason, "none")),
+		})
+	}
+	for _, blocker := range pack.BlockerLog {
+		b := blocker.normalized()
+		if !b.FreezeException {
+			continue
+		}
+		entries = append(entries, entry{
+			EntryID:    "freeze-" + b.BlockerID,
+			ItemType:   "blocker",
+			SourceID:   b.BlockerID,
+			SurfaceID:  b.SurfaceID,
+			Owner:      fallback(b.FreezeOwner, b.Owner),
+			Status:     b.Status,
+			Window:     fallback(b.FreezeUntil, "none"),
+			Summary:    fallback(b.FreezeReason, b.Summary),
+			Evidence:   latestBlockerEventLabel(pack.BlockerTimeline, b.BlockerID),
+			NextAction: fallback(b.NextAction, "none"),
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Owner != entries[j].Owner {
+			return entries[i].Owner < entries[j].Owner
+		}
+		if entries[i].SurfaceID != entries[j].SurfaceID {
+			return entries[i].SurfaceID < entries[j].SurfaceID
+		}
+		if entries[i].ItemType != entries[j].ItemType {
+			return entries[i].ItemType < entries[j].ItemType
+		}
+		return entries[i].SourceID < entries[j].SourceID
+	})
+	for _, e := range entries {
+		if _, ok := ownerCounts[e.Owner]; !ok {
+			ownerCounts[e.Owner] = map[string]int{"blocker": 0, "signoff": 0, "total": 0}
+		}
+		if _, ok := surfaceCounts[e.SurfaceID]; !ok {
+			surfaceCounts[e.SurfaceID] = map[string]int{"blocker": 0, "signoff": 0, "total": 0}
+		}
+		ownerCounts[e.Owner][e.ItemType]++
+		ownerCounts[e.Owner]["total"]++
+		surfaceCounts[e.SurfaceID][e.ItemType]++
+		surfaceCounts[e.SurfaceID]["total"]++
+	}
+	var lines []string
+	lines = append(lines, "# UI Review Freeze Exception Board", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Exceptions: "+itoa(len(entries)), "- Owners: "+itoa(len(ownerCounts)), "", "## By Owner")
+	for _, k := range sortedNestedMapKeys(ownerCounts) {
+		c := ownerCounts[k]
+		lines = append(lines, "- "+k+": blockers="+itoa(c["blocker"])+" signoffs="+itoa(c["signoff"])+" total="+itoa(c["total"]))
+	}
+	if len(ownerCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Surface")
+	for _, k := range sortedNestedMapKeys(surfaceCounts) {
+		c := surfaceCounts[k]
+		lines = append(lines, "- "+k+": blockers="+itoa(c["blocker"])+" signoffs="+itoa(c["signoff"])+" total="+itoa(c["total"]))
+	}
+	if len(surfaceCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": owner="+e.Owner+" type="+e.ItemType+" source="+e.SourceID+" surface="+e.SurfaceID+" status="+e.Status+" window="+e.Window)
+		lines = append(lines, "  summary="+e.Summary+" evidence="+e.Evidence+" next_action="+e.NextAction)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewExceptionMatrix(pack UIReviewPack) string {
+	type entry struct {
+		ExceptionID string
+		Category    string
+		SourceID    string
+		SurfaceID   string
+		Owner       string
+		Status      string
+		Severity    string
+		Summary     string
+		LatestEvent string
+		NextAction  string
+	}
+	var entries []entry
+	ownerCounts := map[string]map[string]int{}
+	statusCounts := map[string]map[string]int{}
+	surfaceCounts := map[string]map[string]int{}
+	for _, signoff := range pack.SignoffLog {
+		s := signoff.normalized()
+		status := strings.ToLower(s.Status)
+		if status != "waived" && status != "deferred" {
+			continue
+		}
+		entries = append(entries, entry{
+			ExceptionID: "exc-" + s.SignoffID,
+			Category:    "signoff",
+			SourceID:    s.SignoffID,
+			SurfaceID:   s.SurfaceID,
+			Owner:       fallback(s.WaiverOwner, s.Role),
+			Status:      s.Status,
+			Severity:    "none",
+			Summary:     fallback(s.WaiverReason, fallback(s.Notes, "none")),
+			LatestEvent: "none",
+			NextAction:  fallback(s.Notes, fallback(s.WaiverReason, "none")),
+		})
+	}
+	for _, blocker := range pack.BlockerLog {
+		b := blocker.normalized()
+		status := strings.ToLower(b.Status)
+		if status == "resolved" || status == "closed" {
+			continue
+		}
+		entries = append(entries, entry{
+			ExceptionID: "exc-" + b.BlockerID,
+			Category:    "blocker",
+			SourceID:    b.BlockerID,
+			SurfaceID:   b.SurfaceID,
+			Owner:       b.Owner,
+			Status:      b.Status,
+			Severity:    b.Severity,
+			Summary:     b.Summary,
+			LatestEvent: latestBlockerEventLabel(pack.BlockerTimeline, b.BlockerID),
+			NextAction:  fallback(b.NextAction, "none"),
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Owner != entries[j].Owner {
+			return entries[i].Owner < entries[j].Owner
+		}
+		if entries[i].SurfaceID != entries[j].SurfaceID {
+			return entries[i].SurfaceID < entries[j].SurfaceID
+		}
+		if entries[i].Category != entries[j].Category {
+			return entries[i].Category < entries[j].Category
+		}
+		return entries[i].SourceID < entries[j].SourceID
+	})
+	for _, e := range entries {
+		if _, ok := ownerCounts[e.Owner]; !ok {
+			ownerCounts[e.Owner] = map[string]int{"blocker": 0, "signoff": 0, "total": 0}
+		}
+		if _, ok := statusCounts[e.Status]; !ok {
+			statusCounts[e.Status] = map[string]int{"blocker": 0, "signoff": 0, "total": 0}
+		}
+		if _, ok := surfaceCounts[e.SurfaceID]; !ok {
+			surfaceCounts[e.SurfaceID] = map[string]int{"blocker": 0, "signoff": 0, "total": 0}
+		}
+		ownerCounts[e.Owner][e.Category]++
+		ownerCounts[e.Owner]["total"]++
+		statusCounts[e.Status][e.Category]++
+		statusCounts[e.Status]["total"]++
+		surfaceCounts[e.SurfaceID][e.Category]++
+		surfaceCounts[e.SurfaceID]["total"]++
+	}
+	var lines []string
+	lines = append(lines, "# UI Review Exception Matrix", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Exceptions: "+itoa(len(entries)), "- Owners: "+itoa(len(ownerCounts)), "- Surfaces: "+itoa(len(surfaceCounts)), "", "## By Owner")
+	for _, k := range sortedNestedMapKeys(ownerCounts) {
+		c := ownerCounts[k]
+		lines = append(lines, "- "+k+": blockers="+itoa(c["blocker"])+" signoffs="+itoa(c["signoff"])+" total="+itoa(c["total"]))
+	}
+	if len(ownerCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Status")
+	for _, k := range sortedNestedMapKeys(statusCounts) {
+		c := statusCounts[k]
+		lines = append(lines, "- "+k+": blockers="+itoa(c["blocker"])+" signoffs="+itoa(c["signoff"])+" total="+itoa(c["total"]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Surface")
+	for _, k := range sortedNestedMapKeys(surfaceCounts) {
+		c := surfaceCounts[k]
+		lines = append(lines, "- "+k+": blockers="+itoa(c["blocker"])+" signoffs="+itoa(c["signoff"])+" total="+itoa(c["total"]))
+	}
+	if len(surfaceCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.ExceptionID+": owner="+e.Owner+" type="+e.Category+" source="+e.SourceID+" surface="+e.SurfaceID+" status="+e.Status+" severity="+e.Severity)
+		lines = append(lines, "  summary="+e.Summary+" latest_event="+e.LatestEvent+" next_action="+e.NextAction)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func BuildBIG4204ReviewPack() UIReviewPack {
 	return UIReviewPack{
 		IssueID:                   "BIG-4204",
@@ -3330,6 +3621,24 @@ func sortedNestedMapKeys(m map[string]map[string]int) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func latestBlockerEventLabel(events []ReviewBlockerEvent, blockerID string) string {
+	latest := ""
+	for _, event := range events {
+		e := event.normalized()
+		if e.BlockerID != blockerID {
+			continue
+		}
+		label := e.EventID + "/" + e.Status + "/" + e.Actor + "@" + e.Timestamp
+		if latest == "" || e.Timestamp > strings.SplitN(latest, "@", 2)[1] {
+			latest = label
+		}
+	}
+	if latest == "" {
+		return "none"
+	}
+	return latest
 }
 
 func formatListMap(m map[string][]string) string {

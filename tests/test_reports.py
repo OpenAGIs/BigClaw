@@ -2897,59 +2897,6 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "- Unresolved required signoff ids: sig-run-detail-eng-lead" in report
     assert "- Unresolved questions: oq-role-density, oq-alert-priority, oq-handoff-evidence" in report
 
-def test_render_ui_review_exception_matrix_includes_signoff_and_blocker_counts() -> None:
-    pack = build_big_4204_review_pack()
-    pack.signoff_log[2] = ReviewSignoff(
-        signoff_id="sig-run-detail-eng-lead",
-        assignment_id="role-run-detail-eng-lead",
-        surface_id="wf-run-detail",
-        role="Eng Lead",
-        status="waived",
-        evidence_links=["chk-run-replay-context", "dec-run-detail-audit-rail"],
-        notes="Temporary waiver approved pending copy lock.",
-        waiver_owner="Eng Lead",
-        waiver_reason="Copy review is deferred to the next wording pass.",
-    )
-
-    exception_matrix = render_ui_review_exception_matrix(pack)
-
-    assert "# UI Review Exception Matrix" in exception_matrix
-    assert "- Exceptions: 2" in exception_matrix
-    assert "- Owners: 2" in exception_matrix
-    assert "- Surfaces: 1" in exception_matrix
-    assert "- Eng Lead: blockers=0 signoffs=1 total=1" in exception_matrix
-    assert "- product-experience: blockers=1 signoffs=0 total=1" in exception_matrix
-    assert "- open: blockers=1 signoffs=0 total=1" in exception_matrix
-    assert "- waived: blockers=0 signoffs=1 total=1" in exception_matrix
-    assert "- wf-run-detail: blockers=1 signoffs=1 total=2" in exception_matrix
-
-
-
-def test_render_ui_review_freeze_exception_board() -> None:
-    pack = build_big_4204_review_pack()
-
-    freeze_board = render_ui_review_freeze_exception_board(pack)
-
-    assert "# UI Review Freeze Exception Board" in freeze_board
-    assert "- Exceptions: 1" in freeze_board
-    assert "- release-director: blockers=1 signoffs=0 total=1" in freeze_board
-    assert "- wf-run-detail: blockers=1 signoffs=0 total=1" in freeze_board
-    assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in freeze_board
-
-
-def test_render_ui_review_freeze_approval_trail() -> None:
-    pack = build_big_4204_review_pack()
-
-    freeze_trail = render_ui_review_freeze_approval_trail(pack)
-
-    assert "# UI Review Freeze Approval Trail" in freeze_trail
-    assert "- Approvals: 1" in freeze_trail
-    assert "- release-director: 1" in freeze_trail
-    assert "freeze-approval-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open owner=release-director approved_by=release-director approved_at=2026-03-14T08:30:00Z window=2026-03-18T18:00:00Z" in freeze_trail
-
-
-
-
 def test_render_ui_review_summary_persona_and_interaction_boards() -> None:
     pack = build_big_4204_review_pack()
 

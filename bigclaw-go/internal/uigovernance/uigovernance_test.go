@@ -794,6 +794,75 @@ func TestRenderUIReviewSignoffAndEscalationDashboards(t *testing.T) {
 	}
 }
 
+func TestRenderUIReviewExceptionAndFreezeBoards(t *testing.T) {
+	exceptionPack := BuildBIG4204ReviewPack()
+	exceptionPack.SignoffLog[2] = ReviewSignoff{
+		SignoffID:     "sig-run-detail-eng-lead",
+		AssignmentID:  "role-run-detail-eng-lead",
+		SurfaceID:     "wf-run-detail",
+		Role:          "Eng Lead",
+		Status:        "waived",
+		EvidenceLinks: []string{"chk-run-replay-context", "dec-run-detail-audit-rail"},
+		Notes:         "Temporary waiver approved pending copy lock.",
+		WaiverOwner:   "Eng Lead",
+		WaiverReason:  "Copy review is deferred to the next wording pass.",
+	}
+	freezePack := BuildBIG4204ReviewPack()
+
+	exceptionMatrix := RenderUIReviewExceptionMatrix(exceptionPack)
+	freezeBoard := RenderUIReviewFreezeExceptionBoard(freezePack)
+	freezeTrail := RenderUIReviewFreezeApprovalTrail(freezePack)
+
+	for _, tc := range []struct {
+		name      string
+		body      string
+		fragments []string
+	}{
+		{
+			name: "exception matrix",
+			body: exceptionMatrix,
+			fragments: []string{
+				"# UI Review Exception Matrix",
+				"- Exceptions: 2",
+				"- Owners: 2",
+				"- Surfaces: 1",
+				"- Eng Lead: blockers=0 signoffs=1 total=1",
+				"- product-experience: blockers=1 signoffs=0 total=1",
+				"- open: blockers=1 signoffs=0 total=1",
+				"- waived: blockers=0 signoffs=1 total=1",
+				"- wf-run-detail: blockers=1 signoffs=1 total=2",
+			},
+		},
+		{
+			name: "freeze board",
+			body: freezeBoard,
+			fragments: []string{
+				"# UI Review Freeze Exception Board",
+				"- Exceptions: 1",
+				"- release-director: blockers=1 signoffs=0 total=1",
+				"- wf-run-detail: blockers=1 signoffs=0 total=1",
+				"freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z",
+			},
+		},
+		{
+			name: "freeze trail",
+			body: freezeTrail,
+			fragments: []string{
+				"# UI Review Freeze Approval Trail",
+				"- Approvals: 1",
+				"- release-director: 1",
+				"freeze-approval-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open owner=release-director approved_by=release-director approved_at=2026-03-14T08:30:00Z window=2026-03-18T18:00:00Z",
+			},
+		},
+	} {
+		for _, fragment := range tc.fragments {
+			if !strings.Contains(tc.body, fragment) {
+				t.Fatalf("%s: expected %q in report, got %s", tc.name, fragment, tc.body)
+			}
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{
