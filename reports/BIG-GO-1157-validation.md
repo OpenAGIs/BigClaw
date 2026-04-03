@@ -8,11 +8,12 @@ Issue: `BIG-GO-1157`
 
 Title: `physical Python residual sweep 7`
 
-This lane audited the candidate residual Python assets listed for the sweep and
-verified the materialized workspace already contains no live `.py` files. The
-targeted benchmark, e2e, migration, and root `scripts/` candidate paths are
-already retired in this checkout, while Go and shell entrypoints remain as the
-active replacement surface.
+This lane audited the candidate residual Python assets listed for the sweep,
+added a dedicated regression guard for the full candidate set, and verified the
+materialized workspace already contains no live `.py` files. The targeted
+benchmark, e2e, migration, and root `scripts/` candidate paths are already
+retired in this checkout, while Go and shell entrypoints remain as the active
+replacement surface.
 
 Because the workspace baseline is already zero physical Python files, this lane
 cannot produce a further numeric drop in `find . -name '*.py' | wc -l`. The
@@ -21,6 +22,9 @@ and confirmation that the Go replacement/compatibility paths are intact.
 
 ## Delivered
 
+- added `bigclaw-go/internal/regression/physical_python_residual_sweep7_test.go`
+  to lock the full lane candidate set to absent-on-disk and assert the Go/shell
+  replacement surface plus migration docs
 - refreshed `.symphony/workpad.md` for `BIG-GO-1157` with plan, acceptance,
   validation commands, exact results, and the zero-baseline blocker
 - confirmed `bigclaw-go/scripts/` only contains active Go and shell surfaces:
@@ -122,16 +126,52 @@ Only matches in bigclaw-go/internal/regression/top_level_module_purge_tranche16_
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1157/bigclaw-go && go test ./internal/regression -run 'TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints|TestTopLevelModulePurgeTranche16'
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1157/bigclaw-go && go test ./internal/regression -run 'TestPhysicalPythonResidualSweep7|TestPhysicalPythonResidualSweep7Docs|TestE2EScriptDirectoryStaysPythonFree|TestTopLevelModulePurgeTranche16'
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.152s
+ok  	bigclaw-go/internal/regression	1.292s
 ```
 
 ### Go compatibility path
+
+Command:
+
+```bash
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-1157/scripts/ops/bigclawctl create-issues --help | head -n 1
+```
+
+Result:
+
+```text
+usage: bigclawctl create-issues [flags]
+```
+
+Command:
+
+```bash
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-1157/scripts/ops/bigclawctl dev-smoke --help | head -n 1
+```
+
+Result:
+
+```text
+usage: bigclawctl dev-smoke [flags]
+```
+
+Command:
+
+```bash
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-1157/scripts/ops/bigclawctl automation benchmark capacity-certification --help | head -n 1
+```
+
+Result:
+
+```text
+usage: bigclawctl automation benchmark capacity-certification [flags]
+```
 
 Command:
 
@@ -143,6 +183,18 @@ Result:
 
 ```text
 usage: bigclawctl automation e2e external-store-validation [flags]
+```
+
+Command:
+
+```bash
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-1157/scripts/ops/bigclawctl automation migration export-live-shadow-bundle --help | head -n 1
+```
+
+Result:
+
+```text
+usage: bigclawctl automation migration export-live-shadow-bundle [flags]
 ```
 
 ## Blocker

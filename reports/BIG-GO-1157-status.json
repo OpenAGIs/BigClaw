@@ -11,6 +11,7 @@
     "validation_report": "reports/BIG-GO-1157-validation.md",
     "workpad": ".symphony/workpad.md",
     "regression_guards": [
+      "bigclaw-go/internal/regression/physical_python_residual_sweep7_test.go",
       "bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go",
       "bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go"
     ]
@@ -22,8 +23,12 @@
       "find scripts -type f | sort",
       "rg -n \"run_task_smoke\\.py|export_validation_bundle\\.py|validation_bundle_continuation_policy_gate\\.py|validation_bundle_continuation_scorecard\\.py|broker_failover_stub_matrix\\.py|mixed_workload_matrix\\.py|cross_process_coordination_surface\\.py|subscriber_takeover_fault_matrix\\.py|external_store_validation\\.py|multi_node_shared_queue\\.py\" bigclaw-go/internal/regression bigclaw-go/docs",
       "rg -n \"scripts/create_issues\\.py|scripts/dev_smoke\\.py\" bigclaw-go/internal/regression",
-      "cd bigclaw-go && go test ./internal/regression -run 'TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints|TestTopLevelModulePurgeTranche16'",
-      "bash scripts/ops/bigclawctl automation e2e external-store-validation --help | head -n 1"
+      "cd bigclaw-go && go test ./internal/regression -run 'TestPhysicalPythonResidualSweep7|TestPhysicalPythonResidualSweep7Docs|TestE2EScriptDirectoryStaysPythonFree|TestTopLevelModulePurgeTranche16'",
+      "bash scripts/ops/bigclawctl create-issues --help | head -n 1",
+      "bash scripts/ops/bigclawctl dev-smoke --help | head -n 1",
+      "bash scripts/ops/bigclawctl automation benchmark capacity-certification --help | head -n 1",
+      "bash scripts/ops/bigclawctl automation e2e external-store-validation --help | head -n 1",
+      "bash scripts/ops/bigclawctl automation migration export-live-shadow-bundle --help | head -n 1"
     ],
     "results": {
       "repo_py_count": "0",
@@ -42,8 +47,14 @@
         "scripts/ops/bigclawctl"
       ],
       "candidate_reference_scan": "matches exist only in regression tests that assert removed Python paths stay absent",
-      "targeted_go_regression": "ok   bigclaw-go/internal/regression  0.152s",
-      "go_compatibility_help": "usage: bigclawctl automation e2e external-store-validation [flags]"
+      "targeted_go_regression": "ok   bigclaw-go/internal/regression  1.292s",
+      "go_compatibility_help": [
+        "usage: bigclawctl create-issues [flags]",
+        "usage: bigclawctl dev-smoke [flags]",
+        "usage: bigclawctl automation benchmark capacity-certification [flags]",
+        "usage: bigclawctl automation e2e external-store-validation [flags]",
+        "usage: bigclawctl automation migration export-live-shadow-bundle [flags]"
+      ]
     }
   },
   "blocker": {
