@@ -44,6 +44,56 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1162` extends the same migration evidence to the retired repository-root
+Python test tranche that previously included:
+
+- `tests/conftest.py`
+- `tests/test_audit_events.py`
+- `tests/test_connectors.py`
+- `tests/test_console_ia.py`
+- `tests/test_control_center.py`
+- `tests/test_cost_control.py`
+- `tests/test_cross_process_coordination_surface.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_design_system.py`
+- `tests/test_dsl.py`
+- `tests/test_evaluation.py`
+- `tests/test_event_bus.py`
+- `tests/test_execution_contract.py`
+- `tests/test_execution_flow.py`
+- `tests/test_followup_digests.py`
+- `tests/test_github_sync.py`
+- `tests/test_governance.py`
+- `tests/test_issue_archive.py`
+- `tests/test_live_shadow_bundle.py`
+- `tests/test_live_shadow_scorecard.py`
+- `tests/test_mapping.py`
+- `tests/test_memory.py`
+- `tests/test_models.py`
+- `tests/test_observability.py`
+- `tests/test_operations.py`
+- `tests/test_orchestration.py`
+- `tests/test_parallel_refill.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_pilot.py`
+- `tests/test_planning.py`
+- `tests/test_queue.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_links.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_rollout.py`
+- `tests/test_repo_triage.py`
+- `tests/test_reports.py`
+
+Those root test assets are also already absent in the current branch baseline,
+so the lane stays focused on preventing reintroduction and keeping the Go
+coverage map explicit. The supported replacements remain the Go-native test and
+report surfaces under `bigclaw-go/internal/...`, `bigclaw-go/cmd/bigclawctl/...`,
+and `bigclaw-go/docs/reports/...`.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`

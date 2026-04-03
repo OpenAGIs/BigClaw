@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`, `BIG-GO-1162`
 
 ## Current Go-Only Entrypoints
 
@@ -40,6 +40,25 @@ regression surface focuses on keeping the deletion state sticky.
 | E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `./scripts/e2e/run_all.sh`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` |
 | Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
 | Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
+
+## BIG-GO-1162 Residual Test Sweep Coverage
+
+`BIG-GO-1162` hardens the retired repository-root `tests/*.py` tranche that used
+to validate Python-era audit, connector, console, control-plane, planning,
+queue, repo, reporting, and migration shadow surfaces. The branch baseline is
+already at zero real `.py` files, so this lane keeps the scope on preventing
+reintroduction and pinning the supported Go-native replacements that cover the
+same operator and report surfaces.
+
+| Retired Python test tranche | Supported replacement |
+| --- | --- |
+| `tests/test_audit_events.py`, `tests/test_observability.py`, `tests/test_reports.py` | `bigclaw-go/internal/observability/audit_test.go`, `bigclaw-go/internal/observability/recorder_test.go`, `bigclaw-go/internal/reporting/reporting_test.go`, `bigclaw-go/docs/reports/go-control-plane-observability-report.md` |
+| `tests/test_connectors.py`, `tests/test_mapping.py`, `tests/test_models.py` | `bigclaw-go/internal/intake/connector_test.go`, `bigclaw-go/internal/intake/mapping_test.go`, `bigclaw-go/internal/workflow/model_test.go` |
+| `tests/test_console_ia.py`, `tests/test_design_system.py`, `tests/test_dashboard_run_contract.py`, `tests/test_control_center.py` | `bigclaw-go/internal/consoleia/consoleia_test.go`, `bigclaw-go/internal/designsystem/designsystem_test.go`, `bigclaw-go/internal/product/dashboard_run_contract_test.go`, `bigclaw-go/internal/api/server_test.go` |
+| `tests/test_cost_control.py`, `tests/test_execution_contract.py`, `tests/test_execution_flow.py`, `tests/test_orchestration.py`, `tests/test_planning.py`, `tests/test_queue.py` | `bigclaw-go/internal/costcontrol/controller_test.go`, `bigclaw-go/internal/contract/execution_test.go`, `bigclaw-go/internal/workflow/orchestration_test.go`, `bigclaw-go/internal/planning/planning_test.go`, `bigclaw-go/internal/queue/sqlite_queue_test.go` |
+| `tests/test_cross_process_coordination_surface.py`, `tests/test_parallel_refill.py`, `tests/test_parallel_validation_bundle.py`, `tests/test_followup_digests.py`, `tests/test_live_shadow_bundle.py`, `tests/test_live_shadow_scorecard.py` | `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`, `bigclaw-go/internal/regression/parallel_validation_matrix_docs_test.go`, `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`, `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`, `bigclaw-go/docs/reports/parallel-follow-up-index.md` |
+| `tests/test_github_sync.py`, `tests/test_governance.py`, `tests/test_issue_archive.py`, `tests/test_operations.py`, `tests/test_pilot.py` | `bigclaw-go/internal/githubsync/sync_test.go`, `bigclaw-go/internal/governance/freeze_test.go`, `bigclaw-go/internal/issuearchive/archive_test.go`, `bigclaw-go/docs/reports/v2-phase1-operations-foundation-report.md`, `bigclaw-go/internal/pilot/rollout_test.go` |
+| `tests/test_repo_board.py`, `tests/test_repo_collaboration.py`, `tests/test_repo_gateway.py`, `tests/test_repo_governance.py`, `tests/test_repo_links.py`, `tests/test_repo_registry.py`, `tests/test_repo_rollout.py`, `tests/test_repo_triage.py` | `bigclaw-go/internal/repo/repo_surfaces_test.go`, `bigclaw-go/internal/collaboration/thread_test.go`, `bigclaw-go/internal/repo/gateway.go`, `bigclaw-go/internal/repo/governance.go`, `bigclaw-go/internal/repo/links.go`, `bigclaw-go/internal/repo/registry.go`, `bigclaw-go/internal/product/clawhost_rollout_test.go`, `bigclaw-go/internal/triage/repo_test.go` |
 
 ## Validation Commands
 
