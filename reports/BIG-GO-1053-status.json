@@ -48,7 +48,7 @@
   },
   "notes": [
     "The tranche-2 e2e Python helper files were already absent in this checkout before the evidence commits were created, so the code migration itself is represented by origin/main at commit 004de016.",
-    "The final repo-wide Python count at the current main tip is 43 because BIG-GO-1057 removed one Python entrypoint while this closeout was being rebased and this lane also deleted two stale Python tests that still imported removed tranche-2 helpers.",
+    "The 2026-04-03 validation snapshot recorded a repo-wide Python count of 43 because BIG-GO-1057 removed one Python entrypoint while this closeout was being rebased and this lane also deleted two stale Python tests that still imported removed tranche-2 helpers.",
     "The follow-up rebased commits on main add the missing validation and closeout artifacts so the lane has the same in-repo reporting surface as adjacent Go-replacement issues, while the final cleanup removes stale test-only imports of deleted helper paths.",
     "The 2026-04-03 unattended refresh preserved `BIG-GO-1053` as an archived section inside `.symphony/workpad.md` while leaving the newer active workpad intact, and aligned `bigclaw-go/docs/go-cli-script-migration.md` so the tranche-2 Python-free e2e surface is explicitly attributed to this issue.",
     "The evidence branch symphony/BIG-GO-1053-validation was deleted after its contents were landed on main; the pull_request_seed link is retained only as historical traceability.",

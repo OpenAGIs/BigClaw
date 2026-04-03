@@ -76,10 +76,11 @@ Result:
 
 Note: the tranche-2 e2e Python helpers were already absent in this checkout before the
 evidence commits were created, so the measurable repo-wide `.py` reduction for this lane
-started in the baseline migration commit on `main`. The final repo-wide count is `43`
-because this lane also removes two stale Python tests that still imported deleted tranche-2
-entrypoints, and a later `main` commit from `BIG-GO-1057` removed one additional Python
-entrypoint while this closeout was being rebased.
+started in the baseline migration commit on `main`. The repo-wide count recorded by this
+2026-04-03 validation snapshot was `43` because this lane also removes two stale Python
+tests that still imported deleted tranche-2 entrypoints, and a later `main` commit from
+`BIG-GO-1057` removed one additional Python entrypoint while this closeout was being
+rebased.
 
 ### Stale reference scan
 
