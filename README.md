@@ -105,12 +105,12 @@ curl localhost:8080/healthz
 bash ../scripts/ops/bigclawctl github-sync status --json
 ```
 
-## Legacy Python smoke verify
+## Legacy Python compatibility verify
 
-Use this only when validating a frozen migration-reference path:
+Use this only when validating the retained frozen Python surface:
 
 ```bash
-PYTHONPATH=src python3 scripts/dev_smoke.py
+bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json
 ```
 
 ## Quality gates
