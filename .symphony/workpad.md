@@ -61,3 +61,29 @@
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `19` tracked `.py` files in `HEAD`; `17` `.py` files in the worktree after deleting the packaging entrypoint residue
 - follow-up sweep: `rg -n "python -m bigclaw serve|src/bigclaw/service\\.py|src/bigclaw/__main__\\.py|python -m bigclaw\\b" README.md bigclaw-go .github scripts docs src -g '!docs/go-mainline-cutover-issue-pack.md' -g '!bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json'` -> exit `1` with no matches after updating `src/bigclaw/runtime.py`
 - follow-up sweep: `cd bigclaw-go && go test ./internal/legacyshim ./internal/regression ./cmd/bigclawctl` -> `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/internal/regression (cached)`; `ok   bigclaw-go/cmd/bigclawctl 3.216s`
+
+## Archived Workpads
+
+### BIG-GO-1053
+
+#### Plan
+- Reconfirm the live `bigclaw-go/scripts/e2e/` surface is Go/shell only and identify any active docs, workflow, hook, or CI references that still mention deleted tranche-2 Python helpers.
+- Align the issue-local migration evidence so the archived workpad note and migration matrix reflect `BIG-GO-1053` rather than an older tranche header.
+- Run targeted validation for the e2e entrypoint migration guard and the Go CLI help surfaces used by the retained operator entrypoints.
+- Record exact commands and results in the issue reports and push the scoped closeout refresh.
+
+#### Acceptance
+- `bigclaw-go/scripts/e2e/` contains no tracked `.py` helpers.
+- Live README/docs/workflow/hooks/CI surfaces do not reference deleted tranche-2 Python helpers.
+- `bigclaw-go/docs/go-cli-script-migration.md` explicitly attributes the tranche-2 Python-free e2e surface to `BIG-GO-1053`.
+- Targeted validation passes and exact commands/results are captured in `reports/BIG-GO-1053-validation.md`.
+
+#### Validation
+- `find bigclaw-go/scripts/e2e -maxdepth 1 -name '*.py' | wc -l` -> `0`
+- `find . -name '*.py' | wc -l` -> `43`
+- `dirs=(); for p in README.md bigclaw-go/README.md bigclaw-go/docs docs .github .githooks .husky workflow.md; do [ -e "$p" ] && dirs+=("$p"); done; rg -n "bigclaw-go/scripts/e2e/.*\\.py|scripts/e2e/.*\\.py|run_task_smoke\\.py|export_validation_bundle\\.py|validation_bundle_continuation_policy_gate\\.py|mixed_workload_matrix\\.py|cross_process_coordination_surface\\.py|subscriber_takeover_fault_matrix\\.py|external_store_validation\\.py|multi_node_shared_queue\\.py" "${dirs[@]}"` -> exit `1` with no matches
+- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/regression/...` -> `ok   bigclaw-go/cmd/bigclawctl 4.995s`; `ok   bigclaw-go/internal/regression 0.839s`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help` -> exit `0`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help` -> exit `0`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help` -> exit `0`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help` -> exit `0`

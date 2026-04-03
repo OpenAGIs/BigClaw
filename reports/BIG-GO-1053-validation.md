@@ -1,6 +1,6 @@
 # BIG-GO-1053 Validation
 
-Date: 2026-04-01
+Date: 2026-04-03
 
 ## Scope
 
@@ -16,7 +16,7 @@ shell wrappers, and that regression coverage enforces the contract.
 The code migration itself is already present in the checked-out baseline at
 `004de016252d6ca168a45dccda48fc9fa69e27f1`
 (`BIG-GO-1053: remove stale e2e Python entrypoint refs`). This report captures the
-fresh validation evidence and the missing in-repo closeout artifacts for the lane.
+fresh validation evidence and the in-repo closeout artifacts for the lane.
 
 ## Delivered
 
@@ -26,7 +26,8 @@ fresh validation evidence and the missing in-repo closeout artifacts for the lan
   - `ray_smoke.sh`
   - `run_all.sh`
 - `bigclaw-go/docs/go-cli-script-migration.md` now lists only active Go and shell e2e
-  entrypoints, including:
+  entrypoints and explicitly attributes the tranche-2 Python-free e2e surface to
+  `BIG-GO-1053`, including:
   - `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`
   - `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`
   - `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...`
@@ -34,6 +35,8 @@ fresh validation evidence and the missing in-repo closeout artifacts for the lan
   - `./scripts/e2e/run_all.sh`
   - `./scripts/e2e/kubernetes_smoke.sh`
   - `./scripts/e2e/ray_smoke.sh`
+- `.symphony/workpad.md` now carries the active `BIG-GO-1053` plan, acceptance, and
+  validation checklist instead of an unrelated later-lane workpad.
 - `bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go` enforces:
   - no `.py` files can reappear under `bigclaw-go/scripts/e2e/`
   - the e2e migration doc does not advertise removed tranche-2 Python helpers as
@@ -114,8 +117,8 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1053/bigclaw-go && go test ./cm
 Result:
 
 ```text
-ok  	bigclaw-go/cmd/bigclawctl	3.707s
-ok  	bigclaw-go/internal/regression	0.878s
+ok  	bigclaw-go/cmd/bigclawctl	4.995s
+ok  	bigclaw-go/internal/regression	0.839s
 ```
 
 ### E2E command help checks
@@ -155,15 +158,16 @@ Result: exit code `0`, printed `usage: bigclawctl automation e2e continuation-po
 ## Commit And Push
 
 - Baseline migration commit on `main`: `004de016`
-- Closeout commits on `main`: `7cde78db`, `702293e2`, `9d23c137`, `215234bb`, `179db471`, `5e207e3b`, `e96216e3`
+- This refresh commit updates the issue-local workpad and migration-matrix metadata after
+  revalidating the tranche-2 Go-only surface.
 - Push target: `origin/main`
 - Historical PR seed URL from the now-deleted evidence branch:
   `https://github.com/OpenAGIs/BigClaw/compare/main...symphony/BIG-GO-1053-validation?expand=1`
 
 ## Residual Risk
 
-- This closeout sequence does not change the already-landed code migration on `main`; it adds
-  the missing validation and closeout artifacts for the lane and removes two stale Python
-  tests that still targeted deleted tranche-2 entrypoints.
+- This closeout refresh does not change the already-landed code migration on `main`; it
+  refreshes the issue-local workpad and validation evidence after confirming the tranche-2
+  Go-only surface is still intact.
 - The repo-wide Python file count now stands at `43`; any further reduction depends on
   follow-on lanes outside the scoped tranche-2 e2e entrypoint migration.

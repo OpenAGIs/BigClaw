@@ -1,12 +1,13 @@
 # Go CLI Script Migration
 
-Issue: `BIG-GO-902`
+Issues: `BIG-GO-902`, `BIG-GO-1053`
 
 ## Current Go-Only Entrypoints
 
-`bigclaw-go/scripts/e2e/` is now a Python-free operator surface. Use the
-Go-native `bigclawctl automation ...` subcommands directly, or the retained
-shell wrappers when you need the bundled live-validation workflow.
+`bigclaw-go/scripts/e2e/` is now a Python-free operator surface. `BIG-GO-1053`
+completed the tranche-2 cleanup by keeping only Go-native
+`bigclawctl automation ...` subcommands plus the retained shell wrappers needed
+for the bundled live-validation workflow.
 
 | Active entrypoint | Backing command | Purpose |
 | --- | --- | --- |
