@@ -346,22 +346,6 @@ from .planning import (
     ScopeFreezeGovernance,
     render_scope_freeze_report,
 )
-from .execution_contract import (
-    AuditPolicy,
-    build_operations_api_contract,
-    ExecutionApiSpec,
-    ExecutionContract,
-    ExecutionContractAudit,
-    ExecutionContractLibrary,
-    ExecutionField,
-    ExecutionModel,
-    ExecutionPermission,
-    ExecutionPermissionMatrix,
-    ExecutionRole,
-    MetricDefinition,
-    PermissionCheckResult,
-    render_execution_contract_report,
-)
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
@@ -425,6 +409,7 @@ from .reports import (
     write_report_studio_bundle,
 )
 from .operations import (
+    AuditPolicy,
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,
@@ -435,6 +420,15 @@ from .operations import (
     DashboardLayout,
     DashboardWidgetPlacement,
     DashboardWidgetSpec,
+    ExecutionApiSpec,
+    ExecutionContract,
+    ExecutionContractAudit,
+    ExecutionContractLibrary,
+    ExecutionField,
+    ExecutionModel,
+    ExecutionPermission,
+    ExecutionPermissionMatrix,
+    ExecutionRole,
     EvaluationCriterion,
     EngineeringActivity,
     EngineeringFunnelStage,
@@ -442,6 +436,7 @@ from .operations import (
     EngineeringOverviewBlocker,
     EngineeringOverviewKPI,
     EngineeringOverviewPermission,
+    MetricDefinition,
     OperationsAnalytics,
     OperationsMetricDefinition,
     OperationsMetricSpec,
@@ -459,9 +454,12 @@ from .operations import (
     VersionedArtifactHistory,
     WeeklyOperationsArtifacts,
     WeeklyOperationsReport,
+    PermissionCheckResult,
+    build_operations_api_contract,
     render_dashboard_builder_report,
     render_benchmark_suite_report,
     render_engineering_overview,
+    render_execution_contract_report,
     render_operations_metric_spec,
     render_operations_dashboard,
     render_policy_prompt_version_center,
@@ -495,6 +493,31 @@ _install_legacy_surface_module(
         "evaluation.py has been folded into operations.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/ops/benchmark.go",
+)
+_install_legacy_surface_module(
+    "execution_contract",
+    [
+        "AuditPolicy",
+        "build_operations_api_contract",
+        "ExecutionApiSpec",
+        "ExecutionContract",
+        "ExecutionContractAudit",
+        "ExecutionContractLibrary",
+        "ExecutionField",
+        "ExecutionModel",
+        "ExecutionPermission",
+        "ExecutionPermissionMatrix",
+        "ExecutionRole",
+        "MetricDefinition",
+        "PermissionCheckResult",
+        "render_execution_contract_report",
+    ],
+    source_module=sys.modules[f"{__name__}.operations"],
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "execution_contract.py has been folded into operations.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/ops/contract.go",
 )
 from .planning import (
     FourWeekExecutionPlan,
