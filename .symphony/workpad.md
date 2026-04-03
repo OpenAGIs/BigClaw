@@ -1,14 +1,14 @@
-# BIG-GO-1142
+# BIG-GO-1152
 
 ## Plan
-- confirm the lane-owned `tests/*.py` candidate list against the actual worktree and record the pre-change Python-file baseline
+- confirm the lane-owned `tests/*.py` candidate list against the actual worktree and record the pre-change Python-file baseline, which is already zero in this workspace
 - replace the stale active workpad section with this issue's scoped plan before any code changes
-- add a regression tranche that locks the retired Python test paths to absent-on-disk and asserts the active Go replacement coverage for the same domains
-- validate the new tranche plus repo-wide Python-count checks and a live Go compatibility path
+- extend the existing tranche-17 regression coverage with an explicit repo-wide zero-Python baseline assertion and lane-owned Go compatibility checks so this issue still hardens the residual sweep
+- validate the regression extension plus repo-wide Python-count checks and Go compatibility commands
 - record exact commands and outcomes, then commit and push the scoped change set
 
 ## Acceptance
-- the lane candidate Python test paths are explicitly covered and remain absent from disk:
+- the lane candidate Python test paths remain explicitly covered and absent from disk:
 - `tests/conftest.py`
 - `tests/test_audit_events.py`
 - `tests/test_connectors.py`
@@ -49,15 +49,16 @@
 - `tests/test_repo_rollout.py`
 - `tests/test_repo_triage.py`
 - `tests/test_reports.py`
+- tranche-17 coverage stays intact and this issue adds a separate regression assertion that the repository has zero live or tracked `.py` files for the residual test sweep
 - Go replacements or compatibility surfaces are asserted for this lane through concrete repo-native files under `bigclaw-go/internal`, `bigclaw-go/cmd`, and `docs/reports`
-- the repository remains at zero live `.py` files in the worktree
+- the repository remains at zero live `.py` files in the worktree and zero tracked `.py` files in `HEAD`
 - exact validation commands and outcomes are recorded below
 - residual risk explicitly notes that this workspace already starts at a zero-`.py` baseline, so the count cannot numerically decrease further here
 
 ## Validation
 - `find . -name '*.py' | wc -l`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'`
-- `cd bigclaw-go && go test ./internal/regression -run TestPythonTestTranche17Removed`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestPythonTestTranche17Removed|TestPythonResidualSweepRepoBaseline|TestPythonResidualSweepGoCompatibilitySurfaces'`
 - `bash scripts/ops/bigclawctl automation e2e continuation-scorecard --help`
 - `bash scripts/ops/bigclawctl automation migration live-shadow-scorecard --help`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json`
@@ -66,11 +67,11 @@
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
-- `cd bigclaw-go && go test ./internal/regression -run TestPythonTestTranche17Removed` -> `ok  	bigclaw-go/internal/regression	1.146s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestPythonTestTranche17Removed|TestPythonResidualSweepRepoBaseline|TestPythonResidualSweepGoCompatibilitySurfaces'` -> `ok  	bigclaw-go/internal/regression	0.435s`
 - `bash scripts/ops/bigclawctl automation e2e continuation-scorecard --help` -> exit `0`; printed `usage: bigclawctl automation e2e continuation-scorecard [flags]`
 - `bash scripts/ops/bigclawctl automation migration live-shadow-scorecard --help` -> exit `0`; printed `usage: bigclawctl automation migration live-shadow-scorecard [flags]`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
-- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/python_test_tranche17_removal_test.go`
+- `git status --short --branch` -> `## BIG-GO-1152`; modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/python_residual_sweep_test.go`
 
 ## Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
