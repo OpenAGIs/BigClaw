@@ -27,6 +27,24 @@ for the bundled live-validation workflow.
 | `go run ./cmd/bigclawctl automation benchmark soak-local|run-matrix|capacity-certification ...` | `bigclawctl automation benchmark ...` | Benchmark and capacity-certification surfaces |
 | `go run ./cmd/bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle ...` | `bigclawctl automation migration ...` | Migration shadow comparison and export surfaces |
 
+## BIG-GO-1124 Residual Sweep Check
+
+`BIG-GO-1124` revalidated the remaining script-sweep candidate set after the
+earlier Go migration batches landed. In the current worktree:
+
+- `bigclaw-go/scripts/benchmark/` keeps only `run_suite.sh`; the former
+  `capacity_certification.py`, `run_matrix.py`, and `soak_local.py` surfaces
+  map to `bigclawctl automation benchmark ...`.
+- `bigclaw-go/scripts/e2e/` is Python-free and keeps only `run_all.sh`,
+  `kubernetes_smoke.sh`, and `ray_smoke.sh`; the former e2e Python helpers map
+  to `bigclawctl automation e2e ...`.
+- `bigclaw-go/scripts/migration/` has no Python helpers; the former shadow and
+  live-shadow scripts map to `bigclawctl automation migration ...`.
+
+This lane therefore records a zero-`.py` residual baseline rather than a fresh
+file-removal change: the Go replacement path is already the only active
+operator surface under `bigclaw-go/scripts/`.
+
 ## Validation Commands
 
 ```bash

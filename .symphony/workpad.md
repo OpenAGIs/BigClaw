@@ -1,48 +1,68 @@
-# BIG-GO-1115
+# BIG-GO-1124
 
 ## Plan
-- confirm the lane-owned candidate files from the issue context against the actual worktree
-- document the zero-`.py` baseline in this branch so the acceptance risk is explicit before any code change
-- add missing regression coverage for the still-uncovered candidate modules `src/bigclaw/planning.py`, `src/bigclaw/queue.py`, `src/bigclaw/reports.py`, and `src/bigclaw/risk.py`
-- keep the existing `repo_*` candidate coverage unchanged because `top_level_module_purge_tranche2_test.go` and `top_level_module_purge_tranche10_test.go` already enforce those deletions
-- run targeted validation for the new regression tranche plus repo-wide `.py` baseline checks
+- confirm whether the issue candidate Python scripts still exist in this worktree
+- record the current repo baseline before edits, including the effective `*.py` count
+- document the Go replacement and compatibility path already covering the benchmark, e2e, and migration script families
+- keep the change scoped to issue evidence and validation for the residual `bigclaw-go/scripts` sweep
+- run targeted validation for the Go command surfaces plus repo-wide Python-file checks
 - commit and push the scoped change set
 
 ## Acceptance
-- lane file list is explicit:
-- `src/bigclaw/planning.py`
-- `src/bigclaw/queue.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_governance.py`
-- `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_triage.py`
-- `src/bigclaw/reports.py`
-- `src/bigclaw/risk.py`
-- the implementation stays scoped to the uncovered tranche for `planning.py`, `queue.py`, `reports.py`, and `risk.py`
-- the repository continues to have no live `.py` files in the worktree
+- the candidate `bigclaw-go/scripts/benchmark/*.py`, `bigclaw-go/scripts/e2e/*.py`, and `bigclaw-go/scripts/migration/*.py` assets are verified absent in the current worktree
+- the Go replacement path is explicit for benchmark, e2e, and migration command families
+- `bigclaw-go/scripts/` remains Python-free, with only the retained shell wrappers and Go-owned entrypoints documented
 - exact validation commands and outcomes are recorded below
-- residual risk explicitly notes that the issue goal of reducing Python file count further is already blocked by the pre-change zero baseline in this workspace
+- residual risk explicitly notes that the issue goal of lowering the repo Python count is blocked by the pre-change zero baseline in this workspace
 
 ## Validation
 - `find . -name '*.py' | wc -l`
-- `git ls-tree -r --name-only HEAD | rg '\.py$'`
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14`
-- `cd bigclaw-go && go test ./internal/regression`
+- `find bigclaw-go/scripts -type f | sort`
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-matrix --help`
 - `git status --short`
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
-- `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
-- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14` -> `ok  	bigclaw-go/internal/regression	0.459s`
-- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.653s`
-- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go`
+- `find bigclaw-go/scripts -type f | sort` -> `bigclaw-go/scripts/benchmark/run_suite.sh`, `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`, `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`, `bigclaw-go/scripts/e2e/ray_smoke.sh`, `bigclaw-go/scripts/e2e/run_all.sh`
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...` -> `ok   bigclaw-go/cmd/bigclawctl 3.094s`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help` -> exit `0`; first line `usage: bigclawctl automation benchmark capacity-certification [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help` -> exit `0`; first line `usage: bigclawctl automation benchmark run-matrix [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help` -> exit `0`; first line `usage: bigclawctl automation benchmark soak-local [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help` -> exit `0`; first line `usage: bigclawctl automation e2e broker-failover-stub-matrix [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help` -> exit `0`; first line `usage: bigclawctl automation e2e cross-process-coordination-surface [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help` -> exit `0`; first line `usage: bigclawctl automation e2e export-validation-bundle [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help` -> exit `0`; first line `usage: bigclawctl automation e2e external-store-validation [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help` -> exit `0`; first line `usage: bigclawctl automation e2e mixed-workload-matrix [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help` -> exit `0`; first line `usage: bigclawctl automation e2e multi-node-shared-queue [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help` -> exit `0`; first line `usage: bigclawctl automation e2e run-task-smoke [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix --help` -> exit `0`; first line `usage: bigclawctl automation e2e subscriber-takeover-fault-matrix [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help` -> exit `0`; first line `usage: bigclawctl automation e2e continuation-policy-gate [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e continuation-scorecard --help` -> exit `0`; first line `usage: bigclawctl automation e2e continuation-scorecard [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help` -> exit `0`; first line `usage: bigclawctl automation migration export-live-shadow-bundle [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help` -> exit `0`; first line `usage: bigclawctl automation migration live-shadow-scorecard [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help` -> exit `0`; first line `usage: bigclawctl automation migration shadow-compare [flags]`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-matrix --help` -> exit `0`; first line `usage: bigclawctl automation migration shadow-matrix [flags]`
+- `git status --short` -> pending final commit state at closeout
 
 ## Residual Risk
-- the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
+- the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only record and preserve the Python-free `bigclaw-go/scripts` state; it cannot make the Python file count numerically lower from the current baseline
 
 ## Archived Workpads
 ### BIG-GO-1114
