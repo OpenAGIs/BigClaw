@@ -5,11 +5,12 @@
 1. Inspect the two remaining Python tests under `tests/` and map them to existing Go coverage.
 2. Delete `tests/test_reports.py` after confirming equivalent Go coverage exists or adding the missing
    `_test.go` assertions inside `bigclaw-go/internal/reporting`.
-3. Delete `tests/test_ui_review.py` only if a Go-native replacement can be added within this issue's
-   scope without widening into unrelated product surface work.
-4. Run targeted validation for touched Go packages, repo Python-file counts, and Python packaging-file
+3. Add a Go-native `bigclaw-go/internal/uireview` package and tests to replace the remaining
+   `tests/test_ui_review.py` coverage.
+4. Delete `tests/test_ui_review.py` after the Go replacement passes.
+5. Run targeted validation for touched Go packages, repo Python-file counts, and Python packaging-file
    absence, then record exact commands and outcomes here.
-5. Commit only this issue's changes and push the current branch.
+6. Commit only this issue's changes and push the current branch.
 
 ## Acceptance
 
@@ -23,21 +24,20 @@
 ## Validation
 
 - `find tests -maxdepth 1 -name '*.py' | sort`
-- `cd bigclaw-go && go test ./internal/reporting`
+- `cd bigclaw-go && go test ./internal/reporting ./internal/uireview`
 - `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
 - `find tests -maxdepth 1 -name '*.py' | sort`
-  - `tests/test_ui_review.py`
-- `cd bigclaw-go && go test ./internal/reporting`
+  - no output
+- `cd bigclaw-go && go test ./internal/reporting ./internal/uireview`
   - `ok  	bigclaw-go/internal/reporting	(cached)`
+  - `ok  	bigclaw-go/internal/uireview	(cached)`
 - `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
   - no output
 - `git status --short`
-  - ` M .symphony/workpad.md`
   - ` M docs/BigClaw-AgentHub-Integration-Alignment.md`
-  - ` D tests/test_reports.py`
-  - `?? bigclaw-go/internal/reporting/reporting_orchestration.go`
-  - `?? bigclaw-go/internal/reporting/reporting_orchestration_test.go`
+  - ` D tests/test_ui_review.py`
+  - `?? bigclaw-go/internal/uireview/`
