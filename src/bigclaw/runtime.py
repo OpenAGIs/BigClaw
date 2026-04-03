@@ -9,6 +9,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
+from html import escape
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -21,9 +22,25 @@ from .audit_events import (
     MANUAL_TAKEOVER_EVENT,
     SCHEDULER_DECISION_EVENT,
 )
+from .collaboration import (
+    build_collaboration_thread_from_audits,
+    render_collaboration_lines,
+    render_collaboration_panel_html,
+)
 from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, RepoSyncAudit, TaskRun, utc_now
+from .operations import build_console_actions, render_console_actions
+from .evaluation import (
+    RunDetailEvent,
+    RunDetailResource,
+    RunDetailStat,
+    RunDetailTab,
+    render_resource_grid,
+    render_run_detail_console,
+    render_timeline_panel,
+    write_report,
+)
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
@@ -111,6 +128,400 @@ class RiskScorer:
         if total >= 25:
             return RiskLevel.MEDIUM
         return RiskLevel.LOW
+
+
+@dataclass
+class OrchestrationCanvas:
+    task_id: str
+    run_id: str
+    collaboration_mode: str
+    departments: List[str] = field(default_factory=list)
+    required_approvals: List[str] = field(default_factory=list)
+    tier: str = "standard"
+    upgrade_required: bool = False
+    blocked_departments: List[str] = field(default_factory=list)
+    handoff_team: str = "none"
+    handoff_status: str = "none"
+    handoff_reason: str = ""
+    active_tools: List[str] = field(default_factory=list)
+    entitlement_status: str = "included"
+    billing_model: str = "standard-included"
+    estimated_cost_usd: float = 0.0
+    included_usage_units: int = 0
+    overage_usage_units: int = 0
+    overage_cost_usd: float = 0.0
+    actions: List[Any] = field(default_factory=list)
+    collaboration: Optional[Any] = None
+
+    @property
+    def recommendation(self) -> str:
+        if self.collaboration is not None and self.collaboration.open_comment_count:
+            return "resolve-flow-comments"
+        if self.handoff_team == "security":
+            return "review-security-takeover"
+        if self.upgrade_required:
+            return "resolve-entitlement-gap"
+        if self.overage_cost_usd > 0:
+            return "review-billing-overage"
+        if len(self.departments) > 1:
+            return "continue-cross-team-execution"
+        return "monitor"
+
+
+def render_pilot_scorecard(scorecard: Any) -> str:
+    lines = [
+        "# Pilot Scorecard",
+        "",
+        f"- Issue ID: {scorecard.issue_id}",
+        f"- Customer: {scorecard.customer}",
+        f"- Period: {scorecard.period}",
+        f"- Recommendation: {scorecard.recommendation}",
+        f"- Metrics Met: {scorecard.metrics_met}/{len(scorecard.metrics)}",
+        f"- Monthly Net Value: {scorecard.monthly_net_value:.2f}",
+        f"- Annualized ROI: {scorecard.annualized_roi:.1f}%",
+    ]
+
+    if scorecard.payback_months is None:
+        lines.append("- Payback Months: n/a")
+    else:
+        lines.append(f"- Payback Months: {scorecard.payback_months:.1f}")
+
+    if scorecard.benchmark_score is not None:
+        lines.append(f"- Benchmark Score: {scorecard.benchmark_score}")
+    if scorecard.benchmark_passed is not None:
+        lines.append(f"- Benchmark Passed: {scorecard.benchmark_passed}")
+
+    lines.extend(["", "## KPI Progress", ""])
+    if scorecard.metrics:
+        for metric in scorecard.metrics:
+            comparator = ">=" if metric.higher_is_better else "<="
+            unit_suffix = f" {metric.unit}" if metric.unit else ""
+            lines.append(
+                f"- {metric.name}: baseline={metric.baseline}{unit_suffix} current={metric.current}{unit_suffix} "
+                f"target{comparator}{metric.target}{unit_suffix} delta={metric.delta:+.2f}{unit_suffix} met={metric.met_target}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def build_orchestration_canvas(
+    run: TaskRun,
+    plan: "OrchestrationPlan",
+    policy: Optional["OrchestrationPolicyDecision"] = None,
+    handoff_request: Optional["HandoffRequest"] = None,
+) -> OrchestrationCanvas:
+    return OrchestrationCanvas(
+        task_id=run.task_id,
+        run_id=run.run_id,
+        collaboration_mode=plan.collaboration_mode,
+        departments=plan.departments,
+        required_approvals=plan.required_approvals,
+        tier=policy.tier if policy is not None else "standard",
+        upgrade_required=policy.upgrade_required if policy is not None else False,
+        blocked_departments=policy.blocked_departments if policy is not None else [],
+        handoff_team=handoff_request.target_team if handoff_request is not None else "none",
+        handoff_status=handoff_request.status if handoff_request is not None else "none",
+        handoff_reason=handoff_request.reason if handoff_request is not None else "",
+        active_tools=sorted(
+            {
+                str(entry.details.get("tool", ""))
+                for entry in run.audits
+                if entry.action == "tool.invoke" and entry.details.get("tool")
+            }
+        ),
+        entitlement_status=policy.entitlement_status if policy is not None else "included",
+        billing_model=policy.billing_model if policy is not None else "standard-included",
+        estimated_cost_usd=policy.estimated_cost_usd if policy is not None else 0.0,
+        included_usage_units=policy.included_usage_units if policy is not None else 0,
+        overage_usage_units=policy.overage_usage_units if policy is not None else 0,
+        overage_cost_usd=policy.overage_cost_usd if policy is not None else 0.0,
+        actions=build_console_actions(
+            run.run_id,
+            allow_retry=handoff_request is None or handoff_request.status != "pending",
+            retry_reason="" if handoff_request is None or handoff_request.status != "pending" else "pending handoff must be resolved before retry",
+            allow_pause=run.status not in {"failed", "completed", "approved"},
+            pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
+            allow_reassign=handoff_request is not None,
+            reassign_reason="" if handoff_request is not None else "reassign is available after a handoff exists",
+            allow_escalate=policy is not None and policy.upgrade_required,
+            escalate_reason="" if policy is not None and policy.upgrade_required else "escalate when policy requires an entitlement or approval upgrade",
+        ),
+        collaboration=build_collaboration_thread_from_audits(
+            [entry.to_dict() for entry in run.audits],
+            surface="flow",
+            target_id=run.run_id,
+        ),
+    )
+
+
+def render_orchestration_canvas(canvas: OrchestrationCanvas) -> str:
+    lines = [
+        "# Orchestration Canvas",
+        "",
+        f"- Task ID: {canvas.task_id}",
+        f"- Run ID: {canvas.run_id}",
+        f"- Collaboration Mode: {canvas.collaboration_mode}",
+        f"- Departments: {', '.join(canvas.departments) if canvas.departments else 'none'}",
+        f"- Required Approvals: {', '.join(canvas.required_approvals) if canvas.required_approvals else 'none'}",
+        f"- Tier: {canvas.tier}",
+        f"- Upgrade Required: {canvas.upgrade_required}",
+        f"- Entitlement Status: {canvas.entitlement_status}",
+        f"- Billing Model: {canvas.billing_model}",
+        f"- Blocked Departments: {', '.join(canvas.blocked_departments) if canvas.blocked_departments else 'none'}",
+        f"- Handoff Team: {canvas.handoff_team}",
+        f"- Handoff Status: {canvas.handoff_status}",
+        f"- Recommendation: {canvas.recommendation}",
+        "",
+        "## Execution Context",
+        "",
+        f"- Active Tools: {', '.join(canvas.active_tools) if canvas.active_tools else 'none'}",
+        f"- Estimated Cost (USD): {canvas.estimated_cost_usd:.2f}",
+        f"- Included Usage Units: {canvas.included_usage_units}",
+        f"- Overage Usage Units: {canvas.overage_usage_units}",
+        f"- Overage Cost (USD): {canvas.overage_cost_usd:.2f}",
+        f"- Handoff Reason: {canvas.handoff_reason or 'none'}",
+        "",
+        "## Actions",
+        "",
+        f"- {render_console_actions(canvas.actions)}",
+    ]
+    lines.extend(render_collaboration_lines(canvas.collaboration))
+    return "\n".join(lines) + "\n"
+
+
+def render_repo_sync_audit_report(audit: RepoSyncAudit) -> str:
+    lines = [
+        "# Repo Sync Audit",
+        "",
+        "## Sync Status",
+        "",
+        f"- Status: {audit.sync.status}",
+        f"- Failure Category: {audit.sync.failure_category or 'none'}",
+        f"- Summary: {audit.sync.summary or 'none'}",
+        f"- Branch: {audit.sync.branch or 'unknown'}",
+        f"- Remote: {audit.sync.remote}",
+        f"- Remote Ref: {audit.sync.remote_ref or 'unknown'}",
+        f"- Ahead By: {audit.sync.ahead_by}",
+        f"- Behind By: {audit.sync.behind_by}",
+        f"- Dirty Paths: {', '.join(audit.sync.dirty_paths) if audit.sync.dirty_paths else 'none'}",
+        f"- Auth Target: {audit.sync.auth_target or 'none'}",
+        f"- Checked At: {audit.sync.timestamp}",
+        "",
+        "## Pull Request Freshness",
+        "",
+        f"- PR Number: {audit.pull_request.pr_number if audit.pull_request.pr_number is not None else 'unknown'}",
+        f"- PR URL: {audit.pull_request.pr_url or 'none'}",
+        f"- Branch State: {audit.pull_request.branch_state}",
+        f"- Body State: {audit.pull_request.body_state}",
+        f"- Branch Head SHA: {audit.pull_request.branch_head_sha or 'unknown'}",
+        f"- PR Head SHA: {audit.pull_request.pr_head_sha or 'unknown'}",
+        f"- Expected Body Digest: {audit.pull_request.expected_body_digest or 'unknown'}",
+        f"- Actual Body Digest: {audit.pull_request.actual_body_digest or 'unknown'}",
+        f"- Checked At: {audit.pull_request.checked_at}",
+        "",
+        "## Summary",
+        "",
+        f"- {audit.summary}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_task_run_report(run: TaskRun) -> str:
+    actions = build_console_actions(
+        run.run_id,
+        allow_retry=run.status in {"failed", "needs-approval"},
+        retry_reason="" if run.status in {"failed", "needs-approval"} else "retry is available for failed or approval-blocked runs",
+        allow_pause=run.status not in {"failed", "completed", "approved"},
+        pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
+    )
+    collaboration = build_collaboration_thread_from_audits(
+        [entry.to_dict() for entry in run.audits],
+        surface="run",
+        target_id=run.run_id,
+    )
+    lines = [
+        "# Task Run Report",
+        "",
+        f"- Run ID: {run.run_id}",
+        f"- Task ID: {run.task_id}",
+        f"- Source: {run.source}",
+        f"- Medium: {run.medium}",
+        f"- Status: {run.status}",
+        f"- Started At: {run.started_at}",
+        f"- Ended At: {run.ended_at or 'n/a'}",
+        "",
+        "## Summary",
+        "",
+        run.summary or "No summary recorded.",
+        "",
+        "## Logs",
+        "",
+    ]
+    if run.logs:
+        lines.extend(f"- [{entry.level}] {entry.timestamp} {entry.message}" for entry in run.logs)
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Trace", ""])
+    if run.traces:
+        lines.extend(f"- {entry.span}: {entry.status} @ {entry.timestamp}" for entry in run.traces)
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Artifacts", ""])
+    if run.artifacts:
+        lines.extend(f"- {entry.name} ({entry.kind}): {entry.path}" for entry in run.artifacts)
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Audit", ""])
+    if run.audits:
+        lines.extend(f"- {entry.action} by {entry.actor}: {entry.outcome}" for entry in run.audits)
+    else:
+        lines.append("- None")
+    lines.extend(["", "## Closeout", ""])
+    lines.append(f"- Complete: {run.closeout.complete}")
+    lines.append("- Validation Evidence: " + (", ".join(run.closeout.validation_evidence) if run.closeout.validation_evidence else "None"))
+    lines.append(f"- Git Push Succeeded: {run.closeout.git_push_succeeded}")
+    lines.append(f"- Git Push Output: {run.closeout.git_push_output or 'None'}")
+    lines.append(f"- Git Log -1 --stat Output: {run.closeout.git_log_stat_output or 'None'}")
+    if run.closeout.repo_sync_audit is not None:
+        lines.append(f"- Repo Sync Status: {run.closeout.repo_sync_audit.sync.status}")
+        lines.append("- Repo Sync Failure Category: " + (run.closeout.repo_sync_audit.sync.failure_category or "none"))
+        lines.append(f"- PR Branch State: {run.closeout.repo_sync_audit.pull_request.branch_state}")
+        lines.append(f"- PR Body State: {run.closeout.repo_sync_audit.pull_request.body_state}")
+    lines.extend(["", "## Actions", "", f"- {render_console_actions(actions)}"])
+    lines.extend(render_collaboration_lines(collaboration))
+    return "\n".join(lines) + "\n"
+
+
+def render_task_run_detail_page(run: TaskRun) -> str:
+    status_tone = "accent" if run.status in {"approved", "completed", "succeeded"} else "warning"
+    if run.status in {"failed", "rejected"}:
+        status_tone = "danger"
+    actions = build_console_actions(
+        run.run_id,
+        allow_retry=run.status in {"failed", "needs-approval"},
+        retry_reason="" if run.status in {"failed", "needs-approval"} else "retry is available for failed or approval-blocked runs",
+        allow_pause=run.status not in {"failed", "completed", "approved"},
+        pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
+    )
+    timeline_events = sorted(
+        [
+            *[
+                RunDetailEvent(
+                    event_id=f"log-{index}",
+                    lane="log",
+                    title=entry.message,
+                    timestamp=entry.timestamp,
+                    status=entry.level,
+                    summary=f"log entry at {entry.timestamp}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.context.items())] or ["No structured context recorded."],
+                )
+                for index, entry in enumerate(run.logs)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"trace-{index}",
+                    lane="trace",
+                    title=entry.span,
+                    timestamp=entry.timestamp,
+                    status=entry.status,
+                    summary=f"trace span {entry.span}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.attributes.items())] or ["No trace attributes recorded."],
+                )
+                for index, entry in enumerate(run.traces)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"audit-{index}",
+                    lane="audit",
+                    title=entry.action,
+                    timestamp=entry.timestamp,
+                    status=entry.outcome,
+                    summary=f"audit by {entry.actor}",
+                    details=[f"actor={entry.actor}", *[f"{key}={value}" for key, value in sorted(entry.details.items())]] or ["No audit details recorded."],
+                )
+                for index, entry in enumerate(run.audits)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"artifact-{index}",
+                    lane="artifact",
+                    title=entry.name,
+                    timestamp=entry.timestamp,
+                    status=entry.kind,
+                    summary=f"artifact emitted at {entry.path}",
+                    details=[f"path={entry.path}", f"sha256={entry.sha256 or 'n/a'}", *[f"{key}={value}" for key, value in sorted(entry.metadata.items())]],
+                )
+                for index, entry in enumerate(run.artifacts)
+            ],
+        ],
+        key=lambda event: event.timestamp,
+    )
+    artifacts = [
+        RunDetailResource(
+            name=entry.name,
+            kind=entry.kind,
+            path=entry.path,
+            meta=[f"sha256={entry.sha256 or 'n/a'}", *[f"{key}={value}" for key, value in sorted(entry.metadata.items())]],
+            tone="report" if entry.kind == "report" else "page" if entry.kind == "page" else "default",
+        )
+        for entry in run.artifacts
+    ]
+    report_resources = [resource for resource in artifacts if resource.kind == "report"]
+    collaboration = build_collaboration_thread_from_audits([entry.to_dict() for entry in run.audits], surface="run", target_id=run.run_id)
+    repo_link_resources = [
+        RunDetailResource(
+            name=link.commit_hash,
+            kind=link.role,
+            path=f"repo:{link.repo_space_id}",
+            meta=[f"actor={link.actor or 'unknown'}", *[f"{key}={value}" for key, value in sorted(link.metadata.items())]],
+            tone="accent" if link.role == "accepted" else "default",
+        )
+        for link in run.closeout.run_commit_links
+    ]
+    overview_html = f"""
+    <section class="surface">
+      <h2>Overview</h2>
+      <p>{escape(run.summary or 'No summary recorded.')}</p>
+      <p class="meta">Task {escape(run.task_id)} from {escape(run.source)} started at {escape(run.started_at)} and ended at {escape(run.ended_at or 'n/a')}.</p>
+    </section>
+    <section class="surface">
+      <h2>Closeout</h2>
+      <p>Validation evidence: {escape(', '.join(run.closeout.validation_evidence) if run.closeout.validation_evidence else 'None recorded.')}</p>
+      <p class="meta">git push succeeded={escape(str(run.closeout.git_push_succeeded))} | git log captured={escape(str(bool(run.closeout.git_log_stat_output.strip())))} | complete={escape(str(run.closeout.complete))}</p>
+      <p class="meta">accepted_commit_hash={escape(run.closeout.accepted_commit_hash or 'none')} | commit_links={escape(str(len(run.closeout.run_commit_links)))}</p>
+    </section>
+    <section class="surface">
+      <h2>Actions</h2>
+      <p>{escape(render_console_actions(actions))}</p>
+    </section>
+    """
+    return render_run_detail_console(
+        page_title=f"Task Run Detail · {run.run_id}",
+        eyebrow="Run Detail",
+        hero_title=run.title,
+        hero_summary=run.summary or "Operational detail page with synced logs, traces, audits, and artifacts.",
+        stats=[
+            RunDetailStat("Run ID", run.run_id),
+            RunDetailStat("Task ID", run.task_id),
+            RunDetailStat("Medium", run.medium, tone="accent" if run.medium == "browser" else "default"),
+            RunDetailStat("Status", run.status, tone=status_tone),
+            RunDetailStat("Artifacts", str(len(run.artifacts))),
+            RunDetailStat("Reports", str(len(report_resources)), tone="accent" if report_resources else "default"),
+            RunDetailStat("Closeout", "complete" if run.closeout.complete else "pending", tone="accent" if run.closeout.complete else "warning"),
+            RunDetailStat("Repo Links", str(len(run.closeout.run_commit_links)), tone="accent" if run.closeout.run_commit_links else "default"),
+        ],
+        tabs=[
+            RunDetailTab("overview", "Overview", overview_html),
+            RunDetailTab("timeline", "Timeline / Log Sync", render_timeline_panel("Timeline / Log Sync", "Unified execution timeline for logs, traces, audits, and emitted artifacts. Selecting an item updates the inspector in the split view.", timeline_events)),
+            RunDetailTab("artifacts", "Artifacts", render_resource_grid("Artifacts", "Execution artifacts and generated outputs attached to this run.", artifacts)),
+            RunDetailTab("reports", "Reports", render_resource_grid("Reports", "Report artifacts emitted for this run, including markdown summaries and linked detail pages when present.", report_resources)),
+            RunDetailTab("repo-evidence", "Repo Evidence", render_resource_grid("Repo Evidence", "Commit links, roles, and accepted lineage hints bound at closeout.", repo_link_resources)),
+            RunDetailTab("collaboration", "Collaboration", render_collaboration_panel_html("Collaboration", "Comments, mentions, and decision notes recorded against this run.", collaboration)),
+        ],
+        timeline_events=timeline_events,
+    )
 
 
 @dataclass
@@ -796,8 +1207,6 @@ class Scheduler:
         report_path: Optional[str] = None,
         actor: str = "scheduler",
     ) -> ExecutionRecord:
-        from .reports import render_task_run_detail_page, render_task_run_report, write_report
-
         risk_score = self.risk_scorer.score_task(task)
         decision = self.decide(task, risk_score=risk_score)
         raw_plan = self.orchestrator.plan(task)
@@ -1192,14 +1601,6 @@ class WorkflowEngine:
         git_push_output: str = "",
         git_log_stat_output: str = "",
     ) -> WorkflowRunResult:
-        from .reports import (
-            build_orchestration_canvas,
-            render_orchestration_canvas,
-            render_pilot_scorecard,
-            render_repo_sync_audit_report,
-            write_report,
-        )
-
         journal = WorkpadJournal(task_id=task.task_id, run_id=run_id)
         journal.record("intake", "recorded", source=task.source)
 

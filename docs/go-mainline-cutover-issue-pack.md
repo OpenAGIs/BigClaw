@@ -195,7 +195,6 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/operations.py`
 
@@ -430,7 +429,6 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/dashboard_run_contract.py`
@@ -440,6 +438,7 @@ Go ownership:
 - `bigclaw-go/internal/reporting/reporting.go`
 
 Current repo progress:
+- the residual Python reporting reference file has been removed after folding its remaining helpers into the surviving legacy runtime, evaluation, and operations modules
 - the residual Python run-detail rendering module has been removed after folding its helpers into the surviving report/evaluation migration surface
 - `bigclaw-go/internal/regression/regression.go`
 - `bigclaw-go/internal/api/server.go`

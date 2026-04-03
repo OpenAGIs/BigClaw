@@ -6,15 +6,17 @@
 - delete the removable residual Python assets in this lane: `src/bigclaw/planning.py` and `src/bigclaw/ui_review.py`
 - inline the residual `risk.py` logic into `runtime.py` so the standalone Python risk module can be deleted without changing runtime behaviour
 - inline the residual `run_detail.py` rendering helpers into `reports.py` and repoint `evaluation.py` to the surviving module so the standalone Python run-detail module can be deleted
+- inline the residual `reports.py` helpers into `runtime.py`, `operations.py`, and `evaluation.py` so the standalone Python reporting module can be deleted
 - refresh migration documentation that still lists those files as active residual Python assets
 - run targeted validation, record exact commands and results, then commit and push the scoped change set
 
 ## Acceptance
-- lane coverage is explicit: from the provided candidate list, the sweep started from `src/bigclaw/planning.py`, `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`, and `src/bigclaw/ui_review.py`; after this lane only `src/bigclaw/reports.py` remains
+- lane coverage is explicit: from the provided candidate list, the sweep started from `src/bigclaw/planning.py`, `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`, and `src/bigclaw/ui_review.py`; after this lane none of those files remain
 - this change removes real Python assets rather than only editing tracker/docs cosmetics
 - `find . -name '*.py' | wc -l` decreases from the pre-change baseline
 - Go-native planning evidence and migration docs no longer point at the deleted Python files
 - surviving Python imports no longer depend on standalone `risk.py` or `run_detail.py`
+- surviving Python imports no longer depend on standalone `reports.py`
 - validation commands and residual risks are captured with exact results
 
 ## Validation
@@ -23,6 +25,7 @@
 - `cd bigclaw-go && go test ./internal/planning ./internal/uireview ./internal/regression`
 - `python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/reports.py src/bigclaw/evaluation.py src/bigclaw/operations.py`
 - `rg -n "from \\.risk import|src/bigclaw/risk\\.py|from \\.run_detail import|src/bigclaw/run_detail\\.py" src bigclaw-go docs`
+- `rg -n "from \\.reports import|src/bigclaw/reports\\.py" src bigclaw-go docs`
 - `find . -name '*.py' | wc -l`
 
 ## Validation Results
@@ -35,3 +38,8 @@
 - `rg -n "from \\.risk import|src/bigclaw/risk\\.py|from \\.run_detail import|src/bigclaw/run_detail\\.py" src bigclaw-go docs` -> exit `1` with no matches
 - `cd bigclaw-go && go test ./internal/risk ./internal/evaluation ./internal/regression` -> `ok   bigclaw-go/internal/risk 0.776s`; `ok   bigclaw-go/internal/evaluation 0.842s`; `ok   bigclaw-go/internal/regression (cached)`
 - follow-up sweep: `find . -name '*.py' | wc -l` -> `13` after deleting `src/bigclaw/risk.py` and `src/bigclaw/run_detail.py`
+- `python3 -m py_compile src/bigclaw/runtime.py src/bigclaw/operations.py src/bigclaw/evaluation.py` -> exit `0`
+- `PYTHONPATH=src python3 -c "import bigclaw.runtime, bigclaw.operations, bigclaw.evaluation"` -> exit `0`
+- `rg -n "from \\.reports import|src/bigclaw/reports\\.py" src bigclaw-go docs` -> exit `1` with no matches after updating planning/doc references
+- `cd bigclaw-go && go test ./internal/planning ./internal/evaluation ./internal/regression` -> `ok   bigclaw-go/internal/planning 0.816s`; `ok   bigclaw-go/internal/evaluation (cached)`; `ok   bigclaw-go/internal/regression (cached)`
+- final sweep: `find . -name '*.py' | wc -l` -> `12` after deleting `src/bigclaw/reports.py`
