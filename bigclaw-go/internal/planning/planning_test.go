@@ -458,6 +458,16 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	for _, link := range releaseCandidate.EvidenceLinks {
 		releaseTargets[link.Target] = struct{}{}
 	}
+	for _, want := range []string{
+		"bigclaw-go/internal/designsystem/designsystem.go",
+		"bigclaw-go/internal/consoleia/consoleia.go",
+		"bigclaw-go/internal/uireview/uireview.go",
+		"bigclaw-go/internal/uireview/uireview_test.go",
+	} {
+		if _, ok := releaseTargets[want]; !ok {
+			t.Fatalf("missing release evidence target %q in %+v", want, releaseTargets)
+		}
+	}
 	if _, ok := releaseTargets["bigclaw-go/internal/uireview/uireview_test.go"]; !ok {
 		t.Fatalf("missing Go-native review pack evidence target in %+v", releaseTargets)
 	}
@@ -465,6 +475,9 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		prefix, _, _ := strings.Cut(target, "/")
 		if prefix == "tests" {
 			t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
+		}
+		if strings.HasPrefix(target, "src/bigclaw/") {
+			t.Fatalf("deleted Python release-gate target still present in %+v", releaseTargets)
 		}
 	}
 }
