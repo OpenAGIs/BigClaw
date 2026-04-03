@@ -3,8 +3,9 @@
 BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 `bigclaw-go` is the current implementation mainline for new development. The
-repository root now exposes Go-only build entrypoints; legacy Python surfaces
-remain migration-only source assets and are not packaged from the root.
+repository root now exposes Go-only build entrypoints; the last physical
+`src/bigclaw` package asset has been retired and the root is no longer a Python
+package surface.
 
 ## What is included
 
@@ -15,21 +16,7 @@ remain migration-only source assets and are not packaged from the root.
   - `docs/*`: Go control-plane validation and migration evidence
 - `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
-- `src/bigclaw`: legacy Python foundation modules pending staged migration to Go
-  - engineering operations analytics for dashboards, triage, regressions, and weekly reports
-  - `BIG-1606` Policy/Prompt Version Center with workflow/prompt/policy history, diffs, rollback targets, and bundle rendering
-  - unified task model
-  - persistent priority queue
-  - risk/tool based scheduler
-  - worker runtime with sandbox profiles and auditable tool gateway
-  - workflow DSL plus workflow engine with workpad journal, orchestration artifacts/canvas, entitlement-aware policy, and acceptance gate
-  - observability ledger with logs/trace/artifact/audit capture
-  - queue-to-scheduler execution recording with audit reports
-  - auto triage center for failed, pending-approval, and replay-needed runs, with inbox suggestions, similarity evidence, and reviewer feedback tracking
-  - benchmark runner with replay, weighted scoring, and version comparison
-  - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
-  - narrative report studio with section composing plus markdown, HTML, and plain-text export
-  - v2 design-system token/component inventory with release-readiness audit reporting
+- `src/bigclaw`: retired physical package path; kept only as a historical reference in migration documentation and validation reports
 - `tests/`: unit tests
 
 ## Root Go quick start (recommended)
@@ -76,23 +63,16 @@ Notes:
 
 ## Legacy Python migration note
 
-Do not use Python packaging from the repository root. When a migration-only
-Python surface must be exercised, validate it directly from source:
+Do not use Python packaging from the repository root. The repository no longer
+ships a physical `src/bigclaw` package tree; remaining Python references in the
+repo are historical migration evidence or Go-invoked compatibility tooling.
+
+Use the Go-first bootstrap helper when you need the documented compatibility
+checks:
 
 ```bash
-PYTHONPATH=src python3 -m pytest tests
+bash scripts/dev_bootstrap.sh
 ```
-
-Or use the bootstrap helper to validate Go first and then run the legacy
-Python migration surface from the active environment without editable install
-or repo-root packaging bootstrap:
-
-```bash
-BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
-```
-
-That legacy path runs `bigclawctl dev-smoke` plus the targeted source-level smoke
-suite in `tests/test_planning.py` when `pytest` is available.
 
 ## Go smoke verify
 
@@ -102,14 +82,6 @@ make test
 make run &
 curl localhost:8080/healthz
 bash scripts/ops/bigclawctl github-sync status --json
-```
-
-## Legacy Python smoke verify
-
-Use this only when validating a frozen migration-reference path:
-
-```bash
-bash scripts/ops/bigclawctl dev-smoke
 ```
 
 ## Quality gates
@@ -127,11 +99,10 @@ Go-first bootstrap helper:
 bash scripts/dev_bootstrap.sh
 ```
 
-Legacy Python migration surface:
+Repository compatibility checks:
 
 ```bash
-ruff check src tests scripts
-PYTHONPATH=src python3 -m pytest tests
+bash scripts/ops/bigclawctl legacy-python compile-check --json
 pre-commit run --all-files
 ```
 
@@ -152,11 +123,7 @@ reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`.
 
-The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
-`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The old `python -m bigclaw` and
-`python -m bigclaw serve` entrypoints are retired; use
-`bash scripts/ops/bigclawctl` and `go run ./bigclaw-go/cmd/bigclawd`
-for the active operator and local server paths. Active runtime development
-belongs in `bigclaw-go/internal/*`.
+The old `python -m bigclaw` and `python -m bigclaw serve` entrypoints are
+retired; use `bash scripts/ops/bigclawctl` and
+`go run ./bigclaw-go/cmd/bigclawd` for the active operator and local server
+paths. Active runtime development belongs in `bigclaw-go/internal/*`.
