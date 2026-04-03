@@ -893,7 +893,7 @@ def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
                         GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
                         GlobalAction(action_id="export", label="Export", placement="topbar"),
                         GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
-                        GlobalAction(action_id="bulk-approve", label="Bulk Approve", placement="topbar", requires_selection=True),
+                        GlobalAction(action_id="bulk-retry", label="Bulk Retry", placement="topbar", requires_selection=True),
                     ],
                     filters=[
                         FilterDefinition(name="Status", field="status", control="select", options=["all", "queued", "approval"]),
@@ -979,10 +979,10 @@ def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
                 ),
                 primary_persona="Platform Admin",
                 linked_wireframe_id="wf-queue",
-                review_focus_areas=["batch approvals", "denied-role state", "audit rail"],
+                review_focus_areas=["bulk retry readiness", "failure attribution", "manual takeover rail"],
                 decision_prompts=[
-                    "Does the queue clearly separate selection, confirmation, and audit outcomes?",
-                    "Is the denied-role treatment explicit enough for VP Eng and guest personas?",
+                    "Does the queue clearly separate retry eligibility, takeover blockers, and audit outcomes?",
+                    "Is the denied-role treatment explicit enough for VP Eng and guest personas when bulk retry is unavailable?",
                 ],
             ),
             SurfaceInteractionContract(

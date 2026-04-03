@@ -485,17 +485,17 @@ def test_render_console_interaction_report_summarizes_critical_page_contracts() 
                     name="Queue",
                     route="/queue",
                     navigation_section="Operate",
-                    top_bar_actions=[
-                        GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
-                        GlobalAction(action_id="export", label="Export", placement="topbar"),
-                        GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
-                        GlobalAction(
-                            action_id="bulk-approve",
-                            label="Bulk Approve",
-                            placement="topbar",
-                            requires_selection=True,
-                        ),
-                    ],
+                        top_bar_actions=[
+                            GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
+                            GlobalAction(action_id="export", label="Export", placement="topbar"),
+                            GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
+                            GlobalAction(
+                                action_id="bulk-retry",
+                                label="Bulk Retry",
+                                placement="topbar",
+                                requires_selection=True,
+                            ),
+                        ],
                     filters=[FilterDefinition(name="Status", field="status", control="select", options=["all"])],
                     states=[
                         SurfaceState(name="default"),
@@ -597,7 +597,7 @@ def test_render_console_interaction_report_summarizes_critical_page_contracts() 
     assert "- Readiness Score: 100.0" in report
     assert "- Release Ready: True" in report
     assert "- Overview: route=/overview required_actions=drill-down, export, audit available_actions=drill-down, export, audit filters=1 states=default, loading, empty, error batch=optional permissions=complete" in report
-    assert "- Queue: route=/queue required_actions=drill-down, export, audit available_actions=drill-down, export, audit, bulk-approve filters=1 states=default, loading, empty, error batch=required permissions=complete" in report
+    assert "- Queue: route=/queue required_actions=drill-down, export, audit available_actions=drill-down, export, audit, bulk-retry filters=1 states=default, loading, empty, error batch=required permissions=complete" in report
     assert "- Permission gaps: none" in report
 
 
@@ -622,6 +622,24 @@ def test_build_big_4203_console_interaction_draft_is_release_ready() -> None:
     assert "- Uncovered roles: none" in report
     assert "- Pages missing personas: none" in report
     assert "- Pages missing wireframe links: none" in report
+
+
+def test_build_big_4203_queue_contract_tracks_retry_and_takeover_focus() -> None:
+    draft = build_big_4203_console_interaction_draft()
+
+    queue_surface = next(surface for surface in draft.architecture.surfaces if surface.name == "Queue")
+    queue_contract = next(contract for contract in draft.contracts if contract.surface_name == "Queue")
+
+    assert queue_surface.action_ids == ["drill-down", "export", "audit", "bulk-retry"]
+    assert queue_contract.review_focus_areas == [
+        "bulk retry readiness",
+        "failure attribution",
+        "manual takeover rail",
+    ]
+    assert queue_contract.decision_prompts == [
+        "Does the queue clearly separate retry eligibility, takeover blockers, and audit outcomes?",
+        "Is the denied-role treatment explicit enough for VP Eng and guest personas when bulk retry is unavailable?",
+    ]
 
 
 def test_console_interaction_audit_flags_uncovered_required_roles() -> None:
