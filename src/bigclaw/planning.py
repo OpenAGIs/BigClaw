@@ -349,22 +349,22 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 evidence=["acceptance-suite", "validation-report"],
                 evidence_links=[
                     EvidenceLink(
-                        label="design-system-audit",
-                        target="src/bigclaw/design_system.py",
+                        label="design-system-surface",
+                        target="bigclaw-go/internal/designsystem/designsystem.go",
                         capability="release-gate",
-                        note="component inventory, accessibility, and UI acceptance coverage",
+                        note="Go-native component inventory, accessibility, and UI acceptance contracts",
                     ),
                     EvidenceLink(
-                        label="console-ia-contract",
-                        target="src/bigclaw/console_ia.py",
+                        label="console-ia-surface",
+                        target="bigclaw-go/internal/consoleia/consoleia.go",
                         capability="release-gate",
-                        note="global navigation, top bar, filters, and state contracts",
+                        note="Go-native global navigation, top bar, filters, and state contracts",
                     ),
                     EvidenceLink(
-                        label="ui-review-pack",
-                        target="src/bigclaw/ui_review.py",
+                        label="ui-review-surface",
+                        target="bigclaw-go/internal/uireview/uireview.go",
                         capability="release-gate",
-                        note="review objectives, wireframes, interaction coverage, and open questions",
+                        note="Go-native review objectives, wireframes, interaction coverage, and open questions",
                     ),
                     EvidenceLink(
                         label="ui-acceptance-tests",

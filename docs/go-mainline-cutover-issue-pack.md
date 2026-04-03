@@ -163,7 +163,7 @@ Historical initial state:
 ### BIG-GOM-303 Workflow orchestration and scheduler loop migration
 
 Python source:
-- `src/bigclaw/runtime.py`
+- retired `src/bigclaw/runtime.py`; active runtime ownership is Go-only in `bigclaw-go/internal/worker/runtime.go`
 - `src/bigclaw/scheduler.py`
 - `src/bigclaw/orchestration.py`
 - `src/bigclaw/workflow.py`
@@ -407,7 +407,7 @@ Historical planned state:
 ### 2. Port the workflow, scheduler, runtime, and orchestration loop to Go
 
 Python source:
-- `src/bigclaw/runtime.py`
+- retired `src/bigclaw/runtime.py`; follow-up validation should not treat it as an active source asset
 - `src/bigclaw/scheduler.py`
 - `src/bigclaw/orchestration.py`
 - `src/bigclaw/workflow.py`
@@ -473,16 +473,16 @@ Historical planned state:
 ### 5. Port operator console and saved-view surfaces to Go
 
 Python source:
-- `src/bigclaw/console_ia.py`
-- `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:
 - `bigclaw-go/internal/product/console.go`
 - `bigclaw-go/internal/api/v2.go`
 - `bigclaw-go/internal/api/server.go`
+- `bigclaw-go/internal/designsystem/*`
+- `bigclaw-go/internal/consoleia/*`
+- `bigclaw-go/internal/uireview/*`
 - optional new `bigclaw-go/internal/product/views.go`
 
 Historical planned state:

@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1102`
 
 ## Current Go-Only Entrypoints
 
@@ -8,6 +8,11 @@ Issues: `BIG-GO-902`, `BIG-GO-1053`
 completed the tranche-2 cleanup by keeping only Go-native
 `bigclawctl automation ...` subcommands plus the retained shell wrappers needed
 for the bundled live-validation workflow.
+
+`BIG-GO-1102` closes the residual sweep for the lane's removed Python files
+across `bigclaw-go/scripts/benchmark/`, `bigclaw-go/scripts/e2e/`, and
+`bigclaw-go/scripts/migration/`: the candidate `.py` entrypoints are absent,
+and the remaining operator surface is Go or shell only.
 
 | Active entrypoint | Backing command | Purpose |
 | --- | --- | --- |
