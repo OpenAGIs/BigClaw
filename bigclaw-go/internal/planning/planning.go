@@ -249,7 +249,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				EvidenceLinks: []EvidenceLink{
 					{Label: "design-system-audit", Target: "src/bigclaw/design_system.py", Capability: "release-gate", Note: "component inventory, accessibility, and UI acceptance coverage"},
 					{Label: "console-ia-contract", Target: "src/bigclaw/console_ia.py", Capability: "release-gate", Note: "global navigation, top bar, filters, and state contracts"},
-					{Label: "ui-review-pack", Target: "src/bigclaw/ui_review.py", Capability: "release-gate", Note: "review objectives, wireframes, interaction coverage, and open questions"},
+					{Label: "ui-review-pack", Target: "bigclaw-go/internal/uireview/uireview.go", Capability: "release-gate", Note: "review objectives, wireframes, interaction coverage, and open questions"},
 					{Label: "ui-acceptance-tests", Target: "bigclaw-go/internal/designsystem/designsystem_test.go", Capability: "release-gate", Note: "Go-native role-permission, data accuracy, and performance audits"},
 					{Label: "console-shell-tests", Target: "bigclaw-go/internal/consoleia/consoleia_test.go", Capability: "release-gate", Note: "Go-native console shell and interaction draft release readiness"},
 					{Label: "review-pack-tests", Target: "bigclaw-go/internal/uireview/uireview_test.go", Capability: "release-gate", Note: "Go-native deterministic review packet validation"},

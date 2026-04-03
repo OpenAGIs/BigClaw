@@ -432,7 +432,6 @@ Python source:
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
-- `src/bigclaw/planning.py`
 
 Go ownership:
 - `bigclaw-go/internal/observability/*`
@@ -444,6 +443,10 @@ Go ownership:
 
 Historical planned state:
 - `Todo`
+
+Current repo progress:
+- `bigclaw-go/internal/planning/planning.go` now owns the candidate backlog, entry gate, and weekly planning surface for this migration tranche
+- the residual Python planning reference file has been removed from the repository
 
 ### 4. Port repo collaboration and lineage surfaces to Go
 
@@ -476,7 +479,6 @@ Python source:
 - `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:
@@ -487,6 +489,10 @@ Go ownership:
 
 Historical planned state:
 - `Backlog`
+
+Current repo progress:
+- `bigclaw-go/internal/uireview/uireview.go` now owns the UI review pack domain for this migration tranche
+- the residual Python UI review reference file has been removed from the repository
 
 ### 6. Replace Python bootstrap and sync entrypoints with Go-only tooling
 
