@@ -1,0 +1,51 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1141",
+    "title": "src/bigclaw residual sweep",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1141",
+    "latest_code_migration_commit": "c985bcd85531766fd105edbdf0e7ffe8443bf968"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1141-closeout.md",
+    "validation_report": "reports/BIG-GO-1141-validation.md",
+    "regression_guard": "bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw",
+    "pull_request_seed": "https://github.com/OpenAGIs/BigClaw/pull/new/symphony/BIG-GO-1141"
+  },
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "git ls-tree -r --name-only HEAD | rg '\\.py$'",
+      "cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17",
+      "cd bigclaw-go && go test ./internal/regression",
+      "rg -n --fixed-strings 'pending staged migration to Go' README.md workflow.md",
+      "rg -n --fixed-strings 'this repo currently carries no live `src/bigclaw` tree' workflow.md",
+      "rg -n --fixed-strings 'retired `src/bigclaw` Python foundations' README.md",
+      "git rev-parse HEAD origin/symphony/BIG-GO-1141"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "tracked_py_files": "0",
+      "targeted_tranche_test": "ok   bigclaw-go/internal/regression  0.682s",
+      "full_regression_package": "ok   bigclaw-go/internal/regression  0.508s",
+      "stale_pending_claim_scan": "exit 1 with no matches",
+      "workflow_live_tree_statement": "matched workflow.md:73",
+      "readme_retired_lane_statement": "matched README.md:18",
+      "branch_sync": "local HEAD matched origin/symphony/BIG-GO-1141 at c985bcd85531766fd105edbdf0e7ffe8443bf968"
+    }
+  },
+  "blocker": {
+    "type": "none",
+    "summary": "No additional in-repo implementation work remains for BIG-GO-1141."
+  },
+  "notes": [
+    "No BIG-GO-1141 record exists in local-issues.json in this workspace, so any remaining active issue state is external to the repo-local tracker.",
+    "The repository already started from a zero-.py baseline, so this lane enforced and documented the deletion state rather than lowering the file count further."
+  ]
+}
