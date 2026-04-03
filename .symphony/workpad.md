@@ -861,3 +861,30 @@
   - `D tests/test_live_shadow_bundle.py`
   - `D tests/test_parallel_validation_bundle.py`
   - `D tests/test_validation_bundle_continuation_policy_gate.py`
+
+## BIG-GO-1040 Tranche 2026-04-03
+
+Plan
+1. Finish the in-flight `src/bigclaw/collaboration.py` removal by keeping the compatibility export surface wired through `src/bigclaw/__init__.py` and `src/bigclaw/observability.py`.
+2. Remove one more repo-root Python test file in scope if its contract can be covered by a Go test under `bigclaw-go/internal/reporting`.
+3. Run targeted validation for the touched Python compatibility surface, Go reporting coverage, and repo file-count acceptance.
+4. Commit the scoped diff and push `big-go-1040` to `origin`.
+
+Acceptance
+- Repository `.py` count is lower than the pre-tranche baseline because `src/bigclaw/collaboration.py` is gone, and lower again if the targeted Python test deletion lands.
+- No `pyproject.toml` or `setup.py` exists anywhere in the repo.
+- The remaining `bigclaw.collaboration` import surface still resolves through the package compatibility shim.
+- Go coverage increases in `bigclaw-go/internal/legacyshim` to guard the deleted Python surface and absent packaging files.
+
+Validation
+- `PYTHONPATH=src python3 -m pytest tests/test_reports.py`
+- `PYTHONPATH=src python3 - <<'PY'`
+  `from bigclaw.collaboration import CollaborationComment, DecisionNote, build_collaboration_thread`
+  `from bigclaw.reports import render_shared_view_context, SharedViewContext, SharedViewFilter`
+  `thread = build_collaboration_thread("dashboard", "ops-overview", comments=[CollaborationComment(comment_id="c1", author="pm", body="body")], decisions=[DecisionNote(decision_id="d1", author="ops", outcome="approved", summary="summary")])`
+  `print(thread.surface)`
+  `print(render_shared_view_context(SharedViewContext(filters=[SharedViewFilter(label="Team", value="ops")], result_count=1, collaboration=thread))[0])`
+  `PY`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+- `find . -name '*.py' | sort | wc -l`
+- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`

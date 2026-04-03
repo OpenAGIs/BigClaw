@@ -128,16 +128,12 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
 from .observability import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
     FLOW_HANDOFF_EVENT,
     GitSyncTelemetry,
     MANUAL_TAKEOVER_EVENT,
@@ -149,9 +145,28 @@ from .observability import (
     SCHEDULER_DECISION_EVENT,
     TaskRun,
     AuditEventSpec,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
     get_audit_event_spec,
     missing_required_fields,
+    render_collaboration_lines,
+    render_collaboration_panel_html,
 )
+_collaboration_module = types.ModuleType(f"{__name__}.collaboration")
+for _export_name in [
+    "CollaborationComment",
+    "CollaborationThread",
+    "DecisionNote",
+    "build_collaboration_thread",
+    "build_collaboration_thread_from_audits",
+    "render_collaboration_lines",
+    "render_collaboration_panel_html",
+]:
+    _collaboration_module.__dict__[_export_name] = globals()[_export_name]
+_collaboration_module.__dict__["LEGACY_MAINLINE_STATUS"] = _legacy_runtime_surface.LEGACY_MAINLINE_STATUS
+_collaboration_module.__dict__["GO_MAINLINE_REPLACEMENT"] = "bigclaw-go/internal/observability"
+sys.modules[_collaboration_module.__name__] = _collaboration_module
+globals()["collaboration"] = _collaboration_module
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
