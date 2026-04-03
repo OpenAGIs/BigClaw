@@ -509,6 +509,173 @@ func TestRenderOrchestrationOverviewPage(t *testing.T) {
 	}
 }
 
+func TestBuildOrchestrationCanvasFromLedgerEntryExtractsAuditState(t *testing.T) {
+	entry := map[string]any{
+		"run_id":  "run-ledger",
+		"task_id": "OPE-66-ledger",
+		"audits": []any{
+			map[string]any{
+				"action":  "orchestration.plan",
+				"outcome": "ready",
+				"details": map[string]any{
+					"collaboration_mode": "tier-limited",
+					"departments":        []any{"operations", "engineering"},
+					"approvals":          []any{"security-review"},
+				},
+			},
+			map[string]any{
+				"action":  "orchestration.policy",
+				"outcome": "upgrade-required",
+				"details": map[string]any{
+					"tier":                 "standard",
+					"entitlement_status":   "upgrade-required",
+					"billing_model":        "standard-blocked",
+					"estimated_cost_usd":   7.0,
+					"included_usage_units": 2,
+					"overage_usage_units":  1,
+					"overage_cost_usd":     4.0,
+					"blocked_departments":  []any{"security", "customer-success"},
+				},
+			},
+			map[string]any{
+				"action":  "orchestration.handoff",
+				"outcome": "pending",
+				"details": map[string]any{
+					"target_team": "operations",
+					"reason":      "premium tier required for advanced cross-department orchestration",
+				},
+			},
+			map[string]any{"action": "tool.invoke", "outcome": "success", "details": map[string]any{"tool": "browser"}},
+		},
+	}
+
+	canvas := BuildOrchestrationCanvasFromLedgerEntry(entry)
+	if canvas.RunID != "run-ledger" || canvas.CollaborationMode != "tier-limited" {
+		t.Fatalf("unexpected canvas header: %+v", canvas)
+	}
+	if !reflect.DeepEqual(canvas.Departments, []string{"operations", "engineering"}) {
+		t.Fatalf("unexpected departments: %+v", canvas.Departments)
+	}
+	if !reflect.DeepEqual(canvas.RequiredApprovals, []string{"security-review"}) {
+		t.Fatalf("unexpected approvals: %+v", canvas.RequiredApprovals)
+	}
+	if canvas.Tier != "standard" || !canvas.UpgradeRequired {
+		t.Fatalf("unexpected tier state: %+v", canvas)
+	}
+	if canvas.EntitlementStatus != "upgrade-required" || canvas.BillingModel != "standard-blocked" {
+		t.Fatalf("unexpected billing state: %+v", canvas)
+	}
+	if canvas.EstimatedCostUSD != 7.0 || canvas.IncludedUsageUnits != 2 || canvas.OverageUsageUnits != 1 || canvas.OverageCostUSD != 4.0 {
+		t.Fatalf("unexpected cost state: %+v", canvas)
+	}
+	if !reflect.DeepEqual(canvas.BlockedDepartments, []string{"security", "customer-success"}) {
+		t.Fatalf("unexpected blocked departments: %+v", canvas.BlockedDepartments)
+	}
+	if canvas.HandoffTeam != "operations" {
+		t.Fatalf("unexpected handoff team: %+v", canvas)
+	}
+	if !reflect.DeepEqual(canvas.ActiveTools, []string{"browser"}) {
+		t.Fatalf("unexpected active tools: %+v", canvas.ActiveTools)
+	}
+	if !canvas.Actions[3].Enabled || canvas.Actions[4].Enabled {
+		t.Fatalf("unexpected action states: %+v", canvas.Actions)
+	}
+}
+
+func TestBuildOrchestrationPortfolioFromLedgerRollsUpEntries(t *testing.T) {
+	entries := []map[string]any{
+		{
+			"run_id":  "run-a",
+			"task_id": "OPE-66-a",
+			"audits": []any{
+				map[string]any{
+					"action":  "orchestration.plan",
+					"outcome": "ready",
+					"details": map[string]any{
+						"collaboration_mode": "cross-functional",
+						"departments":        []any{"operations", "engineering", "security"},
+						"approvals":          []any{"security-review"},
+					},
+				},
+				map[string]any{
+					"action":  "orchestration.policy",
+					"outcome": "enabled",
+					"details": map[string]any{
+						"tier":                 "premium",
+						"entitlement_status":   "included",
+						"billing_model":        "premium-included",
+						"estimated_cost_usd":   4.5,
+						"included_usage_units": 3,
+						"blocked_departments":  []any{},
+					},
+				},
+				map[string]any{
+					"action":  "orchestration.handoff",
+					"outcome": "pending",
+					"details": map[string]any{"target_team": "security", "reason": "approval required", "required_approvals": []any{"security-review"}},
+				},
+			},
+		},
+		{
+			"run_id":  "run-b",
+			"task_id": "OPE-66-b",
+			"audits": []any{
+				map[string]any{
+					"action":  "orchestration.plan",
+					"outcome": "ready",
+					"details": map[string]any{
+						"collaboration_mode": "tier-limited",
+						"departments":        []any{"operations", "engineering"},
+						"approvals":          []any{},
+					},
+				},
+				map[string]any{
+					"action":  "orchestration.policy",
+					"outcome": "upgrade-required",
+					"details": map[string]any{
+						"tier":                 "standard",
+						"entitlement_status":   "upgrade-required",
+						"billing_model":        "standard-blocked",
+						"estimated_cost_usd":   7.0,
+						"included_usage_units": 2,
+						"overage_usage_units":  1,
+						"overage_cost_usd":     4.0,
+						"blocked_departments":  []any{"customer-success"},
+					},
+				},
+				map[string]any{
+					"action":  "orchestration.handoff",
+					"outcome": "pending",
+					"details": map[string]any{"target_team": "operations", "reason": "entitlement gap", "required_approvals": []any{"ops-manager"}},
+				},
+			},
+		},
+	}
+
+	portfolio := BuildOrchestrationPortfolioFromLedger(entries, "Ledger Portfolio", "2026-03-10")
+	if portfolio.TotalRuns() != 2 {
+		t.Fatalf("unexpected total runs: %+v", portfolio)
+	}
+	if !reflect.DeepEqual(portfolio.CollaborationModes(), map[string]int{"cross-functional": 1, "tier-limited": 1}) {
+		t.Fatalf("unexpected collaboration modes: %+v", portfolio.CollaborationModes())
+	}
+	if !reflect.DeepEqual(portfolio.TierCounts(), map[string]int{"premium": 1, "standard": 1}) {
+		t.Fatalf("unexpected tier counts: %+v", portfolio.TierCounts())
+	}
+	if !reflect.DeepEqual(portfolio.EntitlementCounts(), map[string]int{"included": 1, "upgrade-required": 1}) {
+		t.Fatalf("unexpected entitlement counts: %+v", portfolio.EntitlementCounts())
+	}
+	if portfolio.TotalEstimatedCostUSD() != 11.5 {
+		t.Fatalf("unexpected estimated cost: %+v", portfolio)
+	}
+	if portfolio.TakeoverQueue == nil || portfolio.TakeoverQueue.PendingRequests() != 2 {
+		t.Fatalf("unexpected takeover queue: %+v", portfolio.TakeoverQueue)
+	}
+	if portfolio.Recommendation() != "stabilize-security-takeovers" {
+		t.Fatalf("unexpected recommendation: %s", portfolio.Recommendation())
+	}
+}
+
 func TestBuildBillingEntitlementsPageRollsUpOrchestrationCosts(t *testing.T) {
 	portfolio := OrchestrationPortfolio{
 		Name:   "Revenue Ops",
