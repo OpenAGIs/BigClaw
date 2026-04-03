@@ -214,7 +214,7 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2" in report
     assert "## Open Question Tracker" in report
     assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in report
-    assert "chk-queue-batch-approval: surface=wf-queue owner=Platform Admin status=ready" in report
+    assert "chk-queue-bulk-retry: surface=wf-queue owner=Platform Admin status=ready" in report
     assert "dec-queue-vp-summary: surface=wf-queue owner=VP Eng status=proposed" in report
     assert "role-queue-platform-admin: surface=wf-queue role=Platform Admin status=ready" in report
     assert "## Checklist Traceability Board" in report
@@ -378,7 +378,7 @@ def test_ui_review_pack_audit_flags_missing_role_matrix_coverage() -> None:
     assert audit.role_assignments_missing_decision_links == []
     assert audit.checklist_items_missing_role_links == [
         "chk-overview-alert-hierarchy",
-        "chk-queue-batch-approval",
+        "chk-queue-bulk-retry",
         "chk-queue-role-density",
         "chk-run-audit-density",
         "chk-run-replay-context",
@@ -754,7 +754,7 @@ def test_render_ui_review_objective_wireframe_and_question_boards() -> None:
     assert "- Questions: 3" in question_tracker
     assert "- Owners: 3" in question_tracker
     assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in question_tracker
-    assert "checklist=chk-queue-role-density flows=none impact=Changes denial-path copy, button placement, and review criteria for queue and triage pages." in question_tracker
+    assert "checklist=chk-queue-role-density flows=none impact=Changes denial-path copy, bulk-action placement, and review criteria for queue and triage pages." in question_tracker
 
 
 def test_render_ui_review_traceability_and_role_coverage_boards() -> None:
@@ -772,12 +772,31 @@ def test_render_ui_review_traceability_and_role_coverage_boards() -> None:
     assert "- Decisions: 4" in decision_followup
     assert "- Owners: 4" in decision_followup
     assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in decision_followup
-    assert "linked_assignments=role-queue-platform-admin,role-queue-product-experience linked_checklists=chk-queue-batch-approval,chk-queue-role-density follow_up=Resolve after the next design critique with policy owners." in decision_followup
+    assert "linked_assignments=role-queue-platform-admin,role-queue-product-experience linked_checklists=chk-queue-bulk-retry,chk-queue-role-density follow_up=Resolve after the next design critique with policy owners." in decision_followup
     assert "# UI Review Role Coverage Board" in role_coverage
     assert "- Assignments: 8" in role_coverage
     assert "- Surfaces: 4" in role_coverage
     assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in role_coverage
     assert "signoff=sig-run-detail-eng-lead signoff_status=pending" in role_coverage
+
+
+def test_big_4204_review_pack_queue_surface_tracks_retry_and_takeover_controls() -> None:
+    pack = build_big_4204_review_pack()
+
+    queue_wireframe = next(wireframe for wireframe in pack.wireframes if wireframe.surface_id == "wf-queue")
+    queue_flow = next(flow for flow in pack.interactions if flow.flow_id == "flow-queue-bulk-retry")
+    queue_question = next(question for question in pack.open_questions if question.question_id == "oq-role-density")
+    queue_checklist = next(item for item in pack.reviewer_checklist if item.item_id == "chk-queue-bulk-retry")
+
+    assert queue_wireframe.primary_blocks == ["failure attribution", "bulk retry toolbar", "filters", "takeover audit rail"]
+    assert queue_wireframe.review_notes == [
+        "Validate bulk-retry CTA hierarchy.",
+        "Review denied-role and manual takeover behavior for non-operator personas.",
+    ]
+    assert queue_flow.name == "Queue bulk retry and takeover review"
+    assert "retry eligibility" in queue_flow.system_response
+    assert "manual takeover" in queue_question.question
+    assert "eligibility, failure attribution, takeover blockers" in queue_checklist.prompt
 
 
 def test_render_ui_review_dependency_workload_and_density_boards() -> None:
