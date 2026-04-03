@@ -7,8 +7,7 @@ from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from .models import Task
-from .observability import ObservabilityLedger
+from .observability import ObservabilityLedger, Task
 from .queue import PersistentTaskQueue
 from .reports import (
     RunDetailEvent,

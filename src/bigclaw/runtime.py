@@ -26,7 +26,7 @@ from .observability import (
     TaskRun,
     utc_now,
 )
-from .models import Priority, RiskLevel, Task
+from .observability import Priority, RiskLevel, Task
 
 
 LEGACY_RUNTIME_GUIDANCE = (

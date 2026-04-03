@@ -1,7 +1,7 @@
 import sys
 import types
 
-from .models import (
+from .observability import (
     BillingInterval,
     BillingRate,
     BillingSummary,
@@ -29,9 +29,10 @@ from .models import (
     WorkflowDefinition,
     WorkflowStep,
 )
-from . import models as _legacy_model_surface
 from . import planning as _legacy_planning_surface
 from . import runtime as _legacy_runtime_surface
+
+_legacy_model_surface = sys.modules[f"{__name__}.observability"]
 
 
 def _install_legacy_surface_module(
@@ -49,6 +50,43 @@ def _install_legacy_surface_module(
     globals()[name] = module
 
 
+_install_legacy_surface_module(
+    "models",
+    [
+        "BillingInterval",
+        "BillingRate",
+        "BillingSummary",
+        "FlowRun",
+        "FlowRunStatus",
+        "FlowStepRun",
+        "FlowStepStatus",
+        "FlowTemplate",
+        "FlowTemplateStep",
+        "FlowTrigger",
+        "GitHubConnector",
+        "JiraConnector",
+        "LinearConnector",
+        "Priority",
+        "RiskAssessment",
+        "RiskLevel",
+        "RiskSignal",
+        "SourceIssue",
+        "Task",
+        "TaskState",
+        "TriageLabel",
+        "TriageRecord",
+        "TriageStatus",
+        "UsageRecord",
+        "WorkflowDefinition",
+        "WorkflowStep",
+    ],
+    source_module=_legacy_model_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "models.py has been folded into observability.py for compatibility-only imports."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/observability/models.go",
+)
 _install_legacy_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
@@ -104,7 +142,7 @@ _install_legacy_surface_module(
     source_module=_legacy_model_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "connectors.py has been folded into models.py for compatibility-only imports."
+        "connectors.py has been folded into observability.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/intake/connector.go",
 )
@@ -114,7 +152,7 @@ _install_legacy_surface_module(
     source_module=_legacy_model_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
-        "dsl.py has been folded into models.py for compatibility-only imports."
+        "dsl.py has been folded into observability.py for compatibility-only imports."
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/definition.go",
 )
