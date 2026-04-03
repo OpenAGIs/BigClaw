@@ -1,6 +1,64 @@
-# BIG-GO-1115
+# BIG-GO-1133
 
 ## Plan
+- confirm the lane-owned candidate root script paths from the issue against the actual worktree
+- record the repo's pre-change zero-`.py` baseline so the acceptance limitation is explicit before implementation
+- add scoped regression coverage for the retired Python script paths still named by this lane:
+- `scripts/create_issues.py`
+- `scripts/dev_smoke.py`
+- `scripts/ops/bigclaw_github_sync.py`
+- `scripts/ops/bigclaw_refill_queue.py`
+- `scripts/ops/bigclaw_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_validate.py`
+- verify each retired path still has a live Go-backed replacement or compatibility wrapper in the repo
+- run targeted validation for the Python-file count baseline, the new regression tranche, and the active Go replacement entrypoints
+- commit and push the scoped change set
+
+## Acceptance
+- the lane candidate root script paths are explicitly covered and remain absent from disk
+- Go replacements or compatibility wrappers are asserted for the lane:
+- `bigclaw-go/cmd/bigclawctl/main.go`
+- `scripts/ops/bigclawctl`
+- `scripts/ops/bigclaw-symphony`
+- `scripts/dev_bootstrap.sh`
+- the repository remains at zero live `.py` files in the worktree
+- exact validation commands and outcomes are recorded below
+- residual risk explicitly notes that the issue goal of lowering the Python-file count further is blocked by the pre-change zero baseline in this workspace
+
+## Validation
+- `find . -name '*.py' | wc -l`
+- `git ls-tree -r --name-only HEAD | rg '\.py$'`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16`
+- `bash scripts/ops/bigclawctl create-issues --help`
+- `bash scripts/ops/bigclawctl dev-smoke --help`
+- `bash scripts/ops/bigclawctl github-sync --help`
+- `bash scripts/ops/bigclawctl refill --help`
+- `bash scripts/ops/bigclawctl workspace validate --help`
+- `bash scripts/ops/bigclaw-symphony --help`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- `git status --short`
+
+## Validation Results
+- `find . -name '*.py' | wc -l` -> `0`
+- `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16` -> `ok  	bigclaw-go/internal/regression	0.442s`
+- `bash scripts/ops/bigclawctl create-issues --help` -> exit `0`; printed `usage: bigclawctl create-issues [flags]`
+- `bash scripts/ops/bigclawctl dev-smoke --help` -> exit `0`; printed `usage: bigclawctl dev-smoke [flags]`
+- `bash scripts/ops/bigclawctl github-sync --help` -> exit `0`; printed `usage: bigclawctl github-sync <install|status|sync> [flags]`
+- `bash scripts/ops/bigclawctl refill --help` -> exit `0`; printed `usage: bigclawctl refill [flags]` and `bigclawctl refill seed [flags]`
+- `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]`
+- `bash scripts/ops/bigclaw-symphony --help` -> exit `0`; printed `usage: bigclawctl symphony [flags] [args...]`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
+- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go`
+
+## Residual Risk
+- the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
+
+## Archived Workpads
+### BIG-GO-1115
+
+#### Plan
 - confirm the lane-owned candidate files from the issue context against the actual worktree
 - document the zero-`.py` baseline in this branch so the acceptance risk is explicit before any code change
 - add missing regression coverage for the still-uncovered candidate modules `src/bigclaw/planning.py`, `src/bigclaw/queue.py`, `src/bigclaw/reports.py`, and `src/bigclaw/risk.py`
@@ -8,7 +66,7 @@
 - run targeted validation for the new regression tranche plus repo-wide `.py` baseline checks
 - commit and push the scoped change set
 
-## Acceptance
+#### Acceptance
 - lane file list is explicit:
 - `src/bigclaw/planning.py`
 - `src/bigclaw/queue.py`
@@ -27,24 +85,23 @@
 - exact validation commands and outcomes are recorded below
 - residual risk explicitly notes that the issue goal of reducing Python file count further is already blocked by the pre-change zero baseline in this workspace
 
-## Validation
+#### Validation
 - `find . -name '*.py' | wc -l`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'`
 - `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14`
 - `cd bigclaw-go && go test ./internal/regression`
 - `git status --short`
 
-## Validation Results
+#### Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
 - `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14` -> `ok  	bigclaw-go/internal/regression	0.459s`
 - `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.653s`
 - `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go`
 
-## Residual Risk
+#### Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
 
-## Archived Workpads
 ### BIG-GO-1114
 
 #### Plan
