@@ -46,7 +46,9 @@ func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
 	}
 }
 
-func TestAutomationUsageListsBIGGO1160GoReplacements(t *testing.T) {
+func assertAutomationUsageListsGoReplacements(t *testing.T) {
+	t.Helper()
+
 	cases := []struct {
 		args    []string
 		needles []string
@@ -99,6 +101,14 @@ func TestAutomationUsageListsBIGGO1160GoReplacements(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestAutomationUsageListsBIGGO1160GoReplacements(t *testing.T) {
+	assertAutomationUsageListsGoReplacements(t)
+}
+
+func TestAutomationUsageListsBIGGO1166GoReplacements(t *testing.T) {
+	assertAutomationUsageListsGoReplacements(t)
 }
 
 func TestRunAutomationRunTaskSmokeJSONOutput(t *testing.T) {

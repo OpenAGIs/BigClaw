@@ -44,6 +44,11 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1166` restates the same sweep inventory on a later branch baseline.
+The repo-level Python count is already zero here, so the only safe issue-scoped
+work is to reaffirm that the candidate paths stay deleted and that operators
+keep using the Go entrypoints listed in `bigclaw-go/docs/go-cli-script-migration.md`.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
