@@ -19,7 +19,7 @@
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1161(CandidatePythonFilesRemainDeleted|GoReplacementPathsExist|RepositoryContainsNoPythonFiles)$'` -> `ok  	bigclaw-go/internal/regression	1.114s`
-- `git status --short` -> pending until after commit
+- `git status --short` -> clean
 
 ## Residual Risk
 - The workspace already starts at a zero-`.py` baseline, so this issue can harden and centralize deletion enforcement but cannot numerically reduce the Python count below `0`.
