@@ -2,6 +2,8 @@ package uigovernance
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -1299,6 +1301,190 @@ func TestRenderUIReviewSummaryPersonaAndInteractionBoards(t *testing.T) {
 			if !strings.Contains(tc.body, fragment) {
 				t.Fatalf("%s: expected %q in report, got %s", tc.name, fragment, tc.body)
 			}
+		}
+	}
+}
+
+func TestRenderAndWriteUIReviewPackBundle(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+
+	html := RenderUIReviewPackHTML(pack, audit)
+	for _, fragment := range []string{
+		"<h2>Decision Log</h2>",
+		"<h2>Checklist Traceability Board</h2>",
+		"<h2>Decision Follow-up Tracker</h2>",
+		"<h2>Review Summary Board</h2>",
+		"<h2>Objective Coverage Board</h2>",
+		"<h2>Persona Readiness Board</h2>",
+		"<h2>Wireframe Readiness Board</h2>",
+		"<h2>Interaction Coverage Board</h2>",
+		"<h2>Open Question Tracker</h2>",
+		"<h2>Role Matrix</h2>",
+		"<h2>Role Coverage Board</h2>",
+		"<h2>Signoff Dependency Board</h2>",
+		"<h2>Sign-off Log</h2>",
+		"<h2>Sign-off SLA Dashboard</h2>",
+		"<h2>Sign-off Reminder Queue</h2>",
+		"<h2>Reminder Cadence Board</h2>",
+		"<h2>Sign-off Breach Board</h2>",
+		"<h2>Escalation Dashboard</h2>",
+		"<h2>Escalation Handoff Ledger</h2>",
+		"<h2>Handoff Ack Ledger</h2>",
+		"<h2>Owner Escalation Digest</h2>",
+		"<h2>Owner Workload Board</h2>",
+		"<h2>Blocker Log</h2>",
+		"<h2>Blocker Timeline</h2>",
+		"<h2>Review Freeze Exception Board</h2>",
+		"<h2>Freeze Approval Trail</h2>",
+		"<h2>Freeze Renewal Tracker</h2>",
+		"<h2>Review Exceptions</h2>",
+		"<h2>Review Exception Matrix</h2>",
+		"<h2>Audit Density Board</h2>",
+		"<h2>Owner Review Queue</h2>",
+		"<h2>Blocker Timeline Summary</h2>",
+		"dec-queue-vp-summary",
+	} {
+		if !strings.Contains(html, fragment) {
+			t.Fatalf("expected %q in html, got %s", fragment, html)
+		}
+	}
+
+	outputDir := t.TempDir()
+	artifacts, err := WriteUIReviewPackBundle(outputDir, pack)
+	if err != nil {
+		t.Fatalf("write ui review pack bundle: %v", err)
+	}
+
+	expectedPaths := []string{
+		artifacts.MarkdownPath,
+		artifacts.HTMLPath,
+		artifacts.DecisionLogPath,
+		artifacts.ReviewSummaryBoardPath,
+		artifacts.ObjectiveCoverageBoardPath,
+		artifacts.PersonaReadinessBoardPath,
+		artifacts.WireframeReadinessBoardPath,
+		artifacts.InteractionCoverageBoardPath,
+		artifacts.OpenQuestionTrackerPath,
+		artifacts.ChecklistTraceabilityBoardPath,
+		artifacts.DecisionFollowupTrackerPath,
+		artifacts.RoleMatrixPath,
+		artifacts.RoleCoverageBoardPath,
+		artifacts.SignoffDependencyBoardPath,
+		artifacts.SignoffLogPath,
+		artifacts.SignoffSLADashboardPath,
+		artifacts.SignoffReminderQueuePath,
+		artifacts.ReminderCadenceBoardPath,
+		artifacts.SignoffBreachBoardPath,
+		artifacts.EscalationDashboardPath,
+		artifacts.EscalationHandoffLedgerPath,
+		artifacts.HandoffAckLedgerPath,
+		artifacts.OwnerEscalationDigestPath,
+		artifacts.OwnerWorkloadBoardPath,
+		artifacts.BlockerLogPath,
+		artifacts.BlockerTimelinePath,
+		artifacts.FreezeExceptionBoardPath,
+		artifacts.FreezeApprovalTrailPath,
+		artifacts.FreezeRenewalTrackerPath,
+		artifacts.ExceptionLogPath,
+		artifacts.ExceptionMatrixPath,
+		artifacts.AuditDensityBoardPath,
+		artifacts.OwnerReviewQueuePath,
+		artifacts.BlockerTimelineSummaryPath,
+	}
+	for _, path := range expectedPaths {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("expected artifact at %s: %v", path, err)
+		}
+	}
+	if artifacts.MarkdownPath != filepath.Join(outputDir, "big-4204-review-pack.md") {
+		t.Fatalf("unexpected markdown path: %s", artifacts.MarkdownPath)
+	}
+	htmlBody, err := os.ReadFile(artifacts.HTMLPath)
+	if err != nil {
+		t.Fatalf("read html bundle: %v", err)
+	}
+	for _, fragment := range []string{
+		"Decision Log",
+		"Checklist Traceability Board",
+		"Decision Follow-up Tracker",
+		"Review Summary Board",
+		"Objective Coverage Board",
+		"Persona Readiness Board",
+		"Wireframe Readiness Board",
+		"Interaction Coverage Board",
+		"Open Question Tracker",
+		"Role Matrix",
+		"Role Coverage Board",
+		"Signoff Dependency Board",
+		"Sign-off Log",
+		"Sign-off SLA Dashboard",
+		"Sign-off Reminder Queue",
+		"Reminder Cadence Board",
+		"Sign-off Breach Board",
+		"Escalation Dashboard",
+		"Escalation Handoff Ledger",
+		"Handoff Ack Ledger",
+		"Owner Escalation Digest",
+		"Owner Workload Board",
+		"Blocker Log",
+		"Blocker Timeline",
+		"Review Freeze Exception Board",
+		"Freeze Approval Trail",
+		"Freeze Renewal Tracker",
+		"Review Exceptions",
+		"Review Exception Matrix",
+		"Audit Density Board",
+		"Owner Review Queue",
+		"Blocker Timeline Summary",
+	} {
+		if !strings.Contains(string(htmlBody), fragment) {
+			t.Fatalf("expected %q in html artifact", fragment)
+		}
+	}
+	for _, fileCheck := range []struct {
+		Path     string
+		Fragment string
+	}{
+		{artifacts.ReviewSummaryBoardPath, "summary-objectives: category=objectives total=4 blocked=1 at-risk=1 covered=2"},
+		{artifacts.PersonaReadinessBoardPath, "persona-eng-lead: persona=Eng Lead readiness=blocked objectives=1 assignments=1 signoffs=1 open_questions=0 queue_items=1 blockers=1"},
+		{artifacts.InteractionCoverageBoardPath, "intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2"},
+		{artifacts.DecisionLogPath, "dec-triage-handoff-density"},
+		{artifacts.ObjectiveCoverageBoardPath, "objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail"},
+		{artifacts.WireframeReadinessBoardPath, "wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail"},
+		{artifacts.OpenQuestionTrackerPath, "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue"},
+		{artifacts.ChecklistTraceabilityBoardPath, "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience"},
+		{artifacts.DecisionFollowupTrackerPath, "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience"},
+		{artifacts.RoleMatrixPath, "role-run-detail-eng-lead"},
+		{artifacts.RoleCoverageBoardPath, "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1"},
+		{artifacts.SignoffDependencyBoardPath, "dep-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=pending dependency_status=blocked blockers=blk-run-detail-copy-final"},
+		{artifacts.SignoffLogPath, "sig-queue-platform-admin"},
+		{artifacts.SignoffSLADashboardPath, "- at-risk: 1"},
+		{artifacts.SignoffReminderQueuePath, "rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk owner=design-program-manager channel=slack"},
+		{artifacts.ReminderCadenceBoardPath, "cad-rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail cadence=daily status=scheduled owner=design-program-manager"},
+		{artifacts.SignoffBreachBoardPath, "breach-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk escalation_owner=engineering-director"},
+		{artifacts.EscalationDashboardPath, "esc-sig-run-detail-eng-lead: owner=engineering-director type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending priority=at-risk current_owner=Eng Lead"},
+		{artifacts.EscalationHandoffLedgerPath, "handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z"},
+		{artifacts.HandoffAckLedgerPath, "ack-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail handoff_to=Eng Lead ack_owner=Eng Lead ack_status=acknowledged ack_at=2026-03-14T10:15:00Z"},
+		{artifacts.OwnerEscalationDigestPath, "digest-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending"},
+		{artifacts.OwnerWorkloadBoardPath, "load-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending lane=reminder"},
+		{artifacts.BlockerLogPath, "blk-run-detail-copy-final"},
+		{artifacts.BlockerTimelinePath, "evt-run-detail-copy-opened"},
+		{artifacts.FreezeExceptionBoardPath, "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z"},
+		{artifacts.FreezeApprovalTrailPath, "freeze-approval-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open owner=release-director approved_by=release-director approved_at=2026-03-14T08:30:00Z window=2026-03-18T18:00:00Z"},
+		{artifacts.FreezeRenewalTrackerPath, "renew-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open renewal_owner=release-director renewal_by=2026-03-17T12:00:00Z renewal_status=review-needed"},
+		{artifacts.ExceptionLogPath, "exc-blk-run-detail-copy-final"},
+		{artifacts.ExceptionMatrixPath, "- product-experience: blockers=1 signoffs=0 total=1"},
+		{artifacts.AuditDensityBoardPath, "density-wf-run-detail: surface=wf-run-detail artifact_total=9 open_total=4 band=dense"},
+		{artifacts.OwnerReviewQueuePath, "- Queue items: 6"},
+		{artifacts.BlockerTimelineSummaryPath, "- escalated: 1"},
+	} {
+		body, err := os.ReadFile(fileCheck.Path)
+		if err != nil {
+			t.Fatalf("read artifact %s: %v", fileCheck.Path, err)
+		}
+		if !strings.Contains(string(body), fileCheck.Fragment) {
+			t.Fatalf("expected %q in %s", fileCheck.Fragment, fileCheck.Path)
 		}
 	}
 }

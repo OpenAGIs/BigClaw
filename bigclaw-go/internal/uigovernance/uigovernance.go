@@ -3,6 +3,9 @@ package uigovernance
 import (
 	"encoding/json"
 	"fmt"
+	"html"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -1162,6 +1165,44 @@ type UIReviewPack struct {
 	RequiresBlockerLog        bool                    `json:"requires_blocker_log,omitempty"`
 	BlockerTimeline           []ReviewBlockerEvent    `json:"blocker_timeline,omitempty"`
 	RequiresBlockerTimeline   bool                    `json:"requires_blocker_timeline,omitempty"`
+}
+
+type UIReviewPackArtifacts struct {
+	RootDir                        string `json:"root_dir"`
+	MarkdownPath                   string `json:"markdown_path"`
+	HTMLPath                       string `json:"html_path"`
+	DecisionLogPath                string `json:"decision_log_path"`
+	ReviewSummaryBoardPath         string `json:"review_summary_board_path"`
+	ObjectiveCoverageBoardPath     string `json:"objective_coverage_board_path"`
+	PersonaReadinessBoardPath      string `json:"persona_readiness_board_path"`
+	WireframeReadinessBoardPath    string `json:"wireframe_readiness_board_path"`
+	InteractionCoverageBoardPath   string `json:"interaction_coverage_board_path"`
+	OpenQuestionTrackerPath        string `json:"open_question_tracker_path"`
+	ChecklistTraceabilityBoardPath string `json:"checklist_traceability_board_path"`
+	DecisionFollowupTrackerPath    string `json:"decision_followup_tracker_path"`
+	RoleMatrixPath                 string `json:"role_matrix_path"`
+	RoleCoverageBoardPath          string `json:"role_coverage_board_path"`
+	SignoffDependencyBoardPath     string `json:"signoff_dependency_board_path"`
+	SignoffLogPath                 string `json:"signoff_log_path"`
+	SignoffSLADashboardPath        string `json:"signoff_sla_dashboard_path"`
+	SignoffReminderQueuePath       string `json:"signoff_reminder_queue_path"`
+	ReminderCadenceBoardPath       string `json:"reminder_cadence_board_path"`
+	SignoffBreachBoardPath         string `json:"signoff_breach_board_path"`
+	EscalationDashboardPath        string `json:"escalation_dashboard_path"`
+	EscalationHandoffLedgerPath    string `json:"escalation_handoff_ledger_path"`
+	HandoffAckLedgerPath           string `json:"handoff_ack_ledger_path"`
+	OwnerEscalationDigestPath      string `json:"owner_escalation_digest_path"`
+	OwnerWorkloadBoardPath         string `json:"owner_workload_board_path"`
+	BlockerLogPath                 string `json:"blocker_log_path"`
+	BlockerTimelinePath            string `json:"blocker_timeline_path"`
+	FreezeExceptionBoardPath       string `json:"freeze_exception_board_path"`
+	FreezeApprovalTrailPath        string `json:"freeze_approval_trail_path"`
+	FreezeRenewalTrackerPath       string `json:"freeze_renewal_tracker_path"`
+	ExceptionLogPath               string `json:"exception_log_path"`
+	ExceptionMatrixPath            string `json:"exception_matrix_path"`
+	AuditDensityBoardPath          string `json:"audit_density_board_path"`
+	OwnerReviewQueuePath           string `json:"owner_review_queue_path"`
+	BlockerTimelineSummaryPath     string `json:"blocker_timeline_summary_path"`
 }
 
 func (p UIReviewPack) normalized() UIReviewPack {
@@ -2580,9 +2621,150 @@ func RenderUIReviewPackReport(pack UIReviewPack, audit UIReviewPackAudit) string
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func RenderUIReviewPackHTML(pack UIReviewPack, audit UIReviewPackAudit) string {
+	pack = pack.normalized()
+	type section struct {
+		Title   string
+		Content string
+	}
+	sections := []section{
+		{Title: "Checklist Traceability Board", Content: RenderUIReviewChecklistTraceabilityBoard(pack)},
+		{Title: "Decision Log", Content: RenderUIReviewDecisionLog(pack)},
+		{Title: "Decision Follow-up Tracker", Content: RenderUIReviewDecisionFollowupTracker(pack)},
+		{Title: "Review Summary Board", Content: RenderUIReviewReviewSummaryBoard(pack)},
+		{Title: "Objective Coverage Board", Content: RenderUIReviewObjectiveCoverageBoard(pack)},
+		{Title: "Persona Readiness Board", Content: RenderUIReviewPersonaReadinessBoard(pack)},
+		{Title: "Wireframe Readiness Board", Content: RenderUIReviewWireframeReadinessBoard(pack)},
+		{Title: "Interaction Coverage Board", Content: RenderUIReviewInteractionCoverageBoard(pack)},
+		{Title: "Open Question Tracker", Content: RenderUIReviewOpenQuestionTracker(pack)},
+		{Title: "Role Matrix", Content: RenderUIReviewRoleMatrix(pack)},
+		{Title: "Role Coverage Board", Content: RenderUIReviewRoleCoverageBoard(pack)},
+		{Title: "Signoff Dependency Board", Content: RenderUIReviewSignoffDependencyBoard(pack)},
+		{Title: "Sign-off Log", Content: RenderUIReviewSignoffLog(pack)},
+		{Title: "Sign-off SLA Dashboard", Content: RenderUIReviewSignoffSLADashboard(pack)},
+		{Title: "Sign-off Reminder Queue", Content: RenderUIReviewSignoffReminderQueue(pack)},
+		{Title: "Reminder Cadence Board", Content: RenderUIReviewReminderCadenceBoard(pack)},
+		{Title: "Sign-off Breach Board", Content: RenderUIReviewSignoffBreachBoard(pack)},
+		{Title: "Escalation Dashboard", Content: RenderUIReviewEscalationDashboard(pack)},
+		{Title: "Escalation Handoff Ledger", Content: RenderUIReviewEscalationHandoffLedger(pack)},
+		{Title: "Handoff Ack Ledger", Content: RenderUIReviewHandoffAckLedger(pack)},
+		{Title: "Owner Escalation Digest", Content: RenderUIReviewOwnerEscalationDigest(pack)},
+		{Title: "Owner Workload Board", Content: RenderUIReviewOwnerWorkloadBoard(pack)},
+		{Title: "Blocker Log", Content: RenderUIReviewBlockerLog(pack)},
+		{Title: "Blocker Timeline", Content: RenderUIReviewBlockerTimeline(pack)},
+		{Title: "Review Freeze Exception Board", Content: RenderUIReviewFreezeExceptionBoard(pack)},
+		{Title: "Freeze Approval Trail", Content: RenderUIReviewFreezeApprovalTrail(pack)},
+		{Title: "Freeze Renewal Tracker", Content: RenderUIReviewFreezeRenewalTracker(pack)},
+		{Title: "Review Exceptions", Content: RenderUIReviewExceptionLog(pack)},
+		{Title: "Review Exception Matrix", Content: RenderUIReviewExceptionMatrix(pack)},
+		{Title: "Audit Density Board", Content: RenderUIReviewAuditDensityBoard(pack)},
+		{Title: "Owner Review Queue", Content: RenderUIReviewOwnerReviewQueue(pack)},
+		{Title: "Blocker Timeline Summary", Content: RenderUIReviewBlockerTimelineSummary(pack)},
+	}
+	var builder strings.Builder
+	builder.WriteString("<html><head><title>UI Review Pack</title></head><body>\n")
+	builder.WriteString("<h1>UI Review Pack</h1>\n")
+	builder.WriteString("<p>Issue " + html.EscapeString(pack.IssueID) + " " + html.EscapeString(pack.Title) + ".</p>\n")
+	builder.WriteString("<p>Audit " + html.EscapeString(audit.Summary()) + ".</p>\n")
+	for _, section := range sections {
+		builder.WriteString("<h2>" + html.EscapeString(section.Title) + "</h2>\n")
+		builder.WriteString("<pre>" + html.EscapeString(strings.TrimSuffix(section.Content, "\n")) + "</pre>\n")
+	}
+	builder.WriteString("</body></html>\n")
+	return builder.String()
+}
+
 func appendRenderedReportSection(lines *[]string, title, rendered string) {
 	*lines = append(*lines, "", "## "+title)
 	*lines = append(*lines, strings.TrimSuffix(rendered, "\n"))
+}
+
+func WriteUIReviewPackBundle(rootDir string, pack UIReviewPack) (UIReviewPackArtifacts, error) {
+	base := filepath.Clean(rootDir)
+	if err := os.MkdirAll(base, 0o755); err != nil {
+		return UIReviewPackArtifacts{}, err
+	}
+	slug := strings.ToLower(strings.ReplaceAll(pack.IssueID, " ", "-"))
+	artifacts := UIReviewPackArtifacts{
+		RootDir:                        base,
+		MarkdownPath:                   filepath.Join(base, slug+"-review-pack.md"),
+		HTMLPath:                       filepath.Join(base, slug+"-review-pack.html"),
+		DecisionLogPath:                filepath.Join(base, slug+"-decision-log.md"),
+		ReviewSummaryBoardPath:         filepath.Join(base, slug+"-review-summary-board.md"),
+		ObjectiveCoverageBoardPath:     filepath.Join(base, slug+"-objective-coverage-board.md"),
+		PersonaReadinessBoardPath:      filepath.Join(base, slug+"-persona-readiness-board.md"),
+		WireframeReadinessBoardPath:    filepath.Join(base, slug+"-wireframe-readiness-board.md"),
+		InteractionCoverageBoardPath:   filepath.Join(base, slug+"-interaction-coverage-board.md"),
+		OpenQuestionTrackerPath:        filepath.Join(base, slug+"-open-question-tracker.md"),
+		ChecklistTraceabilityBoardPath: filepath.Join(base, slug+"-checklist-traceability-board.md"),
+		DecisionFollowupTrackerPath:    filepath.Join(base, slug+"-decision-followup-tracker.md"),
+		RoleMatrixPath:                 filepath.Join(base, slug+"-role-matrix.md"),
+		RoleCoverageBoardPath:          filepath.Join(base, slug+"-role-coverage-board.md"),
+		SignoffDependencyBoardPath:     filepath.Join(base, slug+"-signoff-dependency-board.md"),
+		SignoffLogPath:                 filepath.Join(base, slug+"-signoff-log.md"),
+		SignoffSLADashboardPath:        filepath.Join(base, slug+"-signoff-sla-dashboard.md"),
+		SignoffReminderQueuePath:       filepath.Join(base, slug+"-signoff-reminder-queue.md"),
+		ReminderCadenceBoardPath:       filepath.Join(base, slug+"-reminder-cadence-board.md"),
+		SignoffBreachBoardPath:         filepath.Join(base, slug+"-signoff-breach-board.md"),
+		EscalationDashboardPath:        filepath.Join(base, slug+"-escalation-dashboard.md"),
+		EscalationHandoffLedgerPath:    filepath.Join(base, slug+"-escalation-handoff-ledger.md"),
+		HandoffAckLedgerPath:           filepath.Join(base, slug+"-handoff-ack-ledger.md"),
+		OwnerEscalationDigestPath:      filepath.Join(base, slug+"-owner-escalation-digest.md"),
+		OwnerWorkloadBoardPath:         filepath.Join(base, slug+"-owner-workload-board.md"),
+		BlockerLogPath:                 filepath.Join(base, slug+"-blocker-log.md"),
+		BlockerTimelinePath:            filepath.Join(base, slug+"-blocker-timeline.md"),
+		FreezeExceptionBoardPath:       filepath.Join(base, slug+"-freeze-exception-board.md"),
+		FreezeApprovalTrailPath:        filepath.Join(base, slug+"-freeze-approval-trail.md"),
+		FreezeRenewalTrackerPath:       filepath.Join(base, slug+"-freeze-renewal-tracker.md"),
+		ExceptionLogPath:               filepath.Join(base, slug+"-exception-log.md"),
+		ExceptionMatrixPath:            filepath.Join(base, slug+"-exception-matrix.md"),
+		AuditDensityBoardPath:          filepath.Join(base, slug+"-audit-density-board.md"),
+		OwnerReviewQueuePath:           filepath.Join(base, slug+"-owner-review-queue.md"),
+		BlockerTimelineSummaryPath:     filepath.Join(base, slug+"-blocker-timeline-summary.md"),
+	}
+	audit := (UIReviewPackAuditor{}).Audit(pack)
+	files := map[string]string{
+		artifacts.MarkdownPath:                   RenderUIReviewPackReport(pack, audit),
+		artifacts.HTMLPath:                       RenderUIReviewPackHTML(pack, audit),
+		artifacts.DecisionLogPath:                RenderUIReviewDecisionLog(pack),
+		artifacts.ReviewSummaryBoardPath:         RenderUIReviewReviewSummaryBoard(pack),
+		artifacts.ObjectiveCoverageBoardPath:     RenderUIReviewObjectiveCoverageBoard(pack),
+		artifacts.PersonaReadinessBoardPath:      RenderUIReviewPersonaReadinessBoard(pack),
+		artifacts.WireframeReadinessBoardPath:    RenderUIReviewWireframeReadinessBoard(pack),
+		artifacts.InteractionCoverageBoardPath:   RenderUIReviewInteractionCoverageBoard(pack),
+		artifacts.OpenQuestionTrackerPath:        RenderUIReviewOpenQuestionTracker(pack),
+		artifacts.ChecklistTraceabilityBoardPath: RenderUIReviewChecklistTraceabilityBoard(pack),
+		artifacts.DecisionFollowupTrackerPath:    RenderUIReviewDecisionFollowupTracker(pack),
+		artifacts.RoleMatrixPath:                 RenderUIReviewRoleMatrix(pack),
+		artifacts.RoleCoverageBoardPath:          RenderUIReviewRoleCoverageBoard(pack),
+		artifacts.SignoffDependencyBoardPath:     RenderUIReviewSignoffDependencyBoard(pack),
+		artifacts.SignoffLogPath:                 RenderUIReviewSignoffLog(pack),
+		artifacts.SignoffSLADashboardPath:        RenderUIReviewSignoffSLADashboard(pack),
+		artifacts.SignoffReminderQueuePath:       RenderUIReviewSignoffReminderQueue(pack),
+		artifacts.ReminderCadenceBoardPath:       RenderUIReviewReminderCadenceBoard(pack),
+		artifacts.SignoffBreachBoardPath:         RenderUIReviewSignoffBreachBoard(pack),
+		artifacts.EscalationDashboardPath:        RenderUIReviewEscalationDashboard(pack),
+		artifacts.EscalationHandoffLedgerPath:    RenderUIReviewEscalationHandoffLedger(pack),
+		artifacts.HandoffAckLedgerPath:           RenderUIReviewHandoffAckLedger(pack),
+		artifacts.OwnerEscalationDigestPath:      RenderUIReviewOwnerEscalationDigest(pack),
+		artifacts.OwnerWorkloadBoardPath:         RenderUIReviewOwnerWorkloadBoard(pack),
+		artifacts.BlockerLogPath:                 RenderUIReviewBlockerLog(pack),
+		artifacts.BlockerTimelinePath:            RenderUIReviewBlockerTimeline(pack),
+		artifacts.FreezeExceptionBoardPath:       RenderUIReviewFreezeExceptionBoard(pack),
+		artifacts.FreezeApprovalTrailPath:        RenderUIReviewFreezeApprovalTrail(pack),
+		artifacts.FreezeRenewalTrackerPath:       RenderUIReviewFreezeRenewalTracker(pack),
+		artifacts.ExceptionLogPath:               RenderUIReviewExceptionLog(pack),
+		artifacts.ExceptionMatrixPath:            RenderUIReviewExceptionMatrix(pack),
+		artifacts.AuditDensityBoardPath:          RenderUIReviewAuditDensityBoard(pack),
+		artifacts.OwnerReviewQueuePath:           RenderUIReviewOwnerReviewQueue(pack),
+		artifacts.BlockerTimelineSummaryPath:     RenderUIReviewBlockerTimelineSummary(pack),
+	}
+	for path, content := range files {
+		if err := writeUIReviewFile(path, content); err != nil {
+			return UIReviewPackArtifacts{}, err
+		}
+	}
+	return artifacts, nil
 }
 
 func RenderUIReviewDecisionLog(pack UIReviewPack) string {
@@ -5693,6 +5875,13 @@ func fallback(value, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func writeUIReviewFile(path, content string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(content), 0o644)
 }
 
 func sortedKeys[V any](m map[string]V) []string {
