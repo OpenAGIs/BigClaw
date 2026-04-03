@@ -313,7 +313,7 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
         theme="ops-command-center",
         priority="P0",
         owner="ops-platform",
-        outcome="Package command-center and approval surfaces with linked evidence.",
+        outcome="Package command-center bulk retry, failure attribution, and manual takeover surfaces with linked evidence.",
         validation_command="python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
         capabilities=["ops-control", "saved-views"],
         evidence=["weekly-review", "validation-report"],
@@ -322,7 +322,7 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
                 label="queue-control-center",
                 target="src/bigclaw/operations.py",
                 capability="ops-control",
-                note="queue and approval command center",
+                note="queue bulk retry, failure attribution, and manual takeover command center",
             ),
             EvidenceLink(
                 label="saved-view-report",
