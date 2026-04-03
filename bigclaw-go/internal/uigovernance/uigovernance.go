@@ -2460,6 +2460,7 @@ func RenderConsoleInteractionReport(draft ConsoleInteractionDraft, audit Console
 }
 
 func RenderUIReviewPackReport(pack UIReviewPack, audit UIReviewPackAudit) string {
+	pack = pack.normalized()
 	var lines []string
 	lines = append(lines,
 		"# UI Review Pack",
@@ -2486,8 +2487,175 @@ func RenderUIReviewPackReport(pack UIReviewPack, audit UIReviewPackAudit) string
 		}
 	}
 	lines = append(lines, "")
-	lines = append(lines, "## Open Questions")
+	appendRenderedReportSection(&lines, "Review Summary Board", RenderUIReviewReviewSummaryBoard(pack))
+	appendRenderedReportSection(&lines, "Objective Coverage Board", RenderUIReviewObjectiveCoverageBoard(pack))
+	appendRenderedReportSection(&lines, "Persona Readiness Board", RenderUIReviewPersonaReadinessBoard(pack))
+	lines = append(lines, "", "## Wireframes")
+	for _, wireframe := range pack.Wireframes {
+		lines = append(lines, "- "+wireframe.SurfaceID+": "+wireframe.Name+" device="+wireframe.Device+" entry="+wireframe.EntryPoint)
+		lines = append(lines, "  blocks="+joinCSVOrNone(wireframe.PrimaryBlocks)+" review_notes="+joinCSVOrNone(wireframe.ReviewNotes))
+	}
+	if len(pack.Wireframes) == 0 {
+		lines = append(lines, "- none")
+	}
+	appendRenderedReportSection(&lines, "Wireframe Readiness Board", RenderUIReviewWireframeReadinessBoard(pack))
+	lines = append(lines, "", "## Interactions")
+	for _, interaction := range pack.Interactions {
+		lines = append(lines, "- "+interaction.FlowID+": "+interaction.Name+" trigger="+interaction.Trigger)
+		lines = append(lines, "  response="+interaction.SystemResponse+" states="+joinCSVOrNone(interaction.States)+" exceptions="+joinCSVOrNone(interaction.Exceptions))
+	}
+	if len(pack.Interactions) == 0 {
+		lines = append(lines, "- none")
+	}
+	appendRenderedReportSection(&lines, "Interaction Coverage Board", RenderUIReviewInteractionCoverageBoard(pack))
+	lines = append(lines, "", "## Open Question Tracker")
+	lines = append(lines, strings.TrimSuffix(RenderUIReviewOpenQuestionTracker(pack), "\n"))
+	lines = append(lines, "", "## Reviewer Checklist")
+	for _, item := range pack.ReviewerChecklist {
+		lines = append(lines, "- "+item.ItemID+": surface="+item.SurfaceID+" owner="+item.Owner+" status="+item.Status)
+		lines = append(lines, "  prompt="+item.Prompt+" evidence="+joinCSVOrNone(item.EvidenceLinks)+" notes="+fallback(item.Notes, "none"))
+	}
+	if len(pack.ReviewerChecklist) == 0 {
+		lines = append(lines, "- none")
+	}
+	appendRenderedReportSection(&lines, "Checklist Traceability Board", RenderUIReviewChecklistTraceabilityBoard(pack))
+	appendRenderedReportSection(&lines, "Decision Log", RenderUIReviewDecisionLog(pack))
+	appendRenderedReportSection(&lines, "Decision Follow-up Tracker", RenderUIReviewDecisionFollowupTracker(pack))
+	appendRenderedReportSection(&lines, "Role Matrix", RenderUIReviewRoleMatrix(pack))
+	appendRenderedReportSection(&lines, "Role Coverage Board", RenderUIReviewRoleCoverageBoard(pack))
+	appendRenderedReportSection(&lines, "Signoff Dependency Board", RenderUIReviewSignoffDependencyBoard(pack))
+	appendRenderedReportSection(&lines, "Sign-off Log", RenderUIReviewSignoffLog(pack))
+	appendRenderedReportSection(&lines, "Review Exceptions", RenderUIReviewExceptionLog(pack))
+	appendRenderedReportSection(&lines, "Sign-off SLA Dashboard", RenderUIReviewSignoffSLADashboard(pack))
+	appendRenderedReportSection(&lines, "Sign-off Reminder Queue", RenderUIReviewSignoffReminderQueue(pack))
+	appendRenderedReportSection(&lines, "Reminder Cadence Board", RenderUIReviewReminderCadenceBoard(pack))
+	appendRenderedReportSection(&lines, "Sign-off Breach Board", RenderUIReviewSignoffBreachBoard(pack))
+	appendRenderedReportSection(&lines, "Escalation Dashboard", RenderUIReviewEscalationDashboard(pack))
+	appendRenderedReportSection(&lines, "Escalation Handoff Ledger", RenderUIReviewEscalationHandoffLedger(pack))
+	appendRenderedReportSection(&lines, "Handoff Ack Ledger", RenderUIReviewHandoffAckLedger(pack))
+	appendRenderedReportSection(&lines, "Owner Escalation Digest", RenderUIReviewOwnerEscalationDigest(pack))
+	appendRenderedReportSection(&lines, "Owner Workload Board", RenderUIReviewOwnerWorkloadBoard(pack))
+	appendRenderedReportSection(&lines, "Review Freeze Exception Board", RenderUIReviewFreezeExceptionBoard(pack))
+	appendRenderedReportSection(&lines, "Freeze Approval Trail", RenderUIReviewFreezeApprovalTrail(pack))
+	appendRenderedReportSection(&lines, "Freeze Renewal Tracker", RenderUIReviewFreezeRenewalTracker(pack))
+	appendRenderedReportSection(&lines, "Blocker Log", RenderUIReviewBlockerLog(pack))
+	appendRenderedReportSection(&lines, "Blocker Timeline", RenderUIReviewBlockerTimeline(pack))
+	appendRenderedReportSection(&lines, "Review Exception Matrix", RenderUIReviewExceptionMatrix(pack))
+	appendRenderedReportSection(&lines, "Audit Density Board", RenderUIReviewAuditDensityBoard(pack))
+	appendRenderedReportSection(&lines, "Owner Review Queue", RenderUIReviewOwnerReviewQueue(pack))
+	appendRenderedReportSection(&lines, "Blocker Timeline Summary", RenderUIReviewBlockerTimelineSummary(pack))
+	lines = append(lines, "", "## Audit Findings")
+	lines = append(lines, "- Wireframes missing checklist coverage: "+joinOrNone(audit.WireframesMissingChecklists))
+	lines = append(lines, "- Checklist items missing role links: "+joinOrNone(audit.ChecklistItemsMissingRoleLinks))
+	lines = append(lines, "- Wireframes missing decision coverage: "+joinOrNone(audit.WireframesMissingDecisions))
+	lines = append(lines, "- Unresolved decisions missing follow-ups: "+joinOrNone(audit.UnresolvedDecisionsMissingFollowUps))
+	lines = append(lines, "- Wireframes missing role assignments: "+joinOrNone(audit.WireframesMissingRoleAssignments))
+	lines = append(lines, "- Wireframes missing signoff coverage: "+joinOrNone(audit.WireframesMissingSignoffs))
+	lines = append(lines, "- Blockers missing signoff links: "+joinOrNone(audit.BlockersMissingSignoffLinks))
+	lines = append(lines, "- Freeze exceptions missing owners: "+joinOrNone(audit.FreezeExceptionsMissingOwners))
+	lines = append(lines, "- Freeze exceptions missing windows: "+joinOrNone(audit.FreezeExceptionsMissingUntil))
+	lines = append(lines, "- Freeze exceptions missing approvers: "+joinOrNone(audit.FreezeExceptionsMissingApprovers))
+	lines = append(lines, "- Freeze exceptions missing approval dates: "+joinOrNone(audit.FreezeExceptionsMissingApprovalDates))
+	lines = append(lines, "- Freeze exceptions missing renewal owners: "+joinOrNone(audit.FreezeExceptionsMissingRenewalOwners))
+	lines = append(lines, "- Freeze exceptions missing renewal dates: "+joinOrNone(audit.FreezeExceptionsMissingRenewalDates))
+	lines = append(lines, "- Blockers missing timeline events: "+joinOrNone(audit.BlockersMissingTimelineEvents))
+	lines = append(lines, "- Closed blockers missing resolution events: "+joinOrNone(audit.ClosedBlockersMissingResolutionEvents))
+	lines = append(lines, "- Orphan blocker timeline blocker ids: "+joinOrNone(audit.OrphanBlockerTimelineBlockerIDs))
+	lines = append(lines, "- Handoff events missing targets: "+joinOrNone(audit.HandoffEventsMissingTargets))
+	lines = append(lines, "- Handoff events missing artifacts: "+joinOrNone(audit.HandoffEventsMissingArtifacts))
+	lines = append(lines, "- Handoff events missing ack owners: "+joinOrNone(audit.HandoffEventsMissingAckOwners))
+	lines = append(lines, "- Handoff events missing ack dates: "+joinOrNone(audit.HandoffEventsMissingAckDates))
+	lines = append(lines, "- Unresolved required signoffs without blockers: "+joinOrNone(audit.UnresolvedRequiredSignoffsWithoutBlockers))
+	lines = append(lines, "- Unresolved decision ids: "+joinOrNone(audit.UnresolvedDecisionIDs))
+	lines = append(lines, "- Decisions missing role links: "+joinOrNone(audit.DecisionsMissingRoleLinks))
+	lines = append(lines, "- Signoffs missing requested dates: "+joinOrNone(audit.SignoffsMissingRequestedDates))
+	lines = append(lines, "- Signoffs missing due dates: "+joinOrNone(audit.SignoffsMissingDueDates))
+	lines = append(lines, "- Signoffs missing escalation owners: "+joinOrNone(audit.SignoffsMissingEscalationOwners))
+	lines = append(lines, "- Signoffs missing reminder owners: "+joinOrNone(audit.SignoffsMissingReminderOwners))
+	lines = append(lines, "- Signoffs missing next reminders: "+joinOrNone(audit.SignoffsMissingNextReminders))
+	lines = append(lines, "- Signoffs missing reminder cadence: "+joinOrNone(audit.SignoffsMissingReminderCadence))
+	lines = append(lines, "- Signoffs with breached SLA: "+joinOrNone(audit.SignoffsWithBreachedSLA))
+	lines = append(lines, "- Unresolved required signoff ids: "+joinOrNone(audit.UnresolvedRequiredSignoffIDs))
 	lines = append(lines, "- Unresolved questions: "+joinOrNone(audit.UnresolvedQuestionIDs))
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func appendRenderedReportSection(lines *[]string, title, rendered string) {
+	*lines = append(*lines, "", "## "+title)
+	*lines = append(*lines, strings.TrimSuffix(rendered, "\n"))
+}
+
+func RenderUIReviewDecisionLog(pack UIReviewPack) string {
+	pack = pack.normalized()
+	var lines []string
+	lines = append(lines, "# UI Review Decision Log", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Decisions: "+itoa(len(pack.DecisionLog)), "", "## Decisions")
+	for _, decision := range pack.DecisionLog {
+		lines = append(lines, "- "+decision.DecisionID+": surface="+decision.SurfaceID+" owner="+decision.Owner+" status="+decision.Status)
+		lines = append(lines, "  summary="+decision.Summary+" rationale="+decision.Rationale+" follow_up="+fallback(decision.FollowUp, "none"))
+	}
+	if len(pack.DecisionLog) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewRoleMatrix(pack UIReviewPack) string {
+	pack = pack.normalized()
+	var lines []string
+	lines = append(lines, "# UI Review Role Matrix", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Assignments: "+itoa(len(pack.RoleMatrix)), "", "## Assignments")
+	for _, assignment := range pack.RoleMatrix {
+		lines = append(lines, "- "+assignment.AssignmentID+": surface="+assignment.SurfaceID+" role="+assignment.Role+" status="+assignment.Status)
+		lines = append(lines, "  responsibilities="+joinCSVOrNone(assignment.Responsibilities)+" checklist="+joinCSVOrNone(assignment.ChecklistItemIDs)+" decisions="+joinCSVOrNone(assignment.DecisionIDs))
+	}
+	if len(pack.RoleMatrix) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewSignoffLog(pack UIReviewPack) string {
+	pack = pack.normalized()
+	var lines []string
+	lines = append(lines, "# UI Review Sign-off Log", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Sign-offs: "+itoa(len(pack.SignoffLog)), "", "## Sign-offs")
+	for _, signoff := range pack.SignoffLog {
+		required := "no"
+		if signoff.Required {
+			required = "yes"
+		}
+		lines = append(lines, "- "+signoff.SignoffID+": surface="+signoff.SurfaceID+" role="+signoff.Role+" assignment="+signoff.AssignmentID+" status="+signoff.Status)
+		lines = append(lines, "  required="+required+" evidence="+joinCSVOrNone(signoff.EvidenceLinks)+" notes="+fallback(signoff.Notes, "none")+" waiver_owner="+fallback(signoff.WaiverOwner, "none")+" waiver_reason="+fallback(signoff.WaiverReason, "none")+" requested_at="+fallback(signoff.RequestedAt, "none")+" due_at="+fallback(signoff.DueAt, "none")+" escalation_owner="+fallback(signoff.EscalationOwner, "none")+" sla_status="+signoff.SLAStatus+" reminder_owner="+fallback(signoff.ReminderOwner, "none")+" reminder_channel="+fallback(signoff.ReminderChannel, "none")+" last_reminder_at="+fallback(signoff.LastReminderAt, "none")+" next_reminder_at="+fallback(signoff.NextReminderAt, "none"))
+	}
+	if len(pack.SignoffLog) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewBlockerLog(pack UIReviewPack) string {
+	pack = pack.normalized()
+	var lines []string
+	lines = append(lines, "# UI Review Blocker Log", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Blockers: "+itoa(len(pack.BlockerLog)), "", "## Blockers")
+	for _, blocker := range pack.BlockerLog {
+		lines = append(lines, "- "+blocker.BlockerID+": surface="+blocker.SurfaceID+" signoff="+blocker.SignoffID+" owner="+blocker.Owner+" status="+blocker.Status+" severity="+blocker.Severity)
+		lines = append(lines, "  summary="+blocker.Summary+" escalation_owner="+fallback(blocker.EscalationOwner, "none")+" next_action="+fallback(blocker.NextAction, "none")+" freeze_owner="+fallback(blocker.FreezeOwner, "none")+" freeze_until="+fallback(blocker.FreezeUntil, "none")+" freeze_approved_by="+fallback(blocker.FreezeApprovedBy, "none")+" freeze_approved_at="+fallback(blocker.FreezeApprovedAt, "none"))
+	}
+	if len(pack.BlockerLog) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewBlockerTimeline(pack UIReviewPack) string {
+	pack = pack.normalized()
+	var lines []string
+	lines = append(lines, "# UI Review Blocker Timeline", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Events: "+itoa(len(pack.BlockerTimeline)), "", "## Events")
+	for _, event := range pack.BlockerTimeline {
+		lines = append(lines, "- "+event.EventID+": blocker="+event.BlockerID+" actor="+event.Actor+" status="+event.Status+" at="+event.Timestamp)
+		lines = append(lines, "  summary="+event.Summary+" next_action="+fallback(event.NextAction, "none"))
+	}
+	if len(pack.BlockerTimeline) == 0 {
+		lines = append(lines, "- none")
+	}
 	return strings.Join(lines, "\n") + "\n"
 }
 
