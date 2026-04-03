@@ -295,6 +295,61 @@ func (c FinalDeliveryChecklist) Ready() bool {
 	return len(c.MissingRequiredOutputs()) == 0
 }
 
+type NarrativeSection struct {
+	Heading  string   `json:"heading"`
+	Body     string   `json:"body"`
+	Evidence []string `json:"evidence,omitempty"`
+	Callouts []string `json:"callouts,omitempty"`
+}
+
+func (s NarrativeSection) Ready() bool {
+	return strings.TrimSpace(s.Heading) != "" && strings.TrimSpace(s.Body) != ""
+}
+
+type ReportStudio struct {
+	Name          string             `json:"name"`
+	IssueID       string             `json:"issue_id"`
+	Audience      string             `json:"audience"`
+	Period        string             `json:"period"`
+	Summary       string             `json:"summary"`
+	Sections      []NarrativeSection `json:"sections,omitempty"`
+	ActionItems   []string           `json:"action_items,omitempty"`
+	SourceReports []string           `json:"source_reports,omitempty"`
+}
+
+func (s ReportStudio) Ready() bool {
+	if strings.TrimSpace(s.Summary) == "" || len(s.Sections) == 0 {
+		return false
+	}
+	for _, section := range s.Sections {
+		if !section.Ready() {
+			return false
+		}
+	}
+	return true
+}
+
+func (s ReportStudio) Recommendation() string {
+	if s.Ready() {
+		return "publish"
+	}
+	return "draft"
+}
+
+func (s ReportStudio) ExportSlug() string {
+	if slug := slugifyReportStudioName(s.Name); slug != "" {
+		return slug
+	}
+	return "report-studio"
+}
+
+type ReportStudioArtifacts struct {
+	RootDir      string `json:"root_dir"`
+	MarkdownPath string `json:"markdown_path"`
+	HTMLPath     string `json:"html_path"`
+	TextPath     string `json:"text_path"`
+}
+
 type TeamBreakdown struct {
 	Key                string `json:"key"`
 	TotalRuns          int    `json:"total_runs"`
@@ -1645,6 +1700,184 @@ func BuildFinalDeliveryChecklist(issueID string, requiredOutputs, recommendedDoc
 	}
 }
 
+func RenderReportStudioReport(studio ReportStudio) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Report Studio\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", studio.Name))
+	builder.WriteString(fmt.Sprintf("- Issue ID: %s\n", studio.IssueID))
+	builder.WriteString(fmt.Sprintf("- Audience: %s\n", studio.Audience))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", studio.Period))
+	builder.WriteString(fmt.Sprintf("- Sections: %d\n", len(studio.Sections)))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n\n", studio.Recommendation()))
+	builder.WriteString("## Narrative Summary\n\n")
+	if studio.Summary != "" {
+		builder.WriteString(studio.Summary)
+	} else {
+		builder.WriteString("No summary drafted.")
+	}
+	builder.WriteString("\n\n## Sections\n\n")
+	if len(studio.Sections) == 0 {
+		builder.WriteString("- None\n\n")
+	} else {
+		for _, section := range studio.Sections {
+			builder.WriteString(fmt.Sprintf("### %s\n\n", section.Heading))
+			if section.Body != "" {
+				builder.WriteString(section.Body)
+			} else {
+				builder.WriteString("No narrative drafted.")
+			}
+			builder.WriteString("\n\n")
+			evidence := "None"
+			if len(section.Evidence) > 0 {
+				evidence = strings.Join(section.Evidence, ", ")
+			}
+			callouts := "None"
+			if len(section.Callouts) > 0 {
+				callouts = strings.Join(section.Callouts, ", ")
+			}
+			builder.WriteString(fmt.Sprintf("- Evidence: %s\n", evidence))
+			builder.WriteString(fmt.Sprintf("- Callouts: %s\n\n", callouts))
+		}
+	}
+	builder.WriteString("## Action Items\n\n")
+	if len(studio.ActionItems) == 0 {
+		builder.WriteString("- None\n\n")
+	} else {
+		for _, item := range studio.ActionItems {
+			builder.WriteString(fmt.Sprintf("- %s\n", item))
+		}
+		builder.WriteString("\n")
+	}
+	builder.WriteString("## Sources\n\n")
+	if len(studio.SourceReports) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, path := range studio.SourceReports {
+			builder.WriteString(fmt.Sprintf("- %s\n", path))
+		}
+	}
+	return builder.String() + "\n"
+}
+
+func RenderReportStudioPlainText(studio ReportStudio) string {
+	builder := strings.Builder{}
+	builder.WriteString(fmt.Sprintf("%s (%s)\n", studio.Name, studio.IssueID))
+	builder.WriteString(fmt.Sprintf("Audience: %s\n", studio.Audience))
+	builder.WriteString(fmt.Sprintf("Period: %s\n", studio.Period))
+	builder.WriteString(fmt.Sprintf("Recommendation: %s\n\n", studio.Recommendation()))
+	if studio.Summary != "" {
+		builder.WriteString(studio.Summary)
+	} else {
+		builder.WriteString("No summary drafted.")
+	}
+	builder.WriteString("\n\n")
+	for _, section := range studio.Sections {
+		builder.WriteString(strings.ToUpper(section.Heading) + "\n")
+		if section.Body != "" {
+			builder.WriteString(section.Body)
+		} else {
+			builder.WriteString("No narrative drafted.")
+		}
+		builder.WriteString("\n")
+		if len(section.Callouts) > 0 {
+			builder.WriteString("Callouts: " + strings.Join(section.Callouts, "; ") + "\n")
+		}
+		if len(section.Evidence) > 0 {
+			builder.WriteString("Evidence: " + strings.Join(section.Evidence, "; ") + "\n")
+		}
+		builder.WriteString("\n")
+	}
+	if len(studio.ActionItems) > 0 {
+		builder.WriteString("Action Items:\n")
+		for _, item := range studio.ActionItems {
+			builder.WriteString(fmt.Sprintf("- %s\n", item))
+		}
+		builder.WriteString("\n")
+	}
+	return strings.TrimRight(builder.String(), "\n") + "\n"
+}
+
+func RenderReportStudioHTML(studio ReportStudio) string {
+	sectionHTML := strings.Builder{}
+	for _, section := range studio.Sections {
+		evidence := "None"
+		if len(section.Evidence) > 0 {
+			evidence = strings.Join(section.Evidence, ", ")
+		}
+		callouts := "None"
+		if len(section.Callouts) > 0 {
+			callouts = strings.Join(section.Callouts, ", ")
+		}
+		sectionHTML.WriteString(fmt.Sprintf(`
+        <section class="section">
+          <h2>%s</h2>
+          <p>%s</p>
+          <p class="meta">Evidence: %s</p>
+          <p class="meta">Callouts: %s</p>
+        </section>
+        `, html.EscapeString(section.Heading), html.EscapeString(section.Body), html.EscapeString(evidence), html.EscapeString(callouts)))
+	}
+	actionHTML := "<li>None</li>"
+	if len(studio.ActionItems) > 0 {
+		items := make([]string, 0, len(studio.ActionItems))
+		for _, item := range studio.ActionItems {
+			items = append(items, "<li>"+html.EscapeString(item)+"</li>")
+		}
+		actionHTML = strings.Join(items, "")
+	}
+	sourceHTML := "<li>None</li>"
+	if len(studio.SourceReports) > 0 {
+		items := make([]string, 0, len(studio.SourceReports))
+		for _, item := range studio.SourceReports {
+			items = append(items, "<li>"+html.EscapeString(item)+"</li>")
+		}
+		sourceHTML = strings.Join(items, "")
+	}
+	sections := sectionHTML.String()
+	if sections == "" {
+		sections = `<section class="section"><p>No sections drafted.</p></section>`
+	}
+	summary := studio.Summary
+	if summary == "" {
+		summary = "No summary drafted."
+	}
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>%s</title>
+    <style>
+      body { font-family: Georgia, 'Times New Roman', serif; margin: 40px auto; max-width: 840px; color: #1f2933; line-height: 1.6; }
+      h1, h2 { font-family: 'Avenir Next', 'Segoe UI', sans-serif; }
+      .meta { color: #52606d; font-size: 0.95rem; }
+      .summary { padding: 16px 20px; background: #f7f3e8; border-left: 4px solid #c58b32; }
+      .section { margin-top: 28px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="meta">%s · %s · %s</p>
+      <h1>%s</h1>
+      <p class="meta">Recommendation: %s</p>
+    </header>
+    <section class="summary">
+      <h2>Narrative Summary</h2>
+      <p>%s</p>
+    </section>
+    %s
+    <section class="section">
+      <h2>Action Items</h2>
+      <ul>%s</ul>
+    </section>
+    <section class="section">
+      <h2>Sources</h2>
+      <ul>%s</ul>
+    </section>
+  </body>
+</html>
+`, html.EscapeString(studio.Name), html.EscapeString(studio.IssueID), html.EscapeString(studio.Audience), html.EscapeString(studio.Period), html.EscapeString(studio.Name), html.EscapeString(studio.Recommendation()), html.EscapeString(summary), sections, actionHTML, sourceHTML)
+}
+
 func RenderLaunchChecklistReport(checklist LaunchChecklist) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Launch Checklist\n\n")
@@ -1712,6 +1945,28 @@ func ValidationReportExists(reportPath string) bool {
 	return strings.TrimSpace(string(body)) != ""
 }
 
+func WriteReportStudioBundle(rootDir string, studio ReportStudio) (ReportStudioArtifacts, error) {
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		return ReportStudioArtifacts{}, err
+	}
+	artifacts := ReportStudioArtifacts{
+		RootDir:      rootDir,
+		MarkdownPath: filepath.Join(rootDir, studio.ExportSlug()+".md"),
+		HTMLPath:     filepath.Join(rootDir, studio.ExportSlug()+".html"),
+		TextPath:     filepath.Join(rootDir, studio.ExportSlug()+".txt"),
+	}
+	if err := WriteReport(artifacts.MarkdownPath, RenderReportStudioReport(studio)); err != nil {
+		return ReportStudioArtifacts{}, err
+	}
+	if err := WriteReport(artifacts.HTMLPath, RenderReportStudioHTML(studio)); err != nil {
+		return ReportStudioArtifacts{}, err
+	}
+	if err := WriteReport(artifacts.TextPath, RenderReportStudioPlainText(studio)); err != nil {
+		return ReportStudioArtifacts{}, err
+	}
+	return artifacts, nil
+}
+
 func EvaluateIssueClosure(issueID, reportPath string, validationPassed bool, launchChecklist *LaunchChecklist, finalDeliveryChecklist *FinalDeliveryChecklist) IssueClosureDecision {
 	resolvedPath := ""
 	if strings.TrimSpace(reportPath) != "" {
@@ -1763,6 +2018,26 @@ func EvaluateIssueClosure(issueID, reportPath string, validationPassed bool, lau
 		Reason:     "validation report and launch checklist requirements satisfied; issue can be closed",
 		ReportPath: resolvedPath,
 	}
+}
+
+func slugifyReportStudioName(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	var builder strings.Builder
+	lastHyphen := false
+	for _, r := range value {
+		isLetter := r >= 'a' && r <= 'z'
+		isDigit := r >= '0' && r <= '9'
+		if isLetter || isDigit {
+			builder.WriteRune(r)
+			lastHyphen = false
+			continue
+		}
+		if !lastHyphen && builder.Len() > 0 {
+			builder.WriteByte('-')
+			lastHyphen = true
+		}
+	}
+	return strings.Trim(builder.String(), "-")
 }
 
 func RenderIssueValidationReport(issueID, version, environment, summary string) string {
