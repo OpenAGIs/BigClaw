@@ -295,24 +295,6 @@ def make_shared_view(
     )
 
 
-def test_render_and_write_report(tmp_path: Path):
-    content = render_issue_validation_report("BIG-101", "v0.1", "sandbox", "pass")
-    out = tmp_path / "report.md"
-    write_report(str(out), content)
-    assert out.exists()
-    text = out.read_text()
-    assert "BIG-101" in text
-    assert "pass" in text
-
-
-def test_console_action_state_reflects_enabled_flag():
-    enabled = ConsoleAction("retry", "Retry", "run-1")
-    disabled = ConsoleAction("pause", "Pause", "run-1", enabled=False, reason="already completed")
-
-    assert enabled.state == "enabled"
-    assert disabled.state == "disabled"
-
-
 def test_merge_collaboration_threads_combines_native_and_repo_surfaces() -> None:
     native = build_collaboration_thread(
         "run",
@@ -1561,17 +1543,6 @@ def test_triage_feedback_record_uses_timezone_aware_utc_timestamp():
 
     assert record.timestamp.endswith("Z")
     parsed = __import__("datetime").datetime.fromisoformat(record.timestamp.replace("Z", "+00:00"))
-    assert parsed.tzinfo is not None
-    assert parsed.utcoffset().total_seconds() == 0
-
-
-def test_issue_validation_report_uses_timezone_aware_utc_timestamp():
-    content = render_issue_validation_report("BIG-900", "v1", "repo", "pass")
-
-    timestamp_line = next(line for line in content.splitlines() if line.startswith("- 生成时间:"))
-    timestamp_value = timestamp_line.split(": ", 1)[1]
-    assert timestamp_value.endswith("Z")
-    parsed = __import__("datetime").datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
     assert parsed.tzinfo is not None
     assert parsed.utcoffset().total_seconds() == 0
 

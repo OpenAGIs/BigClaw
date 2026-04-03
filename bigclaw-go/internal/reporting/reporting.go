@@ -839,6 +839,16 @@ func WriteReport(path string, content string) error {
 	return os.WriteFile(path, []byte(content), 0o644)
 }
 
+func RenderIssueValidationReport(issueID, version, environment, summary string) string {
+	return "# Issue Validation Report\n\n" +
+		"- Issue ID: " + issueID + "\n" +
+		"- 版本号: " + version + "\n" +
+		"- 测试环境: " + environment + "\n" +
+		"- 生成时间: " + time.Now().UTC().Format(time.RFC3339) + "\n\n" +
+		"## 结论\n\n" +
+		summary + "\n"
+}
+
 func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec) (WeeklyArtifacts, error) {
 	if err := os.MkdirAll(rootDir, 0o755); err != nil {
 		return WeeklyArtifacts{}, err

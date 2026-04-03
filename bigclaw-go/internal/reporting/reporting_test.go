@@ -63,6 +63,56 @@ func TestBuildWeeklyReportRendersExpandedMarkdown(t *testing.T) {
 	}
 }
 
+func TestWriteReportWritesContentToDisk(t *testing.T) {
+	output := filepath.Join(t.TempDir(), "report.md")
+	content := RenderIssueValidationReport("BIG-101", "v0.1", "sandbox", "pass")
+	if err := WriteReport(output, content); err != nil {
+		t.Fatalf("write report: %v", err)
+	}
+	body, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(body), "BIG-101") || !strings.Contains(string(body), "pass") {
+		t.Fatalf("unexpected report body: %s", string(body))
+	}
+}
+
+func TestConsoleActionStateReflectsEnabledFlag(t *testing.T) {
+	enabled := ConsoleAction{ActionID: "retry", Label: "Retry", Target: "run-1", Enabled: true}
+	disabled := ConsoleAction{ActionID: "pause", Label: "Pause", Target: "run-1", Enabled: false, Reason: "already completed"}
+	if enabled.State() != "enabled" {
+		t.Fatalf("expected enabled action state, got %q", enabled.State())
+	}
+	if disabled.State() != "disabled" {
+		t.Fatalf("expected disabled action state, got %q", disabled.State())
+	}
+}
+
+func TestRenderIssueValidationReportUsesTimezoneAwareUTCTimestamp(t *testing.T) {
+	content := RenderIssueValidationReport("BIG-900", "v1", "repo", "pass")
+	if !strings.Contains(content, "# Issue Validation Report") {
+		t.Fatalf("expected header in issue validation report, got %s", content)
+	}
+	var timestampValue string
+	for _, line := range strings.Split(content, "\n") {
+		if strings.HasPrefix(line, "- 生成时间: ") {
+			timestampValue = strings.TrimPrefix(line, "- 生成时间: ")
+			break
+		}
+	}
+	if !strings.HasSuffix(timestampValue, "Z") {
+		t.Fatalf("expected UTC timestamp suffix, got %q", timestampValue)
+	}
+	parsed, err := time.Parse(time.RFC3339, timestampValue)
+	if err != nil {
+		t.Fatalf("parse timestamp: %v", err)
+	}
+	if parsed.Location() != time.UTC && parsed.UTC() != parsed {
+		t.Fatalf("expected UTC timestamp, got %v", parsed)
+	}
+}
+
 func TestBuildOperationsMetricSpec(t *testing.T) {
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
 	end := start.Add(7 * 24 * time.Hour)
