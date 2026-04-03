@@ -268,11 +268,11 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				EvidenceLinks: []EvidenceLink{
 					{Label: "command-center-src", Target: "bigclaw-go/internal/product/dashboard_run_contract.go", Capability: "ops-control", Note: "Go-owned queue control center, dashboard builder, weekly review, and regression surfaces"},
 					{Label: "operations-tests", Target: "bigclaw-go/internal/product/dashboard_run_contract_test.go", Capability: "ops-control", Note: "Go-native dashboard, weekly report, regression, and version-center coverage"},
-					{Label: "approval-contract", Target: "src/bigclaw/execution_contract.py", Capability: "ops-control", Note: "approval permission and API role coverage contract"},
-					{Label: "approval-workflow", Target: "src/bigclaw/workflow.py", Capability: "ops-control", Note: "approval workflow and closeout flow wiring"},
+					{Label: "approval-contract", Target: "bigclaw-go/internal/contract/execution.go", Capability: "ops-control", Note: "Go-owned approval permission matrix and operations API role coverage contract"},
+					{Label: "approval-workflow", Target: "bigclaw-go/internal/workflow/engine.go", Capability: "ops-control", Note: "Go-owned approval workflow, closeout flow, and workpad execution wiring"},
 					{Label: "workflow-tests", Target: "bigclaw-go/internal/workflow/engine_test.go", Capability: "ops-control", Note: "acceptance gate and workpad journal validation"},
 					{Label: "execution-flow-tests", Target: "bigclaw-go/internal/worker/runtime_test.go", Capability: "ops-control", Note: "execution handoff, closeout, and routed runtime evidence"},
-					{Label: "saved-views-src", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "saved views, digest subscriptions, and governed filters"},
+					{Label: "saved-views-src", Target: "bigclaw-go/internal/product/saved_views.go", Capability: "saved-views", Note: "Go-owned saved views, digest subscriptions, and governed filters"},
 					{Label: "saved-views-tests", Target: "bigclaw-go/internal/product/saved_views_test.go", Capability: "saved-views", Note: "Go-native saved-view audit coverage"},
 					{Label: "simulation-src", Target: "bigclaw-go/internal/evaluation/evaluation.go", Capability: "rollback-simulation", Note: "Go-owned simulation, replay, and comparison evidence"},
 					{Label: "simulation-tests", Target: "bigclaw-go/internal/evaluation/evaluation_test.go", Capability: "rollback-simulation", Note: "Go-native replay and benchmark validation"},
@@ -289,7 +289,7 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				Capabilities:      []string{"commercialization", "handoff", "pilot-rollout"},
 				Evidence:          []string{"pilot-evidence", "validation-report"},
 				EvidenceLinks: []EvidenceLink{
-					{Label: "orchestration-plan-src", Target: "src/bigclaw/orchestration.py", Capability: "commercialization", Note: "cross-team orchestration, entitlement-aware policy, and handoff decisions"},
+					{Label: "orchestration-plan-src", Target: "bigclaw-go/internal/workflow/orchestration.go", Capability: "commercialization", Note: "Go-owned cross-team orchestration, entitlement-aware policy, and handoff decisions"},
 					{Label: "orchestration-report-src", Target: "bigclaw-go/internal/reportstudio/reportstudio.go", Capability: "commercialization", Note: "Go-owned orchestration canvas, portfolio rollups, and narrative exports"},
 					{Label: "collaboration-tests", Target: "bigclaw-go/internal/collaboration/thread_test.go", Capability: "handoff", Note: "Go-native thread merge and handoff validation"},
 					{Label: "pilot-rollout-tests", Target: "bigclaw-go/internal/pilot/rollout_test.go", Capability: "pilot-rollout", Note: "Go-native rollout scoring and repo narrative validation"},

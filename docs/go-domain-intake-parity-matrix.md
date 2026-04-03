@@ -74,12 +74,13 @@ mainline for this surface.
 
 ## Remaining gaps
 
-- The only remaining Python compatibility surface under `src/bigclaw` is the
-  legacy wrapper shim compile-checked by `bigclawctl legacy-python`.
-- Python tests under `BigClaw/tests` no longer exist in the active repo tree.
-- Follow-on `BIG-GOM-302` migration work has started in Go with:
+- Python tests under `BigClaw/tests` no longer exist in the active repo tree,
+  and the active worktree no longer carries tracked `.py` source files.
+- Follow-on `BIG-GOM-302` migration work landed in Go with:
   - `bigclaw-go/internal/governance/freeze.go`
   - `bigclaw-go/internal/contract/execution.go`
   - `bigclaw-go/internal/observability/audit_spec.go`
-  but the broader Python runtime/reporting/orchestration surface still remains.
-- The workflow execution engine and broader runtime/reporting surfaces still need follow-on Go migrations from the `BIG-GOM-302` to `BIG-GOM-306` slices.
+  and the former Python runtime/reporting/orchestration surface has already
+  been retired from the repo tree.
+- Remaining work is now feature hardening inside Go packages rather than
+  Python-to-Go source migration.

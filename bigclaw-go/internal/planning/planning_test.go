@@ -302,7 +302,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
 			{Label: "queue-control-center", Target: "bigclaw-go/internal/product/dashboard_run_contract.go", Capability: "ops-control", Note: "Go-owned queue and approval command center"},
-			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
+			{Label: "saved-view-report", Target: "bigclaw-go/internal/product/saved_views.go", Capability: "saved-views", Note: "team saved views and digest evidence"},
 		},
 	}
 
@@ -437,12 +437,12 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	for _, want := range []string{
 		"bigclaw-go/internal/product/dashboard_run_contract.go",
 		"bigclaw-go/internal/product/dashboard_run_contract_test.go",
-		"src/bigclaw/execution_contract.py",
-		"src/bigclaw/workflow.py",
+		"bigclaw-go/internal/contract/execution.go",
+		"bigclaw-go/internal/workflow/engine.go",
 		"bigclaw-go/internal/product/saved_views_test.go",
 		"bigclaw-go/internal/workflow/engine_test.go",
 		"bigclaw-go/internal/worker/runtime_test.go",
-		"src/bigclaw/saved_views.py",
+		"bigclaw-go/internal/product/saved_views.go",
 		"bigclaw-go/internal/evaluation/evaluation.go",
 		"bigclaw-go/internal/evaluation/evaluation_test.go",
 	} {
