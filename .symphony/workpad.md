@@ -2,14 +2,14 @@
 
 ## Plan
 - Inventory the suggested residual Python assets under `src/bigclaw` and confirm which files are already gone versus still physically present.
-- Remove the modules in this batch that no longer participate in a live Python runtime path: `src/bigclaw/planning.py` and `src/bigclaw/operations.py`.
-- Remove package exports and Python tests that only exercised the deleted modules, and clean up adjacent references that still point at those deleted Python surfaces.
-- Add a Go regression tranche that locks the purge and points at the canonical Go replacement files for planning and operations capabilities.
+- Remove the modules in this batch that still exist physically but only carry schema/observability compatibility payloads: `src/bigclaw/models.py` and `src/bigclaw/observability.py`.
+- Replace those physical modules with a single downgraded compatibility aggregation shell and clean up package exports so existing imports continue to resolve without the deleted files.
+- Extend the existing Go regression tranche so it locks the purge and points at the canonical Go replacement files for the removed Python surfaces.
 - Run targeted validation, record exact commands and results, then commit and push the branch.
 
 ## Acceptance
 - The issue batch inventory is explicit: suggested files are classified as already absent, removed in this change, or retained with rationale.
-- `src/bigclaw/planning.py` and `src/bigclaw/operations.py` are deleted, and no package export or Python test still imports them.
+- `src/bigclaw/models.py` and `src/bigclaw/observability.py` are deleted, while package-level compatibility imports continue to resolve through `src/bigclaw/_compat_schema.py`.
 - Go regression coverage asserts the deleted Python files stay absent and that the Go replacement surfaces exist.
 - `.py` file count decreases relative to the pre-change baseline.
 
@@ -21,8 +21,16 @@
 
 ## Batch Inventory
 - Already absent before this change: `src/bigclaw/issue_archive.py`, `src/bigclaw/mapping.py`, `src/bigclaw/memory.py`, `src/bigclaw/orchestration.py`, `src/bigclaw/parallel_refill.py`, `src/bigclaw/pilot.py`, `src/bigclaw/queue.py`, `src/bigclaw/repo_board.py`, `src/bigclaw/repo_commits.py`, `src/bigclaw/repo_gateway.py`, `src/bigclaw/repo_governance.py`
-- Removed in this batch: `src/bigclaw/operations.py`, `src/bigclaw/planning.py`
-- Retained for later migration because they are still imported by active Python compatibility paths: `src/bigclaw/models.py`, `src/bigclaw/observability.py`
+- Already absent before this change: `src/bigclaw/operations.py`, `src/bigclaw/planning.py`
+- Removed in this batch: `src/bigclaw/models.py`, `src/bigclaw/observability.py`
+- Replaced by downgraded compatibility aggregation shell: `src/bigclaw/_compat_schema.py`
+
+## Validation Record
+- `git ls-tree -r --name-only HEAD | rg '\\.py$' | wc -l` -> `39`
+- `rg --files . | rg '\\.py$' | wc -l` -> `38`
+- `python3 -m pytest tests/test_models.py tests/test_observability.py tests/test_reports.py tests/test_runtime_matrix.py` -> `48 passed in 0.09s`
+- `python3 -m pytest tests/test_risk.py tests/test_evaluation.py` -> `10 passed in 0.06s`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14 -count=1` -> `ok   bigclaw-go/internal/regression 0.897s`
 
 ## Archived Closeout
 

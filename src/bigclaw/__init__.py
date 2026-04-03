@@ -1,7 +1,8 @@
 import sys
 import types
+from typing import Optional
 
-from .models import (
+from ._compat_schema import (
     BillingInterval,
     BillingRate,
     BillingSummary,
@@ -22,26 +23,87 @@ from .models import (
     TriageRecord,
     TriageStatus,
     UsageRecord,
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    RunCommitBinding,
+    RunCommitLink,
+    TaskRun,
+    VALID_RUN_COMMIT_ROLES,
+    bind_run_commits,
+    sha256_file,
+    utc_now,
+    validate_run_commit_roles,
 )
-from . import runtime as _legacy_runtime_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_surface_module(name: str, export_names: list[str], source: Optional[object] = None, **extra_attrs: object) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
+    provider = source if source is not None else sys.modules[__name__]
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(provider, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
 
 
-_install_legacy_surface_module(
+_install_surface_module(
+    "models",
+    [
+        "BillingInterval",
+        "BillingRate",
+        "BillingSummary",
+        "FlowRun",
+        "FlowRunStatus",
+        "FlowStepRun",
+        "FlowStepStatus",
+        "FlowTemplate",
+        "FlowTemplateStep",
+        "FlowTrigger",
+        "Priority",
+        "RiskAssessment",
+        "RiskLevel",
+        "RiskSignal",
+        "Task",
+        "TaskState",
+        "TriageLabel",
+        "TriageRecord",
+        "TriageStatus",
+        "UsageRecord",
+    ],
+)
+_install_surface_module(
+    "observability",
+    [
+        "GitSyncTelemetry",
+        "ObservabilityLedger",
+        "PullRequestFreshness",
+        "RepoSyncAudit",
+        "RunCloseout",
+        "RunCommitBinding",
+        "RunCommitLink",
+        "TaskRun",
+        "bind_run_commits",
+        "sha256_file",
+        "utc_now",
+        "validate_run_commit_roles",
+    ],
+    VALID_RUN_COMMIT_ROLES=VALID_RUN_COMMIT_ROLES,
+)
+
+from . import runtime as _legacy_runtime_surface
+
+
+_install_surface_module(
     "queue",
     ["DeadLetterEntry", "PersistentTaskQueue"],
+    source=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/queue/queue.go",
 )
-_install_legacy_surface_module(
+_install_surface_module(
     "orchestration",
     [
         "CrossDepartmentOrchestrator",
@@ -52,22 +114,25 @@ _install_legacy_surface_module(
         "PremiumOrchestrationPolicy",
         "render_orchestration_plan",
     ],
+    source=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/orchestration.go",
 )
-_install_legacy_surface_module(
+_install_surface_module(
     "scheduler",
     ["ExecutionRecord", "Scheduler", "SchedulerDecision"],
+    source=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/scheduler/scheduler.go",
 )
-_install_legacy_surface_module(
+_install_surface_module(
     "workflow",
     ["AcceptanceDecision", "AcceptanceGate", "JournalEntry", "WorkflowEngine", "WorkflowRunResult", "WorkpadJournal"],
+    source=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=_legacy_runtime_surface.LEGACY_MAINLINE_STATUS,
     GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/workflow/engine.go",
 )
-_install_legacy_surface_module(
+_install_surface_module(
     "service",
     [
         "RepoGovernanceEnforcer",
@@ -78,6 +143,7 @@ _install_legacy_surface_module(
         "run_server",
         "warn_legacy_service_surface",
     ],
+    source=_legacy_runtime_surface,
     LEGACY_MAINLINE_STATUS=(
         "bigclaw-go is the sole implementation mainline for active development; "
         "service.py remains migration-only compatibility scaffolding."
@@ -194,7 +260,6 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
