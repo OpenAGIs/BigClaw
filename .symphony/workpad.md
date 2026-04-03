@@ -1,17 +1,17 @@
 # BIG-GO-1026 Workpad
 
 ## Plan
-- Extend `bigclaw-go/internal/reporting` with orchestration flow-collaboration reconstruction from ledger audits.
-- Add Go-native collaboration thread helpers and canvas rendering support for collaboration summaries, comments, and decision notes.
-- Add focused Go coverage for the remaining `test_orchestration_canvas_reconstructs_flow_collaboration_from_ledger` contract.
-- Remove only the matching Python orchestration collaboration test from `tests/test_reports.py`.
+- Extend `bigclaw-go/internal/reporting` with the remaining auto-triage center reporting contract still covered only in Python.
+- Add Go-native auto-triage types, suggestion/evidence scoring, and markdown rendering that match the current Python assertions.
+- Add focused Go coverage for the three remaining auto-triage tests in `tests/test_reports.py`.
+- Remove only the matching Python auto-triage tests from `tests/test_reports.py`.
 - Re-run the targeted reports pytest file and the Go tests for `./internal/reporting`.
 - Capture the updated repo inventory and confirm `pyproject.toml` / `setup.py` / `setup.cfg` remain unchanged.
 - Commit and push the follow-up reduction on `BIG-GO-1026`.
 
 ## Acceptance
-- Scope stays limited to the remaining orchestration collaboration contract currently exercised by the matching `tests/test_reports.py` case.
-- Go-native coverage in `bigclaw-go/internal/reporting` becomes the source of truth for that collaboration contract.
+- Scope stays limited to the remaining auto-triage reporting contracts currently exercised by the matching `tests/test_reports.py` cases.
+- Go-native coverage in `bigclaw-go/internal/reporting` becomes the source of truth for those auto-triage contracts.
 - `tests/test_reports.py` shrinks while the consolidated suite still passes.
 - Report includes `.py` / `.go` file-count impact and confirms whether `pyproject.toml` / `setup.py` / `setup.cfg` changed.
 
@@ -26,13 +26,13 @@
 
 ## Validation Results
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
-  `48 passed in 0.16s`
+  `45 passed in 0.14s`
 - `go test ./internal/reporting` (run from `bigclaw-go/`)
-  `ok  	bigclaw-go/internal/reporting	1.248s`
+  `ok  	bigclaw-go/internal/reporting	(cached)`
 - `wc -l tests/test_reports.py`
-  `1970 tests/test_reports.py`
+  `1838 tests/test_reports.py`
 - `git diff --stat`
-  `.symphony/workpad.md | 11 +-\n  bigclaw-go/internal/reporting/reporting.go | 153 +++++++++++++++++++++---\n  bigclaw-go/internal/reporting/reporting_test.go | 78 ++++++++++++\n  tests/test_reports.py | 68 -----------\n  4 files changed, 223 insertions(+), 87 deletions(-)`
+  `.symphony/workpad.md | 20 +-\n  bigclaw-go/internal/reporting/reporting.go | 510 ++++++++++++++++++++++++\n  bigclaw-go/internal/reporting/reporting_test.go | 192 +++++++++\n  tests/test_reports.py | 132 ------\n  4 files changed, 712 insertions(+), 142 deletions(-)`
 - `rg --files | rg '\.py$' | wc -l`
   `51`
 - `rg --files | rg '\.go$' | wc -l`

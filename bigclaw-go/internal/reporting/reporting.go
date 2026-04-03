@@ -601,6 +601,136 @@ func NewTriageFeedbackRecord(runID, action, decision, actor, notes string) Triag
 	}
 }
 
+type TriageFinding struct {
+	RunID      string          `json:"run_id"`
+	TaskID     string          `json:"task_id"`
+	Source     string          `json:"source"`
+	Severity   string          `json:"severity"`
+	Owner      string          `json:"owner"`
+	Status     string          `json:"status"`
+	Reason     string          `json:"reason"`
+	NextAction string          `json:"next_action"`
+	Actions    []ConsoleAction `json:"actions,omitempty"`
+}
+
+type TriageSimilarityEvidence struct {
+	RelatedRunID  string  `json:"related_run_id"`
+	RelatedTaskID string  `json:"related_task_id"`
+	Score         float64 `json:"score"`
+	Reason        string  `json:"reason"`
+}
+
+type TriageSuggestion struct {
+	Label          string                     `json:"label"`
+	Action         string                     `json:"action"`
+	Owner          string                     `json:"owner"`
+	Confidence     float64                    `json:"confidence"`
+	Evidence       []TriageSimilarityEvidence `json:"evidence,omitempty"`
+	FeedbackStatus string                     `json:"feedback_status"`
+}
+
+type TriageInboxItem struct {
+	RunID       string             `json:"run_id"`
+	TaskID      string             `json:"task_id"`
+	Source      string             `json:"source"`
+	Status      string             `json:"status"`
+	Severity    string             `json:"severity"`
+	Owner       string             `json:"owner"`
+	Summary     string             `json:"summary"`
+	SubmittedAt string             `json:"submitted_at"`
+	Suggestions []TriageSuggestion `json:"suggestions,omitempty"`
+}
+
+type AutoTriageRunTrace struct {
+	Span   string `json:"span"`
+	Status string `json:"status"`
+}
+
+type AutoTriageRunAudit struct {
+	Action  string         `json:"action"`
+	Outcome string         `json:"outcome"`
+	Details map[string]any `json:"details,omitempty"`
+}
+
+type AutoTriageArtifact struct {
+	Kind string `json:"kind"`
+}
+
+type AutoTriageRun struct {
+	RunID     string               `json:"run_id"`
+	TaskID    string               `json:"task_id"`
+	Source    string               `json:"source"`
+	Title     string               `json:"title"`
+	Summary   string               `json:"summary"`
+	Medium    string               `json:"medium"`
+	Status    string               `json:"status"`
+	StartedAt string               `json:"started_at,omitempty"`
+	EndedAt   string               `json:"ended_at,omitempty"`
+	Traces    []AutoTriageRunTrace `json:"traces,omitempty"`
+	Audits    []AutoTriageRunAudit `json:"audits,omitempty"`
+	Artifacts []AutoTriageArtifact `json:"artifacts,omitempty"`
+}
+
+type AutoTriageCenter struct {
+	Name     string                 `json:"name"`
+	Period   string                 `json:"period"`
+	Findings []TriageFinding        `json:"findings,omitempty"`
+	Inbox    []TriageInboxItem      `json:"inbox,omitempty"`
+	Feedback []TriageFeedbackRecord `json:"feedback,omitempty"`
+}
+
+func (c AutoTriageCenter) FlaggedRuns() int { return len(c.Findings) }
+
+func (c AutoTriageCenter) InboxSize() int { return len(c.Inbox) }
+
+func (c AutoTriageCenter) SeverityCounts() map[string]int {
+	counts := map[string]int{"critical": 0, "high": 0, "medium": 0}
+	for _, finding := range c.Findings {
+		counts[finding.Severity]++
+	}
+	return counts
+}
+
+func (c AutoTriageCenter) OwnerCounts() map[string]int {
+	counts := map[string]int{"security": 0, "engineering": 0, "operations": 0}
+	for _, finding := range c.Findings {
+		counts[finding.Owner]++
+	}
+	return counts
+}
+
+func (c AutoTriageCenter) FeedbackCounts() map[string]int {
+	counts := map[string]int{"accepted": 0, "rejected": 0, "pending": 0}
+	for _, record := range c.Feedback {
+		counts[record.Decision]++
+	}
+	pending := 0
+	for _, item := range c.Inbox {
+		for _, suggestion := range item.Suggestions {
+			if suggestion.FeedbackStatus == "pending" {
+				pending++
+			}
+		}
+	}
+	counts["pending"] = pending
+	return counts
+}
+
+func (c AutoTriageCenter) Recommendation() string {
+	severity := c.SeverityCounts()
+	feedback := c.FeedbackCounts()
+	if severity["critical"] > 0 {
+		return "immediate-attention"
+	}
+	if feedback["rejected"] > feedback["accepted"] {
+		return "retune-suggestions"
+	}
+	if severity["high"] > 0 {
+		return "review-queue"
+	}
+	return "monitor"
+}
+
 type SharedViewContext struct {
 	Filters       []SharedViewFilter   `json:"filters,omitempty"`
 	ResultCount   *int                 `json:"result_count,omitempty"`
@@ -1588,6 +1718,122 @@ func RenderBillingEntitlementsPage(page BillingEntitlementsPage) string {
 	}
 	builder.WriteString("      </ul>\n    </section>\n  </main>\n</body>\n</html>\n")
 	return builder.String()
+}
+
+func BuildAutoTriageCenter(runs []AutoTriageRun, name, period string, feedback []TriageFeedbackRecord) AutoTriageCenter {
+	findings := make([]TriageFinding, 0, len(runs))
+	inbox := make([]TriageInboxItem, 0, len(runs))
+	for _, run := range runs {
+		if !runRequiresTriage(run) {
+			continue
+		}
+		severity := triageSeverity(run)
+		owner := triageOwner(run)
+		reason := triageReason(run)
+		next := triageNextAction(severity, owner)
+		suggestions := buildTriageSuggestions(run, runs, severity, owner, feedback)
+		findings = append(findings, TriageFinding{
+			RunID:      run.RunID,
+			TaskID:     run.TaskID,
+			Source:     run.Source,
+			Severity:   severity,
+			Owner:      owner,
+			Status:     run.Status,
+			Reason:     reason,
+			NextAction: next,
+			Actions:    buildAutoTriageActions(run.RunID, severity, owner, run.Status),
+		})
+		inbox = append(inbox, TriageInboxItem{
+			RunID:       run.RunID,
+			TaskID:      run.TaskID,
+			Source:      run.Source,
+			Status:      run.Status,
+			Severity:    severity,
+			Owner:       owner,
+			Summary:     reason,
+			SubmittedAt: firstNonEmpty(run.EndedAt, run.StartedAt),
+			Suggestions: suggestions,
+		})
+	}
+	severityRank := map[string]int{"critical": 0, "high": 1, "medium": 2}
+	sort.Slice(findings, func(i, j int) bool {
+		if severityRank[findings[i].Severity] != severityRank[findings[j].Severity] {
+			return severityRank[findings[i].Severity] < severityRank[findings[j].Severity]
+		}
+		if findings[i].Owner != findings[j].Owner {
+			return findings[i].Owner < findings[j].Owner
+		}
+		return findings[i].RunID < findings[j].RunID
+	})
+	sort.Slice(inbox, func(i, j int) bool {
+		if severityRank[inbox[i].Severity] != severityRank[inbox[j].Severity] {
+			return severityRank[inbox[i].Severity] < severityRank[inbox[j].Severity]
+		}
+		if inbox[i].Owner != inbox[j].Owner {
+			return inbox[i].Owner < inbox[j].Owner
+		}
+		return inbox[i].RunID < inbox[j].RunID
+	})
+	return AutoTriageCenter{Name: name, Period: period, Findings: findings, Inbox: inbox, Feedback: feedback}
+}
+
+func RenderAutoTriageCenterReport(center AutoTriageCenter, totalRuns *int, view *SharedViewContext) string {
+	severity := center.SeverityCounts()
+	owners := center.OwnerCounts()
+	feedback := center.FeedbackCounts()
+	reportTotalRuns := center.FlaggedRuns()
+	if totalRuns != nil {
+		reportTotalRuns = *totalRuns
+	}
+	builder := strings.Builder{}
+	builder.WriteString("# Auto Triage Center\n\n")
+	builder.WriteString(fmt.Sprintf("- Center: %s\n", center.Name))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", center.Period))
+	builder.WriteString(fmt.Sprintf("- Flagged Runs: %d\n", center.FlaggedRuns()))
+	builder.WriteString(fmt.Sprintf("- Inbox Size: %d\n", center.InboxSize()))
+	builder.WriteString(fmt.Sprintf("- Total Runs: %d\n", reportTotalRuns))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n", center.Recommendation()))
+	builder.WriteString(fmt.Sprintf("- Severity Mix: critical=%d high=%d medium=%d\n", severity["critical"], severity["high"], severity["medium"]))
+	builder.WriteString(fmt.Sprintf("- Owner Mix: security=%d engineering=%d operations=%d\n", owners["security"], owners["engineering"], owners["operations"]))
+	builder.WriteString(fmt.Sprintf("- Feedback Loop: accepted=%d rejected=%d pending=%d\n\n", feedback["accepted"], feedback["rejected"], feedback["pending"]))
+	builder.WriteString("## Queue\n\n")
+	builder.WriteString(renderSharedViewContext(view))
+	if len(center.Findings) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, finding := range center.Findings {
+			builder.WriteString(fmt.Sprintf("- %s: severity=%s owner=%s status=%s task=%s reason=%s next=%s actions=%s\n", finding.RunID, finding.Severity, finding.Owner, finding.Status, finding.TaskID, finding.Reason, finding.NextAction, RenderConsoleActions(finding.Actions)))
+		}
+	}
+	builder.WriteString("\n## Inbox\n\n")
+	if len(center.Inbox) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, item := range center.Inbox {
+			suggestionSummary := "none"
+			if len(item.Suggestions) > 0 {
+				parts := make([]string, 0, len(item.Suggestions))
+				for _, suggestion := range item.Suggestions {
+					parts = append(parts, fmt.Sprintf("%s(%s, confidence=%.2f)", suggestion.Action, suggestion.FeedbackStatus, suggestion.Confidence))
+				}
+				suggestionSummary = strings.Join(parts, "; ")
+			}
+			evidenceSummary := "none"
+			if len(item.Suggestions) > 0 {
+				var parts []string
+				for _, suggestion := range item.Suggestions {
+					for _, evidence := range suggestion.Evidence {
+						parts = append(parts, fmt.Sprintf("%s:%.2f", evidence.RelatedRunID, evidence.Score))
+					}
+				}
+				if len(parts) > 0 {
+					evidenceSummary = strings.Join(parts, ", ")
+				}
+			}
+			builder.WriteString(fmt.Sprintf("- %s: severity=%s owner=%s status=%s summary=%s suggestions=%s similar=%s\n", item.RunID, item.Severity, item.Owner, item.Status, item.Summary, suggestionSummary, evidenceSummary))
+		}
+	}
+	return builder.String() + "\n"
 }
 
 func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec) (WeeklyArtifacts, error) {
@@ -2740,6 +2986,270 @@ func renderSortedCounts(counts map[string]int, separator string) string {
 		parts = append(parts, fmt.Sprintf("%s=%d", key, counts[key]))
 	}
 	return strings.Join(parts, separator)
+}
+
+func buildAutoTriageActions(target, severity, owner, status string) []ConsoleAction {
+	allowRetry := severity == "critical" && owner != "security"
+	allowPause := status != "failed" && status != "completed" && status != "approved"
+	allowReassign := owner != "security"
+	return []ConsoleAction{
+		{ActionID: "drill-down", Label: "Drill Down", Target: target, Enabled: true},
+		{ActionID: "export", Label: "Export", Target: target, Enabled: true},
+		{ActionID: "add-note", Label: "Add Note", Target: target, Enabled: true},
+		{ActionID: "escalate", Label: "Escalate", Target: target, Enabled: true},
+		{ActionID: "retry", Label: "Retry", Target: target, Enabled: allowRetry, Reason: disabledReason(allowRetry, "retry available after owner review")},
+		{ActionID: "pause", Label: "Pause", Target: target, Enabled: allowPause, Reason: disabledReason(allowPause, "completed or failed runs cannot be paused")},
+		{ActionID: "reassign", Label: "Reassign", Target: target, Enabled: allowReassign, Reason: disabledReason(allowReassign, "security-owned findings stay with the security queue")},
+		{ActionID: "audit", Label: "Audit Trail", Target: target, Enabled: true},
+	}
+}
+
+func runRequiresTriage(run AutoTriageRun) bool {
+	if run.Status == "failed" || run.Status == "needs-approval" {
+		return true
+	}
+	for _, trace := range run.Traces {
+		if trace.Status == "pending" || trace.Status == "error" || trace.Status == "failed" {
+			return true
+		}
+	}
+	for _, audit := range run.Audits {
+		if audit.Outcome == "pending" || audit.Outcome == "failed" || audit.Outcome == "rejected" {
+			return true
+		}
+	}
+	return false
+}
+
+func triageSeverity(run AutoTriageRun) string {
+	if run.Status == "failed" {
+		return "critical"
+	}
+	for _, trace := range run.Traces {
+		if trace.Status == "error" || trace.Status == "failed" {
+			return "critical"
+		}
+	}
+	for _, audit := range run.Audits {
+		if audit.Outcome == "failed" || audit.Outcome == "rejected" {
+			return "critical"
+		}
+	}
+	if run.Status == "needs-approval" {
+		return "high"
+	}
+	for _, trace := range run.Traces {
+		if trace.Status == "pending" {
+			return "high"
+		}
+	}
+	for _, audit := range run.Audits {
+		if audit.Outcome == "pending" {
+			return "high"
+		}
+	}
+	return "medium"
+}
+
+func triageOwner(run AutoTriageRun) string {
+	var parts []string
+	parts = append(parts, run.Summary, run.Title, run.Source, run.Medium)
+	for _, trace := range run.Traces {
+		parts = append(parts, trace.Status, trace.Span)
+	}
+	for _, audit := range run.Audits {
+		parts = append(parts, audit.Outcome, stringValue(audit.Details["reason"]), fmt.Sprint(audit.Details["approvals"]))
+	}
+	evidence := strings.ToLower(strings.Join(parts, " "))
+	switch {
+	case strings.Contains(evidence, "security"), strings.Contains(evidence, "high-risk"), strings.Contains(evidence, "security-review"):
+		return "security"
+	case run.Medium == "browser":
+		return "engineering"
+	default:
+		for _, artifact := range run.Artifacts {
+			if artifact.Kind == "page" {
+				return "engineering"
+			}
+		}
+		return "operations"
+	}
+}
+
+func triageReason(run AutoTriageRun) string {
+	for _, audit := range run.Audits {
+		if (audit.Outcome == "failed" || audit.Outcome == "rejected" || audit.Outcome == "pending") && stringValue(audit.Details["reason"]) != "" {
+			return stringValue(audit.Details["reason"])
+		}
+	}
+	for _, trace := range run.Traces {
+		if trace.Status == "error" || trace.Status == "failed" || trace.Status == "pending" {
+			return fmt.Sprintf("%s is %s", trace.Span, trace.Status)
+		}
+	}
+	return firstNonEmpty(run.Summary, run.Status)
+}
+
+func triageNextAction(severity, owner string) string {
+	if severity == "critical" {
+		if owner == "engineering" {
+			return "replay run and inspect tool failures"
+		}
+		if owner == "security" {
+			return "page security reviewer and block rollout"
+		}
+		return "open incident review and coordinate response"
+	}
+	if owner == "security" {
+		return "request approval and queue security review"
+	}
+	if owner == "engineering" {
+		return "inspect execution evidence and retry when safe"
+	}
+	return "confirm owner and clear pending workflow gate"
+}
+
+func buildTriageSuggestions(run AutoTriageRun, runs []AutoTriageRun, severity, owner string, feedback []TriageFeedbackRecord) []TriageSuggestion {
+	action := triageNextAction(severity, owner)
+	evidence := similarityEvidence(run, runs, 2)
+	return []TriageSuggestion{{
+		Label:          triageSuggestionLabel(run, severity, owner),
+		Action:         action,
+		Owner:          owner,
+		Confidence:     triageSuggestionConfidence(run, evidence),
+		Evidence:       evidence,
+		FeedbackStatus: feedbackStatus(run.RunID, action, feedback),
+	}}
+}
+
+func triageSuggestionLabel(run AutoTriageRun, severity, owner string) string {
+	if severity == "critical" && owner == "engineering" {
+		return "replay candidate"
+	}
+	if owner == "security" {
+		return "approval review"
+	}
+	if run.Status == "failed" {
+		return "incident review"
+	}
+	return "workflow follow-up"
+}
+
+func triageSuggestionConfidence(run AutoTriageRun, evidence []TriageSimilarityEvidence) float64 {
+	base := 0.45
+	if run.Status == "needs-approval" || run.Status == "failed" {
+		base = 0.55
+	}
+	if len(evidence) > 0 {
+		candidate := 0.45 + evidence[0].Score/2
+		if candidate > 0.95 {
+			candidate = 0.95
+		}
+		if candidate > base {
+			base = candidate
+		}
+	}
+	return math.Round(base*100) / 100
+}
+
+func feedbackStatus(runID, action string, feedback []TriageFeedbackRecord) string {
+	for i := len(feedback) - 1; i >= 0; i-- {
+		if feedback[i].RunID == runID && feedback[i].Action == action {
+			return feedback[i].Decision
+		}
+	}
+	return "pending"
+}
+
+func similarityEvidence(run AutoTriageRun, runs []AutoTriageRun, limit int) []TriageSimilarityEvidence {
+	type scoredMatch struct {
+		score float64
+		run   AutoTriageRun
+	}
+	var matches []scoredMatch
+	for _, candidate := range runs {
+		if candidate.RunID == run.RunID {
+			continue
+		}
+		score := runSimilarityScore(run, candidate)
+		if score < 0.35 {
+			continue
+		}
+		matches = append(matches, scoredMatch{score: score, run: candidate})
+	}
+	sort.Slice(matches, func(i, j int) bool {
+		if matches[i].score != matches[j].score {
+			return matches[i].score > matches[j].score
+		}
+		return matches[i].run.RunID < matches[j].run.RunID
+	})
+	out := make([]TriageSimilarityEvidence, 0, minInt(limit, len(matches)))
+	for _, match := range matches[:minInt(limit, len(matches))] {
+		out = append(out, TriageSimilarityEvidence{
+			RelatedRunID:  match.run.RunID,
+			RelatedTaskID: match.run.TaskID,
+			Score:         math.Round(match.score*100) / 100,
+			Reason:        similarityReason(run, match.run),
+		})
+	}
+	return out
+}
+
+func runSimilarityScore(run, candidate AutoTriageRun) float64 {
+	haystack := strings.ToLower(strings.Join([]string{
+		run.Title,
+		run.Summary,
+		strings.Join(traceSpans(run.Traces), " "),
+		strings.Join(auditOutcomes(run.Audits), " "),
+	}, " "))
+	needle := strings.ToLower(strings.Join([]string{
+		candidate.Title,
+		candidate.Summary,
+		strings.Join(traceSpans(candidate.Traces), " "),
+		strings.Join(auditOutcomes(candidate.Audits), " "),
+	}, " "))
+	statusBonus := 0.0
+	if run.Status == candidate.Status {
+		statusBonus = 0.15
+	}
+	ownerBonus := 0.0
+	if triageOwner(run) == triageOwner(candidate) {
+		ownerBonus = 0.1
+	}
+	return math.Min(1.0, difflib.NewMatcher([]string{haystack}, []string{needle}).Ratio()+statusBonus+ownerBonus)
+}
+
+func similarityReason(run, candidate AutoTriageRun) string {
+	var reasons []string
+	if run.Status == candidate.Status {
+		reasons = append(reasons, "shared status "+run.Status)
+	}
+	if triageOwner(run) == triageOwner(candidate) {
+		reasons = append(reasons, "shared owner "+triageOwner(run))
+	}
+	if triageReason(run) == triageReason(candidate) {
+		reasons = append(reasons, "matching failure reason")
+	}
+	if len(reasons) == 0 {
+		return "similar execution trail"
+	}
+	return strings.Join(reasons, ", ")
+}
+
+func traceSpans(traces []AutoTriageRunTrace) []string {
+	out := make([]string, 0, len(traces))
+	for _, trace := range traces {
+		out = append(out, trace.Span)
+	}
+	return out
+}
+
+func auditOutcomes(audits []AutoTriageRunAudit) []string {
+	out := make([]string, 0, len(audits))
+	for _, audit := range audits {
+		out = append(out, audit.Outcome)
+	}
+	return out
 }
 
 func disabledReason(enabled bool, reason string) string {

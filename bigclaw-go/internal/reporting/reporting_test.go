@@ -417,6 +417,198 @@ func TestOrchestrationCanvasReconstructsFlowCollaborationFromLedger(t *testing.T
 	}
 }
 
+func TestAutoTriageCenterPrioritizesFailedAndPendingRuns(t *testing.T) {
+	runs := []AutoTriageRun{
+		{
+			RunID:   "run-ok",
+			TaskID:  "OPE-76-ok",
+			Source:  "linear",
+			Title:   "Healthy run",
+			Medium:  "docker",
+			Status:  "approved",
+			Summary: "default low risk path",
+			Traces:  []AutoTriageRunTrace{{Span: "scheduler.decide", Status: "ok"}},
+			Audits:  []AutoTriageRunAudit{{Action: "scheduler.decision", Outcome: "approved", Details: map[string]any{"reason": "default low risk path"}}},
+		},
+		{
+			RunID:   "run-risk",
+			TaskID:  "OPE-76-risk",
+			Source:  "linear",
+			Title:   "Prod approval",
+			Medium:  "vm",
+			Status:  "needs-approval",
+			Summary: "requires approval for high-risk task",
+			Traces:  []AutoTriageRunTrace{{Span: "scheduler.decide", Status: "pending"}},
+			Audits:  []AutoTriageRunAudit{{Action: "scheduler.decision", Outcome: "pending", Details: map[string]any{"reason": "requires approval for high-risk task"}}},
+		},
+		{
+			RunID:   "run-browser",
+			TaskID:  "OPE-76-browser",
+			Source:  "linear",
+			Title:   "Replay browser task",
+			Medium:  "browser",
+			Status:  "failed",
+			Summary: "browser session crashed",
+			Traces:  []AutoTriageRunTrace{{Span: "runtime.execute", Status: "failed"}},
+			Audits:  []AutoTriageRunAudit{{Action: "runtime.execute", Outcome: "failed", Details: map[string]any{"reason": "browser session crashed"}}},
+		},
+	}
+	center := BuildAutoTriageCenter(runs, "Engineering Ops", "2026-03-10", nil)
+	totalRuns := 3
+	report := RenderAutoTriageCenterReport(center, &totalRuns, nil)
+
+	if center.FlaggedRuns() != 2 || center.InboxSize() != 2 {
+		t.Fatalf("unexpected center sizing: %+v", center)
+	}
+	if !reflect.DeepEqual(center.SeverityCounts(), map[string]int{"critical": 1, "high": 1, "medium": 0}) {
+		t.Fatalf("unexpected severity counts: %+v", center.SeverityCounts())
+	}
+	if !reflect.DeepEqual(center.OwnerCounts(), map[string]int{"security": 1, "engineering": 1, "operations": 0}) {
+		t.Fatalf("unexpected owner counts: %+v", center.OwnerCounts())
+	}
+	if center.Recommendation() != "immediate-attention" {
+		t.Fatalf("unexpected recommendation: %s", center.Recommendation())
+	}
+	if got := []string{center.Findings[0].RunID, center.Findings[1].RunID}; !reflect.DeepEqual(got, []string{"run-browser", "run-risk"}) {
+		t.Fatalf("unexpected finding order: %+v", got)
+	}
+	if got := []string{center.Inbox[0].RunID, center.Inbox[1].RunID}; !reflect.DeepEqual(got, []string{"run-browser", "run-risk"}) {
+		t.Fatalf("unexpected inbox order: %+v", got)
+	}
+	if center.Inbox[0].Suggestions[0].Label != "replay candidate" || center.Inbox[0].Suggestions[0].Confidence < 0.55 {
+		t.Fatalf("unexpected browser suggestion: %+v", center.Inbox[0].Suggestions[0])
+	}
+	if center.Findings[0].NextAction != "replay run and inspect tool failures" || center.Findings[1].NextAction != "request approval and queue security review" {
+		t.Fatalf("unexpected next actions: %+v", center.Findings)
+	}
+	if !center.Findings[0].Actions[4].Enabled || center.Findings[1].Actions[4].Enabled || center.Findings[1].Actions[6].Enabled {
+		t.Fatalf("unexpected action states: %+v", center.Findings)
+	}
+	for _, fragment := range []string{
+		"Flagged Runs: 2",
+		"Inbox Size: 2",
+		"Severity Mix: critical=1 high=1 medium=0",
+		"Feedback Loop: accepted=0 rejected=0 pending=2",
+		"run-browser: severity=critical owner=engineering status=failed",
+		"run-risk: severity=high owner=security status=needs-approval",
+		"actions=Drill Down [drill-down]",
+		"Retry [retry] state=disabled target=run-risk reason=retry available after owner review",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in auto triage report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestAutoTriageCenterReportRendersSharedViewPartialState(t *testing.T) {
+	runs := []AutoTriageRun{{
+		RunID:   "run-risk",
+		TaskID:  "OPE-94-risk",
+		Source:  "linear",
+		Title:   "Prod approval",
+		Medium:  "vm",
+		Status:  "needs-approval",
+		Summary: "requires approval for high-risk task",
+		Audits:  []AutoTriageRunAudit{{Action: "scheduler.decision", Outcome: "pending", Details: map[string]any{"reason": "requires approval for high-risk task"}}},
+	}}
+	center := BuildAutoTriageCenter(runs, "Engineering Ops", "2026-03-10", nil)
+	resultCount := 1
+	report := RenderAutoTriageCenterReport(center, &resultCount, &SharedViewContext{
+		Filters:     []SharedViewFilter{{Label: "Team", Value: "engineering"}, {Label: "Window", Value: "2026-03-10"}},
+		ResultCount: &resultCount,
+		PartialData: []string{"Replay ledger data is still backfilling."},
+		LastUpdated: "2026-03-11T09:00:00Z",
+	})
+	for _, fragment := range []string{
+		"## View State",
+		"- State: partial-data",
+		"- Team: engineering",
+		"## Partial Data",
+		"Replay ledger data is still backfilling.",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in partial-state report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestAutoTriageCenterBuildsSimilarityEvidenceAndFeedbackLoop(t *testing.T) {
+	runs := []AutoTriageRun{
+		{
+			RunID:   "run-browser-a",
+			TaskID:  "OPE-100-browser-a",
+			Source:  "linear",
+			Title:   "Browser replay failure",
+			Medium:  "browser",
+			Status:  "failed",
+			Summary: "browser session crashed",
+			Traces:  []AutoTriageRunTrace{{Span: "runtime.execute", Status: "failed"}},
+			Audits:  []AutoTriageRunAudit{{Action: "runtime.execute", Outcome: "failed", Details: map[string]any{"reason": "browser session crashed"}}},
+		},
+		{
+			RunID:   "run-browser-b",
+			TaskID:  "OPE-100-browser-b",
+			Source:  "linear",
+			Title:   "Browser replay failure",
+			Medium:  "browser",
+			Status:  "failed",
+			Summary: "browser session crashed",
+			Traces:  []AutoTriageRunTrace{{Span: "runtime.execute", Status: "failed"}},
+			Audits:  []AutoTriageRunAudit{{Action: "runtime.execute", Outcome: "failed", Details: map[string]any{"reason": "browser session crashed"}}},
+		},
+		{
+			RunID:   "run-security",
+			TaskID:  "OPE-100-security",
+			Source:  "linear",
+			Title:   "Security approval",
+			Medium:  "vm",
+			Status:  "needs-approval",
+			Summary: "requires approval for high-risk task",
+			Traces:  []AutoTriageRunTrace{{Span: "scheduler.decide", Status: "pending"}},
+			Audits:  []AutoTriageRunAudit{{Action: "scheduler.decision", Outcome: "pending", Details: map[string]any{"reason": "requires approval for high-risk task"}}},
+		},
+	}
+	feedback := []TriageFeedbackRecord{
+		{RunID: "run-browser-a", Action: "replay run and inspect tool failures", Decision: "accepted", Actor: "ops-lead", Notes: "matched previous recovery path"},
+		{RunID: "run-security", Action: "request approval and queue security review", Decision: "rejected", Actor: "sec-reviewer", Notes: "approval already in flight"},
+	}
+	center := BuildAutoTriageCenter(runs, "Auto Triage Center", "2026-03-11", feedback)
+	totalRuns := 3
+	report := RenderAutoTriageCenterReport(center, &totalRuns, nil)
+
+	var browserItem, approvalItem *TriageInboxItem
+	for i := range center.Inbox {
+		if center.Inbox[i].RunID == "run-browser-a" {
+			browserItem = &center.Inbox[i]
+		}
+		if center.Inbox[i].RunID == "run-security" {
+			approvalItem = &center.Inbox[i]
+		}
+	}
+	if !reflect.DeepEqual(center.FeedbackCounts(), map[string]int{"accepted": 1, "rejected": 1, "pending": 1}) {
+		t.Fatalf("unexpected feedback counts: %+v", center.FeedbackCounts())
+	}
+	if browserItem == nil || approvalItem == nil {
+		t.Fatalf("missing inbox items: %+v", center.Inbox)
+	}
+	if browserItem.Suggestions[0].FeedbackStatus != "accepted" || approvalItem.Suggestions[0].FeedbackStatus != "rejected" {
+		t.Fatalf("unexpected feedback status: %+v %+v", browserItem.Suggestions[0], approvalItem.Suggestions[0])
+	}
+	if browserItem.Suggestions[0].Evidence[0].RelatedRunID != "run-browser-b" || browserItem.Suggestions[0].Evidence[0].Score < 0.8 {
+		t.Fatalf("unexpected browser evidence: %+v", browserItem.Suggestions[0].Evidence)
+	}
+	for _, fragment := range []string{
+		"## Inbox",
+		"run-browser-a: severity=critical owner=engineering status=failed",
+		"similar=run-browser-b:",
+		"Feedback Loop: accepted=1 rejected=1 pending=1",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in feedback report, got %s", fragment, report)
+		}
+	}
+}
+
 func TestOrchestrationPortfolioRollsUpCanvasAndTakeoverState(t *testing.T) {
 	canvases := []OrchestrationCanvas{
 		{
