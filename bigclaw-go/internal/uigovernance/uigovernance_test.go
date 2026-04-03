@@ -884,6 +884,105 @@ func TestRenderUIReviewOwnerReviewQueue(t *testing.T) {
 	}
 }
 
+func TestRenderUIReviewMixedReviewSurfaces(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+
+	checklistTraceability := RenderUIReviewChecklistTraceabilityBoard(pack)
+	decisionFollowup := RenderUIReviewDecisionFollowupTracker(pack)
+	reminderCadence := RenderUIReviewReminderCadenceBoard(pack)
+	roleCoverage := RenderUIReviewRoleCoverageBoard(pack)
+	handoffAck := RenderUIReviewHandoffAckLedger(pack)
+	freezeRenewal := RenderUIReviewFreezeRenewalTracker(pack)
+	exceptionLog := RenderUIReviewExceptionLog(pack)
+	timelineSummary := RenderUIReviewBlockerTimelineSummary(pack)
+
+	for _, tc := range []struct {
+		name      string
+		body      string
+		fragments []string
+	}{
+		{
+			name: "checklist traceability",
+			body: checklistTraceability,
+			fragments: []string{
+				"# UI Review Checklist Traceability Board",
+				"trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience",
+			},
+		},
+		{
+			name: "decision followup",
+			body: decisionFollowup,
+			fragments: []string{
+				"# UI Review Decision Follow-up Tracker",
+				"follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience",
+			},
+		},
+		{
+			name: "reminder cadence",
+			body: reminderCadence,
+			fragments: []string{
+				"# UI Review Reminder Cadence Board",
+				"- Cadences: 1",
+				"cad-rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail cadence=daily status=scheduled owner=design-program-manager",
+			},
+		},
+		{
+			name: "role coverage",
+			body: roleCoverage,
+			fragments: []string{
+				"# UI Review Role Coverage Board",
+				"cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1",
+			},
+		},
+		{
+			name: "handoff ack",
+			body: handoffAck,
+			fragments: []string{
+				"# UI Review Handoff Ack Ledger",
+				"- Ack owners: 1",
+				"ack-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail handoff_to=Eng Lead ack_owner=Eng Lead ack_status=acknowledged ack_at=2026-03-14T10:15:00Z",
+			},
+		},
+		{
+			name: "freeze renewal",
+			body: freezeRenewal,
+			fragments: []string{
+				"# UI Review Freeze Renewal Tracker",
+				"- Renewal owners: 1",
+				"renew-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open renewal_owner=release-director renewal_by=2026-03-17T12:00:00Z renewal_status=review-needed",
+			},
+		},
+		{
+			name: "exception log",
+			body: exceptionLog,
+			fragments: []string{
+				"# UI Review Exception Log",
+				"- Exceptions: 1",
+				"exc-blk-run-detail-copy-final",
+				"evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z",
+			},
+		},
+		{
+			name: "timeline summary",
+			body: timelineSummary,
+			fragments: []string{
+				"# UI Review Blocker Timeline Summary",
+				"- Events: 2",
+				"- opened: 1",
+				"- escalated: 1",
+				"- design-program-manager: 1",
+				"- blk-run-detail-copy-final: latest=evt-run-detail-copy-escalated actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z",
+			},
+		},
+	} {
+		for _, fragment := range tc.fragments {
+			if !strings.Contains(tc.body, fragment) {
+				t.Fatalf("%s: expected %q in report, got %s", tc.name, fragment, tc.body)
+			}
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{

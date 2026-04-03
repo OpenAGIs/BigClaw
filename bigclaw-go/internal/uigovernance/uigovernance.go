@@ -3379,6 +3379,643 @@ func RenderUIReviewOwnerReviewQueue(pack UIReviewPack) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func RenderUIReviewChecklistTraceabilityBoard(pack UIReviewPack) string {
+	type entry struct {
+		EntryID           string
+		ItemID            string
+		SurfaceID         string
+		Owner             string
+		Status            string
+		LinkedAssignments string
+		LinkedRoles       string
+		LinkedDecisions   string
+		Evidence          string
+		Summary           string
+	}
+	assignmentsByItem := map[string][]ReviewRoleAssignment{}
+	for _, assignment := range pack.RoleMatrix {
+		for _, itemID := range assignment.ChecklistItemIDs {
+			assignmentsByItem[itemID] = append(assignmentsByItem[itemID], assignment)
+		}
+	}
+	var entries []entry
+	ownerCounts := map[string]int{}
+	statusCounts := map[string]int{}
+	for _, item := range pack.ReviewerChecklist {
+		assignments := assignmentsByItem[item.ItemID]
+		var assignmentIDs []string
+		var roles []string
+		decisionSet := map[string]bool{}
+		for _, assignment := range assignments {
+			assignmentIDs = append(assignmentIDs, assignment.AssignmentID)
+			roles = append(roles, assignment.Role)
+			for _, decisionID := range assignment.DecisionIDs {
+				decisionSet[decisionID] = true
+			}
+		}
+		var decisionIDs []string
+		for decisionID := range decisionSet {
+			decisionIDs = append(decisionIDs, decisionID)
+		}
+		sort.Strings(decisionIDs)
+		e := entry{
+			EntryID:           "trace-" + item.ItemID,
+			ItemID:            item.ItemID,
+			SurfaceID:         item.SurfaceID,
+			Owner:             item.Owner,
+			Status:            item.Status,
+			LinkedAssignments: joinCSVOrNone(assignmentIDs),
+			LinkedRoles:       joinCSVOrNone(roles),
+			LinkedDecisions:   joinCSVOrNone(decisionIDs),
+			Evidence:          joinCSVOrNone(item.EvidenceLinks),
+			Summary:           fallback(item.Notes, item.Prompt),
+		}
+		entries = append(entries, e)
+		ownerCounts[e.Owner]++
+		statusCounts[e.Status]++
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Status != entries[j].Status {
+			return entries[i].Status < entries[j].Status
+		}
+		if entries[i].Owner != entries[j].Owner {
+			return entries[i].Owner < entries[j].Owner
+		}
+		return entries[i].ItemID < entries[j].ItemID
+	})
+	var lines []string
+	lines = append(lines, "# UI Review Checklist Traceability Board", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Checklist items: "+itoa(len(entries)), "- Owners: "+itoa(len(ownerCounts)), "", "## By Owner")
+	for _, k := range sortedStringMapKeys(intStringMap(ownerCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(ownerCounts[k]))
+	}
+	if len(ownerCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": item="+e.ItemID+" surface="+e.SurfaceID+" owner="+e.Owner+" status="+e.Status+" linked_roles="+e.LinkedRoles)
+		lines = append(lines, "  linked_assignments="+e.LinkedAssignments+" linked_decisions="+e.LinkedDecisions+" evidence="+e.Evidence+" summary="+e.Summary)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewDecisionFollowupTracker(pack UIReviewPack) string {
+	type entry struct {
+		EntryID           string
+		DecisionID        string
+		SurfaceID         string
+		Owner             string
+		Status            string
+		LinkedRoles       string
+		LinkedAssignments string
+		LinkedChecklists  string
+		FollowUp          string
+		Summary           string
+	}
+	assignmentsByDecision := map[string][]ReviewRoleAssignment{}
+	for _, assignment := range pack.RoleMatrix {
+		for _, decisionID := range assignment.DecisionIDs {
+			assignmentsByDecision[decisionID] = append(assignmentsByDecision[decisionID], assignment)
+		}
+	}
+	var entries []entry
+	ownerCounts := map[string]int{}
+	statusCounts := map[string]int{}
+	for _, decision := range pack.DecisionLog {
+		assignments := assignmentsByDecision[decision.DecisionID]
+		var roles []string
+		var assignmentIDs []string
+		checklistSet := map[string]bool{}
+		for _, assignment := range assignments {
+			roles = append(roles, assignment.Role)
+			assignmentIDs = append(assignmentIDs, assignment.AssignmentID)
+			for _, checklistID := range assignment.ChecklistItemIDs {
+				checklistSet[checklistID] = true
+			}
+		}
+		var checklistIDs []string
+		for checklistID := range checklistSet {
+			checklistIDs = append(checklistIDs, checklistID)
+		}
+		sort.Strings(checklistIDs)
+		e := entry{
+			EntryID:           "follow-" + decision.DecisionID,
+			DecisionID:        decision.DecisionID,
+			SurfaceID:         decision.SurfaceID,
+			Owner:             decision.Owner,
+			Status:            decision.Status,
+			LinkedRoles:       joinCSVOrNone(roles),
+			LinkedAssignments: joinCSVOrNone(assignmentIDs),
+			LinkedChecklists:  joinCSVOrNone(checklistIDs),
+			FollowUp:          fallback(decision.FollowUp, "none"),
+			Summary:           decision.Summary,
+		}
+		entries = append(entries, e)
+		ownerCounts[e.Owner]++
+		statusCounts[e.Status]++
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Status != entries[j].Status {
+			return entries[i].Status < entries[j].Status
+		}
+		if entries[i].Owner != entries[j].Owner {
+			return entries[i].Owner < entries[j].Owner
+		}
+		return entries[i].DecisionID < entries[j].DecisionID
+	})
+	var lines []string
+	lines = append(lines, "# UI Review Decision Follow-up Tracker", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Decisions: "+itoa(len(entries)), "- Owners: "+itoa(len(ownerCounts)), "", "## By Owner")
+	for _, k := range sortedStringMapKeys(intStringMap(ownerCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(ownerCounts[k]))
+	}
+	if len(ownerCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": decision="+e.DecisionID+" surface="+e.SurfaceID+" owner="+e.Owner+" status="+e.Status+" linked_roles="+e.LinkedRoles)
+		lines = append(lines, "  linked_assignments="+e.LinkedAssignments+" linked_checklists="+e.LinkedChecklists+" follow_up="+e.FollowUp+" summary="+e.Summary)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewRoleCoverageBoard(pack UIReviewPack) string {
+	type entry struct {
+		EntryID             string
+		AssignmentID        string
+		SurfaceID           string
+		Role                string
+		Status              string
+		ResponsibilityCount int
+		ChecklistCount      int
+		DecisionCount       int
+		SignoffID           string
+		SignoffStatus       string
+		Summary             string
+	}
+	signoffsByAssignment := map[string]ReviewSignoff{}
+	for _, signoff := range pack.SignoffLog {
+		signoffsByAssignment[signoff.AssignmentID] = signoff
+	}
+	var entries []entry
+	surfaceCounts := map[string]int{}
+	statusCounts := map[string]int{}
+	for _, assignment := range pack.RoleMatrix {
+		signoff, ok := signoffsByAssignment[assignment.AssignmentID]
+		signoffID := "none"
+		signoffStatus := "none"
+		if ok {
+			signoffID = signoff.SignoffID
+			signoffStatus = signoff.Status
+		}
+		e := entry{
+			EntryID:             "cover-" + assignment.AssignmentID,
+			AssignmentID:        assignment.AssignmentID,
+			SurfaceID:           assignment.SurfaceID,
+			Role:                assignment.Role,
+			Status:              assignment.Status,
+			ResponsibilityCount: len(assignment.Responsibilities),
+			ChecklistCount:      len(assignment.ChecklistItemIDs),
+			DecisionCount:       len(assignment.DecisionIDs),
+			SignoffID:           signoffID,
+			SignoffStatus:       signoffStatus,
+			Summary:             joinCSVOrNone(assignment.Responsibilities),
+		}
+		entries = append(entries, e)
+		surfaceCounts[e.SurfaceID]++
+		statusCounts[e.Status]++
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].SurfaceID != entries[j].SurfaceID {
+			return entries[i].SurfaceID < entries[j].SurfaceID
+		}
+		if entries[i].Status != entries[j].Status {
+			return entries[i].Status < entries[j].Status
+		}
+		return entries[i].AssignmentID < entries[j].AssignmentID
+	})
+	var lines []string
+	lines = append(lines, "# UI Review Role Coverage Board", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Assignments: "+itoa(len(entries)), "- Surfaces: "+itoa(len(surfaceCounts)), "", "## By Surface")
+	for _, k := range sortedStringMapKeys(intStringMap(surfaceCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(surfaceCounts[k]))
+	}
+	if len(surfaceCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": assignment="+e.AssignmentID+" surface="+e.SurfaceID+" role="+e.Role+" status="+e.Status+" responsibilities="+itoa(e.ResponsibilityCount)+" checklist="+itoa(e.ChecklistCount)+" decisions="+itoa(e.DecisionCount))
+		lines = append(lines, "  signoff="+e.SignoffID+" signoff_status="+e.SignoffStatus+" summary="+e.Summary)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewReminderCadenceBoard(pack UIReviewPack) string {
+	type entry struct {
+		EntryID        string
+		SignoffID      string
+		Role           string
+		SurfaceID      string
+		Cadence        string
+		Status         string
+		Owner          string
+		SLAStatus      string
+		LastReminderAt string
+		NextReminderAt string
+		DueAt          string
+		Summary        string
+	}
+	unresolvedStatuses := map[string]bool{"approved": true, "accepted": true, "resolved": true, "waived": true, "deferred": true}
+	var entries []entry
+	cadenceCounts := map[string]int{}
+	statusCounts := map[string]int{}
+	for _, signoff := range pack.SignoffLog {
+		s := signoff.normalized()
+		if !s.Required || unresolvedStatuses[strings.ToLower(s.Status)] {
+			continue
+		}
+		e := entry{
+			EntryID:        "cad-rem-" + s.SignoffID,
+			SignoffID:      s.SignoffID,
+			Role:           s.Role,
+			SurfaceID:      s.SurfaceID,
+			Cadence:        fallback(s.ReminderCadence, "none"),
+			Status:         fallback(s.ReminderStatus, "scheduled"),
+			Owner:          fallback(s.ReminderOwner, "none"),
+			SLAStatus:      s.SLAStatus,
+			LastReminderAt: fallback(s.LastReminderAt, "none"),
+			NextReminderAt: fallback(s.NextReminderAt, "none"),
+			DueAt:          fallback(s.DueAt, "none"),
+			Summary:        fallback(s.Notes, fallback(s.WaiverReason, s.Role)),
+		}
+		entries = append(entries, e)
+		cadenceCounts[e.Cadence]++
+		statusCounts[e.Status]++
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Cadence != entries[j].Cadence {
+			return entries[i].Cadence < entries[j].Cadence
+		}
+		if entries[i].Status != entries[j].Status {
+			return entries[i].Status < entries[j].Status
+		}
+		return entries[i].SignoffID < entries[j].SignoffID
+	})
+	var lines []string
+	lines = append(lines, "# UI Review Reminder Cadence Board", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Items: "+itoa(len(entries)), "- Cadences: "+itoa(len(cadenceCounts)), "", "## By Cadence")
+	for _, k := range sortedStringMapKeys(intStringMap(cadenceCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(cadenceCounts[k]))
+	}
+	if len(cadenceCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Items")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": signoff="+e.SignoffID+" role="+e.Role+" surface="+e.SurfaceID+" cadence="+e.Cadence+" status="+e.Status+" owner="+e.Owner)
+		lines = append(lines, "  sla="+e.SLAStatus+" last_reminder_at="+e.LastReminderAt+" next_reminder_at="+e.NextReminderAt+" due_at="+e.DueAt+" summary="+e.Summary)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewHandoffAckLedger(pack UIReviewPack) string {
+	type entry struct {
+		EntryID     string
+		EventID     string
+		BlockerID   string
+		SurfaceID   string
+		Actor       string
+		Status      string
+		HandoffTo   string
+		AckOwner    string
+		AckStatus   string
+		AckAt       string
+		Channel     string
+		ArtifactRef string
+		Summary     string
+	}
+	blockers := map[string]ReviewBlocker{}
+	for _, blocker := range pack.BlockerLog {
+		blockers[blocker.BlockerID] = blocker
+	}
+	var entries []entry
+	ownerCounts := map[string]int{}
+	statusCounts := map[string]int{}
+	for _, event := range pack.BlockerTimeline {
+		e := event.normalized()
+		status := strings.ToLower(e.Status)
+		if status != "escalated" && status != "handoff" && status != "reassigned" && strings.TrimSpace(e.HandoffTo) == "" {
+			continue
+		}
+		blocker, ok := blockers[e.BlockerID]
+		fallbackOwner := "none"
+		surfaceID := "none"
+		if ok {
+			surfaceID = blocker.SurfaceID
+			fallbackOwner = fallback(blocker.EscalationOwner, "none")
+		}
+		handoffTo := fallback(e.HandoffTo, fallbackOwner)
+		ackOwner := fallback(e.AckOwner, handoffTo)
+		entry := entry{
+			EntryID:     "ack-" + e.EventID,
+			EventID:     e.EventID,
+			BlockerID:   e.BlockerID,
+			SurfaceID:   surfaceID,
+			Actor:       e.Actor,
+			Status:      e.Status,
+			HandoffTo:   handoffTo,
+			AckOwner:    ackOwner,
+			AckStatus:   fallback(e.AckStatus, "pending"),
+			AckAt:       fallback(e.AckAt, "none"),
+			Channel:     fallback(e.Channel, "none"),
+			ArtifactRef: fallback(e.ArtifactRef, "none"),
+			Summary:     e.Summary,
+		}
+		entries = append(entries, entry)
+		ownerCounts[entry.AckOwner]++
+		statusCounts[entry.AckStatus]++
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].AckStatus != entries[j].AckStatus {
+			return entries[i].AckStatus < entries[j].AckStatus
+		}
+		if entries[i].AckOwner != entries[j].AckOwner {
+			return entries[i].AckOwner < entries[j].AckOwner
+		}
+		return entries[i].EventID < entries[j].EventID
+	})
+	var lines []string
+	lines = append(lines, "# UI Review Handoff Ack Ledger", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Ack items: "+itoa(len(entries)), "- Ack owners: "+itoa(len(ownerCounts)), "", "## By Ack Owner")
+	for _, k := range sortedStringMapKeys(intStringMap(ownerCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(ownerCounts[k]))
+	}
+	if len(ownerCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Ack Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": event="+e.EventID+" blocker="+e.BlockerID+" surface="+e.SurfaceID+" handoff_to="+e.HandoffTo+" ack_owner="+e.AckOwner+" ack_status="+e.AckStatus+" ack_at="+e.AckAt)
+		lines = append(lines, "  actor="+e.Actor+" status="+e.Status+" channel="+e.Channel+" artifact="+e.ArtifactRef+" summary="+e.Summary)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewFreezeRenewalTracker(pack UIReviewPack) string {
+	type entry struct {
+		EntryID          string
+		BlockerID        string
+		SurfaceID        string
+		Status           string
+		FreezeOwner      string
+		FreezeUntil      string
+		RenewalOwner     string
+		RenewalBy        string
+		RenewalStatus    string
+		FreezeApprovedBy string
+		Summary          string
+		NextAction       string
+	}
+	var entries []entry
+	ownerCounts := map[string]int{}
+	statusCounts := map[string]int{}
+	for _, blocker := range pack.BlockerLog {
+		b := blocker.normalized()
+		if !b.FreezeException {
+			continue
+		}
+		e := entry{
+			EntryID:          "renew-" + b.BlockerID,
+			BlockerID:        b.BlockerID,
+			SurfaceID:        b.SurfaceID,
+			Status:           b.Status,
+			FreezeOwner:      fallback(b.FreezeOwner, b.Owner),
+			FreezeUntil:      fallback(b.FreezeUntil, "none"),
+			RenewalOwner:     fallback(b.FreezeRenewalOwner, "none"),
+			RenewalBy:        fallback(b.FreezeRenewalBy, "none"),
+			RenewalStatus:    fallback(b.FreezeRenewalStatus, "not-needed"),
+			FreezeApprovedBy: fallback(b.FreezeApprovedBy, "none"),
+			Summary:          fallback(b.FreezeReason, b.Summary),
+			NextAction:       fallback(b.NextAction, "none"),
+		}
+		entries = append(entries, e)
+		ownerCounts[e.RenewalOwner]++
+		statusCounts[e.RenewalStatus]++
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].RenewalBy != entries[j].RenewalBy {
+			return entries[i].RenewalBy < entries[j].RenewalBy
+		}
+		if entries[i].RenewalOwner != entries[j].RenewalOwner {
+			return entries[i].RenewalOwner < entries[j].RenewalOwner
+		}
+		return entries[i].BlockerID < entries[j].BlockerID
+	})
+	var lines []string
+	lines = append(lines, "# UI Review Freeze Renewal Tracker", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Renewal items: "+itoa(len(entries)), "- Renewal owners: "+itoa(len(ownerCounts)), "", "## By Renewal Owner")
+	for _, k := range sortedStringMapKeys(intStringMap(ownerCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(ownerCounts[k]))
+	}
+	if len(ownerCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## By Renewal Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Entries")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.EntryID+": blocker="+e.BlockerID+" surface="+e.SurfaceID+" status="+e.Status+" renewal_owner="+e.RenewalOwner+" renewal_by="+e.RenewalBy+" renewal_status="+e.RenewalStatus)
+		lines = append(lines, "  freeze_owner="+e.FreezeOwner+" freeze_until="+e.FreezeUntil+" approved_by="+e.FreezeApprovedBy+" summary="+e.Summary+" next_action="+e.NextAction)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewExceptionLog(pack UIReviewPack) string {
+	type entry struct {
+		ExceptionID string
+		Category    string
+		SourceID    string
+		SurfaceID   string
+		Owner       string
+		Status      string
+		Severity    string
+		Summary     string
+		Evidence    string
+		LatestEvent string
+		NextAction  string
+	}
+	var entries []entry
+	for _, signoff := range pack.SignoffLog {
+		s := signoff.normalized()
+		status := strings.ToLower(s.Status)
+		if status != "waived" && status != "deferred" {
+			continue
+		}
+		entries = append(entries, entry{
+			ExceptionID: "exc-" + s.SignoffID,
+			Category:    "signoff",
+			SourceID:    s.SignoffID,
+			SurfaceID:   s.SurfaceID,
+			Owner:       fallback(s.WaiverOwner, s.Role),
+			Status:      s.Status,
+			Severity:    "none",
+			Summary:     fallback(s.WaiverReason, fallback(s.Notes, "none")),
+			Evidence:    joinCSVOrNone(s.EvidenceLinks),
+			LatestEvent: "none",
+			NextAction:  fallback(s.Notes, fallback(s.WaiverReason, "none")),
+		})
+	}
+	for _, blocker := range pack.BlockerLog {
+		b := blocker.normalized()
+		status := strings.ToLower(b.Status)
+		if status == "resolved" || status == "closed" {
+			continue
+		}
+		entries = append(entries, entry{
+			ExceptionID: "exc-" + b.BlockerID,
+			Category:    "blocker",
+			SourceID:    b.BlockerID,
+			SurfaceID:   b.SurfaceID,
+			Owner:       b.Owner,
+			Status:      b.Status,
+			Severity:    b.Severity,
+			Summary:     b.Summary,
+			Evidence:    fallback(b.EscalationOwner, "none"),
+			LatestEvent: latestBlockerEventLabel(pack.BlockerTimeline, b.BlockerID),
+			NextAction:  fallback(b.NextAction, "none"),
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Owner != entries[j].Owner {
+			return entries[i].Owner < entries[j].Owner
+		}
+		if entries[i].SurfaceID != entries[j].SurfaceID {
+			return entries[i].SurfaceID < entries[j].SurfaceID
+		}
+		if entries[i].Category != entries[j].Category {
+			return entries[i].Category < entries[j].Category
+		}
+		return entries[i].SourceID < entries[j].SourceID
+	})
+	var lines []string
+	lines = append(lines, "# UI Review Exception Log", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Exceptions: "+itoa(len(entries)), "", "## Exceptions")
+	for _, e := range entries {
+		lines = append(lines, "- "+e.ExceptionID+": type="+e.Category+" source="+e.SourceID+" surface="+e.SurfaceID+" owner="+e.Owner+" status="+e.Status+" severity="+e.Severity)
+		lines = append(lines, "  summary="+e.Summary+" evidence="+e.Evidence+" latest_event="+e.LatestEvent+" next_action="+e.NextAction)
+	}
+	if len(entries) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderUIReviewBlockerTimelineSummary(pack UIReviewPack) string {
+	statusCounts := map[string]int{}
+	actorCounts := map[string]int{}
+	timelineIndex := map[string][]ReviewBlockerEvent{}
+	for _, event := range pack.BlockerTimeline {
+		e := event.normalized()
+		statusCounts[e.Status]++
+		actorCounts[e.Actor]++
+		timelineIndex[e.BlockerID] = append(timelineIndex[e.BlockerID], e)
+	}
+	blockerIDs := map[string]bool{}
+	for _, blocker := range pack.BlockerLog {
+		blockerIDs[blocker.BlockerID] = true
+	}
+	var orphanIDs []string
+	for blockerID := range timelineIndex {
+		if !blockerIDs[blockerID] {
+			orphanIDs = append(orphanIDs, blockerID)
+		}
+	}
+	sort.Strings(orphanIDs)
+	var lines []string
+	lines = append(lines, "# UI Review Blocker Timeline Summary", "", "- Issue: "+pack.IssueID+" "+pack.Title, "- Version: "+pack.Version, "- Events: "+itoa(len(pack.BlockerTimeline)), "- Blockers with timeline: "+itoa(len(timelineIndex)), "- Orphan timeline blockers: "+joinCSVOrNone(orphanIDs), "", "## Events by Status")
+	for _, k := range sortedStringMapKeys(intStringMap(statusCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(statusCounts[k]))
+	}
+	if len(statusCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Events by Actor")
+	for _, k := range sortedStringMapKeys(intStringMap(actorCounts)) {
+		lines = append(lines, "- "+k+": "+itoa(actorCounts[k]))
+	}
+	if len(actorCounts) == 0 {
+		lines = append(lines, "- none")
+	}
+	lines = append(lines, "", "## Latest Blocker Events")
+	for _, blocker := range pack.BlockerLog {
+		events := timelineIndex[blocker.BlockerID]
+		if len(events) == 0 {
+			lines = append(lines, "- "+blocker.BlockerID+": latest=none")
+			continue
+		}
+		latest := latestBlockerEvent(events)
+		lines = append(lines, "- "+blocker.BlockerID+": latest="+latest.EventID+" actor="+latest.Actor+" status="+latest.Status+" at="+latest.Timestamp)
+	}
+	if len(pack.BlockerLog) == 0 {
+		lines = append(lines, "- none")
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func BuildBIG4204ReviewPack() UIReviewPack {
 	return UIReviewPack{
 		IssueID:                   "BIG-4204",
@@ -3755,6 +4392,17 @@ func latestBlockerEventLabel(events []ReviewBlockerEvent, blockerID string) stri
 	}
 	if latest == "" {
 		return "none"
+	}
+	return latest
+}
+
+func latestBlockerEvent(events []ReviewBlockerEvent) ReviewBlockerEvent {
+	var latest ReviewBlockerEvent
+	for i, event := range events {
+		e := event.normalized()
+		if i == 0 || e.Timestamp > latest.Timestamp {
+			latest = e
+		}
 	}
 	return latest
 }
