@@ -44,6 +44,11 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1169` confirms the repo-wide physical Python count is already `0`,
+rechecks that the retired sweep candidates remain absent, and records the
+supported operator replacements for this lane. The repo-level acceptance probe
+for this sweep is `find . -name '*.py' | wc -l`.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
@@ -61,6 +66,7 @@ operator replacements.
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
 - retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
+- retired E2E Python helpers -> `bigclawctl automation e2e ...`
 - retired migration Python helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
@@ -128,6 +134,7 @@ operator docs and external automation references finish the direct cutover to
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
+- `find . -name '*.py' | wc -l`
 
 ## Regression Surface
 
