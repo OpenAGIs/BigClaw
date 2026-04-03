@@ -11,6 +11,10 @@ operator cutover window.
 The implemented migration batches in this issue moved these entrypoints behind the Go CLI and
 retired the final root Python workspace shims.
 
+`BIG-GO-1138` validated that this migration lane is already physically retired in the current
+worktree: `find . -name '*.py'` returns `0`, so the remaining work is explicit retirement
+accounting and regression enforcement rather than another file deletion.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
@@ -28,7 +32,13 @@ retired the final root Python workspace shims.
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
 - retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
-- `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- retired `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- retired `bigclaw-go/scripts/migration/shadow_matrix.py` -> `bigclawctl automation migration shadow-matrix`
+- retired `bigclaw-go/scripts/migration/live_shadow_scorecard.py` -> `bigclawctl automation migration live-shadow-scorecard`
+- retired `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` -> `bigclawctl automation migration export-live-shadow-bundle`
+- the lane-owned `bigclaw-go/scripts/benchmark/*.py`, `bigclaw-go/scripts/e2e/*.py`, and repo-root
+  `scripts/create_issues.py` / `scripts/dev_smoke.py` files are already absent on disk and remain
+  covered by Go-native regression tests
 
 The remaining compatibility layer is intentionally thin:
 

@@ -9,6 +9,60 @@ completed the tranche-2 cleanup by keeping only Go-native
 `bigclawctl automation ...` subcommands plus the retained shell wrappers needed
 for the bundled live-validation workflow.
 
+## Retired Lane Coverage
+
+The physical Python sweep for `BIG-GO-1138` found this lane already retired in
+the materialized worktree: there are no remaining `*.py` files anywhere in the
+repository, including the benchmark/e2e/migration candidates that previously
+lived under `bigclaw-go/scripts/`.
+
+### Benchmark candidates retired behind Go
+
+- `bigclaw-go/scripts/benchmark/soak_local.py`
+- `bigclaw-go/scripts/benchmark/run_matrix.py`
+- `bigclaw-go/scripts/benchmark/capacity_certification.py`
+- `bigclaw-go/scripts/benchmark/capacity_certification_test.py`
+
+Replacement owner:
+
+- `go run ./cmd/bigclawctl automation benchmark soak-local|run-matrix|capacity-certification ...`
+
+### E2E candidates retired behind Go
+
+- `bigclaw-go/scripts/e2e/run_task_smoke.py`
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
+- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
+- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
+- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
+- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
+- `bigclaw-go/scripts/e2e/external_store_validation.py`
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
+- `bigclaw-go/scripts/e2e/run_all_test.py`
+
+Replacement owner:
+
+- `go run ./cmd/bigclawctl automation e2e ...`
+- `./scripts/e2e/run_all.sh`
+- `./scripts/e2e/kubernetes_smoke.sh`
+- `./scripts/e2e/ray_smoke.sh`
+
+### Migration candidates retired behind Go
+
+- `bigclaw-go/scripts/migration/shadow_compare.py`
+- `bigclaw-go/scripts/migration/shadow_matrix.py`
+- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+
+Replacement owner:
+
+- `go run ./cmd/bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle ...`
+
 | Active entrypoint | Backing command | Purpose |
 | --- | --- | --- |
 | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | `bigclawctl automation e2e run-task-smoke` | Generic submit/poll smoke helper for local, Kubernetes, and Ray paths |
