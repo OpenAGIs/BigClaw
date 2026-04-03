@@ -1494,6 +1494,10 @@ def render_queue_control_center(
     lines.append(
         f"- Eligible Tasks: {', '.join(center.bulk_retry_tasks) if center.bulk_retry_tasks else 'none'}"
     )
+    if center.bulk_retry_tasks:
+        lines.append(
+            f"- Entry: Bulk Retry [bulk-retry] targets={', '.join(center.bulk_retry_tasks)}"
+        )
     if center.bulk_retry_blockers:
         for task_id, reason in center.bulk_retry_blockers.items():
             lines.append(f"- Blocked: {task_id} reason={reason}")

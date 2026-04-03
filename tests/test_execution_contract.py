@@ -253,10 +253,12 @@ def test_operations_api_contract_draft_is_release_ready() -> None:
 
     assert contract.contract_id == "OPE-131"
     assert audit.release_ready is True
-    assert len(contract.apis) == 12
+    assert len(contract.apis) == 14
     assert "GET /operations/dashboard" in report
     assert "GET /operations/runs/{run_id}" in report
     assert "GET /operations/queue/control-center" in report
+    assert "POST /operations/queue/bulk-retry" in report
+    assert "POST /operations/queue/{task_id}/manual-takeover" in report
     assert "GET /operations/risk/overview" in report
     assert "GET /operations/sla/overview" in report
     assert "GET /operations/regressions" in report

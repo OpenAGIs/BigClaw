@@ -90,6 +90,7 @@ def test_queue_control_center_summarizes_queue_and_execution_media(tmp_path: Pat
     assert "- Waiting Approval Runs: 1" in report
     assert "- BIG-802-1" in report
     assert "- Eligible Tasks: BIG-802-1, BIG-802-2" in report
+    assert "- Entry: Bulk Retry [bulk-retry] targets=BIG-802-1, BIG-802-2" in report
     assert "- Blocked: BIG-802-3 reason=manual takeover required before retry" in report
     assert "- approval: BIG-802-1" in report
     assert "- repo-sync: BIG-802-3" in report
