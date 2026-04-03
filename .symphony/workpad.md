@@ -14,11 +14,13 @@
 - `find . -name '*.py' | wc -l`
 - `cd bigclaw-go && go test ./internal/regression -run 'Test(PythonTestTranche17Removed|BIGGO1162CandidatePythonTestsRemainDeleted|BIGGO1162MigrationDocsListGoReplacements)$'`
 - `git status --short`
+- `git push -u origin symphony/BIG-GO-1162`
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `cd bigclaw-go && go test ./internal/regression -run 'Test(PythonTestTranche17Removed|BIGGO1162CandidatePythonTestsRemainDeleted|BIGGO1162MigrationDocsListGoReplacements)$'` -> `ok  	bigclaw-go/internal/regression	0.839s`
-- `git status --short` -> `M .symphony/workpad.md`, `M bigclaw-go/docs/go-cli-script-migration.md`, `M docs/go-cli-script-migration-plan.md`, `?? bigclaw-go/internal/regression/big_go_1162_python_test_sweep_test.go`
+- `git status --short` -> clean after commit
+- `git push -u origin symphony/BIG-GO-1162` -> pushed successfully; remote branch tracks `origin/symphony/BIG-GO-1162`
 
 ## Residual Risk
 - The workspace already starts from `0` real `.py` files, so this issue can harden deletion and Go-replacement coverage for the retired test tranche but cannot numerically lower the count below zero.
