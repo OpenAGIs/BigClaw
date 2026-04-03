@@ -113,6 +113,50 @@ func TestRenderIssueValidationReportUsesTimezoneAwareUTCTimestamp(t *testing.T) 
 	}
 }
 
+func TestBuildOrchestrationCanvasAndTakeoverQueueAcceptCanonicalHandoffEvents(t *testing.T) {
+	entry := map[string]any{
+		"run_id":  "run-ope-134-canvas",
+		"task_id": "OPE-134-canvas",
+		"source":  "linear",
+		"summary": "handoff requested",
+		"audits": []any{
+			map[string]any{
+				"action":  "orchestration.plan",
+				"actor":   "scheduler",
+				"outcome": "ready",
+				"details": map[string]any{
+					"collaboration_mode": "cross-functional",
+					"departments":        []any{"operations", "engineering"},
+					"approvals":          []any{"security-review"},
+				},
+			},
+			map[string]any{
+				"action":  "execution.manual_takeover",
+				"actor":   "scheduler",
+				"outcome": "pending",
+				"details": map[string]any{
+					"task_id":            "OPE-134-canvas",
+					"run_id":             "run-ope-134-canvas",
+					"target_team":        "security",
+					"reason":             "manual review required",
+					"requested_by":       "scheduler",
+					"required_approvals": []any{"security-review"},
+				},
+			},
+		},
+	}
+
+	canvas := BuildOrchestrationCanvasFromLedgerEntry(entry)
+	queue := BuildTakeoverQueueFromLedger([]map[string]any{entry}, "2026-03-11")
+
+	if canvas.HandoffTeam != "security" || canvas.HandoffStatus != "pending" {
+		t.Fatalf("unexpected orchestration canvas: %+v", canvas)
+	}
+	if len(queue.Requests) != 1 || !reflect.DeepEqual(queue.Requests[0].RequiredApprovals, []string{"security-review"}) {
+		t.Fatalf("unexpected takeover queue: %+v", queue)
+	}
+}
+
 func TestBuildOperationsMetricSpec(t *testing.T) {
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
 	end := start.Add(7 * 24 * time.Hour)

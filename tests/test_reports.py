@@ -1547,45 +1547,6 @@ def test_triage_feedback_record_uses_timezone_aware_utc_timestamp():
     assert parsed.utcoffset().total_seconds() == 0
 
 
-def test_reports_accept_canonical_handoff_and_takeover_events() -> None:
-    entry = {
-        "run_id": "run-ope-134-canvas",
-        "task_id": "OPE-134-canvas",
-        "source": "linear",
-        "summary": "handoff requested",
-        "audits": [
-            {
-                "action": "orchestration.plan",
-                "actor": "scheduler",
-                "outcome": "ready",
-                "details": {
-                    "collaboration_mode": "cross-functional",
-                    "departments": ["operations", "engineering"],
-                    "approvals": ["security-review"],
-                },
-            },
-            {
-                "action": MANUAL_TAKEOVER_EVENT,
-                "actor": "scheduler",
-                "outcome": "pending",
-                "details": {
-                    "task_id": "OPE-134-canvas",
-                    "run_id": "run-ope-134-canvas",
-                    "target_team": "security",
-                    "reason": "manual review required",
-                    "requested_by": "scheduler",
-                    "required_approvals": ["security-review"],
-                },
-            },
-        ],
-    }
-
-    canvas = build_orchestration_canvas_from_ledger_entry(entry)
-    queue = build_takeover_queue_from_ledger([entry], period="2026-03-11")
-
-    assert canvas.handoff_team == "security"
-    assert queue.requests[0].required_approvals == ["security-review"]
-
 def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Path) -> None:
     ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
     task = Task(

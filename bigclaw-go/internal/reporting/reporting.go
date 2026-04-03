@@ -119,6 +119,34 @@ type QueueControlCenter struct {
 	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
+type TakeoverRequest struct {
+	RunID             string          `json:"run_id"`
+	TaskID            string          `json:"task_id"`
+	Source            string          `json:"source"`
+	TargetTeam        string          `json:"target_team"`
+	Status            string          `json:"status"`
+	Reason            string          `json:"reason"`
+	RequiredApprovals []string        `json:"required_approvals,omitempty"`
+	Actions           []ConsoleAction `json:"actions,omitempty"`
+}
+
+type TakeoverQueue struct {
+	Name     string            `json:"name"`
+	Period   string            `json:"period"`
+	Requests []TakeoverRequest `json:"requests,omitempty"`
+}
+
+type OrchestrationCanvas struct {
+	TaskID            string   `json:"task_id"`
+	RunID             string   `json:"run_id"`
+	CollaborationMode string   `json:"collaboration_mode"`
+	Departments       []string `json:"departments,omitempty"`
+	RequiredApprovals []string `json:"required_approvals,omitempty"`
+	HandoffTeam       string   `json:"handoff_team"`
+	HandoffStatus     string   `json:"handoff_status"`
+	HandoffReason     string   `json:"handoff_reason,omitempty"`
+}
+
 type TriageCluster struct {
 	Reason   string   `json:"reason"`
 	RunIDs   []string `json:"run_ids,omitempty"`
@@ -847,6 +875,65 @@ func RenderIssueValidationReport(issueID, version, environment, summary string) 
 		"- 生成时间: " + time.Now().UTC().Format(time.RFC3339) + "\n\n" +
 		"## 结论\n\n" +
 		summary + "\n"
+}
+
+func BuildOrchestrationCanvasFromLedgerEntry(entry map[string]any) OrchestrationCanvas {
+	audits := mapsFromAny(entry["audits"])
+	planAudit := latestNamedAudit(audits, "orchestration.plan")
+	handoffAudit := latestHandoffAudit(audits)
+	planDetails := map[string]any{}
+	if planAudit != nil {
+		planDetails = mapFromAny(planAudit["details"])
+	}
+	handoffDetails := map[string]any{}
+	if handoffAudit != nil {
+		handoffDetails = mapFromAny(handoffAudit["details"])
+	}
+	canvas := OrchestrationCanvas{
+		TaskID:            stringValue(entry["task_id"]),
+		RunID:             stringValue(entry["run_id"]),
+		CollaborationMode: firstNonEmpty(stringValue(planDetails["collaboration_mode"]), "single-team"),
+		Departments:       stringListFromAny(planDetails["departments"]),
+		RequiredApprovals: stringListFromAny(planDetails["approvals"]),
+		HandoffTeam:       "none",
+		HandoffStatus:     "none",
+		HandoffReason:     "",
+	}
+	if handoffAudit != nil {
+		canvas.HandoffTeam = firstNonEmpty(stringValue(handoffDetails["target_team"]), "none")
+		canvas.HandoffStatus = firstNonEmpty(stringValue(handoffAudit["outcome"]), "none")
+		canvas.HandoffReason = stringValue(handoffDetails["reason"])
+	}
+	return canvas
+}
+
+func BuildTakeoverQueueFromLedger(entries []map[string]any, period string) TakeoverQueue {
+	queue := TakeoverQueue{Name: "Human Takeover Queue", Period: period}
+	for _, entry := range entries {
+		audits := mapsFromAny(entry["audits"])
+		handoffAudit := latestHandoffAudit(audits)
+		if handoffAudit == nil {
+			continue
+		}
+		details := mapFromAny(handoffAudit["details"])
+		queue.Requests = append(queue.Requests, TakeoverRequest{
+			RunID:             stringValue(entry["run_id"]),
+			TaskID:            stringValue(entry["task_id"]),
+			Source:            stringValue(entry["source"]),
+			TargetTeam:        firstNonEmpty(stringValue(details["target_team"]), "operations"),
+			Status:            firstNonEmpty(stringValue(handoffAudit["outcome"]), "pending"),
+			Reason:            firstNonEmpty(stringValue(details["reason"]), firstNonEmpty(stringValue(entry["summary"]), "handoff requested")),
+			RequiredApprovals: stringListFromAny(details["required_approvals"]),
+			Actions:           buildConsoleActions(stringValue(entry["run_id"]), false, false, stringValue(details["target_team"]) != "security"),
+		})
+	}
+	sort.Slice(queue.Requests, func(i, j int) bool {
+		if queue.Requests[i].TargetTeam != queue.Requests[j].TargetTeam {
+			return queue.Requests[i].TargetTeam < queue.Requests[j].TargetTeam
+		}
+		return queue.Requests[i].RunID < queue.Requests[j].RunID
+	})
+	return queue
 }
 
 func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec) (WeeklyArtifacts, error) {
@@ -2422,6 +2509,68 @@ func writeFileWithDirs(path, content string) error {
 		return err
 	}
 	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+func latestNamedAudit(audits []map[string]any, action string) map[string]any {
+	for i := len(audits) - 1; i >= 0; i-- {
+		if stringValue(audits[i]["action"]) == action {
+			return audits[i]
+		}
+	}
+	return nil
+}
+
+func latestHandoffAudit(audits []map[string]any) map[string]any {
+	for i := len(audits) - 1; i >= 0; i-- {
+		action := stringValue(audits[i]["action"])
+		if action == "orchestration.handoff" || action == "execution.manual_takeover" || action == "execution.flow_handoff" {
+			return audits[i]
+		}
+	}
+	return nil
+}
+
+func mapsFromAny(value any) []map[string]any {
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		out = append(out, mapFromAny(item))
+	}
+	return out
+}
+
+func mapFromAny(value any) map[string]any {
+	if value == nil {
+		return map[string]any{}
+	}
+	if typed, ok := value.(map[string]any); ok {
+		return typed
+	}
+	return map[string]any{}
+}
+
+func stringValue(value any) string {
+	if typed, ok := value.(string); ok {
+		return typed
+	}
+	return ""
+}
+
+func stringListFromAny(value any) []string {
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if text, ok := item.(string); ok {
+			out = append(out, text)
+		}
+	}
+	return out
 }
 
 func ternaryString(condition bool, whenTrue, whenFalse string) string {

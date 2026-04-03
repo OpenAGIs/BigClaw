@@ -1,17 +1,17 @@
 # BIG-GO-1026 Workpad
 
 ## Plan
-- Extend `bigclaw-go/internal/reporting` with the small issue-validation contract still covered only in Python.
-- Add a Go-native `RenderIssueValidationReport` that preserves the existing markdown shape and UTC timestamp contract from `tests/test_reports.py`.
-- Add focused Go tests for `WriteReport`, `ConsoleAction.State()`, and `RenderIssueValidationReport` timestamp/content behavior.
-- Remove only the matching short Python reporting tests from `tests/test_reports.py` after Go-native coverage is in place.
+- Extend `bigclaw-go/internal/reporting` with the small ledger-to-orchestration contract still covered only in Python.
+- Add Go-native `BuildOrchestrationCanvasFromLedgerEntry` and `BuildTakeoverQueueFromLedger` helpers that preserve canonical manual-takeover/handoff parsing and approval propagation.
+- Add focused Go coverage for the canonical handoff/takeover event path exercised by `test_reports_accept_canonical_handoff_and_takeover_events`.
+- Remove only the matching Python handoff/takeover contract test from `tests/test_reports.py` after Go-native coverage is in place.
 - Re-run the targeted reports pytest file and the Go tests for `./internal/reporting`.
 - Capture the updated repo inventory and confirm `pyproject.toml` / `setup.py` / `setup.cfg` remain unchanged.
 - Commit and push the follow-up reduction on `BIG-GO-1026`.
 
 ## Acceptance
-- Scope stays limited to the short reporting contracts currently exercised by `test_render_and_write_report`, `test_console_action_state_reflects_enabled_flag`, and `test_issue_validation_report_uses_timezone_aware_utc_timestamp` in `tests/test_reports.py`.
-- Go-native coverage in `bigclaw-go/internal/reporting` becomes the source of truth for those contracts.
+- Scope stays limited to the canonical handoff/takeover reporting contract currently exercised by `test_reports_accept_canonical_handoff_and_takeover_events` in `tests/test_reports.py`.
+- Go-native coverage in `bigclaw-go/internal/reporting` becomes the source of truth for that ledger parsing contract.
 - `tests/test_reports.py` shrinks while the consolidated suite still passes.
 - Report includes `.py` / `.go` file-count impact and confirms whether `pyproject.toml` / `setup.py` / `setup.cfg` changed.
 
@@ -26,17 +26,17 @@
 
 ## Validation Results
 - `PYTHONPATH=src python3 -m pytest tests/test_reports.py -q`
-  `64 passed in 0.19s`
+  `63 passed in 0.19s`
 - `go test ./internal/reporting` (run from `bigclaw-go/`)
-  `ok  	bigclaw-go/internal/reporting	1.540s`
+  `ok  	bigclaw-go/internal/reporting	1.071s`
 - `wc -l tests/test_reports.py`
-  `2733 tests/test_reports.py`
+  `2694 tests/test_reports.py`
 - `git diff --stat`
-  `.symphony/workpad.md | 15 ++++----`
-  `bigclaw-go/internal/reporting/reporting.go | 10 +++++`
-  `bigclaw-go/internal/reporting/reporting_test.go | 50 +++++++++++++++++++++++++`
-  `tests/test_reports.py | 29 --------------`
-  `4 files changed, 67 insertions(+), 37 deletions(-)`
+  `.symphony/workpad.md | 12 +-`
+  `bigclaw-go/internal/reporting/reporting.go | 149 ++++++++++++++++++++++++`
+  `bigclaw-go/internal/reporting/reporting_test.go | 44 +++++++`
+  `tests/test_reports.py | 39 -------`
+  `4 files changed, 199 insertions(+), 45 deletions(-)`
 - `rg --files | rg '\.py$' | wc -l`
   `51`
 - `rg --files | rg '\.go$' | wc -l`
