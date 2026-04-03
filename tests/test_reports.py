@@ -2897,45 +2897,6 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "- Unresolved required signoff ids: sig-run-detail-eng-lead" in report
     assert "- Unresolved questions: oq-role-density, oq-alert-priority, oq-handoff-evidence" in report
 
-def test_render_ui_review_signoff_sla_and_escalation_dashboards() -> None:
-    pack = build_big_4204_review_pack()
-
-    signoff_sla = render_ui_review_signoff_sla_dashboard(pack)
-    signoff_reminder = render_ui_review_signoff_reminder_queue(pack)
-    signoff_breach = render_ui_review_signoff_breach_board(pack)
-    escalation_dashboard = render_ui_review_escalation_dashboard(pack)
-    handoff_ledger = render_ui_review_escalation_handoff_ledger(pack)
-    owner_digest = render_ui_review_owner_escalation_digest(pack)
-
-    assert "# UI Review Sign-off SLA Dashboard" in signoff_sla
-    assert "- Sign-offs: 4" in signoff_sla
-    assert "- Escalation owners: 4" in signoff_sla
-    assert "- at-risk: 1" in signoff_sla
-    assert "- met: 3" in signoff_sla
-    assert "sig-run-detail-eng-lead: role=Eng Lead surface=wf-run-detail status=pending sla=at-risk requested_at=2026-03-12T11:00:00Z due_at=2026-03-15T18:00:00Z escalation_owner=engineering-director" in signoff_sla
-    assert "# UI Review Sign-off Reminder Queue" in signoff_reminder
-    assert "- Reminders: 1" in signoff_reminder
-    assert "- design-program-manager: reminders=1" in signoff_reminder
-    assert "rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk owner=design-program-manager channel=slack" in signoff_reminder
-    assert "# UI Review Sign-off Breach Board" in signoff_breach
-    assert "- Breach items: 1" in signoff_breach
-    assert "- engineering-director: 1" in signoff_breach
-    assert "breach-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk escalation_owner=engineering-director" in signoff_breach
-    assert "# UI Review Escalation Dashboard" in escalation_dashboard
-    assert "- Items: 2" in escalation_dashboard
-    assert "- design-program-manager: blockers=1 signoffs=0 total=1" in escalation_dashboard
-    assert "- engineering-director: blockers=0 signoffs=1 total=1" in escalation_dashboard
-    assert "esc-sig-run-detail-eng-lead: owner=engineering-director type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending priority=at-risk current_owner=Eng Lead" in escalation_dashboard
-    assert "# UI Review Escalation Handoff Ledger" in handoff_ledger
-    assert "- Handoffs: 1" in handoff_ledger
-    assert "- design-critique: 1" in handoff_ledger
-    assert "handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in handoff_ledger
-    assert "from=product-experience to=Eng Lead channel=design-critique artifact=wf-run-detail#copy-v5" in handoff_ledger
-    assert "# UI Review Owner Escalation Digest" in owner_digest
-    assert "- design-program-manager: blockers=1 signoffs=0 reminders=1 freezes=0 handoffs=0 total=2" in owner_digest
-    assert "digest-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending" in owner_digest
-
-
 def test_render_ui_review_exception_matrix_includes_signoff_and_blocker_counts() -> None:
     pack = build_big_4204_review_pack()
     pack.signoff_log[2] = ReviewSignoff(

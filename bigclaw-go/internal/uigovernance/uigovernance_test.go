@@ -707,6 +707,93 @@ func TestUIReviewPackAuditFlagsClosedBlockerWithoutResolutionEventAndOrphans(t *
 	}
 }
 
+func TestRenderUIReviewSignoffAndEscalationDashboards(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+
+	signoffSLA := RenderUIReviewSignoffSLADashboard(pack)
+	signoffReminder := RenderUIReviewSignoffReminderQueue(pack)
+	signoffBreach := RenderUIReviewSignoffBreachBoard(pack)
+	escalationDashboard := RenderUIReviewEscalationDashboard(pack)
+	handoffLedger := RenderUIReviewEscalationHandoffLedger(pack)
+	ownerDigest := RenderUIReviewOwnerEscalationDigest(pack)
+
+	for _, tc := range []struct {
+		name      string
+		body      string
+		fragments []string
+	}{
+		{
+			name: "signoff sla",
+			body: signoffSLA,
+			fragments: []string{
+				"# UI Review Sign-off SLA Dashboard",
+				"- Sign-offs: 4",
+				"- Escalation owners: 4",
+				"- at-risk: 1",
+				"- met: 3",
+				"sig-run-detail-eng-lead: role=Eng Lead surface=wf-run-detail status=pending sla=at-risk requested_at=2026-03-12T11:00:00Z due_at=2026-03-15T18:00:00Z escalation_owner=engineering-director",
+			},
+		},
+		{
+			name: "signoff reminder",
+			body: signoffReminder,
+			fragments: []string{
+				"# UI Review Sign-off Reminder Queue",
+				"- Reminders: 1",
+				"- design-program-manager: reminders=1",
+				"rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk owner=design-program-manager channel=slack",
+			},
+		},
+		{
+			name: "signoff breach",
+			body: signoffBreach,
+			fragments: []string{
+				"# UI Review Sign-off Breach Board",
+				"- Breach items: 1",
+				"- engineering-director: 1",
+				"breach-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk escalation_owner=engineering-director",
+			},
+		},
+		{
+			name: "escalation dashboard",
+			body: escalationDashboard,
+			fragments: []string{
+				"# UI Review Escalation Dashboard",
+				"- Items: 2",
+				"- design-program-manager: blockers=1 signoffs=0 total=1",
+				"- engineering-director: blockers=0 signoffs=1 total=1",
+				"esc-sig-run-detail-eng-lead: owner=engineering-director type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending priority=at-risk current_owner=Eng Lead",
+			},
+		},
+		{
+			name: "handoff ledger",
+			body: handoffLedger,
+			fragments: []string{
+				"# UI Review Escalation Handoff Ledger",
+				"- Handoffs: 1",
+				"- design-critique: 1",
+				"handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z",
+				"from=product-experience to=Eng Lead channel=design-critique artifact=wf-run-detail#copy-v5",
+			},
+		},
+		{
+			name: "owner digest",
+			body: ownerDigest,
+			fragments: []string{
+				"# UI Review Owner Escalation Digest",
+				"- design-program-manager: blockers=1 signoffs=0 reminders=1 freezes=0 handoffs=0 total=2",
+				"digest-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending",
+			},
+		},
+	} {
+		for _, fragment := range tc.fragments {
+			if !strings.Contains(tc.body, fragment) {
+				t.Fatalf("%s: expected %q in report, got %s", tc.name, fragment, tc.body)
+			}
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{
