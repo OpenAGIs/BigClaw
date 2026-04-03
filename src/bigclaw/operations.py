@@ -157,7 +157,9 @@ class QueueControlCenter:
     bulk_retry_tasks: List[str] = field(default_factory=list)
     bulk_retry_blockers: Dict[str, str] = field(default_factory=dict)
     failure_attribution: Dict[str, List[str]] = field(default_factory=dict)
+    failure_attribution_counts: Dict[str, int] = field(default_factory=dict)
     manual_takeover_tasks: List[str] = field(default_factory=list)
+    manual_takeover_reasons: Dict[str, str] = field(default_factory=dict)
     actions: Dict[str, List] = field(default_factory=dict)
 
 
@@ -821,7 +823,9 @@ class OperationsAnalytics:
         bulk_retry_tasks: List[str] = []
         bulk_retry_blockers: Dict[str, str] = {}
         failure_attribution: Dict[str, List[str]] = {}
+        failure_attribution_counts: Dict[str, int] = {}
         manual_takeover_tasks: List[str] = []
+        manual_takeover_reasons: Dict[str, str] = {}
         actions: Dict[str, List[ConsoleAction]] = {}
 
         for task in queued_tasks:
@@ -829,12 +833,14 @@ class OperationsAnalytics:
             actionable_run = self._queue_actionable_run(task_runs)
             retry_blocker = self._queue_retry_blocker(actionable_run)
             requires_takeover = self._queue_requires_manual_takeover(actionable_run)
+            takeover_reason = self._queue_manual_takeover_reason(actionable_run)
 
             if actionable_run is not None:
                 attribution = self._queue_failure_attribution(actionable_run)
                 failure_attribution.setdefault(attribution, [])
                 if task.task_id not in failure_attribution[attribution]:
                     failure_attribution[attribution].append(task.task_id)
+                    failure_attribution_counts[attribution] = failure_attribution_counts.get(attribution, 0) + 1
 
             if retry_blocker:
                 bulk_retry_blockers[task.task_id] = retry_blocker
@@ -843,6 +849,7 @@ class OperationsAnalytics:
 
             if requires_takeover:
                 manual_takeover_tasks.append(task.task_id)
+                manual_takeover_reasons[task.task_id] = takeover_reason
 
             task_actions = build_console_actions(
                 task.task_id,
@@ -874,7 +881,9 @@ class OperationsAnalytics:
             bulk_retry_tasks=bulk_retry_tasks,
             bulk_retry_blockers=bulk_retry_blockers,
             failure_attribution=failure_attribution,
+            failure_attribution_counts=failure_attribution_counts,
             manual_takeover_tasks=manual_takeover_tasks,
+            manual_takeover_reasons=manual_takeover_reasons,
             actions=actions,
         )
 
@@ -1172,6 +1181,22 @@ class OperationsAnalytics:
         if status == "failed":
             return "unknown"
         return status
+
+    def _queue_manual_takeover_reason(self, run: Optional[dict]) -> str:
+        if run is None:
+            return "no actionable run is linked to the queued task"
+        if bool(run.get("manual_takeover_required")):
+            return "run policy explicitly requires manual takeover"
+        if int(run.get("retry_count", run.get("retry_attempts", 0)) or 0) >= 2:
+            return "retry budget exhausted and requires human ownership"
+        failure_category = self._queue_failure_category(run)
+        if failure_category == "repo-sync":
+            return "repo sync failures require human takeover before retry"
+        if failure_category == "approval":
+            return "approval workflow requires manual takeover before retry"
+        if str(run.get("status", "unknown")) == "needs-approval":
+            return "approval-blocked runs require manual takeover before retry"
+        return "human ownership is required before the next retry"
 
     def _queue_failure_category(self, run: dict) -> str:
         for key in ("failure_category", "error_category", "failure_reason"):
@@ -1507,14 +1532,17 @@ def render_queue_control_center(
     lines.extend(["", "## Failure Attribution", ""])
     if center.failure_attribution:
         for category, task_ids in sorted(center.failure_attribution.items()):
-            lines.append(f"- {category}: {', '.join(task_ids)}")
+            lines.append(
+                f"- {category}: count={center.failure_attribution_counts.get(category, len(task_ids))} tasks={', '.join(task_ids)}"
+            )
     else:
         lines.append("- None")
 
     lines.extend(["", "## Manual Takeover", ""])
     if center.manual_takeover_tasks:
         for task_id in center.manual_takeover_tasks:
-            lines.append(f"- {task_id}: Manual Takeover [manual-takeover]")
+            reason = center.manual_takeover_reasons.get(task_id, "manual takeover required")
+            lines.append(f"- {task_id}: Manual Takeover [manual-takeover] reason={reason}")
     else:
         lines.append("- None")
 

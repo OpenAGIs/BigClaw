@@ -626,7 +626,9 @@ def build_operations_api_contract(contract_id: str = "OPE-131", version: str = "
                     ExecutionField("bulk_retry_tasks", "string[]", required=False),
                     ExecutionField("bulk_retry_blockers", "map<string,string>", required=False),
                     ExecutionField("failure_attribution", "map<string,string[]>", required=False),
+                    ExecutionField("failure_attribution_counts", "map<string,int>", required=False),
                     ExecutionField("manual_takeover_tasks", "string[]", required=False),
+                    ExecutionField("manual_takeover_reasons", "map<string,string>", required=False),
                 ],
             ),
             ExecutionModel(

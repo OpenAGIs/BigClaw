@@ -299,7 +299,9 @@ def test_operations_api_contract_queue_control_model_includes_retry_attribution_
         ("bulk_retry_tasks", "string[]", False),
         ("bulk_retry_blockers", "map<string,string>", False),
         ("failure_attribution", "map<string,string[]>", False),
+        ("failure_attribution_counts", "map<string,int>", False),
         ("manual_takeover_tasks", "string[]", False),
+        ("manual_takeover_reasons", "map<string,string>", False),
     ]
 
 

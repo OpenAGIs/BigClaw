@@ -2,43 +2,29 @@
 
 ### Plan
 
-- Audit the current queue control center data model, renderer, and contract surface for issue-scoped changes only.
-- Add bulk retry state, failure attribution rollups, and manual takeover entry points to the queue control center.
-- Extend targeted control center tests to cover the new analytics and rendered output.
-- Run targeted validation commands, capture exact commands and results, then commit and push the branch.
+- Audit the queue control center model, builder, renderer, and targeted tests to keep the slice scoped to this issue.
+- Extend the queue control center with operator-facing batch retry readiness, failure attribution rollups, and manual takeover entry metadata.
+- Update targeted contract and rendering tests to lock the new behavior.
+- Run targeted validation, record exact commands and results, then commit and push the branch.
 
 ### Acceptance
 
-- Queue control center exposes batch retry readiness for blocked or failed queue work, including eligible task IDs and blocked reasons when a task cannot join the batch retry set.
-- Queue control center groups actionable failures into an attribution view so operators can distinguish approval, tool, repo sync, and unknown failure causes.
-- Queue control center surfaces a manual takeover entry point for tasks that should move from retry/escalation into human ownership.
-- Existing queue control center behavior remains intact for queue depth, priority/risk rollups, and per-task actions.
+- The queue control center distinguishes tasks eligible for batch retry from tasks blocked by approval, ownership, or takeover constraints.
+- The queue control center exposes failure attribution in a form operators can use to understand both grouped tasks and cause counts.
+- The queue control center exposes manual takeover entry points with clear reasons for each queued task that requires human ownership.
+- Existing queue control center and contract behavior stays intact outside the new retry, attribution, and takeover surfaces.
 
 ### Validation
 
-- `pytest tests/test_control_center.py`
-- If contract coverage changes: `pytest tests/test_execution_contract.py`
+- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py`
+- `python3 -m pytest tests/test_console_ia.py`
 
 ### Validation Results
 
-- `pytest tests/test_control_center.py` -> failed in workspace because `pytest` executable was unavailable: `zsh:1: command not found: pytest`
-- `python3 -m pytest tests/test_control_center.py` -> passed: `3 passed in 0.07s`
-- `python3 -m pytest tests/test_execution_contract.py` -> passed: `7 passed in 0.07s`
-- `python3 -m pytest tests/test_ui_review.py` -> passed: `28 passed in 0.21s`
-- `python3 -m pytest tests/test_console_ia.py` -> passed: `11 passed in 0.07s`
-- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_ui_review.py` -> passed: `38 passed in 0.09s`
-- `python3 -m pytest tests/test_operations.py` -> passed: `20 passed in 0.10s`
-- `python3 -m pytest tests/test_control_center.py` -> passed: `3 passed in 0.06s`
-- `python3 -m pytest tests/test_planning.py` -> passed: `14 passed in 0.07s`
-- `python3 -m pytest tests/test_control_center.py tests/test_operations.py` -> passed: `23 passed in 0.08s`
-- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_ui_review.py tests/test_console_ia.py tests/test_operations.py tests/test_planning.py` -> passed: `83 passed in 0.12s`
-- `python3 -m pytest tests/test_design_system.py` -> passed: `16 passed in 0.08s`
-- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_ui_review.py tests/test_console_ia.py tests/test_operations.py tests/test_planning.py` -> passed: `83 passed in 0.12s`
-- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_ui_review.py tests/test_console_ia.py tests/test_operations.py tests/test_planning.py tests/test_design_system.py` -> passed: `99 passed in 0.13s`
-- `python3 -m pytest tests/test_execution_contract.py` -> passed: `9 passed in 0.08s`
-- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_ui_review.py tests/test_console_ia.py tests/test_operations.py tests/test_planning.py tests/test_design_system.py` -> passed: `101 passed in 0.13s`
+- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py` -> passed: `13 passed in 0.10s`
+- `python3 -m pytest tests/test_console_ia.py` -> passed: `11 passed in 0.06s`
 
 ### Status
 
 - Branch: `bigclaw-182-control-center`
-- Commit resolution: use `git rev-parse HEAD` on `bigclaw-182-control-center` for the current pushed SHA.
+- Scope: queue control center batch retry, failure attribution, manual takeover
