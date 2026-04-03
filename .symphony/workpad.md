@@ -63,6 +63,34 @@
 ## Validation Results
 
 - Removed Python files:
+  - `src/bigclaw/models.py`
+- Added Go files:
+  - `bigclaw-go/internal/regression/python_inventory_models_cutover_test.go`
+- Updated files:
+  - `src/bigclaw/__init__.py`
+  - `bigclaw-go/internal/regression/python_inventory_test.go`
+- `PYTHONPATH=src python3 - <<'PY' ...`
+  - `Task`
+  - `Task`
+  - `bigclaw-go/internal/domain`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/observability.py src/bigclaw/operations.py src/bigclaw/reports.py src/bigclaw/runtime.py`
+  - no output
+- `cd bigclaw-go && go test ./internal/regression`
+  - `ok  	bigclaw-go/internal/regression	0.535s`
+- `find src/bigclaw -maxdepth 1 -name '*.py' | sort`
+  - `src/bigclaw/__init__.py`
+  - `src/bigclaw/observability.py`
+  - `src/bigclaw/operations.py`
+  - `src/bigclaw/reports.py`
+  - `src/bigclaw/runtime.py`
+- `find . -name '*.py' | sort | wc -l`
+  - `5`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
+  - no output
+
+## Validation Results
+
+- Removed Python files:
   - `src/bigclaw/evaluation.py`
 - Added Go files:
   - `bigclaw-go/internal/regression/python_inventory_evaluation_cutover_test.go`
