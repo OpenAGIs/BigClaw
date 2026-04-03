@@ -44,6 +44,11 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1168` keeps that sweep active on the current zero-`.py` branch
+baseline, revalidates the repo-wide count explicitly, and treats the Go
+entrypoints below as the only supported replacements for the retired Python
+assets.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`

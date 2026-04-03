@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`, `BIG-GO-1168`
 
 ## Current Go-Only Entrypoints
 
@@ -38,6 +38,21 @@ regression surface focuses on keeping the deletion state sticky.
 | --- | --- |
 | Benchmark soak/matrix/capacity helpers and their Python-side tests | `go run ./cmd/bigclawctl automation benchmark soak-local ...`, `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, `go run ./cmd/bigclawctl automation benchmark capacity-certification ...`, `go test ./cmd/bigclawctl -run TestAutomationBenchmarkCapacityCertificationBuildsReport` |
 | E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `./scripts/e2e/run_all.sh`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` |
+| Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
+| Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
+
+## BIG-GO-1168 Residual Sweep Coverage
+
+`BIG-GO-1168` keeps the same benchmark, e2e, migration, and root helper
+candidate set locked to zero physical Python files. This follow-up sweep
+revalidates the repository-wide `find . -name '*.py' | wc -l` baseline, records
+that the observed branch starts at zero, and keeps the Go-native operator
+commands below as the only supported path for the retired Python assets.
+
+| Residual sweep area | Supported replacement |
+| --- | --- |
+| Benchmark soak/matrix/capacity helpers and their Python-side tests | `go run ./cmd/bigclawctl automation benchmark soak-local ...`, `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` |
+| E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...`, `./scripts/e2e/run_all.sh` |
 | Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
 | Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
 

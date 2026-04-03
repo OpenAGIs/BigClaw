@@ -46,7 +46,15 @@ func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
 	}
 }
 
+func TestAutomationUsageListsBIGGO1168GoReplacements(t *testing.T) {
+	testAutomationUsageListsGoReplacements(t)
+}
+
 func TestAutomationUsageListsBIGGO1160GoReplacements(t *testing.T) {
+	testAutomationUsageListsGoReplacements(t)
+}
+
+func testAutomationUsageListsGoReplacements(t *testing.T) {
 	cases := []struct {
 		args    []string
 		needles []string
