@@ -301,7 +301,7 @@ func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
 		Capabilities:      []string{"ops-control", "saved-views"},
 		Evidence:          []string{"weekly-review", "validation-report"},
 		EvidenceLinks: []EvidenceLink{
-			{Label: "queue-control-center", Target: "src/bigclaw/operations.py", Capability: "ops-control", Note: "queue and approval command center"},
+			{Label: "queue-control-center", Target: "bigclaw-go/internal/product/dashboard_run_contract_test.go", Capability: "ops-control", Note: "queue and approval command center"},
 			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
 		},
 	}
@@ -461,10 +461,22 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	if _, ok := releaseTargets["bigclaw-go/internal/uireview/uireview_test.go"]; !ok {
 		t.Fatalf("missing Go-native review pack evidence target in %+v", releaseTargets)
 	}
+	for _, want := range []string{
+		"bigclaw-go/internal/designsystem/designsystem.go",
+		"bigclaw-go/internal/consoleia/consoleia.go",
+		"bigclaw-go/internal/uireview/uireview.go",
+	} {
+		if _, ok := releaseTargets[want]; !ok {
+			t.Fatalf("missing Go-native release-control evidence target %q in %+v", want, releaseTargets)
+		}
+	}
 	for target := range releaseTargets {
 		prefix, _, _ := strings.Cut(target, "/")
 		if prefix == "tests" {
 			t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
+		}
+		if target == "src/bigclaw/design_system.py" || target == "src/bigclaw/console_ia.py" || target == "src/bigclaw/ui_review.py" {
+			t.Fatalf("deleted Python release-control target still present in %+v", releaseTargets)
 		}
 	}
 }

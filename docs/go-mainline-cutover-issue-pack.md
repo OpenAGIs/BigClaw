@@ -130,7 +130,6 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/risk.py`
-- `src/bigclaw/governance.py`
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/audit_events.py`
 
@@ -145,7 +144,7 @@ Acceptance focus:
 - align policy runtime and audit payloads with the canonical Go domain shape
 
 Current repo progress:
-- `bigclaw-go/internal/governance/freeze.go` now owns the Go scope-freeze backlog board and governance audit surface migrated from `src/bigclaw/governance.py`
+- `bigclaw-go/internal/governance/freeze.go` now owns the Go scope-freeze backlog board and governance audit surface
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
@@ -391,7 +390,7 @@ tracker work.
 
 Python source:
 - `src/bigclaw/risk.py`
-- remaining active consumers of `src/bigclaw/governance.py`
+- remaining approval-policy compatibility references
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of `src/bigclaw/audit_events.py`
 
@@ -432,7 +431,6 @@ Python source:
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
-- `src/bigclaw/planning.py`
 
 Go ownership:
 - `bigclaw-go/internal/observability/*`
@@ -473,14 +471,14 @@ Historical planned state:
 ### 5. Port operator console and saved-view surfaces to Go
 
 Python source:
-- `src/bigclaw/console_ia.py`
-- `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:
 - `bigclaw-go/internal/product/console.go`
+- `bigclaw-go/internal/consoleia/consoleia.go`
+- `bigclaw-go/internal/designsystem/designsystem.go`
+- `bigclaw-go/internal/uireview/uireview.go`
 - `bigclaw-go/internal/api/v2.go`
 - `bigclaw-go/internal/api/server.go`
 - optional new `bigclaw-go/internal/product/views.go`

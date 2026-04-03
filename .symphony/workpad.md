@@ -1,4 +1,36 @@
-# BIG-GO-1096
+# BIG-GO-1107
+
+## Plan
+- confirm the lane-covered Python surface after the prior `tests/*.py` sweep and record the real remaining file list for this slice
+- migrate planning and regression references away from Go-replaced Python contract modules under `src/bigclaw`
+- delete the now-unreferenced Python contract modules for release-control and planning surfaces: `src/bigclaw/design_system.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/ui_review.py`, `src/bigclaw/planning.py`, and `src/bigclaw/governance.py`
+- add or tighten Go regression coverage so the removed Python modules stay absent and their Go replacements remain present
+- capture exact validation commands/results, verify repository `.py` count drops, then commit and push the scoped lane branch
+
+## Acceptance
+- lane-covered file list is explicit for the removed release-control/planning Python tranche
+- the change removes real Python assets rather than doc-only references
+- active planning/regression surfaces no longer point at the deleted Python modules
+- targeted validation records exact commands/results and `find . -name '*.py' | wc -l` is lower after the change
+
+## Validation
+- `find . -name '*.py' | sort`
+- `find src/bigclaw -maxdepth 1 -type f -name '*.py' | sort`
+- `rg -n "src/bigclaw/(design_system|console_ia|ui_review|planning|governance)\\.py" README.md docs/go-mainline-cutover-issue-pack.md bigclaw-go/internal/planning/planning.go src scripts`
+- `cd bigclaw-go && go test ./internal/planning ./internal/regression`
+- `find . -name '*.py' | wc -l`
+
+## Validation Results
+- lane-covered deleted files: `src/bigclaw/design_system.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/ui_review.py`, `src/bigclaw/planning.py`, `src/bigclaw/governance.py`
+- `find . -name '*.py' | sort` -> post-change worktree contains `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/deprecation.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/legacy_shim.py`, `src/bigclaw/models.py`, `src/bigclaw/observability.py`, `src/bigclaw/operations.py`, `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`, and `src/bigclaw/runtime.py`
+- `find src/bigclaw -maxdepth 1 -type f -name '*.py' | sort` -> same 12-file remaining Python surface under `src/bigclaw`
+- `rg -n "src/bigclaw/(design_system|console_ia|ui_review|planning|governance)\\.py" README.md docs/go-mainline-cutover-issue-pack.md bigclaw-go/internal/planning/planning.go src scripts` -> exit `1` with no matches on active docs/planning surfaces
+- `cd bigclaw-go && go test ./internal/planning ./internal/regression` -> `ok   bigclaw-go/internal/planning 0.419s`; `ok   bigclaw-go/internal/regression 0.626s`
+- `find . -name '*.py' | wc -l` -> `12` (down from pre-change baseline `17`)
+
+## Archived Workpads
+
+### BIG-GO-1096
 
 ## Plan
 - inspect the remaining packaging-era Python package surface under `src/bigclaw`, with focus on `__main__.py`, `__init__.py`, and legacy compile-check references
