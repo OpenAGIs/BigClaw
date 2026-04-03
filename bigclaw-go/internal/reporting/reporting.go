@@ -193,6 +193,9 @@ type OrchestrationCanvas struct {
 }
 
 func (c OrchestrationCanvas) Recommendation() string {
+	if c.Collaboration != nil && c.Collaboration.OpenCommentCount() > 0 {
+		return "resolve-flow-comments"
+	}
 	if c.HandoffTeam == "security" {
 		return "review-security-takeover"
 	}
@@ -505,17 +508,21 @@ type CollaborationComment struct {
 	CommentID string   `json:"comment_id"`
 	Author    string   `json:"author"`
 	Body      string   `json:"body"`
+	CreatedAt string   `json:"created_at,omitempty"`
 	Mentions  []string `json:"mentions,omitempty"`
 	Anchor    string   `json:"anchor,omitempty"`
+	Status    string   `json:"status,omitempty"`
 }
 
 type DecisionNote struct {
-	DecisionID string   `json:"decision_id"`
-	Author     string   `json:"author"`
-	Outcome    string   `json:"outcome"`
-	Summary    string   `json:"summary"`
-	Mentions   []string `json:"mentions,omitempty"`
-	FollowUp   string   `json:"follow_up,omitempty"`
+	DecisionID        string   `json:"decision_id"`
+	Author            string   `json:"author"`
+	Outcome           string   `json:"outcome"`
+	Summary           string   `json:"summary"`
+	RecordedAt        string   `json:"recorded_at,omitempty"`
+	Mentions          []string `json:"mentions,omitempty"`
+	RelatedCommentIDs []string `json:"related_comment_ids,omitempty"`
+	FollowUp          string   `json:"follow_up,omitempty"`
 }
 
 type CollaborationThread struct {
@@ -523,6 +530,55 @@ type CollaborationThread struct {
 	TargetID  string                 `json:"target_id"`
 	Comments  []CollaborationComment `json:"comments,omitempty"`
 	Decisions []DecisionNote         `json:"decisions,omitempty"`
+}
+
+func (t CollaborationThread) ParticipantCount() int {
+	participants := map[string]struct{}{}
+	for _, comment := range t.Comments {
+		if comment.Author != "" {
+			participants[comment.Author] = struct{}{}
+		}
+	}
+	for _, decision := range t.Decisions {
+		if decision.Author != "" {
+			participants[decision.Author] = struct{}{}
+		}
+	}
+	return len(participants)
+}
+
+func (t CollaborationThread) MentionCount() int {
+	total := 0
+	for _, comment := range t.Comments {
+		total += len(comment.Mentions)
+	}
+	for _, decision := range t.Decisions {
+		total += len(decision.Mentions)
+	}
+	return total
+}
+
+func (t CollaborationThread) OpenCommentCount() int {
+	total := 0
+	for _, comment := range t.Comments {
+		if comment.Status != "resolved" {
+			total++
+		}
+	}
+	return total
+}
+
+func (t CollaborationThread) Recommendation() string {
+	if len(t.Decisions) > 0 {
+		return "share-latest-decision"
+	}
+	if t.OpenCommentCount() > 0 {
+		return "resolve-open-comments"
+	}
+	if len(t.Comments) > 0 {
+		return "monitor-collaboration"
+	}
+	return "no-collaboration-recorded"
 }
 
 type TriageFeedbackRecord struct {
@@ -1237,6 +1293,7 @@ func BuildOrchestrationCanvasFromLedgerEntry(entry map[string]any) Orchestration
 		canvas.HandoffStatus = firstNonEmpty(stringValue(handoffAudit["outcome"]), "none")
 		canvas.HandoffReason = stringValue(handoffDetails["reason"])
 	}
+	canvas.Collaboration = buildCollaborationThreadFromAudits(audits, "flow", canvas.RunID)
 	canvas.Actions = buildConsoleActions(
 		canvas.RunID,
 		handoffAudit == nil || canvas.HandoffStatus != "pending",
@@ -1370,6 +1427,7 @@ func RenderOrchestrationCanvas(canvas OrchestrationCanvas) string {
 	builder.WriteString(fmt.Sprintf("- Handoff Reason: %s\n\n", firstNonEmpty(canvas.HandoffReason, "none")))
 	builder.WriteString("## Actions\n\n")
 	builder.WriteString(fmt.Sprintf("- %s\n", RenderConsoleActions(canvas.Actions)))
+	builder.WriteString(renderCollaborationLines(canvas.Collaboration))
 	return builder.String() + "\n"
 }
 
@@ -2951,19 +3009,86 @@ func renderSharedViewContext(view *SharedViewContext) string {
 			builder.WriteString(fmt.Sprintf("- %s\n", message))
 		}
 	}
-	if view.Collaboration != nil {
-		builder.WriteString("\n## Collaboration\n\n")
-		builder.WriteString(fmt.Sprintf("- Surface: %s\n", view.Collaboration.Surface))
-		builder.WriteString(fmt.Sprintf("- Target ID: %s\n", view.Collaboration.TargetID))
-		for _, comment := range view.Collaboration.Comments {
-			builder.WriteString(fmt.Sprintf("- Comment %s by %s: %s\n", comment.CommentID, comment.Author, comment.Body))
+	builder.WriteString(renderCollaborationLines(view.Collaboration))
+	builder.WriteString("\n")
+	return builder.String()
+}
+
+func renderCollaborationLines(thread *CollaborationThread) string {
+	if thread == nil {
+		return ""
+	}
+	builder := strings.Builder{}
+	builder.WriteString("\n## Collaboration\n\n")
+	builder.WriteString(fmt.Sprintf("- Surface: %s\n", thread.Surface))
+	builder.WriteString(fmt.Sprintf("- Target: %s\n", thread.TargetID))
+	builder.WriteString(fmt.Sprintf("- Participants: %d\n", thread.ParticipantCount()))
+	builder.WriteString(fmt.Sprintf("- Comments: %d\n", len(thread.Comments)))
+	builder.WriteString(fmt.Sprintf("- Open Comments: %d\n", thread.OpenCommentCount()))
+	builder.WriteString(fmt.Sprintf("- Mentions: %d\n", thread.MentionCount()))
+	builder.WriteString(fmt.Sprintf("- Decision Notes: %d\n", len(thread.Decisions)))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n", thread.Recommendation()))
+	builder.WriteString("\n## Comments\n\n")
+	if len(thread.Comments) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, comment := range thread.Comments {
+			builder.WriteString(fmt.Sprintf("- %s: author=%s status=%s anchor=%s mentions=%s body=%s\n", comment.CommentID, comment.Author, firstNonEmpty(comment.Status, "open"), firstNonEmpty(comment.Anchor, "none"), joinOrNone(comment.Mentions), comment.Body))
 		}
-		for _, decision := range view.Collaboration.Decisions {
-			builder.WriteString(fmt.Sprintf("- Decision %s by %s outcome=%s: %s\n", decision.DecisionID, decision.Author, decision.Outcome, decision.Summary))
+	}
+	builder.WriteString("\n## Decision Notes\n\n")
+	if len(thread.Decisions) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, decision := range thread.Decisions {
+			builder.WriteString(fmt.Sprintf("- %s: outcome=%s author=%s mentions=%s related=%s summary=%s follow_up=%s\n", decision.DecisionID, decision.Outcome, decision.Author, joinOrNone(decision.Mentions), joinOrNone(decision.RelatedCommentIDs), decision.Summary, firstNonEmpty(decision.FollowUp, "none")))
 		}
 	}
 	builder.WriteString("\n")
 	return builder.String()
+}
+
+func buildCollaborationThreadFromAudits(audits []map[string]any, surface, targetID string) *CollaborationThread {
+	var comments []CollaborationComment
+	var decisions []DecisionNote
+	for _, audit := range audits {
+		details := mapFromAny(audit["details"])
+		if firstNonEmpty(stringValue(details["surface"]), "run") != surface {
+			continue
+		}
+		switch stringValue(audit["action"]) {
+		case "collaboration.comment":
+			comments = append(comments, CollaborationComment{
+				CommentID: firstNonEmpty(stringValue(details["comment_id"]), ""),
+				Author:    stringValue(audit["actor"]),
+				Body:      stringValue(details["body"]),
+				CreatedAt: stringValue(audit["timestamp"]),
+				Mentions:  stringListFromAny(details["mentions"]),
+				Anchor:    stringValue(details["anchor"]),
+				Status:    firstNonEmpty(stringValue(details["status"]), "open"),
+			})
+		case "collaboration.decision":
+			decisions = append(decisions, DecisionNote{
+				DecisionID:        firstNonEmpty(stringValue(details["decision_id"]), ""),
+				Author:            stringValue(audit["actor"]),
+				Outcome:           stringValue(audit["outcome"]),
+				Summary:           stringValue(details["summary"]),
+				RecordedAt:        stringValue(audit["timestamp"]),
+				Mentions:          stringListFromAny(details["mentions"]),
+				RelatedCommentIDs: stringListFromAny(details["related_comment_ids"]),
+				FollowUp:          stringValue(details["follow_up"]),
+			})
+		}
+	}
+	if len(comments) == 0 && len(decisions) == 0 {
+		return nil
+	}
+	return &CollaborationThread{
+		Surface:   surface,
+		TargetID:  targetID,
+		Comments:  comments,
+		Decisions: decisions,
+	}
 }
 
 func anyFloat(value any) float64 {

@@ -339,6 +339,84 @@ func TestRenderOrchestrationCanvasSummarizesPolicyAndHandoff(t *testing.T) {
 	}
 }
 
+func TestOrchestrationCanvasReconstructsFlowCollaborationFromLedger(t *testing.T) {
+	entry := map[string]any{
+		"run_id":  "run-flow-1",
+		"task_id": "OPE-113",
+		"audits": []any{
+			map[string]any{
+				"action":    "orchestration.plan",
+				"actor":     "scheduler",
+				"outcome":   "enabled",
+				"timestamp": "2026-03-11T11:00:00Z",
+				"details": map[string]any{
+					"collaboration_mode": "cross-functional",
+					"departments":        []any{"operations", "engineering"},
+					"approvals":          []any{},
+				},
+			},
+			map[string]any{
+				"action":    "orchestration.policy",
+				"actor":     "scheduler",
+				"outcome":   "enabled",
+				"timestamp": "2026-03-11T11:01:00Z",
+				"details": map[string]any{
+					"tier":               "premium",
+					"entitlement_status": "included",
+					"billing_model":      "premium-included",
+				},
+			},
+			map[string]any{
+				"action":    "collaboration.comment",
+				"actor":     "ops-lead",
+				"outcome":   "recorded",
+				"timestamp": "2026-03-11T11:02:00Z",
+				"details": map[string]any{
+					"surface":    "flow",
+					"comment_id": "flow-comment-1",
+					"body":       "Route @eng once the dashboard note is resolved.",
+					"mentions":   []any{"eng"},
+					"anchor":     "handoff-lane",
+					"status":     "open",
+				},
+			},
+			map[string]any{
+				"action":    "collaboration.decision",
+				"actor":     "eng-manager",
+				"outcome":   "accepted",
+				"timestamp": "2026-03-11T11:03:00Z",
+				"details": map[string]any{
+					"surface":             "flow",
+					"decision_id":         "flow-decision-1",
+					"summary":             "Engineering owns the next flow handoff.",
+					"mentions":            []any{"ops-lead"},
+					"related_comment_ids": []any{"flow-comment-1"},
+					"follow_up":           "Post in the shared channel after deploy.",
+				},
+			},
+		},
+	}
+
+	canvas := BuildOrchestrationCanvasFromLedgerEntry(entry)
+	report := RenderOrchestrationCanvas(canvas)
+
+	if canvas.Collaboration == nil {
+		t.Fatalf("expected collaboration thread on canvas: %+v", canvas)
+	}
+	if canvas.Recommendation() != "resolve-flow-comments" {
+		t.Fatalf("unexpected collaboration recommendation: %+v", canvas)
+	}
+	for _, fragment := range []string{
+		"## Collaboration",
+		"Route @eng once the dashboard note is resolved.",
+		"Engineering owns the next flow handoff.",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in collaboration canvas report, got %s", fragment, report)
+		}
+	}
+}
+
 func TestOrchestrationPortfolioRollsUpCanvasAndTakeoverState(t *testing.T) {
 	canvases := []OrchestrationCanvas{
 		{
