@@ -26,8 +26,9 @@
 - `python3 -m pytest tests/test_execution_contract.py` -> passed: `7 passed in 0.07s`
 - `python3 -m pytest tests/test_ui_review.py` -> passed: `28 passed in 0.21s`
 - `python3 -m pytest tests/test_console_ia.py` -> passed: `11 passed in 0.07s`
+- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_ui_review.py` -> passed: `38 passed in 0.09s`
 
 ### Status
 
 - Branch: `bigclaw-182-control-center`
-- Latest commit: `7b3ab444d0fdafb8b08b65cd24263eea801e7a74`
+- Latest commit: `a6e19fe1704358c2149df932b667a80eb5b0bd06`
