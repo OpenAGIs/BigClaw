@@ -2897,35 +2897,6 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "- Unresolved required signoff ids: sig-run-detail-eng-lead" in report
     assert "- Unresolved questions: oq-role-density, oq-alert-priority, oq-handoff-evidence" in report
 
-def test_render_ui_review_summary_persona_and_interaction_boards() -> None:
-    pack = build_big_4204_review_pack()
-
-    review_summary = render_ui_review_review_summary_board(pack)
-    persona_readiness = render_ui_review_persona_readiness_board(pack)
-    interaction_coverage = render_ui_review_interaction_coverage_board(pack)
-
-    assert "# UI Review Review Summary Board" in review_summary
-    assert "- Categories: 6" in review_summary
-    assert "summary-objectives: category=objectives total=4 blocked=1 at-risk=1 covered=2" in review_summary
-    assert "summary-personas: category=personas total=4 blocked=1 at-risk=1 ready=2" in review_summary
-    assert "summary-interactions: category=interactions total=4 covered=4 watch=0 missing=0" in review_summary
-    assert "summary-actions: category=actions total=8 queue=6 reminder=1 renewal=1" in review_summary
-    assert "# UI Review Persona Readiness Board" in persona_readiness
-    assert "- Personas: 4" in persona_readiness
-    assert "- Objectives: 4" in persona_readiness
-    assert "- blocked: 1" in persona_readiness
-    assert "- at-risk: 1" in persona_readiness
-    assert "- ready: 2" in persona_readiness
-    assert "persona-eng-lead: persona=Eng Lead readiness=blocked objectives=1 assignments=1 signoffs=1 open_questions=0 queue_items=1 blockers=1" in persona_readiness
-    assert "objective_ids=obj-run-detail-investigation surfaces=wf-run-detail queue_ids=queue-sig-run-detail-eng-lead blocker_ids=blk-run-detail-copy-final" in persona_readiness
-    assert "# UI Review Interaction Coverage Board" in interaction_coverage
-    assert "- Interactions: 4" in interaction_coverage
-    assert "- Surfaces: 4" in interaction_coverage
-    assert "- covered: 4" in interaction_coverage
-    assert "intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2" in interaction_coverage
-    assert "checklist=chk-triage-handoff-clarity,chk-triage-bulk-assign open_checklist=none trigger=Cross-Team Operator bulk-assigns a finding set or opens the handoff panel" in interaction_coverage
-
-
 def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     pack = build_big_4204_review_pack()
     audit = UIReviewPackAuditor().audit(pack)

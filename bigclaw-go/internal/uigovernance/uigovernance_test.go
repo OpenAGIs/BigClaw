@@ -1110,6 +1110,65 @@ func TestRenderUIReviewDependencyWorkloadAndDensityBoards(t *testing.T) {
 	}
 }
 
+func TestRenderUIReviewSummaryPersonaAndInteractionBoards(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+
+	reviewSummary := RenderUIReviewReviewSummaryBoard(pack)
+	personaReadiness := RenderUIReviewPersonaReadinessBoard(pack)
+	interactionCoverage := RenderUIReviewInteractionCoverageBoard(pack)
+
+	for _, tc := range []struct {
+		name      string
+		body      string
+		fragments []string
+	}{
+		{
+			name: "review summary",
+			body: reviewSummary,
+			fragments: []string{
+				"# UI Review Review Summary Board",
+				"- Categories: 6",
+				"summary-objectives: category=objectives total=4 blocked=1 at-risk=1 covered=2",
+				"summary-personas: category=personas total=4 blocked=1 at-risk=1 ready=2",
+				"summary-interactions: category=interactions total=4 covered=4 watch=0 missing=0",
+				"summary-actions: category=actions total=8 queue=6 reminder=1 renewal=1",
+			},
+		},
+		{
+			name: "persona readiness",
+			body: personaReadiness,
+			fragments: []string{
+				"# UI Review Persona Readiness Board",
+				"- Personas: 4",
+				"- Objectives: 4",
+				"- blocked: 1",
+				"- at-risk: 1",
+				"- ready: 2",
+				"persona-eng-lead: persona=Eng Lead readiness=blocked objectives=1 assignments=1 signoffs=1 open_questions=0 queue_items=1 blockers=1",
+				"objective_ids=obj-run-detail-investigation surfaces=wf-run-detail queue_ids=queue-sig-run-detail-eng-lead blocker_ids=blk-run-detail-copy-final",
+			},
+		},
+		{
+			name: "interaction coverage",
+			body: interactionCoverage,
+			fragments: []string{
+				"# UI Review Interaction Coverage Board",
+				"- Interactions: 4",
+				"- Surfaces: 4",
+				"- covered: 4",
+				"intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2",
+				"checklist=chk-triage-handoff-clarity,chk-triage-bulk-assign open_checklist=none trigger=Cross-Team Operator bulk-assigns a finding set or opens the handoff panel",
+			},
+		},
+	} {
+		for _, fragment := range tc.fragments {
+			if !strings.Contains(tc.body, fragment) {
+				t.Fatalf("%s: expected %q in report, got %s", tc.name, fragment, tc.body)
+			}
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{
