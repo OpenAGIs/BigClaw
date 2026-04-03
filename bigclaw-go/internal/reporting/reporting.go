@@ -1984,6 +1984,46 @@ func RenderPilotPortfolioReport(portfolio PilotPortfolio) string {
 	return builder.String() + "\n"
 }
 
+func RenderPilotScorecard(scorecard PilotScorecard) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Pilot Scorecard\n\n")
+	builder.WriteString(fmt.Sprintf("- Issue ID: %s\n", scorecard.IssueID))
+	builder.WriteString(fmt.Sprintf("- Customer: %s\n", scorecard.Customer))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", scorecard.Period))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n", scorecard.Recommendation()))
+	builder.WriteString(fmt.Sprintf("- Metrics Met: %d/%d\n", scorecard.MetricsMet(), len(scorecard.Metrics)))
+	builder.WriteString(fmt.Sprintf("- Monthly Net Value: %.2f\n", scorecard.MonthlyNetValue()))
+	builder.WriteString(fmt.Sprintf("- Annualized ROI: %.1f%%\n", scorecard.AnnualizedROI()))
+	if payback := scorecard.PaybackMonths(); payback == nil {
+		builder.WriteString("- Payback Months: n/a\n")
+	} else {
+		builder.WriteString(fmt.Sprintf("- Payback Months: %.1f\n", *payback))
+	}
+	if scorecard.BenchmarkScore != nil {
+		builder.WriteString(fmt.Sprintf("- Benchmark Score: %d\n", *scorecard.BenchmarkScore))
+	}
+	if scorecard.BenchmarkPassed != nil {
+		builder.WriteString(fmt.Sprintf("- Benchmark Passed: %t\n", *scorecard.BenchmarkPassed))
+	}
+	builder.WriteString("\n## KPI Progress\n\n")
+	if len(scorecard.Metrics) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String() + "\n"
+	}
+	for _, metric := range scorecard.Metrics {
+		comparator := ">="
+		if !metric.HigherIsBetter {
+			comparator = "<="
+		}
+		unitSuffix := ""
+		if metric.Unit != "" {
+			unitSuffix = " " + metric.Unit
+		}
+		builder.WriteString(fmt.Sprintf("- %s: baseline=%v%s current=%v%s target%s%v%s delta=%+.2f%s met=%t\n", metric.Name, metric.Baseline, unitSuffix, metric.Current, unitSuffix, comparator, metric.Target, unitSuffix, metric.Delta(), unitSuffix, metric.MetTarget()))
+	}
+	return builder.String() + "\n"
+}
+
 func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec) (WeeklyArtifacts, error) {
 	if err := os.MkdirAll(rootDir, 0o755); err != nil {
 		return WeeklyArtifacts{}, err

@@ -125,6 +125,72 @@ func TestRenderPilotPortfolioReportSummarizesCommercialReadiness(t *testing.T) {
 	}
 }
 
+func TestRenderPilotScorecardIncludesROIAndRecommendation(t *testing.T) {
+	benchmark := 96
+	passed := true
+	scorecard := PilotScorecard{
+		IssueID:  "OPE-60",
+		Customer: "Design Partner A",
+		Period:   "2026-Q2",
+		Metrics: []PilotMetric{
+			{Name: "Automation coverage", Baseline: 35, Current: 82, Target: 80, Unit: "%", HigherIsBetter: true},
+			{Name: "Manual review time", Baseline: 12, Current: 4, Target: 5, Unit: "h", HigherIsBetter: false},
+		},
+		MonthlyBenefit:     12000,
+		MonthlyCost:        2500,
+		ImplementationCost: 18000,
+		BenchmarkScore:     &benchmark,
+		BenchmarkPassed:    &passed,
+	}
+
+	content := RenderPilotScorecard(scorecard)
+
+	if scorecard.MetricsMet() != 2 {
+		t.Fatalf("unexpected metrics met: %+v", scorecard)
+	}
+	if scorecard.Recommendation() != "go" {
+		t.Fatalf("unexpected recommendation: %s", scorecard.Recommendation())
+	}
+	if payback := scorecard.PaybackMonths(); payback == nil || *payback != 1.9 {
+		t.Fatalf("unexpected payback months: %+v", payback)
+	}
+	for _, fragment := range []string{
+		"Annualized ROI: 200.0%",
+		"Recommendation: go",
+		"Benchmark Score: 96",
+		"Automation coverage",
+	} {
+		if !strings.Contains(content, fragment) {
+			t.Fatalf("expected %q in pilot scorecard report, got %s", fragment, content)
+		}
+	}
+}
+
+func TestPilotScorecardReturnsHoldWhenValueIsNegative(t *testing.T) {
+	passed := false
+	scorecard := PilotScorecard{
+		IssueID:  "OPE-60",
+		Customer: "Design Partner B",
+		Period:   "2026-Q2",
+		Metrics: []PilotMetric{
+			{Name: "Backlog aging", Baseline: 5, Current: 7, Target: 4, Unit: "d", HigherIsBetter: false},
+		},
+		MonthlyBenefit:     1000,
+		MonthlyCost:        3000,
+		ImplementationCost: 12000,
+		BenchmarkPassed:    &passed,
+	}
+	if scorecard.MonthlyNetValue() != -2000 {
+		t.Fatalf("unexpected monthly net value: %+v", scorecard)
+	}
+	if scorecard.PaybackMonths() != nil {
+		t.Fatalf("expected nil payback months: %+v", scorecard.PaybackMonths())
+	}
+	if scorecard.Recommendation() != "hold" {
+		t.Fatalf("unexpected recommendation: %s", scorecard.Recommendation())
+	}
+}
+
 func TestWriteReportWritesContentToDisk(t *testing.T) {
 	output := filepath.Join(t.TempDir(), "report.md")
 	content := RenderIssueValidationReport("BIG-101", "v0.1", "sandbox", "pass")
