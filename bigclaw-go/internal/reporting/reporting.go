@@ -2,6 +2,7 @@ package reporting
 
 import (
 	"fmt"
+	"html"
 	"math"
 	"os"
 	"path/filepath"
@@ -169,25 +170,26 @@ func (q TakeoverQueue) Recommendation() string {
 }
 
 type OrchestrationCanvas struct {
-	TaskID             string          `json:"task_id"`
-	RunID              string          `json:"run_id"`
-	CollaborationMode  string          `json:"collaboration_mode"`
-	Departments        []string        `json:"departments,omitempty"`
-	RequiredApprovals  []string        `json:"required_approvals,omitempty"`
-	Tier               string          `json:"tier"`
-	UpgradeRequired    bool            `json:"upgrade_required"`
-	BlockedDepartments []string        `json:"blocked_departments,omitempty"`
-	HandoffTeam        string          `json:"handoff_team"`
-	HandoffStatus      string          `json:"handoff_status"`
-	HandoffReason      string          `json:"handoff_reason,omitempty"`
-	ActiveTools        []string        `json:"active_tools,omitempty"`
-	EntitlementStatus  string          `json:"entitlement_status"`
-	BillingModel       string          `json:"billing_model"`
-	EstimatedCostUSD   float64         `json:"estimated_cost_usd"`
-	IncludedUsageUnits int             `json:"included_usage_units"`
-	OverageUsageUnits  int             `json:"overage_usage_units"`
-	OverageCostUSD     float64         `json:"overage_cost_usd"`
-	Actions            []ConsoleAction `json:"actions,omitempty"`
+	TaskID             string               `json:"task_id"`
+	RunID              string               `json:"run_id"`
+	CollaborationMode  string               `json:"collaboration_mode"`
+	Departments        []string             `json:"departments,omitempty"`
+	RequiredApprovals  []string             `json:"required_approvals,omitempty"`
+	Tier               string               `json:"tier"`
+	UpgradeRequired    bool                 `json:"upgrade_required"`
+	BlockedDepartments []string             `json:"blocked_departments,omitempty"`
+	HandoffTeam        string               `json:"handoff_team"`
+	HandoffStatus      string               `json:"handoff_status"`
+	HandoffReason      string               `json:"handoff_reason,omitempty"`
+	ActiveTools        []string             `json:"active_tools,omitempty"`
+	EntitlementStatus  string               `json:"entitlement_status"`
+	BillingModel       string               `json:"billing_model"`
+	EstimatedCostUSD   float64              `json:"estimated_cost_usd"`
+	IncludedUsageUnits int                  `json:"included_usage_units"`
+	OverageUsageUnits  int                  `json:"overage_usage_units"`
+	OverageCostUSD     float64              `json:"overage_cost_usd"`
+	Actions            []ConsoleAction      `json:"actions,omitempty"`
+	Collaboration      *CollaborationThread `json:"collaboration,omitempty"`
 }
 
 func (c OrchestrationCanvas) Recommendation() string {
@@ -204,6 +206,208 @@ func (c OrchestrationCanvas) Recommendation() string {
 		return "continue-cross-team-execution"
 	}
 	return "monitor"
+}
+
+type OrchestrationPortfolio struct {
+	Name          string                `json:"name"`
+	Period        string                `json:"period"`
+	Canvases      []OrchestrationCanvas `json:"canvases,omitempty"`
+	TakeoverQueue *TakeoverQueue        `json:"takeover_queue,omitempty"`
+}
+
+func (p OrchestrationPortfolio) TotalRuns() int {
+	return len(p.Canvases)
+}
+
+func (p OrchestrationPortfolio) CollaborationModes() map[string]int {
+	counts := map[string]int{}
+	for _, canvas := range p.Canvases {
+		counts[canvas.CollaborationMode]++
+	}
+	return counts
+}
+
+func (p OrchestrationPortfolio) TierCounts() map[string]int {
+	counts := map[string]int{}
+	for _, canvas := range p.Canvases {
+		counts[canvas.Tier]++
+	}
+	return counts
+}
+
+func (p OrchestrationPortfolio) UpgradeRequiredCount() int {
+	total := 0
+	for _, canvas := range p.Canvases {
+		if canvas.UpgradeRequired {
+			total++
+		}
+	}
+	return total
+}
+
+func (p OrchestrationPortfolio) ActiveHandoffs() int {
+	total := 0
+	for _, canvas := range p.Canvases {
+		if canvas.HandoffTeam != "none" {
+			total++
+		}
+	}
+	return total
+}
+
+func (p OrchestrationPortfolio) EntitlementCounts() map[string]int {
+	counts := map[string]int{}
+	for _, canvas := range p.Canvases {
+		counts[canvas.EntitlementStatus]++
+	}
+	return counts
+}
+
+func (p OrchestrationPortfolio) BillingModelCounts() map[string]int {
+	counts := map[string]int{}
+	for _, canvas := range p.Canvases {
+		counts[canvas.BillingModel]++
+	}
+	return counts
+}
+
+func (p OrchestrationPortfolio) TotalEstimatedCostUSD() float64 {
+	total := 0.0
+	for _, canvas := range p.Canvases {
+		total += canvas.EstimatedCostUSD
+	}
+	return math.Round(total*100) / 100
+}
+
+func (p OrchestrationPortfolio) TotalOverageCostUSD() float64 {
+	total := 0.0
+	for _, canvas := range p.Canvases {
+		total += canvas.OverageCostUSD
+	}
+	return math.Round(total*100) / 100
+}
+
+func (p OrchestrationPortfolio) Recommendation() string {
+	if p.TakeoverQueue != nil && p.TakeoverQueue.Recommendation() == "expedite-security-review" {
+		return "stabilize-security-takeovers"
+	}
+	if p.UpgradeRequiredCount() > 0 {
+		return "close-entitlement-gaps"
+	}
+	if p.ActiveHandoffs() > 0 {
+		return "manage-cross-team-flow"
+	}
+	return "monitor"
+}
+
+type BillingRunCharge struct {
+	RunID               string   `json:"run_id"`
+	TaskID              string   `json:"task_id"`
+	BillingModel        string   `json:"billing_model"`
+	EntitlementStatus   string   `json:"entitlement_status"`
+	EstimatedCostUSD    float64  `json:"estimated_cost_usd"`
+	IncludedUsageUnits  int      `json:"included_usage_units"`
+	OverageUsageUnits   int      `json:"overage_usage_units"`
+	OverageCostUSD      float64  `json:"overage_cost_usd"`
+	BlockedCapabilities []string `json:"blocked_capabilities,omitempty"`
+	HandoffTeam         string   `json:"handoff_team"`
+	Recommendation      string   `json:"recommendation"`
+}
+
+type BillingEntitlementsPage struct {
+	WorkspaceName string             `json:"workspace_name"`
+	PlanName      string             `json:"plan_name"`
+	BillingPeriod string             `json:"billing_period"`
+	Charges       []BillingRunCharge `json:"charges,omitempty"`
+}
+
+func (p BillingEntitlementsPage) RunCount() int {
+	return len(p.Charges)
+}
+
+func (p BillingEntitlementsPage) TotalEstimatedCostUSD() float64 {
+	total := 0.0
+	for _, charge := range p.Charges {
+		total += charge.EstimatedCostUSD
+	}
+	return math.Round(total*100) / 100
+}
+
+func (p BillingEntitlementsPage) TotalIncludedUsageUnits() int {
+	total := 0
+	for _, charge := range p.Charges {
+		total += charge.IncludedUsageUnits
+	}
+	return total
+}
+
+func (p BillingEntitlementsPage) TotalOverageUsageUnits() int {
+	total := 0
+	for _, charge := range p.Charges {
+		total += charge.OverageUsageUnits
+	}
+	return total
+}
+
+func (p BillingEntitlementsPage) TotalOverageCostUSD() float64 {
+	total := 0.0
+	for _, charge := range p.Charges {
+		total += charge.OverageCostUSD
+	}
+	return math.Round(total*100) / 100
+}
+
+func (p BillingEntitlementsPage) UpgradeRequiredCount() int {
+	total := 0
+	for _, charge := range p.Charges {
+		if charge.EntitlementStatus == "upgrade-required" {
+			total++
+		}
+	}
+	return total
+}
+
+func (p BillingEntitlementsPage) BillingModelCounts() map[string]int {
+	counts := map[string]int{}
+	for _, charge := range p.Charges {
+		counts[charge.BillingModel]++
+	}
+	return counts
+}
+
+func (p BillingEntitlementsPage) EntitlementCounts() map[string]int {
+	counts := map[string]int{}
+	for _, charge := range p.Charges {
+		counts[charge.EntitlementStatus]++
+	}
+	return counts
+}
+
+func (p BillingEntitlementsPage) BlockedCapabilities() []string {
+	var capabilities []string
+	for _, charge := range p.Charges {
+		for _, capability := range charge.BlockedCapabilities {
+			if !containsString(capabilities, capability) {
+				capabilities = append(capabilities, capability)
+			}
+		}
+	}
+	return capabilities
+}
+
+func (p BillingEntitlementsPage) Recommendation() string {
+	if p.UpgradeRequiredCount() > 0 {
+		return "resolve-plan-gaps"
+	}
+	if p.TotalOverageCostUSD() > 0 {
+		return "optimize-billed-usage"
+	}
+	for _, charge := range p.Charges {
+		if charge.HandoffTeam != "none" {
+			return "monitor-shared-capacity"
+		}
+	}
+	return "healthy"
 }
 
 type TriageCluster struct {
@@ -1167,6 +1371,165 @@ func RenderOrchestrationCanvas(canvas OrchestrationCanvas) string {
 	builder.WriteString("## Actions\n\n")
 	builder.WriteString(fmt.Sprintf("- %s\n", RenderConsoleActions(canvas.Actions)))
 	return builder.String() + "\n"
+}
+
+func BuildOrchestrationPortfolio(canvases []OrchestrationCanvas, name, period string, takeoverQueue *TakeoverQueue) OrchestrationPortfolio {
+	return OrchestrationPortfolio{
+		Name:          name,
+		Period:        period,
+		Canvases:      append([]OrchestrationCanvas(nil), canvases...),
+		TakeoverQueue: takeoverQueue,
+	}
+}
+
+func BuildOrchestrationPortfolioFromLedger(entries []map[string]any, name, period string) OrchestrationPortfolio {
+	canvases := make([]OrchestrationCanvas, 0, len(entries))
+	for _, entry := range entries {
+		if latestNamedAudit(mapsFromAny(entry["audits"]), "orchestration.plan") == nil {
+			continue
+		}
+		canvases = append(canvases, BuildOrchestrationCanvasFromLedgerEntry(entry))
+	}
+	queue := BuildTakeoverQueueFromLedger(entries, period)
+	queue.Name = name + " Takeovers"
+	return BuildOrchestrationPortfolio(canvases, name, period, &queue)
+}
+
+func BuildBillingEntitlementsPage(portfolio OrchestrationPortfolio, workspaceName, planName, billingPeriod string) BillingEntitlementsPage {
+	charges := make([]BillingRunCharge, 0, len(portfolio.Canvases))
+	for _, canvas := range portfolio.Canvases {
+		charges = append(charges, BillingRunCharge{
+			RunID:               canvas.RunID,
+			TaskID:              canvas.TaskID,
+			BillingModel:        canvas.BillingModel,
+			EntitlementStatus:   canvas.EntitlementStatus,
+			EstimatedCostUSD:    canvas.EstimatedCostUSD,
+			IncludedUsageUnits:  canvas.IncludedUsageUnits,
+			OverageUsageUnits:   canvas.OverageUsageUnits,
+			OverageCostUSD:      canvas.OverageCostUSD,
+			BlockedCapabilities: append([]string(nil), canvas.BlockedDepartments...),
+			HandoffTeam:         canvas.HandoffTeam,
+			Recommendation:      canvas.Recommendation(),
+		})
+	}
+	if billingPeriod == "" {
+		billingPeriod = portfolio.Period
+	}
+	return BillingEntitlementsPage{
+		WorkspaceName: workspaceName,
+		PlanName:      planName,
+		BillingPeriod: billingPeriod,
+		Charges:       charges,
+	}
+}
+
+func BuildBillingEntitlementsPageFromLedger(entries []map[string]any, workspaceName, planName, billingPeriod string) BillingEntitlementsPage {
+	portfolio := BuildOrchestrationPortfolioFromLedger(entries, workspaceName, billingPeriod)
+	return BuildBillingEntitlementsPage(portfolio, workspaceName, planName, billingPeriod)
+}
+
+func RenderOrchestrationPortfolioReport(portfolio OrchestrationPortfolio, view *SharedViewContext) string {
+	takeoverSummary := "none"
+	if portfolio.TakeoverQueue != nil {
+		takeoverSummary = fmt.Sprintf("pending=%d recommendation=%s", portfolio.TakeoverQueue.PendingRequests(), portfolio.TakeoverQueue.Recommendation())
+	}
+	builder := strings.Builder{}
+	builder.WriteString("# Orchestration Portfolio Report\n\n")
+	builder.WriteString(fmt.Sprintf("- Portfolio: %s\n", portfolio.Name))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", portfolio.Period))
+	builder.WriteString(fmt.Sprintf("- Total Runs: %d\n", portfolio.TotalRuns()))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n", portfolio.Recommendation()))
+	builder.WriteString(fmt.Sprintf("- Collaboration Mix: %s\n", renderSortedCounts(portfolio.CollaborationModes(), " ")))
+	builder.WriteString(fmt.Sprintf("- Tier Mix: %s\n", renderSortedCounts(portfolio.TierCounts(), " ")))
+	builder.WriteString(fmt.Sprintf("- Entitlement Mix: %s\n", renderSortedCounts(portfolio.EntitlementCounts(), " ")))
+	builder.WriteString(fmt.Sprintf("- Billing Models: %s\n", renderSortedCounts(portfolio.BillingModelCounts(), " ")))
+	builder.WriteString(fmt.Sprintf("- Upgrade Required Count: %d\n", portfolio.UpgradeRequiredCount()))
+	builder.WriteString(fmt.Sprintf("- Estimated Cost (USD): %.2f\n", portfolio.TotalEstimatedCostUSD()))
+	builder.WriteString(fmt.Sprintf("- Overage Cost (USD): %.2f\n", portfolio.TotalOverageCostUSD()))
+	builder.WriteString(fmt.Sprintf("- Active Handoffs: %d\n", portfolio.ActiveHandoffs()))
+	builder.WriteString(fmt.Sprintf("- Takeover Queue: %s\n\n", takeoverSummary))
+	builder.WriteString("## Runs\n\n")
+	builder.WriteString(renderSharedViewContext(view))
+	if len(portfolio.Canvases) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String() + "\n"
+	}
+	for _, canvas := range portfolio.Canvases {
+		collaborationSummary := "comments=0 decisions=0"
+		if canvas.Collaboration != nil {
+			collaborationSummary = fmt.Sprintf("comments=%d decisions=%d", len(canvas.Collaboration.Comments), len(canvas.Collaboration.Decisions))
+		}
+		builder.WriteString(fmt.Sprintf("- %s: mode=%s tier=%s entitlement=%s billing=%s estimated_cost_usd=%.2f overage_cost_usd=%.2f upgrade_required=%t handoff=%s collaboration=%s recommendation=%s actions=%s\n", canvas.RunID, canvas.CollaborationMode, canvas.Tier, canvas.EntitlementStatus, canvas.BillingModel, canvas.EstimatedCostUSD, canvas.OverageCostUSD, canvas.UpgradeRequired, canvas.HandoffTeam, collaborationSummary, canvas.Recommendation(), RenderConsoleActions(actionsOrDefault(canvas))))
+	}
+	return builder.String() + "\n"
+}
+
+func RenderBillingEntitlementsReport(page BillingEntitlementsPage, view *SharedViewContext) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Billing & Entitlements Report\n\n")
+	builder.WriteString(fmt.Sprintf("- Workspace: %s\n", page.WorkspaceName))
+	builder.WriteString(fmt.Sprintf("- Plan: %s\n", page.PlanName))
+	builder.WriteString(fmt.Sprintf("- Billing Period: %s\n", page.BillingPeriod))
+	builder.WriteString(fmt.Sprintf("- Runs: %d\n", page.RunCount()))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n", page.Recommendation()))
+	builder.WriteString(fmt.Sprintf("- Entitlement Mix: %s\n", renderSortedCounts(page.EntitlementCounts(), " ")))
+	builder.WriteString(fmt.Sprintf("- Billing Models: %s\n", renderSortedCounts(page.BillingModelCounts(), " ")))
+	builder.WriteString(fmt.Sprintf("- Included Usage Units: %d\n", page.TotalIncludedUsageUnits()))
+	builder.WriteString(fmt.Sprintf("- Overage Usage Units: %d\n", page.TotalOverageUsageUnits()))
+	builder.WriteString(fmt.Sprintf("- Estimated Cost (USD): %.2f\n", page.TotalEstimatedCostUSD()))
+	builder.WriteString(fmt.Sprintf("- Overage Cost (USD): %.2f\n", page.TotalOverageCostUSD()))
+	builder.WriteString(fmt.Sprintf("- Upgrade Required Count: %d\n", page.UpgradeRequiredCount()))
+	builder.WriteString(fmt.Sprintf("- Blocked Capabilities: %s\n\n", joinOrNone(page.BlockedCapabilities())))
+	builder.WriteString("## Charges\n\n")
+	builder.WriteString(renderSharedViewContext(view))
+	if len(page.Charges) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String() + "\n"
+	}
+	for _, charge := range page.Charges {
+		builder.WriteString(fmt.Sprintf("- %s: task=%s entitlement=%s billing=%s included_units=%d overage_units=%d estimated_cost_usd=%.2f overage_cost_usd=%.2f blocked=%s handoff=%s recommendation=%s\n", charge.RunID, charge.TaskID, charge.EntitlementStatus, charge.BillingModel, charge.IncludedUsageUnits, charge.OverageUsageUnits, charge.EstimatedCostUSD, charge.OverageCostUSD, joinOrNone(charge.BlockedCapabilities), charge.HandoffTeam, charge.Recommendation))
+	}
+	return builder.String() + "\n"
+}
+
+func RenderOrchestrationOverviewPage(portfolio OrchestrationPortfolio) string {
+	builder := strings.Builder{}
+	builder.WriteString("<!doctype html>\n<html lang=\"en\">\n<head>\n")
+	builder.WriteString("  <meta charset=\"utf-8\">\n")
+	builder.WriteString("  <title>Orchestration Overview · " + html.EscapeString(portfolio.Name) + "</title>\n")
+	builder.WriteString("</head>\n<body>\n")
+	builder.WriteString("  <h1>Orchestration Overview</h1>\n")
+	builder.WriteString("  <p>" + html.EscapeString(portfolio.Name) + " · " + html.EscapeString(portfolio.Period) + "</p>\n")
+	builder.WriteString("  <div><strong>Estimated Cost</strong> $" + fmt.Sprintf("%.2f", portfolio.TotalEstimatedCostUSD()) + "</div>\n")
+	if portfolio.TakeoverQueue != nil {
+		builder.WriteString("  <div>" + html.EscapeString(fmt.Sprintf("pending=%d recommendation=%s", portfolio.TakeoverQueue.PendingRequests(), portfolio.TakeoverQueue.Recommendation())) + "</div>\n")
+	}
+	builder.WriteString("  <ul>\n")
+	for _, canvas := range portfolio.Canvases {
+		builder.WriteString("    <li><strong>" + html.EscapeString(canvas.RunID) + "</strong> · mode=" + html.EscapeString(canvas.CollaborationMode) + " · tier=" + html.EscapeString(canvas.Tier) + " · entitlement=" + html.EscapeString(canvas.EntitlementStatus) + " · billing=" + html.EscapeString(canvas.BillingModel) + " · cost=$" + fmt.Sprintf("%.2f", canvas.EstimatedCostUSD) + " · handoff=" + html.EscapeString(canvas.HandoffTeam) + " · comments=0 · decisions=0 · recommendation=" + html.EscapeString(canvas.Recommendation()) + " · actions=" + html.EscapeString(RenderConsoleActions(actionsOrDefault(canvas))) + "</li>\n")
+	}
+	builder.WriteString("  </ul>\n</body>\n</html>\n")
+	return builder.String()
+}
+
+func RenderBillingEntitlementsPage(page BillingEntitlementsPage) string {
+	builder := strings.Builder{}
+	builder.WriteString("<!doctype html>\n<html lang=\"en\">\n<head>\n")
+	builder.WriteString("  <meta charset=\"utf-8\">\n")
+	builder.WriteString("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
+	builder.WriteString("  <title>Billing & Entitlements · " + html.EscapeString(page.WorkspaceName) + "</title>\n")
+	builder.WriteString("</head>\n<body>\n")
+	builder.WriteString("  <main>\n")
+	builder.WriteString("    <section>\n")
+	builder.WriteString("      <h1>" + html.EscapeString(page.WorkspaceName) + "</h1>\n")
+	builder.WriteString("      <p>" + html.EscapeString(page.PlanName) + " plan for " + html.EscapeString(page.BillingPeriod) + ". Recommendation: " + html.EscapeString(page.Recommendation()) + ".</p>\n")
+	builder.WriteString("    </section>\n")
+	builder.WriteString("    <section>\n      <h2>Charge Feed</h2>\n      <ul>\n")
+	for _, charge := range page.Charges {
+		builder.WriteString("        <li><strong>" + html.EscapeString(charge.RunID) + "</strong> · task=" + html.EscapeString(charge.TaskID) + " · entitlement=" + html.EscapeString(charge.EntitlementStatus) + " · billing=" + html.EscapeString(charge.BillingModel) + " · included=" + strconv.Itoa(charge.IncludedUsageUnits) + " · overage=" + strconv.Itoa(charge.OverageUsageUnits) + " · cost=$" + fmt.Sprintf("%.2f", charge.EstimatedCostUSD) + " · recommendation=" + html.EscapeString(charge.Recommendation) + "</li>\n")
+	}
+	builder.WriteString("      </ul>\n    </section>\n  </main>\n</body>\n</html>\n")
+	return builder.String()
 }
 
 func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec) (WeeklyArtifacts, error) {
@@ -2291,6 +2654,34 @@ func RenderConsoleActions(actions []ConsoleAction) string {
 		rendered = append(rendered, detail)
 	}
 	return strings.Join(rendered, "; ")
+}
+
+func actionsOrDefault(canvas OrchestrationCanvas) []ConsoleAction {
+	if len(canvas.Actions) > 0 {
+		return canvas.Actions
+	}
+	return buildConsoleActions(
+		canvas.RunID,
+		canvas.HandoffStatus != "pending",
+		canvas.HandoffStatus != "completed",
+		canvas.UpgradeRequired,
+	)
+}
+
+func renderSortedCounts(counts map[string]int, separator string) string {
+	if len(counts) == 0 {
+		return "none"
+	}
+	keys := make([]string, 0, len(counts))
+	for key := range counts {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, fmt.Sprintf("%s=%d", key, counts[key]))
+	}
+	return strings.Join(parts, separator)
 }
 
 func disabledReason(enabled bool, reason string) string {
