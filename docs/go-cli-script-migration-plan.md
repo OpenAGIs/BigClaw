@@ -29,6 +29,9 @@ retired the final root Python workspace shims.
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
 - retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- `bigclaw-go/scripts/migration/shadow_matrix.py` -> `bigclawctl automation migration shadow-matrix`
+- `bigclaw-go/scripts/migration/live_shadow_scorecard.py` -> `bigclawctl automation migration live-shadow-scorecard`
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` -> `bigclawctl automation migration export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
@@ -95,6 +98,9 @@ operator docs and external automation references finish the direct cutover to
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-matrix --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help`
 
 ## Regression Surface
 
