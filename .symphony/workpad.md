@@ -1,59 +1,103 @@
-# BIG-GO-1155
+# BIG-GO-1151
 
 ## Plan
+- confirm which `src/bigclaw/*.py` candidates from this lane still lack explicit regression coverage and record the pre-change Python-file baseline
+- replace the stale active workpad section with this issue's scoped plan before any code changes
+- add one scoped regression tranche that locks the uncovered residual top-level Python modules to absent-on-disk and asserts the active Go replacement coverage for the same domains
+- validate the new tranche plus repo-wide Python-count checks and a Go CLI compatibility path
+- record exact commands and outcomes, then commit and push the scoped change set
+
+## Acceptance
+- the lane candidate Python module paths are explicitly covered and remain absent from disk:
+- `src/bigclaw/__init__.py`
+- `src/bigclaw/__main__.py`
+- `src/bigclaw/audit_events.py`
+- `src/bigclaw/collaboration.py`
+- `src/bigclaw/console_ia.py`
+- `src/bigclaw/design_system.py`
+- `src/bigclaw/evaluation.py`
+- `src/bigclaw/run_detail.py`
+- `src/bigclaw/runtime.py`
+- Go replacements or compatibility surfaces are asserted for this lane through concrete repo-native files under `bigclaw-go/internal` and `bigclaw-go/cmd`
+- the repository remains at zero live `.py` files in the worktree
+- exact validation commands and outcomes are recorded below
+- residual risk explicitly notes that this workspace already starts at a zero-`.py` baseline, so the count cannot numerically decrease further here
+
+## Validation
+- `find . -name '*.py' | wc -l`
+- `git ls-tree -r --name-only HEAD | rg '\.py$'`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17`
+- `bash scripts/ops/bigclawctl automation migration live-shadow-scorecard --help`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- `git status --short`
+
+## Validation Results
+- `find . -name '*.py' | wc -l` -> `0`
+- `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17` -> `ok  	bigclaw-go/internal/regression	1.486s`
+- `bash scripts/ops/bigclawctl automation migration live-shadow-scorecard --help` -> exit `0`; printed `usage: bigclawctl automation migration live-shadow-scorecard [flags]`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
+- `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go`
+
+## Residual Risk
+- the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the candidate lane; it cannot make the Python file count numerically lower from the current baseline
+
+## Archived Workpads
+### BIG-GO-1155
+
+#### Plan
 - Verify the repository-wide Python file count.
 - Check whether the issue's candidate Python paths still exist in this workspace.
 - Confirm the available Go or shell execution paths in the affected script areas.
 - Keep the change scoped to this issue by recording the audit and validation only if the lane is already complete.
 - Commit and push the resulting issue-scoped artifact.
 
-## Acceptance
+#### Acceptance
 - Real Python files in this lane are covered or confirmed absent.
 - Go replacement or compatible non-Python execution paths are verified for the relevant script areas.
 - `find . -name '*.py' | wc -l` is confirmed and does not regress.
 
-## Validation
+#### Validation
 - `find . -name '*.py' | wc -l`
 - `find bigclaw-go/scripts -maxdepth 3 -type f | sort`
 - `find scripts -maxdepth 2 -type f | sort`
 - `go test ./internal/regression -run 'TestTopLevelModulePurgeTranche16|TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'`
 - `git status --short`
 
-## Notes
+#### Notes
 - Initial inspection in this workspace shows zero Python files repository-wide.
 - The candidate Python files listed in the issue are not present in this checkout.
 - Existing compatible paths observed during inspection:
-  - `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`
-  - `bigclaw-go/scripts/e2e/run_all.sh`
-  - `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
-  - `bigclaw-go/scripts/e2e/ray_smoke.sh`
-  - `bigclaw-go/scripts/benchmark/run_suite.sh`
-  - `scripts/dev_bootstrap.sh`
+- `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`
+- `bigclaw-go/scripts/e2e/run_all.sh`
+- `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
+- `bigclaw-go/scripts/e2e/ray_smoke.sh`
+- `bigclaw-go/scripts/benchmark/run_suite.sh`
+- `scripts/dev_bootstrap.sh`
 
-## Results
+#### Results
 - `find . -name '*.py' | wc -l`
-  - Result: `0`
+- Result: `0`
 - `find bigclaw-go/scripts -maxdepth 3 -type f | sort`
-  - Result:
-    - `bigclaw-go/scripts/benchmark/run_suite.sh`
-    - `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`
-    - `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
-    - `bigclaw-go/scripts/e2e/ray_smoke.sh`
-    - `bigclaw-go/scripts/e2e/run_all.sh`
+- Result:
+- `bigclaw-go/scripts/benchmark/run_suite.sh`
+- `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`
+- `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
+- `bigclaw-go/scripts/e2e/ray_smoke.sh`
+- `bigclaw-go/scripts/e2e/run_all.sh`
 - `find scripts -maxdepth 2 -type f | sort`
-  - Result:
-    - `scripts/dev_bootstrap.sh`
-    - `scripts/ops/bigclaw-issue`
-    - `scripts/ops/bigclaw-panel`
-    - `scripts/ops/bigclaw-symphony`
-    - `scripts/ops/bigclawctl`
+- Result:
+- `scripts/dev_bootstrap.sh`
+- `scripts/ops/bigclaw-issue`
+- `scripts/ops/bigclaw-panel`
+- `scripts/ops/bigclaw-symphony`
+- `scripts/ops/bigclawctl`
 - `go test ./internal/regression -run 'TestTopLevelModulePurgeTranche16|TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'`
-  - Result: `ok  	bigclaw-go/internal/regression	3.211s`
+- Result: `ok  	bigclaw-go/internal/regression	3.211s`
 
-## Residual Risk
+#### Residual Risk
 - The repository already starts from a zero-`.py` baseline in this workspace, so this issue can only document and validate the completed lane state; it cannot make the Python file count numerically lower from the current baseline.
 
-## Archived Workpads
 ### BIG-GO-1153
 
 #### Plan
@@ -73,6 +117,59 @@
 - `scripts/ops/symphony_workspace_bootstrap.py`
 - `scripts/ops/symphony_workspace_validate.py`
 - Go replacements or compatibility entrypoints are asserted for this lane through concrete files and docs under `bigclaw-go/cmd`, `bigclaw-go/internal`, `scripts/ops`, `scripts/dev_bootstrap.sh`, `docs/go-cli-script-migration-plan.md`, and `README.md`
+
+### BIG-GO-1142
+
+#### Plan
+- confirm the lane-owned `tests/*.py` candidate list against the actual worktree and record the pre-change Python-file baseline
+- replace the stale active workpad section with this issue's scoped plan before any code changes
+- add a regression tranche that locks the retired Python test paths to absent-on-disk and asserts the active Go replacement coverage for the same domains
+- validate the new tranche plus repo-wide Python-count checks and a live Go compatibility path
+- record exact commands and outcomes, then commit and push the scoped change set
+
+#### Acceptance
+- the lane candidate Python test paths are explicitly covered and remain absent from disk:
+- `tests/conftest.py`
+- `tests/test_audit_events.py`
+- `tests/test_connectors.py`
+- `tests/test_console_ia.py`
+- `tests/test_control_center.py`
+- `tests/test_cost_control.py`
+- `tests/test_cross_process_coordination_surface.py`
+- `tests/test_dashboard_run_contract.py`
+- `tests/test_design_system.py`
+- `tests/test_dsl.py`
+- `tests/test_evaluation.py`
+- `tests/test_event_bus.py`
+- `tests/test_execution_contract.py`
+- `tests/test_execution_flow.py`
+- `tests/test_followup_digests.py`
+- `tests/test_github_sync.py`
+- `tests/test_governance.py`
+- `tests/test_issue_archive.py`
+- `tests/test_live_shadow_bundle.py`
+- `tests/test_live_shadow_scorecard.py`
+- `tests/test_mapping.py`
+- `tests/test_memory.py`
+- `tests/test_models.py`
+- `tests/test_observability.py`
+- `tests/test_operations.py`
+- `tests/test_orchestration.py`
+- `tests/test_parallel_refill.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_pilot.py`
+- `tests/test_planning.py`
+- `tests/test_queue.py`
+- `tests/test_repo_board.py`
+- `tests/test_repo_collaboration.py`
+- `tests/test_repo_gateway.py`
+- `tests/test_repo_governance.py`
+- `tests/test_repo_links.py`
+- `tests/test_repo_registry.py`
+- `tests/test_repo_rollout.py`
+- `tests/test_repo_triage.py`
+- `tests/test_reports.py`
+- Go replacements or compatibility surfaces are asserted for this lane through concrete repo-native files under `bigclaw-go/internal`, `bigclaw-go/cmd`, and `docs/reports`
 - the repository remains at zero live `.py` files in the worktree
 - exact validation commands and outcomes are recorded below
 - residual risk explicitly notes that this workspace already starts at a zero-`.py` baseline, so the count cannot numerically decrease further here
