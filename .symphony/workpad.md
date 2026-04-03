@@ -82,6 +82,7 @@
 - follow-up commit: `939c8976` (`BIG-GO-1143: clean root script report surfaces`)
 - follow-up commit: `d590f2df` (`BIG-GO-1143: finalize workpad history`)
 - follow-up commit: `df2901b8` (`BIG-GO-1143: guard repo root script surfaces`)
+- follow-up commit: `498c1e8a` (`BIG-GO-1143: record external tracker blocker`)
 - first `git push -u origin feat/BIG-GO-1143-root-scripts-residual-sweep` attempt -> exit `128` with `LibreSSL SSL_connect: SSL_ERROR_SYSCALL`
 - second `git push -u origin feat/BIG-GO-1143-root-scripts-residual-sweep` attempt -> success; remote published the branch and returned the PR helper URL `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-1143-root-scripts-residual-sweep`
 - `git push` after `2d8f34b1` -> success
@@ -92,6 +93,7 @@
 - `git push` after `939c8976` -> success
 - `git push` after `d590f2df` -> success
 - `git push` after `df2901b8` -> success
+- `git push` after `498c1e8a` -> success
 
 ## Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the lane and confirm the Go replacements; it cannot make the Python file count numerically lower from the current baseline
