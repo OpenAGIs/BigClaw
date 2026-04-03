@@ -40,13 +40,7 @@ func TestRepoPythonInventoryStaysOnPackageOnlySurface(t *testing.T) {
 	}
 
 	sort.Strings(got)
-	want := []string{
-		"src/bigclaw/__init__.py",
-		"src/bigclaw/observability.py",
-		"src/bigclaw/operations.py",
-		"src/bigclaw/reports.py",
-		"src/bigclaw/runtime.py",
-	}
+	var want []string
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected Python inventory:\n got=%v\nwant=%v", got, want)
 	}
