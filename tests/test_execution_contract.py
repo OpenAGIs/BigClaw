@@ -284,6 +284,58 @@ def test_operations_api_contract_permissions_cover_read_and_action_paths() -> No
     assert operator.missing_permissions == ["operations.run.approve"]
 
 
+def test_operations_api_contract_queue_control_model_includes_retry_attribution_and_takeover_fields() -> None:
+    contract = build_operations_api_contract()
+
+    queue_model = next(model for model in contract.models if model.name == "QueueControlCenterResponse")
+
+    assert [(field.name, field.field_type, field.required) for field in queue_model.fields] == [
+        ("queue_depth", "int", True),
+        ("queued_by_priority", "map<string,int>", True),
+        ("queued_by_risk", "map<string,int>", True),
+        ("execution_media", "map<string,int>", True),
+        ("waiting_approval_runs", "int", True),
+        ("blocked_tasks", "string[]", False),
+        ("bulk_retry_tasks", "string[]", False),
+        ("bulk_retry_blockers", "map<string,string>", False),
+        ("failure_attribution", "map<string,string[]>", False),
+        ("manual_takeover_tasks", "string[]", False),
+    ]
+
+
+def test_operations_api_contract_exposes_bulk_retry_and_manual_takeover_actions() -> None:
+    contract = build_operations_api_contract()
+
+    bulk_retry_api = next(api for api in contract.apis if api.name == "bulk_retry_queue_tasks")
+    manual_takeover_api = next(api for api in contract.apis if api.name == "request_manual_queue_takeover")
+    bulk_request = next(model for model in contract.models if model.name == "QueueBulkActionRequest")
+    bulk_response = next(model for model in contract.models if model.name == "QueueBulkActionResponse")
+
+    assert bulk_retry_api.method == "POST"
+    assert bulk_retry_api.path == "/operations/queue/bulk-retry"
+    assert bulk_retry_api.request_model == "QueueBulkActionRequest"
+    assert bulk_retry_api.response_model == "QueueBulkActionResponse"
+    assert bulk_retry_api.emitted_audits == ["operations.queue.bulk_retry.requested"]
+    assert bulk_retry_api.emitted_metrics == ["operations.queue.bulk_retry.requests", "operations.queue.depth"]
+
+    assert manual_takeover_api.method == "POST"
+    assert manual_takeover_api.path == "/operations/queue/{task_id}/manual-takeover"
+    assert manual_takeover_api.request_model == "QueueActionRequest"
+    assert manual_takeover_api.response_model == "QueueActionResponse"
+    assert manual_takeover_api.emitted_audits == ["operations.queue.manual_takeover.requested"]
+    assert manual_takeover_api.emitted_metrics == ["operations.queue.manual_takeover.requests", "operations.queue.depth"]
+
+    assert [field.name for field in bulk_request.fields] == ["actor", "task_ids", "reason"]
+    assert [field.name for field in bulk_response.fields] == [
+        "action",
+        "accepted",
+        "requested_task_ids",
+        "accepted_task_ids",
+        "rejected_task_ids",
+        "queue_depth",
+    ]
+
+
 def test_execution_contract_audit_requires_persona_scope_and_escalation_metadata() -> None:
     contract = build_contract()
     contract.roles[0] = ExecutionRole(
