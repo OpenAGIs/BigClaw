@@ -1,27 +1,27 @@
-# BIG-GO-1160 Workpad
-
 ## Plan
-- Verify the current repository baseline for physical Python files and identify whether the candidate lane assets were already removed.
-- Inspect existing Go automation commands, regression tests, and migration docs for the benchmark, e2e, migration, and root script candidates listed in BIG-GO-1160.
-- Add scoped regression and migration-document coverage that pins the retired candidate `.py` entrypoints to concrete Go replacements and keeps the relevant script surfaces Python-free.
-- Run targeted validation commands, capture exact command lines and results, then commit and push the branch.
+
+1. Verify repository materialization and current Python file count for the candidate sweep area.
+2. Inspect the replacement Go script layout that covers the listed benchmark, e2e, migration, and root script lanes.
+3. Add a scoped regression guard and issue evidence so this lane preserves the zero-Python state.
+4. Run targeted validation commands and record exact commands plus results.
+5. Commit the scoped change and push branch `BIG-GO-1167`.
 
 ## Acceptance
-- Real Python candidate assets covered by this lane remain absent from the repository.
-- Go replacement or compatibility paths are explicitly validated for the covered benchmark, e2e, migration, and root helper surfaces.
-- `find . -name '*.py' | wc -l` is validated and documented from the current branch baseline.
+
+- Candidate sweep areas contain no real Python files.
+- Repository-level `find . -name '*.py' | wc -l` remains `0`.
+- Go replacement and compatibility paths for the affected script areas are verifiable from the current tree.
+- Added issue-scoped guard/evidence without broad unrelated edits.
 
 ## Validation
+
 - `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run 'Test(E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints|BIGGO1160CandidatePythonFilesRemainDeleted|BIGGO1160MigrationDocsListGoReplacements)$'`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|AutomationUsageListsBIGGO1160GoReplacements|RunAutomationRunTaskSmokeJSONOutput|AutomationSoakLocalWritesReport|AutomationShadowCompareDetectsMismatch|AutomationShadowMatrixBuildsCorpusCoverage|AutomationLiveShadowScorecardBuildsReport|AutomationExportLiveShadowBundleBuildsManifest|AutomationBenchmarkRunMatrixBuildsReport|AutomationBenchmarkCapacityCertificationBuildsReport|RunDevSmokeJSONOutput|RunCreateIssuesCreatesOnlyMissing)$'`
-- `git status --short`
+- `rg --files bigclaw-go/scripts scripts | rg '\\.py$'`
+- Targeted inspection of Go replacement files for benchmark, e2e, migration, and root script paths.
+- Targeted test command for the added regression guard.
 
-## Validation Results
+## Results
+
 - `find . -name '*.py' | wc -l` -> `0`
-- `cd bigclaw-go && go test ./internal/regression -run 'Test(E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints|BIGGO1160CandidatePythonFilesRemainDeleted|BIGGO1160MigrationDocsListGoReplacements)$'` -> `ok  	bigclaw-go/internal/regression	0.429s`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|AutomationUsageListsBIGGO1160GoReplacements|RunAutomationRunTaskSmokeJSONOutput|AutomationSoakLocalWritesReport|AutomationShadowCompareDetectsMismatch|AutomationShadowMatrixBuildsCorpusCoverage|AutomationLiveShadowScorecardBuildsReport|AutomationExportLiveShadowBundleBuildsManifest|AutomationBenchmarkRunMatrixBuildsReport|AutomationBenchmarkCapacityCertificationBuildsReport|RunDevSmokeJSONOutput|RunCreateIssuesCreatesOnlyMissing)$'` -> `ok  	bigclaw-go/cmd/bigclawctl	0.589s`
-- `git status --short` -> clean after commit
-
-## Residual Risk
-- The repository already starts from a zero-`.py` baseline in this workspace, so this issue can only harden deletion enforcement and Go replacement coverage for the lane; it cannot make the Python file count numerically lower from the current baseline.
+- `rg --files bigclaw-go/scripts scripts | rg '\\.py$'` -> exit `1` (no matches)
+- `cd bigclaw-go && go test ./internal/regression -run BIGGO1167` -> `ok  	bigclaw-go/internal/regression	0.481s`
