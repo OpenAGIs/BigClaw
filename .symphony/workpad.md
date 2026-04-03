@@ -16,9 +16,21 @@
 ## Validation
 - `find . -name '*.py' | wc -l`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160|TestBIGGO1164|TestE2EScriptDirectoryStaysPythonFree|TestRootScriptResidualSweep'`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
 - `git status --short`
 
 ## Notes
 - `origin/main` already materializes with `find . -name '*.py' | wc -l == 0`.
 - The exact candidate list in this issue is already covered by `bigclaw-go/internal/regression/big_go_1160_script_migration_test.go`.
 - This issue therefore lands incremental hardening for the zero-Python repository baseline instead of deleting files that no longer exist on the current branch.
+
+## Validation Results
+- `find . -name '*.py' | wc -l` -> `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160|TestBIGGO1164|TestE2EScriptDirectoryStaysPythonFree|TestRootScriptResidualSweep'` -> `ok  	bigclaw-go/internal/regression	0.470s`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help` -> exit `0`; printed the expected `shadow-compare` usage and flag surface
+- `git status --short` -> clean after commit/push
+
+## Git
+- Branch: `BIG-GO-1164`
+- Commit: `b2bac9b8015610dd8051e67feffb2ab2476eca49`
+- Push: `git push -u origin BIG-GO-1164` -> success
