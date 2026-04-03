@@ -7,21 +7,28 @@ import (
 	"testing"
 )
 
-func TestE2EScriptDirectoryStaysPythonFree(t *testing.T) {
+func TestAutomationScriptDirectoryStaysPythonFree(t *testing.T) {
 	repoRoot := repoRoot(t)
-	e2eDir := filepath.Join(repoRoot, "scripts", "e2e")
+	scriptsDir := filepath.Join(repoRoot, "scripts")
 
-	entries, err := os.ReadDir(e2eDir)
+	err := filepath.WalkDir(scriptsDir, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(d.Name(), ".py") {
+			relPath, err := filepath.Rel(repoRoot, path)
+			if err != nil {
+				return err
+			}
+			t.Fatalf("expected no Python helper in bigclaw-go/scripts, found %s", filepath.ToSlash(relPath))
+		}
+		return nil
+	})
 	if err != nil {
-		t.Fatalf("read e2e script directory: %v", err)
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		if strings.HasSuffix(entry.Name(), ".py") {
-			t.Fatalf("expected no Python helper in scripts/e2e, found %s", entry.Name())
-		}
+		t.Fatalf("walk bigclaw-go/scripts: %v", err)
 	}
 }
 
@@ -35,6 +42,8 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 		"`./scripts/e2e/run_all.sh`",
 		"`./scripts/e2e/kubernetes_smoke.sh`",
 		"`./scripts/e2e/ray_smoke.sh`",
+		"`go run ./cmd/bigclawctl automation benchmark soak-local|run-matrix|capacity-certification ...`",
+		"`go run ./cmd/bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle ...`",
 	}
 	for _, needle := range required {
 		if !strings.Contains(contents, needle) {
@@ -53,6 +62,14 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 		"bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py",
 		"bigclaw-go/scripts/e2e/external_store_validation.py",
 		"bigclaw-go/scripts/e2e/multi_node_shared_queue.py",
+		"bigclaw-go/scripts/benchmark/soak_local.py",
+		"bigclaw-go/scripts/benchmark/run_matrix.py",
+		"bigclaw-go/scripts/benchmark/capacity_certification.py",
+		"bigclaw-go/scripts/migration/shadow_compare.py",
+		"bigclaw-go/scripts/migration/shadow_matrix.py",
+		"bigclaw-go/scripts/migration/live_shadow_scorecard.py",
+		"bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+		"Continue the remaining non-e2e script migrations in follow-up batches",
 	}
 	for _, needle := range disallowed {
 		if strings.Contains(contents, needle) {
