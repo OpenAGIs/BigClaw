@@ -22,3 +22,8 @@ jobs:
         run: bash scripts/ops/bigclawctl legacy-python compile-check --json
       - name: Verify Go GitHub Sync Entrypoint
         run: bash scripts/ops/bigclawctl github-sync --help >/dev/null
+      - name: Verify Go E2E Automation Entrypoints
+        run: |
+          cd bigclaw-go
+          go run ./cmd/bigclawctl automation e2e run-task-smoke --help >/dev/null
+          go run ./cmd/bigclawctl automation e2e export-validation-bundle --help >/dev/null

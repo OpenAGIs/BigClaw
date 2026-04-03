@@ -68,7 +68,20 @@ Notes:
 - GitHub sync is no longer exposed through a Python wrapper; use
   `bash scripts/ops/bigclawctl github-sync ...`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
-  `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e export-validation-bundle ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e continuation-scorecard ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e continuation-policy-gate ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e mixed-workload-matrix ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e cross-process-coordination-surface ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation e2e external-store-validation ...`,
+  and `go run ./bigclaw-go/cmd/bigclawctl automation e2e multi-node-shared-queue ...`
+  are the supported e2e automation entrypoints for the tranche-2 Go replacement.
+- `./bigclaw-go/scripts/e2e/run_all.sh`, `./bigclaw-go/scripts/e2e/kubernetes_smoke.sh`, and
+  `./bigclaw-go/scripts/e2e/ray_smoke.sh` are the retained shell wrappers over those Go e2e
+  commands.
+- `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark capacity-certification ...`,
   and `go run ./bigclaw-go/cmd/bigclawctl automation migration shadow-compare ...`

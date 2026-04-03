@@ -41,22 +41,38 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 			t.Fatalf("docs/go-cli-script-migration.md missing active entrypoint %q", needle)
 		}
 	}
+}
 
-	disallowed := []string{
-		"bigclaw-go/scripts/e2e/run_task_smoke.py",
-		"bigclaw-go/scripts/e2e/export_validation_bundle.py",
-		"bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py",
-		"bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py",
-		"bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py",
-		"bigclaw-go/scripts/e2e/mixed_workload_matrix.py",
-		"bigclaw-go/scripts/e2e/cross_process_coordination_surface.py",
-		"bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py",
-		"bigclaw-go/scripts/e2e/external_store_validation.py",
-		"bigclaw-go/scripts/e2e/multi_node_shared_queue.py",
+func TestRepoManagedEntrypointsDoNotReferenceRemovedE2EPythonHelpers(t *testing.T) {
+	repoRoot := repoRoot(t)
+
+	paths := []string{
+		"README.md",
+		"workflow.md",
+		".github/workflows/ci.yml",
+		".githooks/post-commit",
+		".githooks/post-rewrite",
+		"bigclaw-go/README.md",
+		"bigclaw-go/docs/go-cli-script-migration.md",
 	}
-	for _, needle := range disallowed {
-		if strings.Contains(contents, needle) {
-			t.Fatalf("docs/go-cli-script-migration.md should not reference removed Python helper %q", needle)
+	disallowed := []string{
+		"scripts/e2e/run_task_smoke.py",
+		"scripts/e2e/export_validation_bundle.py",
+		"scripts/e2e/validation_bundle_continuation_scorecard.py",
+		"scripts/e2e/validation_bundle_continuation_policy_gate.py",
+		"scripts/e2e/broker_failover_stub_matrix.py",
+		"scripts/e2e/mixed_workload_matrix.py",
+		"scripts/e2e/cross_process_coordination_surface.py",
+		"scripts/e2e/subscriber_takeover_fault_matrix.py",
+		"scripts/e2e/external_store_validation.py",
+		"scripts/e2e/multi_node_shared_queue.py",
+	}
+	for _, relativePath := range paths {
+		contents := readRepoFile(t, repoRoot, relativePath)
+		for _, needle := range disallowed {
+			if strings.Contains(contents, needle) {
+				t.Fatalf("%s should not reference removed Python helper %q", relativePath, needle)
+			}
 		}
 	}
 }
