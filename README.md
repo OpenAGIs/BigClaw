@@ -89,17 +89,17 @@ Python surface must be exercised, validate it directly from source:
 bash scripts/ops/bigclawctl legacy-python compile-check --json
 ```
 
-Or use the bootstrap helper to validate Go first and then run the remaining
-legacy Python shim check from the active environment without a repo-root
-packaging bootstrap:
+Or use the bootstrap helper to validate Go first and then run the retained
+Go-side legacy Python compatibility check without a repo-root packaging
+bootstrap:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
 That helper always runs the Go `bigclawctl dev-smoke` replacement first, then
-`cd bigclaw-go && go test ./internal/bootstrap`, and finally the remaining
-legacy Python shim compile-check when `python3` is available.
+`cd bigclaw-go && go test ./internal/bootstrap`, and finally the retained
+legacy Python compatibility compile-check.
 
 ## Go smoke verify
 
@@ -160,7 +160,7 @@ the Go-first operator entrypoint is `scripts/ops/bigclawctl`; retired root
 Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
 `scripts/ops/bigclawctl`.
 
-The remaining legacy Python compatibility shims under `src/bigclaw` are frozen
-for migration-only reference use. Active runtime development belongs in
+The repo no longer keeps active Python compatibility modules under
+`src/bigclaw`. Active runtime development belongs in
 `bigclaw-go/internal/*`; use `go run ./bigclaw-go/cmd/bigclawd` for the local
 server path.

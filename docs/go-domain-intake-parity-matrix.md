@@ -1,16 +1,20 @@
 # BigClaw Go Domain and Intake Parity Matrix
 
-This matrix captures the current `BIG-GOM-301` field and ownership split while the repo continues moving from the legacy Python surface to the Go-only mainline.
+This matrix captures the `BIG-GOM-301` domain/intake ownership split after the
+repo retired the legacy Python contract file and left Go as the only active
+mainline for this surface.
 
 ## Current status
 
-- `BigClaw` is not yet `100%` Go.
+- `BigClaw` is not yet `100%` Go, but the domain/intake contract file no longer
+  lives under `src/bigclaw`.
 - `BigClaw/bigclaw-go` is the only implementation mainline for new work.
-- The Python domain/intake/DSL layer is now partially ported into dedicated Go ownership areas instead of a monolithic `models.go`.
+- The former Python domain/intake/DSL layer is now owned by dedicated Go
+  packages instead of a monolithic compatibility file.
 
 ## Python to Go ownership
 
-### `src/bigclaw/models.py`
+### Retired `src/bigclaw/models.py`
 
 - `Task` -> `bigclaw-go/internal/domain/task.go`
   - canonical Go runtime task shape
@@ -59,7 +63,9 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - Python source-board status is intentionally separate from Go runtime execution state.
   - Source status lives in `bigclaw-go/internal/intake/status.go`.
   - Runtime task state remains in `bigclaw-go/internal/domain/task.go`.
-- Python `models.py` is being split by responsibility into existing Go package families rather than copied into a single compatibility file.
+- The retired Python `models.py` surface was split by responsibility into
+  existing Go package families rather than copied into a single compatibility
+  file.
 - New API surfaces for the migrated intake/definition layer live under:
   - `/v2/intake/connectors/...`
   - `/v2/intake/issues/map`
@@ -68,8 +74,9 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 
 ## Remaining gaps
 
-- Legacy Python modules under `src/bigclaw` still exist and are not yet fully retired.
-- Python tests under `BigClaw/tests` still remain as migration references.
+- The only remaining Python compatibility surface under `src/bigclaw` is the
+  legacy wrapper shim compile-checked by `bigclawctl legacy-python`.
+- Python tests under `BigClaw/tests` no longer exist in the active repo tree.
 - Follow-on `BIG-GOM-302` migration work has started in Go with:
   - `bigclaw-go/internal/governance/freeze.go`
   - `bigclaw-go/internal/contract/execution.go`
