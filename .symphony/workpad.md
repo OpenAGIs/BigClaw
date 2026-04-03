@@ -44,7 +44,10 @@ Results
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l && find . -name '*.py' | wc -l` -> `17` tracked `.py` files in `HEAD`; `1` `.py` file in the worktree after this sweep
 - `cd bigclaw-go && go test ./internal/planning ./internal/regression ./internal/legacyshim` -> passed (`ok   bigclaw-go/internal/planning`, `ok   bigclaw-go/internal/regression`, `ok   bigclaw-go/internal/legacyshim`)
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> passed with `status: ok`; checked file list only contained `/Users/openagi/code/bigclaw-workspaces/BIG-GO-1108/src/bigclaw/legacy_shim.py`
-- `git status --short` -> modified active docs/planning files, deleted 16 `src/bigclaw/*.py` assets, added `bigclaw-go/internal/regression/top_level_module_purge_tranche14_test.go`
+- `git status --short` after commit -> clean
+- `git rev-parse HEAD` -> `4442611e5405ca52f4d7cf70e967c0190b32adb1`
+- `git rev-parse origin/symphony/BIG-GO-1108` -> `4442611e5405ca52f4d7cf70e967c0190b32adb1`
+- `git log -1 --stat --oneline` -> `4442611e purge remaining legacy python modules`
 
 Residual risk
 - historical migration docs intentionally continue to mention retired Python paths as archived tranche inputs; this lane only corrected active guidance that still described them as live assets
