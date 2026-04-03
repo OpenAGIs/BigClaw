@@ -43,20 +43,20 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 	}
 
 	disallowed := []string{
-		"bigclaw-go/scripts/e2e/run_task_smoke.py",
-		"bigclaw-go/scripts/e2e/export_validation_bundle.py",
-		"bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py",
-		"bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py",
-		"bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py",
-		"bigclaw-go/scripts/e2e/mixed_workload_matrix.py",
-		"bigclaw-go/scripts/e2e/cross_process_coordination_surface.py",
-		"bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py",
-		"bigclaw-go/scripts/e2e/external_store_validation.py",
-		"bigclaw-go/scripts/e2e/multi_node_shared_queue.py",
+		"run_task_smoke.py",
+		"export_validation_bundle.py",
+		"validation_bundle_continuation_scorecard.py",
+		"validation_bundle_continuation_policy_gate.py",
+		"broker_failover_stub_matrix.py",
+		"mixed_workload_matrix.py",
+		"cross_process_coordination_surface.py",
+		"subscriber_takeover_fault_matrix.py",
+		"external_store_validation.py",
+		"multi_node_shared_queue.py",
 	}
 	for _, needle := range disallowed {
 		if strings.Contains(contents, needle) {
-			t.Fatalf("docs/go-cli-script-migration.md should not reference removed Python helper %q", needle)
+			t.Fatalf("docs/go-cli-script-migration.md should not reference removed Python helper name %q", needle)
 		}
 	}
 }

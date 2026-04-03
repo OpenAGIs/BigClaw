@@ -27,8 +27,25 @@ retired the final root Python workspace shims.
 ### `bigclaw-go/scripts/*` first automation batch
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
-- retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
+- retired `bigclaw-go/scripts/e2e/run_task_smoke.py`; use `bigclawctl automation e2e run-task-smoke`
+- retired `bigclaw-go/scripts/e2e/export_validation_bundle.py`; use `bigclawctl automation e2e export-validation-bundle`
+- retired `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`; use `bigclawctl automation e2e continuation-scorecard`
+- retired `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`; use `bigclawctl automation e2e continuation-policy-gate`
+- retired `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`; use `bigclawctl automation e2e broker-failover-stub-matrix`
+- retired `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`; use `bigclawctl automation e2e mixed-workload-matrix`
+- retired `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`; use `bigclawctl automation e2e cross-process-coordination-surface`
+- retired `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`; use `bigclawctl automation e2e subscriber-takeover-fault-matrix`
+- retired `bigclaw-go/scripts/e2e/external_store_validation.py`; use `bigclawctl automation e2e external-store-validation`
+- retired `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`; use `bigclawctl automation e2e multi-node-shared-queue`
+- retired benchmark Python helpers:
+- `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
+- `bigclaw-go/scripts/benchmark/run_matrix.py` -> `bigclawctl automation benchmark run-matrix`
+- `bigclaw-go/scripts/benchmark/capacity_certification.py` -> `bigclawctl automation benchmark capacity-certification`
+- retired migration Python helpers:
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+- `bigclaw-go/scripts/migration/shadow_matrix.py` -> `bigclawctl automation migration shadow-matrix`
+- `bigclaw-go/scripts/migration/live_shadow_scorecard.py` -> `bigclawctl automation migration live-shadow-scorecard`
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` -> `bigclawctl automation migration export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
