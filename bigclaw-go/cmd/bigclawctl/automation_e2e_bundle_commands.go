@@ -150,9 +150,22 @@ func runAutomationExportValidationBundleCommand(args []string) error {
 	if trim(*runID) == "" || trim(*bundleDir) == "" {
 		return errors.New("--run-id and --bundle-dir are required")
 	}
-	for _, required := range []string{*localReportPath, *localStdoutPath, *localStderrPath, *k8sReportPath, *k8sStdoutPath, *k8sStderrPath, *rayReportPath, *rayStdoutPath, *rayStderrPath} {
-		if trim(required) == "" {
-			return errors.New("all lane report/stdout/stderr paths are required")
+	for _, lane := range []struct {
+		enabled bool
+		name    string
+		paths   []string
+	}{
+		{enabled: *runLocal, name: "local", paths: []string{*localReportPath, *localStdoutPath, *localStderrPath}},
+		{enabled: *runKubernetes, name: "kubernetes", paths: []string{*k8sReportPath, *k8sStdoutPath, *k8sStderrPath}},
+		{enabled: *runRay, name: "ray", paths: []string{*rayReportPath, *rayStdoutPath, *rayStderrPath}},
+	} {
+		if !lane.enabled {
+			continue
+		}
+		for _, required := range lane.paths {
+			if trim(required) == "" {
+				return fmt.Errorf("%s lane report/stdout/stderr paths are required when enabled", lane.name)
+			}
 		}
 	}
 
@@ -895,21 +908,22 @@ func e2eBuildValidationMatrixEntry(name string, section, report map[string]any) 
 	executor := firstNonEmpty(task["required_executor"], name)
 	rootCause, _ := section["failure_root_cause"].(map[string]any)
 	return map[string]any{
-		"lane":                  e2eLaneAliases[name],
-		"executor":              executor,
-		"enabled":               automationBool(section["enabled"]),
-		"status":                firstNonEmpty(section["status"], "unknown"),
-		"task_id":               taskID,
-		"canonical_report_path": firstNonEmpty(section["canonical_report_path"]),
-		"bundle_report_path":    firstNonEmpty(section["bundle_report_path"]),
-		"latest_event_type":     firstNonEmpty(section["latest_event_type"]),
-		"routing_reason":        firstNonEmpty(section["routing_reason"]),
-		"root_cause_event_type": firstNonEmpty(rootCause["event_type"]),
-		"root_cause_location":   firstNonEmpty(rootCause["location"]),
-		"root_cause_message":    firstNonEmpty(rootCause["message"]),
-		"root_cause_event_id":   firstNonEmpty(rootCause["event_id"]),
-		"root_cause_timestamp":  firstNonEmpty(rootCause["timestamp"]),
-		"root_cause_status":     firstNonEmpty(rootCause["status"]),
+		"lane":                     e2eLaneAliases[name],
+		"executor":                 executor,
+		"enabled":                  automationBool(section["enabled"]),
+		"status":                   firstNonEmpty(section["status"], "unknown"),
+		"task_id":                  taskID,
+		"canonical_report_path":    firstNonEmpty(section["canonical_report_path"]),
+		"bundle_report_path":       firstNonEmpty(section["bundle_report_path"]),
+		"latest_event_type":        firstNonEmpty(section["latest_event_type"]),
+		"routing_reason":           firstNonEmpty(section["routing_reason"]),
+		"root_cause_event_type":    firstNonEmpty(rootCause["event_type"]),
+		"root_cause_location":      firstNonEmpty(rootCause["location"]),
+		"root_cause_location_kind": firstNonEmpty(rootCause["location_kind"]),
+		"root_cause_message":       firstNonEmpty(rootCause["message"]),
+		"root_cause_event_id":      firstNonEmpty(rootCause["event_id"]),
+		"root_cause_timestamp":     firstNonEmpty(rootCause["timestamp"]),
+		"root_cause_status":        firstNonEmpty(rootCause["status"]),
 	}
 }
 
@@ -927,15 +941,18 @@ func e2eBuildFailureRootCause(section, report map[string]any) map[string]any {
 	if len(causeEvent) == 0 && latestStatus != "" && latestStatus != "succeeded" {
 		causeEvent = latestEvent
 	}
-	location := firstNonEmpty(section["stderr_path"], section["service_log_path"], section["audit_log_path"], section["bundle_report_path"])
+	location, locationKind := e2eRootCauseLocation(section)
 	if len(causeEvent) == 0 {
 		return map[string]any{
-			"status":     "not_triggered",
-			"event_type": firstNonEmpty(latestEvent["type"]),
-			"message":    "",
-			"location":   location,
-			"event_id":   "",
-			"timestamp":  "",
+			"status":                "not_triggered",
+			"event_type":            firstNonEmpty(latestEvent["type"]),
+			"message":               "",
+			"location":              location,
+			"location_kind":         locationKind,
+			"bundle_report_path":    firstNonEmpty(section["bundle_report_path"]),
+			"canonical_report_path": firstNonEmpty(section["canonical_report_path"]),
+			"event_id":              "",
+			"timestamp":             "",
 		}
 	}
 	return map[string]any{
@@ -947,10 +964,30 @@ func e2eBuildFailureRootCause(section, report map[string]any) map[string]any {
 			report["error"],
 			report["failure_reason"],
 		),
-		"location":  location,
-		"event_id":  firstNonEmpty(causeEvent["id"]),
-		"timestamp": firstNonEmpty(causeEvent["timestamp"]),
+		"location":              location,
+		"location_kind":         locationKind,
+		"bundle_report_path":    firstNonEmpty(section["bundle_report_path"]),
+		"canonical_report_path": firstNonEmpty(section["canonical_report_path"]),
+		"event_id":              firstNonEmpty(causeEvent["id"]),
+		"timestamp":             firstNonEmpty(causeEvent["timestamp"]),
 	}
+}
+
+func e2eRootCauseLocation(section map[string]any) (string, string) {
+	for _, candidate := range []struct {
+		field string
+		kind  string
+	}{
+		{field: "stderr_path", kind: "stderr_log"},
+		{field: "service_log_path", kind: "service_log"},
+		{field: "audit_log_path", kind: "audit_log"},
+		{field: "bundle_report_path", kind: "bundle_report"},
+	} {
+		if value := firstNonEmpty(section[candidate.field]); value != "" {
+			return value, candidate.kind
+		}
+	}
+	return "", ""
 }
 
 func e2eWriteParallelEvidenceBundle(root, bundleDir string, summary map[string]any) (map[string]any, error) {
@@ -1084,7 +1121,7 @@ func e2eRenderParallelEvidenceBundle(report map[string]any) string {
 		for _, raw := range rows {
 			row, _ := raw.(map[string]any)
 			lines = append(lines, fmt.Sprintf("- Lane `%s` executor=`%s` status=`%s` enabled=`%v` report=`%s`", row["lane"], row["executor"], row["status"], row["enabled"], row["bundle_report_path"]))
-			lines = append(lines, fmt.Sprintf("- Lane `%s` root cause: event=`%s` location=`%s` message=`%s`", row["lane"], firstNonEmpty(row["root_cause_event_type"], "not_triggered"), firstNonEmpty(row["root_cause_location"], "n/a"), firstNonEmpty(row["root_cause_message"], "")))
+			lines = append(lines, fmt.Sprintf("- Lane `%s` root cause: event=`%s` location=`%s` kind=`%s` message=`%s`", row["lane"], firstNonEmpty(row["root_cause_event_type"], "not_triggered"), firstNonEmpty(row["root_cause_location"], "n/a"), firstNonEmpty(row["root_cause_location_kind"], "n/a"), firstNonEmpty(row["root_cause_message"], "")))
 		}
 		lines = append(lines, "")
 	}
@@ -1106,7 +1143,7 @@ func e2eRenderParallelEvidenceBundle(report map[string]any) string {
 			if stringValue(lane["canonical_report_path"]) != "" {
 				lines = append(lines, fmt.Sprintf("- Canonical report: `%s`", lane["canonical_report_path"]))
 			}
-			lines = append(lines, fmt.Sprintf("- Failure root cause: status=`%s` event=`%s` location=`%s`", firstNonEmpty(rootCause["status"], "unknown"), firstNonEmpty(rootCause["event_type"], "not_triggered"), firstNonEmpty(rootCause["location"], "n/a")))
+			lines = append(lines, fmt.Sprintf("- Failure root cause: status=`%s` event=`%s` location=`%s` kind=`%s`", firstNonEmpty(rootCause["status"], "unknown"), firstNonEmpty(rootCause["event_type"], "not_triggered"), firstNonEmpty(rootCause["location"], "n/a"), firstNonEmpty(rootCause["location_kind"], "n/a")))
 			if stringValue(rootCause["message"]) != "" {
 				lines = append(lines, fmt.Sprintf("- Failure detail: `%s`", rootCause["message"]))
 			}
@@ -1225,7 +1262,7 @@ func e2eRenderIndex(summary map[string]any, recentRuns []any, continuationGate m
 		}
 		rootCause, _ := section["failure_root_cause"].(map[string]any)
 		if len(rootCause) > 0 {
-			lines = append(lines, fmt.Sprintf("- Failure root cause: status=`%s` event=`%s` location=`%s`", firstNonEmpty(rootCause["status"], "unknown"), firstNonEmpty(rootCause["event_type"], "unknown"), firstNonEmpty(rootCause["location"], "n/a")))
+			lines = append(lines, fmt.Sprintf("- Failure root cause: status=`%s` event=`%s` location=`%s` kind=`%s`", firstNonEmpty(rootCause["status"], "unknown"), firstNonEmpty(rootCause["event_type"], "unknown"), firstNonEmpty(rootCause["location"], "n/a"), firstNonEmpty(rootCause["location_kind"], "n/a")))
 			if stringValue(rootCause["message"]) != "" {
 				lines = append(lines, fmt.Sprintf("- Failure detail: `%s`", rootCause["message"]))
 			}
@@ -1238,7 +1275,7 @@ func e2eRenderIndex(summary map[string]any, recentRuns []any, continuationGate m
 			row, _ := raw.(map[string]any)
 			lines = append(lines, fmt.Sprintf("- Lane `%s` executor=`%s` status=`%s` enabled=`%v` report=`%s`", row["lane"], row["executor"], row["status"], row["enabled"], row["bundle_report_path"]))
 			if stringValue(row["root_cause_event_type"]) != "" || stringValue(row["root_cause_message"]) != "" {
-				lines = append(lines, fmt.Sprintf("- Lane `%s` root cause: event=`%s` location=`%s` message=`%s`", row["lane"], row["root_cause_event_type"], row["root_cause_location"], row["root_cause_message"]))
+				lines = append(lines, fmt.Sprintf("- Lane `%s` root cause: event=`%s` location=`%s` kind=`%s` message=`%s`", row["lane"], row["root_cause_event_type"], row["root_cause_location"], firstNonEmpty(row["root_cause_location_kind"], "n/a"), row["root_cause_message"]))
 			}
 		}
 		lines = append(lines, "")

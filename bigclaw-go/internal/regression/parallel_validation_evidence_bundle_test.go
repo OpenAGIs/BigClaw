@@ -28,12 +28,13 @@ func TestParallelValidationEvidenceBundleStaysAligned(t *testing.T) {
 			Executors             []string `json:"executors"`
 		} `json:"evidence_inputs"`
 		ValidationMatrix []struct {
-			Lane               string `json:"lane"`
-			Executor           string `json:"executor"`
-			Status             string `json:"status"`
-			BundleReportPath   string `json:"bundle_report_path"`
-			RootCauseEventType string `json:"root_cause_event_type"`
-			RootCauseLocation  string `json:"root_cause_location"`
+			Lane                  string `json:"lane"`
+			Executor              string `json:"executor"`
+			Status                string `json:"status"`
+			BundleReportPath      string `json:"bundle_report_path"`
+			RootCauseEventType    string `json:"root_cause_event_type"`
+			RootCauseLocation     string `json:"root_cause_location"`
+			RootCauseLocationKind string `json:"root_cause_location_kind"`
 		} `json:"validation_matrix"`
 		Lanes []struct {
 			Lane             string `json:"lane"`
@@ -41,9 +42,10 @@ func TestParallelValidationEvidenceBundleStaysAligned(t *testing.T) {
 			Status           string `json:"status"`
 			BundleReportPath string `json:"bundle_report_path"`
 			FailureRootCause struct {
-				Status    string `json:"status"`
-				EventType string `json:"event_type"`
-				Location  string `json:"location"`
+				Status       string `json:"status"`
+				EventType    string `json:"event_type"`
+				Location     string `json:"location"`
+				LocationKind string `json:"location_kind"`
 			} `json:"failure_root_cause"`
 		} `json:"lanes"`
 	}
@@ -65,11 +67,11 @@ func TestParallelValidationEvidenceBundleStaysAligned(t *testing.T) {
 		t.Fatalf("unexpected validation matrix lanes: %+v", report.ValidationMatrix)
 	}
 	for _, row := range report.ValidationMatrix {
-		if row.Status != "succeeded" || row.BundleReportPath == "" || row.RootCauseLocation == "" {
+		if row.Status != "succeeded" || row.BundleReportPath == "" || row.RootCauseLocation == "" || row.RootCauseLocationKind != "stderr_log" {
 			t.Fatalf("unexpected validation matrix row: %+v", row)
 		}
 	}
-	if len(report.Lanes) != 3 || report.Lanes[1].FailureRootCause.Status != "not_triggered" || report.Lanes[1].FailureRootCause.Location == "" {
+	if len(report.Lanes) != 3 || report.Lanes[1].FailureRootCause.Status != "not_triggered" || report.Lanes[1].FailureRootCause.Location == "" || report.Lanes[1].FailureRootCause.LocationKind != "stderr_log" {
 		t.Fatalf("unexpected lane details: %+v", report.Lanes)
 	}
 
@@ -78,6 +80,7 @@ func TestParallelValidationEvidenceBundleStaysAligned(t *testing.T) {
 		"# Parallel Validation Evidence Bundle",
 		"Lane `k8s` executor=`kubernetes` status=`succeeded` enabled=`true`",
 		"Lane `k8s` root cause: event=`task.completed`",
+		"kind=`stderr_log`",
 		"### ray",
 		"Failure root cause: status=`not_triggered` event=`task.completed`",
 	} {

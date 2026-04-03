@@ -1,78 +1,152 @@
 {
   "autostarted": true,
   "base_url": "http://127.0.0.1:49313",
-  "task": {
-    "id": "ray-smoke-1773669703",
-    "trace_id": "ray-smoke-1773669703",
-    "title": "Ray smoke test",
-    "state": "queued",
-    "required_executor": "ray",
-    "entrypoint": "python -c \"print('hello from ray')\"",
-    "metadata": {
-      "executor": "ray",
-      "smoke_test": "true"
+  "events": [
+    {
+      "delivery": {
+        "idempotency_key": "ray-smoke-1773669703-queued",
+        "mode": "replay",
+        "replay": true
+      },
+      "id": "ray-smoke-1773669703-queued",
+      "payload": {
+        "executor": "ray",
+        "title": "Ray smoke test"
+      },
+      "task_id": "ray-smoke-1773669703",
+      "timestamp": "2026-03-16T22:01:43.532778+08:00",
+      "trace_id": "ray-smoke-1773669703",
+      "type": "task.queued"
     },
-    "execution_timeout_seconds": 180,
-    "created_at": "2026-03-16T22:01:43.532778+08:00",
-    "updated_at": "2026-03-16T22:01:43.532778+08:00"
-  },
+    {
+      "delivery": {
+        "idempotency_key": "ray-smoke-1773669703-leased",
+        "mode": "replay",
+        "replay": true
+      },
+      "id": "ray-smoke-1773669703-leased",
+      "task_id": "ray-smoke-1773669703",
+      "timestamp": "2026-03-16T22:01:43.54677+08:00",
+      "trace_id": "ray-smoke-1773669703",
+      "type": "task.leased"
+    },
+    {
+      "delivery": {
+        "idempotency_key": "ray-smoke-1773669703-routed",
+        "mode": "replay",
+        "replay": true
+      },
+      "id": "ray-smoke-1773669703-routed",
+      "payload": {
+        "executor": "ray",
+        "quota": {
+          "BudgetRemaining": 1000,
+          "ConcurrentLimit": 32,
+          "CurrentRunning": 0,
+          "MaxQueueDepth": 0,
+          "PreemptibleExecutions": 0,
+          "QueueDepth": 0,
+          "TenantID": ""
+        },
+        "reason": "required executor=ray"
+      },
+      "task_id": "ray-smoke-1773669703",
+      "timestamp": "2026-03-16T22:01:43.546852+08:00",
+      "trace_id": "ray-smoke-1773669703",
+      "type": "scheduler.routed"
+    },
+    {
+      "delivery": {
+        "idempotency_key": "ray-smoke-1773669703-started",
+        "mode": "replay",
+        "replay": true
+      },
+      "id": "ray-smoke-1773669703-started",
+      "payload": {
+        "executor": "ray",
+        "required_tools": null
+      },
+      "task_id": "ray-smoke-1773669703",
+      "timestamp": "2026-03-16T22:01:43.547026+08:00",
+      "trace_id": "ray-smoke-1773669703",
+      "type": "task.started"
+    },
+    {
+      "delivery": {
+        "idempotency_key": "ray-smoke-1773669703-completed",
+        "mode": "replay",
+        "replay": true
+      },
+      "id": "ray-smoke-1773669703-completed",
+      "payload": {
+        "artifacts": [
+          "ray://jobs/bigclaw-ray-smoke-1773669703"
+        ],
+        "executor": "ray",
+        "finished_at": "2026-03-16T14:01:45Z",
+        "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: python -c \"print('hello from ray')\"\nhello from ray"
+      },
+      "task_id": "ray-smoke-1773669703",
+      "timestamp": "2026-03-16T22:01:45.683098+08:00",
+      "trace_id": "ray-smoke-1773669703",
+      "type": "task.completed"
+    }
+  ],
+  "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-fprfbnjw.log",
+  "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-mtmmiefa",
   "status": {
     "events": [
       {
         "id": "ray-smoke-1773669703-queued",
-        "type": "task.queued",
-        "task_id": "ray-smoke-1773669703",
-        "trace_id": "ray-smoke-1773669703",
-        "timestamp": "2026-03-16T22:01:43.532778+08:00",
         "payload": {
           "executor": "ray",
           "title": "Ray smoke test"
-        }
+        },
+        "task_id": "ray-smoke-1773669703",
+        "timestamp": "2026-03-16T22:01:43.532778+08:00",
+        "trace_id": "ray-smoke-1773669703",
+        "type": "task.queued"
       },
       {
         "id": "ray-smoke-1773669703-leased",
-        "type": "task.leased",
         "task_id": "ray-smoke-1773669703",
+        "timestamp": "2026-03-16T22:01:43.54677+08:00",
         "trace_id": "ray-smoke-1773669703",
-        "timestamp": "2026-03-16T22:01:43.54677+08:00"
+        "type": "task.leased"
       },
       {
         "id": "ray-smoke-1773669703-routed",
-        "type": "scheduler.routed",
-        "task_id": "ray-smoke-1773669703",
-        "trace_id": "ray-smoke-1773669703",
-        "timestamp": "2026-03-16T22:01:43.546852+08:00",
         "payload": {
           "executor": "ray",
           "quota": {
-            "TenantID": "",
+            "BudgetRemaining": 1000,
             "ConcurrentLimit": 32,
             "CurrentRunning": 0,
-            "BudgetRemaining": 1000,
-            "QueueDepth": 0,
             "MaxQueueDepth": 0,
-            "PreemptibleExecutions": 0
+            "PreemptibleExecutions": 0,
+            "QueueDepth": 0,
+            "TenantID": ""
           },
           "reason": "required executor=ray"
-        }
+        },
+        "task_id": "ray-smoke-1773669703",
+        "timestamp": "2026-03-16T22:01:43.546852+08:00",
+        "trace_id": "ray-smoke-1773669703",
+        "type": "scheduler.routed"
       },
       {
         "id": "ray-smoke-1773669703-started",
-        "type": "task.started",
-        "task_id": "ray-smoke-1773669703",
-        "trace_id": "ray-smoke-1773669703",
-        "timestamp": "2026-03-16T22:01:43.547026+08:00",
         "payload": {
           "executor": "ray",
           "required_tools": null
-        }
+        },
+        "task_id": "ray-smoke-1773669703",
+        "timestamp": "2026-03-16T22:01:43.547026+08:00",
+        "trace_id": "ray-smoke-1773669703",
+        "type": "task.started"
       },
       {
         "id": "ray-smoke-1773669703-completed",
-        "type": "task.completed",
-        "task_id": "ray-smoke-1773669703",
-        "trace_id": "ray-smoke-1773669703",
-        "timestamp": "2026-03-16T22:01:45.683098+08:00",
         "payload": {
           "artifacts": [
             "ray://jobs/bigclaw-ray-smoke-1773669703"
@@ -80,15 +154,15 @@
           "executor": "ray",
           "finished_at": "2026-03-16T14:01:45Z",
           "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: python -c \"print('hello from ray')\"\nhello from ray"
-        }
+        },
+        "task_id": "ray-smoke-1773669703",
+        "timestamp": "2026-03-16T22:01:45.683098+08:00",
+        "trace_id": "ray-smoke-1773669703",
+        "type": "task.completed"
       }
     ],
     "latest_event": {
       "id": "ray-smoke-1773669703-completed",
-      "type": "task.completed",
-      "task_id": "ray-smoke-1773669703",
-      "trace_id": "ray-smoke-1773669703",
-      "timestamp": "2026-03-16T22:01:45.683098+08:00",
       "payload": {
         "artifacts": [
           "ray://jobs/bigclaw-ray-smoke-1773669703"
@@ -96,118 +170,44 @@
         "executor": "ray",
         "finished_at": "2026-03-16T14:01:45Z",
         "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: python -c \"print('hello from ray')\"\nhello from ray"
-      }
+      },
+      "task_id": "ray-smoke-1773669703",
+      "timestamp": "2026-03-16T22:01:45.683098+08:00",
+      "trace_id": "ray-smoke-1773669703",
+      "type": "task.completed"
     },
     "state": "succeeded",
     "task": {
-      "id": "ray-smoke-1773669703",
-      "trace_id": "ray-smoke-1773669703",
-      "title": "Ray smoke test",
-      "state": "succeeded",
-      "required_executor": "ray",
+      "created_at": "2026-03-16T22:01:43.532778+08:00",
       "entrypoint": "python -c \"print('hello from ray')\"",
+      "execution_timeout_seconds": 180,
+      "id": "ray-smoke-1773669703",
       "metadata": {
         "executor": "ray",
         "smoke_test": "true"
       },
-      "execution_timeout_seconds": 180,
-      "created_at": "2026-03-16T22:01:43.532778+08:00",
+      "required_executor": "ray",
+      "state": "succeeded",
+      "title": "Ray smoke test",
+      "trace_id": "ray-smoke-1773669703",
       "updated_at": "2026-03-16T22:01:45.683098+08:00"
     },
     "task_id": "ray-smoke-1773669703",
     "trace_id": "ray-smoke-1773669703"
   },
-  "events": [
-    {
-      "id": "ray-smoke-1773669703-queued",
-      "type": "task.queued",
-      "task_id": "ray-smoke-1773669703",
-      "trace_id": "ray-smoke-1773669703",
-      "timestamp": "2026-03-16T22:01:43.532778+08:00",
-      "payload": {
-        "executor": "ray",
-        "title": "Ray smoke test"
-      },
-      "delivery": {
-        "mode": "replay",
-        "replay": true,
-        "idempotency_key": "ray-smoke-1773669703-queued"
-      }
+  "task": {
+    "created_at": "2026-03-16T22:01:43.532778+08:00",
+    "entrypoint": "python -c \"print('hello from ray')\"",
+    "execution_timeout_seconds": 180,
+    "id": "ray-smoke-1773669703",
+    "metadata": {
+      "executor": "ray",
+      "smoke_test": "true"
     },
-    {
-      "id": "ray-smoke-1773669703-leased",
-      "type": "task.leased",
-      "task_id": "ray-smoke-1773669703",
-      "trace_id": "ray-smoke-1773669703",
-      "timestamp": "2026-03-16T22:01:43.54677+08:00",
-      "delivery": {
-        "mode": "replay",
-        "replay": true,
-        "idempotency_key": "ray-smoke-1773669703-leased"
-      }
-    },
-    {
-      "id": "ray-smoke-1773669703-routed",
-      "type": "scheduler.routed",
-      "task_id": "ray-smoke-1773669703",
-      "trace_id": "ray-smoke-1773669703",
-      "timestamp": "2026-03-16T22:01:43.546852+08:00",
-      "payload": {
-        "executor": "ray",
-        "quota": {
-          "TenantID": "",
-          "ConcurrentLimit": 32,
-          "CurrentRunning": 0,
-          "BudgetRemaining": 1000,
-          "QueueDepth": 0,
-          "MaxQueueDepth": 0,
-          "PreemptibleExecutions": 0
-        },
-        "reason": "required executor=ray"
-      },
-      "delivery": {
-        "mode": "replay",
-        "replay": true,
-        "idempotency_key": "ray-smoke-1773669703-routed"
-      }
-    },
-    {
-      "id": "ray-smoke-1773669703-started",
-      "type": "task.started",
-      "task_id": "ray-smoke-1773669703",
-      "trace_id": "ray-smoke-1773669703",
-      "timestamp": "2026-03-16T22:01:43.547026+08:00",
-      "payload": {
-        "executor": "ray",
-        "required_tools": null
-      },
-      "delivery": {
-        "mode": "replay",
-        "replay": true,
-        "idempotency_key": "ray-smoke-1773669703-started"
-      }
-    },
-    {
-      "id": "ray-smoke-1773669703-completed",
-      "type": "task.completed",
-      "task_id": "ray-smoke-1773669703",
-      "trace_id": "ray-smoke-1773669703",
-      "timestamp": "2026-03-16T22:01:45.683098+08:00",
-      "payload": {
-        "artifacts": [
-          "ray://jobs/bigclaw-ray-smoke-1773669703"
-        ],
-        "executor": "ray",
-        "finished_at": "2026-03-16T14:01:45Z",
-        "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: python -c \"print('hello from ray')\"\nhello from ray"
-      },
-      "delivery": {
-        "mode": "replay",
-        "replay": true,
-        "idempotency_key": "ray-smoke-1773669703-completed"
-      }
-    }
-  ],
-  "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-mtmmiefa",
-  "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-fprfbnjw.log"
+    "required_executor": "ray",
+    "state": "queued",
+    "title": "Ray smoke test",
+    "trace_id": "ray-smoke-1773669703",
+    "updated_at": "2026-03-16T22:01:43.532778+08:00"
+  }
 }

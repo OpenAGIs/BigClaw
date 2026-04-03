@@ -25,6 +25,14 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 				TaskID              string `json:"task_id"`
 				AuditLogPath        string `json:"audit_log_path"`
 				ServiceLogPath      string `json:"service_log_path"`
+				FailureRootCause    struct {
+					LocationKind string `json:"location_kind"`
+				} `json:"failure_root_cause"`
+				ValidationMatrix struct {
+					Lane                  string `json:"lane"`
+					Executor              string `json:"executor"`
+					RootCauseLocationKind string `json:"root_cause_location_kind"`
+				} `json:"validation_matrix"`
 			} `json:"local"`
 			Kubernetes struct {
 				Enabled             bool   `json:"enabled"`
@@ -34,6 +42,14 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 				TaskID              string `json:"task_id"`
 				AuditLogPath        string `json:"audit_log_path"`
 				ServiceLogPath      string `json:"service_log_path"`
+				FailureRootCause    struct {
+					LocationKind string `json:"location_kind"`
+				} `json:"failure_root_cause"`
+				ValidationMatrix struct {
+					Lane                  string `json:"lane"`
+					Executor              string `json:"executor"`
+					RootCauseLocationKind string `json:"root_cause_location_kind"`
+				} `json:"validation_matrix"`
 			} `json:"kubernetes"`
 			Ray struct {
 				Enabled             bool   `json:"enabled"`
@@ -43,6 +59,14 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 				TaskID              string `json:"task_id"`
 				AuditLogPath        string `json:"audit_log_path"`
 				ServiceLogPath      string `json:"service_log_path"`
+				FailureRootCause    struct {
+					LocationKind string `json:"location_kind"`
+				} `json:"failure_root_cause"`
+				ValidationMatrix struct {
+					Lane                  string `json:"lane"`
+					Executor              string `json:"executor"`
+					RootCauseLocationKind string `json:"root_cause_location_kind"`
+				} `json:"validation_matrix"`
 			} `json:"ray"`
 			Broker struct {
 				Enabled              bool   `json:"enabled"`
@@ -111,7 +135,7 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 	if index.Latest.RunID != "20260316T140138Z" || index.Latest.Status != "succeeded" {
 		t.Fatalf("unexpected live validation latest metadata: %+v", index.Latest)
 	}
-	if index.Latest.GeneratedAt != "2026-03-17T04:32:13.251910+00:00" || index.Latest.BundlePath != "docs/reports/live-validation-runs/20260316T140138Z" || index.Latest.SummaryPath != "docs/reports/live-validation-runs/20260316T140138Z/summary.json" {
+	if index.Latest.GeneratedAt != "2026-04-03T07:57:34.810349Z" || index.Latest.BundlePath != "docs/reports/live-validation-runs/20260316T140138Z" || index.Latest.SummaryPath != "docs/reports/live-validation-runs/20260316T140138Z/summary.json" {
 		t.Fatalf("unexpected live validation latest paths: %+v", index.Latest)
 	}
 	if len(index.Latest.CloseoutCommands) != 3 ||
@@ -124,11 +148,20 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 	if !index.Latest.Local.Enabled || index.Latest.Local.CanonicalReportPath != "docs/reports/sqlite-smoke-report.json" || index.Latest.Local.BundleReportPath != "docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json" || index.Latest.Local.Status != "succeeded" || index.Latest.Local.TaskID == "" {
 		t.Fatalf("unexpected local lane summary: %+v", index.Latest.Local)
 	}
+	if index.Latest.Local.ValidationMatrix.Lane != "local" || index.Latest.Local.ValidationMatrix.Executor != "local" || index.Latest.Local.ValidationMatrix.RootCauseLocationKind != "stderr_log" || index.Latest.Local.FailureRootCause.LocationKind != "stderr_log" {
+		t.Fatalf("unexpected local matrix/root cause: %+v", index.Latest.Local)
+	}
 	if !index.Latest.Kubernetes.Enabled || index.Latest.Kubernetes.CanonicalReportPath != "docs/reports/kubernetes-live-smoke-report.json" || index.Latest.Kubernetes.BundleReportPath != "docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json" || index.Latest.Kubernetes.Status != "succeeded" || index.Latest.Kubernetes.TaskID == "" {
 		t.Fatalf("unexpected kubernetes lane summary: %+v", index.Latest.Kubernetes)
 	}
+	if index.Latest.Kubernetes.ValidationMatrix.Lane != "k8s" || index.Latest.Kubernetes.ValidationMatrix.Executor != "kubernetes" || index.Latest.Kubernetes.ValidationMatrix.RootCauseLocationKind != "stderr_log" || index.Latest.Kubernetes.FailureRootCause.LocationKind != "stderr_log" {
+		t.Fatalf("unexpected kubernetes matrix/root cause: %+v", index.Latest.Kubernetes)
+	}
 	if !index.Latest.Ray.Enabled || index.Latest.Ray.CanonicalReportPath != "docs/reports/ray-live-smoke-report.json" || index.Latest.Ray.BundleReportPath != "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json" || index.Latest.Ray.Status != "succeeded" || index.Latest.Ray.TaskID == "" {
 		t.Fatalf("unexpected ray lane summary: %+v", index.Latest.Ray)
+	}
+	if index.Latest.Ray.ValidationMatrix.Lane != "ray" || index.Latest.Ray.ValidationMatrix.Executor != "ray" || index.Latest.Ray.ValidationMatrix.RootCauseLocationKind != "stderr_log" || index.Latest.Ray.FailureRootCause.LocationKind != "stderr_log" {
+		t.Fatalf("unexpected ray matrix/root cause: %+v", index.Latest.Ray)
 	}
 	if index.Latest.Broker.Enabled || index.Latest.Broker.BundleSummaryPath != "docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json" || index.Latest.Broker.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || index.Latest.Broker.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" || index.Latest.Broker.ConfigurationState != "not_configured" || index.Latest.Broker.Status != "skipped" || index.Latest.Broker.Reason != "not_configured" {
 		t.Fatalf("unexpected broker lane summary: %+v", index.Latest.Broker)
@@ -143,10 +176,10 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 	if len(index.ContinuationGate.FailingChecks) != 0 || len(index.ContinuationGate.NextActions) != 1 || index.ContinuationGate.NextActions[0] != "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions" {
 		t.Fatalf("unexpected continuation gate actions: %+v", index.ContinuationGate)
 	}
-	if index.ContinuationGate.Enforcement.Mode != "review" || index.ContinuationGate.Enforcement.Outcome != "pass" || index.ContinuationGate.Enforcement.ExitCode != 0 {
+	if index.ContinuationGate.Enforcement.Mode != "hold" || index.ContinuationGate.Enforcement.Outcome != "pass" || index.ContinuationGate.Enforcement.ExitCode != 0 {
 		t.Fatalf("unexpected continuation gate enforcement: %+v", index.ContinuationGate.Enforcement)
 	}
-	if index.ContinuationGate.Summary.LatestRunID != "20260316T140138Z" || index.ContinuationGate.Summary.RecentBundleCount != 3 || !index.ContinuationGate.Summary.LatestAllExecutorTracksSucceeded || !index.ContinuationGate.Summary.RecentBundleChainHasNoFailures || !index.ContinuationGate.Summary.AllExecutorTracksHaveRepeatedCoverage || index.ContinuationGate.Summary.Recommendation != "go" || index.ContinuationGate.Summary.EnforcementMode != "review" || index.ContinuationGate.Summary.WorkflowOutcome != "pass" || index.ContinuationGate.Summary.WorkflowExitCode != 0 || index.ContinuationGate.Summary.PassingCheckCount != 6 || index.ContinuationGate.Summary.FailingCheckCount != 0 {
+	if index.ContinuationGate.Summary.LatestRunID != "20260316T140138Z" || index.ContinuationGate.Summary.RecentBundleCount != 3 || !index.ContinuationGate.Summary.LatestAllExecutorTracksSucceeded || !index.ContinuationGate.Summary.RecentBundleChainHasNoFailures || !index.ContinuationGate.Summary.AllExecutorTracksHaveRepeatedCoverage || index.ContinuationGate.Summary.Recommendation != "go" || index.ContinuationGate.Summary.EnforcementMode != "hold" || index.ContinuationGate.Summary.WorkflowOutcome != "pass" || index.ContinuationGate.Summary.WorkflowExitCode != 0 || index.ContinuationGate.Summary.PassingCheckCount != 6 || index.ContinuationGate.Summary.FailingCheckCount != 0 {
 		t.Fatalf("unexpected continuation gate summary: %+v", index.ContinuationGate.Summary)
 	}
 	if index.ContinuationGate.Summary.LatestBundleAgeHours <= 0 || index.ContinuationGate.Summary.LatestBundleAgeHours >= 1 {
@@ -159,7 +192,7 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 	if len(index.RecentRuns) != 3 {
 		t.Fatalf("unexpected recent live validation run count: %+v", index.RecentRuns)
 	}
-	if index.RecentRuns[0].RunID != "20260316T140138Z" || index.RecentRuns[0].GeneratedAt != "2026-03-17T04:32:13.251910+00:00" || index.RecentRuns[0].Status != "succeeded" || index.RecentRuns[0].BundlePath != "docs/reports/live-validation-runs/20260316T140138Z" || index.RecentRuns[0].SummaryPath != "docs/reports/live-validation-runs/20260316T140138Z/summary.json" {
+	if index.RecentRuns[0].RunID != "20260316T140138Z" || index.RecentRuns[0].GeneratedAt != "2026-04-03T07:57:34.810349Z" || index.RecentRuns[0].Status != "succeeded" || index.RecentRuns[0].BundlePath != "docs/reports/live-validation-runs/20260316T140138Z" || index.RecentRuns[0].SummaryPath != "docs/reports/live-validation-runs/20260316T140138Z/summary.json" {
 		t.Fatalf("unexpected first recent run: %+v", index.RecentRuns[0])
 	}
 	if index.RecentRuns[1].RunID != "20260314T164647Z" || index.RecentRuns[1].GeneratedAt != "2026-03-14T16:46:57.671520+00:00" || index.RecentRuns[1].Status != "succeeded" || index.RecentRuns[1].BundlePath != "docs/reports/live-validation-runs/20260314T164647Z" || index.RecentRuns[1].SummaryPath != "docs/reports/live-validation-runs/20260314T164647Z/summary.json" {

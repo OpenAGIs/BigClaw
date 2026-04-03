@@ -16,13 +16,25 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 		SummaryPath     string   `json:"summary_path"`
 		CloseoutCommand []string `json:"closeout_commands"`
 		Local           struct {
-			Enabled            bool   `json:"enabled"`
-			BundleReportPath   string `json:"bundle_report_path"`
+			Enabled             bool   `json:"enabled"`
+			BundleReportPath    string `json:"bundle_report_path"`
 			CanonicalReportPath string `json:"canonical_report_path"`
-			Status             string `json:"status"`
-			TaskID             string `json:"task_id"`
-			AuditLogPath       string `json:"audit_log_path"`
-			ServiceLogPath     string `json:"service_log_path"`
+			Status              string `json:"status"`
+			TaskID              string `json:"task_id"`
+			AuditLogPath        string `json:"audit_log_path"`
+			ServiceLogPath      string `json:"service_log_path"`
+			FailureRootCause    struct {
+				Status       string `json:"status"`
+				EventType    string `json:"event_type"`
+				Location     string `json:"location"`
+				LocationKind string `json:"location_kind"`
+			} `json:"failure_root_cause"`
+			ValidationMatrix struct {
+				Lane                  string `json:"lane"`
+				Executor              string `json:"executor"`
+				RootCauseLocation     string `json:"root_cause_location"`
+				RootCauseLocationKind string `json:"root_cause_location_kind"`
+			} `json:"validation_matrix"`
 		} `json:"local"`
 		Kubernetes struct {
 			Enabled             bool   `json:"enabled"`
@@ -32,6 +44,18 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 			TaskID              string `json:"task_id"`
 			AuditLogPath        string `json:"audit_log_path"`
 			ServiceLogPath      string `json:"service_log_path"`
+			FailureRootCause    struct {
+				Status       string `json:"status"`
+				EventType    string `json:"event_type"`
+				Location     string `json:"location"`
+				LocationKind string `json:"location_kind"`
+			} `json:"failure_root_cause"`
+			ValidationMatrix struct {
+				Lane                  string `json:"lane"`
+				Executor              string `json:"executor"`
+				RootCauseLocation     string `json:"root_cause_location"`
+				RootCauseLocationKind string `json:"root_cause_location_kind"`
+			} `json:"validation_matrix"`
 		} `json:"kubernetes"`
 		Ray struct {
 			Enabled             bool   `json:"enabled"`
@@ -41,6 +65,18 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 			TaskID              string `json:"task_id"`
 			AuditLogPath        string `json:"audit_log_path"`
 			ServiceLogPath      string `json:"service_log_path"`
+			FailureRootCause    struct {
+				Status       string `json:"status"`
+				EventType    string `json:"event_type"`
+				Location     string `json:"location"`
+				LocationKind string `json:"location_kind"`
+			} `json:"failure_root_cause"`
+			ValidationMatrix struct {
+				Lane                  string `json:"lane"`
+				Executor              string `json:"executor"`
+				RootCauseLocation     string `json:"root_cause_location"`
+				RootCauseLocationKind string `json:"root_cause_location_kind"`
+			} `json:"validation_matrix"`
 		} `json:"ray"`
 		Broker struct {
 			Enabled              bool   `json:"enabled"`
@@ -52,20 +88,20 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 			Reason               string `json:"reason"`
 		} `json:"broker"`
 		SharedQueueCompanion struct {
-			Available            bool              `json:"available"`
-			CanonicalReportPath  string            `json:"canonical_report_path"`
-			CanonicalSummaryPath string            `json:"canonical_summary_path"`
-			BundleReportPath     string            `json:"bundle_report_path"`
-			BundleSummaryPath    string            `json:"bundle_summary_path"`
-			Status               string            `json:"status"`
-			Count                int               `json:"count"`
-			CrossNodeCompletions int               `json:"cross_node_completions"`
-			DuplicateStarted     int               `json:"duplicate_started_tasks"`
-			DuplicateCompleted   int               `json:"duplicate_completed_tasks"`
-			MissingCompleted     int               `json:"missing_completed_tasks"`
-			SubmittedByNode      map[string]int    `json:"submitted_by_node"`
-			CompletedByNode      map[string]int    `json:"completed_by_node"`
-			Nodes                []string          `json:"nodes"`
+			Available            bool           `json:"available"`
+			CanonicalReportPath  string         `json:"canonical_report_path"`
+			CanonicalSummaryPath string         `json:"canonical_summary_path"`
+			BundleReportPath     string         `json:"bundle_report_path"`
+			BundleSummaryPath    string         `json:"bundle_summary_path"`
+			Status               string         `json:"status"`
+			Count                int            `json:"count"`
+			CrossNodeCompletions int            `json:"cross_node_completions"`
+			DuplicateStarted     int            `json:"duplicate_started_tasks"`
+			DuplicateCompleted   int            `json:"duplicate_completed_tasks"`
+			MissingCompleted     int            `json:"missing_completed_tasks"`
+			SubmittedByNode      map[string]int `json:"submitted_by_node"`
+			CompletedByNode      map[string]int `json:"completed_by_node"`
+			Nodes                []string       `json:"nodes"`
 		} `json:"shared_queue_companion"`
 	}
 
@@ -87,11 +123,20 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 	if !summary.Local.Enabled || summary.Local.CanonicalReportPath != "docs/reports/sqlite-smoke-report.json" || summary.Local.BundleReportPath != "docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json" || summary.Local.Status != "succeeded" || summary.Local.TaskID == "" {
 		t.Fatalf("unexpected local lane summary: %+v", summary.Local)
 	}
+	if summary.Local.ValidationMatrix.Lane != "local" || summary.Local.ValidationMatrix.Executor != "local" || summary.Local.FailureRootCause.LocationKind != "stderr_log" || summary.Local.ValidationMatrix.RootCauseLocationKind != "stderr_log" {
+		t.Fatalf("unexpected local validation matrix/root cause: %+v %+v", summary.Local.ValidationMatrix, summary.Local.FailureRootCause)
+	}
 	if !summary.Kubernetes.Enabled || summary.Kubernetes.CanonicalReportPath != "docs/reports/kubernetes-live-smoke-report.json" || summary.Kubernetes.BundleReportPath != "docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json" || summary.Kubernetes.Status != "succeeded" || summary.Kubernetes.TaskID == "" {
 		t.Fatalf("unexpected kubernetes lane summary: %+v", summary.Kubernetes)
 	}
+	if summary.Kubernetes.ValidationMatrix.Lane != "k8s" || summary.Kubernetes.ValidationMatrix.Executor != "kubernetes" || summary.Kubernetes.FailureRootCause.LocationKind != "stderr_log" || summary.Kubernetes.ValidationMatrix.RootCauseLocationKind != "stderr_log" {
+		t.Fatalf("unexpected kubernetes validation matrix/root cause: %+v %+v", summary.Kubernetes.ValidationMatrix, summary.Kubernetes.FailureRootCause)
+	}
 	if !summary.Ray.Enabled || summary.Ray.CanonicalReportPath != "docs/reports/ray-live-smoke-report.json" || summary.Ray.BundleReportPath != "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json" || summary.Ray.Status != "succeeded" || summary.Ray.TaskID == "" {
 		t.Fatalf("unexpected ray lane summary: %+v", summary.Ray)
+	}
+	if summary.Ray.ValidationMatrix.Lane != "ray" || summary.Ray.ValidationMatrix.Executor != "ray" || summary.Ray.FailureRootCause.LocationKind != "stderr_log" || summary.Ray.ValidationMatrix.RootCauseLocationKind != "stderr_log" {
+		t.Fatalf("unexpected ray validation matrix/root cause: %+v %+v", summary.Ray.ValidationMatrix, summary.Ray.FailureRootCause)
 	}
 
 	if summary.Broker.Enabled || summary.Broker.BundleSummaryPath != "docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json" || summary.Broker.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || summary.Broker.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" || summary.Broker.ConfigurationState != "not_configured" || summary.Broker.Status != "skipped" || summary.Broker.Reason != "not_configured" {

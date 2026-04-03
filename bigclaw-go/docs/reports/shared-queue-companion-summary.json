@@ -1,26 +1,26 @@
 {
   "available": true,
-  "canonical_report_path": "docs/reports/multi-node-shared-queue-report.json",
-  "canonical_summary_path": "docs/reports/shared-queue-companion-summary.json",
   "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json",
   "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
-  "status": "succeeded",
-  "generated_at": "2026-03-13T09:45:19Z",
-  "count": 200,
-  "cross_node_completions": 99,
-  "duplicate_started_tasks": 0,
-  "duplicate_completed_tasks": 0,
-  "missing_completed_tasks": 0,
-  "submitted_by_node": {
-    "node-a": 100,
-    "node-b": 100
-  },
+  "canonical_report_path": "docs/reports/multi-node-shared-queue-report.json",
+  "canonical_summary_path": "docs/reports/shared-queue-companion-summary.json",
   "completed_by_node": {
     "node-a": 73,
     "node-b": 127
   },
+  "count": 200,
+  "cross_node_completions": 99,
+  "duplicate_completed_tasks": 0,
+  "duplicate_started_tasks": 0,
+  "generated_at": "2026-03-16T15:59:45Z",
+  "missing_completed_tasks": 0,
   "nodes": [
     "node-a",
     "node-b"
-  ]
+  ],
+  "status": "succeeded",
+  "submitted_by_node": {
+    "node-a": 100,
+    "node-b": 100
+  }
 }

@@ -203,11 +203,50 @@ func TestAutomationExportValidationBundleBuildComponentSectionCapturesRootCause(
 	if rootCause["event_type"] != "task.dead_letter" || rootCause["message"] != "lease lost during replay" {
 		t.Fatalf("unexpected root cause: %+v", rootCause)
 	}
-	if rootCause["event_id"] != "evt-dead" || rootCause["timestamp"] != "2026-03-23T11:02:00Z" || rootCause["status"] != "captured" {
+	if rootCause["event_id"] != "evt-dead" || rootCause["timestamp"] != "2026-03-23T11:02:00Z" || rootCause["status"] != "captured" || rootCause["location_kind"] != "stderr_log" {
 		t.Fatalf("unexpected root cause locator fields: %+v", rootCause)
 	}
-	if matrix["root_cause_event_id"] != "evt-dead" || matrix["root_cause_timestamp"] != "2026-03-23T11:02:00Z" || matrix["root_cause_status"] != "captured" {
+	if matrix["root_cause_event_id"] != "evt-dead" || matrix["root_cause_timestamp"] != "2026-03-23T11:02:00Z" || matrix["root_cause_status"] != "captured" || matrix["root_cause_location_kind"] != "stderr_log" {
 		t.Fatalf("unexpected matrix root cause locator fields: %+v", matrix)
+	}
+}
+
+func TestRunAutomationExportValidationBundleCommandAllowsDisabledLanePaths(t *testing.T) {
+	root := t.TempDir()
+	for _, rel := range []string{
+		"docs/reports/multi-node-shared-queue-report.json",
+		"docs/reports/broker-bootstrap-review-summary.json",
+	} {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(root, rel)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs/reports/multi-node-shared-queue-report.json"), []byte(`{"all_ok": true, "generated_at": "2026-03-30T12:10:00Z", "count": 1, "cross_node_completions": 1, "duplicate_started_tasks": [], "duplicate_completed_tasks": [], "missing_completed_tasks": [], "submitted_by_node": {"node-a": 1}, "completed_by_node": {"node-a": 1}, "nodes": [{"name": "node-a"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs/reports/broker-bootstrap-review-summary.json"), []byte(`{"ready": false, "runtime_posture": "contract_only", "live_adapter_implemented": false}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := runAutomationExportValidationBundleCommand([]string{
+		"--go-root", root,
+		"--run-id", "20260330T120000Z",
+		"--bundle-dir", "docs/reports/live-validation-runs/20260330T120000Z",
+		"--summary-path", "docs/reports/live-validation-summary.json",
+		"--index-path", "docs/reports/live-validation-index.md",
+		"--manifest-path", "docs/reports/live-validation-index.json",
+		"--run-local=false",
+		"--run-kubernetes=false",
+		"--run-ray=false",
+		"--validation-status", "0",
+		"--broker-bootstrap-summary-path", "docs/reports/broker-bootstrap-review-summary.json",
+		"--json=false",
+	})
+	if err != nil {
+		t.Fatalf("run export command with disabled lanes: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "docs/reports/parallel-validation-evidence-bundle.json")); err != nil {
+		t.Fatalf("expected evidence bundle output: %v", err)
 	}
 }
 
@@ -390,19 +429,21 @@ func TestAutomationExportValidationBundleWritesParallelEvidenceBundle(t *testing
 			FailingCount     int `json:"failing_lane_count"`
 		} `json:"summary"`
 		ValidationMatrix []struct {
-			Lane               string `json:"lane"`
-			RootCauseEventType string `json:"root_cause_event_type"`
-			RootCauseLocation  string `json:"root_cause_location"`
-			RootCauseMessage   string `json:"root_cause_message"`
+			Lane                  string `json:"lane"`
+			RootCauseEventType    string `json:"root_cause_event_type"`
+			RootCauseLocation     string `json:"root_cause_location"`
+			RootCauseLocationKind string `json:"root_cause_location_kind"`
+			RootCauseMessage      string `json:"root_cause_message"`
 		} `json:"validation_matrix"`
 		Lanes []struct {
 			Lane             string `json:"lane"`
 			Status           string `json:"status"`
 			FailureRootCause struct {
-				Status    string `json:"status"`
-				EventType string `json:"event_type"`
-				Location  string `json:"location"`
-				Message   string `json:"message"`
+				Status       string `json:"status"`
+				EventType    string `json:"event_type"`
+				Location     string `json:"location"`
+				LocationKind string `json:"location_kind"`
+				Message      string `json:"message"`
 			} `json:"failure_root_cause"`
 		} `json:"lanes"`
 	}
@@ -413,10 +454,10 @@ func TestAutomationExportValidationBundleWritesParallelEvidenceBundle(t *testing
 	if bundle.Summary.LaneCount != 3 || bundle.Summary.EnabledLaneCount != 3 || bundle.Summary.SucceededCount != 2 || bundle.Summary.FailingCount != 1 {
 		t.Fatalf("unexpected parallel evidence summary: %+v", bundle.Summary)
 	}
-	if len(bundle.ValidationMatrix) != 3 || bundle.ValidationMatrix[1].Lane != "k8s" || bundle.ValidationMatrix[1].RootCauseEventType != "task.dead_letter" || bundle.ValidationMatrix[1].RootCauseMessage != "lease lost during replay" {
+	if len(bundle.ValidationMatrix) != 3 || bundle.ValidationMatrix[1].Lane != "k8s" || bundle.ValidationMatrix[1].RootCauseEventType != "task.dead_letter" || bundle.ValidationMatrix[1].RootCauseLocationKind != "bundle_report" || bundle.ValidationMatrix[1].RootCauseMessage != "lease lost during replay" {
 		t.Fatalf("unexpected validation matrix rows: %+v", bundle.ValidationMatrix)
 	}
-	if bundle.Lanes[1].FailureRootCause.Location == "" || bundle.Lanes[1].FailureRootCause.EventType != "task.dead_letter" {
+	if bundle.Lanes[1].FailureRootCause.Location == "" || bundle.Lanes[1].FailureRootCause.LocationKind != "bundle_report" || bundle.Lanes[1].FailureRootCause.EventType != "task.dead_letter" {
 		t.Fatalf("unexpected lane root cause: %+v", bundle.Lanes[1].FailureRootCause)
 	}
 
@@ -429,6 +470,7 @@ func TestAutomationExportValidationBundleWritesParallelEvidenceBundle(t *testing
 		"# Parallel Validation Evidence Bundle",
 		"Lane `k8s` executor=`kubernetes` status=`dead_letter` enabled=`true`",
 		"Lane `k8s` root cause: event=`task.dead_letter`",
+		"kind=`bundle_report`",
 		"Failure root cause: status=`captured` event=`task.dead_letter`",
 	} {
 		if !strings.Contains(markdown, needle) {
