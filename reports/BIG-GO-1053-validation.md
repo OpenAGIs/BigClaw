@@ -35,8 +35,9 @@ fresh validation evidence and the in-repo closeout artifacts for the lane.
   - `./scripts/e2e/run_all.sh`
   - `./scripts/e2e/kubernetes_smoke.sh`
   - `./scripts/e2e/ray_smoke.sh`
-- `.symphony/workpad.md` now carries the active `BIG-GO-1053` plan, acceptance, and
-  validation checklist instead of an unrelated later-lane workpad.
+- `.symphony/workpad.md` now preserves `BIG-GO-1053` as an archived workpad section under
+  the active later-lane workpad, so the lane retains its plan, acceptance, and validation
+  checklist without overwriting newer in-flight issue planning.
 - `bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go` enforces:
   - no `.py` files can reappear under `bigclaw-go/scripts/e2e/`
   - the e2e migration doc does not advertise removed tranche-2 Python helpers as
