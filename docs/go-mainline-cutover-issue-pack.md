@@ -129,7 +129,6 @@ Historical initial state:
 ### BIG-GOM-302 Risk, policy, and approval semantics migration
 
 Python source:
-- `src/bigclaw/risk.py`
 - `src/bigclaw/governance.py`
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/audit_events.py`
@@ -145,6 +144,8 @@ Acceptance focus:
 - align policy runtime and audit payloads with the canonical Go domain shape
 
 Current repo progress:
+- `bigclaw-go/internal/risk/risk.go` now owns the Go risk scoring surface for this migration tranche
+- the residual Python risk reference file has been removed from the repository
 - `bigclaw-go/internal/governance/freeze.go` now owns the Go scope-freeze backlog board and governance audit surface migrated from `src/bigclaw/governance.py`
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
@@ -222,7 +223,6 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/repo_triage.py`
-- `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/saved_views.py`
@@ -235,6 +235,10 @@ Go ownership:
 
 Acceptance focus:
 - move operator-facing status, control-center, and triage surfaces to Go-owned endpoints
+
+Current repo progress:
+- the residual Python run-detail rendering reference file has been removed from the repository
+- Go-owned run detail and triage surfaces continue under `bigclaw-go/internal/product`, `bigclaw-go/internal/api`, and related test coverage
 
 Dependencies:
 - depends on `BIG-GOM-303`
@@ -390,7 +394,6 @@ tracker work.
 ### 1. Close risk and policy parity on the Go mainline
 
 Python source:
-- `src/bigclaw/risk.py`
 - remaining active consumers of `src/bigclaw/governance.py`
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of `src/bigclaw/audit_events.py`
@@ -430,12 +433,14 @@ Python source:
 - `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
-- `src/bigclaw/run_detail.py`
 - `src/bigclaw/dashboard_run_contract.py`
 
 Go ownership:
 - `bigclaw-go/internal/observability/*`
 - `bigclaw-go/internal/reporting/reporting.go`
+
+Current repo progress:
+- the residual Python run-detail rendering module has been removed after folding its helpers into the surviving report/evaluation migration surface
 - `bigclaw-go/internal/regression/regression.go`
 - `bigclaw-go/internal/api/server.go`
 - `bigclaw-go/internal/triage/*`
