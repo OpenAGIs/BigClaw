@@ -60,14 +60,19 @@
 - `bash scripts/ops/bigclaw-symphony --help` -> exit `0`; printed `usage: bigclawctl symphony [flags] [args...]`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
 - `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go`
+- final `git status --short` after follow-up commits -> clean working tree
 
 ## Git
 - branch: `feat/BIG-GO-1143-root-scripts-residual-sweep`
 - commit: `b3ce907c` (`BIG-GO-1143: lock root script migration sweep`)
 - follow-up commit: `2d8f34b1` (`BIG-GO-1143: record branch closeout evidence`)
+- follow-up commit: `faad602f` (`BIG-GO-1143: guard root script cutover docs`)
+- follow-up commit: `082b1565` (`BIG-GO-1143: guard root script wrappers`)
 - first `git push -u origin feat/BIG-GO-1143-root-scripts-residual-sweep` attempt -> exit `128` with `LibreSSL SSL_connect: SSL_ERROR_SYSCALL`
 - second `git push -u origin feat/BIG-GO-1143-root-scripts-residual-sweep` attempt -> success; remote published the branch and returned the PR helper URL `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-1143-root-scripts-residual-sweep`
 - `git push` after `2d8f34b1` -> success
+- `git push` after `faad602f` -> success
+- `git push` after `082b1565` -> success
 
 ## Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the lane and confirm the Go replacements; it cannot make the Python file count numerically lower from the current baseline
