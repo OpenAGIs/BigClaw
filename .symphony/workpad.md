@@ -4,6 +4,7 @@
 - confirm the repo baseline for live Python files and the actual state of each lane-owned candidate path
 - document the pre-change constraint explicitly: this workspace is already materialized to zero `*.py` files, so the only scoped implementation left is regression hardening plus Go-path validation
 - add a new regression tranche only for the uncovered lane guarantees around the retired root scripts and their active Go or shell entrypoints
+- add a cutover-doc regression guard so the broader Go-mainline handoff artifacts cannot drift back to Python execution guidance for the retired root scripts
 - run targeted validation for the Python-file baseline, the new tranche, the active CLI replacements, and the retained legacy compile-check
 - commit and push the scoped change set
 
@@ -31,6 +32,7 @@
 - `find . -name '*.py' | wc -l`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'`
 - `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly'`
 - `bash scripts/ops/bigclawctl create-issues --help`
 - `bash scripts/ops/bigclawctl dev-smoke --help`
 - `bash scripts/ops/bigclawctl github-sync --help`
@@ -45,6 +47,7 @@
 - `find . -name '*.py' | wc -l` -> `0`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
 - `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche17` -> `ok  	bigclaw-go/internal/regression	0.805s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly'` -> `ok  	bigclaw-go/internal/regression	0.767s`
 - `bash scripts/ops/bigclawctl create-issues --help` -> exit `0`; printed `usage: bigclawctl create-issues [flags]`
 - `bash scripts/ops/bigclawctl dev-smoke --help` -> exit `0`; printed `usage: bigclawctl dev-smoke [flags]`
 - `bash scripts/ops/bigclawctl github-sync --help` -> exit `0`; printed `usage: bigclawctl github-sync <install|status|sync> [flags]`
@@ -58,8 +61,10 @@
 ## Git
 - branch: `feat/BIG-GO-1143-root-scripts-residual-sweep`
 - commit: `b3ce907c` (`BIG-GO-1143: lock root script migration sweep`)
+- follow-up commit: `2d8f34b1` (`BIG-GO-1143: record branch closeout evidence`)
 - first `git push -u origin feat/BIG-GO-1143-root-scripts-residual-sweep` attempt -> exit `128` with `LibreSSL SSL_connect: SSL_ERROR_SYSCALL`
 - second `git push -u origin feat/BIG-GO-1143-root-scripts-residual-sweep` attempt -> success; remote published the branch and returned the PR helper URL `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-1143-root-scripts-residual-sweep`
+- `git push` after `2d8f34b1` -> success
 
 ## Residual Risk
 - the repo already starts from a zero-`.py` baseline in this worktree, so this issue can only harden deletion enforcement for the lane and confirm the Go replacements; it cannot make the Python file count numerically lower from the current baseline
