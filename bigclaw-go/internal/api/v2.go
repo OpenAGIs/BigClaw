@@ -208,6 +208,7 @@ type workerPoolSummary struct {
 	DegradedNodes              int                  `json:"degraded_nodes"`
 	CapacityUtilizationPercent float64              `json:"capacity_utilization_percent"`
 	ExecutorDistribution       []auditFacetCount    `json:"executor_distribution,omitempty"`
+	NodeHealthDistribution     []auditFacetCount    `json:"node_health_distribution,omitempty"`
 	Nodes                      []workerPoolNodeView `json:"nodes,omitempty"`
 	Workers                    []worker.Status      `json:"workers"`
 }
@@ -2972,6 +2973,7 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 	activeNodes := 0
 	idleNodes := 0
 	degradedNodes := 0
+	nodeHealthCounts := make(map[string]int)
 	for _, node := range nodeIndex {
 		if node.TotalWorkers > 0 {
 			node.CapacityUtilizationPercent = float64(node.ActiveWorkers) / float64(node.TotalWorkers) * 100
@@ -2995,6 +2997,7 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 			node.Health = "idle"
 			idleNodes++
 		}
+		nodeHealthCounts[node.Health]++
 		nodes = append(nodes, *node)
 	}
 	sort.SliceStable(nodes, func(i, j int) bool { return nodes[i].NodeID < nodes[j].NodeID })
@@ -3012,6 +3015,7 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 		DegradedNodes:              degradedNodes,
 		CapacityUtilizationPercent: capacityUtilizationPercent,
 		ExecutorDistribution:       sortFacetCounts(executorCounts),
+		NodeHealthDistribution:     sortFacetCounts(nodeHealthCounts),
 		Nodes:                      nodes,
 		Workers:                    snapshots,
 	}

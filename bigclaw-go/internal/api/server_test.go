@@ -75,6 +75,40 @@ func containsString(values []string, want string) bool {
 	return false
 }
 
+func TestWorkerPoolSummaryBuildsNodeAwareAggregates(t *testing.T) {
+	base := time.Date(2026, 3, 23, 10, 0, 0, 0, time.UTC)
+	server := &Server{
+		Worker: fakeNodeAwareWorkerPoolStatus{now: base},
+		Now:    func() time.Time { return base },
+	}
+
+	summary := server.workerPoolSummary()
+	if summary == nil {
+		t.Fatal("expected worker pool summary")
+	}
+	if summary.TotalWorkers != 3 || summary.ActiveWorkers != 2 || summary.IdleWorkers != 1 {
+		t.Fatalf("unexpected worker counts: %+v", summary)
+	}
+	if summary.TotalNodes != 3 || summary.ActiveNodes != 1 || summary.IdleNodes != 1 || summary.DegradedNodes != 1 {
+		t.Fatalf("unexpected node counts: %+v", summary)
+	}
+	if summary.CapacityUtilizationPercent != float64(2)/float64(3)*100 {
+		t.Fatalf("unexpected capacity utilization: %+v", summary)
+	}
+	if len(summary.ExecutorDistribution) != 3 || summary.ExecutorDistribution[0].Count != 1 {
+		t.Fatalf("unexpected executor distribution: %+v", summary.ExecutorDistribution)
+	}
+	if len(summary.NodeHealthDistribution) != 3 ||
+		summary.NodeHealthDistribution[0].Key != "active" ||
+		summary.NodeHealthDistribution[1].Key != "degraded" ||
+		summary.NodeHealthDistribution[2].Key != "idle" {
+		t.Fatalf("unexpected node health distribution: %+v", summary.NodeHealthDistribution)
+	}
+	if len(summary.Nodes) != 3 || summary.Nodes[1].NodeID != "node-b" || summary.Nodes[1].Health != "degraded" || summary.Nodes[1].StaleWorkers != 1 {
+		t.Fatalf("unexpected node summaries: %+v", summary.Nodes)
+	}
+}
+
 func TestQueryMemoryEventsAndEventStateHelpers(t *testing.T) {
 	t.Run("nil recorder", func(t *testing.T) {
 		server := &Server{}
@@ -4061,7 +4095,11 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 			IdleNodes                  int     `json:"idle_nodes"`
 			DegradedNodes              int     `json:"degraded_nodes"`
 			CapacityUtilizationPercent float64 `json:"capacity_utilization_percent"`
-			Nodes                      []struct {
+			NodeHealthDistribution     []struct {
+				Key   string `json:"key"`
+				Count int    `json:"count"`
+			} `json:"node_health_distribution"`
+			Nodes []struct {
 				NodeID                     string         `json:"node_id"`
 				Health                     string         `json:"health"`
 				ActiveWorkers              int            `json:"active_workers"`
@@ -4098,6 +4136,12 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 	}
 	if len(decoded.WorkerPool.ExecutorDistribution) != 3 {
 		t.Fatalf("expected executor distribution across worker nodes, got %+v", decoded.WorkerPool.ExecutorDistribution)
+	}
+	if len(decoded.WorkerPool.NodeHealthDistribution) != 3 ||
+		decoded.WorkerPool.NodeHealthDistribution[0].Key != "active" ||
+		decoded.WorkerPool.NodeHealthDistribution[1].Key != "degraded" ||
+		decoded.WorkerPool.NodeHealthDistribution[2].Key != "idle" {
+		t.Fatalf("expected node health distribution across worker nodes, got %+v", decoded.WorkerPool.NodeHealthDistribution)
 	}
 	nodesByID := make(map[string]struct {
 		Health                     string
@@ -4138,6 +4182,107 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 	}
 	if !strings.Contains(decoded.DistributedDiagnostics.RolloutReport.ExportURL, "since=2026-03-23T09%3A30%3A00Z") || !strings.Contains(decoded.DistributedDiagnostics.RolloutReport.ExportURL, "until=2026-03-23T10%3A00%3A00Z") {
 		t.Fatalf("expected distributed export url to retain the time window, got %s", decoded.DistributedDiagnostics.RolloutReport.ExportURL)
+	}
+}
+
+func TestBuildDistributedDiagnosticsIncludesWorkerPoolSummary(t *testing.T) {
+	base := time.Date(2026, 3, 23, 10, 0, 0, 0, time.UTC)
+	server := &Server{
+		Recorder:  observability.NewRecorder(),
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
+		Control:   control.New(),
+		Worker:    fakeNodeAwareWorkerPoolStatus{now: base},
+		Now:       func() time.Time { return base },
+	}
+
+	diagnostics := server.buildDistributedDiagnostics(controlCenterFilters{})
+	if diagnostics.WorkerPool == nil || diagnostics.WorkerPoolHealth == nil {
+		t.Fatalf("expected worker pool diagnostics, got %+v %+v", diagnostics.WorkerPool, diagnostics.WorkerPoolHealth)
+	}
+	if diagnostics.WorkerPool.TotalNodes != 3 || diagnostics.WorkerPool.DegradedNodes != 1 {
+		t.Fatalf("unexpected worker pool summary: %+v", diagnostics.WorkerPool)
+	}
+	if len(diagnostics.WorkerPool.ExecutorDistribution) != 3 || len(diagnostics.WorkerPool.NodeHealthDistribution) != 3 {
+		t.Fatalf("unexpected worker pool distributions: %+v %+v", diagnostics.WorkerPool.ExecutorDistribution, diagnostics.WorkerPool.NodeHealthDistribution)
+	}
+	if diagnostics.WorkerPoolHealth.StaleWorkers != 1 || diagnostics.WorkerPoolHealth.WorkersMissingHeartbeat != 0 {
+		t.Fatalf("unexpected worker pool health: %+v", diagnostics.WorkerPoolHealth)
+	}
+}
+
+func TestRenderDistributedDiagnosticsMarkdownIncludesWorkerPoolSummary(t *testing.T) {
+	markdown := renderDistributedDiagnosticsMarkdown(distributedDiagnostics{
+		Summary: distributedDiagnosticsSummary{
+			RegisteredExecutors: 2,
+			ActiveExecutors:     1,
+			TotalTasks:          3,
+			ActiveRuns:          2,
+			ActiveWorkers:       2,
+			IdleWorkers:         1,
+		},
+		WorkerPool: &workerPoolSummary{
+			TotalWorkers:               3,
+			ActiveWorkers:              2,
+			IdleWorkers:                1,
+			TotalNodes:                 2,
+			CapacityUtilizationPercent: 66.7,
+			ExecutorDistribution: []auditFacetCount{
+				{Key: "local", Count: 2},
+				{Key: "ray", Count: 1},
+			},
+			NodeHealthDistribution: []auditFacetCount{
+				{Key: "active", Count: 1},
+				{Key: "degraded", Count: 1},
+			},
+			Nodes: []workerPoolNodeView{
+				{
+					NodeID:                     "node-a",
+					TotalWorkers:               2,
+					ActiveWorkers:              2,
+					Health:                     "active",
+					CapacityUtilizationPercent: 100,
+					ExecutorDistribution: []auditFacetCount{
+						{Key: "local", Count: 2},
+					},
+					WorkerStates: map[string]int{"running": 1, "leased": 1},
+				},
+				{
+					NodeID:                     "node-b",
+					TotalWorkers:               1,
+					IdleWorkers:                1,
+					StaleWorkers:               1,
+					MissingHeartbeatWorkers:    1,
+					Health:                     "degraded",
+					CapacityUtilizationPercent: 0,
+					ExecutorDistribution: []auditFacetCount{
+						{Key: "ray", Count: 1},
+					},
+					WorkerStates: map[string]int{"idle": 1},
+				},
+			},
+		},
+		WorkerPoolHealth: &workerPoolHealthSummary{
+			WorkersWithHeartbeat:    2,
+			WorkersMissingHeartbeat: 1,
+			StaleWorkers:            1,
+		},
+	}, controlCenterFilters{})
+
+	for _, want := range []string{
+		"## Worker Pool",
+		"Capacity utilization: 66.7%",
+		"Executor distribution: local=2, ray=1",
+		"Node health: active=1, degraded=1",
+		"## Worker Pool Nodes",
+		"node-a: health=active workers=2 active=2 idle=0 stale=0 missing_heartbeat=0 capacity=100.0%",
+		"executors: local=2",
+		"worker states: leased=1, running=1",
+		"node-b: health=degraded workers=1 active=0 idle=1 stale=1 missing_heartbeat=1 capacity=0.0%",
+	} {
+		if !strings.Contains(markdown, want) {
+			t.Fatalf("expected markdown to contain %q, got %s", want, markdown)
+		}
 	}
 }
 
@@ -4634,6 +4779,9 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		t.Fatalf("expected merged continuation next actions, got %+v", decoded.Diagnostics.ValidationBundleContinuation.NextActions)
 	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Worker Pool") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Executor distribution") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Worker Pool Nodes") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Coordination Leader Election") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Shared Queue Coordination") ||

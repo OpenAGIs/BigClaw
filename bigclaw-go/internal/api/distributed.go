@@ -162,6 +162,8 @@ type traceExportBundleTrace struct {
 
 type distributedDiagnostics struct {
 	Summary               distributedDiagnosticsSummary            `json:"summary"`
+	WorkerPool            *workerPoolSummary                       `json:"worker_pool,omitempty"`
+	WorkerPoolHealth      *workerPoolHealthSummary                 `json:"worker_pool_health,omitempty"`
 	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
 	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
@@ -357,8 +359,19 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, capacity.ExecutorCapacity, s.Control.Snapshot()),
 	}
 	fairness := buildFairnessDiagnostics(capabilities, eventRollup.CountersByExecutor, eventRollup.TotalRouted)
+	pool := s.workerPoolSummary()
+	var poolHealth *workerPoolHealthSummary
+	if pool != nil {
+		now := time.Now()
+		if s.Now != nil {
+			now = s.Now()
+		}
+		poolHealth = workerPoolHealth(now, pool)
+	}
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
+		WorkerPool:            pool,
+		WorkerPoolHealth:      poolHealth,
 		RoutingReasons:        eventRollup.RoutingReasons,
 		ExecutorCapacity:      capacity.ExecutorCapacity,
 		ClusterHealth:         clusterHealth,
@@ -998,6 +1011,52 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		}
 		if len(item.SampleTasks) > 0 {
 			lines = append(lines, "  - sample tasks: "+strings.Join(item.SampleTasks, ", "))
+		}
+	}
+	lines = append(lines, "", "## Worker Pool")
+	if diagnostics.WorkerPool == nil {
+		lines = append(lines, "- Worker pool unavailable")
+	} else {
+		lines = append(lines,
+			fmt.Sprintf("- Total workers: %d", diagnostics.WorkerPool.TotalWorkers),
+			fmt.Sprintf("- Active workers: %d", diagnostics.WorkerPool.ActiveWorkers),
+			fmt.Sprintf("- Idle workers: %d", diagnostics.WorkerPool.IdleWorkers),
+			fmt.Sprintf("- Total nodes: %d", diagnostics.WorkerPool.TotalNodes),
+			fmt.Sprintf("- Capacity utilization: %.1f%%", diagnostics.WorkerPool.CapacityUtilizationPercent),
+		)
+		if len(diagnostics.WorkerPool.ExecutorDistribution) > 0 {
+			lines = append(lines, "- Executor distribution: "+formatFacetCounts(diagnostics.WorkerPool.ExecutorDistribution))
+		}
+		if len(diagnostics.WorkerPool.NodeHealthDistribution) > 0 {
+			lines = append(lines, "- Node health: "+formatFacetCounts(diagnostics.WorkerPool.NodeHealthDistribution))
+		}
+		if diagnostics.WorkerPoolHealth != nil {
+			lines = append(lines,
+				fmt.Sprintf("- Workers with heartbeat: %d", diagnostics.WorkerPoolHealth.WorkersWithHeartbeat),
+				fmt.Sprintf("- Workers missing heartbeat: %d", diagnostics.WorkerPoolHealth.WorkersMissingHeartbeat),
+				fmt.Sprintf("- Stale workers: %d", diagnostics.WorkerPoolHealth.StaleWorkers),
+			)
+		}
+		if len(diagnostics.WorkerPool.Nodes) > 0 {
+			lines = append(lines, "", "## Worker Pool Nodes")
+			for _, node := range diagnostics.WorkerPool.Nodes {
+				lines = append(lines, fmt.Sprintf("- %s: health=%s workers=%d active=%d idle=%d stale=%d missing_heartbeat=%d capacity=%.1f%%", node.NodeID, firstNonEmpty(node.Health, "unknown"), node.TotalWorkers, node.ActiveWorkers, node.IdleWorkers, node.StaleWorkers, node.MissingHeartbeatWorkers, node.CapacityUtilizationPercent))
+				if len(node.ExecutorDistribution) > 0 {
+					lines = append(lines, "  - executors: "+formatFacetCounts(node.ExecutorDistribution))
+				}
+				if len(node.WorkerStates) > 0 {
+					stateKeys := make([]string, 0, len(node.WorkerStates))
+					for key := range node.WorkerStates {
+						stateKeys = append(stateKeys, key)
+					}
+					sort.Strings(stateKeys)
+					parts := make([]string, 0, len(stateKeys))
+					for _, key := range stateKeys {
+						parts = append(parts, fmt.Sprintf("%s=%d", key, node.WorkerStates[key]))
+					}
+					lines = append(lines, "  - worker states: "+strings.Join(parts, ", "))
+				}
+			}
 		}
 	}
 	lines = append(lines,
