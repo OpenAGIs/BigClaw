@@ -2,46 +2,42 @@
 
 ## Plan
 
-1. Keep this tranche scoped to porting the simpler remaining `tests/test_reports.py` surfaces into
-   `bigclaw-go/internal/reporting` instead of widening into the UI-review module.
-2. Add Go-native report studio, issue validation, launch/final-delivery checklist, pilot
-   scorecard/portfolio, and shared-view rendering helpers, plus any small collaboration support
-   needed to render those surfaces cleanly.
-3. Add targeted Go tests for the newly ported reporting behavior, reusing the existing reporting
-   package rather than introducing a new package layer.
-4. Run targeted Go validation for `./internal/reporting` and any touched supporting package plus
-   repo-level file-count and Python packaging checks, then record exact commands and results here.
-4. Commit the scoped migration changes and push the branch to the remote.
+1. Inspect the two remaining Python tests under `tests/` and map them to existing Go coverage.
+2. Delete `tests/test_reports.py` after confirming equivalent Go coverage exists or adding the missing
+   `_test.go` assertions inside `bigclaw-go/internal/reporting`.
+3. Delete `tests/test_ui_review.py` only if a Go-native replacement can be added within this issue's
+   scope without widening into unrelated product surface work.
+4. Run targeted validation for touched Go packages, repo Python-file counts, and Python packaging-file
+   absence, then record exact commands and outcomes here.
+5. Commit only this issue's changes and push the current branch.
 
 ## Acceptance
 
-- The Go tree gains native coverage for the report-studio/checklist/pilot/shared-view portion of
-  `tests/test_reports.py`.
-- No new Python tests are introduced.
-- `pyproject.toml` and `setup.py` remain absent.
-- The final change can name the deleted Python files and the added or expanded Go test files.
+- The number of Python files under `tests/` decreases.
+- Any deleted Python coverage is replaced by Go tests in `bigclaw-go/internal/reporting` or another
+  directly corresponding Go package.
+- No new Python files are introduced.
+- `pyproject.toml` and `setup.py` are absent after the change.
+- Final notes can name which Python files were removed and which Go test files were added or expanded.
 
 ## Validation
 
-- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-- `cd bigclaw-go && go test ./internal/reporting ./internal/collaboration`
-- `find . \\( -name pyproject.toml -o -name setup.py \\) -print | sort`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+- `cd bigclaw-go && go test ./internal/reporting`
+- `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
 - `git status --short`
 
 ## Validation Results
 
-- `cd bigclaw-go && go test ./internal/collaboration ./internal/reporting`
-  - `ok  	bigclaw-go/internal/collaboration	0.433s`
-  - `ok  	bigclaw-go/internal/reporting	0.805s`
-- `find tests -maxdepth 1 -name '*.py' | sort | wc -l`
-  - `2`
+- `find tests -maxdepth 1 -name '*.py' | sort`
+  - `tests/test_ui_review.py`
+- `cd bigclaw-go && go test ./internal/reporting`
+  - `ok  	bigclaw-go/internal/reporting	(cached)`
 - `find . \( -name pyproject.toml -o -name setup.py \) -print | sort`
   - no output
 - `git status --short`
   - ` M .symphony/workpad.md`
-  - ` M bigclaw-go/internal/collaboration/thread.go`
-  - ` M bigclaw-go/internal/collaboration/thread_test.go`
-  - ` M bigclaw-go/internal/reporting/reporting.go`
-  - `?? bigclaw-go/internal/reporting/reporting_surface.go`
-  - `?? bigclaw-go/internal/reporting/reporting_surface_test.go`
   - ` M docs/BigClaw-AgentHub-Integration-Alignment.md`
+  - ` D tests/test_reports.py`
+  - `?? bigclaw-go/internal/reporting/reporting_orchestration.go`
+  - `?? bigclaw-go/internal/reporting/reporting_orchestration_test.go`
