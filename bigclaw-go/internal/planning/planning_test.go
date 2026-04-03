@@ -421,10 +421,14 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	}
 
 	var opsCandidate CandidateEntry
+	var orchestrationCandidate CandidateEntry
 	var releaseCandidate CandidateEntry
 	for _, candidate := range backlog.Candidates {
 		if candidate.CandidateID == "candidate-ops-hardening" {
 			opsCandidate = candidate
+		}
+		if candidate.CandidateID == "candidate-orchestration-rollout" {
+			orchestrationCandidate = candidate
 		}
 		if candidate.CandidateID == "candidate-release-control" {
 			releaseCandidate = candidate
@@ -466,6 +470,17 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		if prefix == "tests" {
 			t.Fatalf("deleted Python review pack target still present in %+v", releaseTargets)
 		}
+	}
+
+	orchestrationTargets := map[string]struct{}{}
+	for _, link := range orchestrationCandidate.EvidenceLinks {
+		orchestrationTargets[link.Target] = struct{}{}
+	}
+	if _, ok := orchestrationTargets["bigclaw-go/internal/reportstudio/reportstudio.go"]; !ok {
+		t.Fatalf("missing Go-native report studio evidence target in %+v", orchestrationTargets)
+	}
+	if _, ok := orchestrationTargets["src/bigclaw/reports.py"]; ok {
+		t.Fatalf("deleted Python report target still present in %+v", orchestrationTargets)
 	}
 }
 
