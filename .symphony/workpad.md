@@ -16,3 +16,13 @@
 - `find . -name '*.py' | wc -l`
 - `git ls-files -- bigclaw-go/scripts/benchmark bigclaw-go/scripts/e2e bigclaw-go/scripts/migration scripts`
 - Targeted `go test` commands covering the regression test package and the affected CLI command package.
+
+## Outcome
+- Repository Python count was already `0` at the start of the lane, so the sweep could not reduce it further.
+- Added `bigclaw-go/internal/regression/python_residual_sweep6_test.go` to keep the listed candidate Python files absent, verify the Go replacement surfaces remain present, and fail if any `*.py` file reappears anywhere in the repo.
+- Committed and pushed the lane on branch `BIG-GO-1146` at commit `742fbc59` (`Add regression coverage for python residual sweep 6`).
+
+## Validation Results
+- `find . -name '*.py' | wc -l` -> `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestPythonResidualSweep6|TestRepositoryPythonCountStaysZero'` -> `ok  	bigclaw-go/internal/regression	0.449s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl` -> `ok  	bigclaw-go/cmd/bigclawctl	3.048s`
