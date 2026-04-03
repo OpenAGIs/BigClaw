@@ -70,6 +70,19 @@
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
 - `git status --short` -> modified `.symphony/workpad.md`; added `bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go`
 - final `git status --short` after follow-up commits -> clean working tree
+- final unattended revalidation on `2026-04-04`:
+- `find . -name '*.py' | wc -l` -> `0`
+- `git ls-tree -r --name-only HEAD | rg '\.py$'` -> exit `1` with no tracked Python files
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly|TestRootScriptWrappersStayGoFirst|TestRootScriptWorkflowAndHooksStayGoOnly|TestRootScriptReportsStayGoOnly|TestRootScriptRepoSurfacesStayGoOnly'` -> `ok  	bigclaw-go/internal/regression	(cached)`
+- `bash scripts/ops/bigclawctl create-issues --help` -> exit `0`; printed `usage: bigclawctl create-issues [flags]`
+- `bash scripts/ops/bigclawctl dev-smoke --help` -> exit `0`; printed `usage: bigclawctl dev-smoke [flags]`
+- `bash scripts/ops/bigclawctl github-sync --help` -> exit `0`; printed `usage: bigclawctl github-sync <install|status|sync> [flags]`
+- `bash scripts/ops/bigclawctl refill --help` -> exit `0`; printed `usage: bigclawctl refill [flags]` and `bigclawctl refill seed [flags]`
+- `bash scripts/ops/bigclawctl workspace bootstrap --help` -> exit `0`; printed `usage: bigclawctl workspace bootstrap [flags]`
+- `bash scripts/ops/bigclawctl workspace validate --help` -> exit `0`; printed `usage: bigclawctl workspace validate [flags]`
+- `bash scripts/ops/bigclaw-symphony --help` -> exit `0`; printed `usage: bigclawctl symphony [flags] [args...]`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and `files: []`
+- `git status --short` -> clean working tree before the final audit commit
 
 ## Git
 - branch: `feat/BIG-GO-1143-root-scripts-residual-sweep`
