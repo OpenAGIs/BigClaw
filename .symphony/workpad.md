@@ -7,6 +7,8 @@
 - migrate Go planning evidence links off the frozen Python release-gate sources where the Go-native packages already own the behavior and tests
 - delete the now-unreferenced release-gate Python source tranche under `src/bigclaw`: `design_system.py`, `console_ia.py`, and `ui_review.py`
 - delete the now-unreferenced Python planning/governance tranche under `src/bigclaw`: `planning.py` and `governance.py`
+- retarget the remaining planning evidence links off `operations.py`, `evaluation.py`, and `reports.py` so the orphaned Python operations/reporting support tranche can be removed
+- delete the now-unreferenced Python operations/reporting support tranche under `src/bigclaw`: `audit_events.py`, `collaboration.py`, `deprecation.py`, `evaluation.py`, `observability.py`, `operations.py`, `reports.py`, `risk.py`, and `run_detail.py`
 - update planning/unit regression expectations to point at Go-owned evidence targets instead of the deleted Python files
 - run targeted validation for planning/report regressions, legacy shim compile-check, docs/reference sweeps, and repo Python file count reduction
 - commit the scoped change set and push it to the remote branch
@@ -14,6 +16,7 @@
 ## Acceptance
 - lane coverage is explicit: stale root wrapper guidance plus the removable release-gate Python tranche (`src/bigclaw/design_system.py`, `src/bigclaw/console_ia.py`, `src/bigclaw/ui_review.py`)
 - lane coverage also includes the removable orphan planning/governance tranche (`src/bigclaw/planning.py`, `src/bigclaw/governance.py`)
+- lane coverage also includes the removable orphan operations/reporting support tranche (`src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/deprecation.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/observability.py`, `src/bigclaw/operations.py`, `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`)
 - the change removes or replaces real Python assets instead of only tracker/doc cosmetics
 - repository guidance no longer claims the deleted workspace Python wrappers still exist
 - Go planning evidence points at Go-owned implementation/test surfaces for release-gate validation
@@ -26,18 +29,19 @@
 - `rg -n "scripts/ops/\\*workspace\\*\\.py|compatibility shims over the same Go CLI|ops wrappers remain only as compatibility shims" README.md docs/go-cli-script-migration-plan.md`
 - `rg -n "src/bigclaw/(design_system|console_ia|ui_review)\\.py" README.md bigclaw-go docs scripts .github -g '!docs/go-mainline-cutover-issue-pack.md'`
 - `rg -n "src/bigclaw/(design_system|console_ia|ui_review|planning|governance)\\.py|bigclaw\\.planning|bigclaw\\.governance" README.md bigclaw-go docs scripts .github src -g '!docs/go-mainline-cutover-issue-pack.md' -g '!reports/**' -g '!local-issues.json'`
+- `rg -n "src/bigclaw/(audit_events|collaboration|deprecation|evaluation|governance|observability|operations|planning|reports|risk|run_detail|design_system|console_ia|ui_review)\\.py|bigclaw\\.(planning|governance)" README.md bigclaw-go docs scripts .github src -g '!docs/go-mainline-cutover-issue-pack.md' -g '!reports/**' -g '!local-issues.json'`
 - `cd bigclaw-go && go test ./internal/planning ./internal/regression ./internal/legacyshim ./cmd/bigclawctl`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `git status --short`
 
 ## Validation Results
-- `find . -name '*.py' | wc -l` -> `11`
-- `find src/bigclaw -maxdepth 1 -type f -name '*.py' | sort` -> `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/deprecation.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/legacy_shim.py`, `src/bigclaw/models.py`, `src/bigclaw/observability.py`, `src/bigclaw/operations.py`, `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`
+- `find . -name '*.py' | wc -l` -> `2`
+- `find src/bigclaw -maxdepth 1 -type f -name '*.py' | sort` -> `src/bigclaw/legacy_shim.py`, `src/bigclaw/models.py`
 - `rg -n "scripts/ops/\\*workspace\\*\\.py|compatibility shims over the same Go CLI|ops wrappers remain only as compatibility shims" README.md docs/go-cli-script-migration-plan.md` -> exit `1` with no matches
-- `rg -n "src/bigclaw/(design_system|console_ia|ui_review|planning|governance)\\.py|bigclaw\\.planning|bigclaw\\.governance" README.md bigclaw-go docs scripts .github src -g '!docs/go-mainline-cutover-issue-pack.md' -g '!reports/**' -g '!local-issues.json'` -> exit `1` with no matches
-- `cd bigclaw-go && go test ./internal/planning ./internal/regression ./internal/legacyshim ./cmd/bigclawctl` -> `ok   bigclaw-go/internal/planning (cached)`; `ok   bigclaw-go/internal/regression 1.342s`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/cmd/bigclawctl (cached)`
+- `rg -n "src/bigclaw/(audit_events|collaboration|deprecation|evaluation|governance|observability|operations|planning|reports|risk|run_detail|design_system|console_ia|ui_review)\\.py|bigclaw\\.(planning|governance)" README.md bigclaw-go docs scripts .github src -g '!docs/go-mainline-cutover-issue-pack.md' -g '!reports/**' -g '!local-issues.json'` -> exit `1` with no matches
+- `cd bigclaw-go && go test ./internal/planning ./internal/regression ./internal/legacyshim ./cmd/bigclawctl` -> `ok   bigclaw-go/internal/planning 0.818s`; `ok   bigclaw-go/internal/regression 0.983s`; `ok   bigclaw-go/internal/legacyshim (cached)`; `ok   bigclaw-go/cmd/bigclawctl (cached)`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> exit `0`; JSON reported `status: ok`, `python: python3`, and the single checked file `/Users/openagi/code/bigclaw-workspaces/BIG-GO-1101/src/bigclaw/legacy_shim.py`
-- `git status --short` -> modified `.symphony/workpad.md`; deleted `src/bigclaw/governance.py`, `src/bigclaw/planning.py`
+- `git status --short` -> modified `.symphony/workpad.md`, `bigclaw-go/internal/planning/planning.go`, `bigclaw-go/internal/planning/planning_test.go`; deleted `src/bigclaw/audit_events.py`, `src/bigclaw/collaboration.py`, `src/bigclaw/deprecation.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/observability.py`, `src/bigclaw/operations.py`, `src/bigclaw/reports.py`, `src/bigclaw/risk.py`, `src/bigclaw/run_detail.py`
 
 ## Archived Workpads
 ### BIG-GO-1096
