@@ -1,8 +1,13 @@
 # BIG-GO-1040 Workpad
 
+## Current Tranche
+
+- Target Python deletion: `src/bigclaw/models.py`
+- Replacement strategy: inline the legacy model surface into `src/bigclaw/__init__.py`, expose a synthetic `bigclaw.models` module before the remaining compatibility imports execute, and tighten Go regression coverage for the lower Python inventory.
+
 ## Plan
 
-1. Delete one remaining legacy package module by folding the `src/bigclaw/evaluation.py` surface into `src/bigclaw/operations.py` and exposing a compatibility `bigclaw.evaluation` module from package init.
+1. Delete one remaining legacy package module by folding the `src/bigclaw/models.py` surface into `src/bigclaw/__init__.py` and exposing a compatibility `bigclaw.models` module from package init.
 2. Remove the physical Python file and tighten Go-side regression coverage so the repo inventory explicitly expects one fewer `.py` file.
 3. Validate with targeted Go tests plus repo-wide Python inventory checks, then commit and push the scoped issue branch.
 
@@ -10,7 +15,7 @@
 
 - Repository `.py` file count drops within this issue scope.
 - No new Python files are introduced.
-- `src/bigclaw/evaluation.py` is deleted while `bigclaw.evaluation` remains import-compatible through the package surface.
+- `src/bigclaw/models.py` is deleted while `bigclaw.models` remains import-compatible through the package surface.
 - Go regression coverage is updated to pin the new lower Python inventory.
 - `pyproject.toml` and `setup.py` remain absent.
 
