@@ -32,5 +32,5 @@
 
 ## Git
 - Branch: `BIG-GO-1164`
-- Commit: `b2bac9b8015610dd8051e67feffb2ab2476eca49`
+- Commit: `71f1b567`
 - Push: `git push -u origin BIG-GO-1164` -> success
