@@ -238,14 +238,39 @@ type SharedViewFilter struct {
 	Value string `json:"value"`
 }
 
+type CollaborationComment struct {
+	CommentID string   `json:"comment_id"`
+	Author    string   `json:"author"`
+	Body      string   `json:"body"`
+	Mentions  []string `json:"mentions,omitempty"`
+	Anchor    string   `json:"anchor,omitempty"`
+}
+
+type DecisionNote struct {
+	DecisionID string   `json:"decision_id"`
+	Author     string   `json:"author"`
+	Outcome    string   `json:"outcome"`
+	Summary    string   `json:"summary"`
+	Mentions   []string `json:"mentions,omitempty"`
+	FollowUp   string   `json:"follow_up,omitempty"`
+}
+
+type CollaborationThread struct {
+	Surface   string                 `json:"surface"`
+	TargetID  string                 `json:"target_id"`
+	Comments  []CollaborationComment `json:"comments,omitempty"`
+	Decisions []DecisionNote         `json:"decisions,omitempty"`
+}
+
 type SharedViewContext struct {
-	Filters      []SharedViewFilter `json:"filters,omitempty"`
-	ResultCount  *int               `json:"result_count,omitempty"`
-	Loading      bool               `json:"loading,omitempty"`
-	Errors       []string           `json:"errors,omitempty"`
-	PartialData  []string           `json:"partial_data,omitempty"`
-	EmptyMessage string             `json:"empty_message,omitempty"`
-	LastUpdated  string             `json:"last_updated,omitempty"`
+	Filters       []SharedViewFilter   `json:"filters,omitempty"`
+	ResultCount   *int                 `json:"result_count,omitempty"`
+	Loading       bool                 `json:"loading,omitempty"`
+	Errors        []string             `json:"errors,omitempty"`
+	PartialData   []string             `json:"partial_data,omitempty"`
+	EmptyMessage  string               `json:"empty_message,omitempty"`
+	LastUpdated   string               `json:"last_updated,omitempty"`
+	Collaboration *CollaborationThread `json:"collaboration,omitempty"`
 }
 
 func (v SharedViewContext) State() string {
@@ -2325,6 +2350,17 @@ func renderSharedViewContext(view *SharedViewContext) string {
 		builder.WriteString("\n## Partial Data\n\n")
 		for _, message := range view.PartialData {
 			builder.WriteString(fmt.Sprintf("- %s\n", message))
+		}
+	}
+	if view.Collaboration != nil {
+		builder.WriteString("\n## Collaboration\n\n")
+		builder.WriteString(fmt.Sprintf("- Surface: %s\n", view.Collaboration.Surface))
+		builder.WriteString(fmt.Sprintf("- Target ID: %s\n", view.Collaboration.TargetID))
+		for _, comment := range view.Collaboration.Comments {
+			builder.WriteString(fmt.Sprintf("- Comment %s by %s: %s\n", comment.CommentID, comment.Author, comment.Body))
+		}
+		for _, decision := range view.Collaboration.Decisions {
+			builder.WriteString(fmt.Sprintf("- Decision %s by %s outcome=%s: %s\n", decision.DecisionID, decision.Author, decision.Outcome, decision.Summary))
 		}
 	}
 	builder.WriteString("\n")

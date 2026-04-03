@@ -503,6 +503,45 @@ func TestRenderRegressionCenterShowsSharedViewPartialState(t *testing.T) {
 	}
 }
 
+func TestRenderSharedViewContextIncludesCollaborationAnnotations(t *testing.T) {
+	resultCount := 4
+	view := &SharedViewContext{
+		Filters:     []SharedViewFilter{{Label: "Team", Value: "ops"}},
+		ResultCount: &resultCount,
+		Collaboration: &CollaborationThread{
+			Surface:  "dashboard",
+			TargetID: "ops-overview",
+			Comments: []CollaborationComment{{
+				CommentID: "dashboard-comment-1",
+				Author:    "pm",
+				Body:      "Please review blocker copy with @ops and @eng.",
+				Mentions:  []string{"ops", "eng"},
+				Anchor:    "blockers",
+			}},
+			Decisions: []DecisionNote{{
+				DecisionID: "dashboard-decision-1",
+				Author:     "ops",
+				Outcome:    "approved",
+				Summary:    "Keep the blocker module visible for managers.",
+				Mentions:   []string{"pm"},
+				FollowUp:   "Recheck after next data refresh.",
+			}},
+		},
+	}
+
+	content := renderSharedViewContext(view)
+	for _, fragment := range []string{
+		"## Collaboration",
+		"Surface: dashboard",
+		"Please review blocker copy with @ops and @eng.",
+		"Keep the blocker module visible for managers.",
+	} {
+		if !strings.Contains(content, fragment) {
+			t.Fatalf("expected %q in shared view context, got %s", fragment, content)
+		}
+	}
+}
+
 func TestRenderPolicyPromptVersionCenterShowsSharedViewContext(t *testing.T) {
 	resultCount := 1
 	view := &SharedViewContext{

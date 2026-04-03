@@ -708,44 +708,6 @@ def test_render_pilot_portfolio_report_summarizes_commercial_readiness():
     assert "Partner B: recommendation=iterate" in content
 
 
-def test_render_shared_view_context_includes_collaboration_annotations():
-    view = SharedViewContext(
-        filters=[SharedViewFilter(label="Team", value="ops")],
-        result_count=4,
-        collaboration=build_collaboration_thread(
-            "dashboard",
-            "ops-overview",
-            comments=[
-                CollaborationComment(
-                    comment_id="dashboard-comment-1",
-                    author="pm",
-                    body="Please review blocker copy with @ops and @eng.",
-                    mentions=["ops", "eng"],
-                    anchor="blockers",
-                )
-            ],
-            decisions=[
-                DecisionNote(
-                    decision_id="dashboard-decision-1",
-                    author="ops",
-                    outcome="approved",
-                    summary="Keep the blocker module visible for managers.",
-                    mentions=["pm"],
-                    follow_up="Recheck after next data refresh.",
-                )
-            ],
-        ),
-    )
-
-    lines = render_shared_view_context(view)
-    content = "\n".join(lines)
-
-    assert "## Collaboration" in content
-    assert "Surface: dashboard" in content
-    assert "Please review blocker copy with @ops and @eng." in content
-    assert "Keep the blocker module visible for managers." in content
-
-
 def test_auto_triage_center_prioritizes_failed_and_pending_runs():
     approval_task = Task(task_id="OPE-76-risk", source="linear", title="Prod approval", description="")
     approval_run = TaskRun.from_task(approval_task, run_id="run-risk", medium="vm")
