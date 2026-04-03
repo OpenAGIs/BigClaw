@@ -157,6 +157,188 @@ func TestBuildOrchestrationCanvasAndTakeoverQueueAcceptCanonicalHandoffEvents(t 
 	}
 }
 
+func TestBuildTakeoverQueueFromLedgerGroupsPendingHandoffs(t *testing.T) {
+	entries := []map[string]any{
+		{
+			"run_id":  "run-sec",
+			"task_id": "OPE-66-sec",
+			"source":  "linear",
+			"summary": "requires approval for high-risk task",
+			"audits": []any{
+				map[string]any{
+					"action":  "orchestration.handoff",
+					"outcome": "pending",
+					"details": map[string]any{
+						"target_team":        "security",
+						"reason":             "requires approval for high-risk task",
+						"required_approvals": []any{"security-review"},
+					},
+				},
+			},
+		},
+		{
+			"run_id":  "run-ops",
+			"task_id": "OPE-66-ops",
+			"source":  "linear",
+			"summary": "premium tier required for advanced cross-department orchestration",
+			"audits": []any{
+				map[string]any{
+					"action":  "orchestration.handoff",
+					"outcome": "pending",
+					"details": map[string]any{
+						"target_team":        "operations",
+						"reason":             "premium tier required for advanced cross-department orchestration",
+						"required_approvals": []any{"ops-manager"},
+					},
+				},
+			},
+		},
+		{
+			"run_id":  "run-ok",
+			"task_id": "OPE-66-ok",
+			"source":  "linear",
+			"summary": "default low risk path",
+			"audits": []any{
+				map[string]any{
+					"action":  "scheduler.decision",
+					"outcome": "approved",
+					"details": map[string]any{"reason": "default low risk path"},
+				},
+			},
+		},
+	}
+
+	queue := BuildTakeoverQueueFromLedger(entries, "2026-03-10")
+	totalRuns := 3
+	report := RenderTakeoverQueueReport(queue, &totalRuns, nil)
+
+	if queue.PendingRequests() != 2 {
+		t.Fatalf("unexpected pending request count: %+v", queue)
+	}
+	if !reflect.DeepEqual(queue.TeamCounts(), map[string]int{"operations": 1, "security": 1}) {
+		t.Fatalf("unexpected team counts: %+v", queue.TeamCounts())
+	}
+	if queue.ApprovalCount() != 2 {
+		t.Fatalf("unexpected approval count: %d", queue.ApprovalCount())
+	}
+	if queue.Recommendation() != "expedite-security-review" {
+		t.Fatalf("unexpected recommendation: %s", queue.Recommendation())
+	}
+	if got := []string{queue.Requests[0].RunID, queue.Requests[1].RunID}; !reflect.DeepEqual(got, []string{"run-ops", "run-sec"}) {
+		t.Fatalf("unexpected request order: %+v", got)
+	}
+	if !queue.Requests[0].Actions[3].Enabled {
+		t.Fatalf("expected operations escalation action enabled: %+v", queue.Requests[0].Actions[3])
+	}
+	if queue.Requests[1].Actions[3].Enabled {
+		t.Fatalf("expected security escalation action disabled: %+v", queue.Requests[1].Actions[3])
+	}
+	for _, fragment := range []string{
+		"Pending Requests: 2",
+		"Team Mix: operations=1 security=1",
+		"run-sec: team=security status=pending task=OPE-66-sec approvals=security-review",
+		"run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager",
+		"Escalate [escalate] state=disabled target=run-sec reason=security takeovers are already escalated",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in takeover queue report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestRenderTakeoverQueueReportRendersSharedViewErrorState(t *testing.T) {
+	queue := BuildTakeoverQueueFromLedger(nil, "2026-03-10")
+	resultCount := 0
+	report := RenderTakeoverQueueReport(queue, nil, &SharedViewContext{
+		ResultCount: &resultCount,
+		Errors:      []string{"Takeover approvals service timed out."},
+	})
+
+	for _, fragment := range []string{
+		"- State: error",
+		"- Summary: Unable to load data for the current filters.",
+		"## Errors",
+		"Takeover approvals service timed out.",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in shared-view error report, got %s", fragment, report)
+		}
+	}
+}
+
+func TestRenderOrchestrationCanvasSummarizesPolicyAndHandoff(t *testing.T) {
+	entry := map[string]any{
+		"run_id":  "run-canvas",
+		"task_id": "OPE-66-canvas",
+		"source":  "linear",
+		"summary": "Canvas run",
+		"audits": []any{
+			map[string]any{
+				"action": "tool.invoke",
+				"details": map[string]any{
+					"tool": "browser",
+				},
+			},
+			map[string]any{
+				"action": "orchestration.plan",
+				"details": map[string]any{
+					"collaboration_mode": "tier-limited",
+					"departments":        []any{"operations", "engineering"},
+				},
+			},
+			map[string]any{
+				"action":  "orchestration.policy",
+				"outcome": "upgrade-required",
+				"details": map[string]any{
+					"tier":                 "standard",
+					"reason":               "premium tier required for advanced cross-department orchestration",
+					"blocked_departments":  []any{"customer-success"},
+					"entitlement_status":   "upgrade-required",
+					"billing_model":        "standard-blocked",
+					"estimated_cost_usd":   7.0,
+					"included_usage_units": 2,
+					"overage_usage_units":  1,
+					"overage_cost_usd":     4.0,
+				},
+			},
+			map[string]any{
+				"action":  "orchestration.handoff",
+				"outcome": "pending",
+				"details": map[string]any{
+					"target_team":        "operations",
+					"reason":             "premium tier required for advanced cross-department orchestration",
+					"required_approvals": []any{"ops-manager"},
+				},
+			},
+		},
+	}
+
+	canvas := BuildOrchestrationCanvasFromLedgerEntry(entry)
+	report := RenderOrchestrationCanvas(canvas)
+
+	if canvas.Recommendation() != "resolve-entitlement-gap" {
+		t.Fatalf("unexpected recommendation: %+v", canvas)
+	}
+	if !reflect.DeepEqual(canvas.ActiveTools, []string{"browser"}) {
+		t.Fatalf("unexpected active tools: %+v", canvas.ActiveTools)
+	}
+	if !canvas.Actions[3].Enabled {
+		t.Fatalf("expected escalate action enabled: %+v", canvas.Actions[3])
+	}
+	if canvas.Actions[4].Enabled {
+		t.Fatalf("expected retry action disabled for pending handoff: %+v", canvas.Actions[4])
+	}
+	for _, fragment := range []string{
+		"# Orchestration Canvas",
+		"- Tier: standard",
+		"- Entitlement Status: upgrade-required",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in orchestration canvas report, got %s", fragment, report)
+		}
+	}
+}
+
 func TestBuildOperationsMetricSpec(t *testing.T) {
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
 	end := start.Add(7 * 24 * time.Hour)

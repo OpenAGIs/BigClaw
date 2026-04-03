@@ -136,15 +136,74 @@ type TakeoverQueue struct {
 	Requests []TakeoverRequest `json:"requests,omitempty"`
 }
 
+func (q TakeoverQueue) PendingRequests() int {
+	return len(q.Requests)
+}
+
+func (q TakeoverQueue) TeamCounts() map[string]int {
+	counts := map[string]int{}
+	for _, request := range q.Requests {
+		counts[request.TargetTeam]++
+	}
+	return counts
+}
+
+func (q TakeoverQueue) ApprovalCount() int {
+	total := 0
+	for _, request := range q.Requests {
+		total += len(request.RequiredApprovals)
+	}
+	return total
+}
+
+func (q TakeoverQueue) Recommendation() string {
+	for _, request := range q.Requests {
+		if request.TargetTeam == "security" {
+			return "expedite-security-review"
+		}
+	}
+	if len(q.Requests) > 0 {
+		return "staff-takeover-queue"
+	}
+	return "monitor"
+}
+
 type OrchestrationCanvas struct {
-	TaskID            string   `json:"task_id"`
-	RunID             string   `json:"run_id"`
-	CollaborationMode string   `json:"collaboration_mode"`
-	Departments       []string `json:"departments,omitempty"`
-	RequiredApprovals []string `json:"required_approvals,omitempty"`
-	HandoffTeam       string   `json:"handoff_team"`
-	HandoffStatus     string   `json:"handoff_status"`
-	HandoffReason     string   `json:"handoff_reason,omitempty"`
+	TaskID             string          `json:"task_id"`
+	RunID              string          `json:"run_id"`
+	CollaborationMode  string          `json:"collaboration_mode"`
+	Departments        []string        `json:"departments,omitempty"`
+	RequiredApprovals  []string        `json:"required_approvals,omitempty"`
+	Tier               string          `json:"tier"`
+	UpgradeRequired    bool            `json:"upgrade_required"`
+	BlockedDepartments []string        `json:"blocked_departments,omitempty"`
+	HandoffTeam        string          `json:"handoff_team"`
+	HandoffStatus      string          `json:"handoff_status"`
+	HandoffReason      string          `json:"handoff_reason,omitempty"`
+	ActiveTools        []string        `json:"active_tools,omitempty"`
+	EntitlementStatus  string          `json:"entitlement_status"`
+	BillingModel       string          `json:"billing_model"`
+	EstimatedCostUSD   float64         `json:"estimated_cost_usd"`
+	IncludedUsageUnits int             `json:"included_usage_units"`
+	OverageUsageUnits  int             `json:"overage_usage_units"`
+	OverageCostUSD     float64         `json:"overage_cost_usd"`
+	Actions            []ConsoleAction `json:"actions,omitempty"`
+}
+
+func (c OrchestrationCanvas) Recommendation() string {
+	if c.HandoffTeam == "security" {
+		return "review-security-takeover"
+	}
+	if c.UpgradeRequired {
+		return "resolve-entitlement-gap"
+	}
+	if c.OverageCostUSD > 0 {
+		return "review-billing-overage"
+	}
+	if len(c.Departments) > 1 {
+		return "continue-cross-team-execution"
+	}
+	return "monitor"
 }
 
 type TriageCluster struct {
@@ -925,30 +984,61 @@ func RenderIssueValidationReport(issueID, version, environment, summary string) 
 func BuildOrchestrationCanvasFromLedgerEntry(entry map[string]any) OrchestrationCanvas {
 	audits := mapsFromAny(entry["audits"])
 	planAudit := latestNamedAudit(audits, "orchestration.plan")
+	policyAudit := latestNamedAudit(audits, "orchestration.policy")
 	handoffAudit := latestHandoffAudit(audits)
 	planDetails := map[string]any{}
 	if planAudit != nil {
 		planDetails = mapFromAny(planAudit["details"])
 	}
+	policyDetails := map[string]any{}
+	if policyAudit != nil {
+		policyDetails = mapFromAny(policyAudit["details"])
+	}
 	handoffDetails := map[string]any{}
 	if handoffAudit != nil {
 		handoffDetails = mapFromAny(handoffAudit["details"])
 	}
+	activeTools := map[string]struct{}{}
+	for _, audit := range audits {
+		if stringValue(audit["action"]) != "tool.invoke" {
+			continue
+		}
+		tool := stringValue(mapFromAny(audit["details"])["tool"])
+		if tool != "" {
+			activeTools[tool] = struct{}{}
+		}
+	}
 	canvas := OrchestrationCanvas{
-		TaskID:            stringValue(entry["task_id"]),
-		RunID:             stringValue(entry["run_id"]),
-		CollaborationMode: firstNonEmpty(stringValue(planDetails["collaboration_mode"]), "single-team"),
-		Departments:       stringListFromAny(planDetails["departments"]),
-		RequiredApprovals: stringListFromAny(planDetails["approvals"]),
-		HandoffTeam:       "none",
-		HandoffStatus:     "none",
-		HandoffReason:     "",
+		TaskID:             stringValue(entry["task_id"]),
+		RunID:              stringValue(entry["run_id"]),
+		CollaborationMode:  firstNonEmpty(stringValue(planDetails["collaboration_mode"]), "single-team"),
+		Departments:        stringListFromAny(planDetails["departments"]),
+		RequiredApprovals:  stringListFromAny(planDetails["approvals"]),
+		Tier:               firstNonEmpty(stringValue(policyDetails["tier"]), "standard"),
+		UpgradeRequired:    policyAudit != nil && stringValue(policyAudit["outcome"]) == "upgrade-required",
+		BlockedDepartments: stringListFromAny(policyDetails["blocked_departments"]),
+		HandoffTeam:        "none",
+		HandoffStatus:      "none",
+		HandoffReason:      "",
+		ActiveTools:        sortedKeys(activeTools),
+		EntitlementStatus:  firstNonEmpty(stringValue(policyDetails["entitlement_status"]), "included"),
+		BillingModel:       firstNonEmpty(stringValue(policyDetails["billing_model"]), "standard-included"),
+		EstimatedCostUSD:   anyFloat(policyDetails["estimated_cost_usd"]),
+		IncludedUsageUnits: int(anyFloat(policyDetails["included_usage_units"])),
+		OverageUsageUnits:  int(anyFloat(policyDetails["overage_usage_units"])),
+		OverageCostUSD:     anyFloat(policyDetails["overage_cost_usd"]),
 	}
 	if handoffAudit != nil {
 		canvas.HandoffTeam = firstNonEmpty(stringValue(handoffDetails["target_team"]), "none")
 		canvas.HandoffStatus = firstNonEmpty(stringValue(handoffAudit["outcome"]), "none")
 		canvas.HandoffReason = stringValue(handoffDetails["reason"])
 	}
+	canvas.Actions = buildConsoleActions(
+		canvas.RunID,
+		handoffAudit == nil || canvas.HandoffStatus != "pending",
+		handoffAudit == nil || canvas.HandoffStatus != "completed",
+		policyAudit != nil && stringValue(policyAudit["outcome"]) == "upgrade-required",
+	)
 	return canvas
 }
 
@@ -969,7 +1059,33 @@ func BuildTakeoverQueueFromLedger(entries []map[string]any, period string) Takeo
 			Status:            firstNonEmpty(stringValue(handoffAudit["outcome"]), "pending"),
 			Reason:            firstNonEmpty(stringValue(details["reason"]), firstNonEmpty(stringValue(entry["summary"]), "handoff requested")),
 			RequiredApprovals: stringListFromAny(details["required_approvals"]),
-			Actions:           buildConsoleActions(stringValue(entry["run_id"]), false, false, stringValue(details["target_team"]) != "security"),
+			Actions: []ConsoleAction{
+				{ActionID: "drill-down", Label: "Drill Down", Target: stringValue(entry["run_id"]), Enabled: true},
+				{ActionID: "export", Label: "Export", Target: stringValue(entry["run_id"]), Enabled: true},
+				{ActionID: "add-note", Label: "Add Note", Target: stringValue(entry["run_id"]), Enabled: true},
+				{
+					ActionID: "escalate",
+					Label:    "Escalate",
+					Target:   stringValue(entry["run_id"]),
+					Enabled:  stringValue(details["target_team"]) != "security",
+					Reason:   disabledReason(stringValue(details["target_team"]) != "security", "security takeovers are already escalated"),
+				},
+				{
+					ActionID: "retry",
+					Label:    "Retry",
+					Target:   stringValue(entry["run_id"]),
+					Enabled:  false,
+					Reason:   "retry is blocked while takeover is pending",
+				},
+				{
+					ActionID: "pause",
+					Label:    "Pause",
+					Target:   stringValue(entry["run_id"]),
+					Enabled:  stringValue(handoffAudit["outcome"]) == "pending",
+					Reason:   disabledReason(stringValue(handoffAudit["outcome"]) == "pending", "only pending takeovers can be paused"),
+				},
+				{ActionID: "audit", Label: "Audit Trail", Target: stringValue(entry["run_id"]), Enabled: true},
+			},
 		})
 	}
 	sort.Slice(queue.Requests, func(i, j int) bool {
@@ -979,6 +1095,78 @@ func BuildTakeoverQueueFromLedger(entries []map[string]any, period string) Takeo
 		return queue.Requests[i].RunID < queue.Requests[j].RunID
 	})
 	return queue
+}
+
+func RenderTakeoverQueueReport(queue TakeoverQueue, totalRuns *int, view *SharedViewContext) string {
+	teamCounts := queue.TeamCounts()
+	teamKeys := make([]string, 0, len(teamCounts))
+	for team := range teamCounts {
+		teamKeys = append(teamKeys, team)
+	}
+	sort.Strings(teamKeys)
+	teamMix := "none"
+	if len(teamKeys) > 0 {
+		parts := make([]string, 0, len(teamKeys))
+		for _, team := range teamKeys {
+			parts = append(parts, fmt.Sprintf("%s=%d", team, teamCounts[team]))
+		}
+		teamMix = strings.Join(parts, " ")
+	}
+	reportTotalRuns := queue.PendingRequests()
+	if totalRuns != nil {
+		reportTotalRuns = *totalRuns
+	}
+	builder := strings.Builder{}
+	builder.WriteString("# Human Takeover Queue\n\n")
+	builder.WriteString(fmt.Sprintf("- Queue: %s\n", queue.Name))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", queue.Period))
+	builder.WriteString(fmt.Sprintf("- Pending Requests: %d\n", queue.PendingRequests()))
+	builder.WriteString(fmt.Sprintf("- Total Runs: %d\n", reportTotalRuns))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n", queue.Recommendation()))
+	builder.WriteString(fmt.Sprintf("- Team Mix: %s\n", teamMix))
+	builder.WriteString(fmt.Sprintf("- Required Approvals: %d\n\n", queue.ApprovalCount()))
+	builder.WriteString("## Requests\n\n")
+	builder.WriteString(renderSharedViewContext(view))
+	if len(queue.Requests) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String() + "\n"
+	}
+	for _, request := range queue.Requests {
+		approvals := "none"
+		if len(request.RequiredApprovals) > 0 {
+			approvals = strings.Join(request.RequiredApprovals, ",")
+		}
+		builder.WriteString(fmt.Sprintf("- %s: team=%s status=%s task=%s approvals=%s reason=%s actions=%s\n", request.RunID, request.TargetTeam, request.Status, request.TaskID, approvals, request.Reason, RenderConsoleActions(request.Actions)))
+	}
+	return builder.String() + "\n"
+}
+
+func RenderOrchestrationCanvas(canvas OrchestrationCanvas) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Orchestration Canvas\n\n")
+	builder.WriteString(fmt.Sprintf("- Task ID: %s\n", canvas.TaskID))
+	builder.WriteString(fmt.Sprintf("- Run ID: %s\n", canvas.RunID))
+	builder.WriteString(fmt.Sprintf("- Collaboration Mode: %s\n", canvas.CollaborationMode))
+	builder.WriteString(fmt.Sprintf("- Departments: %s\n", joinOrNone(canvas.Departments)))
+	builder.WriteString(fmt.Sprintf("- Required Approvals: %s\n", joinOrNone(canvas.RequiredApprovals)))
+	builder.WriteString(fmt.Sprintf("- Tier: %s\n", canvas.Tier))
+	builder.WriteString(fmt.Sprintf("- Upgrade Required: %t\n", canvas.UpgradeRequired))
+	builder.WriteString(fmt.Sprintf("- Entitlement Status: %s\n", canvas.EntitlementStatus))
+	builder.WriteString(fmt.Sprintf("- Billing Model: %s\n", canvas.BillingModel))
+	builder.WriteString(fmt.Sprintf("- Blocked Departments: %s\n", joinOrNone(canvas.BlockedDepartments)))
+	builder.WriteString(fmt.Sprintf("- Handoff Team: %s\n", canvas.HandoffTeam))
+	builder.WriteString(fmt.Sprintf("- Handoff Status: %s\n", canvas.HandoffStatus))
+	builder.WriteString(fmt.Sprintf("- Recommendation: %s\n\n", canvas.Recommendation()))
+	builder.WriteString("## Execution Context\n\n")
+	builder.WriteString(fmt.Sprintf("- Active Tools: %s\n", joinOrNone(canvas.ActiveTools)))
+	builder.WriteString(fmt.Sprintf("- Estimated Cost (USD): %.2f\n", canvas.EstimatedCostUSD))
+	builder.WriteString(fmt.Sprintf("- Included Usage Units: %d\n", canvas.IncludedUsageUnits))
+	builder.WriteString(fmt.Sprintf("- Overage Usage Units: %d\n", canvas.OverageUsageUnits))
+	builder.WriteString(fmt.Sprintf("- Overage Cost (USD): %.2f\n", canvas.OverageCostUSD))
+	builder.WriteString(fmt.Sprintf("- Handoff Reason: %s\n\n", firstNonEmpty(canvas.HandoffReason, "none")))
+	builder.WriteString("## Actions\n\n")
+	builder.WriteString(fmt.Sprintf("- %s\n", RenderConsoleActions(canvas.Actions)))
+	return builder.String() + "\n"
 }
 
 func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec) (WeeklyArtifacts, error) {
