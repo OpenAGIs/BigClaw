@@ -1050,6 +1050,66 @@ func TestRenderUIReviewObjectiveWireframeAndQuestionBoards(t *testing.T) {
 	}
 }
 
+func TestRenderUIReviewDependencyWorkloadAndDensityBoards(t *testing.T) {
+	pack := BuildBIG4204ReviewPack()
+
+	signoffDependency := RenderUIReviewSignoffDependencyBoard(pack)
+	ownerWorkload := RenderUIReviewOwnerWorkloadBoard(pack)
+	auditDensity := RenderUIReviewAuditDensityBoard(pack)
+
+	for _, tc := range []struct {
+		name      string
+		body      string
+		fragments []string
+	}{
+		{
+			name: "signoff dependency",
+			body: signoffDependency,
+			fragments: []string{
+				"# UI Review Signoff Dependency Board",
+				"- Sign-offs: 4",
+				"- blocked: 1",
+				"- clear: 3",
+				"dep-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=pending dependency_status=blocked blockers=blk-run-detail-copy-final",
+				"assignment=role-run-detail-eng-lead checklist=chk-run-replay-context decisions=dec-run-detail-audit-rail latest_blocker_event=evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z sla=at-risk due_at=2026-03-15T18:00:00Z cadence=daily",
+			},
+		},
+		{
+			name: "owner workload",
+			body: ownerWorkload,
+			fragments: []string{
+				"# UI Review Owner Workload Board",
+				"- Owners: 7",
+				"- Items: 8",
+				"- product-experience: blockers=1 checklist=1 decisions=0 signoffs=0 reminders=0 renewals=0 total=2",
+				"load-queue-chk-queue-role-density: owner=product-experience type=checklist source=chk-queue-role-density surface=wf-queue status=open lane=queue",
+				"load-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending lane=reminder",
+				"load-renew-blk-run-detail-copy-final: owner=release-director type=renewal source=blk-run-detail-copy-final surface=wf-run-detail status=review-needed lane=renewal",
+			},
+		},
+		{
+			name: "audit density",
+			body: auditDensity,
+			fragments: []string{
+				"# UI Review Audit Density Board",
+				"- Surfaces: 4",
+				"- Load bands: 3",
+				"- active: 2",
+				"- dense: 1",
+				"- light: 1",
+				"density-wf-run-detail: surface=wf-run-detail artifact_total=9 open_total=4 band=dense",
+				"checklist=2 decisions=1 assignments=2 signoffs=1 blockers=1 timeline=2 blocks=4 notes=2",
+			},
+		},
+	} {
+		for _, fragment := range tc.fragments {
+			if !strings.Contains(tc.body, fragment) {
+				t.Fatalf("%s: expected %q in report, got %s", tc.name, fragment, tc.body)
+			}
+		}
+	}
+}
+
 func TestInformationArchitectureRoundTripAndRouteResolution(t *testing.T) {
 	architecture := InformationArchitecture{
 		GlobalNav: []NavigationNode{{

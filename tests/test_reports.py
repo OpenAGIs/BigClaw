@@ -2926,36 +2926,6 @@ def test_render_ui_review_summary_persona_and_interaction_boards() -> None:
     assert "checklist=chk-triage-handoff-clarity,chk-triage-bulk-assign open_checklist=none trigger=Cross-Team Operator bulk-assigns a finding set or opens the handoff panel" in interaction_coverage
 
 
-def test_render_ui_review_dependency_workload_and_density_boards() -> None:
-    pack = build_big_4204_review_pack()
-
-    signoff_dependency = render_ui_review_signoff_dependency_board(pack)
-    owner_workload = render_ui_review_owner_workload_board(pack)
-    audit_density = render_ui_review_audit_density_board(pack)
-
-    assert "# UI Review Signoff Dependency Board" in signoff_dependency
-    assert "- Sign-offs: 4" in signoff_dependency
-    assert "- blocked: 1" in signoff_dependency
-    assert "- clear: 3" in signoff_dependency
-    assert "dep-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=pending dependency_status=blocked blockers=blk-run-detail-copy-final" in signoff_dependency
-    assert "assignment=role-run-detail-eng-lead checklist=chk-run-replay-context decisions=dec-run-detail-audit-rail latest_blocker_event=evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z sla=at-risk due_at=2026-03-15T18:00:00Z cadence=daily" in signoff_dependency
-    assert "# UI Review Owner Workload Board" in owner_workload
-    assert "- Owners: 7" in owner_workload
-    assert "- Items: 8" in owner_workload
-    assert "- product-experience: blockers=1 checklist=1 decisions=0 signoffs=0 reminders=0 renewals=0 total=2" in owner_workload
-    assert "load-queue-chk-queue-role-density: owner=product-experience type=checklist source=chk-queue-role-density surface=wf-queue status=open lane=queue" in owner_workload
-    assert "load-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending lane=reminder" in owner_workload
-    assert "load-renew-blk-run-detail-copy-final: owner=release-director type=renewal source=blk-run-detail-copy-final surface=wf-run-detail status=review-needed lane=renewal" in owner_workload
-    assert "# UI Review Audit Density Board" in audit_density
-    assert "- Surfaces: 4" in audit_density
-    assert "- Load bands: 3" in audit_density
-    assert "- active: 2" in audit_density
-    assert "- dense: 1" in audit_density
-    assert "- light: 1" in audit_density
-    assert "density-wf-run-detail: surface=wf-run-detail artifact_total=9 open_total=4 band=dense" in audit_density
-    assert "checklist=2 decisions=1 assignments=2 signoffs=1 blockers=1 timeline=2 blocks=4 notes=2" in audit_density
-
-
 def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     pack = build_big_4204_review_pack()
     audit = UIReviewPackAuditor().audit(pack)
