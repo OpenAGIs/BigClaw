@@ -41,3 +41,15 @@
 - `find bigclaw-go -type f -name '*.py' | sort`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'`
 - `rg -n 'capacity_certification\.py|run_matrix\.py|soak_local\.py|broker_failover_stub_matrix\.py|cross_process_coordination_surface\.py|export_validation_bundle\.py|external_store_validation\.py|mixed_workload_matrix\.py|multi_node_shared_queue\.py|run_task_smoke\.py|subscriber_takeover_fault_matrix\.py|validation_bundle_continuation_policy_gate\.py|validation_bundle_continuation_scorecard\.py|export_live_shadow_bundle\.py|live_shadow_scorecard\.py|shadow_compare\.py|shadow_matrix\.py' bigclaw-go/internal bigclaw-go/docs docs -g '!reports/**'`
+
+## Validation Results
+
+- `find bigclaw-go -type f -name '*.py' | sort` -> no output
+- `cd bigclaw-go && go test ./internal/regression -run 'TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'` -> `ok  	bigclaw-go/internal/regression	0.449s`
+- `rg -n 'candidate Python files covered by this lane were:|bigclaw-go/scripts/benchmark/capacity_certification\.py|bigclaw-go/scripts/e2e/export_validation_bundle\.py|bigclaw-go/scripts/migration/shadow_compare\.py|bigclaw-go/scripts/e2e/run_task_smoke\.py' bigclaw-go/docs/go-cli-script-migration.md bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go docs/go-cli-script-migration-plan.md` -> expected matches only in the updated migration docs and regression guard
+- `git rev-parse HEAD` -> `2246b090d2b80c554ce81d23841f4321927e9c5a`
+- `git rev-parse --abbrev-ref --symbolic-full-name @{u}` -> `origin/symphony/BIG-GO-1112`
+
+## Residual Risk
+
+- This materialized workspace was already at a zero-`.py` baseline for `bigclaw-go`, so this lane could only harden the delete gate and migration record instead of numerically reducing the Python count below zero.
