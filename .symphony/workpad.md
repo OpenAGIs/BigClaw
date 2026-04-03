@@ -26,6 +26,10 @@
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l`
 - `rg -n "scripts/create_issues\\.py|scripts/dev_smoke\\.py|scripts/ops/bigclaw_github_sync\\.py|scripts/ops/bigclaw_refill_queue\\.py|scripts/ops/bigclaw_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_validate\\.py" README.md docs bigclaw-go scripts .github workflow.md -g '!reports/**' -g '!local-issues.json'`
 - `cd bigclaw-go && go test ./internal/regression`
+- `git -c http.version=HTTP/1.1 push -u origin symphony/BIG-GO-1111`
+- `git rev-parse HEAD`
+- `git rev-parse origin/symphony/BIG-GO-1111`
+- `git log -1 --stat --oneline`
 - `git status --short`
 
 ## Validation Results
@@ -33,4 +37,8 @@
 - `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l` -> `0`
 - `rg -n "scripts/create_issues\\.py|scripts/dev_smoke\\.py|scripts/ops/bigclaw_github_sync\\.py|scripts/ops/bigclaw_refill_queue\\.py|scripts/ops/bigclaw_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_validate\\.py" README.md docs bigclaw-go scripts .github workflow.md -g '!reports/**' -g '!local-issues.json'` -> active matches are limited to retirement guidance in `docs/go-cli-script-migration-plan.md`, a Go-only warning in `workflow.md`, the archived cutover pack, and the new regression assertions
 - `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.504s`
-- `git status --short` -> modified `.symphony/workpad.md`; modified `docs/go-cli-script-migration-plan.md`; added `bigclaw-go/internal/regression/root_python_sweep_issue1111_test.go`
+- `git -c http.version=HTTP/1.1 push -u origin symphony/BIG-GO-1111` -> pushed branch successfully; GitHub advertised PR seed URL `https://github.com/OpenAGIs/BigClaw/pull/new/symphony/BIG-GO-1111`
+- `git rev-parse HEAD` -> `ba8b87d1308e887ec928327dbf7b5c722419c80a`
+- `git rev-parse origin/symphony/BIG-GO-1111` -> `ba8b87d1308e887ec928327dbf7b5c722419c80a`
+- `git log -1 --stat --oneline` -> `ba8b87d1 Add root Python sweep regression guard`; stat shows `.symphony/workpad.md`, `docs/go-cli-script-migration-plan.md`, and `bigclaw-go/internal/regression/root_python_sweep_issue1111_test.go`
+- `git status --short` -> clean
