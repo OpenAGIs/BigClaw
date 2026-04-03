@@ -31,8 +31,9 @@
 - `python3 -m pytest tests/test_control_center.py` -> passed: `3 passed in 0.06s`
 - `python3 -m pytest tests/test_planning.py` -> passed: `14 passed in 0.07s`
 - `python3 -m pytest tests/test_control_center.py tests/test_operations.py` -> passed: `23 passed in 0.08s`
+- `python3 -m pytest tests/test_control_center.py tests/test_execution_contract.py tests/test_ui_review.py tests/test_console_ia.py tests/test_operations.py tests/test_planning.py` -> passed: `83 passed in 0.12s`
 
 ### Status
 
 - Branch: `bigclaw-182-control-center`
-- Latest commit: `2205b9e121665615414a800453b941b54c138597`
+- Latest commit: `3a33ff7c8f4a51f660657f6edcc687a1ea2f3868`
