@@ -7,7 +7,6 @@
   "branch": {
     "name": "main",
     "latest_code_migration_commit": "004de016",
-    "final_closeout_commit": "d4b7bd6f",
     "final_landed_tag": "BIG-GO-1053-closeout"
   },
   "artifacts": {
@@ -53,7 +52,7 @@
     "The follow-up rebased commits on main add the missing validation and closeout artifacts so the lane has the same in-repo reporting surface as adjacent Go-replacement issues, while the final cleanup removes stale test-only imports of deleted helper paths.",
     "The 2026-04-03 unattended refresh preserved `BIG-GO-1053` as an archived section inside `.symphony/workpad.md` while leaving the newer active workpad intact, and aligned `bigclaw-go/docs/go-cli-script-migration.md` so the tranche-2 Python-free e2e surface is explicitly attributed to this issue.",
     "The evidence branch symphony/BIG-GO-1053-validation was deleted after its contents were landed on main; the pull_request_seed link is retained only as historical traceability.",
-    "The published `BIG-GO-1053-closeout` tag was retargeted on 2026-04-03 from the earlier closeout artifact tip to the final `main` tip `d4b7bd6f` so the tag matches the last in-repo artifact corrections.",
+    "The published `BIG-GO-1053-closeout` tag was retargeted on 2026-04-03 and is now the canonical stable reference for the final `main` tip carrying the closeout artifacts, avoiding further drift from self-referential commit hashes in the issue reports.",
     "A final closeout comment was posted on merged PR #217 to synchronize the remote record with the additional mainline cleanup commits.",
     "No BIG-GO-1053 record exists in local-issues.json or the Symphony local issue store, so any remaining active state is external to this workspace."
   ]
