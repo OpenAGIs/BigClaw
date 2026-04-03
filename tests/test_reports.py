@@ -2926,29 +2926,6 @@ def test_render_ui_review_summary_persona_and_interaction_boards() -> None:
     assert "checklist=chk-triage-handoff-clarity,chk-triage-bulk-assign open_checklist=none trigger=Cross-Team Operator bulk-assigns a finding set or opens the handoff panel" in interaction_coverage
 
 
-def test_render_ui_review_traceability_and_role_coverage_boards() -> None:
-    pack = build_big_4204_review_pack()
-
-    checklist_traceability = render_ui_review_checklist_traceability_board(pack)
-    decision_followup = render_ui_review_decision_followup_tracker(pack)
-    role_coverage = render_ui_review_role_coverage_board(pack)
-
-    assert "# UI Review Checklist Traceability Board" in checklist_traceability
-    assert "- Checklist items: 8" in checklist_traceability
-    assert "- Owners: 7" in checklist_traceability
-    assert "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience" in checklist_traceability
-    assert "# UI Review Decision Follow-up Tracker" in decision_followup
-    assert "- Decisions: 4" in decision_followup
-    assert "- Owners: 4" in decision_followup
-    assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in decision_followup
-    assert "linked_assignments=role-queue-platform-admin,role-queue-product-experience linked_checklists=chk-queue-batch-approval,chk-queue-role-density follow_up=Resolve after the next design critique with policy owners." in decision_followup
-    assert "# UI Review Role Coverage Board" in role_coverage
-    assert "- Assignments: 8" in role_coverage
-    assert "- Surfaces: 4" in role_coverage
-    assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in role_coverage
-    assert "signoff=sig-run-detail-eng-lead signoff_status=pending" in role_coverage
-
-
 def test_render_ui_review_dependency_workload_and_density_boards() -> None:
     pack = build_big_4204_review_pack()
 

@@ -906,6 +906,8 @@ func TestRenderUIReviewMixedReviewSurfaces(t *testing.T) {
 			body: checklistTraceability,
 			fragments: []string{
 				"# UI Review Checklist Traceability Board",
+				"- Checklist items: 8",
+				"- Owners: 7",
 				"trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience",
 			},
 		},
@@ -914,7 +916,10 @@ func TestRenderUIReviewMixedReviewSurfaces(t *testing.T) {
 			body: decisionFollowup,
 			fragments: []string{
 				"# UI Review Decision Follow-up Tracker",
+				"- Decisions: 4",
+				"- Owners: 4",
 				"follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience",
+				"linked_assignments=role-queue-platform-admin,role-queue-product-experience linked_checklists=chk-queue-batch-approval,chk-queue-role-density follow_up=Resolve after the next design critique with policy owners.",
 			},
 		},
 		{
@@ -931,7 +936,10 @@ func TestRenderUIReviewMixedReviewSurfaces(t *testing.T) {
 			body: roleCoverage,
 			fragments: []string{
 				"# UI Review Role Coverage Board",
+				"- Assignments: 8",
+				"- Surfaces: 4",
 				"cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1",
+				"signoff=sig-run-detail-eng-lead signoff_status=pending",
 			},
 		},
 		{
