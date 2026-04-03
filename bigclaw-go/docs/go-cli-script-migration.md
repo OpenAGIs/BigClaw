@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`, `BIG-GO-1164`
 
 ## Current Go-Only Entrypoints
 
@@ -27,12 +27,14 @@ for the bundled live-validation workflow.
 | `go run ./cmd/bigclawctl automation benchmark soak-local|run-matrix|capacity-certification ...` | `bigclawctl automation benchmark ...` | Benchmark and capacity-certification surfaces |
 | `go run ./cmd/bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle ...` | `bigclawctl automation migration ...` | Migration shadow comparison and export surfaces |
 
-## BIG-GO-1160 Sweep Coverage
+## BIG-GO-1160 / BIG-GO-1164 Sweep Coverage
 
 `BIG-GO-1160` validates that the remaining Python candidate paths in this lane
 stay retired and that operators keep using the Go-native replacements below.
-The current branch baseline is already Python-free for these assets, so the
-regression surface focuses on keeping the deletion state sticky.
+`BIG-GO-1164` keeps the repository-wide Python count pinned at `0`, matching the
+current `find . -name '*.py' | wc -l` baseline on `origin/main`. The regression
+surface therefore focuses on keeping both the candidate deletions and the
+repo-wide zero-Python state sticky.
 
 | Retired sweep area | Supported replacement |
 | --- | --- |

@@ -1,27 +1,24 @@
-# BIG-GO-1160 Workpad
+# BIG-GO-1164 Workpad
 
 ## Plan
-- Verify the current repository baseline for physical Python files and identify whether the candidate lane assets were already removed.
-- Inspect existing Go automation commands, regression tests, and migration docs for the benchmark, e2e, migration, and root script candidates listed in BIG-GO-1160.
-- Add scoped regression and migration-document coverage that pins the retired candidate `.py` entrypoints to concrete Go replacements and keeps the relevant script surfaces Python-free.
-- Run targeted validation commands, capture exact command lines and results, then commit and push the branch.
+- Materialize the repository from `origin/main` and verify the current baseline for Python assets in this lane.
+- Confirm whether the candidate `bigclaw-go/scripts/*` Python files still exist or were already removed by prior migration work.
+- If the files still exist, remove them in favor of the existing Go entrypoints and validate the replacement paths.
+- If the files are already gone on `main`, add a scoped regression and documentation update that locks the lane to the current Go-only baseline without widening issue scope.
+- Run targeted validation, then commit and push a dedicated `BIG-GO-1164` branch.
 
 ## Acceptance
-- Real Python candidate assets covered by this lane remain absent from the repository.
-- Go replacement or compatibility paths are explicitly validated for the covered benchmark, e2e, migration, and root helper surfaces.
-- `find . -name '*.py' | wc -l` is validated and documented from the current branch baseline.
+- The lane covered by `BIG-GO-1164` is validated as Go-only.
+- The candidate Python paths remain absent and their Go replacement paths remain documented.
+- A regression prevents reintroduction of Python files into the repository baseline.
+- Validation commands and exact results are captured for closeout.
 
 ## Validation
 - `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run 'Test(E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints|BIGGO1160CandidatePythonFilesRemainDeleted|BIGGO1160MigrationDocsListGoReplacements)$'`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|AutomationUsageListsBIGGO1160GoReplacements|RunAutomationRunTaskSmokeJSONOutput|AutomationSoakLocalWritesReport|AutomationShadowCompareDetectsMismatch|AutomationShadowMatrixBuildsCorpusCoverage|AutomationLiveShadowScorecardBuildsReport|AutomationExportLiveShadowBundleBuildsManifest|AutomationBenchmarkRunMatrixBuildsReport|AutomationBenchmarkCapacityCertificationBuildsReport|RunDevSmokeJSONOutput|RunCreateIssuesCreatesOnlyMissing)$'`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160|TestBIGGO1164|TestE2EScriptDirectoryStaysPythonFree|TestRootScriptResidualSweep'`
 - `git status --short`
 
-## Validation Results
-- `find . -name '*.py' | wc -l` -> `0`
-- `cd bigclaw-go && go test ./internal/regression -run 'Test(E2EScriptDirectoryStaysPythonFree|E2EMigrationDocListsOnlyActiveEntrypoints|RootOpsDirectoryStaysPythonFree|RootOpsMigrationDocsListOnlyGoEntrypoints|BIGGO1160CandidatePythonFilesRemainDeleted|BIGGO1160MigrationDocsListGoReplacements)$'` -> `ok  	bigclaw-go/internal/regression	0.429s`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|AutomationUsageListsBIGGO1160GoReplacements|RunAutomationRunTaskSmokeJSONOutput|AutomationSoakLocalWritesReport|AutomationShadowCompareDetectsMismatch|AutomationShadowMatrixBuildsCorpusCoverage|AutomationLiveShadowScorecardBuildsReport|AutomationExportLiveShadowBundleBuildsManifest|AutomationBenchmarkRunMatrixBuildsReport|AutomationBenchmarkCapacityCertificationBuildsReport|RunDevSmokeJSONOutput|RunCreateIssuesCreatesOnlyMissing)$'` -> `ok  	bigclaw-go/cmd/bigclawctl	0.589s`
-- `git status --short` -> clean after commit
-
-## Residual Risk
-- The repository already starts from a zero-`.py` baseline in this workspace, so this issue can only harden deletion enforcement and Go replacement coverage for the lane; it cannot make the Python file count numerically lower from the current baseline.
+## Notes
+- `origin/main` already materializes with `find . -name '*.py' | wc -l == 0`.
+- The exact candidate list in this issue is already covered by `bigclaw-go/internal/regression/big_go_1160_script_migration_test.go`.
+- This issue therefore lands incremental hardening for the zero-Python repository baseline instead of deleting files that no longer exist on the current branch.

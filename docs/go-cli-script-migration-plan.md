@@ -44,6 +44,10 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1164` closes the residual sweep by pinning the current repository
+baseline at `find . -name '*.py' | wc -l == 0`, which matches the already
+materialized `origin/main` state for this lane.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
