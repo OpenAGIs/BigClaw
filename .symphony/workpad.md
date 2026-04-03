@@ -18,5 +18,6 @@ Validation
 - `gofmt -w bigclaw-go/internal/planning/planning.go bigclaw-go/internal/planning/planning_test.go bigclaw-go/internal/regression/top_level_module_purge_tranche15_test.go`
 - `cd bigclaw-go && go test ./internal/planning -run 'Test(CandidateBacklogRoundTripPreservesManifestShape|CandidateBacklogRanksReadyItemsAheadOfBlockedWork|EntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence|EntryGateHoldsWhenV2BaselineIsMissingOrNotReady|RenderCandidateBacklogReportSummarizesBacklogAndGateFindings|BuildV3CandidateBacklogMatchesIssuePlanTraceability)' -count=1`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche15' -count=1`
+- `rg -n "src/bigclaw/(console_ia|design_system|ui_review)\.py|tests/test_(console_ia|design_system|ui_review)\.py" README.md docs bigclaw-go src scripts . -g '*.md' -g '*.go' -g '*.sh' -g '*.json' -g '*.yml'`
 - `git diff --stat`
 - `git status --short`

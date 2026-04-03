@@ -473,10 +473,7 @@ Historical planned state:
 ### 5. Port operator console and saved-view surfaces to Go
 
 Python source:
-- `src/bigclaw/console_ia.py`
-- `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:
