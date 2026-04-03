@@ -26,13 +26,16 @@ func TestTopLevelModulePurgeTranche16(t *testing.T) {
 	}
 
 	goReplacementFiles := []string{
-		"bigclaw-go/cmd/bigclawctl/main.go",
+		"bigclaw-go/internal/domain/task.go",
+		"bigclaw-go/internal/intake/connector.go",
+		"bigclaw-go/internal/workflow/definition.go",
 		"bigclaw-go/cmd/bigclawd/main.go",
-		"bigclaw-go/internal/api/server.go",
-		"bigclaw-go/internal/collaboration/thread.go",
-		"bigclaw-go/internal/evaluation/evaluation.go",
+		"bigclaw-go/cmd/bigclawctl/main.go",
 		"bigclaw-go/internal/observability/audit_spec.go",
+		"bigclaw-go/internal/collaboration/thread.go",
 		"bigclaw-go/internal/product/console.go",
+		"bigclaw-go/internal/api/v2.go",
+		"bigclaw-go/internal/evaluation/evaluation.go",
 		"bigclaw-go/internal/worker/runtime.go",
 	}
 	for _, relativePath := range goReplacementFiles {

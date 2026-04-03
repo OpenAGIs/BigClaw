@@ -31,7 +31,11 @@
 - `git status --short`
 
 ## Validation Results
-- pending
+- `find . -name '*.py' | wc -l` -> `0`
+- `git ls-tree -r --name-only HEAD | rg '\.py$' | wc -l` -> `0`
+- `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16` -> `ok   bigclaw-go/internal/regression (cached)`
+- `cd bigclaw-go && go test ./internal/regression` -> `ok   bigclaw-go/internal/regression (cached)`
+- `git status --short` before commit -> `M bigclaw-go/internal/regression/top_level_module_purge_tranche16_test.go`
 
 ## Residual Risk
 - this materialized workspace already starts from `0` real `.py` files, so `BIG-GO-1121` can only harden deletion enforcement and Go replacement verification; it cannot make the Python file count numerically lower from the current baseline
