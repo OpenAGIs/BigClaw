@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1156`
 
 ## Current Go-Only Entrypoints
 
@@ -8,6 +8,11 @@ Issues: `BIG-GO-902`, `BIG-GO-1053`
 completed the tranche-2 cleanup by keeping only Go-native
 `bigclawctl automation ...` subcommands plus the retained shell wrappers needed
 for the bundled live-validation workflow.
+
+`BIG-GO-1156` closes the remaining benchmark and migration script references for
+this lane: the repo now keeps benchmark, E2E, migration, and repo-root
+automation entrypoints on Go-native `bigclawctl` commands with no live `.py`
+files left in the worktree.
 
 | Active entrypoint | Backing command | Purpose |
 | --- | --- | --- |
@@ -60,9 +65,9 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - Report serialization compatibility for JSON consumers that previously read the Python script output
 ## Compatibility Layer Plan
 
-- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/e2e/`.
+- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/`.
 - Preserve the retained shell wrappers only where they add operator convenience over direct `bigclawctl automation ...` invocation.
-- Continue the remaining non-e2e script migrations in follow-up batches without expanding the e2e compatibility layer again.
+- Treat any new Python automation script as a regression unless it exists strictly outside the repo worktree.
 
 ## Branch And PR Suggestion
 
