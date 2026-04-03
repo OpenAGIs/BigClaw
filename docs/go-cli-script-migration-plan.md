@@ -14,12 +14,12 @@ retired the final root Python workspace shims.
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
-- root dev smoke path is Go-only: use `bigclawctl dev-smoke`
+- retired `scripts/dev_smoke.py`; use `bigclawctl dev-smoke`
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
-- retired the refill Python wrapper; use `bigclawctl refill`
+- retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`
 - retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`
