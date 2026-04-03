@@ -4,6 +4,7 @@
 - confirm whether the issue candidate Python scripts still exist in this worktree
 - record the current repo baseline before edits, including the effective `*.py` count
 - document the Go replacement and compatibility path already covering the benchmark, e2e, and migration script families
+- add regression coverage that locks the full `BIG-GO-1124` candidate list absent on disk and keeps the surviving script directories Python-free
 - keep the change scoped to issue evidence and validation for the residual `bigclaw-go/scripts` sweep
 - run targeted validation for the Go command surfaces plus repo-wide Python-file checks
 - commit and push the scoped change set
@@ -12,6 +13,7 @@
 - the candidate `bigclaw-go/scripts/benchmark/*.py`, `bigclaw-go/scripts/e2e/*.py`, and `bigclaw-go/scripts/migration/*.py` assets are verified absent in the current worktree
 - the Go replacement path is explicit for benchmark, e2e, and migration command families
 - `bigclaw-go/scripts/` remains Python-free, with only the retained shell wrappers and Go-owned entrypoints documented
+- regression coverage enforces absence of the lane-owned benchmark, e2e, and migration Python candidates
 - exact validation commands and outcomes are recorded below
 - residual risk explicitly notes that the issue goal of lowering the repo Python count is blocked by the pre-change zero baseline in this workspace
 
@@ -19,6 +21,7 @@
 - `find . -name '*.py' | wc -l`
 - `find bigclaw-go/scripts -type f | sort`
 - `cd bigclaw-go && go test ./cmd/bigclawctl/...`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestAutomationScriptSweepCandidatesStayAbsent|TestAutomationScriptDirectoriesStayPythonFree|TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help`
@@ -42,6 +45,7 @@
 - `find . -name '*.py' | wc -l` -> `0`
 - `find bigclaw-go/scripts -type f | sort` -> `bigclaw-go/scripts/benchmark/run_suite.sh`, `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`, `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`, `bigclaw-go/scripts/e2e/ray_smoke.sh`, `bigclaw-go/scripts/e2e/run_all.sh`
 - `cd bigclaw-go && go test ./cmd/bigclawctl/...` -> `ok   bigclaw-go/cmd/bigclawctl 3.094s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestAutomationScriptSweepCandidatesStayAbsent|TestAutomationScriptDirectoriesStayPythonFree|TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'` -> `ok   bigclaw-go/internal/regression 1.379s`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help` -> exit `0`; first line `usage: bigclawctl automation benchmark capacity-certification [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help` -> exit `0`; first line `usage: bigclawctl automation benchmark run-matrix [flags]`
 - `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help` -> exit `0`; first line `usage: bigclawctl automation benchmark soak-local [flags]`
