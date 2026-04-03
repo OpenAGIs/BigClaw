@@ -26,11 +26,16 @@
 - Replaced by downgraded compatibility aggregation shell: `src/bigclaw/_compat_schema.py`
 
 ## Validation Record
+- `git ls-tree -r --name-only HEAD~1 | rg '\\.py$' | wc -l` -> `39`
 - `git ls-tree -r --name-only HEAD | rg '\\.py$' | wc -l` -> `39`
 - `rg --files . | rg '\\.py$' | wc -l` -> `38`
 - `python3 -m pytest tests/test_models.py tests/test_observability.py tests/test_reports.py tests/test_runtime_matrix.py` -> `48 passed in 0.09s`
 - `python3 -m pytest tests/test_risk.py tests/test_evaluation.py` -> `10 passed in 0.06s`
 - `cd bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche14 -count=1` -> `ok   bigclaw-go/internal/regression 0.897s`
+
+## Outcome
+- Tracked Python file count delta across the implemented change: `39 -> 38` (`-1`)
+- The net reduction is one tracked `.py` file because `src/bigclaw/observability.py` and `src/bigclaw/models.py` were removed while one replacement compatibility aggregation shell, `src/bigclaw/_compat_schema.py`, was added.
 
 ## Archived Closeout
 
