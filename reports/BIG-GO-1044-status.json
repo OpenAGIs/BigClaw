@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1044",
+    "title": "Go-replacement N: tests top-level purge tranche 2",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1044",
+    "latest_code_migration_commit": "e39d108f"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-1044-closeout.md",
+    "validation_report": "reports/BIG-GO-1044-validation.md",
+    "cutover_inventory": "docs/go-mainline-cutover-issue-pack.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "repository": "https://github.com/OpenAGIs/BigClaw"
+  },
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "find . -name '*.go' | wc -l",
+      "gofmt -w bigclaw-go/internal/planning/planning.go bigclaw-go/internal/planning/planning_test.go bigclaw-go/internal/regression/top_level_module_purge_tranche15_test.go",
+      "cd bigclaw-go && go test ./internal/planning -run 'Test(CandidateBacklogRoundTripPreservesManifestShape|CandidateBacklogRanksReadyItemsAheadOfBlockedWork|EntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence|EntryGateHoldsWhenV2BaselineIsMissingOrNotReady|RenderCandidateBacklogReportSummarizesBacklogAndGateFindings|BuildV3CandidateBacklogMatchesIssuePlanTraceability)' -count=1",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche15' -count=1",
+      "cd bigclaw-go && go test ./internal/planning ./internal/regression -count=1",
+      "rg -n \"src/bigclaw/(console_ia|design_system|ui_review)\\.py|tests/test_(console_ia|design_system|ui_review)\\.py\" README.md docs bigclaw-go src scripts . -g '*.md' -g '*.go' -g '*.sh' -g '*.json' -g '*.yml'"
+    ],
+    "results": {
+      "repo_py_count": "14",
+      "repo_go_count": "323",
+      "py_count_delta": "-3 from 17 to 14",
+      "targeted_planning_tests": "ok   bigclaw-go/internal/planning  0.902s",
+      "targeted_regression_tests": "ok   bigclaw-go/internal/regression  1.105s",
+      "combined_go_tests": "ok   bigclaw-go/internal/planning  0.489s; ok   bigclaw-go/internal/regression  0.913s",
+      "reference_sweep": "only historical reports and intentional regression/assertion matches remain"
+    }
+  },
+  "blocker": {
+    "type": "tracker-missing-row",
+    "summary": "BIG-GO-1044 is not present in local-issues.json, so there is no local tracker entry to transition to Done from this checkout."
+  },
+  "notes": [
+    "This lane satisfied the physical file-count acceptance by deleting three src/bigclaw Python files.",
+    "The follow-up inventory cleanup removed stale live references without broadening the tranche scope."
+  ]
+}
