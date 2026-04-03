@@ -12,26 +12,32 @@ import (
 	"time"
 )
 
-func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
+func TestAutomationScriptTreeStaysGoOnly(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("get working directory: %v", err)
 	}
 	goRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
-	benchmarkDir := filepath.Join(goRoot, "scripts", "benchmark")
-	entries, err := os.ReadDir(benchmarkDir)
-	if err != nil {
-		t.Fatalf("read benchmark script directory: %v", err)
+	scriptDirs := []string{
+		filepath.Join(goRoot, "scripts"),
+		filepath.Join(goRoot, "scripts", "benchmark"),
+		filepath.Join(goRoot, "scripts", "e2e"),
 	}
-	if len(entries) == 0 {
-		t.Fatalf("expected benchmark wrapper files in %s", benchmarkDir)
-	}
-	for _, entry := range entries {
-		if strings.HasSuffix(entry.Name(), ".py") {
-			t.Fatalf("benchmark directory must not contain Python helpers: %s", entry.Name())
+	for _, dir := range scriptDirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			t.Fatalf("read automation script directory %s: %v", dir, err)
+		}
+		if len(entries) == 0 {
+			t.Fatalf("expected wrapper files in %s", dir)
+		}
+		for _, entry := range entries {
+			if strings.HasSuffix(entry.Name(), ".py") {
+				t.Fatalf("automation script directory %s must not contain Python helpers: %s", dir, entry.Name())
+			}
 		}
 	}
-	body, err := os.ReadFile(filepath.Join(benchmarkDir, "run_suite.sh"))
+	body, err := os.ReadFile(filepath.Join(goRoot, "scripts", "benchmark", "run_suite.sh"))
 	if err != nil {
 		t.Fatalf("read benchmark wrapper: %v", err)
 	}
