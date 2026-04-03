@@ -16,7 +16,7 @@
 - Agent orchestration rollout: carry entitlement-aware orchestration, handoff visibility, and commercialization evidence into a candidate that is ready for v3-level release review.
 
 #### Candidate traceability
-- Operations command-center hardening evidence should explicitly cover queue control center, approval queue handling, auto-triage, regression analysis, weekly operations reporting, dashboard builder output, saved views, and rollback simulation status so v3 planning reflects the actual operator journey.
+- Operations command-center hardening evidence should explicitly cover queue control center, bulk retry, failure attribution, manual takeover, auto-triage, regression analysis, weekly operations reporting, dashboard builder output, saved views, and rollback simulation status so v3 planning reflects the actual operator journey.
 - Link evidence to repo-native artifacts instead of prose-only references; minimum trace set for `OPE-139`:
   - command center: `bigclaw-go/internal/api/v2.go`, `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/server_test.go`
   - approval: `bigclaw-go/internal/contract/execution.go`, `bigclaw-go/internal/workflow/engine.go`, `bigclaw-go/internal/contract/execution_test.go`, `bigclaw-go/internal/workflow/engine_test.go`
