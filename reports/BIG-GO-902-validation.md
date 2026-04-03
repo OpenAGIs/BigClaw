@@ -90,10 +90,10 @@ Result:
 Command:
 
 ```bash
-python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl legacy-python compile-check --json
 ```
 
-Result: exit code `0`
+Result: exit code `0` with `status: ok`
 
 ### Command-level checks
 
@@ -112,21 +112,19 @@ smoke_ok local
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/dev_smoke.py
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl dev-smoke
 ```
 
 Result:
 
 ```text
-/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/dev_smoke.py:17: DeprecationWarning: scripts/dev_smoke.py is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl dev-smoke instead.
-  warn_legacy_runtime_surface("scripts/dev_smoke.py", "bash scripts/ops/bigclawctl dev-smoke")
 smoke_ok local
 ```
 
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/create_issues.py --help
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl create-issues --help
 ```
 
 Result: usage for `bigclawctl create-issues`
@@ -142,7 +140,7 @@ Result: usage for `bigclawctl issue`
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_github_sync.py --help
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl github-sync --help
 ```
 
 Result: usage for `bigclawctl github-sync`
@@ -150,7 +148,7 @@ Result: usage for `bigclawctl github-sync`
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_workspace_bootstrap.py --help
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl workspace bootstrap --help
 ```
 
 Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
@@ -158,7 +156,7 @@ Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/symphony_workspace_bootstrap.py --help
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl workspace bootstrap --help
 ```
 
 Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
@@ -166,7 +164,7 @@ Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_refill_queue.py --help
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl refill --help
 ```
 
 Result: usage for `bigclawctl refill`
@@ -174,7 +172,7 @@ Result: usage for `bigclawctl refill`
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/symphony_workspace_validate.py --help
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl workspace validate --help
 ```
 
 Result: usage for `bigclawctl workspace validate`
@@ -182,7 +180,7 @@ Result: usage for `bigclawctl workspace validate`
 Command:
 
 ```bash
-python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_github_sync.py status --json
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl github-sync status --json
 ```
 
 Result:

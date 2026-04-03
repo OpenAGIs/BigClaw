@@ -7,6 +7,7 @@
 - add a cutover-doc regression guard so the broader Go-mainline handoff artifacts cannot drift back to Python execution guidance for the retired root scripts
 - add a wrapper-surface regression guard so the retained shell entrypoints stay wired to Go-first execution rather than drifting back to retired Python scripts
 - add a workflow-and-hook regression guard so repo automation surfaces stay on `bigclawctl` instead of reintroducing removed Python root-script paths
+- clean the checked-in BIG-GO-902 report artifacts so they stop advertising removed Python root-script commands, and add a regression guard for that report surface
 - run targeted validation for the Python-file baseline, the new tranche, the active CLI replacements, and the retained legacy compile-check
 - commit and push the scoped change set
 
@@ -37,6 +38,7 @@
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly'`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly|TestRootScriptWrappersStayGoFirst'`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly|TestRootScriptWrappersStayGoFirst|TestRootScriptWorkflowAndHooksStayGoOnly'`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly|TestRootScriptWrappersStayGoFirst|TestRootScriptWorkflowAndHooksStayGoOnly|TestRootScriptReportsStayGoOnly'`
 - `bash scripts/ops/bigclawctl create-issues --help`
 - `bash scripts/ops/bigclawctl dev-smoke --help`
 - `bash scripts/ops/bigclawctl github-sync --help`
@@ -54,6 +56,7 @@
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly'` -> `ok  	bigclaw-go/internal/regression	0.767s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly|TestRootScriptWrappersStayGoFirst'` -> `ok  	bigclaw-go/internal/regression	0.790s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly|TestRootScriptWrappersStayGoFirst|TestRootScriptWorkflowAndHooksStayGoOnly'` -> `ok  	bigclaw-go/internal/regression	1.188s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestTopLevelModulePurgeTranche17|TestRootScriptCutoverDocsStayGoOnly|TestRootScriptWrappersStayGoFirst|TestRootScriptWorkflowAndHooksStayGoOnly|TestRootScriptReportsStayGoOnly'` -> `ok  	bigclaw-go/internal/regression	0.529s`
 - `bash scripts/ops/bigclawctl create-issues --help` -> exit `0`; printed `usage: bigclawctl create-issues [flags]`
 - `bash scripts/ops/bigclawctl dev-smoke --help` -> exit `0`; printed `usage: bigclawctl dev-smoke [flags]`
 - `bash scripts/ops/bigclawctl github-sync --help` -> exit `0`; printed `usage: bigclawctl github-sync <install|status|sync> [flags]`
