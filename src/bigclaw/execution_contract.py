@@ -620,8 +620,13 @@ def build_operations_api_contract(contract_id: str = "OPE-131", version: str = "
                     ExecutionField("queue_depth", "int"),
                     ExecutionField("queued_by_priority", "map<string,int>"),
                     ExecutionField("queued_by_risk", "map<string,int>"),
+                    ExecutionField("execution_media", "map<string,int>"),
                     ExecutionField("waiting_approval_runs", "int"),
                     ExecutionField("blocked_tasks", "string[]", required=False),
+                    ExecutionField("bulk_retry_tasks", "string[]", required=False),
+                    ExecutionField("bulk_retry_blockers", "map<string,string>", required=False),
+                    ExecutionField("failure_attribution", "map<string,string[]>", required=False),
+                    ExecutionField("manual_takeover_tasks", "string[]", required=False),
                 ],
             ),
             ExecutionModel(

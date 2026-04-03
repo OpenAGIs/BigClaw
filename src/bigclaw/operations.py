@@ -9,6 +9,7 @@ from .queue import PersistentTaskQueue
 
 from .evaluation import BenchmarkSuiteResult
 from .reports import (
+    ConsoleAction,
     SharedViewContext,
     build_console_actions,
     render_console_actions,
@@ -153,6 +154,10 @@ class QueueControlCenter:
     waiting_approval_runs: int
     blocked_tasks: List[str] = field(default_factory=list)
     queued_tasks: List[str] = field(default_factory=list)
+    bulk_retry_tasks: List[str] = field(default_factory=list)
+    bulk_retry_blockers: Dict[str, str] = field(default_factory=dict)
+    failure_attribution: Dict[str, List[str]] = field(default_factory=dict)
+    manual_takeover_tasks: List[str] = field(default_factory=list)
     actions: Dict[str, List] = field(default_factory=dict)
 
 
@@ -801,14 +806,62 @@ class OperationsAnalytics:
         execution_media: Dict[str, int] = {}
         waiting_approval_runs = 0
         blocked_tasks: List[str] = []
+        runs_by_task: Dict[str, List[dict]] = {}
         for run in runs:
             medium = str(run.get("medium", "unknown"))
             execution_media[medium] = execution_media.get(medium, 0) + 1
+            task_id = str(run.get("task_id", ""))
+            if task_id:
+                runs_by_task.setdefault(task_id, []).append(run)
             if run.get("status") == "needs-approval":
                 waiting_approval_runs += 1
-                task_id = str(run.get("task_id", ""))
                 if task_id and task_id not in blocked_tasks:
                     blocked_tasks.append(task_id)
+
+        bulk_retry_tasks: List[str] = []
+        bulk_retry_blockers: Dict[str, str] = {}
+        failure_attribution: Dict[str, List[str]] = {}
+        manual_takeover_tasks: List[str] = []
+        actions: Dict[str, List[ConsoleAction]] = {}
+
+        for task in queued_tasks:
+            task_runs = runs_by_task.get(task.task_id, [])
+            actionable_run = self._queue_actionable_run(task_runs)
+            retry_blocker = self._queue_retry_blocker(actionable_run)
+            requires_takeover = self._queue_requires_manual_takeover(actionable_run)
+
+            if actionable_run is not None:
+                attribution = self._queue_failure_attribution(actionable_run)
+                failure_attribution.setdefault(attribution, [])
+                if task.task_id not in failure_attribution[attribution]:
+                    failure_attribution[attribution].append(task.task_id)
+
+            if retry_blocker:
+                bulk_retry_blockers[task.task_id] = retry_blocker
+            else:
+                bulk_retry_tasks.append(task.task_id)
+
+            if requires_takeover:
+                manual_takeover_tasks.append(task.task_id)
+
+            task_actions = build_console_actions(
+                task.task_id,
+                allow_retry=task.task_id in blocked_tasks,
+                retry_reason="" if task.task_id in blocked_tasks else "retry is reserved for blocked queue items",
+                allow_pause=task.task_id not in blocked_tasks,
+                pause_reason="" if task.task_id not in blocked_tasks else "approval-blocked tasks should be escalated instead of paused",
+                allow_escalate=task.task_id in blocked_tasks,
+                escalate_reason="" if task.task_id in blocked_tasks else "escalate is reserved for blocked queue items",
+            )
+            if requires_takeover:
+                task_actions.append(
+                    ConsoleAction(
+                        "manual-takeover",
+                        "Manual Takeover",
+                        task.task_id,
+                    )
+                )
+            actions[task.task_id] = task_actions
 
         return QueueControlCenter(
             queue_depth=queue.size(),
@@ -818,18 +871,11 @@ class OperationsAnalytics:
             waiting_approval_runs=waiting_approval_runs,
             blocked_tasks=blocked_tasks,
             queued_tasks=[task.task_id for task in queued_tasks],
-            actions={
-                task.task_id: build_console_actions(
-                    task.task_id,
-                    allow_retry=task.task_id in blocked_tasks,
-                    retry_reason="" if task.task_id in blocked_tasks else "retry is reserved for blocked queue items",
-                    allow_pause=task.task_id not in blocked_tasks,
-                    pause_reason="" if task.task_id not in blocked_tasks else "approval-blocked tasks should be escalated instead of paused",
-                    allow_escalate=task.task_id in blocked_tasks,
-                    escalate_reason="" if task.task_id in blocked_tasks else "escalate is reserved for blocked queue items",
-                )
-                for task in queued_tasks
-            },
+            bulk_retry_tasks=bulk_retry_tasks,
+            bulk_retry_blockers=bulk_retry_blockers,
+            failure_attribution=failure_attribution,
+            manual_takeover_tasks=manual_takeover_tasks,
+            actions=actions,
         )
 
     def build_policy_prompt_version_center(
@@ -1080,6 +1126,81 @@ class OperationsAnalytics:
         if summary:
             return summary
         return str(run.get("status", "unknown"))
+
+    def _queue_actionable_run(self, runs: Sequence[dict]) -> Optional[dict]:
+        actionable = [run for run in runs if str(run.get("status", "unknown")) in STATUS_ACTIONABLE]
+        if not actionable:
+            return None
+        return sorted(
+            actionable,
+            key=lambda run: (
+                self._parse_ts(str(run.get("ended_at", ""))) or self._parse_ts(str(run.get("started_at", ""))) or datetime.min.replace(tzinfo=timezone.utc),
+                str(run.get("run_id", "")),
+            ),
+            reverse=True,
+        )[0]
+
+    def _queue_retry_blocker(self, run: Optional[dict]) -> str:
+        if run is None:
+            return "no failed or approval-blocked run linked to the queued task"
+        if self._queue_requires_manual_takeover(run):
+            return "manual takeover required before retry"
+        status = str(run.get("status", "unknown"))
+        if status not in {"failed", "needs-approval"}:
+            return "retry is available for failed or approval-blocked runs"
+        return ""
+
+    def _queue_requires_manual_takeover(self, run: Optional[dict]) -> bool:
+        if run is None:
+            return False
+        if bool(run.get("manual_takeover_required")):
+            return True
+        if int(run.get("retry_count", run.get("retry_attempts", 0)) or 0) >= 2:
+            return True
+        failure_category = self._queue_failure_category(run)
+        return failure_category in {"repo-sync", "approval"}
+
+    def _queue_failure_attribution(self, run: dict) -> str:
+        status = str(run.get("status", "unknown"))
+        if status == "needs-approval":
+            return "approval"
+
+        failure_category = self._queue_failure_category(run)
+        if failure_category:
+            return failure_category
+
+        if status == "failed":
+            return "unknown"
+        return status
+
+    def _queue_failure_category(self, run: dict) -> str:
+        for key in ("failure_category", "error_category", "failure_reason"):
+            value = str(run.get(key, "")).strip().lower()
+            if value:
+                return value
+
+        repo_sync_audit = run.get("repo_sync_audit")
+        if hasattr(repo_sync_audit, "sync"):
+            value = str(getattr(repo_sync_audit.sync, "failure_category", "")).strip().lower()
+            if value:
+                return value
+
+        if isinstance(repo_sync_audit, dict):
+            sync = repo_sync_audit.get("sync", {})
+            if isinstance(sync, dict):
+                value = str(sync.get("failure_category", "")).strip().lower()
+                if value:
+                    return value
+
+        for audit in run.get("audits", []):
+            details = audit.get("details", {})
+            if not isinstance(details, dict):
+                continue
+            value = str(details.get("failure_category", "")).strip().lower()
+            if value:
+                return value
+
+        return ""
 
     def _cycle_minutes(self, run: dict) -> Optional[float]:
         started_at = run.get("started_at")
@@ -1366,6 +1487,30 @@ def render_queue_control_center(
     if center.blocked_tasks:
         for task_id in center.blocked_tasks:
             lines.append(f"- {task_id}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Bulk Retry", ""])
+    lines.append(
+        f"- Eligible Tasks: {', '.join(center.bulk_retry_tasks) if center.bulk_retry_tasks else 'none'}"
+    )
+    if center.bulk_retry_blockers:
+        for task_id, reason in center.bulk_retry_blockers.items():
+            lines.append(f"- Blocked: {task_id} reason={reason}")
+    else:
+        lines.append("- Blocked: none")
+
+    lines.extend(["", "## Failure Attribution", ""])
+    if center.failure_attribution:
+        for category, task_ids in sorted(center.failure_attribution.items()):
+            lines.append(f"- {category}: {', '.join(task_ids)}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Manual Takeover", ""])
+    if center.manual_takeover_tasks:
+        for task_id in center.manual_takeover_tasks:
+            lines.append(f"- {task_id}: Manual Takeover [manual-takeover]")
     else:
         lines.append("- None")
 

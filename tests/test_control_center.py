@@ -33,7 +33,14 @@ def test_queue_control_center_summarizes_queue_and_execution_media(tmp_path: Pat
         queue,
         runs=[
             {"task_id": "BIG-802-1", "status": "needs-approval", "medium": "vm"},
-            {"task_id": "BIG-802-2", "status": "approved", "medium": "browser"},
+            {"task_id": "BIG-802-2", "status": "failed", "medium": "browser", "failure_category": "tool"},
+            {
+                "task_id": "BIG-802-3",
+                "status": "failed",
+                "medium": "docker",
+                "repo_sync_audit": {"sync": {"failure_category": "repo-sync"}},
+                "retry_count": 2,
+            },
             {"task_id": "BIG-802-4", "status": "approved", "medium": "docker"},
         ],
     )
@@ -43,10 +50,18 @@ def test_queue_control_center_summarizes_queue_and_execution_media(tmp_path: Pat
     assert center.queue_depth == 3
     assert center.queued_by_priority == {"P0": 1, "P1": 1, "P2": 1}
     assert center.queued_by_risk == {"low": 1, "medium": 1, "high": 1}
-    assert center.execution_media == {"vm": 1, "browser": 1, "docker": 1}
+    assert center.execution_media == {"vm": 1, "browser": 1, "docker": 2}
     assert center.waiting_approval_runs == 1
     assert center.blocked_tasks == ["BIG-802-1"]
     assert center.queued_tasks == ["BIG-802-1", "BIG-802-2", "BIG-802-3"]
+    assert center.bulk_retry_tasks == ["BIG-802-1", "BIG-802-2"]
+    assert center.bulk_retry_blockers == {"BIG-802-3": "manual takeover required before retry"}
+    assert center.failure_attribution == {
+        "approval": ["BIG-802-1"],
+        "tool": ["BIG-802-2"],
+        "repo-sync": ["BIG-802-3"],
+    }
+    assert center.manual_takeover_tasks == ["BIG-802-3"]
     assert [action.action_id for action in center.actions["BIG-802-1"]] == [
         "drill-down",
         "export",
@@ -57,15 +72,32 @@ def test_queue_control_center_summarizes_queue_and_execution_media(tmp_path: Pat
         "reassign",
         "audit",
     ]
+    assert [action.action_id for action in center.actions["BIG-802-3"]] == [
+        "drill-down",
+        "export",
+        "add-note",
+        "escalate",
+        "retry",
+        "pause",
+        "reassign",
+        "audit",
+        "manual-takeover",
+    ]
     assert center.actions["BIG-802-1"][3].enabled is True
     assert center.actions["BIG-802-1"][4].enabled is True
     assert center.actions["BIG-802-1"][5].enabled is False
     assert "# Queue Control Center" in report
     assert "- Waiting Approval Runs: 1" in report
     assert "- BIG-802-1" in report
+    assert "- Eligible Tasks: BIG-802-1, BIG-802-2" in report
+    assert "- Blocked: BIG-802-3 reason=manual takeover required before retry" in report
+    assert "- approval: BIG-802-1" in report
+    assert "- repo-sync: BIG-802-3" in report
+    assert "- BIG-802-3: Manual Takeover [manual-takeover]" in report
     assert "BIG-802-1: Drill Down [drill-down]" in report
     assert "Escalate [escalate] state=enabled" in report
     assert "Pause [pause] state=disabled target=BIG-802-1 reason=approval-blocked tasks should be escalated instead of paused" in report
+    assert "Manual Takeover [manual-takeover] state=enabled target=BIG-802-3" in report
 
 
 def test_queue_control_center_renders_shared_view_empty_state(tmp_path: Path) -> None:
