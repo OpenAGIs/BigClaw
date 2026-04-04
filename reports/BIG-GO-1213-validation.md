@@ -84,7 +84,8 @@ ok  	bigclaw-go/internal/regression	0.842s
 
 ## Git
 
-- Pending final commit and push.
+- Implementation commit: `88576f34`
+- Pending final metadata commit and push.
 
 ## Residual Risk
 
