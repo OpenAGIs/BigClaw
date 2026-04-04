@@ -7,10 +7,10 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from .models import RiskLevel, Task
 from .observability import APPROVAL_RECORDED_EVENT, ObservabilityLedger, RepoSyncAudit, utc_now
-from .orchestration import render_orchestration_plan
 from .reports import (
     build_orchestration_canvas,
     PilotScorecard,
+    render_orchestration_plan,
     render_orchestration_canvas,
     render_pilot_scorecard,
     render_repo_sync_audit_report,

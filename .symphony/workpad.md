@@ -47,6 +47,7 @@
 - Current continuation is folding the standalone queue coverage into `tests/test_operations.py`, removing one more queue/ops-adjacent test file while keeping queue persistence and control-center assertions in the operational suite that already owns queue views.
 - Current continuation is folding the standalone scheduler coverage into `tests/test_runtime.py`, removing one more scheduler/runtime-adjacent test file while keeping routing, risk scoring, and execution assertions in the runtime suite that already exercises scheduler behavior.
 - Current continuation is folding the standalone benchmark/evaluation coverage into `tests/test_operations.py`, removing one more analytics-adjacent test file while keeping benchmark, replay, and report assertions with the operations suite that already consumes evaluation artifacts.
+- Current continuation is folding the tiny migration-only `src/bigclaw/queue.py` surface into `src/bigclaw/runtime.py`, removing one more real package Python file while preserving `bigclaw.queue` compatibility via a package alias.
 - Current continuation folded the standalone risk test coverage into `tests/test_scheduler.py`, removing `tests/test_risk.py` while keeping the scheduler-owned risk assertions intact.
 - Validation commands:
   - `rg -n "capacity_certification\.py|run_matrix\.py|soak_local\.py|broker_failover_stub_matrix\.py|cross_process_coordination_surface\.py|external_store_validation\.py|mixed_workload_matrix\.py|multi_node_shared_queue\.py|subscriber_takeover_fault_matrix\.py|export_live_shadow_bundle\.py|live_shadow_scorecard\.py|shadow_compare\.py|shadow_matrix\.py" bigclaw-go README.md scripts tests docs` -> no matches
@@ -218,3 +219,12 @@
   - `python3 -m build` -> passed
   - `git diff --check` -> passed
   - `find . -name '*.py' | wc -l` -> `17`
+- Current continuation folded the standalone benchmark/evaluation surface into `src/bigclaw/operations.py`, removing `src/bigclaw/evaluation.py` while preserving `bigclaw.evaluation` imports via a package alias.
+- Current continuation folded the standalone orchestration surface into `src/bigclaw/reports.py`, removing `src/bigclaw/orchestration.py` while preserving `bigclaw.orchestration` imports via a package alias.
+- Validation commands:
+  - `python3 -m pytest tests/test_operations.py tests/test_reports.py tests/test_workflow.py tests/test_runtime.py` -> `106 passed in 0.11s`
+  - `PYTHONPATH=src python3 - <<'PY' ... import bigclaw.evaluation ... import bigclaw.orchestration ... PY` -> `bigclaw.operations`, `bigclaw.reports`, callable alias available, benchmark/orchestration symbols preserved
+  - `python3 -m pytest tests/test_models.py tests/test_observability.py tests/test_operations.py tests/test_reports.py tests/test_runtime.py tests/test_workflow.py` -> `121 passed in 0.11s`
+  - `python3 -m build` -> passed
+  - `git diff --check` -> passed
+  - `find . -name '*.py' | wc -l` -> `14`

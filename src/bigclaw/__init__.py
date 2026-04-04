@@ -1,5 +1,10 @@
 import sys as _sys
+import types as _types
 
+from . import operations as evaluation
+from . import reports as orchestration
+from . import runtime as deprecation
+from . import runtime as legacy_shim
 from .models import (
     BillingInterval,
     BillingRate,
@@ -22,7 +27,6 @@ from .models import (
     TriageStatus,
     UsageRecord,
 )
-from .queue import PersistentTaskQueue
 from .scheduler import ExecutionRecord, RiskFactor, RiskScore, RiskScorer, Scheduler, SchedulerDecision
 from .observability import (
     CollaborationComment,
@@ -46,18 +50,12 @@ from .observability import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .orchestration import (
-    CrossDepartmentOrchestrator,
-    DepartmentHandoff,
-    HandoffRequest,
-    OrchestrationPlan,
-    OrchestrationPolicyDecision,
-    PremiumOrchestrationPolicy,
-    render_orchestration_plan,
-)
 from .runtime import (
     ClawWorkerRuntime,
+    DeadLetterEntry,
+    LEGACY_RUNTIME_GUIDANCE,
     LEGACY_PYTHON_WRAPPER_NOTICE,
+    PersistentTaskQueue,
     SandboxProfile,
     SandboxRouter,
     ToolCallResult,
@@ -71,15 +69,16 @@ from .runtime import (
     build_workspace_validate_args,
     translate_workspace_validate_args,
 )
-from . import runtime as deprecation
-from . import runtime as legacy_shim
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
+    CrossDepartmentOrchestrator,
+    DepartmentHandoff,
     BillingEntitlementsPage,
     BillingRunCharge,
     DocumentationArtifact,
     FinalDeliveryChecklist,
+    HandoffRequest,
     LaunchChecklist,
     LaunchChecklistItem,
     NarrativeSection,
@@ -89,10 +88,13 @@ from .reports import (
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
+    PremiumOrchestrationPolicy,
     ReportStudio,
     ReportStudioArtifacts,
     SharedViewContext,
     SharedViewFilter,
+    OrchestrationPlan,
+    OrchestrationPolicyDecision,
     TakeoverQueue,
     TakeoverRequest,
     TriageFeedbackRecord,
@@ -118,6 +120,7 @@ from .reports import (
     render_billing_entitlements_report,
     render_final_delivery_checklist_report,
     render_launch_checklist_report,
+    render_orchestration_plan,
     render_orchestration_canvas,
     render_orchestration_overview_page,
     render_orchestration_portfolio_report,
@@ -185,8 +188,18 @@ from .operations import (
 )
 
 _sys.modules[__name__ + ".deprecation"] = deprecation
+
+queue = _types.ModuleType(__name__ + ".queue")
+queue.DeadLetterEntry = DeadLetterEntry
+queue.PersistentTaskQueue = PersistentTaskQueue
+queue.LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+queue.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/queue/queue.go"
+_sys.modules[__name__ + ".queue"] = queue
+
+_sys.modules[__name__ + ".evaluation"] = evaluation
+_sys.modules[__name__ + ".orchestration"] = orchestration
 _sys.modules[__name__ + ".legacy_shim"] = legacy_shim
-from .evaluation import (
+from .operations import (
     BenchmarkCase,
     BenchmarkComparison,
     BenchmarkResult,
