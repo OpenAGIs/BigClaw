@@ -84,9 +84,9 @@ ok  	bigclaw-go/internal/regression	0.833s
 ## Git
 
 - Branch: `main`
-- Commit: `7c594cdb`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-1233'` -> `7c594cdb BIG-GO-1233 add zero-python guard`
-- Push result: `git push origin HEAD:main` -> `76f8e7f2..7c594cdb  HEAD -> main`
+- Commit: `450da0de`
+- Lane commit details: `git log --oneline --grep 'BIG-GO-1233'` -> `450da0de BIG-GO-1233 finalize validation report`, `7c594cdb BIG-GO-1233 add zero-python guard`
+- Push result: `git push origin HEAD:main` -> `7c594cdb..450da0de  HEAD -> main`
 
 ## Residual Risk
 
