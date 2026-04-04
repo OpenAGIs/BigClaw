@@ -79,15 +79,18 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1242/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.831s
+ok  	bigclaw-go/internal/regression	0.485s
 ```
 
 ## Git
 
 - Branch: `main`
-- Commit: `91c91b75` (`BIG-GO-1242: add zero-python regression lane artifacts`)
+- Content commit: `91c91b75` (`BIG-GO-1242: add zero-python regression lane artifacts`)
+- Final published head: `c0130d71` (`BIG-GO-1242: record published lane metadata`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1242'`
-- Push result: `git push origin HEAD:main` -> success (`73c7e105..91c91b75  HEAD -> main`)
+- Push results:
+  `git push origin HEAD:main` -> success (`73c7e105..91c91b75  HEAD -> main`)
+  `git push origin HEAD:main` -> success (`91c91b75..c0130d71  HEAD -> main`)
 
 ## Residual Risk
 
