@@ -1,0 +1,56 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1186",
+    "title": "Heartbeat refill lane 1186: remaining Python asset sweep 6/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "recorded in git history for BIG-GO-1186",
+    "push_target": "origin/main"
+  },
+  "inventory": {
+    "repository_python_files": [],
+    "priority_directories": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1186-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1186_remaining_python_sweep_test.go"
+  },
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/githubsync/sync.go",
+    "bigclaw-go/internal/refill/queue.go",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -name '*.py' 2>/dev/null | wc -l",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1186(RemainingPythonAssetInventoryIsEmpty|PriorityResidualDirectoriesStayPythonFree|GoReplacementEntrypointsRemainAvailable)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "priority_py_count": "0",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.772s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1186 changes."
+  }
+}
