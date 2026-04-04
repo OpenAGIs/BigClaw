@@ -84,9 +84,9 @@ ok  	bigclaw-go/internal/regression	0.477s
 ## Git
 
 - Branch: `main`
-- Commit: `tracked in git history after lane commit`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-1224'`
-- Push result: `pending`
+- Commit: `0e4d990f47011c3546906a69157829429405a331`
+- Lane commit details: `0e4d990f BIG-GO-1224: harden zero-python sweep lane`
+- Push result: `git push origin main` -> `To https://github.com/OpenAGIs/BigClaw.git`; `9bc23113..0e4d990f  main -> main`
 
 ## Residual Risk
 

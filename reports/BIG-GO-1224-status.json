@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "tracked in git history",
+    "latest_commit": "0e4d990f47011c3546906a69157829429405a331",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -47,6 +47,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Commit metadata and push evidence are recorded in the validation report."
+    "Commit metadata and successful push evidence are recorded in the validation report."
   ]
 }

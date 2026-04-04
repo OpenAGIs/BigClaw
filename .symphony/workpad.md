@@ -22,7 +22,7 @@
 - `find . -name '*.py' -type f | wc -l` -> `0`
 - `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done` -> `<empty>`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1224(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.477s`
-- `git status --short` -> `M .symphony/workpad.md`; `?? bigclaw-go/internal/regression/big_go_1224_zero_python_guard_test.go`; `?? reports/BIG-GO-1224-status.json`; `?? reports/BIG-GO-1224-validation.md`
+- `git status --short --branch` -> `## main...origin/main`
 
 ## Residual Risk
 - The live workspace baseline was already at a repository-wide Python file count of `0`, so BIG-GO-1224 can only harden and document the Go-only state rather than reduce the count numerically.
