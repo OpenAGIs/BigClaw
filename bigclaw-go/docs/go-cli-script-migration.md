@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`, `BIG-GO-1175`
 
 ## Current Go-Only Entrypoints
 
@@ -40,6 +40,18 @@ regression surface focuses on keeping the deletion state sticky.
 | E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `./scripts/e2e/run_all.sh`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` |
 | Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
 | Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
+
+## BIG-GO-1175 Root Helper Evidence
+
+`BIG-GO-1175` extends the root-helper sweep evidence for the already-zero `.py`
+baseline. The retained [`scripts/dev_bootstrap.sh`](../../scripts/dev_bootstrap.sh)
+path is intentionally limited to shell/Go validation duties:
+
+- `go test ./cmd/bigclawctl`
+- `bash scripts/ops/bigclawctl dev-smoke`
+- `BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh` optionally adds `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+
+That helper must not regain direct references to retired root Python entrypoints.
 
 ## Validation Commands
 

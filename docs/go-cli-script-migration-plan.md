@@ -44,6 +44,12 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1175` records the follow-on replacement evidence for the retained root
+helper path: `scripts/dev_bootstrap.sh` remains a shell validation helper that
+only drives `go test`, `bash scripts/ops/bigclawctl dev-smoke`, and the
+optional `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+compatibility check when `BIGCLAW_ENABLE_LEGACY_PYTHON=1`.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
@@ -100,7 +106,8 @@ operator docs and external automation references finish the direct cutover to
 ## Remaining Backlog
 
 - Continue shrinking `scripts/dev_bootstrap.sh` so it stays a validation-only shell helper and
-  does not reintroduce Python environment management at the repository root.
+  does not reintroduce retired Python entrypoints or Python environment management at the
+  repository root.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
 - Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
