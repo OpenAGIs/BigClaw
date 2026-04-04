@@ -83,8 +83,8 @@ ok  	bigclaw-go/internal/regression	0.808s
 
 ## Git
 
-- Lane commit: `ade0a5e0` (`BIG-GO-1231: add zero-python heartbeat guard`)
-- Final push target: `origin/main`
+- Lane commit: `e406512d` (`BIG-GO-1231: add zero-python heartbeat guard`)
+- Final push target: `origin/big-go-1231`
 - Final tip: `tracked in git history after BIG-GO-1231 final sync`
 
 ## Residual Risk
@@ -92,3 +92,6 @@ ok  	bigclaw-go/internal/regression	0.808s
 - The live branch baseline was already Python-free, so BIG-GO-1231 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- `origin/main` continued advancing during repeated push attempts after the
+  final rebase, so the latest rebased lane state was published on
+  `origin/big-go-1231`.
