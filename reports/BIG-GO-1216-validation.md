@@ -83,8 +83,8 @@ ok  	bigclaw-go/internal/regression	0.501s
 
 ## Git
 
-- Commit: `pending`
-- Push: `pending`
+- Commit: `f4411ec4418aa64c4ada08d1d0aa3952c795663d` (`BIG-GO-1216 harden zero-python sweep lane`)
+- Push: `pending final metadata push`
 
 ## Residual Risk
 
