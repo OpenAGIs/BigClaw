@@ -34,6 +34,7 @@ and lane-specific validation evidence.
 ## Validation Commands
 
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1214 -name '*.py' | wc -l`
+- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1214/$dir" -name '*.py' -type f; fi; done`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1214/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1214(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
 
 ## Validation Results
@@ -52,6 +53,20 @@ Result:
 0
 ```
 
+### Priority residual directories
+
+Command:
+
+```bash
+for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1214/$dir" -name '*.py' -type f; fi; done
+```
+
+Result:
+
+```text
+<empty>
+```
+
 ### Targeted regression guard
 
 Command:
@@ -68,8 +83,10 @@ ok  	bigclaw-go/internal/regression	0.504s
 
 ## Git
 
-- Commit: `tracked in git history after lane commit`
-- Push: `pending`
+- Implementation commit: `06d5fbab`
+- Final metadata commit: `pending`
+- Push target: `origin/BIG-GO-1214`
+- `origin/main` push attempts: `rejected as non-fast-forward while concurrent unattended lanes advanced main`
 
 ## Residual Risk
 

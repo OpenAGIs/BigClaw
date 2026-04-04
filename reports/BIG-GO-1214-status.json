@@ -6,8 +6,9 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "tracked in git history",
-    "push_target": "origin/main"
+    "latest_commit": "pending",
+    "implementation_commit": "06d5fbab",
+    "push_target": "origin/BIG-GO-1214"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1214-validation.md",
@@ -32,19 +33,22 @@
   "validation": {
     "commands": [
       "find . -name '*.py' | wc -l",
+      "for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d \"$dir\" ]; then find \"$dir\" -name '*.py' -type f; fi; done",
       "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1214(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'"
     ],
     "results": {
       "repo_py_count": "0",
+      "priority_dir_py_files": "<empty>",
       "regression_tests": "ok   bigclaw-go/internal/regression  0.504s"
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1214 changes."
+    "type": "integration",
+    "summary": "Repeated non-fast-forward races on origin/main blocked a clean main push while parallel unattended lanes were updating the shared .symphony/workpad.md file."
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1214 changes.",
     "Lane commit details are recorded in git history and summarized in the validation report."
   ]
 }
