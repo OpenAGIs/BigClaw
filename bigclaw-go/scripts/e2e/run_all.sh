@@ -85,7 +85,7 @@ fi
 export_bundle() {
   go run "$ROOT/scripts/e2e/broker_bootstrap_summary.go" \
     --output "$ROOT/$BROKER_BOOTSTRAP_SUMMARY_PATH"
-  python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
+  go run "$ROOT/cmd/bigclawctl" e2e export-validation-bundle \
     --go-root "$ROOT" \
     --run-id "$RUN_ID" \
     --bundle-dir "$BUNDLE_DIR_REL" \

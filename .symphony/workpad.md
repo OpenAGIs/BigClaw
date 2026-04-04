@@ -17,7 +17,7 @@
 - `git status --short`
 
 ## Results
-- `find . -name '*.py' | wc -l` -> `107` after retiring the Go-backed E2E smoke, continuation helpers, and deterministic takeover harness, down from the pre-change baseline of `138`
+- `find . -name '*.py' | wc -l` -> `106` after retiring the Go-backed E2E smoke, exporter, continuation helpers, and deterministic takeover harness, down from the pre-change baseline of `138`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.490s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.944s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLiveValidationIndexStaysAligned|TestRuntimeReportFollowUpDocsStayAligned|TestTakeoverFollowUpDigestReferences|TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.839s`
@@ -26,3 +26,5 @@
 - `python3 -m pytest -q tests/test_followup_digests.py` -> `.. [100%]`
 - `cd bigclaw-go && go test ./cmd/bigclawctl -count=1` -> `ok  	bigclaw-go/cmd/bigclawctl	0.809s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLocalTakeoverReportStaysAligned|TestLiveTakeoverReportStaysAligned|TestTakeoverFollowUpDigestReferences|TestE2EValidationDocsStayAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.259s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl -count=1` -> `ok  	bigclaw-go/cmd/bigclawctl	1.266s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLiveValidationIndexStaysAligned|TestLiveValidationSummaryStaysAligned|TestRuntimeReportFollowUpDocsStayAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.470s`

@@ -102,6 +102,96 @@ func TestBuildValidationBundleContinuationPolicyGate(t *testing.T) {
 	}
 }
 
+func TestRunE2EExportValidationBundle(t *testing.T) {
+	root := t.TempDir()
+	writeJSONFixture(t, filepath.Join(root, "docs", "reports", "multi-node-shared-queue-report.json"), map[string]any{
+		"generated_at":              "2026-03-13T09:45:19Z",
+		"all_ok":                    true,
+		"count":                     12,
+		"cross_node_completions":    6,
+		"duplicate_started_tasks":   []any{},
+		"duplicate_completed_tasks": []any{},
+		"missing_completed_tasks":   []any{},
+		"submitted_by_node":         map[string]any{"node-a": 6, "node-b": 6},
+		"completed_by_node":         map[string]any{"node-a": 4, "node-b": 8},
+		"nodes":                     []any{map[string]any{"name": "node-a"}, map[string]any{"name": "node-b"}},
+	})
+	writeJSONFixture(t, filepath.Join(root, "docs", "reports", "validation-bundle-continuation-policy-gate.json"), map[string]any{
+		"status":         "policy-go",
+		"recommendation": "go",
+		"failing_checks": []any{},
+		"enforcement":    map[string]any{"mode": "review", "outcome": "pass", "exit_code": 0},
+		"summary":        map[string]any{"latest_run_id": "run-1", "failing_check_count": 0, "workflow_exit_code": 0},
+		"reviewer_path":  map[string]any{"index_path": "docs/reports/live-validation-index.md", "digest_path": "docs/reports/validation-bundle-continuation-digest.md"},
+		"next_actions":   []any{"set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions"},
+	})
+	writeJSONFixture(t, filepath.Join(root, "run-1", "local.json"), map[string]any{
+		"base_url": "http://127.0.0.1:1",
+		"task":     map[string]any{"id": "local-1", "required_executor": "local"},
+		"status":   map[string]any{"state": "succeeded"},
+	})
+	writeJSONFixture(t, filepath.Join(root, "run-1", "k8s.json"), map[string]any{
+		"base_url": "http://127.0.0.1:2",
+		"task":     map[string]any{"id": "k8s-1", "required_executor": "kubernetes"},
+		"status":   map[string]any{"state": "succeeded"},
+	})
+	writeJSONFixture(t, filepath.Join(root, "run-1", "ray.json"), map[string]any{
+		"base_url": "http://127.0.0.1:3",
+		"task":     map[string]any{"id": "ray-1", "required_executor": "ray"},
+		"status":   map[string]any{"state": "succeeded"},
+	})
+	if err := os.WriteFile(filepath.Join(root, "local.out"), []byte("ok\n"), 0o644); err != nil {
+		t.Fatalf("write local stdout: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "local.err"), nil, 0o644); err != nil {
+		t.Fatalf("write local stderr: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "k8s.out"), []byte("ok\n"), 0o644); err != nil {
+		t.Fatalf("write k8s stdout: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "k8s.err"), nil, 0o644); err != nil {
+		t.Fatalf("write k8s stderr: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "ray.out"), []byte("ok\n"), 0o644); err != nil {
+		t.Fatalf("write ray stdout: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "ray.err"), nil, 0o644); err != nil {
+		t.Fatalf("write ray stderr: %v", err)
+	}
+
+	if err := runE2EExportValidationBundle([]string{
+		"--go-root", root,
+		"--run-id", "run-1",
+		"--bundle-dir", "docs/reports/live-validation-runs/run-1",
+		"--local-report-path", "run-1/local.json",
+		"--local-stdout-path", filepath.Join(root, "local.out"),
+		"--local-stderr-path", filepath.Join(root, "local.err"),
+		"--kubernetes-report-path", "run-1/k8s.json",
+		"--kubernetes-stdout-path", filepath.Join(root, "k8s.out"),
+		"--kubernetes-stderr-path", filepath.Join(root, "k8s.err"),
+		"--ray-report-path", "run-1/ray.json",
+		"--ray-stdout-path", filepath.Join(root, "ray.out"),
+		"--ray-stderr-path", filepath.Join(root, "ray.err"),
+	}); err != nil {
+		t.Fatalf("run export validation bundle: %v", err)
+	}
+
+	summaryBody, err := os.ReadFile(filepath.Join(root, "docs", "reports", "live-validation-summary.json"))
+	if err != nil {
+		t.Fatalf("read summary: %v", err)
+	}
+	if !strings.Contains(string(summaryBody), `"run_id": "run-1"`) || !strings.Contains(string(summaryBody), `"canonical_summary_path": "docs/reports/shared-queue-companion-summary.json"`) {
+		t.Fatalf("unexpected summary body: %s", string(summaryBody))
+	}
+	indexBody, err := os.ReadFile(filepath.Join(root, "docs", "reports", "live-validation-index.md"))
+	if err != nil {
+		t.Fatalf("read index: %v", err)
+	}
+	if !strings.Contains(string(indexBody), "## Continuation gate") || !strings.Contains(string(indexBody), "## Workflow closeout commands") {
+		t.Fatalf("unexpected index body: %s", string(indexBody))
+	}
+}
+
 func TestRunE2ETaskSmokeWithoutAutostartWritesReport(t *testing.T) {
 	var taskID string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
