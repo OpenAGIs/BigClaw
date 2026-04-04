@@ -130,7 +130,7 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/risk.py`
-- `src/bigclaw/governance.py`
+- retired `src/bigclaw/governance.py`
 - `src/bigclaw/execution_contract.py`
 - `src/bigclaw/audit_events.py`
 
@@ -225,7 +225,7 @@ Python source:
 - `src/bigclaw/run_detail.py`
 - retired `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
-- `src/bigclaw/saved_views.py`
+- retired `src/bigclaw/saved_views.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/server.go`
@@ -394,7 +394,7 @@ tracker work.
 
 Python source:
 - `src/bigclaw/risk.py`
-- remaining active consumers of `src/bigclaw/governance.py`
+- the former `src/bigclaw/governance.py` sidecar has now been retired after the Go scope-freeze surface became the maintained path
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of `src/bigclaw/audit_events.py`
 
@@ -435,7 +435,7 @@ Python source:
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
 - retired `src/bigclaw/dashboard_run_contract.py`
-- `src/bigclaw/planning.py`
+- retired `src/bigclaw/planning.py`
 
 Go ownership:
 - `bigclaw-go/internal/observability/*`
@@ -476,10 +476,10 @@ Historical planned state:
 ### 5. Port operator console and saved-view surfaces to Go
 
 Python source:
-- `src/bigclaw/console_ia.py`
+- retired `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
-- `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
+- retired `src/bigclaw/saved_views.py`
+- retired `src/bigclaw/ui_review.py`
 - historical operator-facing parts formerly carried by `src/bigclaw/service.py`
 
 Go ownership:
