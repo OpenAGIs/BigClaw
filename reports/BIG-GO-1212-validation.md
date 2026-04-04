@@ -84,7 +84,7 @@ ok  	bigclaw-go/internal/regression	0.783s
 ## Git
 
 - Implementation commit: `c59242ad`
-- Final metadata commit: `dcf39f26`
+- Final metadata commit: `6409dda1`
 - Push target: `origin/main`
 
 ## Residual Risk
