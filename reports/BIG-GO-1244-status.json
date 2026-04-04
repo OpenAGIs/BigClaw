@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "4ce1848d",
+    "latest_commit": "tracked in git history after BIG-GO-1244 final sync",
     "push_target": "origin/main"
   },
   "artifacts": {
