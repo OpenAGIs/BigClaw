@@ -17,6 +17,6 @@
 - `cd bigclaw-go && go test ./internal/regression -run 'Test(BIGGO1177|BIGGO1160|RootScriptResidualSweep|E2EScriptDirectoryStaysPythonFree|RootOpsDirectoryStaysPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.472s`
 - `git status --short` before changes -> clean
 - `git status --short` after changes, before commit -> `M .symphony/workpad.md`, `M docs/go-cli-script-migration-plan.md`, `?? bigclaw-go/internal/regression/big_go_1177_python_free_test.go`, `?? reports/BIG-GO-1177-status.json`, `?? reports/BIG-GO-1177-validation.md`
-- `git rev-parse HEAD` after closeout commit -> `56b446ca87b7b169db0facbe98d163f9f98fb982`
+- `git rev-parse HEAD` after closeout commit -> `d9391e893335a41f5edb76484f2dcc2df072c845`
 - `git push -u origin symphony/BIG-GO-1177` -> pushed successfully
 - `git status --short` after push -> clean

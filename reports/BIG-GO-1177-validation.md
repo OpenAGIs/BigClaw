@@ -74,7 +74,7 @@ ok  	bigclaw-go/internal/regression	0.472s
 
 ## Git
 
-- Commit: `56b446ca87b7b169db0facbe98d163f9f98fb982` (`BIG-GO-1177 lock zero-python sweep evidence`)
+- Commit: `d9391e893335a41f5edb76484f2dcc2df072c845` (`BIG-GO-1177 record push metadata`)
 - Push: `git push -u origin symphony/BIG-GO-1177` -> success
 
 ## Residual Risk

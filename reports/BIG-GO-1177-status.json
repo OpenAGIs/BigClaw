@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "symphony/BIG-GO-1177",
-    "latest_commit": "56b446ca87b7b169db0facbe98d163f9f98fb982",
+    "latest_commit": "d9391e893335a41f5edb76484f2dcc2df072c845",
     "push_target": "origin/symphony/BIG-GO-1177"
   },
   "artifacts": {
