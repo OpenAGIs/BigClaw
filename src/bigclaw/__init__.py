@@ -5,6 +5,7 @@ from . import operations as evaluation
 from . import reports as orchestration
 from . import runtime as deprecation
 from . import runtime as legacy_shim
+from . import scheduler as _workflow_impl
 from .models import (
     BillingInterval,
     BillingRate,
@@ -138,7 +139,7 @@ from .reports import (
     write_report,
     write_report_studio_bundle,
 )
-from .workflow import (
+from .scheduler import (
     AcceptanceDecision,
     AcceptanceGate,
     WorkflowDefinition,
@@ -199,6 +200,17 @@ _sys.modules[__name__ + ".queue"] = queue
 _sys.modules[__name__ + ".evaluation"] = evaluation
 _sys.modules[__name__ + ".orchestration"] = orchestration
 _sys.modules[__name__ + ".legacy_shim"] = legacy_shim
+workflow = _types.ModuleType(__name__ + ".workflow")
+workflow.AcceptanceDecision = AcceptanceDecision
+workflow.AcceptanceGate = AcceptanceGate
+workflow.WorkflowDefinition = WorkflowDefinition
+workflow.WorkflowEngine = WorkflowEngine
+workflow.WorkflowRunResult = WorkflowRunResult
+workflow.WorkflowStep = WorkflowStep
+workflow.WorkpadJournal = WorkpadJournal
+workflow.LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+workflow.GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/workflow/engine.go"
+_sys.modules[__name__ + ".workflow"] = workflow
 from .operations import (
     BenchmarkCase,
     BenchmarkComparison,

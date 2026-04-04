@@ -225,6 +225,7 @@
 - Current continuation folded the standalone observability coverage into `tests/test_reports.py`, removing `tests/test_observability.py` while keeping ledger/report/detail-page assertions with the reporting surface that renders them.
 - Current continuation folded the standalone runtime/scheduler compatibility coverage into `tests/test_workflow.py`, removing `tests/test_runtime.py` while keeping workflow-owned runtime, scheduler, and legacy-shim assertions in the same execution suite.
 - Current continuation folded the standalone operations/evaluation/queue coverage into `tests/test_reports.py`, removing `tests/test_operations.py` while keeping report and operations-center assertions in the suite that already owns the reporting surfaces they exercise.
+- Current continuation folded the standalone workflow engine surface into `src/bigclaw/scheduler.py`, removing `src/bigclaw/workflow.py` while preserving `bigclaw.workflow` imports via a package compatibility module.
 - Validation commands:
   - `python3 -m pytest tests/test_operations.py tests/test_reports.py tests/test_workflow.py tests/test_runtime.py` -> `106 passed in 0.11s`
   - `PYTHONPATH=src python3 - <<'PY' ... import bigclaw.evaluation ... import bigclaw.orchestration ... PY` -> `bigclaw.operations`, `bigclaw.reports`, callable alias available, benchmark/orchestration symbols preserved
@@ -247,3 +248,6 @@
   - `python3 -m build` -> passed
   - `git diff --check` -> passed
   - `find . -name '*.py' | wc -l` -> `10`
+  - `PYTHONPATH=src python3 - <<'PY' ... import bigclaw.workflow ... PY` -> `bigclaw-go/internal/workflow/engine.go`, workflow symbols resolve from `bigclaw.scheduler`
+  - `python3 -m pytest tests/test_reports.py` -> `121 passed in 0.11s`
+  - `find . -name '*.py' | wc -l` -> `8`
