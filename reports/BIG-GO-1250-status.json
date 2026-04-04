@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "028cc7d5",
+    "latest_commit": "tracked in git history after BIG-GO-1250 final sync",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -49,7 +49,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "The lane rebased repeatedly against concurrent heartbeat updates and landed on origin/main at 028cc7d5.",
-    "Published lane commits: 7808cff9, 3294f051, aa6c9771, 8d402899, 89aaeff8, 028cc7d5."
+    "The lane rebased repeatedly against concurrent heartbeat updates and landed on origin/main after the final BIG-GO-1250 metadata sync.",
+    "Published BIG-GO-1250 commits are recorded in git history via `git log --grep 'BIG-GO-1250'`."
   ]
 }
