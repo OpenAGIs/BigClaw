@@ -71,8 +71,8 @@ ok  	bigclaw-go/internal/regression	0.470s
 
 ## Git
 
-- Commit: pending at report write time
-- Push: `origin/main`
+- Commit: `a1707f6b198334c94e3b3207439852d540d4483f` (`BIG-GO-1200: harden zero-python sweep baseline`)
+- Push: `origin/BIG-GO-1200`
 
 ## Residual Risk
 
