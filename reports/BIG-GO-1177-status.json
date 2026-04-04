@@ -1,0 +1,38 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1177",
+    "title": "Go-only sweep lane 1177: remove remaining Python assets batch 7/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1177",
+    "latest_commit": "PENDING",
+    "push_target": "origin/symphony/BIG-GO-1177"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1177-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "migration_plan": "docs/go-cli-script-migration-plan.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1177_python_free_test.go"
+  },
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "find . -name '*.py' | sort",
+      "cd bigclaw-go && go test ./internal/regression -run 'Test(BIGGO1177|BIGGO1160|RootScriptResidualSweep|E2EScriptDirectoryStaysPythonFree|RootOpsDirectoryStaysPythonFree)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "repo_py_listing": "<no output>",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.472s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repo-wide physical Python count was already zero in this workspace before BIG-GO-1177 changes, so the lane could not reduce it further numerically."
+  },
+  "notes": [
+    "BIG-GO-1177 is closed out by committed replacement evidence and regression coverage rather than a fresh deletion.",
+    "The target priority areas are src/bigclaw, tests, scripts, and bigclaw-go/scripts."
+  ]
+}

@@ -44,6 +44,11 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1177` records the follow-on zero-count sweep evidence for the same
+priority lanes (`src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`)
+after the physical `.py` count reached `0`, with regression coverage keeping
+the repo rooted in Go/shell-native entrypoints.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
