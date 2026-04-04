@@ -1,0 +1,54 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1247",
+    "title": "Heartbeat refill lane 1247: remaining Python asset sweep 7/10",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "tracked in git history after BIG-GO-1247 final sync",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1247-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1247_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1247_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -name '*.py' -type f | wc -l",
+      "for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d \"$dir\" ]; then find \"$dir\" -name '*.py' -type f; fi; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1247(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "priority_dir_inventory": "<empty>",
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.500s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1247 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "The shared .symphony/workpad.md is durable enough for operator context, but the lane evidence of record lives in the BIG-GO-1247 report artifacts.",
+    "The lane stays scoped to zero-Python audit evidence and regression coverage because there are no remaining physical Python assets in this workspace."
+  ]
+}

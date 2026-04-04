@@ -21,8 +21,8 @@
 
 ## Go Replacement Paths
 - `scripts/ops/bigclawctl`
-- `bigclaw-go/cmd/bigclawctl/main.go`
 - `scripts/dev_bootstrap.sh`
+- `bigclaw-go/cmd/bigclawctl/main.go`
 - `bigclaw-go/internal/bootstrap/bootstrap.go`
 
 ## Validation
