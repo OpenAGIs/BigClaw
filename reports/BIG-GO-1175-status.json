@@ -1,0 +1,41 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1175",
+    "title": "Go-only sweep lane 1175: remove remaining Python assets batch 5/10",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1175",
+    "latest_commit": "5eb5a487",
+    "push_target": "origin/BIG-GO-1175"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1175-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "migration_docs": [
+      "bigclaw-go/docs/go-cli-script-migration.md",
+      "docs/go-cli-script-migration-plan.md"
+    ],
+    "regression_guard": "bigclaw-go/internal/regression/root_script_residual_sweep_test.go"
+  },
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "cd bigclaw-go && go test ./internal/regression -run 'Test(RootScriptResidualSweep|RootScriptResidualSweepDocs|BIGGO1175DevBootstrapStaysGoOnly|BIGGO1175DocsRecordDevBootstrapReplacementEvidence)$'",
+      "bash scripts/ops/bigclawctl dev-smoke"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.470s",
+      "dev_smoke": "smoke_ok local"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repo-wide physical Python count was already zero in this workspace before the lane changes, so the count could not be reduced further numerically."
+  },
+  "notes": [
+    "This lane records concrete replacement evidence for the retained root helper path instead of removing a new on-disk Python file.",
+    "The issue should be accompanied by a local issue completion comment and state transition after these artifacts are written."
+  ]
+}
