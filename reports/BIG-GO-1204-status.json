@@ -7,7 +7,8 @@
   "branch": {
     "name": "main",
     "latest_commit": "tracked in git history",
-    "push_target": "origin/main"
+    "push_target": "origin/main",
+    "push_result": "git push origin main -> 729687b5..f5e22218"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1204-validation.md",

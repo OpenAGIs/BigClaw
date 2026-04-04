@@ -71,6 +71,7 @@ ok  	bigclaw-go/internal/regression	1.251s
 - Branch: `main`
 - Push target: `origin/main`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1204'`
+- Push result: `git push origin main` -> `729687b5..f5e22218`
 
 ## Residual Risk
 
