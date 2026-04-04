@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1237",
+    "title": "Heartbeat refill lane 1237: remaining Python asset sweep 7/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1237-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1237_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1237_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "bigclaw-go/cmd/bigclawctl",
+    "scripts/dev_bootstrap.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -name '*.py' -type f | wc -l",
+      "for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d \"$dir\" ]; then find \"$dir\" -name '*.py' -type f; fi; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1237(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "priority_dir_inventory": "",
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.796s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1237 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "Commit metadata and push evidence will be recorded in the validation report."
+  ]
+}
