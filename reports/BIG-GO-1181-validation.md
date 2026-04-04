@@ -81,7 +81,9 @@ ok  	bigclaw-go/internal/regression	0.487s
 ## Git
 
 - Branch: `feat/BIG-GO-1181-python-asset-sweep-1`
-- Commit: `0293aa47` (`BIG-GO-1181 harden remaining python sweep lane`)
+- Commits:
+  - `0293aa47` (`BIG-GO-1181 harden remaining python sweep lane`)
+  - `1deb7ddb` (`BIG-GO-1181 sync lane metadata`)
 - Push: `git push -u origin feat/BIG-GO-1181-python-asset-sweep-1` -> success
 
 ## Residual Risk
