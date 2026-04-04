@@ -85,9 +85,11 @@ ok  	bigclaw-go/internal/regression	0.475s
 ## Git
 
 - Branch: `main`
-- Commit: `73c7e105` (`BIG-GO-1243: add zero-python regression lane artifacts`)
+- Commits:
+  - `73c7e105` (`BIG-GO-1243: add zero-python regression lane artifacts`)
+  - `8a7cc025` (`BIG-GO-1243: finalize lane metadata`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1243'`
-- Push result: `git push origin main` -> success (`15eb73fc..73c7e105  main -> main`)
+- Push result: `git fetch origin main && git rebase origin/main && git push origin HEAD:main` -> success (`c0130d71..8a7cc025  HEAD -> main`)
 
 ## Residual Risk
 

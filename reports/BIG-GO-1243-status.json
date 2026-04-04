@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "73c7e105",
+    "latest_commit": "8a7cc025",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -49,6 +49,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The shared .symphony/workpad.md is concurrently updated by later heartbeat lanes, so the durable BIG-GO-1243 evidence is recorded in the lane report artifacts.",
-    "The lane landed on origin/main with a clean post-push workspace."
+    "The lane landed on origin/main after a fetch-plus-rebase reconciliation against concurrent heartbeat pushes.",
+    "The final landed metadata commit is 8a7cc025."
   ]
 }
