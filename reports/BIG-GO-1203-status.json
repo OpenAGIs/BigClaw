@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "4700d567",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -46,6 +46,7 @@
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1203 changes."
   },
   "notes": [
-    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage."
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "Commit metadata is recorded in the validation report."
   ]
 }
