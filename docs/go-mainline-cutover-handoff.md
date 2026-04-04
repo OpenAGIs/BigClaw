@@ -30,7 +30,8 @@ cutover set.
 
 - Canonical Go owners now cover the `src/bigclaw/models.py`,
   retired `src/bigclaw/connectors.py`, retired `src/bigclaw/mapping.py`, and
-  `src/bigclaw/dsl.py` contract surfaces required by the cutover plan.
+  workflow-definition contract surfaces now housed in `src/bigclaw/workflow.py`
+  that were required by the cutover plan.
 - Risk, policy, orchestration, reporting, control-center, repo collaboration,
   tooling, and Python-retirement slices are closed in the local tracker.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now

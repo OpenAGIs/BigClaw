@@ -30,7 +30,6 @@ from .collaboration import (
     build_collaboration_thread_from_audits,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -123,7 +122,15 @@ from .reports import (
     write_report,
     write_report_studio_bundle,
 )
-from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
+from .workflow import (
+    AcceptanceDecision,
+    AcceptanceGate,
+    WorkflowDefinition,
+    WorkflowEngine,
+    WorkflowRunResult,
+    WorkflowStep,
+    WorkpadJournal,
+)
 from .operations import (
     DashboardBuilder,
     DashboardBuilderAudit,

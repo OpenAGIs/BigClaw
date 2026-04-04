@@ -45,7 +45,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `map_state` -> `bigclaw-go/internal/intake/mapping.go`
 - `map_source_issue_to_task` -> `bigclaw-go/internal/intake/mapping.go`
 
-### `src/bigclaw/dsl.py`
+### workflow-definition surface now in `src/bigclaw/workflow.py`
 
 - `WorkflowStep` -> `bigclaw-go/internal/workflow/definition.go`
 - `WorkflowDefinition` -> `bigclaw-go/internal/workflow/definition.go`

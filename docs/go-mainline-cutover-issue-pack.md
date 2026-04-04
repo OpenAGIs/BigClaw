@@ -97,7 +97,7 @@ Python source:
 - `src/bigclaw/models.py`
 - retired `src/bigclaw/connectors.py`
 - retired `src/bigclaw/mapping.py`
-- `src/bigclaw/dsl.py`
+- workflow-definition types now live in `src/bigclaw/workflow.py`
 
 Go ownership:
 - `bigclaw-go/internal/domain/task.go`
