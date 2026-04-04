@@ -37,7 +37,7 @@ cutover set.
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
 - The default mainline posture is Go-first, with remaining Python entrypoints
-  marked as migration-only compatibility shims.
+  reduced to compatibility shims such as `src/bigclaw/legacy_shim.py`.
 
 ## Remaining non-blocking caveats
 

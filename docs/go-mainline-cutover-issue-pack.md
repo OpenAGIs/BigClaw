@@ -321,8 +321,8 @@ Historical initial state:
 ### BIG-GOM-308 Python deprecation and Go-only mainline switch
 
 Python source:
-- `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- retired `src/bigclaw/service.py`
+- retired `src/bigclaw/__main__.py`
 - any remaining active Python entrypoints not covered by earlier slices
 
 Go ownership:
@@ -333,6 +333,10 @@ Go ownership:
 Acceptance focus:
 - remove Python from the default developer and runtime path
 - leave legacy markers or archival notes where Python code is intentionally retained
+
+Current repo progress:
+- `src/bigclaw/service.py` and `src/bigclaw/__main__.py` have now been retired after the Go `bigclawd` server path became the only maintained runtime entrypoint
+- the remaining frozen Python migration surface is limited to library/reference modules plus `src/bigclaw/legacy_shim.py`
 - finish cutover validation and release-readiness evidence
 
 Dependencies:
@@ -476,7 +480,7 @@ Python source:
 - `src/bigclaw/design_system.py`
 - `src/bigclaw/saved_views.py`
 - `src/bigclaw/ui_review.py`
-- remaining operator-facing parts of `src/bigclaw/service.py`
+- historical operator-facing parts formerly carried by `src/bigclaw/service.py`
 
 Go ownership:
 - `bigclaw-go/internal/product/console.go`
@@ -495,8 +499,8 @@ Historical Python source:
 - retired `src/bigclaw/workspace_bootstrap.py`
 - retired `src/bigclaw/workspace_bootstrap_cli.py`
 - retired `src/bigclaw/workspace_bootstrap_validation.py`
-- `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- retired `src/bigclaw/service.py`
+- retired `src/bigclaw/__main__.py`
 
 Go ownership:
 - `bigclaw-go/cmd/bigclawctl`
