@@ -1,9 +1,16 @@
 import hashlib
 from pathlib import Path
 
-from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.models import Priority, Task
-from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCommitLink, TaskRun
+from bigclaw.observability import (
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCommitLink,
+    TaskRun,
+    build_collaboration_thread_from_audits,
+)
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
 
 

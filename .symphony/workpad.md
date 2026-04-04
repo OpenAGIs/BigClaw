@@ -103,3 +103,8 @@
   - `env -u HTTPS_PROXY -u HTTP_PROXY GIT_CURL_VERBOSE=1 git -c http.version=HTTP/1.1 push --porcelain origin BIG-GO-1170` -> pushed `6574d60..ffa258d`
   - `git ls-remote origin BIG-GO-1170` -> `ffa258d634f875f21eee13cdeab456b9f5e79086 refs/heads/BIG-GO-1170`
   - `bash scripts/ops/bigclaw_github_sync status --json` -> `status: ok`, `branch: BIG-GO-1170`, `pushed: true`, `synced: true`, `dirty: false`
+  - `python3 -m pytest tests/test_reports.py tests/test_observability.py tests/test_execution_flow.py tests/test_runtime.py tests/test_runtime_matrix.py tests/test_scheduler.py tests/test_queue.py tests/test_orchestration.py tests/test_audit_events.py` -> `69 passed in 0.09s`
+  - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [/Users/openagi/code/bigclaw-workspaces/BIG-GO-1170/src/bigclaw/legacy_shim.py]`
+  - `python3 -m build` -> passed
+  - `git diff --check` -> passed
+  - `find . -name '*.py' | wc -l` -> `33`

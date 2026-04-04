@@ -22,13 +22,6 @@ from .models import (
 )
 from .queue import PersistentTaskQueue
 from .scheduler import ExecutionRecord, RiskFactor, RiskScore, RiskScorer, Scheduler, SchedulerDecision
-from .collaboration import (
-    CollaborationComment,
-    CollaborationThread,
-    DecisionNote,
-    build_collaboration_thread,
-    build_collaboration_thread_from_audits,
-)
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -40,7 +33,19 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
+from .observability import (
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
+    GitSyncTelemetry,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    RunCloseout,
+    TaskRun,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
+)
 from .orchestration import (
     CrossDepartmentOrchestrator,
     DepartmentHandoff,

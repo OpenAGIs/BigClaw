@@ -7,13 +7,14 @@ from pathlib import Path
 from typing import List, Optional
 
 from .audit_events import FLOW_HANDOFF_EVENT, MANUAL_TAKEOVER_EVENT
-from .collaboration import (
+from .observability import (
     CollaborationThread,
+    RepoSyncAudit,
+    TaskRun,
     build_collaboration_thread_from_audits,
     render_collaboration_lines,
     render_collaboration_panel_html,
 )
-from .observability import RepoSyncAudit, TaskRun
 from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
 
 

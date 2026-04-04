@@ -452,7 +452,7 @@ Historical planned state:
 ### 4. Port repo collaboration and lineage surfaces to Go
 
 Python source:
-- `src/bigclaw/collaboration.py`
+- collaboration helpers now live in `src/bigclaw/observability.py`
 - retired `src/bigclaw/repo_board.py`
 - retired `src/bigclaw/repo_commits.py`
 - retired `src/bigclaw/repo_gateway.py`
