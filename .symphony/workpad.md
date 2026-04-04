@@ -1,26 +1,28 @@
-# BIG-GO-1208 Workpad
+# BIG-GO-1202 Workpad
 
 ## Plan
-- Verify the live repository baseline for physical Python files, with extra focus on `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- Add a lane-specific Go regression guard that fails if any `.py` file reappears repository-wide or in the priority residual directories.
-- Record the remaining Python asset inventory, Go replacement paths, and exact validation commands in BIG-GO-1208 report artifacts.
-- Run targeted validation, capture exact results, then commit and push the branch.
+- Confirm the current repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- Add a lane-specific Go regression guard that keeps the repository and priority residual directories Python-free for BIG-GO-1202.
+- Record the lane inventory, Go replacement paths, and exact validation commands in BIG-GO-1202 report artifacts.
+- Run targeted validation, capture exact command results, then commit and push to `origin/main`.
 
 ## Acceptance
-- The remaining Python asset inventory for BIG-GO-1208 is explicit and auditable.
+- The remaining Python asset inventory for BIG-GO-1202 is explicit and auditable.
 - The repository contains no physical `.py` files, including in `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- A Go regression guard and lane validation artifacts are committed for BIG-GO-1208.
-- Go replacement paths and validation commands are documented for operators.
+- A Go regression guard and lane validation artifacts are committed for BIG-GO-1202.
+- Go replacement paths and exact validation commands are documented.
 
 ## Validation
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1208(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
+- `find . -name '*.py' -type f | wc -l`
+- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1202(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
 - `git status --short`
 
 ## Validation Results
-- `find . -name '*.py' | wc -l` -> `0`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1208(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.454s`
-- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/regression/big_go_1208_zero_python_guard_test.go`, `reports/BIG-GO-1208-validation.md`, and `reports/BIG-GO-1208-status.json` added before commit`
+- `find . -name '*.py' -type f | wc -l` -> `0`
+- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done` -> `<empty>`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1202(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	1.085s`
+- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/regression/big_go_1202_zero_python_guard_test.go`, `reports/BIG-GO-1202-validation.md`, and `reports/BIG-GO-1202-status.json` added before commit`
 
 ## Residual Risk
-- If the workspace baseline is already at a repository-wide `.py` count of `0`, this lane can only harden and document the zero-Python state rather than reduce the count numerically.
+- The live workspace baseline is already at a repository-wide Python file count of `0`, so BIG-GO-1202 can only harden and document the Go-only state rather than reduce the count numerically.
