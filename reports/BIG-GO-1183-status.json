@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "0c24868c",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -21,7 +21,7 @@
     ],
     "results": {
       "repo_py_count": "0",
-      "regression_tests": "ok   bigclaw-go/internal/regression  0.491s"
+      "regression_tests": "ok   bigclaw-go/internal/regression  1.156s"
     }
   },
   "blocker": {

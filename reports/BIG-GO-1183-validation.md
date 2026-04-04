@@ -66,12 +66,12 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1183/bigclaw-go && go test ./in
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.491s
+ok  	bigclaw-go/internal/regression	1.156s
 ```
 
 ## Git
 
-- Commit: pending until staged and recorded
+- Commit: `0c24868c`
 - Push: `origin/main`
 
 ## Residual Risk
