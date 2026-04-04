@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "tracked in git history",
+    "latest_commit": "70e34b1d",
     "push_target": "origin/main"
   },
   "artifacts": {
