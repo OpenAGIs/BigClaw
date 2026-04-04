@@ -71,6 +71,7 @@ ok  	bigclaw-go/internal/regression	3.211s
 - Commits:
   - `03528511` (`BIG-GO-1191 harden zero-python sweep lane`)
   - `7c2e6b98` (`BIG-GO-1191 finalize validation metadata`)
+  - `2688f1bd` (`BIG-GO-1191 align branch delivery metadata`)
 - Push: `git push origin HEAD:refs/heads/big-go-1191` -> success
 
 ## Residual Risk
