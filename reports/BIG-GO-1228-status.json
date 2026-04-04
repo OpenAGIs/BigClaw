@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "tracked in git history",
+    "latest_commit": "3c0f21c9fa14926e93cb10f1f869699871ffb613",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -38,7 +38,7 @@
     "results": {
       "repo_py_count": "0",
       "priority_dir_inventory": "",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t1.121s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.879s"
     }
   },
   "blocker": {
@@ -47,6 +47,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Commit metadata and push evidence are recorded in the validation report."
+    "Commit metadata and push evidence are recorded in the validation report.",
+    "The implementation commit was rebased across concurrent origin/main updates before the successful push."
   ]
 }
