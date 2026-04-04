@@ -44,6 +44,39 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1176` narrows the follow-up evidence to the residual live script surface
+that remains under `scripts/` and `bigclaw-go/scripts/`. The repository already
+starts from a zero-`.py` baseline in this branch, so the acceptance evidence is
+the audited shell/Go entrypoint set below rather than a new physical Python
+deletion.
+
+### BIG-GO-1176 residual live script surface
+
+- `scripts/dev_bootstrap.sh`
+  - validation-only shell helper for dev bootstrap checks
+  - use `bash scripts/ops/bigclawctl dev-smoke`
+  - use `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- `scripts/ops/bigclawctl`
+  - canonical root operator wrapper for Go-native repo commands
+  - covers `bash scripts/ops/bigclawctl create-issues ...`
+- `scripts/ops/bigclaw-issue`
+  - compatibility alias for `bash scripts/ops/bigclawctl issue ...`
+- `scripts/ops/bigclaw-panel`
+  - compatibility alias for `bash scripts/ops/bigclawctl panel ...`
+- `scripts/ops/bigclaw-symphony`
+  - compatibility alias for `bash scripts/ops/bigclawctl symphony ...`
+- `bigclaw-go/scripts/benchmark/run_suite.sh`
+  - benchmark wrapper for `bigclawctl automation benchmark run-matrix`
+  - capacity follow-up remains `bigclawctl automation benchmark capacity-certification`
+- `bigclaw-go/scripts/e2e/run_all.sh`
+  - bundles the Go-native live validation flow around `bigclawctl automation e2e ...`
+- `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`
+  - wraps `bigclawctl automation e2e run-task-smoke`
+- `bigclaw-go/scripts/e2e/ray_smoke.sh`
+  - wraps `bigclawctl automation e2e run-task-smoke`
+- `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`
+  - repo-native Go helper retained as `go run ./scripts/e2e/broker_bootstrap_summary.go`
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`

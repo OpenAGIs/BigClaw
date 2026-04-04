@@ -1,6 +1,6 @@
 # Go CLI Script Migration
 
-Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`
+Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`, `BIG-GO-1176`
 
 ## Current Go-Only Entrypoints
 
@@ -40,6 +40,23 @@ regression surface focuses on keeping the deletion state sticky.
 | E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `./scripts/e2e/run_all.sh`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` |
 | Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
 | Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
+
+## BIG-GO-1176 Residual Surface
+
+`BIG-GO-1176` records the residual live script surface after the repo reached a
+zero-`.py` baseline. This lane does not claim a fresh physical Python deletion;
+it hardens the remaining `scripts/` and `bigclaw-go/scripts/` operator surfaces
+as shell/Go-only entrypoints with explicit Go-native replacements.
+
+| Audited residual surface | Supported replacement |
+| --- | --- |
+| `bigclaw-go/scripts/benchmark/run_suite.sh` | `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` |
+| `bigclaw-go/scripts/e2e/run_all.sh` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...` |
+| `bigclaw-go/scripts/e2e/kubernetes_smoke.sh` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` |
+| `bigclaw-go/scripts/e2e/ray_smoke.sh` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` |
+| `bigclaw-go/scripts/e2e/broker_bootstrap_summary.go` | `go run ./scripts/e2e/broker_bootstrap_summary.go` |
+| `scripts/dev_bootstrap.sh` | `bash scripts/ops/bigclawctl dev-smoke`, `bash scripts/ops/bigclawctl legacy-python compile-check --json` |
+| `scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-panel`, `scripts/ops/bigclaw-symphony` | `bash scripts/ops/bigclawctl ...`, `bash scripts/ops/bigclaw-issue ...`, `bash scripts/ops/bigclaw-panel ...`, `bash scripts/ops/bigclaw-symphony ...` |
 
 ## Validation Commands
 
