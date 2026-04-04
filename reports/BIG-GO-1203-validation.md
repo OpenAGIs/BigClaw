@@ -83,8 +83,10 @@ ok  	bigclaw-go/internal/regression	0.454s
 
 ## Git
 
-- Commit: `4700d567` (`BIG-GO-1203 harden zero-python sweep lane`)
-- Push: `PENDING`
+- Commits:
+  - `91c6a45c` (`BIG-GO-1203 harden zero-python sweep lane`)
+  - `8ef41f93` (`BIG-GO-1203 record validation metadata`)
+- Push: `git push origin main` -> `To https://github.com/OpenAGIs/BigClaw.git / 89e86454..8ef41f93  main -> main`
 
 ## Residual Risk
 
