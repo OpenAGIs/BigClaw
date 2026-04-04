@@ -6,9 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "tracked in git history after finalization",
-    "implementation_commit": "e83270e1",
-    "metadata_commit": "abd793d1",
+    "latest_commit": "tracked in git history on main after push",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -49,6 +47,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Implementation and metadata commit details are recorded in git history and summarized in the validation report."
+    "Lane commit details are intentionally recorded generically because repeated rebases may rewrite local commit hashes before push."
   ]
 }

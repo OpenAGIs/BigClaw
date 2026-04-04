@@ -83,8 +83,7 @@ ok  	bigclaw-go/internal/regression	0.500s
 
 ## Git
 
-- Implementation commit: `e83270e1`
-- Metadata commit chain: `abd793d1` and the finalization commit that carries this report update
+- Lane commits: `tracked in git history on main`
 - Push target: `origin/main`
 
 ## Residual Risk
