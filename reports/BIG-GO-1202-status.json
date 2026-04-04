@@ -7,6 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "tracked in git history",
+    "implementation_commit": "b3644cee",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -38,7 +39,7 @@
     "results": {
       "repo_py_count": "0",
       "priority_dir_py_files": [],
-      "regression_tests": "ok   bigclaw-go/internal/regression  1.085s"
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.786s"
     }
   },
   "blocker": {
