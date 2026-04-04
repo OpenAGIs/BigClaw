@@ -84,3 +84,6 @@
   - `python3 -m pytest tests/test_workflow.py tests/test_dsl.py` -> `12 passed in 0.06s`
   - `git diff --check` -> passed
   - `find . -name '*.py' | wc -l` -> `36`
+  - `git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 -c http.lowSpeedLimit=0 -c http.lowSpeedTime=999999 push --porcelain origin BIG-GO-1170` -> pushed `30016a3..a59f419`
+  - `git ls-remote origin BIG-GO-1170` -> `a59f4197210dfb28818f8a82af4389a70af015cf refs/heads/BIG-GO-1170`
+  - `bash scripts/ops/bigclaw_github_sync status --json` -> `status: ok`, `branch: BIG-GO-1170`, `pushed: true`, `synced: true`, `dirty: false`
