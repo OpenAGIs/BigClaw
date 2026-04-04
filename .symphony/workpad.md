@@ -93,3 +93,5 @@
   - `python3 -m build` -> passed
   - `git diff --check` -> passed
   - `find . -name '*.py' | wc -l` -> `35`
+  - `env -u HTTPS_PROXY -u HTTP_PROXY git -c http.version=HTTP/1.1 push --porcelain origin BIG-GO-1170` -> pushed `5488519..c361e68`
+  - `git ls-remote origin BIG-GO-1170` -> `c361e684de9eabb516041dc07bc71fff6fb1f833 refs/heads/BIG-GO-1170`
