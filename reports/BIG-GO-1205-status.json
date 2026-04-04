@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "70e34b1d",
+    "latest_commit": "62bd957f",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -45,6 +45,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Lane commit details are recorded in git history and summarized in the validation report."
+    "Lane commit details are recorded in git history and summarized in the validation report.",
+    "The final lane commits were rebased onto the advancing origin/main tip before the successful push."
   ]
 }
