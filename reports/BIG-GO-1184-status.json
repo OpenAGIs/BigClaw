@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1184",
+    "title": "Heartbeat refill lane 1184: remaining Python asset sweep 4/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "recorded in git history for BIG-GO-1184",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1184-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1184_python_residual_inventory_test.go"
+  },
+  "inventory": {
+    "repository_python_files": 0,
+    "priority_directories": {
+      "src/bigclaw": "absent",
+      "tests": "absent",
+      "scripts": 0,
+      "bigclaw-go/scripts": 0
+    }
+  },
+  "replacement_paths": [
+    "bash scripts/ops/bigclawctl",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d \"$dir\" ]; then find \"$dir\" -name '*.py' | sort; else printf '[absent] %s\\n' \"$dir\"; fi; done",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1184(RepositoryHasNoPythonFiles|PriorityResidualInventoryAndReplacementSurface)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "priority_inventory": "[absent] src/bigclaw; [absent] tests; scripts=0; bigclaw-go/scripts=0",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.452s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1184 changes."
+  }
+}
