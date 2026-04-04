@@ -30,6 +30,10 @@ surfaces.
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
 - `bigclaw-go/scripts/e2e/run_all_test.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
+- `tests/test_validation_bundle_continuation_scorecard.py`
+- `tests/test_subscriber_takeover_harness.py`
 
 These were Python-only harnesses for now-repo-native checked-in artifacts and do
 not remain on the active Go mainline.

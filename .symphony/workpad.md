@@ -17,6 +17,7 @@
 - `git status --short`
 
 ## Results
-- `find . -name '*.py' | wc -l` -> `115` after the second sweep batch, down from the pre-change baseline of `138`
+- `find . -name '*.py' | wc -l` -> `111` after the third sweep batch, down from the pre-change baseline of `138`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.490s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.944s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLiveValidationIndexStaysAligned|TestRuntimeReportFollowUpDocsStayAligned|TestTakeoverFollowUpDigestReferences|TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.839s`

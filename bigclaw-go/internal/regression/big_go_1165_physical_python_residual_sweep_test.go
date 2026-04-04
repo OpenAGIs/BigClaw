@@ -31,6 +31,10 @@ func TestBIGGO1165CandidatePythonFilesRemainDeleted(t *testing.T) {
 		"bigclaw-go/scripts/migration/shadow_matrix.py",
 		"scripts/create_issues.py",
 		"scripts/dev_smoke.py",
+		"tests/test_parallel_validation_bundle.py",
+		"tests/test_validation_bundle_continuation_policy_gate.py",
+		"tests/test_validation_bundle_continuation_scorecard.py",
+		"tests/test_subscriber_takeover_harness.py",
 	}
 
 	for _, relativePath := range candidates {
