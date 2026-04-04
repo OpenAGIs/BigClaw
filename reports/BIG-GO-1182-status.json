@@ -1,0 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1182",
+    "title": "Heartbeat refill lane 1182: remaining Python asset sweep 2/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-1182",
+    "latest_commit": "recorded in git history for BIG-GO-1182",
+    "push_target": "origin/BIG-GO-1182"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1182-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1182_zero_python_guard_test.go"
+  },
+  "remaining_python_assets": {
+    "inventory_command": "find . -type f -name '*.py' | sort",
+    "count_command": "find . -type f -name '*.py' | wc -l",
+    "inventory_result": [],
+    "count_result": 0
+  },
+  "go_replacement_path": {
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1182_zero_python_guard_test.go",
+    "validation_command": "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1182(RemainingPythonAssetInventoryIsEmpty|PriorityResidualDirectoriesStayPythonFree)$'",
+    "priority_directories": [
+      "src/bigclaw",
+      "tests",
+      "scripts",
+      "bigclaw-go/scripts"
+    ]
+  },
+  "validation": {
+    "commands": [
+      "find . -type f -name '*.py' | sort",
+      "find . -type f -name '*.py' | wc -l",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1182(RemainingPythonAssetInventoryIsEmpty|PriorityResidualDirectoriesStayPythonFree)$'"
+    ],
+    "results": {
+      "inventory": "[]",
+      "repo_py_count": "0",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.914s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero before BIG-GO-1182 changes."
+  }
+}
