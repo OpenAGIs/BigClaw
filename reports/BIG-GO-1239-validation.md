@@ -84,15 +84,14 @@ ok  	bigclaw-go/internal/regression	0.499s
 ## Git
 
 - Branch: `main`
-- Commit: `85734f95 BIG-GO-1239: add zero-python regression guard`
+- Commit: `see git log --oneline --grep 'BIG-GO-1239'`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1239'`
-- Push result: `git push origin HEAD:main` -> `failed: unable to access 'https://github.com/OpenAGIs/BigClaw.git/': LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443`
+- Push result: `pending final push after rebase onto latest origin/main`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1239 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
-- Remote push is currently blocked by an HTTPS/TLS connectivity failure to
-  `github.com:443`, so the committed lane cannot be published from this
-  workspace until network access succeeds.
+- Concurrent heartbeat lanes advanced `origin/main` during this run, so this
+  lane required a rebase before final publication.
