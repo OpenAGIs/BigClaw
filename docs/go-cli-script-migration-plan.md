@@ -17,6 +17,7 @@ surfaces.
 - `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e run-task-smoke --help`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e validation-bundle-continuation-scorecard --pretty`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e validation-bundle-continuation-policy-gate --pretty`
+- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e subscriber-takeover-fault-matrix --pretty`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py` -> checked-in `bigclaw-go/docs/reports/mixed-workload-matrix-report.json` plus admission-policy coverage in `bigclaw-go/internal/api/server_test.go`
 - `bigclaw-go/scripts/e2e/external_store_validation.py` -> `cd bigclaw-go && go test ./internal/regression -run TestExternalStoreValidationReportStaysAligned -count=1`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` -> `cd bigclaw-go && go test ./internal/regression -run TestCrossProcessCoordinationReadinessDocsStayAligned -count=1`

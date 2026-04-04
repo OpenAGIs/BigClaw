@@ -120,7 +120,7 @@ DIGESTS = {
         "links": [
             "docs/reports/multi-subscriber-takeover-validation-report.md",
             "docs/reports/multi-subscriber-takeover-validation-report.json",
-            "scripts/e2e/subscriber_takeover_fault_matrix.py",
+            "go run ./cmd/bigclawctl e2e subscriber-takeover-fault-matrix",
             "docs/reports/event-bus-reliability-report.md",
             "docs/reports/issue-coverage.md",
             "docs/reports/review-readiness.md",

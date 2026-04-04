@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestBuildValidationBundleContinuationScorecard(t *testing.T) {
@@ -145,6 +146,22 @@ func TestRunE2ETaskSmokeWithoutAutostartWritesReport(t *testing.T) {
 	}
 	if !strings.Contains(string(reportBody), `"autostarted": false`) || !strings.Contains(string(reportBody), `"state": "succeeded"`) {
 		t.Fatalf("unexpected report body: %s", string(reportBody))
+	}
+}
+
+func TestBuildSubscriberTakeoverFaultMatrixReport(t *testing.T) {
+	report := buildSubscriberTakeoverFaultMatrixReport(time.Date(2026, 3, 16, 10, 20, 20, 246671000, time.UTC))
+	if report["ticket"] != "OPE-269" || report["status"] != "local-executable" {
+		t.Fatalf("unexpected report identity: %+v", report)
+	}
+	summary := mapAt(report, "summary")
+	if intAt(summary, "scenario_count") != 3 || intAt(summary, "passing_scenarios") != 3 || intAt(summary, "duplicate_delivery_count") != 4 || intAt(summary, "stale_write_rejections") != 2 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	currentPrimitives := mapAt(report, "current_primitives")
+	takeoverHarness, ok := currentPrimitives["takeover_harness"].([]string)
+	if !ok || len(takeoverHarness) != 2 || takeoverHarness[0] != "cmd/bigclawctl/e2e.go" {
+		t.Fatalf("unexpected takeover harness primitive: %+v", currentPrimitives)
 	}
 }
 
