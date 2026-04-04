@@ -85,9 +85,9 @@ ok  	bigclaw-go/internal/regression	0.439s
 ## Git
 
 - Branch: `main`
-- Commit: `pending final commit`
+- Commit: `aaa3870d` (`BIG-GO-1248: add zero-python heartbeat artifacts`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1248'`
-- Push result: `pending`
+- Push result: `git push origin HEAD:main` -> success (`8a7cc025..aaa3870d  HEAD -> main`)
 
 ## Residual Risk
 
@@ -97,3 +97,5 @@ ok  	bigclaw-go/internal/regression	0.439s
 - The shared `.symphony/workpad.md` is actively updated by adjacent heartbeat
   lanes on `main`, so the durable lane evidence for BIG-GO-1248 lives in this
   validation report and the corresponding status artifact.
+- Concurrent pushes to `origin/main` required two fetch-plus-rebase retries
+  before the final successful publish.
