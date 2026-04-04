@@ -15,7 +15,6 @@ import (
 
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/githubsync"
-	"bigclaw-go/internal/legacyshim"
 	"bigclaw-go/internal/refill"
 )
 
@@ -130,8 +129,6 @@ func run(args []string) int {
 		err = runIssue(args[1:])
 	case "panel":
 		err = runPanel(args[1:])
-	case "legacy-python":
-		err = runLegacyPython(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -140,57 +137,6 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
-}
-
-func runLegacyPython(args []string) error {
-	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check> [flags]\n")
-		return nil
-	}
-	if len(args) == 0 {
-		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
-	}
-	command := args[0]
-	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
-	repoRoot := flags.String("repo", "..", "repo root")
-	pythonBin := flags.String("python", "python3", "python executable")
-	asJSON := flags.Bool("json", false, "json")
-	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl legacy-python %s [flags]", command), args[1:]); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			_, _ = os.Stdout.WriteString(helpText)
-			return nil
-		}
-		return err
-	}
-	switch command {
-	case "compile-check":
-		result, err := legacyshim.CompileCheck(absPath(*repoRoot), *pythonBin)
-		if err != nil {
-			payload := map[string]any{
-				"status": "error",
-				"repo":   absPath(*repoRoot),
-				"python": *pythonBin,
-				"files":  result.Files,
-				"error":  err.Error(),
-			}
-			if result.Output != "" {
-				payload["output"] = result.Output
-			}
-			return emit(payload, *asJSON, 1)
-		}
-		payload := map[string]any{
-			"status": "ok",
-			"repo":   absPath(*repoRoot),
-			"python": result.Python,
-			"files":  result.Files,
-		}
-		if result.Output != "" {
-			payload["output"] = result.Output
-		}
-		return emit(payload, *asJSON, 0)
-	default:
-		return fmt.Errorf("unknown legacy-python subcommand: %s", command)
-	}
 }
 
 func runGitHubSync(args []string) error {
@@ -1432,7 +1378,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1445,7 +1391,6 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
 	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
 	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
-	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 }
 
 func absPath(path string) string {

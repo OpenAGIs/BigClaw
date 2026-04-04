@@ -314,44 +314,6 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
-func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
-	repoRoot := filepath.Join(t.TempDir(), "repo->")
-	if err := os.MkdirAll(filepath.Join(repoRoot, "src", "bigclaw"), 0o755); err != nil {
-		t.Fatalf("mkdir repo tree: %v", err)
-	}
-
-	originalStdout := os.Stdout
-	reader, writer, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("create pipe: %v", err)
-	}
-	os.Stdout = writer
-	defer func() {
-		os.Stdout = originalStdout
-	}()
-
-	if err := runLegacyPython([]string{
-		"compile-check",
-		"--repo", repoRoot,
-		"--python", "python3",
-		"--json",
-	}); err != nil {
-		t.Fatalf("run legacy-python compile-check: %v", err)
-	}
-
-	_ = writer.Close()
-	output, _ := io.ReadAll(reader)
-	if !bytes.Contains(output, []byte(repoRoot)) {
-		t.Fatalf("expected raw arrow token in legacy-python repo path, got %s", string(output))
-	}
-	if !bytes.Contains(output, []byte(`"files": []`)) {
-		t.Fatalf("expected empty legacy-python file list, got %s", string(output))
-	}
-	if bytes.Contains(output, []byte(`\u003e`)) {
-		t.Fatalf("expected no HTML escaping in legacy-python JSON output, got %s", string(output))
-	}
-}
-
 func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoPath := filepath.Join(t.TempDir(), "repo->")
 	hooksPath := ".githooks->"

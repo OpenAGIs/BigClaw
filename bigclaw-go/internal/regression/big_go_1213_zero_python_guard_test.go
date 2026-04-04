@@ -39,7 +39,6 @@ func TestBIGGO1213ReplacementPathsRemainAvailable(t *testing.T) {
 	goReplacementPaths := []string{
 		"scripts/ops/bigclawctl",
 		"bigclaw-go/cmd/bigclawctl/main.go",
-		"bigclaw-go/internal/legacyshim/compilecheck.go",
 		"scripts/dev_bootstrap.sh",
 	}
 

@@ -80,26 +80,14 @@ Notes:
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
-## Legacy Python migration note
+## Python asset status
 
-Do not use Python packaging from the repository root. When a migration-only
-Python surface must be exercised, validate it directly from source:
-
-```bash
-bash scripts/ops/bigclawctl legacy-python compile-check --json
-```
-
-Or use the bootstrap helper to validate Go first and then run the retained
-Go-side legacy Python compatibility check without a repo-root packaging
-bootstrap:
+The repository root no longer carries physical `.py` assets. Validate the
+Go-only posture with the root bootstrap helper:
 
 ```bash
-BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
+bash scripts/dev_bootstrap.sh
 ```
-
-That helper always runs the Go `bigclawctl dev-smoke` replacement first, then
-`cd bigclaw-go && go test ./internal/bootstrap`, and finally the retained
-legacy Python compatibility compile-check.
 
 ## Go smoke verify
 
@@ -134,10 +122,10 @@ Go-first bootstrap helper:
 bash scripts/dev_bootstrap.sh
 ```
 
-Legacy Python migration surface:
+Additional repository checks:
 
 ```bash
-bash scripts/ops/bigclawctl legacy-python compile-check --json
+bash scripts/dev_bootstrap.sh
 pre-commit run --all-files
 ```
 
