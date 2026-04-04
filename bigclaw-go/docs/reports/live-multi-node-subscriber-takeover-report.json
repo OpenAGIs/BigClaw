@@ -11,12 +11,12 @@
       "internal/api/server.go"
     ],
     "shared_queue_evidence": [
-      "scripts/e2e/multi_node_shared_queue.py",
+      "cmd/bigclawctl/e2e.go",
       "docs/reports/multi-node-shared-queue-report.json"
     ],
     "live_takeover_harness": [
       "internal/api/server.go",
-      "scripts/e2e/multi_node_shared_queue.py",
+      "cmd/bigclawctl/e2e.go",
       "docs/reports/live-multi-node-subscriber-takeover-report.json"
     ]
   },

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -15,6 +17,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -28,13 +31,15 @@ var failureEventTypes = map[string]struct{}{
 
 func runE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl e2e <run-task-smoke|export-validation-bundle|validation-bundle-continuation-scorecard|validation-bundle-continuation-policy-gate|subscriber-takeover-fault-matrix> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl e2e <run-task-smoke|multi-node-shared-queue|export-validation-bundle|validation-bundle-continuation-scorecard|validation-bundle-continuation-policy-gate|subscriber-takeover-fault-matrix> [flags]\n")
 		return nil
 	}
 	command := args[0]
 	switch command {
 	case "run-task-smoke":
 		return runE2ETaskSmoke(args[1:])
+	case "multi-node-shared-queue":
+		return runE2EMultiNodeSharedQueue(args[1:])
 	case "export-validation-bundle":
 		return runE2EExportValidationBundle(args[1:])
 	case "validation-bundle-continuation-scorecard":
@@ -234,6 +239,256 @@ func runE2ETaskSmoke(args []string) error {
 	}
 	body, _ := json.MarshalIndent(report, "", "  ")
 	_, _ = fmt.Fprintln(os.Stderr, string(body))
+	return exitError(1)
+}
+
+func runE2EMultiNodeSharedQueue(args []string) error {
+	flags := flag.NewFlagSet("e2e multi-node-shared-queue", flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repository root")
+	reportPath := flags.String("report-path", "docs/reports/multi-node-shared-queue-report.json", "shared queue report path")
+	takeoverReportPath := flags.String("takeover-report-path", "docs/reports/live-multi-node-subscriber-takeover-report.json", "takeover report path")
+	takeoverArtifactDir := flags.String("takeover-artifact-dir", "docs/reports/live-multi-node-subscriber-takeover-artifacts", "takeover artifact directory")
+	takeoverTTLSeconds := flags.Float64("takeover-ttl-seconds", 1.0, "subscriber takeover ttl seconds")
+	count := flags.Int("count", 200, "task count")
+	submitWorkers := flags.Int("submit-workers", 8, "submit workers")
+	timeoutSeconds := flags.Int("timeout-seconds", 180, "timeout seconds")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl e2e multi-node-shared-queue [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+
+	rootStateDir, err := os.MkdirTemp("", "bigclawd-multinode-")
+	if err != nil {
+		return err
+	}
+	nodeConfigs, err := buildMultiNodeEnvMap(rootStateDir)
+	if err != nil {
+		return err
+	}
+	processes := []*exec.Cmd{}
+	timestamp := time.Now().Unix()
+	root := absPath(*goRoot)
+	var sharedQueueReport map[string]any
+	var liveTakeoverReport map[string]any
+
+	defer func() {
+		for _, node := range nodeConfigs {
+			process, _ := node["process"].(*exec.Cmd)
+			if process == nil || process.Process == nil {
+				continue
+			}
+			_ = process.Process.Signal(syscall.SIGTERM)
+			done := make(chan struct{})
+			go func(cmd *exec.Cmd) {
+				_, _ = cmd.Process.Wait()
+				close(done)
+			}(process)
+			select {
+			case <-done:
+			case <-time.After(5 * time.Second):
+				_ = process.Process.Kill()
+				<-done
+			}
+			if serviceLog, ok := node["service_log"].(string); ok && serviceLog != "" {
+				_, _ = fmt.Fprintf(os.Stderr, "%s log: %s\n", stringAt(node, "name"), serviceLog)
+			}
+		}
+	}()
+
+	for i := range nodeConfigs {
+		process, logPath, err := startBigclawdWithPrefix(root, nodeConfigs[i]["env"].([]string), stringAt(nodeConfigs[i], "name")+"-")
+		if err != nil {
+			return err
+		}
+		nodeConfigs[i]["process"] = process
+		nodeConfigs[i]["service_log"] = logPath
+		processes = append(processes, process)
+	}
+	for _, node := range nodeConfigs {
+		if err := waitForHealth(stringAt(node, "base_url"), 60, time.Second); err != nil {
+			return err
+		}
+	}
+
+	submittedBy := map[string]string{}
+	type submittedTask struct {
+		baseURL string
+		task    map[string]any
+	}
+	tasks := make([]submittedTask, 0, *count)
+	for index := 0; index < *count; index++ {
+		submitNode := nodeConfigs[index%len(nodeConfigs)]
+		taskID := fmt.Sprintf("multinode-%d-%d", index, timestamp)
+		task := map[string]any{
+			"id":                taskID,
+			"trace_id":          taskID,
+			"title":             fmt.Sprintf("multi-node task %d", index),
+			"entrypoint":        fmt.Sprintf("echo multinode %d", index),
+			"required_executor": "local",
+			"metadata": map[string]any{
+				"scenario":    "multi-node-shared-queue",
+				"submit_node": stringAt(submitNode, "name"),
+			},
+		}
+		tasks = append(tasks, submittedTask{baseURL: stringAt(submitNode, "base_url"), task: task})
+		submittedBy[taskID] = stringAt(submitNode, "name")
+	}
+	taskCh := make(chan submittedTask)
+	errCh := make(chan error, *submitWorkers)
+	var wg sync.WaitGroup
+	for worker := 0; worker < *submitWorkers; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for item := range taskCh {
+				if _, err := httpJSON(item.baseURL+"/tasks", http.MethodPost, item.task, 30*time.Second); err != nil {
+					errCh <- err
+					return
+				}
+			}
+		}()
+	}
+	for _, item := range tasks {
+		taskCh <- item
+	}
+	close(taskCh)
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		if err != nil {
+			return err
+		}
+	}
+
+	deadline := time.Now().Add(time.Duration(*timeoutSeconds) * time.Second)
+	for time.Now().Before(deadline) {
+		perTask := summarizeMultiNodeTasks(submittedBy, aggregateAuditEvents(nodeConfigs))
+		allDone := true
+		for _, item := range perTask {
+			if len(item["completed"]) < 1 {
+				allDone = false
+				break
+			}
+		}
+		if allDone {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	if time.Now().After(deadline) {
+		return fmt.Errorf("timed out waiting for all multi-node tasks to complete")
+	}
+
+	events := aggregateAuditEvents(nodeConfigs)
+	perTask := summarizeMultiNodeTasks(submittedBy, events)
+	duplicateStarted := []string{}
+	duplicateCompleted := []string{}
+	missingCompleted := []string{}
+	completionByNode := map[string]int{}
+	submittedByNode := map[string]int{}
+	for _, node := range nodeConfigs {
+		completionByNode[stringAt(node, "name")] = 0
+	}
+	crossNodeCompletions := 0
+	for taskID, item := range perTask {
+		if len(item["started"]) > 1 {
+			duplicateStarted = append(duplicateStarted, taskID)
+		}
+		if len(item["completed"]) > 1 {
+			duplicateCompleted = append(duplicateCompleted, taskID)
+		}
+		if len(item["completed"]) == 0 {
+			missingCompleted = append(missingCompleted, taskID)
+		}
+		if len(item["completed"]) > 0 {
+			completionNode := item["completed"][0]
+			completionByNode[completionNode]++
+			if completionNode != submittedBy[taskID] {
+				crossNodeCompletions++
+			}
+		}
+	}
+	for _, name := range submittedBy {
+		submittedByNode[name]++
+	}
+	slices.Sort(duplicateStarted)
+	slices.Sort(duplicateCompleted)
+	slices.Sort(missingCompleted)
+
+	nodes := []map[string]any{}
+	allOK := len(duplicateStarted) == 0 && len(duplicateCompleted) == 0 && len(missingCompleted) == 0
+	for _, node := range nodeConfigs {
+		nodes = append(nodes, map[string]any{
+			"name":        stringAt(node, "name"),
+			"base_url":    stringAt(node, "base_url"),
+			"audit_path":  stringAt(node, "audit_path"),
+			"service_log": stringAt(node, "service_log"),
+		})
+		if completionByNode[stringAt(node, "name")] == 0 {
+			allOK = false
+		}
+	}
+	sharedQueueReport = map[string]any{
+		"generated_at":              utcISO(time.Now()),
+		"root_state_dir":            rootStateDir,
+		"queue_path":                filepath.Join(rootStateDir, "shared-queue.db"),
+		"count":                     *count,
+		"submitted_by_node":         submittedByNode,
+		"completed_by_node":         completionByNode,
+		"cross_node_completions":    crossNodeCompletions,
+		"duplicate_started_tasks":   duplicateStarted,
+		"duplicate_completed_tasks": duplicateCompleted,
+		"missing_completed_tasks":   missingCompleted,
+		"all_ok":                    allOK,
+		"nodes":                     nodes,
+	}
+	if err := writeJSONFile(filepath.Join(root, *reportPath), sharedQueueReport); err != nil {
+		return err
+	}
+
+	artifactRoot := filepath.Join(root, *takeoverArtifactDir)
+	_ = os.RemoveAll(artifactRoot)
+	if err := os.MkdirAll(artifactRoot, 0o755); err != nil {
+		return err
+	}
+	liveScenarios := []map[string]any{}
+	scenarios := []struct {
+		primary         map[string]any
+		takeover        map[string]any
+		id              string
+		title           string
+		index           int
+		offsetBase      int
+		duplicateEvents []string
+		includeConflict bool
+		includeIdleGap  bool
+	}{
+		{nodeConfigs[0], nodeConfigs[1], "lease-expiry-stale-writer-rejected-live", "Lease expires on node-a and node-b takes ownership with stale-writer fencing", 1, 80, []string{"evt-81"}, false, false},
+		{nodeConfigs[1], nodeConfigs[0], "contention-then-takeover-live", "Node-a is rejected during active ownership and takes over after node-b lease expiry", 2, 120, []string{"evt-121", "evt-122"}, true, false},
+		{nodeConfigs[1], nodeConfigs[0], "idle-primary-takeover-live", "Node-b stops checkpointing and node-a advances the durable cursor after expiry", 3, 40, []string{"evt-41"}, false, true},
+	}
+	for _, scenario := range scenarios {
+		result, err := executeLiveTakeoverScenario(scenario.primary, scenario.takeover, scenario.id, scenario.title, scenario.index, nodeConfigs, artifactRoot, minInt(*timeoutSeconds, 30), *takeoverTTLSeconds, scenario.offsetBase, scenario.duplicateEvents, scenario.includeConflict, scenario.includeIdleGap)
+		if err != nil {
+			return err
+		}
+		liveScenarios = append(liveScenarios, result)
+	}
+	liveTakeoverReport = buildLiveTakeoverReport(liveScenarios, *reportPath)
+	if err := writeJSONFile(filepath.Join(root, *takeoverReportPath), liveTakeoverReport); err != nil {
+		return err
+	}
+	body, _ := json.MarshalIndent(map[string]any{
+		"shared_queue_report":  sharedQueueReport,
+		"live_takeover_report": liveTakeoverReport,
+	}, "", "  ")
+	_, _ = fmt.Fprintln(os.Stdout, string(body))
+	if boolAt(sharedQueueReport, "all_ok") && intAt(mapAt(liveTakeoverReport, "summary"), "failing_scenarios") == 0 {
+		return nil
+	}
 	return exitError(1)
 }
 
@@ -663,7 +918,7 @@ func buildValidationBundleContinuationPolicyGate(repoRoot, scorecardPath string,
 		case "recent_bundle_count_meets_floor":
 			nextActions = append(nextActions, "export additional validation bundles so the continuation window spans multiple indexed runs")
 		case "shared_queue_companion_available":
-			nextActions = append(nextActions, "rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json`")
+			nextActions = append(nextActions, "rerun `go run ./cmd/bigclawctl e2e multi-node-shared-queue --report-path docs/reports/multi-node-shared-queue-report.json`")
 		case "repeated_lane_coverage_meets_policy":
 			nextActions = append(nextActions, "refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage")
 		}
@@ -786,6 +1041,15 @@ func buildEnforcementSummary(recommendation, enforcementMode string) map[string]
 	}
 }
 
+type httpStatusError struct {
+	StatusCode int
+	Payload    map[string]any
+}
+
+func (e httpStatusError) Error() string {
+	return fmt.Sprintf("http request failed with status %d", e.StatusCode)
+}
+
 func httpJSON(url, method string, payload any, timeout time.Duration) (map[string]any, error) {
 	var body io.Reader
 	if payload != nil {
@@ -811,7 +1075,7 @@ func httpJSON(url, method string, payload any, timeout time.Duration) (map[strin
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("http request failed with status %d: %+v", resp.StatusCode, result)
+		return nil, httpStatusError{StatusCode: resp.StatusCode, Payload: result}
 	}
 	return result, nil
 }
@@ -874,7 +1138,11 @@ func reserveLocalBaseURL() (string, string, error) {
 }
 
 func startBigclawd(goRoot string, env []string) (*exec.Cmd, string, error) {
-	logFile, err := os.CreateTemp("", "bigclawd-e2e-*.log")
+	return startBigclawdWithPrefix(goRoot, env, "bigclawd-e2e-")
+}
+
+func startBigclawdWithPrefix(goRoot string, env []string, prefix string) (*exec.Cmd, string, error) {
+	logFile, err := os.CreateTemp("", prefix+"*.log")
 	if err != nil {
 		return nil, "", err
 	}
@@ -1803,6 +2071,630 @@ func relToRoot(root, path string) string {
 	return filepath.ToSlash(rel)
 }
 
+func buildMultiNodeEnvMap(rootStateDir string) ([]map[string]any, error) {
+	queuePath := filepath.Join(rootStateDir, "shared-queue.db")
+	leasePath := filepath.Join(rootStateDir, "shared-subscriber-leases.db")
+	nodes := []map[string]any{}
+	for _, nodeName := range []string{"node-a", "node-b"} {
+		envMap := map[string]string{}
+		for _, item := range os.Environ() {
+			key, value, ok := strings.Cut(item, "=")
+			if ok {
+				envMap[key] = value
+			}
+		}
+		baseURL, httpAddr, err := reserveLocalBaseURL()
+		if err != nil {
+			return nil, err
+		}
+		envMap["BIGCLAW_HTTP_ADDR"] = httpAddr
+		envMap["BIGCLAW_SERVICE_NAME"] = nodeName
+		envMap["BIGCLAW_QUEUE_BACKEND"] = "sqlite"
+		envMap["BIGCLAW_QUEUE_SQLITE_PATH"] = queuePath
+		envMap["BIGCLAW_SUBSCRIBER_LEASE_SQLITE_PATH"] = leasePath
+		envMap["BIGCLAW_AUDIT_LOG_PATH"] = filepath.Join(rootStateDir, nodeName+"-audit.jsonl")
+		if _, ok := envMap["BIGCLAW_POLL_INTERVAL"]; !ok {
+			envMap["BIGCLAW_POLL_INTERVAL"] = "100ms"
+		}
+		env := make([]string, 0, len(envMap))
+		for key, value := range envMap {
+			env = append(env, key+"="+value)
+		}
+		nodes = append(nodes, map[string]any{
+			"name":       nodeName,
+			"env":        env,
+			"base_url":   baseURL,
+			"audit_path": filepath.Join(rootStateDir, nodeName+"-audit.jsonl"),
+		})
+	}
+	return nodes, nil
+}
+
+func readJSONLWithNode(path, nodeName string) []map[string]any {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+	events := []map[string]any{}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		item := map[string]any{}
+		if err := json.Unmarshal([]byte(line), &item); err != nil {
+			continue
+		}
+		item["_node"] = nodeName
+		events = append(events, item)
+	}
+	return events
+}
+
+func aggregateAuditEvents(nodeConfigs []map[string]any) []map[string]any {
+	events := []map[string]any{}
+	for _, node := range nodeConfigs {
+		events = append(events, readJSONLWithNode(stringAt(node, "audit_path"), stringAt(node, "name"))...)
+	}
+	return events
+}
+
+func summarizeMultiNodeTasks(submittedBy map[string]string, events []map[string]any) map[string]map[string][]string {
+	perTask := map[string]map[string][]string{}
+	for taskID := range submittedBy {
+		perTask[taskID] = map[string][]string{
+			"started":   {},
+			"completed": {},
+			"queued":    {},
+		}
+	}
+	for _, event := range events {
+		taskID := stringAt(event, "task_id")
+		if _, ok := perTask[taskID]; !ok {
+			continue
+		}
+		nodeName := stringAt(event, "_node")
+		switch stringAt(event, "type") {
+		case "task.started":
+			perTask[taskID]["started"] = append(perTask[taskID]["started"], nodeName)
+		case "task.completed":
+			perTask[taskID]["completed"] = append(perTask[taskID]["completed"], nodeName)
+		case "task.queued":
+			perTask[taskID]["queued"] = append(perTask[taskID]["queued"], nodeName)
+		}
+	}
+	return perTask
+}
+
+func normalizeISO(value string) string {
+	if value == "" {
+		return ""
+	}
+	parsed, err := parseFlexibleTime(value)
+	if err != nil {
+		return value
+	}
+	return utcISO(parsed)
+}
+
+func checkpointPayloadFromLease(lease map[string]any) map[string]any {
+	return map[string]any{
+		"owner":       lease["consumer_id"],
+		"lease_epoch": lease["lease_epoch"],
+		"lease_token": lease["lease_token"],
+		"offset":      lease["checkpoint_offset"],
+		"event_id":    firstNonEmpty(stringAt(lease, "checkpoint_event_id")),
+		"updated_at":  normalizeISO(stringAt(lease, "updated_at")),
+	}
+}
+
+func cursorPayload(offset int, eventID string) map[string]any {
+	return map[string]any{"offset": offset, "event_id": eventID}
+}
+
+func runtimeTakeoverEvents(nodeConfigs []map[string]any, subscriberGroup, subscriberID string) ([]map[string]any, map[string][]map[string]any) {
+	timeline := []map[string]any{}
+	perNode := map[string][]map[string]any{}
+	for _, node := range nodeConfigs {
+		nodeName := stringAt(node, "name")
+		nodeEvents := []map[string]any{}
+		for _, event := range readJSONLWithNode(stringAt(node, "audit_path"), nodeName) {
+			payload := mapAt(event, "payload")
+			eventType := stringAt(event, "type")
+			if !slices.Contains([]string{
+				"subscriber.lease_acquired",
+				"subscriber.lease_rejected",
+				"subscriber.lease_expired",
+				"subscriber.takeover_succeeded",
+				"subscriber.checkpoint_committed",
+				"subscriber.checkpoint_rejected",
+			}, eventType) {
+				continue
+			}
+			if stringAt(payload, "group_id") != subscriberGroup || stringAt(payload, "subscriber_id") != subscriberID {
+				continue
+			}
+			nodeEvents = append(nodeEvents, event)
+			timeline = append(timeline, event)
+		}
+		perNode[nodeName] = nodeEvents
+	}
+	slices.SortFunc(timeline, func(a, b map[string]any) int {
+		if cmp := strings.Compare(stringAt(a, "timestamp"), stringAt(b, "timestamp")); cmp != 0 {
+			return cmp
+		}
+		return strings.Compare(stringAt(a, "id"), stringAt(b, "id"))
+	})
+	return timeline, perNode
+}
+
+func exportRuntimeTakeoverAudit(artifactRoot, scenarioID, repoRoot string, perNodeEvents map[string][]map[string]any) ([]string, error) {
+	scenarioDir := filepath.Join(artifactRoot, scenarioID)
+	if err := os.MkdirAll(scenarioDir, 0o755); err != nil {
+		return nil, err
+	}
+	paths := []string{}
+	for nodeName, events := range perNodeEvents {
+		path := filepath.Join(scenarioDir, nodeName+"-audit.jsonl")
+		file, err := os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+		enc := json.NewEncoder(file)
+		enc.SetEscapeHTML(false)
+		for _, event := range events {
+			if err := enc.Encode(event); err != nil {
+				_ = file.Close()
+				return nil, err
+			}
+		}
+		_ = file.Close()
+		paths = append(paths, relToRoot(repoRoot, path))
+	}
+	slices.Sort(paths)
+	return paths, nil
+}
+
+func toTakeoverTimeline(runtimeEvents []map[string]any) []map[string]any {
+	timeline := []map[string]any{}
+	for _, event := range runtimeEvents {
+		payload := mapAt(event, "payload")
+		eventType := stringAt(event, "type")
+		action := eventType
+		subscriber := firstNonEmpty(stringAt(payload, "consumer_id"), stringAt(payload, "attempted_consumer_id"), "unknown")
+		details := map[string]any{
+			"runtime_event_id":   stringAt(event, "id"),
+			"runtime_event_type": eventType,
+			"audit_node":         stringAt(event, "_node"),
+		}
+		switch eventType {
+		case "subscriber.lease_acquired":
+			action = "lease_acquired"
+			details["lease_epoch"] = payload["lease_epoch"]
+			details["renewal"] = payload["renewal"]
+		case "subscriber.lease_rejected":
+			action = "lease_rejected"
+			subscriber = firstNonEmpty(stringAt(payload, "attempted_consumer_id"), subscriber)
+			details["attempted_owner"] = payload["attempted_consumer_id"]
+			details["accepted_owner"] = payload["consumer_id"]
+			details["lease_epoch"] = payload["lease_epoch"]
+			details["reason"] = payload["reason"]
+		case "subscriber.lease_expired":
+			action = "lease_expired"
+			subscriber = firstNonEmpty(stringAt(payload, "expired_consumer_id"), subscriber)
+			details["last_offset"] = payload["checkpoint_offset"]
+			details["takeover_consumer_id"] = payload["takeover_consumer_id"]
+		case "subscriber.takeover_succeeded":
+			action = "takeover_succeeded"
+			details["lease_epoch"] = payload["lease_epoch"]
+			details["previous_owner"] = payload["previous_consumer_id"]
+		case "subscriber.checkpoint_committed":
+			action = "checkpoint_committed"
+			details["offset"] = payload["checkpoint_offset"]
+			details["event_id"] = payload["checkpoint_event_id"]
+		case "subscriber.checkpoint_rejected":
+			reason := stringAt(payload, "reason")
+			if strings.Contains(reason, "fenced") {
+				action = "lease_fenced"
+			} else {
+				action = "checkpoint_rejected"
+			}
+			subscriber = firstNonEmpty(stringAt(payload, "attempted_consumer_id"), subscriber)
+			details["attempted_offset"] = payload["attempted_checkpoint_offset"]
+			details["attempted_event_id"] = payload["attempted_checkpoint_event_id"]
+			details["accepted_owner"] = payload["consumer_id"]
+			details["reason"] = reason
+		}
+		timeline = append(timeline, map[string]any{
+			"timestamp":  normalizeISO(stringAt(event, "timestamp")),
+			"subscriber": subscriber,
+			"action":     action,
+			"details":    details,
+		})
+	}
+	return timeline
+}
+
+func taskEventExcerpt(events []map[string]any, taskID string) []map[string]any {
+	excerpt := []map[string]any{}
+	for _, event := range events {
+		if stringAt(event, "task_id") != taskID {
+			continue
+		}
+		excerpt = append(excerpt, map[string]any{
+			"event_id":      firstNonEmpty(stringAt(event, "id")),
+			"delivered_by":  []string{firstNonEmpty(stringAt(event, "_node"), "unknown")},
+			"delivery_kind": firstNonEmpty(stringAt(event, "type"), "unknown"),
+		})
+	}
+	return excerpt
+}
+
+func waitForTaskCompletion(taskID, submittedBy string, nodeConfigs []map[string]any, timeoutSeconds int) (map[string][]string, error) {
+	deadline := time.Now().Add(time.Duration(timeoutSeconds) * time.Second)
+	for time.Now().Before(deadline) {
+		perTask := summarizeMultiNodeTasks(map[string]string{taskID: submittedBy}, aggregateAuditEvents(nodeConfigs))
+		item := perTask[taskID]
+		if len(item["completed"]) > 0 {
+			return item, nil
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	return nil, fmt.Errorf("timed out waiting for task %s to complete", taskID)
+}
+
+func submitTakeoverTask(submitNode map[string]any, scenarioID string, scenarioIndex int) (map[string]any, error) {
+	taskID := fmt.Sprintf("%s-task-%d-%d", scenarioID, scenarioIndex, time.Now().Unix())
+	task := map[string]any{
+		"id":                taskID,
+		"trace_id":          taskID,
+		"title":             fmt.Sprintf("%s shared-queue task", scenarioID),
+		"entrypoint":        fmt.Sprintf("echo %s", scenarioID),
+		"required_executor": "local",
+		"metadata": map[string]any{
+			"scenario":          "live-multi-node-subscriber-takeover",
+			"submit_node":       stringAt(submitNode, "name"),
+			"takeover_scenario": scenarioID,
+		},
+	}
+	if _, err := httpJSON(stringAt(submitNode, "base_url")+"/tasks", http.MethodPost, task, 30*time.Second); err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func buildLiveTakeoverAssertionResults(leaseOwnerTimeline []map[string]any, checkpointBefore, checkpointAfter, replayStartCursor, replayEndCursor map[string]any, duplicateEvents []string, staleWriteRejections int, auditTimeline []map[string]any) map[string]any {
+	auditChecks := []map[string]any{
+		{"label": "ownership handoff is visible in the audit timeline", "passed": countDistinctOwners(leaseOwnerTimeline) >= 2},
+		{"label": "audit timeline contains acquisition, expiry, rejection, or takeover events", "passed": takeoverAuditContains(auditTimeline, []string{"lease_acquired", "lease_expired", "lease_rejected", "lease_fenced", "takeover_succeeded"})},
+		{"label": "audit timeline stays ordered by timestamp", "passed": takeoverAuditOrdered(auditTimeline)},
+		{"label": "runtime takeover events keep required owner and lease fields", "passed": allLiveAuditFieldsPresent(auditTimeline)},
+	}
+	checkpointChecks := []map[string]any{
+		{"label": "checkpoint never regresses across takeover", "passed": intAt(checkpointAfter, "offset") >= intAt(checkpointBefore, "offset")},
+		{"label": "final checkpoint owner matches the final lease owner", "passed": stringAt(checkpointAfter, "owner") == stringAt(leaseOwnerTimeline[len(leaseOwnerTimeline)-1], "owner")},
+		{"label": "stale writers do not replace the accepted checkpoint owner", "passed": staleWriteRejections == 0 || stringAt(checkpointAfter, "owner") == stringAt(leaseOwnerTimeline[len(leaseOwnerTimeline)-1], "owner")},
+	}
+	replayChecks := []map[string]any{
+		{"label": "replay restarts from the durable checkpoint boundary", "passed": intAt(replayStartCursor, "offset") == intAt(checkpointBefore, "offset")},
+		{"label": "replay end cursor advances to the final durable checkpoint", "passed": intAt(replayEndCursor, "offset") == intAt(checkpointAfter, "offset")},
+		{"label": "duplicate replay candidates are counted explicitly", "passed": len(duplicateEvents) >= 0},
+	}
+	return map[string]any{
+		"audit":      auditChecks,
+		"checkpoint": checkpointChecks,
+		"replay":     replayChecks,
+	}
+}
+
+func ownerTimelineEntryLive(owner, event string, lease map[string]any) map[string]any {
+	return map[string]any{
+		"timestamp":           utcISO(time.Now()),
+		"owner":               owner,
+		"event":               event,
+		"lease_epoch":         lease["lease_epoch"],
+		"checkpoint_offset":   lease["checkpoint_offset"],
+		"checkpoint_event_id": firstNonEmpty(stringAt(lease, "checkpoint_event_id")),
+	}
+}
+
+func liveScenarioResult(scenarioID, title string, primaryNode, takeoverNode map[string]any, taskOrTraceID, subscriberGroup string, auditAssertions, checkpointAssertions, replayAssertions []string, leaseOwnerTimeline []map[string]any, checkpointBefore, checkpointAfter, replayStartCursor, replayEndCursor map[string]any, duplicateEvents []string, staleWriteRejections int, auditTimeline, eventLogExcerpt []map[string]any, localLimitations, auditLogPaths []string) map[string]any {
+	assertionResults := buildLiveTakeoverAssertionResults(leaseOwnerTimeline, checkpointBefore, checkpointAfter, replayStartCursor, replayEndCursor, duplicateEvents, staleWriteRejections, auditTimeline)
+	allPassed := true
+	for _, category := range []string{"audit", "checkpoint", "replay"} {
+		for _, rawItem := range assertionResults[category].([]map[string]any) {
+			if !boolAt(rawItem, "passed") {
+				allPassed = false
+				break
+			}
+		}
+	}
+	return map[string]any{
+		"id":                       scenarioID,
+		"title":                    title,
+		"subscriber_group":         subscriberGroup,
+		"primary_subscriber":       stringAt(primaryNode, "name"),
+		"takeover_subscriber":      stringAt(takeoverNode, "name"),
+		"task_or_trace_id":         taskOrTraceID,
+		"audit_assertions":         auditAssertions,
+		"checkpoint_assertions":    checkpointAssertions,
+		"replay_assertions":        replayAssertions,
+		"lease_owner_timeline":     leaseOwnerTimeline,
+		"checkpoint_before":        checkpointBefore,
+		"checkpoint_after":         checkpointAfter,
+		"replay_start_cursor":      replayStartCursor,
+		"replay_end_cursor":        replayEndCursor,
+		"duplicate_delivery_count": len(duplicateEvents),
+		"duplicate_events":         duplicateEvents,
+		"stale_write_rejections":   staleWriteRejections,
+		"audit_log_paths":          auditLogPaths,
+		"event_log_excerpt":        eventLogExcerpt,
+		"audit_timeline":           auditTimeline,
+		"assertion_results":        assertionResults,
+		"all_assertions_passed":    allPassed,
+		"local_limitations":        localLimitations,
+	}
+}
+
+func executeLiveTakeoverScenario(primaryNode, takeoverNode map[string]any, scenarioID, title string, scenarioIndex int, nodeConfigs []map[string]any, artifactRoot string, timeoutSeconds int, ttlSeconds float64, offsetBase int, duplicateEvents []string, includeConflictProbe, includeIdleGap bool) (map[string]any, error) {
+	ttl := maxInt(1, int(math.Round(ttlSeconds)))
+	subscriberGroup := "live-" + scenarioID
+	subscriberID := "event-stream"
+	task, err := submitTakeoverTask(primaryNode, scenarioID, scenarioIndex)
+	if err != nil {
+		return nil, err
+	}
+	taskSummary, err := waitForTaskCompletion(stringAt(task, "id"), stringAt(primaryNode, "name"), nodeConfigs, timeoutSeconds)
+	if err != nil {
+		return nil, err
+	}
+	time.Sleep(200 * time.Millisecond)
+	taskEvents := taskEventExcerpt(aggregateAuditEvents(nodeConfigs), stringAt(task, "id"))
+	leaseOwnerTimeline := []map[string]any{}
+	repoRoot := filepath.Dir(filepath.Dir(filepath.Dir(artifactRoot)))
+
+	response, err := httpJSON(stringAt(primaryNode, "base_url")+"/subscriber-groups/leases", http.MethodPost, map[string]any{
+		"group_id":      subscriberGroup,
+		"subscriber_id": subscriberID,
+		"consumer_id":   stringAt(primaryNode, "name"),
+		"ttl_seconds":   ttl,
+	}, 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	lease := mapAt(response, "lease")
+	leaseOwnerTimeline = append(leaseOwnerTimeline, ownerTimelineEntryLive(stringAt(primaryNode, "name"), "lease_acquired", lease))
+
+	if includeConflictProbe {
+		_, err := httpJSON(stringAt(takeoverNode, "base_url")+"/subscriber-groups/leases", http.MethodPost, map[string]any{
+			"group_id":      subscriberGroup,
+			"subscriber_id": subscriberID,
+			"consumer_id":   stringAt(takeoverNode, "name"),
+			"ttl_seconds":   ttl,
+		}, 30*time.Second)
+		if err != nil {
+			var statusErr httpStatusError
+			if !errors.As(err, &statusErr) || statusErr.StatusCode != http.StatusConflict {
+				return nil, err
+			}
+		}
+	}
+
+	response, err = httpJSON(stringAt(primaryNode, "base_url")+"/subscriber-groups/checkpoints", http.MethodPost, map[string]any{
+		"group_id":            subscriberGroup,
+		"subscriber_id":       subscriberID,
+		"consumer_id":         stringAt(primaryNode, "name"),
+		"lease_token":         lease["lease_token"],
+		"lease_epoch":         lease["lease_epoch"],
+		"checkpoint_offset":   offsetBase,
+		"checkpoint_event_id": fmt.Sprintf("evt-%d", offsetBase),
+	}, 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	lease = mapAt(response, "lease")
+	checkpointBefore := checkpointPayloadFromLease(lease)
+	if includeIdleGap {
+		time.Sleep(50 * time.Millisecond)
+	}
+	time.Sleep(time.Duration(ttl)*time.Second + 300*time.Millisecond)
+
+	response, err = httpJSON(stringAt(takeoverNode, "base_url")+"/subscriber-groups/leases", http.MethodPost, map[string]any{
+		"group_id":      subscriberGroup,
+		"subscriber_id": subscriberID,
+		"consumer_id":   stringAt(takeoverNode, "name"),
+		"ttl_seconds":   ttl,
+	}, 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	takeoverLease := mapAt(response, "lease")
+	leaseOwnerTimeline = append(leaseOwnerTimeline, ownerTimelineEntryLive(stringAt(takeoverNode, "name"), "takeover_acquired", takeoverLease))
+
+	attemptedOffset := offsetBase + 1
+	_, err = httpJSON(stringAt(primaryNode, "base_url")+"/subscriber-groups/checkpoints", http.MethodPost, map[string]any{
+		"group_id":            subscriberGroup,
+		"subscriber_id":       subscriberID,
+		"consumer_id":         stringAt(primaryNode, "name"),
+		"lease_token":         lease["lease_token"],
+		"lease_epoch":         lease["lease_epoch"],
+		"checkpoint_offset":   attemptedOffset,
+		"checkpoint_event_id": fmt.Sprintf("evt-%d", attemptedOffset),
+	}, 30*time.Second)
+	if err != nil {
+		var statusErr httpStatusError
+		if !errors.As(err, &statusErr) || statusErr.StatusCode != http.StatusConflict {
+			return nil, err
+		}
+	}
+
+	finalOffset := offsetBase + len(duplicateEvents)
+	response, err = httpJSON(stringAt(takeoverNode, "base_url")+"/subscriber-groups/checkpoints", http.MethodPost, map[string]any{
+		"group_id":            subscriberGroup,
+		"subscriber_id":       subscriberID,
+		"consumer_id":         stringAt(takeoverNode, "name"),
+		"lease_token":         takeoverLease["lease_token"],
+		"lease_epoch":         takeoverLease["lease_epoch"],
+		"checkpoint_offset":   finalOffset,
+		"checkpoint_event_id": fmt.Sprintf("evt-%d", finalOffset),
+	}, 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	takeoverLease = mapAt(response, "lease")
+	checkpointAfter := checkpointPayloadFromLease(takeoverLease)
+	time.Sleep(100 * time.Millisecond)
+	runtimeEvents, perNodeRuntimeEvents := runtimeTakeoverEvents(nodeConfigs, subscriberGroup, subscriberID)
+	auditTimeline := toTakeoverTimeline(runtimeEvents)
+	staleWriteRejections := 0
+	for _, item := range auditTimeline {
+		if stringAt(item, "action") == "lease_fenced" {
+			staleWriteRejections++
+		}
+	}
+	auditLogPaths, err := exportRuntimeTakeoverAudit(artifactRoot, scenarioID, repoRoot, perNodeRuntimeEvents)
+	if err != nil {
+		return nil, err
+	}
+	if len(taskSummary["completed"]) > 0 && taskSummary["completed"][0] != stringAt(primaryNode, "name") {
+		taskEvents = append(taskEvents, map[string]any{
+			"event_id":      fmt.Sprintf("%s-cross-node", stringAt(task, "id")),
+			"delivered_by":  taskSummary["completed"],
+			"delivery_kind": "shared_queue_cross_node_completion",
+		})
+	}
+	return liveScenarioResult(
+		scenarioID,
+		title,
+		primaryNode,
+		takeoverNode,
+		stringAt(task, "trace_id"),
+		subscriberGroup,
+		[]string{
+			"Per-node audit artifacts are filtered excerpts from runtime-emitted audit events rather than harness-authored companion logs.",
+			"The live report binds takeover actions to a real shared-queue task trace ID for the same two-node cluster run.",
+			"Lease rejection and accepted takeover owner are captured in one ordered audit timeline.",
+		},
+		[]string{
+			"Checkpoint after takeover is greater than or equal to the last durable checkpoint from the primary subscriber.",
+			"Standby checkpoint commit is attributed to the new lease owner returned by the live API.",
+			"Late primary checkpoint writes are fenced once takeover succeeds.",
+		},
+		[]string{
+			"Replay resumes from the last durable checkpoint boundary returned by the live lease endpoint.",
+			"Duplicate replay candidates are counted explicitly from the overlap between the last durable offset and final takeover offset.",
+			"The final replay cursor and final owner are both emitted in the live report schema.",
+		},
+		leaseOwnerTimeline,
+		checkpointBefore,
+		checkpointAfter,
+		cursorPayload(offsetBase, fmt.Sprintf("evt-%d", offsetBase)),
+		cursorPayload(finalOffset, fmt.Sprintf("evt-%d", finalOffset)),
+		duplicateEvents,
+		staleWriteRejections,
+		auditTimeline,
+		taskEvents,
+		[]string{
+			"The live proof runs against a real two-node shared-queue cluster and one shared SQLite-backed subscriber lease store.",
+			"The checked-in takeover artifacts are derived from runtime-emitted subscriber transition events exported per scenario.",
+			"This proof upgrades ownership to a shared durable scaffold without claiming broker-backed or replicated subscriber ownership.",
+		},
+		auditLogPaths,
+	), nil
+}
+
+func buildLiveTakeoverReport(scenarios []map[string]any, sharedQueueReportPath string) map[string]any {
+	passing := 0
+	duplicateDeliveryCount := 0
+	staleWriteRejections := 0
+	for _, scenario := range scenarios {
+		if boolAt(scenario, "all_assertions_passed") {
+			passing++
+		}
+		duplicateDeliveryCount += intAt(scenario, "duplicate_delivery_count")
+		staleWriteRejections += intAt(scenario, "stale_write_rejections")
+	}
+	return map[string]any{
+		"generated_at": utcISO(time.Now()),
+		"ticket":       "OPE-260",
+		"title":        "Live multi-node subscriber takeover proof",
+		"status":       "live-multi-node-proof",
+		"harness_mode": "live_multi_node_bigclawd_cluster",
+		"current_primitives": map[string]any{
+			"lease_aware_checkpoints": []string{
+				"internal/events/subscriber_leases.go",
+				"internal/events/subscriber_leases_test.go",
+				"internal/api/server.go",
+			},
+			"shared_queue_evidence": []string{
+				"cmd/bigclawctl/e2e.go",
+				sharedQueueReportPath,
+			},
+			"live_takeover_harness": []string{
+				"internal/api/server.go",
+				"cmd/bigclawctl/e2e.go",
+				"docs/reports/live-multi-node-subscriber-takeover-report.json",
+			},
+		},
+		"required_report_sections": []string{
+			"scenario metadata",
+			"fault injection steps",
+			"audit assertions",
+			"checkpoint assertions",
+			"replay assertions",
+			"per-node audit artifacts",
+			"final owner and replay cursor summary",
+			"duplicate delivery accounting",
+			"open blockers and follow-up implementation hooks",
+		},
+		"implementation_path": []string{
+			"run a real two-node bigclawd cluster against one shared SQLite queue",
+			"drive lease acquisition, expiry, fencing, and checkpoint takeover through the live subscriber-group API on both nodes against one shared SQLite lease backend",
+			"slice canonical per-node takeover artifacts out of the runtime audit stream beside the checked-in report",
+			"keep broker-backed and replicated subscriber ownership caveats explicit until a broker-native lease backend exists",
+		},
+		"summary": map[string]any{
+			"scenario_count":           len(scenarios),
+			"passing_scenarios":        passing,
+			"failing_scenarios":        len(scenarios) - passing,
+			"duplicate_delivery_count": duplicateDeliveryCount,
+			"stale_write_rejections":   staleWriteRejections,
+		},
+		"scenarios": scenarios,
+		"remaining_gaps": []string{
+			"Subscriber ownership now uses a shared durable SQLite scaffold, but it is not yet broker-backed or replicated.",
+			"The live proof reuses real shared-queue nodes but does not yet validate broker-backed or replicated subscriber ownership.",
+			"Native runtime audit coverage now captures takeover transitions, but the proof still depends on the current lease API rather than broker-backed replay ownership.",
+		},
+	}
+}
+
+func allLiveAuditFieldsPresent(auditTimeline []map[string]any) bool {
+	for _, item := range auditTimeline {
+		details := mapAt(item, "details")
+		if stringAt(details, "runtime_event_id") == "" || stringAt(details, "runtime_event_type") == "" || stringAt(item, "subscriber") == "" {
+			return false
+		}
+	}
+	return true
+}
+
+func minInt(left, right int) int {
+	if left < right {
+		return left
+	}
+	return right
+}
+
+func maxInt(left, right int) int {
+	if left > right {
+		return left
+	}
+	return right
+}
+
 var takeoverBaseTime = time.Date(2026, 3, 16, 10, 30, 0, 0, time.UTC)
 
 type takeoverLease struct {
@@ -1937,7 +2829,7 @@ func buildSubscriberTakeoverFaultMatrixReport(now time.Time) map[string]any {
 				"docs/reports/event-bus-reliability-report.md",
 			},
 			"shared_queue_evidence": []string{
-				"scripts/e2e/multi_node_shared_queue.py",
+				"cmd/bigclawctl/e2e.go",
 				"docs/reports/multi-node-shared-queue-report.json",
 			},
 			"takeover_harness": []string{

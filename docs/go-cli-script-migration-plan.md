@@ -16,6 +16,7 @@ surfaces.
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py` -> `cd bigclaw-go && go test ./internal/regression -run TestBrokerValidationSummaryStaysAligned -count=1`
 - `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e run-task-smoke --help`
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e export-validation-bundle --help`
+- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e multi-node-shared-queue --help`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e validation-bundle-continuation-scorecard --pretty`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e validation-bundle-continuation-policy-gate --pretty`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py` -> `cd bigclaw-go && go run ./cmd/bigclawctl e2e subscriber-takeover-fault-matrix --pretty`

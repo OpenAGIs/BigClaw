@@ -6,7 +6,7 @@
       "docs/reports/event-bus-reliability-report.md"
     ],
     "shared_queue_evidence": [
-      "scripts/e2e/multi_node_shared_queue.py",
+      "cmd/bigclawctl/e2e.go",
       "docs/reports/multi-node-shared-queue-report.json"
     ],
     "takeover_harness": [

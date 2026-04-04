@@ -255,6 +255,21 @@ func TestBuildSubscriberTakeoverFaultMatrixReport(t *testing.T) {
 	}
 }
 
+func TestBuildLiveTakeoverReportUsesGoSurface(t *testing.T) {
+	report := buildLiveTakeoverReport([]map[string]any{
+		{"all_assertions_passed": true, "duplicate_delivery_count": 1, "stale_write_rejections": 1},
+	}, "docs/reports/multi-node-shared-queue-report.json")
+	current := mapAt(report, "current_primitives")
+	sharedQueueEvidence, ok := current["shared_queue_evidence"].([]string)
+	if !ok || len(sharedQueueEvidence) != 2 || sharedQueueEvidence[0] != "cmd/bigclawctl/e2e.go" {
+		t.Fatalf("unexpected shared queue evidence: %+v", current)
+	}
+	liveHarness, ok := current["live_takeover_harness"].([]string)
+	if !ok || len(liveHarness) != 3 || liveHarness[1] != "cmd/bigclawctl/e2e.go" {
+		t.Fatalf("unexpected live takeover harness: %+v", current)
+	}
+}
+
 func writeJSONFixture(t *testing.T, path string, payload any) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
