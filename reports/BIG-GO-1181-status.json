@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "feat/BIG-GO-1181-python-asset-sweep-1",
-    "latest_commit": "pending",
-    "push_target": "pending"
+    "latest_commit": "0293aa47",
+    "push_target": "origin/feat/BIG-GO-1181-python-asset-sweep-1"
   },
   "inventory": {
     "repo": [],
