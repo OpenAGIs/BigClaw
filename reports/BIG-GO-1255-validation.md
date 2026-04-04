@@ -86,7 +86,7 @@ ok  	bigclaw-go/internal/regression	0.510s
 ## Git
 
 - Branch: `main`
-- Push target: `origin/main`
+- Push target: `origin/BIG-GO-1255`
 
 ## Residual Risk
 
