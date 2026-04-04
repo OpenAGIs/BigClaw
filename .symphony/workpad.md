@@ -28,5 +28,5 @@ Date: 2026-04-05
 
 - `find . -name '*.py' | wc -l` -> `0`
 - `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done` -> `<empty>`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1219(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.501s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1219(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	1.190s`
 - `git status --short` -> `M .symphony/workpad.md`; `?? bigclaw-go/internal/regression/big_go_1219_zero_python_guard_test.go`; `?? reports/BIG-GO-1219-status.json`; `?? reports/BIG-GO-1219-validation.md`
