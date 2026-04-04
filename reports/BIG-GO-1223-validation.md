@@ -84,9 +84,9 @@ ok  	bigclaw-go/internal/regression	0.467s
 ## Git
 
 - Branch: `main`
-- Commit: `tracked in git history after lane commit`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-1223'`
-- Push result: `pending`
+- Commit: `9806c77bc7d2ac9b3343a06015860740c10f1f6a` (`BIG-GO-1223: harden zero-python sweep lane`)
+- Lane commit details: `9806c77b BIG-GO-1223: harden zero-python sweep lane`
+- Push result: `git push origin main` -> `bd4ca74f..9806c77b`
 
 ## Residual Risk
 
