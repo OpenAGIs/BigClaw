@@ -84,7 +84,7 @@ ok  	bigclaw-go/internal/regression	0.502s
 ## Git
 
 - Branch: `main`
-- Base commit before lane changes: `a118905b`
+- Commit: `tracked in git history after lane commit`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1220'`
 - Push result: `pending`
 
