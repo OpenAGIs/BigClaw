@@ -120,11 +120,17 @@ func run(args []string) int {
 		err = runLocalIssues(args[1:])
 	case "legacy-python":
 		err = runLegacyPython(args[1:])
+	case "e2e":
+		err = runE2E(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		var code exitError
+		if errors.As(err, &code) {
+			return int(code)
+		}
 		return 1
 	}
 	return 0
@@ -1323,7 +1329,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|e2e> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1331,6 +1337,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
+	fmt.Fprintln(w, "  e2e             run repo-native end-to-end smoke and continuation helpers")
 }
 
 func absPath(path string) string {

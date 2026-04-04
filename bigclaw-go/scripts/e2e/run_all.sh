@@ -51,7 +51,7 @@ pids=()
 if [[ "$RUN_LOCAL" == "1" ]]; then
   (
     BIGCLAW_QUEUE_BACKEND=sqlite \
-      python3 "$ROOT/scripts/e2e/run_task_smoke.py" \
+      go run "$ROOT/cmd/bigclawctl" e2e run-task-smoke \
         --autostart \
         --go-root "$ROOT" \
         --executor local \
@@ -117,11 +117,11 @@ if ! export_bundle; then
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
-  python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
+  go run "$ROOT/cmd/bigclawctl" e2e validation-bundle-continuation-scorecard \
     --output "$CONTINUATION_SCORECARD_PATH"
 
   gate_status=0
-  if ! python3 "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.py" \
+  if ! go run "$ROOT/cmd/bigclawctl" e2e validation-bundle-continuation-policy-gate \
     --scorecard "$CONTINUATION_SCORECARD_PATH" \
     --enforcement-mode "$CONTINUATION_GATE_MODE" \
     --output "$CONTINUATION_POLICY_GATE_PATH"; then

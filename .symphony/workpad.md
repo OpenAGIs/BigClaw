@@ -17,7 +17,10 @@
 - `git status --short`
 
 ## Results
-- `find . -name '*.py' | wc -l` -> `111` after the third sweep batch, down from the pre-change baseline of `138`
+- `find . -name '*.py' | wc -l` -> `108` after retiring the Go-backed E2E smoke and continuation helpers, down from the pre-change baseline of `138`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.490s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.944s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestLiveValidationIndexStaysAligned|TestRuntimeReportFollowUpDocsStayAligned|TestTakeoverFollowUpDigestReferences|TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestExternalStoreValidationReportStaysAligned|TestCrossProcessCoordinationReadinessDocsStayAligned|TestBrokerValidationSummaryStaysAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.839s`
+- `cd bigclaw-go && go test ./cmd/bigclawctl -count=1` -> `ok  	bigclaw-go/cmd/bigclawctl	0.494s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1165|TestE2EValidationDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveValidationSummaryStaysAligned|TestRuntimeReportFollowUpDocsStayAligned' -count=1` -> `ok  	bigclaw-go/internal/regression	0.518s`
+- `python3 -m pytest -q tests/test_followup_digests.py` -> `.. [100%]`
