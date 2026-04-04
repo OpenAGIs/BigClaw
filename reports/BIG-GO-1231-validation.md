@@ -83,7 +83,7 @@ ok  	bigclaw-go/internal/regression	0.808s
 
 ## Git
 
-- Lane commit: `PENDING`
+- Lane commit: `b763af9a` (`BIG-GO-1231: add zero-python regression lane artifacts`)
 - Final push target: `origin/main`
 - Final tip: `tracked in git history after BIG-GO-1231 final sync`
 

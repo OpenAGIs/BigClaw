@@ -47,6 +47,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "This mainline landing squashes the lane artifacts onto the latest origin/main to reduce contention with other heartbeat refill lanes."
+    "This mainline landing squashes the lane artifacts onto the latest origin/main to reduce contention with other heartbeat refill lanes.",
+    "Lane commit b763af9a was created from a fresh branch rooted at the latest origin/main."
   ]
 }
