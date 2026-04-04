@@ -83,7 +83,7 @@ ok  	bigclaw-go/internal/regression	1.097s
 
 ## Git
 
-- Implementation commit: `pending`
+- Implementation commit: `7d1e1d74`
 - Final metadata commit: `pending`
 - Push target: `origin/main`
 
