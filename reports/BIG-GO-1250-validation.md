@@ -89,7 +89,8 @@ ok  	bigclaw-go/internal/regression	0.464s
   - `7808cff9` (`BIG-GO-1250: add zero-python regression lane artifacts`)
   - `3294f051` (`BIG-GO-1250: record validation git status`)
   - `aa6c9771` (`BIG-GO-1250: refresh rebased lane metadata`)
-- Push result: `git -c http.version=HTTP/1.1 push origin HEAD:main` -> success (`4ce1848d..aa6c9771  HEAD -> main`) after fetch/rebase reconciliation against moving origin/main
+  - `8d402899` (`BIG-GO-1250: finalize lane evidence`)
+- Push result: `git fetch origin main && git rebase origin/main && git -c http.version=HTTP/1.1 push origin HEAD:main` -> success (`b75e35a3..8d402899  HEAD -> main`)
 
 ## Residual Risk
 
