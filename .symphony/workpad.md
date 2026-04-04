@@ -36,6 +36,8 @@
 - Current continuation folded the standalone audit event helpers into `src/bigclaw/observability.py`, removing `src/bigclaw/audit_events.py` and keeping scheduler/workflow/reporting event semantics intact.
 - Current continuation folded the standalone deprecation test coverage into `tests/test_runtime.py`, removing `tests/test_deprecation.py` while keeping the deprecation/runtime assertions intact.
 - Current continuation folded the standalone workflow-definition test coverage into `tests/test_workflow.py`, removing `tests/test_dsl.py` while keeping the workflow-definition assertions intact.
+- Current continuation folded the standalone risk test coverage into `tests/test_scheduler.py`, removing `tests/test_risk.py` while keeping the scheduler-owned risk assertions intact.
+- Current continuation folded the standalone risk test coverage into `tests/test_scheduler.py`, removing `tests/test_risk.py` while keeping the scheduler-owned risk assertions intact.
 - Validation commands:
   - `rg -n "capacity_certification\.py|run_matrix\.py|soak_local\.py|broker_failover_stub_matrix\.py|cross_process_coordination_surface\.py|external_store_validation\.py|mixed_workload_matrix\.py|multi_node_shared_queue\.py|subscriber_takeover_fault_matrix\.py|export_live_shadow_bundle\.py|live_shadow_scorecard\.py|shadow_compare\.py|shadow_matrix\.py" bigclaw-go README.md scripts tests docs` -> no matches
   - `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard bigclaw-go/scripts/e2e/export_validation_bundle bigclaw-go/scripts/e2e/run_task_smoke` -> passed
@@ -138,3 +140,8 @@
   - `git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 push --porcelain origin BIG-GO-1170` -> pushed `31ff5bd..f319677`
   - `git ls-remote origin BIG-GO-1170` -> `f319677c37307f6498f9c3f9ad71800d80f51d96 refs/heads/BIG-GO-1170`
   - `bash scripts/ops/bigclaw_github_sync status --json` -> `status: ok`, `branch: BIG-GO-1170`, `pushed: true`, `synced: true`, `dirty: false`
+  - `python3 -m pytest tests/test_scheduler.py tests/test_runtime.py tests/test_queue.py tests/test_workflow.py tests/test_execution_flow.py tests/test_runtime_matrix.py` -> `35 passed in 0.07s`
+  - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [/Users/openagi/code/bigclaw-workspaces/BIG-GO-1170/src/bigclaw/legacy_shim.py]`
+  - `python3 -m build` -> passed
+  - `git diff --check` -> passed
+  - `find . -name '*.py' | wc -l` -> `29`
