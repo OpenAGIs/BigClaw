@@ -84,7 +84,8 @@ ok  	bigclaw-go/internal/regression	0.512s
 ## Git
 
 - Commits: `tracked in git history after rebase`
-- Push: `pending final push`
+- Push: `git push origin HEAD:refs/heads/big-go-1216` -> `success`
+- Published branch: `origin/big-go-1216` @ `46d7161441e1c8be6c0972a7bde436aca6aa53ee`
 
 ## Residual Risk
 

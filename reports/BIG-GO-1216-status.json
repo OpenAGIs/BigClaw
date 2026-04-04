@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "tracked in git history",
-    "push_target": "origin/main"
+    "push_target": "origin/big-go-1216"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1216-validation.md",
@@ -47,6 +47,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Lane commit details are recorded in git history and summarized in the validation report."
+    "Lane commit details are recorded in git history and summarized in the validation report.",
+    "The lane was published to a dedicated remote branch because origin/main advanced continuously during unattended execution."
   ]
 }
