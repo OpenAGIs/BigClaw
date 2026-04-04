@@ -105,7 +105,7 @@ def build_report(
     if 'recent_bundle_count_meets_floor' in failing_checks:
         next_actions.append('export additional validation bundles so the continuation window spans multiple indexed runs')
     if 'shared_queue_companion_available' in failing_checks:
-        next_actions.append('rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json`')
+        next_actions.append('rerun `cd bigclaw-go && BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` so the shared-queue companion proof is refreshed with the bundle')
     if 'repeated_lane_coverage_meets_policy' in failing_checks:
         next_actions.append('refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage')
     if not next_actions:

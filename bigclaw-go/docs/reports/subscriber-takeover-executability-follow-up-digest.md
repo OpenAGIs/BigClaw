@@ -8,9 +8,8 @@ This digest consolidates the remaining takeover coordination caveats after the l
 
 - `docs/reports/multi-subscriber-takeover-validation-report.md` explains the executable local harness contract and required assertions.
 - `docs/reports/multi-subscriber-takeover-validation-report.json` captures three passing local takeover scenarios with owner timelines, checkpoint transitions, and duplicate replay accounting.
-- `scripts/e2e/subscriber_takeover_fault_matrix.py` generates the deterministic local harness report.
 - `docs/reports/live-multi-node-subscriber-takeover-report.json` captures the live two-node shared-queue proof using the same core schema plus per-node takeover audit artifacts.
-- `scripts/e2e/multi_node_shared_queue.py` now generates both the shared-queue report and the live takeover companion report in one run.
+- `docs/reports/live-multi-node-subscriber-takeover-artifacts/` keeps the per-node live takeover audit artifacts aligned with the checked-in report.
 - `docs/reports/event-bus-reliability-report.md` explains how subscriber-group checkpoints, replay, and takeover evidence fit into the event-bus roadmap.
 - `docs/reports/issue-coverage.md` and `docs/reports/review-readiness.md` record where takeover validation is executable today and where distributed ownership still remains bounded.
 - `docs/openclaw-parallel-gap-analysis.md` tracks the remaining distributed durability and shared-queue hardening gaps.
@@ -31,6 +30,6 @@ This digest consolidates the remaining takeover coordination caveats after the l
 
 ## Lightweight Consistency Check
 
-- Keep this digest aligned with `docs/reports/multi-subscriber-takeover-validation-report.md`, `docs/reports/multi-subscriber-takeover-validation-report.json`, `scripts/e2e/subscriber_takeover_fault_matrix.py`, and `docs/reports/event-bus-reliability-report.md`.
-- Keep the live companion proof references aligned with `docs/reports/live-multi-node-subscriber-takeover-report.json`, `docs/reports/live-multi-node-subscriber-takeover-artifacts/`, and `scripts/e2e/multi_node_shared_queue.py`.
+- Keep this digest aligned with `docs/reports/multi-subscriber-takeover-validation-report.md`, `docs/reports/multi-subscriber-takeover-validation-report.json`, `docs/reports/live-multi-node-subscriber-takeover-report.json`, and `docs/reports/event-bus-reliability-report.md`.
+- Keep the live companion proof references aligned with `docs/reports/live-multi-node-subscriber-takeover-report.json`, `docs/reports/live-multi-node-subscriber-takeover-artifacts/`, and `docs/reports/multi-node-shared-queue-report.json`.
 - Repeat the `shared durable SQLite scaffold exists but broker-backed ownership does not` caveat anywhere takeover readiness is summarized.

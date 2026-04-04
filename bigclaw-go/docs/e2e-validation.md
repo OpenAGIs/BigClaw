@@ -87,42 +87,27 @@ For workflow behavior, prefer `BIGCLAW_E2E_CONTINUATION_GATE_MODE`:
 
 ## Mixed workload matrix
 
-```bash
-cd bigclaw-go
-export KUBECONFIG=/Users/jxrt/.kube/ray-local-config
-export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
-export BIGCLAW_KUBERNETES_NAMESPACE=ray
-export BIGCLAW_KUBERNETES_IMAGE=alpine:3.20
-export BIGCLAW_QUEUE_BACKEND=sqlite
-python3 scripts/e2e/mixed_workload_matrix.py \
-  --report-path docs/reports/mixed-workload-matrix-report.json
-```
-
-This validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.
+The checked-in matrix lives at `docs/reports/mixed-workload-matrix-report.json`.
+Treat that report as the canonical repo-native proof for the current
+production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`,
+and high-risk isolation scenarios.
 
 ## External-store remote event-log validation lane
 
-```bash
-cd bigclaw-go
-python3 scripts/e2e/external_store_validation.py \
-  --report-path docs/reports/external-store-validation-report.json
-```
-
-This lane starts one repo-native SQLite-backed event-log service node plus two client `bigclawd` nodes configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`. It validates that replay, checkpoint reset history, persisted retention boundaries, and lease-backed takeover behavior remain reviewable when the event log moves behind a remote HTTP service boundary.
+The canonical checked-in lane output lives at
+`docs/reports/external-store-validation-report.json`. It captures the
+repo-native SQLite-backed event-log service plus two client `bigclawd` nodes
+configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`, and validates replay,
+checkpoint reset history, persisted retention boundaries, and lease-backed
+takeover behavior across that remote HTTP service boundary.
 
 The checked-in output lives at `docs/reports/external-store-validation-report.json`. Its `backend_matrix` now makes the backend posture machine-readable instead of leaving it in prose alone: `http_remote_service` is `live_validated`, `broker_replicated` is a deterministic `not_configured` placeholder, and `quorum_replicated` is a `contract_only` placeholder. Replay and checkpoint state are remote-service-backed, while takeover still relies on the shared durable lease store. Replay-to-live handoff isolation for that same provider-backed lane is summarized separately in `docs/reports/provider-live-handoff-isolation-evidence-pack.json` so reviewers can inspect the no-stall contract without opening the full lane output.
 
 ## Multi-node shared queue proof
 
-```bash
-cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
-  --count 200 \
-  --submit-workers 8 \
-  --report-path docs/reports/multi-node-shared-queue-report.json
-```
-
-This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
+The canonical checked-in shared-queue proof lives at
+`docs/reports/multi-node-shared-queue-report.json`. It captures a two-node
+SQLite-backed queue run with no duplicate terminal completions.
 
 The same command now also refreshes `docs/reports/live-multi-node-subscriber-takeover-report.json` plus per-scenario audit artifacts under `docs/reports/live-multi-node-subscriber-takeover-artifacts/`, so the shared-queue proof and the live takeover proof stay generated from one two-node run.
 
@@ -137,49 +122,36 @@ Use that pack as the source of truth for:
 - checkpoint fencing and stale-writer recovery rules
 - the minimum machine-readable report schema required before future broker durability work can be closed honestly
 
-Use this deterministic local harness to exercise the same scenario ids without a live broker:
-
-```bash
-cd bigclaw-go
-python3 scripts/e2e/broker_failover_stub_matrix.py --pretty
-```
-
-This refreshes `docs/reports/broker-failover-stub-report.json` plus per-scenario raw artifacts under `docs/reports/broker-failover-stub-artifacts/`. The stub backend is provider-neutral and deterministic, so sequence accounting, replay resume behavior, ambiguous publish resolution, and checkpoint fencing can be validated before a live Kafka / NATS / Redis adapter exists.
+The checked-in deterministic evidence lives at
+`docs/reports/broker-failover-stub-report.json` plus
+`docs/reports/broker-failover-stub-artifacts/`. The stub backend is
+provider-neutral and deterministic, so sequence accounting, replay resume
+behavior, ambiguous publish resolution, and checkpoint fencing remain
+reviewable before a live Kafka / NATS / Redis adapter exists.
 
 ## Multi-subscriber takeover validation matrix
 
-Use this to regenerate the executable local takeover harness report for lease-aware subscriber-group checkpoint ownership.
+The canonical executable local harness report lives at
+`docs/reports/multi-subscriber-takeover-validation-report.json`. It captures
+three deterministic local takeover scenarios, owner timelines, checkpoint
+transitions, duplicate replay accounting, and stale-writer rejection counts.
+The remaining live multi-node executability caveats are consolidated in
+`docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 
-```bash
-cd bigclaw-go
-python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
-```
-
-This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-
-For the live proof path, run the shared-queue harness:
-
-```bash
-cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
-  --count 200 \
-  --submit-workers 8 \
-  --report-path docs/reports/multi-node-shared-queue-report.json \
-  --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json
-```
-
-This starts the same two-node cluster, drives live lease acquisition and checkpoint takeover through the subscriber-group API on both nodes against one shared SQLite-backed lease store, and exports runtime-emitted subscriber transition events into per-scenario takeover audit artifacts. The live proof upgrades ownership to a shared durable scaffold while keeping broker-backed and replicated ownership caveats explicit.
+For the live proof path, use the checked-in
+`docs/reports/live-multi-node-subscriber-takeover-report.json` plus
+`docs/reports/live-multi-node-subscriber-takeover-artifacts/`. That evidence
+captures the same two-node cluster, live lease acquisition, checkpoint
+takeover, and runtime-emitted subscriber transition events against one shared
+SQLite-backed lease store.
 
 ## Cross-process coordination capability surface
 
-Use this to regenerate the machine-readable coordination surface that ties together the current shared-queue proof, the deterministic takeover harness, and the contract-defined broker-backed target.
-
-```bash
-cd bigclaw-go
-python3 scripts/e2e/cross_process_coordination_surface.py --pretty
-```
-
-This refreshes `docs/reports/cross-process-coordination-capability-surface.json` with the current live local proof metrics, takeover harness summary, capability-by-capability state, and the next runtime hooks for a real distributed coordination proof.
+The canonical machine-readable coordination surface lives at
+`docs/reports/cross-process-coordination-capability-surface.json`. It ties
+together the current live local proof metrics, takeover harness summary,
+capability-by-capability state, and the next runtime hooks for a real
+distributed coordination proof.
 
 ## Canonical follow-up routing
 

@@ -11,12 +11,12 @@
       "docs/reports/event-bus-reliability-report.md"
     ],
     "shared_queue_evidence": [
-      "scripts/e2e/multi_node_shared_queue.py",
-      "docs/reports/multi-node-shared-queue-report.json"
+      "docs/reports/multi-node-shared-queue-report.json",
+      "docs/reports/shared-queue-companion-summary.json"
     ],
     "takeover_harness": [
-      "scripts/e2e/subscriber_takeover_fault_matrix.py",
-      "docs/reports/multi-subscriber-takeover-validation-report.json"
+      "docs/reports/multi-subscriber-takeover-validation-report.json",
+      "docs/reports/subscriber-takeover-executability-follow-up-digest.md"
     ]
   },
   "required_report_sections": [

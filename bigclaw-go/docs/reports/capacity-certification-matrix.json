@@ -12,7 +12,7 @@
       "bigclaw-go/docs/reports/soak-local-1000x24.json",
       "bigclaw-go/docs/reports/soak-local-2000x24.json"
     ],
-    "generator_script": "bigclaw-go/scripts/benchmark/capacity_certification.py"
+    "generator_script": "checked_in_benchmark_evidence_bundle"
   },
   "summary": {
     "overall_status": "pass",

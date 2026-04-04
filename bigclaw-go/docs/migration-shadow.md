@@ -4,48 +4,26 @@ Use this helper to compare two BigClaw control-plane endpoints with the same tas
 
 ## Example
 
-```bash
-cd bigclaw-go
-python3 scripts/migration/shadow_compare.py \
-  --primary http://127.0.0.1:8080 \
-  --shadow http://127.0.0.1:8081 \
-  --task-file ./examples/shadow-task.json \
-  --report-path ./docs/reports/shadow-compare-report.json
-```
-
-The helper now reuses one shared `trace_id` across the primary and shadow submissions,
-so the resulting timelines stay easy to correlate in audit/event tooling.
+The checked-in single-run comparison artifact lives at
+`docs/reports/shadow-compare-report.json`. It reuses one shared `trace_id`
+across the primary and shadow submissions, so the resulting timelines stay easy
+to correlate in audit/event tooling.
 
 ## Matrix example
 
-```bash
-cd bigclaw-go
-python3 scripts/migration/shadow_matrix.py \
-  --primary http://127.0.0.1:8080 \
-  --shadow http://127.0.0.1:8081 \
-  --task-file ./examples/shadow-task.json \
-  --task-file ./examples/shadow-task-budget.json \
-  --task-file ./examples/shadow-task-validation.json \
-  --corpus-manifest ./examples/shadow-corpus-manifest.json \
-  --report-path ./docs/reports/shadow-matrix-report.json
-```
+The checked-in matrix artifact lives at `docs/reports/shadow-matrix-report.json`
+and summarizes the primary/shadow outcomes across the repo fixture set.
 
-This matrix helper runs multiple shadow comparisons back to back and aggregates the
-matched vs mismatched outcomes into one report. `--task-file` inputs remain the explicit
-fixture-backed shadow submissions, while `--corpus-manifest` overlays an anonymized
-corpus scorecard so reviewers can compare fixture coverage against corpus slices and
+The matrix evidence aggregates matched vs mismatched outcomes into one report.
+`examples/shadow-corpus-manifest.json` still overlays an anonymized corpus
+scorecard so reviewers can compare fixture coverage against corpus slices and
 inspect any uncovered task shapes.
 
 To connect the single-run compare evidence and the matrix evidence into one reviewer-facing
 surface, generate the repo-native live shadow mirror scorecard:
 
-```bash
-cd bigclaw-go
-python3 scripts/migration/live_shadow_scorecard.py \
-  --shadow-compare-report ./docs/reports/shadow-compare-report.json \
-  --shadow-matrix-report ./docs/reports/shadow-matrix-report.json \
-  --output ./docs/reports/live-shadow-mirror-scorecard.json
-```
+The checked-in scorecard artifact lives at
+`docs/reports/live-shadow-mirror-scorecard.json`.
 
 The scorecard stays offline and repo-native. It summarizes parity drift and evidence
 freshness across the checked-in shadow artifacts, but it is still not a live legacy-vs-Go
@@ -54,15 +32,10 @@ production traffic comparison; see `docs/reports/live-shadow-comparison-follow-u
 To package the checked-in shadow artifacts into a repeatable reviewer bundle and refresh
 the parity drift rollup, export the live shadow bundle/index:
 
-```bash
-cd bigclaw-go
-python3 scripts/migration/export_live_shadow_bundle.py
-```
-
-This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into
-`docs/reports/live-shadow-runs/<run-id>/`, refreshes `docs/reports/live-shadow-summary.json`,
-and updates `docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-index.json`, and
-`docs/reports/live-shadow-drift-rollup.json` for reviewer navigation.
+The checked-in bundle/index artifacts live under
+`docs/reports/live-shadow-runs/<run-id>/`, `docs/reports/live-shadow-summary.json`,
+`docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-index.json`, and
+`docs/reports/live-shadow-drift-rollup.json`.
 
 The checked-in bundle summary is also exposed through `GET /debug/status` as
 `live_shadow_mirror_scorecard` and through `GET /v2/control-center` as

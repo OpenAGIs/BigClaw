@@ -26,37 +26,25 @@
 - capacity certification matrix
 - migration readiness comparison
 
-## Local matrix helper
+## Local matrix evidence
 
-```bash
-cd bigclaw-go
-python3 scripts/benchmark/run_matrix.py \
-  --scenario 50:8 \
-  --scenario 100:12 \
-  --report-path docs/reports/benchmark-matrix-report.json
-```
+Use the checked-in benchmark matrix in `docs/reports/benchmark-matrix-report.json`
+for the canonical `50:8` and `100:12` local burst evidence. The retained
+`scripts/benchmark/run_suite.sh` wrapper still refreshes the Go microbenchmark
+report in `docs/reports/benchmark-report.md`.
 
 
-## Long-duration soak helper
+## Long-duration soak evidence
 
-```bash
-cd bigclaw-go
-python3 scripts/benchmark/soak_local.py \
-  --autostart \
-  --count 2000 \
-  --workers 24 \
-  --timeout-seconds 480 \
-  --report-path docs/reports/soak-local-2000x24.json
-```
+Use the checked-in soak evidence in `docs/reports/soak-local-1000x24.json` and
+`docs/reports/soak-local-2000x24.json` for the current sustained local envelope.
 
-## Capacity certification helper
+## Capacity certification evidence
 
-```bash
-cd bigclaw-go
-python3 scripts/benchmark/capacity_certification.py \
-  --output docs/reports/capacity-certification-matrix.json \
-  --markdown-output docs/reports/capacity-certification-report.md
-```
+Use `docs/reports/capacity-certification-matrix.json` and
+`docs/reports/capacity-certification-report.md` as the canonical checked-in
+certification surface for the current benchmark, soak, and mixed-workload
+evidence bundle.
 
 This helper converts the checked-in benchmark, soak, and mixed-workload artifacts into
 an explicit certification matrix with pass/fail thresholds, saturation notes, and

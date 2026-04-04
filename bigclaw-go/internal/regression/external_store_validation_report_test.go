@@ -120,7 +120,7 @@ func TestExternalStoreValidationReportStaysAligned(t *testing.T) {
 	}{
 		{
 			path: "docs/e2e-validation.md",
-			substrings: []string{"external_store_validation.py", "external-store-validation-report.json", "backend_matrix", "not_configured", "contract_only"},
+			substrings: []string{"external-store-validation-report.json", "backend_matrix", "not_configured", "contract_only"},
 		},
 		{
 			path: "docs/reports/replay-retention-semantics-report.md",
