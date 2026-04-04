@@ -85,9 +85,12 @@ ok  	bigclaw-go/internal/regression	0.439s
 ## Git
 
 - Branch: `main`
-- Commit: `aaa3870d` (`BIG-GO-1248: add zero-python heartbeat artifacts`)
+- Code commit: `aaa3870d` (`BIG-GO-1248: add zero-python heartbeat artifacts`)
+- Final published commit: `2c6b7e26` (`BIG-GO-1248: finalize lane metadata`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1248'`
-- Push result: `git push origin HEAD:main` -> success (`8a7cc025..aaa3870d  HEAD -> main`)
+- Push results:
+  - `git push origin HEAD:main` -> success (`8a7cc025..aaa3870d  HEAD -> main`)
+  - `git push origin HEAD:main` -> success (`047d113d..2c6b7e26  HEAD -> main`)
 
 ## Residual Risk
 
