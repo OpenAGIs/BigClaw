@@ -90,7 +90,8 @@ ok  	bigclaw-go/internal/regression	0.464s
   - `3294f051` (`BIG-GO-1250: record validation git status`)
   - `aa6c9771` (`BIG-GO-1250: refresh rebased lane metadata`)
   - `8d402899` (`BIG-GO-1250: finalize lane evidence`)
-- Push result: `git fetch origin main && git rebase origin/main && git -c http.version=HTTP/1.1 push origin HEAD:main` -> success (`b75e35a3..8d402899  HEAD -> main`)
+  - `89aaeff8` (`BIG-GO-1250: sync landed commit metadata`)
+- Push result: `git add reports/BIG-GO-1250-status.json reports/BIG-GO-1250-validation.md && git commit -m "BIG-GO-1250: sync landed commit metadata" && git fetch origin main && git rebase origin/main && git -c http.version=HTTP/1.1 push origin HEAD:main` -> success (`8e1d323e..89aaeff8  HEAD -> main`)
 
 ## Residual Risk
 
