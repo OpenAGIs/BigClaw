@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-1217",
-    "latest_commit": "d336e8d9",
+    "latest_commit": "tracked in git history on origin/big-go-1217",
     "push_target": "origin/big-go-1217"
   },
   "artifacts": {
