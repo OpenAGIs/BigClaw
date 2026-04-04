@@ -1,30 +1,24 @@
-# BIG-GO-1187 Workpad
+# BIG-GO-1189 Workpad
 
 ## Plan
-- Verify the live repository baseline for physical Python files, with extra focus on `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- Add a narrow Go regression guard that proves the Go replacement path for legacy Python compile checks sees an empty Python asset inventory.
-- Record lane-specific validation and status artifacts so the remaining Python asset list, Go replacement path, and exact command results are auditable and commit-ready.
-- Run targeted validation, capture exact commands and results, then commit and push the branch.
+- Verify the current repository baseline for physical Python files and capture the lane-specific residual inventory for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- Add a focused Go regression guard for BIG-GO-1189 that preserves the zero-Python baseline across the repository and the priority residual directories.
+- Commit lane-specific validation artifacts documenting the Go replacement path and exact verification commands/results.
+- Run targeted validation, then commit and push the branch with only BIG-GO-1189-scoped changes.
 
 ## Acceptance
-- The repository still contains no physical `.py` files.
-- The priority residual areas for this lane remain free of `.py` files.
-- The Go replacement path `bash scripts/ops/bigclawctl legacy-python compile-check --json` reports an empty file list.
-- Lane-specific regression and validation evidence are committed for the zero-baseline case.
+- The BIG-GO-1189 lane inventory explicitly shows the remaining Python asset count for the repository and the priority directories.
+- The repository remains free of physical `.py` files, with priority directories still at zero.
+- A Go-based regression path and validation record are committed for this lane.
 
 ## Validation
-- `find . -type f -name '*.py' | wc -l`
 - `find . -type f -name '*.py' | sort`
-- `cd bigclaw-go && go test ./internal/regression -run TestBIGGO1187LegacyPythonCompileCheckMatchesZeroPythonBaseline$`
-- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -type f -name '*.py' | sort; else echo "MISSING $dir"; fi; done`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1189(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
 - `git status --short`
 
 ## Validation Results
-- `find . -type f -name '*.py' | wc -l` -> `0`
-- `find . -type f -name '*.py' | sort` -> no output
-- `cd bigclaw-go && go test ./internal/regression -run TestBIGGO1187LegacyPythonCompileCheckMatchesZeroPythonBaseline$` -> `ok  	bigclaw-go/internal/regression	0.453s`
-- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -> `{"files":[],"python":"python3","repo":"/Users/openagi/code/bigclaw-workspaces/BIG-GO-1187","status":"ok"}`
-- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/regression/big_go_1187_zero_python_compilecheck_test.go`, `reports/BIG-GO-1187-status.json`, and `reports/BIG-GO-1187-validation.md` added before commit
-
-## Residual Risk
-- This workspace already starts from a repository-wide `.py` count of `0`, so the lane can only harden and document the zero-Python state rather than drive the count lower.
+- `find . -type f -name '*.py' | sort` -> no output; repository-wide `.py` count remains `0`
+- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -type f -name '*.py' | sort; else echo "MISSING $dir"; fi; done` -> `MISSING src/bigclaw`, `MISSING tests`, and no `.py` output for `scripts` or `bigclaw-go/scripts`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1189(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.494s`
+- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/regression/big_go_1189_zero_python_guard_test.go`, `reports/BIG-GO-1189-status.json`, and `reports/BIG-GO-1189-validation.md` untracked before commit

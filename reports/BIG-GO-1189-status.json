@@ -1,0 +1,58 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1189",
+    "title": "Heartbeat refill lane 1189: remaining Python asset sweep 9/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1189-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1189_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_count": 0,
+    "priority_directories": {
+      "src/bigclaw": {
+        "status": "missing",
+        "py_count": 0
+      },
+      "tests": {
+        "status": "missing",
+        "py_count": 0
+      },
+      "scripts": {
+        "status": "present",
+        "py_count": 0
+      },
+      "bigclaw-go/scripts": {
+        "status": "present",
+        "py_count": 0
+      }
+    }
+  },
+  "go_replacement_paths": [
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/docs/go-cli-script-migration.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -type f -name '*.py' | sort",
+      "for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d \"$dir\" ]; then find \"$dir\" -type f -name '*.py' | sort; else echo \"MISSING $dir\"; fi; done",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1189(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'"
+    ],
+    "results": {
+      "repo_inventory": "",
+      "priority_inventory": "MISSING src/bigclaw\nMISSING tests",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.494s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1189 changes."
+  }
+}
