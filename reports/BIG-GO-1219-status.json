@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "a118905b",
-    "push_target": "origin/main"
+    "latest_commit": "80beee5b",
+    "push_target": "origin/BIG-GO-1219"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1219-validation.md",
