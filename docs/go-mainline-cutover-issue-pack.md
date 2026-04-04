@@ -250,10 +250,10 @@ Historical initial state:
 ### BIG-GOM-306 Repo collaboration and lineage surface migration
 
 Python source:
-- `src/bigclaw/repo_links.py`
+- retired `src/bigclaw/repo_links.py`
 - retired `src/bigclaw/repo_commits.py`
 - retired `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_plane.py`
+- retired `src/bigclaw/repo_plane.py`
 - retired `src/bigclaw/repo_board.py`
 - retired `src/bigclaw/repo_registry.py`
 - retired `src/bigclaw/repo_governance.py`
@@ -457,8 +457,8 @@ Python source:
 - retired `src/bigclaw/repo_commits.py`
 - retired `src/bigclaw/repo_gateway.py`
 - retired `src/bigclaw/repo_governance.py`
-- `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_plane.py`
+- retired `src/bigclaw/repo_links.py`
+- retired `src/bigclaw/repo_plane.py`
 - retired `src/bigclaw/repo_registry.py`
 - retired `src/bigclaw/repo_triage.py`
 - retired `src/bigclaw/issue_archive.py`

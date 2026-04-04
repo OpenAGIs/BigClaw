@@ -50,7 +50,7 @@ Supporting integration:
 ## Validation command baseline
 
 - Incremental:
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_links.py`
+  - repo link assertions are now covered through the remaining observability test slice
   - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_reports.py`
   - `PYTHONPATH=src python3 -m pytest tests/test_operations.py`
 - Full:
