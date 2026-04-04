@@ -119,7 +119,7 @@ def build_report(
         'recommendation': recommendation,
         'evidence_inputs': {
             'scorecard_path': scorecard_path,
-            'generator_script': 'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'generator_script': 'scripts/e2e/validation_bundle_continuation_policy_gate',
         },
         'policy_inputs': {
             'max_latest_age_hours': float(max_latest_age_hours),

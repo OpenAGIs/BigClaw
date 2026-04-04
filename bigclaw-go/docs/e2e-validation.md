@@ -63,7 +63,7 @@ You can then refresh the rolling continuation overlay from the checked-in bundle
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
+python3 scripts/e2e/validation_bundle_continuation_scorecard --pretty
 ```
 
 This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` refreshes the scorecard automatically during closeout.
@@ -72,7 +72,7 @@ You can evaluate the checked-in continuation policy gate as a follow-up:
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
+python3 scripts/e2e/validation_bundle_continuation_policy_gate --pretty
 ```
 
 This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout and now defaults unattended runs to `BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold`, so stale or incomplete evidence exits with code `2`.
@@ -186,7 +186,7 @@ cd bigclaw-go
 export BIGCLAW_QUEUE_BACKEND=sqlite
 export BIGCLAW_QUEUE_SQLITE_PATH=./state/queue.db
 export BIGCLAW_AUDIT_LOG_PATH=./state/audit.jsonl
-python3 scripts/e2e/run_task_smoke.py \
+python3 scripts/e2e/run_task_smoke \
   --autostart \
   --go-root "$PWD" \
   --executor local \
