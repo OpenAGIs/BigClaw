@@ -57,14 +57,22 @@ from .orchestration import (
 )
 from .runtime import (
     ClawWorkerRuntime,
+    LEGACY_PYTHON_WRAPPER_NOTICE,
     SandboxProfile,
     SandboxRouter,
     ToolCallResult,
     ToolPolicy,
     ToolRuntime,
     WorkerExecutionResult,
+    append_missing_flag,
+    build_github_sync_args,
+    build_refill_args,
+    build_workspace_bootstrap_args,
+    build_workspace_validate_args,
+    translate_workspace_validate_args,
 )
 from . import runtime as deprecation
+from . import runtime as legacy_shim
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
@@ -177,6 +185,7 @@ from .operations import (
 )
 
 _sys.modules[__name__ + ".deprecation"] = deprecation
+_sys.modules[__name__ + ".legacy_shim"] = legacy_shim
 from .evaluation import (
     BenchmarkCase,
     BenchmarkComparison,
