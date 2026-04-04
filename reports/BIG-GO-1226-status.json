@@ -5,9 +5,9 @@
     "state": "Done"
   },
   "branch": {
-    "name": "big-go-1226",
+    "name": "main",
     "latest_commit": "see git log --oneline --grep 'BIG-GO-1226'",
-    "push_target": "origin/big-go-1226"
+    "push_target": "origin/main"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1226-validation.md",
@@ -42,8 +42,8 @@
     }
   },
   "blocker": {
-    "type": "delivery-race",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1226 changes, and concurrent heartbeat lanes kept advancing origin/main so this lane was pushed to origin/big-go-1226 instead."
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1226 changes."
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
