@@ -130,7 +130,7 @@ Historical initial state:
 ### BIG-GOM-302 Risk, policy, and approval semantics migration
 
 Python source:
-- `src/bigclaw/risk.py`
+- risk scoring helpers now live in `src/bigclaw/scheduler.py`
 - retired `src/bigclaw/governance.py`
 - retired `src/bigclaw/execution_contract.py`
 - `src/bigclaw/audit_events.py`
@@ -394,7 +394,7 @@ tracker work.
 ### 1. Close risk and policy parity on the Go mainline
 
 Python source:
-- `src/bigclaw/risk.py`
+- risk scoring helpers now live in `src/bigclaw/scheduler.py`
 - the former `src/bigclaw/governance.py` sidecar has now been retired after the Go scope-freeze surface became the maintained path
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of `src/bigclaw/audit_events.py`

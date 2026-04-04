@@ -2,8 +2,7 @@ from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger
-from bigclaw.risk import RiskScorer
-from bigclaw.scheduler import Scheduler
+from bigclaw.scheduler import RiskScorer, Scheduler
 
 
 def test_risk_scorer_keeps_simple_low_risk_work_low() -> None:
