@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "f4c40805d88980d7d5dafcb6f5c87db0aafb247b",
+    "latest_commit": "1e0a6bd4d8307d05657af309e1ed9ae726010c4d",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -38,7 +38,7 @@
     "results": {
       "repo_py_count": "0",
       "priority_dir_inventory": "",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.477s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.839s"
     }
   },
   "blocker": {
