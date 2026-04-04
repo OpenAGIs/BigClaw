@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1239'",
+    "latest_commit": "85734f95 BIG-GO-1239: add zero-python regression guard",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -42,8 +42,8 @@
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1239 changes."
+    "type": "push-network",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1239 changes, and `git push origin HEAD:main` is currently blocked by `LibreSSL SSL_connect: SSL_ERROR_SYSCALL` while connecting to `github.com:443`."
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
