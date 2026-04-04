@@ -86,11 +86,13 @@ ok  	bigclaw-go/internal/regression	0.485s
 
 - Branch: `main`
 - Content commit: `91c91b75` (`BIG-GO-1242: add zero-python regression lane artifacts`)
-- Final published head: `c0130d71` (`BIG-GO-1242: record published lane metadata`)
+- Final published head before tracker reconciliation: `c0130d71` (`BIG-GO-1242: record published lane metadata`)
+- Final published head: `4f64b494` (`BIG-GO-1242: reconcile final lane metadata`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1242'`
 - Push results:
   `git push origin HEAD:main` -> success (`73c7e105..91c91b75  HEAD -> main`)
   `git push origin HEAD:main` -> success (`91c91b75..c0130d71  HEAD -> main`)
+  `git push origin HEAD:main` -> success (`f117a1a1..4f64b494  HEAD -> main`)
 
 ## Residual Risk
 
