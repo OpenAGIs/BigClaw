@@ -71,7 +71,7 @@ ok  	bigclaw-go/internal/regression	1.156s
 
 ## Git
 
-- Commit: `7341e908`
+- Commit: recorded in branch history for `BIG-GO-1183`
 - Push: `origin/main`
 
 ## Residual Risk
