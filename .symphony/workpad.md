@@ -26,6 +26,7 @@
 - Current continuation also removed the redundant root `setup.py` shim after confirming the repo builds cleanly from `pyproject.toml` alone, reducing Python count to `98`.
 - Current continuation also removed the retired Python ops/bootstrap/refill module cluster from `src/bigclaw/` plus their direct tests now that `scripts/ops/bigclawctl` and `bigclaw-go/internal/{bootstrap,githubsync,refill}` own those paths, reducing Python count to `90`.
 - Current continuation also removed the frozen legacy Python runtime entrypoints `src/bigclaw/service.py` and `src/bigclaw/__main__.py` plus their direct tests and compile-check references, reducing Python count to `87`.
+- Current continuation also removed five isolated archival/test-only Python library surfaces from `src/bigclaw/` (`cost_control.py`, `memory.py`, `pilot.py`, `issue_archive.py`, `validation_policy.py`) plus their direct tests and package exports, reducing Python count to `77`.
 - Validation commands:
   - `rg -n "capacity_certification\.py|run_matrix\.py|soak_local\.py|broker_failover_stub_matrix\.py|cross_process_coordination_surface\.py|external_store_validation\.py|mixed_workload_matrix\.py|multi_node_shared_queue\.py|subscriber_takeover_fault_matrix\.py|export_live_shadow_bundle\.py|live_shadow_scorecard\.py|shadow_compare\.py|shadow_matrix\.py" bigclaw-go README.md scripts tests docs` -> no matches
   - `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard bigclaw-go/scripts/e2e/export_validation_bundle bigclaw-go/scripts/e2e/run_task_smoke` -> passed
@@ -44,3 +45,8 @@
   - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [src/bigclaw/legacy_shim.py]`
   - `python3 -m build` -> passed
   - `bash scripts/ops/bigclaw_github_sync status --json` -> `status: ok`, `ahead: 1`, `behind: 0`, `pushed: false`, `synced: false`, `dirty: true`
+  - `find . -name '*.py' | wc -l` -> `77`
+  - `python3 -m pytest tests/test_models.py tests/test_reports.py tests/test_operations.py tests/test_deprecation.py tests/test_legacy_shim.py` -> `64 passed in 0.18s`
+  - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [src/bigclaw/legacy_shim.py]`
+  - `python3 -m build` -> passed
+  - `git diff --check` -> passed
