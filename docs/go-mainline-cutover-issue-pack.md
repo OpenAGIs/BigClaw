@@ -95,8 +95,8 @@ current runnable work.
 
 Python source:
 - `src/bigclaw/models.py`
-- `src/bigclaw/connectors.py`
-- `src/bigclaw/mapping.py`
+- retired `src/bigclaw/connectors.py`
+- retired `src/bigclaw/mapping.py`
 - `src/bigclaw/dsl.py`
 
 Go ownership:
@@ -118,6 +118,7 @@ Current repo progress:
 - `bigclaw-go/internal/risk/assessment.go` and `bigclaw-go/internal/triage/record.go` now own the migrated Python assessment / triage contract surface
 - `bigclaw-go/internal/billing/statement.go` remains the canonical Go billing contract, with parity coverage expanded to preserve Python usage metadata during round trips
 - `/v2/intake/connectors/...`, `/v2/intake/issues/map`, and `/v2/workflows/definitions/render` now expose Go-owned intake / mapping / workflow-definition endpoints for downstream tooling
+- the former Python intake connector and mapping helper files have now been retired after the Go intake surface became the maintained path
 - remaining `models.py` contract structs still need to be folded into the existing Go runtime / orchestration packages instead of copied into one compatibility file
 
 Milestone:
@@ -131,7 +132,7 @@ Historical initial state:
 Python source:
 - `src/bigclaw/risk.py`
 - retired `src/bigclaw/governance.py`
-- `src/bigclaw/execution_contract.py`
+- retired `src/bigclaw/execution_contract.py`
 - `src/bigclaw/audit_events.py`
 
 Go ownership:
@@ -149,7 +150,7 @@ Current repo progress:
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
-- Python source files remain in place as migration references; BigClaw is still not 100% Go
+- Python audit/risk source remains for the still-linked runtime/reporting core, but the former governance and execution-contract sidecars have been retired
 
 Dependencies:
 - depends on `BIG-GOM-301`
@@ -250,10 +251,10 @@ Historical initial state:
 
 Python source:
 - `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_commits.py`
+- retired `src/bigclaw/repo_commits.py`
 - retired `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_board.py`
+- retired `src/bigclaw/repo_board.py`
 - retired `src/bigclaw/repo_registry.py`
 - retired `src/bigclaw/repo_governance.py`
 
@@ -452,8 +453,8 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
+- retired `src/bigclaw/repo_board.py`
+- retired `src/bigclaw/repo_commits.py`
 - retired `src/bigclaw/repo_gateway.py`
 - retired `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_links.py`
@@ -477,7 +478,7 @@ Historical planned state:
 
 Python source:
 - retired `src/bigclaw/console_ia.py`
-- `src/bigclaw/design_system.py`
+- retired `src/bigclaw/design_system.py`
 - retired `src/bigclaw/saved_views.py`
 - retired `src/bigclaw/ui_review.py`
 - historical operator-facing parts formerly carried by `src/bigclaw/service.py`
