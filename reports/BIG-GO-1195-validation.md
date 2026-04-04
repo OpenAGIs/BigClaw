@@ -122,7 +122,7 @@ Result:
 ## Git
 
 - Commit: `recorded in git history for BIG-GO-1195`
-- Push: `origin/main`
+- Push: `origin/BIG-GO-1195`
 
 ## Residual Risk
 

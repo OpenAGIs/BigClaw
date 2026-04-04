@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "recorded in git history for BIG-GO-1195",
-    "push_target": "origin/main"
+    "push_target": "origin/BIG-GO-1195"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1195-validation.md",
