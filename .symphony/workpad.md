@@ -30,7 +30,9 @@
   - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [/Users/openagi/code/bigclaw-workspaces/BIG-GO-1170/src/bigclaw/runtime.py]`
   - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> passed
   - `python3 -m build` -> passed; built sdist and wheel containing only `bigclaw/__init__.py` and `bigclaw/runtime.py`
-  - `ruff check src scripts` -> not run; `ruff` executable is unavailable in this workspace (`zsh:1: command not found: ruff`)
+  - `ruff check src scripts` -> not run via shell entrypoint; `ruff` executable is unavailable in this workspace (`zsh:1: command not found: ruff`)
+  - `python3 -m ruff check src scripts` -> `All checks passed!`
+  - `bash scripts/ops/bigclaw_github_sync status --json` -> `status: ok`, `branch: BIG-GO-1170`, `dirty: false`, `pushed: true`, `synced: true`, `local_sha: 6cbf1d8a60497f69a207ab4236c0258d0997c728`
 
 ## Continuation Results
 - Previous committed state reduced Python files from `138` to `121`.
