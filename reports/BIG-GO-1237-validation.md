@@ -84,9 +84,9 @@ ok  	bigclaw-go/internal/regression	0.796s
 ## Git
 
 - Branch: `main`
-- Commit: `pending`
-- Lane commit details: `pending`
-- Push result: `pending`
+- Commit: `see git log --oneline --grep 'BIG-GO-1237'`
+- Lane commit details: `git log --oneline --grep 'BIG-GO-1237'`
+- Push result: `git push origin HEAD:BIG-GO-1237` -> `new branch created successfully`
 
 ## Residual Risk
 
