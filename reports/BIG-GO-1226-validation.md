@@ -83,13 +83,15 @@ ok  	bigclaw-go/internal/regression	0.506s
 
 ## Git
 
-- Branch: `main`
-- Commit: `tracked in git history after lane commit`
+- Branch: `big-go-1226`
+- Commit: `09be72e7`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1226'`
-- Push result: `pending`
+- Push result: `git push --force-with-lease origin HEAD:refs/heads/big-go-1226` -> `+ 6090b35e...09be72e7 HEAD -> big-go-1226 (forced update)`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1226 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- Concurrent heartbeat lanes kept advancing `origin/main`, so direct pushes to
+  `main` repeatedly failed fast-forward checks during this run.
