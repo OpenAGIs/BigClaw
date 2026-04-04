@@ -68,8 +68,12 @@ ok  	bigclaw-go/internal/regression	0.454s
 
 ## Git
 
-- Commit: `ca6a5128` (`BIG-GO-1208 harden zero-python sweep lane`)
-- Push: `git push origin main` -> `1340ca77..ca6a5128  main -> main`
+- Commits:
+  - `ca6a5128` (`BIG-GO-1208 harden zero-python sweep lane`)
+  - `e9198dec` (`BIG-GO-1208 finalize lane metadata`)
+- Pushes:
+  - `git push origin main` -> `1340ca77..ca6a5128  main -> main`
+  - `git push origin main` -> `ca6a5128..e9198dec  main -> main`
 
 ## Residual Risk
 
