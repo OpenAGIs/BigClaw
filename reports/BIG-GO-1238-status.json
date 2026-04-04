@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "tracked in git history after BIG-GO-1238 final sync",
+    "latest_commit": "30dcd1f1",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -46,6 +46,7 @@
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1238 changes."
   },
   "notes": [
-    "This lane documents the remaining Python asset inventory and hardens the Go-only state with regression coverage."
+    "This lane documents the remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "Landed on origin/main as commit 30dcd1f1 after rebasing through concurrent lane traffic on main."
   ]
 }
