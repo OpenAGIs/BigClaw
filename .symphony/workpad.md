@@ -1,23 +1,26 @@
-# BIG-GO-1185 Workpad
+# BIG-GO-1188 Workpad
 
 ## Plan
-- Verify the live repository baseline for physical Python files, with focused
-  checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- Add a lane-specific Go regression guard that fails if any `.py` asset
-  reappears anywhere in the repository or in the issue's priority directories.
-- Record the explicit remaining Python asset inventory and Go replacement path
-  in lane-specific report artifacts.
-- Run targeted validation, capture exact commands and results, then commit and
-  push the branch.
+- Verify the live repository baseline for physical Python files, with extra focus on `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- Add a narrow Go regression guard that fails if any `.py` file reappears anywhere in the repository or in the lane's priority directories.
+- Record the remaining Python asset inventory, Go replacement paths, and exact validation commands in lane-specific report artifacts.
+- Run targeted validation, capture exact results, then commit and push the branch.
 
 ## Acceptance
-- The lane-specific remaining Python asset list is explicit and auditable.
-- The repository keeps a physical Python file count of `0`, including the
-  priority residual directories for this heartbeat refill lane.
-- The Go replacement path and validation commands are documented in committed
-  artifacts.
+- The remaining Python asset inventory for this lane is explicit and auditable.
+- The repository contains no physical `.py` files, including in `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- A Go regression guard and lane validation artifacts are committed for BIG-GO-1188.
+- Go replacement paths and validation commands are documented for operators.
 
 ## Validation
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1185 -name '*.py' | wc -l`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1185/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1185(RemainingPythonAssetInventoryIsEmpty|PriorityResidualDirectoriesStayPythonFree)$'`
-- `git -C /Users/openagi/code/bigclaw-workspaces/BIG-GO-1185 status --short`
+- `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1188(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
+- `git status --short`
+
+## Validation Results
+- `find . -name '*.py' | wc -l` -> `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1188(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.493s`
+- `git status --short` -> `.symphony/workpad.md` modified and `bigclaw-go/internal/regression/big_go_1188_zero_python_guard_test.go`, `reports/BIG-GO-1188-validation.md`, `reports/BIG-GO-1188-status.json` added before commit
+
+## Residual Risk
+- If the workspace baseline is already at a repository-wide `.py` count of `0`, this lane can only harden and document the zero-Python state rather than reduce the count numerically.
