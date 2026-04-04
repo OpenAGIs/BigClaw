@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "482ca8517f272cb1b8c64c9009d57079bc3ebfbb",
+    "latest_commit": "b3a7e72803820717f5d8ef1d3515515caf72c62b",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -47,6 +47,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Commit metadata and push evidence are recorded in the validation report."
+    "Commit metadata and push evidence are recorded in the validation report.",
+    "The shared .symphony/workpad.md may be overwritten by concurrent heartbeat lanes on main; durable lane evidence lives in this status artifact and the validation report."
   ]
 }
