@@ -85,8 +85,8 @@ ok  	bigclaw-go/internal/regression	0.464s
 ## Git
 
 - Branch: `main`
-- Commit: `pending`
-- Push result: `pending`
+- Commit: `133ecdae` (`BIG-GO-1250: add zero-python regression lane artifacts`)
+- Push result: `git fetch origin main && git rebase origin/main && git push origin HEAD:main` -> failed with `fatal: unable to access 'https://github.com/OpenAGIs/BigClaw.git/': LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443`
 
 ## Residual Risk
 
