@@ -7,8 +7,8 @@
   "branch": {
     "name": "main",
     "latest_commit": "tracked in git history after finalization",
-    "implementation_commit": "050c5d63",
-    "metadata_commit": "16eb7920",
+    "implementation_commit": "e83270e1",
+    "metadata_commit": "abd793d1",
     "push_target": "origin/main"
   },
   "artifacts": {
