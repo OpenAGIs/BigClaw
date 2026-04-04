@@ -1,7 +1,10 @@
+import warnings
 from pathlib import Path
 
+from bigclaw import deprecation, orchestration, queue, workflow
 from bigclaw.models import RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger, TaskRun
+from bigclaw import runtime, scheduler
 from bigclaw.runtime import ClawWorkerRuntime, SandboxRouter, ToolPolicy, ToolRuntime
 from bigclaw.scheduler import Scheduler, SchedulerDecision
 
@@ -95,3 +98,26 @@ def test_scheduler_pauses_execution_when_budget_cannot_cover_docker(tmp_path: Pa
     assert record.tool_results == []
     assert entry["audits"][-1]["action"] == "worker.lifecycle"
     assert entry["audits"][-1]["outcome"] == "paused"
+
+
+def test_warn_legacy_runtime_surface_emits_deprecation_warning():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        message = deprecation.warn_legacy_runtime_surface(
+            "python -m bigclaw",
+            "bash scripts/ops/bigclawctl",
+        )
+
+    assert "frozen for migration-only use" in message
+    assert caught
+    assert issubclass(caught[0].category, DeprecationWarning)
+    assert "bash scripts/ops/bigclawctl" in str(caught[0].message)
+
+
+def test_legacy_runtime_modules_expose_go_mainline_replacements():
+    assert runtime.GO_MAINLINE_REPLACEMENT == "bigclaw-go/internal/worker/runtime.go"
+    assert scheduler.GO_MAINLINE_REPLACEMENT == "bigclaw-go/internal/scheduler/scheduler.go"
+    assert workflow.GO_MAINLINE_REPLACEMENT == "bigclaw-go/internal/workflow/engine.go"
+    assert orchestration.GO_MAINLINE_REPLACEMENT == "bigclaw-go/internal/workflow/orchestration.go"
+    assert queue.GO_MAINLINE_REPLACEMENT == "bigclaw-go/internal/queue/queue.go"
+    assert "sole implementation mainline" in runtime.LEGACY_MAINLINE_STATUS
