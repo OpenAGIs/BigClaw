@@ -13,8 +13,8 @@ priority on `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 
 The checked-out workspace was already at a repository-wide Python file count of
 `0`, so there was no physical `.py` asset left to delete or replace in-branch.
-The delivered work hardens that zero-Python baseline with a Go regression guard
-and lane-specific validation evidence.
+The delivered work hardens that zero-Python baseline with a lane-specific Go
+regression guard and validation evidence.
 
 ## Remaining Python Asset Inventory
 
@@ -34,7 +34,7 @@ and lane-specific validation evidence.
 ## Validation Commands
 
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229 -name '*.py' -type f | wc -l`
-- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/$dir" ]; then find "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/$dir" -name '*.py' -type f; fi; done`
+- `for dir in /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1229(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
 
 ## Validation Results
@@ -53,12 +53,12 @@ Result:
 0
 ```
 
-### Priority directory inventory
+### Priority residual directories
 
 Command:
 
 ```bash
-for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/$dir" ]; then find "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/$dir" -name '*.py' -type f; fi; done
+for dir in /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done
 ```
 
 Result:
@@ -78,14 +78,15 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1229/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.485s
+ok  	bigclaw-go/internal/regression	1.064s
 ```
 
 ## Git
 
-- Branch: `main`
-- Commit: `57cf5284` (`BIG-GO-1229: add zero-python heartbeat guard`)
-- Push: `git push origin main` -> `9806c77b..57cf5284`
+- Lane commit: `57cf5284` (`BIG-GO-1229: add zero-python heartbeat guard`)
+- Metadata commit: `8ced6c07` (`BIG-GO-1229: record final validation metadata`)
+- Final push target: `origin/main`
+- Final tip: `tracked in git history after BIG-GO-1229 final sync`
 
 ## Residual Risk
 

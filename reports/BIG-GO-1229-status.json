@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "57cf5284",
+    "latest_commit": "tracked in git history after BIG-GO-1229 final sync",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -37,8 +37,8 @@
     ],
     "results": {
       "repo_py_count": "0",
-      "priority_dir_inventory": "<empty>",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.485s"
+      "priority_dir_scan": "<empty>",
+      "regression_tests": "ok   bigclaw-go/internal/regression\t1.064s"
     }
   },
   "blocker": {
@@ -47,6 +47,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Lane commit 57cf5284 was pushed to origin/main and recorded in the validation report."
+    "Lane commit 57cf5284 and metadata commit 8ced6c07 were pushed to origin/main before the final sync metadata update."
   ]
 }
