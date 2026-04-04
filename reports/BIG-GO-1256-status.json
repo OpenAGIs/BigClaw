@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "5ac63299",
-    "push_target": "origin/main"
+    "latest_commit": "a0b0ffd0",
+    "push_target": "origin/big-go-1256"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1256-validation.md",
@@ -48,6 +48,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "A fetch-plus-rebase retry was required because concurrent heartbeat lanes advanced origin/main before the first successful publish."
+    "Concurrent heartbeat lanes repeatedly advanced origin/main during publication, so the lane was first published on origin/big-go-1256 and then rebased again for a clean mainline follow-up."
   ]
 }
