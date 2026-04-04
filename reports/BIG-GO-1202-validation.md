@@ -78,12 +78,13 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1202/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.786s
+ok  	bigclaw-go/internal/regression	1.323s
 ```
 
 ## Git
 
-- Implementation commit: `b3644cee`
+- Implementation commit: `4e52280f`
+- Final metadata commit: `a3a7f87d`
 - Push target: `origin/main`
 
 ## Residual Risk

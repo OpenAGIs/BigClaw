@@ -21,7 +21,7 @@
 ## Validation Results
 - `find . -name '*.py' -type f | wc -l` -> `0`
 - `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done` -> `<empty>`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1202(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	1.085s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1202(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	1.323s`
 - `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/regression/big_go_1202_zero_python_guard_test.go`, `reports/BIG-GO-1202-validation.md`, and `reports/BIG-GO-1202-status.json` added before commit`
 
 ## Residual Risk
