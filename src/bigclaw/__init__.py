@@ -1,3 +1,5 @@
+import sys as _sys
+
 from .models import (
     BillingInterval,
     BillingRate,
@@ -62,6 +64,7 @@ from .runtime import (
     ToolRuntime,
     WorkerExecutionResult,
 )
+from . import runtime as deprecation
 from .reports import (
     AutoTriageCenter,
     ConsoleAction,
@@ -172,6 +175,8 @@ from .operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
+
+_sys.modules[__name__ + ".deprecation"] = deprecation
 from .evaluation import (
     BenchmarkCase,
     BenchmarkComparison,

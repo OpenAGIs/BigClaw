@@ -41,6 +41,7 @@
 - Current continuation is folding the standalone control-center, execution-flow, and runtime-matrix test coverage into `tests/test_operations.py`, `tests/test_scheduler.py`, and `tests/test_runtime.py`, removing three more test-only Python files while keeping ownership aligned with the implementation surfaces.
 - Current continuation is folding the standalone legacy-shim compatibility coverage into `tests/test_runtime.py`, removing one more migration-only Python test file while keeping the shim/runtime assertions together.
 - Current continuation is folding the standalone orchestration coverage into `tests/test_workflow.py`, removing one more workflow-adjacent test file while keeping orchestration report and scheduler integration assertions with the owning flow suite.
+- Current continuation is folding the tiny migration-only `src/bigclaw/deprecation.py` surface into `src/bigclaw/runtime.py`, removing one real package Python file while preserving `bigclaw.deprecation` compatibility via a package alias.
 - Current continuation folded the standalone risk test coverage into `tests/test_scheduler.py`, removing `tests/test_risk.py` while keeping the scheduler-owned risk assertions intact.
 - Validation commands:
   - `rg -n "capacity_certification\.py|run_matrix\.py|soak_local\.py|broker_failover_stub_matrix\.py|cross_process_coordination_surface\.py|external_store_validation\.py|mixed_workload_matrix\.py|multi_node_shared_queue\.py|subscriber_takeover_fault_matrix\.py|export_live_shadow_bundle\.py|live_shadow_scorecard\.py|shadow_compare\.py|shadow_matrix\.py" bigclaw-go README.md scripts tests docs` -> no matches
@@ -178,3 +179,9 @@
   - `python3 -m build` -> passed
   - `git diff --check` -> passed
   - `find . -name '*.py' | wc -l` -> `23`
+  - `python3 -m pytest tests/test_runtime.py tests/test_scheduler.py tests/test_workflow.py tests/test_queue.py tests/test_operations.py tests/test_observability.py tests/test_reports.py tests/test_models.py tests/test_evaluation.py` -> `123 passed in 0.13s`
+  - `PYTHONPATH=src python3 - <<'PY' ... import bigclaw.deprecation ... PY` -> `bigclaw.runtime`, callable alias available, guidance string preserved
+  - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [/Users/openagi/code/bigclaw-workspaces/BIG-GO-1170/src/bigclaw/legacy_shim.py]`
+  - `python3 -m build` -> passed
+  - `git diff --check` -> passed
+  - `find . -name '*.py' | wc -l` -> `22`

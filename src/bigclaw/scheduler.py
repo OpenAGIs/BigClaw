@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .observability import (
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
@@ -22,7 +21,7 @@ from .orchestration import (
     PremiumOrchestrationPolicy,
 )
 from .reports import render_task_run_detail_page, render_task_run_report, write_report
-from .runtime import ClawWorkerRuntime, ToolCallResult
+from .runtime import ClawWorkerRuntime, LEGACY_RUNTIME_GUIDANCE, ToolCallResult
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
