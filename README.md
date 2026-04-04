@@ -3,8 +3,8 @@
 BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 `bigclaw-go` is the current implementation mainline for new development. The
-root Python package is retained only for staged migration and legacy surfaces
-that have not been cut over yet.
+root Python package is retained only as a frozen compatibility shim for the
+Go-only mainline.
 
 ## What is included
 
@@ -15,22 +15,7 @@ that have not been cut over yet.
   - `docs/*`: Go control-plane validation and migration evidence
 - `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
-- `src/bigclaw`: legacy Python foundation modules pending staged migration to Go
-  - engineering operations analytics for dashboards, triage, regressions, and weekly reports
-  - `BIG-1606` Policy/Prompt Version Center with workflow/prompt/policy history, diffs, rollback targets, and bundle rendering
-  - unified task model
-  - persistent priority queue
-  - risk/tool based scheduler
-  - worker runtime with sandbox profiles and auditable tool gateway
-  - workflow DSL plus workflow engine with workpad journal, orchestration artifacts/canvas, entitlement-aware policy, and acceptance gate
-  - observability ledger with logs/trace/artifact/audit capture
-  - queue-to-scheduler execution recording with audit reports
-  - auto triage center for failed, pending-approval, and replay-needed runs, with inbox suggestions, similarity evidence, and reviewer feedback tracking
-  - benchmark runner with replay, weighted scoring, and version comparison
-  - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
-  - narrative report studio with section composing plus markdown, HTML, and plain-text export
-  - v2 design-system token/component inventory with release-readiness audit reporting
-- `tests/`: unit tests
+- `src/bigclaw`: frozen Python compatibility shim used only for migration-time wrapper translation and compile checks
 
 ## Go mainline quick start (recommended)
 
@@ -67,8 +52,8 @@ Notes:
 
 ## Legacy Python quick start (migration-only)
 
-> Do not use this path for new mainline development. Use it only when migrating
-> a required legacy surface to Go or validating an existing Python-only path.
+> Do not use this path for new mainline development. Use it only when validating
+> the retained compatibility shim around the Go mainline.
 
 > Do not use system Python directly for editable install. Use a virtualenv.
 
@@ -78,21 +63,14 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
 pip install -e .[dev]
-python -m pytest
+bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python --json
+python -m build
 ```
 
 Or use the legacy bootstrap helper:
 
 ```bash
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
-```
-
-## Legacy Python local test (without editable install)
-
-If your environment has restrictive system-packages permissions, run tests with `PYTHONPATH`:
-
-```bash
-PYTHONPATH=src python3 -m pytest
 ```
 
 ## Go smoke verify
@@ -131,8 +109,7 @@ bash scripts/dev_bootstrap.sh
 Legacy Python migration surface:
 
 ```bash
-ruff check src tests scripts
-python -m pytest
+bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json
 python -m build
 pre-commit run --all-files
 ```
@@ -154,10 +131,8 @@ reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-
 The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
 bootstrap wrappers remain only as compatibility shims during migration.
 
-The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
-`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
-`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The former `python -m bigclaw` and
-`src/bigclaw/service.py` compatibility entrypoints have been retired; use
-`go run ./bigclaw-go/cmd/bigclawd` for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+The retained Python surface is now limited to `src/bigclaw/runtime.py` and its
+package shim, kept only so `scripts/ops/bigclawctl legacy-python compile-check`
+can validate the final migration-time compatibility file. Use
+`go run ./bigclaw-go/cmd/bigclawd` for the active local server path. Active
+runtime development belongs in `bigclaw-go/internal/*`.

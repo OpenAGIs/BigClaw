@@ -1,21 +1,36 @@
 # BIG-GO-1170
 
 ## Plan
-- Materialize the empty BIG-GO-1170 workspace onto the repository mainline so candidate files can be inspected.
-- Measure current Python file count and verify whether any candidate files still exist in this workspace.
-- If real Python files remain in scope, remove or replace them with the existing Go-compatible path used by the current repository.
-- Run targeted validation commands and capture exact commands plus results.
-- Commit scoped changes and push the issue branch.
+- Measure the actual residual Python inventory in this workspace and ignore stale candidate paths that no longer exist here.
+- Collapse the remaining legacy Python surface to the frozen compile-check shim required by `bigclaw-go/internal/legacyshim`.
+- Remove the unused legacy Python package modules and the final Python test aggregate file.
+- Redirect README/bootstrap/CI guidance from Python test execution to Go mainline validation plus `legacy-python compile-check`.
+- Run targeted validation commands, capture exact commands and results, then commit and push the issue branch.
 
 ## Acceptance
-- Cover real Python files that still exist in this workspace and are in scope for this issue.
-- Verify the Go replacement or compatible non-Python path for any removed Python entrypoint.
-- Reduce the actual result of `find . -name '*.py' | wc -l` in this workspace.
+- Cover the 8 real Python files that still exist in this workspace and are in scope for this issue.
+- Verify the retained compatibility path is the Go-owned `bigclaw-go/internal/legacyshim` compile-check plus Go mainline entrypoints under `scripts/ops/bigclawctl`.
+- Reduce the actual result of `find . -name '*.py' | wc -l` in this workspace below `8`.
 
 ## Validation
 - `find . -name '*.py' | wc -l`
-- Repository-specific checks for any touched benchmark/e2e/migration scripts.
+- `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json`
+- `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+- `python3 -m build`
+- `git diff --check`
 - `git status --short`
+
+## Continuation Results
+- Current workspace started this continuation with 8 real Python files: `src/bigclaw/{__init__,models,observability,operations,reports,runtime,scheduler}.py` and `tests/test_reports.py`.
+- Current continuation removed the unused legacy Python library modules and the final Python test aggregate, leaving only the frozen package shim `src/bigclaw/__init__.py` and compile-check target `src/bigclaw/runtime.py`.
+- Current continuation redirected CI/bootstrap/README guidance from Python unit-test execution to the Go mainline plus `scripts/ops/bigclawctl legacy-python compile-check`.
+- Validation commands:
+  - `find . -name '*.py' | sort && printf 'COUNT=' && find . -name '*.py' | wc -l` -> `./src/bigclaw/__init__.py`, `./src/bigclaw/runtime.py`, `COUNT=       2`
+  - `git diff --check` -> passed
+  - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [/Users/openagi/code/bigclaw-workspaces/BIG-GO-1170/src/bigclaw/runtime.py]`
+  - `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl` -> passed
+  - `python3 -m build` -> passed; built sdist and wheel containing only `bigclaw/__init__.py` and `bigclaw/runtime.py`
+  - `ruff check src scripts` -> not run; `ruff` executable is unavailable in this workspace (`zsh:1: command not found: ruff`)
 
 ## Continuation Results
 - Previous committed state reduced Python files from `138` to `121`.

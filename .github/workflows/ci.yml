@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: bigclaw-go/go.mod
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -17,15 +20,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev]
-          pip install pytest-cov
       - name: Lint
-        run: ruff check src tests scripts
+        run: ruff check src scripts
       - name: Test
-        run: pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml
+        run: |
+          cd bigclaw-go
+          go test ./internal/legacyshim ./cmd/bigclawctl
+      - name: Legacy Python compile check
+        run: bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json
       - name: Build package
         run: python -m build
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-xml
-          path: coverage.xml
