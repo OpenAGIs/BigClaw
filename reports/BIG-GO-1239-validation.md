@@ -86,7 +86,7 @@ ok  	bigclaw-go/internal/regression	0.499s
 - Branch: `main`
 - Commit: `see git log --oneline --grep 'BIG-GO-1239'`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1239'`
-- Push result: `pending final push after rebase onto latest origin/main`
+- Push result: `git push origin HEAD:main` -> `cac1f361..17f4c996  HEAD -> main`
 
 ## Residual Risk
 
