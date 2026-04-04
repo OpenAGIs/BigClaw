@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "recorded in git history for BIG-GO-1190",
-    "push_target": "origin/main"
+    "latest_commit": "fff4d8ced4555d35f31b4d649be117f58dbeead0",
+    "push_target": "origin/BIG-GO-1190"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1190-validation.md",
@@ -27,8 +27,8 @@
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1190 changes."
+    "type": "moving-remote-mainline",
+    "summary": "The repository-wide physical Python file count was already zero before BIG-GO-1190 changes, and origin/main advanced during unattended execution, so the validated commit was pushed to origin/BIG-GO-1190."
   },
   "notes": [
     "This lane hardens and documents an already-complete zero-Python worktree rather than deleting additional in-branch .py files.",

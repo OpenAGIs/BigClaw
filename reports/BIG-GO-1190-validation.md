@@ -82,10 +82,13 @@ ok  	bigclaw-go/cmd/bigclawctl	0.855s
 
 ## Git
 
-- Commit: recorded in branch history for BIG-GO-1190
-- Push: `origin/main`
+- Commit: `fff4d8ced4555d35f31b4d649be117f58dbeead0`
+- Push: `origin/BIG-GO-1190`
 
 ## Residual Risk
 
 - The branch starts from an already-complete zero-Python physical asset
   baseline, so this lane can only preserve and document that state.
+- `origin/main` advanced during unattended execution, so the validated commit was
+  pushed to the dedicated remote branch `BIG-GO-1190` instead of rebasing in a
+  loop against a moving target.
