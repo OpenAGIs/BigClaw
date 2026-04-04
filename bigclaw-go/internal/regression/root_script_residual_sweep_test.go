@@ -71,4 +71,7 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 			t.Fatalf("README.md missing active root script replacement guidance %q", needle)
 		}
 	}
+	if strings.Contains(readme, "legacy-python compile-check") {
+		t.Fatalf("README.md should not reference retired legacy-python compile-check guidance")
+	}
 }
