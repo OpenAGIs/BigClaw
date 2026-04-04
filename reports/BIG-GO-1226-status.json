@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-1226",
-    "latest_commit": "c689ca00",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1226'",
     "push_target": "origin/big-go-1226"
   },
   "artifacts": {

@@ -84,9 +84,9 @@ ok  	bigclaw-go/internal/regression	0.506s
 ## Git
 
 - Branch: `big-go-1226`
-- Commit: `c689ca00`
+- Commit: `see git log --oneline --grep 'BIG-GO-1226'`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1226'`
-- Push result: `git push --force-with-lease origin HEAD:refs/heads/big-go-1226` -> `09be72e7..c689ca00 HEAD -> big-go-1226`
+- Push result: `git push --force-with-lease origin HEAD:refs/heads/big-go-1226` -> `remote branch updated successfully`
 
 ## Residual Risk
 
