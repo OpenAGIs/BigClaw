@@ -39,6 +39,7 @@
 - Current continuation folded the standalone risk test coverage into `tests/test_scheduler.py`, removing `tests/test_risk.py` while keeping the scheduler-owned risk assertions intact.
 - Current continuation folded the standalone audit-event test coverage into `tests/test_observability.py`, removing `tests/test_audit_events.py` while keeping the observability-owned audit assertions intact.
 - Current continuation is folding the standalone control-center, execution-flow, and runtime-matrix test coverage into `tests/test_operations.py`, `tests/test_scheduler.py`, and `tests/test_runtime.py`, removing three more test-only Python files while keeping ownership aligned with the implementation surfaces.
+- Current continuation is folding the standalone legacy-shim compatibility coverage into `tests/test_runtime.py`, removing one more migration-only Python test file while keeping the shim/runtime assertions together.
 - Current continuation folded the standalone risk test coverage into `tests/test_scheduler.py`, removing `tests/test_risk.py` while keeping the scheduler-owned risk assertions intact.
 - Validation commands:
   - `rg -n "capacity_certification\.py|run_matrix\.py|soak_local\.py|broker_failover_stub_matrix\.py|cross_process_coordination_surface\.py|external_store_validation\.py|mixed_workload_matrix\.py|multi_node_shared_queue\.py|subscriber_takeover_fault_matrix\.py|export_live_shadow_bundle\.py|live_shadow_scorecard\.py|shadow_compare\.py|shadow_matrix\.py" bigclaw-go README.md scripts tests docs` -> no matches
@@ -166,3 +167,8 @@
   - `env -u HTTPS_PROXY -u HTTP_PROXY git -c http.version=HTTP/1.1 push --porcelain origin BIG-GO-1170` -> pushed `90532d1..b835e0a`
   - `git ls-remote origin BIG-GO-1170` -> `b835e0acd1267cc8366d6a4274e251489b7a9bb9 refs/heads/BIG-GO-1170`
   - `bash scripts/ops/bigclaw_github_sync status --json` -> `status: ok`, `branch: BIG-GO-1170`, `pushed: true`, `synced: true`, `dirty: false`
+  - `python3 -m pytest tests/test_runtime.py tests/test_scheduler.py tests/test_operations.py tests/test_queue.py tests/test_workflow.py tests/test_observability.py tests/test_reports.py tests/test_orchestration.py` -> `112 passed in 0.13s`
+  - `bash scripts/ops/bigclawctl legacy-python compile-check --repo . --python python3 --json` -> `status: ok`, `files: [/Users/openagi/code/bigclaw-workspaces/BIG-GO-1170/src/bigclaw/legacy_shim.py]`
+  - `python3 -m build` -> passed
+  - `git diff --check` -> passed
+  - `find . -name '*.py' | wc -l` -> `24`
