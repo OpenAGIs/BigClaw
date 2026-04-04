@@ -223,7 +223,7 @@ Historical initial state:
 
 Python source:
 - retired `src/bigclaw/repo_triage.py`
-- `src/bigclaw/run_detail.py`
+- run-detail helpers now live in `src/bigclaw/reports.py`
 - retired `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
 - retired `src/bigclaw/saved_views.py`
@@ -434,7 +434,7 @@ Python source:
 - `src/bigclaw/reports.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
-- `src/bigclaw/run_detail.py`
+- run-detail helpers now live in `src/bigclaw/reports.py`
 - retired `src/bigclaw/dashboard_run_contract.py`
 - retired `src/bigclaw/planning.py`
 

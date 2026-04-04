@@ -13,7 +13,7 @@
   - Monitoring state: request/error counters + recent requests
 - Added `src/bigclaw/__main__.py`
   - CLI entry: `python -m bigclaw serve --host --port --dir`
-- Updated `src/bigclaw/run_detail.py`
+- Updated run-detail rendering helpers now housed in `src/bigclaw/reports.py`
   - Timeline payload now uses precomputed `timeline_json` with safe script-breakout escaping
 - Added tests
   - `tests/test_service.py`

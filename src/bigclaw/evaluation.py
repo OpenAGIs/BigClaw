@@ -5,17 +5,17 @@ from typing import List, Optional
 
 from .models import Task
 from .observability import ObservabilityLedger
-from .run_detail import (
+from .reports import (
     RunDetailEvent,
     RunDetailResource,
     RunDetailStat,
     RunDetailTab,
     render_resource_grid,
-    render_run_detail_console,
     render_timeline_panel,
+    render_run_detail_console,
+    write_report,
 )
 from .scheduler import ExecutionRecord, Scheduler
-from .reports import write_report
 
 
 @dataclass
