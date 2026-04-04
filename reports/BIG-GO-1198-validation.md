@@ -85,7 +85,7 @@ ok  	bigclaw-go/internal/regression	0.453s
 
 ## Git
 
-- Commit: `PENDING`
+- Implementation commit: `6df9e15e` (`BIG-GO-1198 harden zero-python sweep lane`)
 - Push: `git push -u origin BIG-GO-1198` -> `PENDING`
 
 ## Residual Risk

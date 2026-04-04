@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1198",
-    "latest_commit": "PENDING",
+    "implementation_commit": "6df9e15e",
     "push_target": "origin/BIG-GO-1198"
   },
   "artifacts": {
