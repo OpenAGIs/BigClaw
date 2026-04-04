@@ -86,8 +86,13 @@ ok  	bigclaw-go/internal/regression	0.501s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `66fb290d`
-- Commit: `PENDING`
-- Push result: `PENDING`
+- Code commit: `5ac63299` (`BIG-GO-1256: add zero-python heartbeat artifacts`)
+- Push attempts:
+  - `git push origin HEAD:main` -> rejected (`fetch first`)
+  - `git fetch origin && git rebase origin/main` -> conflict on shared `.symphony/workpad.md`, resolved locally, rebase continued
+  - `git push origin HEAD:main` -> rejected (`fetch first`)
+  - `git fetch origin && git rebase origin/main` -> conflict on shared `.symphony/workpad.md`, resolved locally, rebase continued
+  - `git push origin HEAD:main` -> success (`27c72bf2..5ac63299  HEAD -> main`)
 
 ## Residual Risk
 
