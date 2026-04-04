@@ -133,7 +133,7 @@ Python source:
 - risk scoring helpers now live in `src/bigclaw/scheduler.py`
 - retired `src/bigclaw/governance.py`
 - retired `src/bigclaw/execution_contract.py`
-- `src/bigclaw/audit_events.py`
+- audit event helpers now live in `src/bigclaw/observability.py`
 
 Go ownership:
 - `bigclaw-go/internal/risk/risk.go`
@@ -148,9 +148,9 @@ Acceptance focus:
 Current repo progress:
 - `bigclaw-go/internal/governance/freeze.go` now owns the Go scope-freeze backlog board and governance audit surface migrated from `src/bigclaw/governance.py`
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
-- `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
+- `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry mirrored by the remaining Python compatibility surface in `src/bigclaw/observability.py`
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
-- Python audit/risk source remains for the still-linked runtime/reporting core, but the former governance and execution-contract sidecars have been retired
+- Python audit helpers now live in `src/bigclaw/observability.py` for the still-linked runtime/reporting core, and the former governance and execution-contract sidecars have been retired
 
 Dependencies:
 - depends on `BIG-GOM-301`
@@ -397,7 +397,7 @@ Python source:
 - risk scoring helpers now live in `src/bigclaw/scheduler.py`
 - the former `src/bigclaw/governance.py` sidecar has now been retired after the Go scope-freeze surface became the maintained path
 - remaining active consumers of `src/bigclaw/execution_contract.py`
-- remaining active consumers of `src/bigclaw/audit_events.py`
+- audit event helpers now live in `src/bigclaw/observability.py`
 
 Go ownership:
 - `bigclaw-go/internal/risk/risk.go`
