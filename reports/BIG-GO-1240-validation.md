@@ -84,13 +84,16 @@ ok  	bigclaw-go/internal/regression	3.204s
 
 ## Git
 
-- Branch: `main`
-- Commit: `tracked in git history after lane commit`
+- Branch: `symphony/BIG-GO-1240`
+- Commit: `7a1accfe` (`BIG-GO-1240: harden zero-python sweep lane`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1240'`
-- Push result: `pending`
+- Push result: `git push -u origin symphony/BIG-GO-1240` created `origin/symphony/BIG-GO-1240`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1240 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- Concurrent unattended pushes kept advancing `origin/main`, so this lane was
+  published on `origin/symphony/BIG-GO-1240` rather than racing further on the
+  shared mainline ref.
