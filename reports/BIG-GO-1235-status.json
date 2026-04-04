@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "see git log --oneline --grep 'BIG-GO-1235'",
-    "push_target": "origin/BIG-GO-1235"
+    "push_target": "origin/main"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1235-validation.md",
@@ -39,7 +39,7 @@
     "results": {
       "repo_py_count": "0",
       "priority_dir_inventory": "",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.481s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t3.219s"
     }
   },
   "blocker": {
