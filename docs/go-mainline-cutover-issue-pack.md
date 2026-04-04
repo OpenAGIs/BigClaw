@@ -173,6 +173,9 @@ Go ownership:
 - `bigclaw-go/internal/scheduler/scheduler.go`
 - `bigclaw-go/internal/worker/runtime.go`
 - `bigclaw-go/internal/orchestrator/loop.go`
+- `bigclaw-go/internal/workflow/definition.go`
+- `bigclaw-go/internal/workflow/engine.go`
+- `bigclaw-go/internal/workflow/orchestration.go`
 - `bigclaw-go/internal/queue/queue.go`
 - `bigclaw-go/internal/control/controller.go`
 
@@ -329,6 +332,7 @@ Python source:
 Go ownership:
 - `bigclaw-go/cmd/bigclawd/main.go`
 - `bigclaw-go/internal/api/server.go`
+- `bigclaw-go/internal/service/server.go`
 - new `cmd/bigclawctl`
 
 Acceptance focus:
@@ -483,6 +487,7 @@ Go ownership:
 - `bigclaw-go/internal/product/console.go`
 - `bigclaw-go/internal/api/v2.go`
 - `bigclaw-go/internal/api/server.go`
+- `bigclaw-go/internal/uireview/uireview.go`
 - optional new `bigclaw-go/internal/product/views.go`
 
 Historical planned state:
