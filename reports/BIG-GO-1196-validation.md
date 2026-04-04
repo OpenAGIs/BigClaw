@@ -94,8 +94,8 @@ Result:
 
 ## Git
 
-- Commit: pending
-- Push: `origin/main`
+- Commit: `9916aa163e53c3abc1e261a007ea2e2b89ec9a5c`
+- Push: `origin/feat/BIG-GO-1196-zero-python-sweep-6`
 
 ## Residual Risk
 
