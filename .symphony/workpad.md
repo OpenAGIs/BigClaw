@@ -1,26 +1,31 @@
-# BIG-GO-1194 Workpad
+# BIG-GO-1195 Workpad
 
 ## Plan
-- Re-inventory the live workspace for physical Python assets, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- Add a lane-specific Go regression guard that fails if any `.py` file reappears repository-wide or in the priority residual directories.
-- Record the remaining Python asset inventory, Go replacement paths, and exact validation evidence in BIG-GO-1194 report artifacts.
-- Run targeted validation, capture exact command results, then commit and push the lane changes.
+- Re-inventory physical Python files across the repository, with explicit focus on `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- Replace the stale workpad with lane-specific acceptance criteria, Go replacement path, and exact validation commands for BIG-GO-1195.
+- Add a narrow Go regression test that proves the retained Go replacement path still observes an empty Python asset baseline.
+- Record the inventory, validation evidence, and residual blocker in lane-specific report artifacts.
+- Run targeted validation, then commit and push the lane changes.
 
 ## Acceptance
-- The remaining Python asset inventory for BIG-GO-1194 is explicit and auditable.
-- The repository remains free of physical `.py` files, including in `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- A BIG-GO-1194 Go regression guard and lane validation artifacts are committed.
-- Go replacement paths and exact validation commands are documented for operators.
+- The remaining Python asset list for BIG-GO-1195 is explicit and auditable.
+- The repository still contains no physical `.py` files, including in `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- A Go regression guard for BIG-GO-1195 is committed and passes.
+- The Go replacement path and exact validation commands/results are documented in committed artifacts.
+- The lane stays scoped to heartbeat Python-asset sweep evidence and hardening.
 
 ## Validation
-- `find . -name '*.py' | wc -l`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1194(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
-- `git status --short`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195 -type f -name '*.py' | wc -l`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195 -type f -name '*.py' | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195/bigclaw-go && go test ./internal/regression -run TestBIGGO1195LegacyPythonCompileCheckMatchesZeroPythonBaseline$`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195 && bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- `git -C /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195 status --short`
 
 ## Validation Results
-- `find . -name '*.py' | wc -l` -> `0`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1194(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.473s`
-- `git status --short` -> `.symphony/workpad.md` modified; `bigclaw-go/internal/regression/big_go_1194_zero_python_guard_test.go`, `reports/BIG-GO-1194-validation.md`, and `reports/BIG-GO-1194-status.json` added before commit
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195 -type f -name '*.py' | wc -l` -> `0`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195 -type f -name '*.py' | sort` -> `[no output]`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195/bigclaw-go && go test ./internal/regression -run TestBIGGO1195LegacyPythonCompileCheckMatchesZeroPythonBaseline$` -> `ok  	bigclaw-go/internal/regression	0.426s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1195 && bash scripts/ops/bigclawctl legacy-python compile-check --json` -> `{"files":[],"python":"python3","repo":"/Users/openagi/code/bigclaw-workspaces/BIG-GO-1195","status":"ok"}`
 
 ## Residual Risk
-- If the workspace baseline is already at a repository-wide `.py` count of `0`, this lane can only harden and document the zero-Python state rather than reduce the count numerically.
+- If the repository baseline is already at zero physical Python files, this lane can only harden and document the Go-only state rather than reduce the `.py` count numerically.
