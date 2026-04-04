@@ -6,8 +6,9 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "tracked in git history after finalization",
     "implementation_commit": "050c5d63",
+    "metadata_commit": "16eb7920",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -47,6 +48,7 @@
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1217 changes."
   },
   "notes": [
-    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage."
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "Implementation and metadata commit details are recorded in git history and summarized in the validation report."
   ]
 }
