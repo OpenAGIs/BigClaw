@@ -5,9 +5,9 @@
     "state": "Done"
   },
   "branch": {
-    "name": "main",
-    "latest_commit": "tracked in git history on main after push",
-    "push_target": "origin/main"
+    "name": "big-go-1217",
+    "latest_commit": "222411e2",
+    "push_target": "origin/big-go-1217"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1217-validation.md",
