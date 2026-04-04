@@ -92,11 +92,14 @@ ok  	bigclaw-go/internal/regression	0.494s
 
 ## Git
 
-- Commit: pending
-- Push: pending
+- Commit: `6ef2e92221b69b09639bfd6d5db74b886c650a50`
+- Push: `git push -u origin HEAD:big-go-1189`
 
 ## Blocker
 
 - The live workspace already began at `0` physical Python files, so this lane
   can only harden and document that state rather than reduce the file count
   numerically.
+- A direct push to `origin/main` was rejected twice because `main` advanced
+  concurrently during the unattended lane run, so the lane is pushed to
+  `origin/big-go-1189` instead.
