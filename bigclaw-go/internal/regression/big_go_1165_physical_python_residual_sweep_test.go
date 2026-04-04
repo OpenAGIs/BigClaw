@@ -25,6 +25,10 @@ func TestBIGGO1165CandidatePythonFilesRemainDeleted(t *testing.T) {
 		"bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py",
 		"bigclaw-go/scripts/e2e/run_all_test.py",
 		"bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py",
+		"bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+		"bigclaw-go/scripts/migration/live_shadow_scorecard.py",
+		"bigclaw-go/scripts/migration/shadow_compare.py",
+		"bigclaw-go/scripts/migration/shadow_matrix.py",
 		"scripts/create_issues.py",
 		"scripts/dev_smoke.py",
 	}
@@ -47,6 +51,8 @@ func TestBIGGO1165MigrationPlanDocumentsReplacementPaths(t *testing.T) {
 		"`bigclaw-go/scripts/benchmark/run_matrix.py` -> `cd bigclaw-go && go test -bench . ./internal/queue ./internal/scheduler`",
 		"`bigclaw-go/scripts/e2e/external_store_validation.py` -> `cd bigclaw-go && go test ./internal/regression -run TestExternalStoreValidationReportStaysAligned -count=1`",
 		"`bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` -> `cd bigclaw-go && go test ./internal/regression -run TestCrossProcessCoordinationReadinessDocsStayAligned -count=1`",
+		"`bigclaw-go/scripts/migration/shadow_compare.py` -> checked-in `bigclaw-go/docs/reports/shadow-compare-report.json`",
+		"`bigclaw-go/scripts/migration/export_live_shadow_bundle.py` -> checked-in `bigclaw-go/docs/reports/live-shadow-summary.json` and `bigclaw-go/docs/reports/live-shadow-index.json`",
 		"`138`",
 	}
 	for _, needle := range requiredPlanEntries {

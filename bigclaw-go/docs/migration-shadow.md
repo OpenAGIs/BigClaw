@@ -5,12 +5,7 @@ Use this helper to compare two BigClaw control-plane endpoints with the same tas
 ## Example
 
 ```bash
-cd bigclaw-go
-python3 scripts/migration/shadow_compare.py \
-  --primary http://127.0.0.1:8080 \
-  --shadow http://127.0.0.1:8081 \
-  --task-file ./examples/shadow-task.json \
-  --report-path ./docs/reports/shadow-compare-report.json
+cat bigclaw-go/docs/reports/shadow-compare-report.json
 ```
 
 The helper now reuses one shared `trace_id` across the primary and shadow submissions,
@@ -19,15 +14,7 @@ so the resulting timelines stay easy to correlate in audit/event tooling.
 ## Matrix example
 
 ```bash
-cd bigclaw-go
-python3 scripts/migration/shadow_matrix.py \
-  --primary http://127.0.0.1:8080 \
-  --shadow http://127.0.0.1:8081 \
-  --task-file ./examples/shadow-task.json \
-  --task-file ./examples/shadow-task-budget.json \
-  --task-file ./examples/shadow-task-validation.json \
-  --corpus-manifest ./examples/shadow-corpus-manifest.json \
-  --report-path ./docs/reports/shadow-matrix-report.json
+cat bigclaw-go/docs/reports/shadow-matrix-report.json
 ```
 
 This matrix helper runs multiple shadow comparisons back to back and aggregates the
@@ -41,10 +28,7 @@ surface, generate the repo-native live shadow mirror scorecard:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/live_shadow_scorecard.py \
-  --shadow-compare-report ./docs/reports/shadow-compare-report.json \
-  --shadow-matrix-report ./docs/reports/shadow-matrix-report.json \
-  --output ./docs/reports/live-shadow-mirror-scorecard.json
+go test ./internal/regression -run TestLiveShadowScorecardBundleStaysAligned -count=1
 ```
 
 The scorecard stays offline and repo-native. It summarizes parity drift and evidence
@@ -56,7 +40,7 @@ the parity drift rollup, export the live shadow bundle/index:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/export_live_shadow_bundle.py
+go test ./internal/regression -run TestLiveShadowBundleSummaryAndIndexStayAligned -count=1
 ```
 
 This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into

@@ -6,10 +6,10 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 ## Implemented surfaces
 
-- Shadow comparison for one task via `scripts/migration/shadow_compare.py`
-- Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
-- Repo-native live shadow mirror scorecard via `scripts/migration/live_shadow_scorecard.py`
-- Repo-native live shadow bundle/index via `scripts/migration/export_live_shadow_bundle.py`
+- Shadow comparison for one task via `docs/reports/shadow-compare-report.json`
+- Shadow comparison matrix across multiple task fixtures via `docs/reports/shadow-matrix-report.json`
+- Repo-native live shadow mirror scorecard via `docs/reports/live-shadow-mirror-scorecard.json`
+- Repo-native live shadow bundle/index via `docs/reports/live-shadow-summary.json` and `docs/reports/live-shadow-index.json`
 - An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
 - Shared `trace_id` correlation across primary/shadow runs
 - JSON reports for single-run and matrix outcomes
@@ -18,10 +18,10 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - `docs/migration.md`
 - `docs/migration-shadow.md`
-- `scripts/migration/shadow_compare.py`
-- `scripts/migration/shadow_matrix.py`
-- `scripts/migration/live_shadow_scorecard.py`
-- `scripts/migration/export_live_shadow_bundle.py`
+- `docs/reports/shadow-compare-report.json`
+- `docs/reports/shadow-matrix-report.json`
+- `docs/reports/live-shadow-mirror-scorecard.json`
+- `docs/reports/live-shadow-summary.json`
 - `docs/reports/rollback-trigger-surface.json`
 - `docs/reports/shadow-compare-report.json`
 - `docs/reports/shadow-matrix-report.json`

@@ -17,6 +17,10 @@ surfaces.
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py` -> checked-in `bigclaw-go/docs/reports/mixed-workload-matrix-report.json` plus admission-policy coverage in `bigclaw-go/internal/api/server_test.go`
 - `bigclaw-go/scripts/e2e/external_store_validation.py` -> `cd bigclaw-go && go test ./internal/regression -run TestExternalStoreValidationReportStaysAligned -count=1`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` -> `cd bigclaw-go && go test ./internal/regression -run TestCrossProcessCoordinationReadinessDocsStayAligned -count=1`
+- `bigclaw-go/scripts/migration/shadow_compare.py` -> checked-in `bigclaw-go/docs/reports/shadow-compare-report.json` plus `cd bigclaw-go && go test ./internal/regression -run TestLiveShadowScorecardBundleStaysAligned -count=1`
+- `bigclaw-go/scripts/migration/shadow_matrix.py` -> checked-in `bigclaw-go/docs/reports/shadow-matrix-report.json` plus `cd bigclaw-go && go test ./internal/regression -run TestLiveShadowScorecardBundleStaysAligned -count=1`
+- `bigclaw-go/scripts/migration/live_shadow_scorecard.py` -> checked-in `bigclaw-go/docs/reports/live-shadow-mirror-scorecard.json` plus `cd bigclaw-go && go test ./internal/regression -run TestLiveShadowScorecardBundleStaysAligned -count=1`
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` -> checked-in `bigclaw-go/docs/reports/live-shadow-summary.json` and `bigclaw-go/docs/reports/live-shadow-index.json` plus `cd bigclaw-go && go test ./internal/regression -run TestLiveShadowBundleSummaryAndIndexStayAligned -count=1`
 
 ## Retired Python test/support entrypoints
 
@@ -29,6 +33,10 @@ surfaces.
 
 These were Python-only harnesses for now-repo-native checked-in artifacts and do
 not remain on the active Go mainline.
+
+Additional retired Python-only coverage harnesses in `tests/` are removed when
+they only exercised these frozen generator scripts instead of an active Go
+surface.
 
 ## Validation notes
 
