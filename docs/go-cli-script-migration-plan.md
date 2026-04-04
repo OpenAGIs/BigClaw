@@ -44,6 +44,14 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1180` closes the final Go-only Python removal sweep lane. `find . -name
+'*.py' | wc -l` already returns `0` in the branch baseline for this lane, so the
+acceptance evidence here is committed enforcement rather than another numerical
+decrement. The repo-wide Python-free state is now enforced by regression
+coverage instead of a narrower directory-only sweep, and the final supported
+operator replacements stay on `bigclawctl`, retained shell wrappers, and the
+Go/native automation entrypoints under `bigclaw-go/scripts/`.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
@@ -110,6 +118,7 @@ operator docs and external automation references finish the direct cutover to
 
 ## Validation Commands
 
+- `find . -name '*.py' | wc -l`
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `bash scripts/ops/bigclawctl dev-smoke`

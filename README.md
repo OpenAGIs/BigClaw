@@ -164,3 +164,8 @@ The repo no longer keeps active Python compatibility modules under
 `src/bigclaw`. Active runtime development belongs in
 `bigclaw-go/internal/*`; use `go run ./bigclaw-go/cmd/bigclawd` for the local
 server path.
+
+Final Python asset sweep status:
+
+- `find . -name '*.py' | wc -l` should return `0` from the repository root.
+- Supported replacements remain `bash scripts/ops/bigclawctl ...`, `bash scripts/dev_bootstrap.sh`, and the Go/native `bigclaw-go/scripts/*` entrypoints.
