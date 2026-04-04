@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "PENDING",
+    "latest_commit": "tracked in git history after BIG-GO-1231 final sync",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -47,6 +47,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Lane commit 8d58933e was created before the final metadata sync."
+    "Lane commit abbfbc38 and metadata commit a77cfa55 were created before the final sync update."
   ]
 }
