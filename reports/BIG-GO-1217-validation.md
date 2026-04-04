@@ -84,7 +84,7 @@ ok  	bigclaw-go/internal/regression	0.500s
 ## Git
 
 - Lane commits: `tracked in git history on big-go-1217`
-- Published commit: `222411e2`
+- Published commit: `d336e8d9`
 - Push target: `origin/big-go-1217`
 
 ## Residual Risk
