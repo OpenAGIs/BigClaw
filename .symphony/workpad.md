@@ -19,7 +19,7 @@
 
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
-- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1204(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.897s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1204(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	1.251s`
 - `git status --short` -> clean before final push
 
 ## Residual Risk
