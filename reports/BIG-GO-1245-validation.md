@@ -85,12 +85,15 @@ ok  	bigclaw-go/internal/regression	1.126s
 ## Git
 
 - Branch: `main`
-- Commit: `PENDING`
+- Commit: `30c0b186` (`BIG-GO-1245 harden zero-python sweep lane`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1245'`
-- Push result: `PENDING`
+- Push result: `git push origin HEAD:main` -> `9c8cebf0..30c0b186  HEAD -> main`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1245 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- The shared `.symphony/workpad.md` remains a concurrent heartbeat lane surface
+  on `main`, so the durable BIG-GO-1245 closeout evidence lives in this report,
+  the lane status JSON, and the regression guard.
