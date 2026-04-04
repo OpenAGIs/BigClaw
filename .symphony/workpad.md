@@ -223,6 +223,7 @@
 - Current continuation folded the standalone orchestration surface into `src/bigclaw/reports.py`, removing `src/bigclaw/orchestration.py` while preserving `bigclaw.orchestration` imports via a package alias.
 - Current continuation folded the standalone model serialization coverage into `tests/test_workflow.py`, removing `tests/test_models.py` while keeping the flow/model round-trip assertions in the workflow-owned suite.
 - Current continuation folded the standalone observability coverage into `tests/test_reports.py`, removing `tests/test_observability.py` while keeping ledger/report/detail-page assertions with the reporting surface that renders them.
+- Current continuation folded the standalone runtime/scheduler compatibility coverage into `tests/test_workflow.py`, removing `tests/test_runtime.py` while keeping workflow-owned runtime, scheduler, and legacy-shim assertions in the same execution suite.
 - Validation commands:
   - `python3 -m pytest tests/test_operations.py tests/test_reports.py tests/test_workflow.py tests/test_runtime.py` -> `106 passed in 0.11s`
   - `PYTHONPATH=src python3 - <<'PY' ... import bigclaw.evaluation ... import bigclaw.orchestration ... PY` -> `bigclaw.operations`, `bigclaw.reports`, callable alias available, benchmark/orchestration symbols preserved
@@ -235,3 +236,8 @@
   - `python3 -m build` -> passed
   - `git diff --check` -> passed
   - `find . -name '*.py' | wc -l` -> `12`
+  - `python3 -m pytest tests/test_workflow.py` -> `42 passed in 0.10s`
+  - `python3 -m pytest tests/test_operations.py tests/test_reports.py tests/test_workflow.py` -> `121 passed in 0.16s`
+  - `python3 -m build` -> passed
+  - `git diff --check` -> passed
+  - `find . -name '*.py' | wc -l` -> `11`
