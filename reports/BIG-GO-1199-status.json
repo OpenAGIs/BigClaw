@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1199",
     "title": "Heartbeat refill lane 1199: remaining Python asset sweep 9/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "4646353b",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -35,8 +35,8 @@
       "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1199(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'"
     ],
     "results": {
-      "repo_py_count": "pending",
-      "regression_tests": "pending"
+      "repo_py_count": "0",
+      "regression_tests": "ok   bigclaw-go/internal/regression  1.133s"
     }
   },
   "blocker": {
