@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "recorded in git history for BIG-GO-1188",
+    "latest_commit": "964071f3",
     "push_target": "origin/main"
   },
   "artifacts": {
