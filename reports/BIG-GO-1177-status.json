@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1177",
     "title": "Go-only sweep lane 1177: remove remaining Python assets batch 7/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "symphony/BIG-GO-1177",
-    "latest_commit": "PENDING",
+    "latest_commit": "56b446ca87b7b169db0facbe98d163f9f98fb982",
     "push_target": "origin/symphony/BIG-GO-1177"
   },
   "artifacts": {
