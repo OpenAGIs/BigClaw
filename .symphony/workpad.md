@@ -100,3 +100,6 @@
   - `python3 -m build` -> passed
   - `git diff --check` -> passed
   - `find . -name '*.py' | wc -l` -> `34`
+  - `env -u HTTPS_PROXY -u HTTP_PROXY GIT_CURL_VERBOSE=1 git -c http.version=HTTP/1.1 push --porcelain origin BIG-GO-1170` -> pushed `6574d60..ffa258d`
+  - `git ls-remote origin BIG-GO-1170` -> `ffa258d634f875f21eee13cdeab456b9f5e79086 refs/heads/BIG-GO-1170`
+  - `bash scripts/ops/bigclaw_github_sync status --json` -> `status: ok`, `branch: BIG-GO-1170`, `pushed: true`, `synced: true`, `dirty: false`
