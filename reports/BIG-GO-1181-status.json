@@ -1,0 +1,53 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1181",
+    "title": "Heartbeat refill lane 1181: remaining Python asset sweep 1/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "feat/BIG-GO-1181-python-asset-sweep-1",
+    "latest_commit": "pending",
+    "push_target": "pending"
+  },
+  "inventory": {
+    "repo": [],
+    "src/bigclaw": [],
+    "tests": [],
+    "scripts": [],
+    "bigclaw-go/scripts": []
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1181-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1181_remaining_python_sweep_test.go"
+  },
+  "go_replacements": [
+    "bash scripts/ops/bigclawctl refill ...",
+    "bash scripts/ops/bigclawctl github-sync ...",
+    "bash scripts/ops/bigclawctl workspace bootstrap ...",
+    "bash scripts/ops/bigclawctl workspace validate ...",
+    "bash scripts/ops/bigclawctl create-issues ...",
+    "bash scripts/ops/bigclawctl dev-smoke",
+    "go run ./bigclaw-go/cmd/bigclawctl automation e2e ...",
+    "go run ./bigclaw-go/cmd/bigclawctl automation benchmark ...",
+    "go run ./bigclaw-go/cmd/bigclawctl automation migration ...",
+    "bash scripts/ops/bigclawctl legacy-python compile-check --json"
+  ],
+  "validation": {
+    "commands": [
+      "find . -type f -name '*.py' | wc -l",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO1181(RemainingPythonInventoryIsEmpty|GoReplacementEntrypointsStayDocumented)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.487s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1181 changes."
+  },
+  "notes": [
+    "This lane records and hardens an already-completed Python asset sweep rather than performing a fresh in-branch .py deletion."
+  ]
+}
