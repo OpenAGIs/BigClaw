@@ -1,28 +1,25 @@
-# BIG-GO-1217 Workpad
+# BIG-GO-1230
 
 ## Plan
-- Confirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- Add a lane-specific Go regression guard that keeps the repository and priority residual directories Python-free for BIG-GO-1217.
-- Record the lane inventory, Go replacement paths, and exact validation commands in BIG-GO-1217 report artifacts.
-- Run targeted validation, capture exact command results, then commit and push to `origin/main`.
+- Inventory remaining Python assets with focus on src/bigclaw, tests, scripts, and bigclaw-go/scripts.
+- Remove or shrink a bounded set of residual Python files in this lane, preferring deletion or thin non-behavioral shims pointing to Go replacements.
+- Run targeted validation for changed paths, record exact commands and results, then commit and push.
 
 ## Acceptance
-- The remaining Python asset inventory for BIG-GO-1217 is explicit and auditable.
-- The repository contains no physical `.py` files, including in `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- A Go regression guard and lane validation artifacts are committed for BIG-GO-1217.
-- Go replacement paths and exact validation commands are documented.
+- Remaining Python asset list for this lane is explicit.
+- A batch of physical Python files is deleted, replaced, or shrunk to thin shells.
+- Go replacement paths and validation commands are documented.
+- The lane preserves a repository-wide Python file count of `0` and prevents reintroduction.
 
 ## Validation
-- `find . -name '*.py' -type f | wc -l`
-- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1217(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'`
-- `git status --short`
+- Use repository inventory commands before and after changes to confirm Python file count delta.
+- Run targeted tests or smoke checks that exercise the changed replacement paths.
+- Record exact commands and outcomes in final report.
 
 ## Validation Results
-- `find . -name '*.py' -type f | wc -l` -> `0`
-- `for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d "$dir" ]; then find "$dir" -name '*.py' -type f; fi; done` -> `<empty>`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1217(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree)$'` -> `ok  	bigclaw-go/internal/regression	0.500s`
-- `git status --short` -> `M .symphony/workpad.md`; `?? bigclaw-go/internal/regression/big_go_1217_zero_python_guard_test.go`; `?? reports/BIG-GO-1217-status.json`; `?? reports/BIG-GO-1217-validation.md`
+- `find . -type f -name '*.py' | sort` -> `<empty>`
+- `git ls-files '*.py'` -> `<empty>`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO(1220|1230)|TestPythonTestTranche17Removed'` -> `ok  	bigclaw-go/internal/regression	0.470s`
 
-## Residual Risk
-- The live workspace baseline is already at a repository-wide Python file count of `0`, so BIG-GO-1217 can only harden and document the Go-only state rather than reduce the count numerically.
+## Notes
+- The branch baseline already had zero physical `.py` files, so `BIG-GO-1230` is a zero-inventory sweep lane: it hardens the Go replacement paths and records the empty residual asset list rather than deleting additional Python files.

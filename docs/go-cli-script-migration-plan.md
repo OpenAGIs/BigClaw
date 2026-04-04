@@ -99,14 +99,17 @@ operator docs and external automation references finish the direct cutover to
 
 ## Remaining Backlog
 
-- Continue shrinking `scripts/dev_bootstrap.sh` so it stays a validation-only shell helper and
-  does not reintroduce Python environment management at the repository root.
-- Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
-  path for production/operator use.
-- Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
-  first automation batch. The remaining backlog is tracked in
-  `bigclaw-go/docs/go-cli-script-migration.md`.
-- Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
+As of `2026-04-05`, the worktree contains zero tracked `.py` files. The remaining work is
+limited to keeping the repo Python-free and tightening the Go-owned operator paths:
+
+- Keep `scripts/dev_bootstrap.sh` as a validation-only shell helper so the repo root does not
+  reintroduce Python environment management.
+- Collapse `scripts/ops/bigclawctl` from a `go run` wrapper into a compiled release binary path
+  for production/operator use.
+- Keep `bigclaw-go/internal/regression/*zero_python*` and lane guard tests current so Python
+  assets do not re-enter through `src/bigclaw`, `tests`, `scripts`, or `bigclaw-go/scripts`.
+- Update repo docs that still describe Python entrypoints as active implementation paths instead
+  of historical migration evidence.
 
 ## Validation Commands
 
