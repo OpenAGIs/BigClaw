@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "tracked in git history",
+    "latest_commit": "c505b840",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -47,6 +47,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Lane commit details are recorded in git history and summarized in the validation report."
+    "Lane commit c505b840 was pushed to origin/main and summarized in the validation report."
   ]
 }

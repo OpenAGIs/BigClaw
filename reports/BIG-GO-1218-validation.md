@@ -83,8 +83,8 @@ ok  	bigclaw-go/internal/regression	0.589s
 
 ## Git
 
-- Commit: `tracked in git history after lane commit`
-- Push: `origin/main`
+- Commit: `c505b840` (`BIG-GO-1218: add zero-python heartbeat guard`)
+- Push: `git push origin main` -> `761c42da..c505b840`
 
 ## Residual Risk
 
