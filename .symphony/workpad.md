@@ -19,7 +19,7 @@
 ## Validation Results
 - `find . -name '*.py' | wc -l` -> `0`
 - `cd bigclaw-go && go test ./internal/regression -run 'Test(BIGGO1180RepositoryStaysPythonFree|BIGGO1180MigrationDocsCaptureFinalSweepState|RootScriptResidualSweep|RootScriptResidualSweepDocs)$'` -> `ok  	bigclaw-go/internal/regression	0.418s`
-- `git status --short` -> pending final post-commit check
+- `git status --short` -> clean
 
 ## Residual Risk
 - This workspace already starts from a zero-`.py` baseline, so the lane cannot numerically reduce the Python file count further; acceptance depends on committed regression and documentation evidence that prevents reintroduction.
