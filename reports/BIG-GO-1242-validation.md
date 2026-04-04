@@ -85,9 +85,9 @@ ok  	bigclaw-go/internal/regression	0.831s
 ## Git
 
 - Branch: `main`
-- Commit: `see git log --oneline --grep 'BIG-GO-1242'`
+- Commit: `91c91b75` (`BIG-GO-1242: add zero-python regression lane artifacts`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1242'`
-- Push result: `pending`
+- Push result: `git push origin HEAD:main` -> success (`73c7e105..91c91b75  HEAD -> main`)
 
 ## Residual Risk
 
@@ -97,3 +97,6 @@ ok  	bigclaw-go/internal/regression	0.831s
 - The shared `.symphony/workpad.md` is concurrently updated by adjacent
   heartbeat lanes on `main`, so the durable lane evidence for BIG-GO-1242 lives
   in this validation report and the corresponding status artifact.
+- Concurrent heartbeat pushes advanced `origin/main` during publication, so
+  this lane required a rebase and the shared workpad conflict was resolved in
+  favor of the newer upstream lane state.

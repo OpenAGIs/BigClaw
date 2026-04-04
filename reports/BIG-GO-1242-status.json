@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "91c91b75",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -49,6 +49,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The shared .symphony/workpad.md is concurrently updated by later heartbeat lanes, so the durable BIG-GO-1242 evidence is recorded in the lane report artifacts.",
-    "The lane should land on origin/main after any required fetch-plus-rebase reconciliation against concurrent heartbeat pushes."
+    "The lane landed on origin/main after a fetch-plus-rebase reconciliation against concurrent heartbeat pushes.",
+    "The shared workpad conflict during rebase was resolved in favor of the newer upstream lane state; BIG-GO-1242 evidence remains in the lane-specific regression and report artifacts."
   ]
 }
