@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "tracked in git history after BIG-GO-1231 final sync",
-    "push_target": "origin/big-go-1231"
+    "push_target": "origin/main"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1231-validation.md",
@@ -38,15 +38,15 @@
     "results": {
       "repo_py_count": "0",
       "priority_dir_scan": "<empty>",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.495s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.808s"
     }
   },
   "blocker": {
-    "type": "mainline-contention",
-    "summary": "The repository-wide physical Python file count was already zero before BIG-GO-1231 changes, and repeated fast-forward contention on origin/main required pushing the lane to origin/big-go-1231."
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1231 changes."
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Lane commit 7790b8f4 and metadata commit 6fe091ef were created before the final sync update."
+    "Lane commit ade0a5e0, metadata commit 7e452262, and sync commits were rebased onto the latest origin/main before final delivery."
   ]
 }

@@ -78,13 +78,13 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1231/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.495s
+ok  	bigclaw-go/internal/regression	0.808s
 ```
 
 ## Git
 
-- Lane commit: `7790b8f4` (`BIG-GO-1231: add zero-python heartbeat guard`)
-- Final push target: `origin/big-go-1231`
+- Lane commit: `ade0a5e0` (`BIG-GO-1231: add zero-python heartbeat guard`)
+- Final push target: `origin/main`
 - Final tip: `tracked in git history after BIG-GO-1231 final sync`
 
 ## Residual Risk
@@ -92,6 +92,3 @@ ok  	bigclaw-go/internal/regression	0.495s
 - The live branch baseline was already Python-free, so BIG-GO-1231 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
-- `origin/main` advanced repeatedly during unattended execution, so the final
-  lane delivery was pushed to `origin/big-go-1231` instead of rebasing
-  indefinitely on a moving mainline.
