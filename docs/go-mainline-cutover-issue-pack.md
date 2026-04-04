@@ -221,9 +221,9 @@ Historical initial state:
 ### BIG-GOM-305 Control center, triage, and operations view migration
 
 Python source:
-- `src/bigclaw/repo_triage.py`
+- retired `src/bigclaw/repo_triage.py`
 - `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
+- retired `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/operations.py`
 - `src/bigclaw/saved_views.py`
 
@@ -251,11 +251,11 @@ Historical initial state:
 Python source:
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
+- retired `src/bigclaw/repo_gateway.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_governance.py`
+- retired `src/bigclaw/repo_registry.py`
+- retired `src/bigclaw/repo_governance.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/v2.go`
@@ -434,7 +434,7 @@ Python source:
 - `src/bigclaw/operations.py`
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
+- retired `src/bigclaw/dashboard_run_contract.py`
 - `src/bigclaw/planning.py`
 
 Go ownership:
@@ -454,14 +454,14 @@ Python source:
 - `src/bigclaw/collaboration.py`
 - `src/bigclaw/repo_board.py`
 - `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_governance.py`
+- retired `src/bigclaw/repo_gateway.py`
+- retired `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_triage.py`
+- retired `src/bigclaw/repo_registry.py`
+- retired `src/bigclaw/repo_triage.py`
 - retired `src/bigclaw/issue_archive.py`
-- `src/bigclaw/roadmap.py`
+- retired `src/bigclaw/roadmap.py`
 
 Go ownership:
 - `bigclaw-go/internal/flow/flow.go`
