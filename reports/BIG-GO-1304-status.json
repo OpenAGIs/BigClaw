@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1304",
-    "latest_commit": "pending validation refresh commit on BIG-GO-1304",
+    "latest_commit": "dc4b60a7 BIG-GO-1304: refresh validation metadata",
     "push_target": "origin/BIG-GO-1304"
   },
   "artifacts": {
