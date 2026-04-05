@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.409s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.830s"
     }
   },
   "blocker": {
@@ -52,6 +52,6 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before the lane commits was `638cdc5f`.",
-    "Code-bearing lane commit: `0fc58981` (`BIG-GO-1289: add zero-python heartbeat artifacts`)."
+    "Code-bearing lane commit: `18c9e72e` (`BIG-GO-1289: add zero-python heartbeat artifacts`)."
   ]
 }
