@@ -2,12 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-1399",
     "title": "Heartbeat refill lane 1399: remaining Python asset sweep 9/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
-    "push_target": "origin/main"
+    "latest_commit": "3ce11e38",
+    "push_target": "origin/big-go-1399"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1399-validation.md",
@@ -43,7 +43,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.595s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.690s"
     }
   },
   "blocker": {
@@ -55,6 +55,9 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `c8e9d79c`.",
     "The first direct push was rejected after `origin/main` advanced to `3db3516b`.",
-    "Rebasing the lane onto `origin/main` produced local tip `5645d197`, which passed the targeted regression guard in `0.595s`."
+    "Rebasing the lane onto `origin/main` produced local tip `5645d197`, which passed the targeted regression guard in `0.595s`.",
+    "A second direct push to `origin/main` was rejected after `origin/main` advanced to `5c545938`.",
+    "A second rebase replayed the two lane commits onto `origin/main`, producing published tip `3ce11e38`.",
+    "The final validated lane state was published on `origin/big-go-1399`."
   ]
 }
