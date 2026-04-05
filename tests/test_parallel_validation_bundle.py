@@ -1,6 +1,5 @@
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -76,11 +75,12 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     ]:
         path.write_text(content, encoding='utf-8')
 
-    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'e2e' / 'export_validation_bundle.py'
+    repo = Path(__file__).resolve().parents[1] / 'bigclaw-go'
     result = subprocess.run(
         [
-            sys.executable,
-            str(script),
+            'go',
+            'run',
+            './scripts/e2e/export_validation_bundle',
             '--go-root', str(root),
             '--run-id', '20260315T120000Z',
             '--bundle-dir', 'docs/reports/live-validation-runs/20260315T120000Z',
@@ -104,6 +104,7 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
         check=False,
         capture_output=True,
         text=True,
+        cwd=repo,
     )
 
     assert result.returncode == 0, result.stderr
