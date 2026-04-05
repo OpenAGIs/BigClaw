@@ -1,6 +1,6 @@
 # BIG-GO-1377 Validation
 
-Date: 2026-04-05
+Date: 2026-04-06
 
 ## Scope
 
@@ -82,7 +82,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1377/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.250s
+ok  	bigclaw-go/internal/regression	0.168s
 ```
 
 ## Git
@@ -90,7 +90,7 @@ ok  	bigclaw-go/internal/regression	0.250s
 - Branch: `main`
 - Baseline HEAD before lane commit: `f6faec68`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1377'`
-- Final pushed lane commit: `4c2f356e` pending push
+- Final pushed lane commit: `eec41977`
 - Push target: `origin/main`
 
 ## Residual Risk
@@ -101,3 +101,5 @@ ok  	bigclaw-go/internal/regression	0.250s
 - The first push attempt was rejected because `origin/main` advanced during the
   lane; the branch was rebased cleanly and the targeted regression guard was
   re-run on the rebased tree.
+- A second remote advance required one more clean rebase before the final push
+  to `origin/main`.
