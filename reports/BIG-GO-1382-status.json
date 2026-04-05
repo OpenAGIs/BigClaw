@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1382'",
-    "push_target": "origin/main"
+    "latest_commit": "e8117e01",
+    "push_target": "origin/big-go-1382"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1382-validation.md",
@@ -43,7 +43,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.527s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.188s"
     }
   },
   "blocker": {
@@ -55,6 +55,8 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `c5450aef`.",
     "The first push was rejected after `origin/main` advanced to `2b00b910`; the lane was then rebased and revalidated at `cb64af0f`.",
-    "A second remote advance to `ea03f42d` required replaying the lane commits again; the final local rebased tip before push is `e2099121`."
+    "A second remote advance to `ea03f42d` required replaying the lane commits again; the next rebased tip before push was `e2099121`.",
+    "A continuation rebase onto `6fc610a2` produced local tip `e8117e01`, which passed the targeted regression guard in `0.188s`.",
+    "Direct pushes to `origin/main` remain blocked by repeated non-fast-forward races, so the validated lane is being maintained on `origin/big-go-1382`."
   ]
 }
