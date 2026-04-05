@@ -82,7 +82,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1398/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.187s
+ok  	bigclaw-go/internal/regression	1.021s
 ```
 
 ## Git
@@ -90,9 +90,10 @@ ok  	bigclaw-go/internal/regression	0.187s
 - Branch: `main`
 - Baseline HEAD before lane commit: `0d551a17`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1398'`
-- Final pushed lane commit: pending current landing commit
+- Final pushed lane commit: `eb45e9d6`
 - Push target: `origin/main`
 - Landing note: the current lane branch was rebuilt directly from fetched `origin/main` at `0d551a17` and restored only the five `BIG-GO-1398` artifacts from the previously validated lane tip.
+- Rebase note: the single-commit lane was replayed onto fetched `origin/main` at `b5983f87`, producing local lane HEAD `eb45e9d6`.
 
 ## Residual Risk
 

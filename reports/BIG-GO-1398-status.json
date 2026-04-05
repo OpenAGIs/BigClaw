@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending lane commit on top of 0d551a17",
+    "latest_commit": "eb45e9d6",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.021s"
     }
   },
   "blocker": {
@@ -51,7 +51,9 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD for the clean landing branch is `0d551a17`.",
-    "The lane was reconstructed from the previously validated `BIG-GO-1398` artifacts on a clean branch rooted at the latest fetched `origin/main` to avoid cross-lane history churn."
+    "Baseline HEAD for the clean landing branch was `0d551a17`.",
+    "The lane was reconstructed from the previously validated `BIG-GO-1398` artifacts on a clean branch rooted at the latest fetched `origin/main` to avoid cross-lane history churn.",
+    "A first single-commit push from `9c6c8c21` was rejected after `origin/main` advanced to `b5983f87`.",
+    "The single-commit lane was then rebased onto `origin/main` at `b5983f87`, revalidated, and published to `origin/main` at `eb45e9d6`."
   ]
 }
