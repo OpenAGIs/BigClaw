@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-1287",
-    "latest_commit": "7beeac95a051372911d3d81eb091d154725eca74",
+    "latest_commit": "tracked in git history after BIG-GO-1287 final sync",
     "push_target": "origin/big-go-1287"
   },
   "artifacts": {
@@ -56,6 +56,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files."
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Lane commit details are tracked in git history via `git log --oneline --grep 'BIG-GO-1287'`."
   ]
 }
