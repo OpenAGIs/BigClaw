@@ -19,3 +19,16 @@
 - `python3 -m pytest tests/test_legacy_shim.py`
 - `rg --files -g '*.py' | wc -l`
 - `git diff --stat`
+
+## Result
+- Deleted the remaining workspace/bootstrap Python helper and validation surfaces now owned by `bigclaw-go/internal/bootstrap` and `bigclaw-go/cmd/bigclawctl`.
+- Added Go regression coverage for validation report generation so the deleted Python validation path remains covered by the replacement implementation.
+- Reduced tracked `.py` files from `138` to `131`.
+- Documented deleted paths and Go ownership in `docs/reports/big-go-1476-python-surface-reduction.md`.
+
+## Final Validation
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1476/bigclaw-go && go test ./cmd/bigclawctl ./internal/bootstrap` -> passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1476 && python3 -m pytest tests/test_legacy_shim.py` -> `2 passed in 0.16s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1476 && rg --files -g '*.py' | wc -l` -> `131`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1476 && git rev-parse HEAD` -> `5c764463613a66d84b2738837a9bcd7ce96d4a1e`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1476 && git rev-parse origin/BIG-GO-1476` -> `5c764463613a66d84b2738837a9bcd7ce96d4a1e`
