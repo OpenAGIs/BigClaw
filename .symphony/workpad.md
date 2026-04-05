@@ -28,4 +28,4 @@
 
 - 2026-04-05: Confirmed the previous lane artifacts in this workspace were still scoped to `BIG-GO-1302`; `BIG-GO-1320` requires its own workpad, report, regression guard, and validation evidence.
 - 2026-04-05: Repository-wide physical Python inventory is already `0`, including the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- 2026-04-05: Re-ran the lane validation commands; both Python inventory sweeps returned no output and `go test -count=1 ./internal/regression -run 'TestBIGGO1320(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` passed in `0.837s`.
+- 2026-04-05: Re-ran the lane validation commands after rebasing onto the latest `origin/main`; both Python inventory sweeps returned no output and `go test -count=1 ./internal/regression -run 'TestBIGGO1320(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` passed in `1.175s`.
