@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending BIG-GO-1322 lane commit",
-    "push_target": "origin/main"
+    "latest_commit": "04ac4e2d BIG-GO-1322 sync post-rebase validation",
+    "push_target": "origin/BIG-GO-1322"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1322-validation.md",

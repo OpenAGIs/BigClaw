@@ -87,12 +87,17 @@ ok  	bigclaw-go/internal/regression	1.115s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `aea0831f`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-1322'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1322'`
-- Push target: `origin/main`
+- Lane commit details:
+  - `69516101 BIG-GO-1322 refresh zero-python sweep evidence`
+  - `04ac4e2d BIG-GO-1322 sync post-rebase validation`
+- Final pushed lane commit: `04ac4e2d BIG-GO-1322 sync post-rebase validation`
+- Push target: `origin/BIG-GO-1322`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1322 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- `origin/main` kept advancing during unattended execution, so the lane was
+  pushed to a dedicated remote branch instead of being fast-forwarded directly
+  onto `main`.
