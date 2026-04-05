@@ -39,4 +39,27 @@ func TestTopLevelModulePurgeTranche16(t *testing.T) {
 			t.Fatalf("expected Go replacement file to exist: %s (%v)", relativePath, err)
 		}
 	}
+
+	compatSymlinks := []string{
+		"scripts/ops/bigclaw-issue",
+		"scripts/ops/bigclaw-panel",
+		"scripts/ops/bigclaw-symphony",
+	}
+	for _, relativePath := range compatSymlinks {
+		path := filepath.Join(repoRoot, relativePath)
+		info, err := os.Lstat(path)
+		if err != nil {
+			t.Fatalf("expected compatibility symlink to exist: %s (%v)", relativePath, err)
+		}
+		if info.Mode()&os.ModeSymlink == 0 {
+			t.Fatalf("expected compatibility path to remain a symlink: %s", relativePath)
+		}
+		target, err := os.Readlink(path)
+		if err != nil {
+			t.Fatalf("read compatibility symlink: %s (%v)", relativePath, err)
+		}
+		if target != "bigclawctl" {
+			t.Fatalf("expected %s to target bigclawctl, got %q", relativePath, target)
+		}
+	}
 }
