@@ -91,6 +91,7 @@ ok  	bigclaw-go/internal/regression	0.501s
 - Final rebased mainline commit: `8234877f` (`BIG-GO-1256: refresh publication metadata`)
 - Final metadata sync commit: `b6f695f5` (`BIG-GO-1256: finalize mainline publication metadata`)
 - Final status sync commit: `c1bd7ab7` (`BIG-GO-1256: sync final published commit metadata`)
+- Stable lane delivery commit recorded in the status artifact: `8234877f`
 - Push attempts:
   - `git push origin HEAD:main` -> rejected (`fetch first`)
   - `git fetch origin && git rebase origin/main` -> conflict on shared `.symphony/workpad.md`, resolved locally, rebase continued
