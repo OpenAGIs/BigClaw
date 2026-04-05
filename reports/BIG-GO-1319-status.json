@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "9745a914",
+    "latest_commit": "see `git log --oneline --grep 'BIG-GO-1319'`",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -53,6 +53,6 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `65b83c6b`.",
     "Initial lane commit on `origin/main`: `eef4cedb`.",
-    "Final published metadata commit prepared for push to `origin/main`: `9745a914`."
+    "The rebased final lane commits can be listed with `git log --oneline --grep 'BIG-GO-1319'` before or after push."
   ]
 }
