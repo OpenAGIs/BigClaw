@@ -91,14 +91,14 @@ ok  	bigclaw-go/internal/regression	0.529s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c8e9d79c`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1393'`
-- Final pushed lane commit: `8784c33f`
+- Final pushed lane commit: recorded in Git history via `git log --oneline --grep 'BIG-GO-1393'`
 - Push target: `origin/main`
 - Initial push rejection: remote `main` advanced to `c71fe8ca`
 - Rebasing resolved the expected `.symphony/workpad.md` conflict and replayed the lane to `6bcd7118`
 - Metadata closeout commit `e3c7c7cf` was also rejected on push after `origin/main` advanced to `f2afdaf3`
 - Final rebase replayed the two lane commits to `1f5924d7`
 - Final push succeeded to `origin/main` at `5c545938`
-- Metadata closeout commit `8784c33f` updated the lane artifacts to `Done` and remains the current pushed tip on `origin/main`
+- Metadata closeout commits updated the lane artifacts to `Done`; the current pushed tip should be read from `git rev-parse --short HEAD`
 
 ## Residual Risk
 
