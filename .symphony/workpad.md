@@ -3,7 +3,7 @@
 ## Plan
 
 1. Confirm the remaining physical Python asset inventory for the full repository and the priority residual directories: `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add lane-scoped zero-Python sweep artifacts for `BIG-GO-1309`:
+2. Refresh the lane-scoped zero-Python sweep artifacts for `BIG-GO-1309` so they reflect the current unattended pass:
    - `bigclaw-go/docs/reports/big-go-1309-python-asset-sweep.md`
    - `bigclaw-go/internal/regression/big_go_1309_zero_python_guard_test.go`
    - `reports/BIG-GO-1309-status.json`
@@ -17,6 +17,7 @@
 - Record the Go replacement paths that cover the retired Python surface.
 - Provide exact validation commands and results.
 - Publish the change as a committed and pushed lane update.
+- Keep the refresh scoped to lane-owned files even if unrelated report files are already dirty in the worktree.
 
 ## Validation
 

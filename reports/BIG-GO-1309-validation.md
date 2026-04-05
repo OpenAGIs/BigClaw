@@ -16,6 +16,9 @@ The checked-out workspace was already at a repository-wide Python file count of
 The delivered work hardens that zero-Python baseline with a Go regression guard
 and lane-specific validation evidence.
 
+This refresh reran the lane validation commands against branch `BIG-GO-1309`
+without expanding scope beyond the lane-owned sweep artifacts.
+
 ## Remaining Python Asset Inventory
 
 - Repository-wide physical `.py` files: `none`
@@ -80,7 +83,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1309/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	1.138s
+ok  	bigclaw-go/internal/regression	0.439s
 ```
 
 ## Git
@@ -88,7 +91,8 @@ ok  	bigclaw-go/internal/regression	1.138s
 - Branch: `BIG-GO-1309`
 - Baseline HEAD before lane commit: `389c32cf`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1309'`
-- Final metadata commit: `tracked in git history after BIG-GO-1309 final sync`
+- Refresh parent commit: `1553db49`
+- Final metadata commit: `tracked in git history after BIG-GO-1309 refresh sync`
 - Push target: `origin/BIG-GO-1309`
 
 ## Residual Risk

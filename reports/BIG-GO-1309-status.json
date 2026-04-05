@@ -6,7 +6,8 @@
   },
   "branch": {
     "name": "BIG-GO-1309",
-    "latest_commit": "tracked in git history after BIG-GO-1309 final sync",
+    "latest_commit": "tracked in git history after BIG-GO-1309 refresh sync",
+    "refresh_parent_commit": "1553db49",
     "push_target": "origin/BIG-GO-1309"
   },
   "artifacts": {
@@ -41,7 +42,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.138s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.439s"
     }
   },
   "blocker": {
@@ -51,6 +52,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Lane execution started from repository HEAD `389c32cf` and validated the zero-Python baseline on branch `BIG-GO-1309`."
+    "Lane execution started from repository HEAD `389c32cf` and validated the zero-Python baseline on branch `BIG-GO-1309`.",
+    "This refresh reran the recorded lane validation commands on 2026-04-05 and kept the change set scoped to lane-owned artifacts."
   ]
 }
