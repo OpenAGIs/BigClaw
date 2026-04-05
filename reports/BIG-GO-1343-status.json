@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "a418ceda BIG-GO-1343: document python asset sweep lane",
+    "latest_commit": "e8fd9d71 BIG-GO-1343: finalize lane metadata",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "<no output>",
       "priority_dir_inventory": "<no output>",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t1.237s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.527s"
     }
   },
   "blocker": {
