@@ -1,28 +1,22 @@
-# BIG-GO-1358 Workpad
+Issue: BIG-GO-1369
 
-## Plan
+Plan
+- Inspect the Go-native `scripts/ops` wrappers and existing `bigclawctl` tests to find an operational gap that still lacks replacement evidence.
+- Add scoped regression coverage proving the `scripts/ops` entrypoints stay Go-native and preserve repo path forwarding from operator invocations.
+- Record lane evidence in issue-specific status and validation reports only.
+- Run targeted validation commands, then commit and push the branch.
 
-1. Reconfirm the repository Python baseline and inspect the existing Go ownership evidence for the retired legacy `models.py` and `runtime.py` surfaces.
-2. Add a lane-scoped Go/native replacement artifact for the legacy model/runtime modules and wire targeted regression coverage to that artifact.
-3. Record lane-specific validation evidence, then commit and push the scoped `BIG-GO-1358` changes.
+Acceptance
+- Keep the issue scoped to the `scripts/ops` python replacement sweep.
+- Land concrete Go/native replacement evidence in git even if repository `.py` count is already zero.
+- Preserve repository reality that `find . -name '*.py' | wc -l` remains at zero or lower after the change.
+- Commit and push the completed lane.
 
-## Acceptance
-
-- The lane lands a concrete Go/native replacement artifact for the legacy model/runtime module slice even though the repository is already at zero tracked `.py` files.
-- The replacement artifact identifies the retired Python modules and the active Go owners that replaced them.
-- Targeted regression coverage verifies the replacement artifact and referenced Go files stay aligned.
-- Exact validation commands and results are recorded.
-- The change is committed and pushed to the remote branch.
-
-## Validation
-
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1358 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1358/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1358LegacyModelRuntimeReplacement(ManifestMatchesRetiredModules|ReplacementPathsExist|LaneReportCapturesReplacementState)$'`
-
-## Execution Notes
-
-- 2026-04-05: The checked-out workspace is already at `0` physical `.py` files, so this lane must land a concrete Go/native replacement instead of reducing the file count.
-- 2026-04-05: Existing repository history and regression references identify `src/bigclaw/models.py` and `src/bigclaw/runtime.py` as the legacy modules in scope for this issue.
-- 2026-04-05: Added `bigclaw-go/internal/migration/legacy_model_runtime_modules.go` as the Go-native replacement registry for the retired model/runtime modules.
-- 2026-04-05: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1358 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output, confirming the repository remains physically Python-free.
-- 2026-04-05: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1358/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1358LegacyModelRuntimeReplacement(ManifestMatchesRetiredModules|ReplacementPathsExist|LaneReportCapturesReplacementState)$'` and observed `ok  	bigclaw-go/internal/regression	3.209s`.
+Validation
+- `find . -name '*.py' | wc -l`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1369(RepositoryHasNoPythonFiles|OpsReplacementPathsRemainAvailable|OpsWrappersStayGoNative|BigclawctlWrapperResolvesRelativeRepoFromInvocationDir|LaneReportCapturesSweepState)$'`
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...`
+- `bash scripts/ops/bigclawctl --help`
+- `bash scripts/ops/bigclaw-issue --help`
+- `bash scripts/ops/bigclaw-panel --help`
+- `bash scripts/ops/bigclaw-symphony --help`

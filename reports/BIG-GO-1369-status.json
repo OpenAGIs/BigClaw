@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1369",
+    "title": "Go-only refill 1369: scripts/ops python replacement sweep",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1369",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1369'",
+    "push_target": "origin/BIG-GO-1369"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1369-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1369-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1369_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_count": 0
+  },
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/internal/regression/big_go_1369_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1369(RepositoryHasNoPythonFiles|OpsReplacementPathsRemainAvailable|OpsWrappersStayGoNative|BigclawctlWrapperResolvesRelativeRepoFromInvocationDir|LaneReportCapturesSweepState)$'",
+      "cd bigclaw-go && go test ./cmd/bigclawctl/...",
+      "bash scripts/ops/bigclawctl --help",
+      "bash scripts/ops/bigclaw-issue --help",
+      "bash scripts/ops/bigclaw-panel --help",
+      "bash scripts/ops/bigclaw-symphony --help"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.324s",
+      "bigclawctl_tests": "ok  \tbigclaw-go/cmd/bigclawctl\t3.138s",
+      "ops_help": "all four scripts/ops wrappers printed Go-native help output"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1369 changes."
+  },
+  "notes": [
+    "This lane lands concrete Go/native replacement evidence for the scripts/ops sweep rather than deleting in-branch Python files.",
+    "Regression coverage now executes the retained shell wrappers directly and verifies invocation-relative --repo forwarding."
+  ]
+}
