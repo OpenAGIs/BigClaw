@@ -1,13 +1,13 @@
-# BIG-GO-1291 Workpad
+# BIG-GO-1305 Workpad
 
 ## Plan
 
 1. Confirm the remaining physical Python asset inventory for the full repository and the priority residual directories: `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add lane-scoped zero-Python sweep artifacts for `BIG-GO-1291`:
-   - `bigclaw-go/docs/reports/big-go-1291-python-asset-sweep.md`
-   - `bigclaw-go/internal/regression/big_go_1291_zero_python_guard_test.go`
-   - `reports/BIG-GO-1291-status.json`
-   - `reports/BIG-GO-1291-validation.md`
+2. Add lane-scoped zero-Python sweep artifacts for `BIG-GO-1305`:
+   - `bigclaw-go/docs/reports/big-go-1305-python-asset-sweep.md`
+   - `bigclaw-go/internal/regression/big_go_1305_zero_python_guard_test.go`
+   - `reports/BIG-GO-1305-status.json`
+   - `reports/BIG-GO-1305-validation.md`
 3. Run targeted validation commands, record exact commands and results in the validation artifacts, then commit and push the lane changes.
 
 ## Acceptance
@@ -22,4 +22,4 @@
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1291(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1305(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
