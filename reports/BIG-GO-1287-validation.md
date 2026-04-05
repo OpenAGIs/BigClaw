@@ -116,7 +116,7 @@ exit 0; all packages passed
 ## Git
 
 - Branch: `big-go-1287`
-- Final lane commit: `979326db5dfc74f70f46b6649e9fd6e6ce92fac0`
+- Final lane commit: `3b7685b3f2632f52917d839c8860bcba8368d59c`
 - Push target: `origin/big-go-1287`
 
 ## Residual Risk

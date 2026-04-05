@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-1287",
-    "latest_commit": "979326db5dfc74f70f46b6649e9fd6e6ce92fac0",
+    "latest_commit": "3b7685b3f2632f52917d839c8860bcba8368d59c",
     "push_target": "origin/big-go-1287"
   },
   "artifacts": {
