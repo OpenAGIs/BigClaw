@@ -46,6 +46,84 @@ func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
 	}
 }
 
+func TestAutomationE2EScriptsStayGoOnly(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	goRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	e2eDir := filepath.Join(goRoot, "scripts", "e2e")
+	entries, err := os.ReadDir(e2eDir)
+	if err != nil {
+		t.Fatalf("read e2e script directory: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatalf("expected e2e wrapper files in %s", e2eDir)
+	}
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".py") {
+			t.Fatalf("e2e directory must not contain Python helpers: %s", entry.Name())
+		}
+	}
+}
+
+func TestAutomationE2EScriptRunAllUsesNativeEntrypoints(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	goRoot := filepath.Clean(filepath.Join(wd, "..", ".."))
+	for _, tc := range []struct {
+		path               string
+		requiredSubstrings []string
+		disallowed         []string
+	}{
+		{
+			path: "scripts/e2e/run_all.sh",
+			requiredSubstrings: []string{
+				`go run "$ROOT/scripts/e2e/broker_bootstrap_summary.go"`,
+				`go run "$ROOT/cmd/bigclawctl" automation e2e export-validation-bundle`,
+				`go run "$ROOT/cmd/bigclawctl" automation e2e continuation-scorecard`,
+				`go run "$ROOT/cmd/bigclawctl" automation e2e continuation-policy-gate`,
+				`"$ROOT/scripts/e2e/kubernetes_smoke.sh"`,
+				`"$ROOT/scripts/e2e/ray_smoke.sh"`,
+			},
+			disallowed: []string{".py", "python ", "python3"},
+		},
+		{
+			path: "scripts/e2e/kubernetes_smoke.sh",
+			requiredSubstrings: []string{
+				`go run "$ROOT/cmd/bigclawctl" automation e2e run-task-smoke`,
+			},
+			disallowed: []string{".py", "python ", "python3"},
+		},
+		{
+			path: "scripts/e2e/ray_smoke.sh",
+			requiredSubstrings: []string{
+				`go run "$ROOT/cmd/bigclawctl" automation e2e run-task-smoke`,
+				`ENTRYPOINT="${BIGCLAW_RAY_SMOKE_ENTRYPOINT:-sh -c 'echo hello from ray'}"`,
+			},
+			disallowed: []string{".py", "python ", "python3", "python -c"},
+		},
+	} {
+		body, err := os.ReadFile(filepath.Join(goRoot, tc.path))
+		if err != nil {
+			t.Fatalf("read %s: %v", tc.path, err)
+		}
+		content := string(body)
+		for _, want := range tc.requiredSubstrings {
+			if !strings.Contains(content, want) {
+				t.Fatalf("%s missing %q", tc.path, want)
+			}
+		}
+		for _, banned := range tc.disallowed {
+			if strings.Contains(content, banned) {
+				t.Fatalf("%s should not contain %q", tc.path, banned)
+			}
+		}
+	}
+}
+
 func TestAutomationUsageListsBIGGO1160GoReplacements(t *testing.T) {
 	cases := []struct {
 		args    []string
