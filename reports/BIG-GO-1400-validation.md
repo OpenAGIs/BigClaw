@@ -82,7 +82,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.622s
+ok  	bigclaw-go/internal/regression	2.729s
 ```
 
 ## Git
@@ -93,6 +93,7 @@ ok  	bigclaw-go/internal/regression	0.622s
 - Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1400'`
 - Push target: `origin/main`
 - Rebase note: the lane was rebased onto `origin/main` after the first push was rejected by a fast-forward update on the remote branch.
+- Current rebased lane tip before final push: `5c838410`
 
 ## Residual Risk
 
