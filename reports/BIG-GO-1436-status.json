@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1436",
     "title": "Heartbeat refill lane 1436: remaining Python asset sweep 6/10",
-    "state": "Todo"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "443617c4",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -44,7 +44,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.453s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.257s"
     }
   },
   "blocker": {
@@ -53,6 +53,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Baseline HEAD before lane changes was `4a24341d`."
+    "Baseline HEAD before lane changes was `4a24341d`.",
+    "Published lane commit `443617c4` to `origin/main`."
   ]
 }
