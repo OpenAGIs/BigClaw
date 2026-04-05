@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1309",
-    "latest_commit": "tracked in git history after BIG-GO-1309 refresh sync",
+    "latest_commit": "ef940264",
     "refresh_parent_commit": "1553db49",
     "push_target": "origin/BIG-GO-1309"
   },
