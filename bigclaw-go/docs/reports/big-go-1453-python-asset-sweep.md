@@ -35,3 +35,5 @@ The Go-only or shell-native replacement surface that remains available for the r
   Result: no output; the priority residual directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1453(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
   Result: `ok  	bigclaw-go/internal/regression	1.161s`
+- Post-push re-run of the same regression guard:
+  Result: `ok  	bigclaw-go/internal/regression	3.204s`

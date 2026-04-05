@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1453",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1453'",
+    "latest_commit": "994a4af08fc6326a64712037835ce1e2c71b0f82",
     "push_target": "origin/BIG-GO-1453"
   },
   "artifacts": {
@@ -43,7 +43,8 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.161s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.161s",
+      "post_push_regression_tests": "ok  \tbigclaw-go/internal/regression\t3.204s"
     }
   },
   "blocker": {
@@ -53,6 +54,8 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `aeab7a1e`."
+    "Baseline HEAD before lane changes was `aeab7a1e`.",
+    "Published lane branch: `origin/BIG-GO-1453`.",
+    "PR helper URL: https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1453"
   ]
 }

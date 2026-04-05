@@ -85,13 +85,28 @@ Result:
 ok  	bigclaw-go/internal/regression	1.161s
 ```
 
+### Post-push regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1453/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1453(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	3.204s
+```
+
 ## Git
 
 - Branch: `BIG-GO-1453`
 - Baseline HEAD before lane commit: `aeab7a1e`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-1453'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1453'`
+- Lane commit details: `994a4af BIG-GO-1453: document zero-python heartbeat sweep`
+- Final pushed lane commit: `994a4af08fc6326a64712037835ce1e2c71b0f82`
 - Push target: `origin/BIG-GO-1453`
+- PR helper URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1453`
 
 ## Residual Risk
 
