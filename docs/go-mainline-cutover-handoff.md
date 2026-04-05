@@ -23,7 +23,9 @@ cutover set.
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- `find . -name '*.py' -o -name '*.pyi' | sort`
+- `find . -path './.git' -prune -o -name '*.py' -o -name '*.pyi' -print | wc -l`
+- `bash scripts/dev_bootstrap.sh`
 
 ## Completed scope
 

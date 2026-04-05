@@ -40,9 +40,10 @@ migration, and root-script sweep candidate set that previously included:
 - `scripts/create_issues.py`
 - `scripts/dev_smoke.py`
 
-Those paths are already absent in the current branch baseline, so this lane
-keeps the scope on preventing reintroduction and pinning the supported Go
-operator replacements.
+Those paths are already absent in the current branch baseline, so the current
+follow-up lane keeps the scope on preventing reintroduction, pinning the
+supported Go operator replacements, and proving that the repo-wide Python
+physical asset count has reached zero.
 
 ### Repo-root entrypoints
 
@@ -62,6 +63,7 @@ operator replacements.
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
 - retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
 - retired migration Python helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
+- `bigclaw-go/scripts/e2e/ray_smoke.sh` now defaults to a shell entrypoint instead of a Python one, so the retained wrapper stays Go/shell-only by default
 
 The remaining compatibility layer is intentionally thin:
 
@@ -110,12 +112,15 @@ operator docs and external automation references finish the direct cutover to
 
 ## Validation Commands
 
+- `find . -name '*.py' -o -name '*.pyi' | sort`
+- `find . -path './.git' -prune -o -name '*.py' -o -name '*.pyi' -print | wc -l`
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `bash scripts/ops/bigclawctl refill --help`
 - `bash scripts/ops/bigclawctl workspace validate --help`
 - `bash scripts/dev_bootstrap.sh`
+- `bash bigclaw-go/scripts/e2e/ray_smoke.sh`
 - `bash scripts/ops/bigclawctl issue --help`
 - `bash scripts/ops/bigclawctl panel --help`
 - `bash scripts/ops/bigclawctl symphony --help`

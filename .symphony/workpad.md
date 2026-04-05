@@ -1,31 +1,26 @@
-# BIG-GO-1326 Workpad
+# BIG-GO-1335 Workpad
 
 ## Plan
-
-1. Reconfirm the remaining physical Python asset inventory for the repository and the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-1326` so this unattended run records the empty Python baseline and the available Go replacement paths:
-   - `bigclaw-go/docs/reports/big-go-1326-python-asset-sweep.md`
-   - `reports/BIG-GO-1326-status.json`
-   - `reports/BIG-GO-1326-validation.md`
-   - `bigclaw-go/internal/regression/big_go_1326_zero_python_guard_test.go`
-3. Re-run the targeted regression coverage, record the exact commands and outputs, then commit and push the lane update.
+- Inventory remaining Python physical assets across the repository, with focus on `src/bigclaw/*.py`, `tests/*.py`, `scripts/*.py`, and `bigclaw-go/scripts/*.py`.
+- Verify whether any Python behavior remains indirectly through documentation, Make targets, or shell wrappers.
+- Remove or shrink any residual Python-facing material that is still physically present or still advertised as the active path.
+- Record the Go replacement path and run targeted validation proving the repo is Python-free for this lane.
+- Commit scoped changes and push the branch to `origin`.
 
 ## Acceptance
-
-- The remaining Python asset inventory is explicit for the full repository and the priority residual directories.
-- The lane either removes Python assets or, if the repository is already Python-free, documents and hardens that zero-Python baseline.
-- The Go replacement paths for the retired Python surface are captured in the lane artifacts.
-- Exact validation commands and results are recorded.
-- The change is committed and pushed to the remote branch.
+- A concrete inventory for this lane is recorded, including confirmation if the remaining Python asset count is zero.
+- Repository state is moved toward Go-only closure by deleting or replacing residual Python-facing material where applicable.
+- Go replacement commands are documented in the touched materials.
+- Validation includes exact commands and results, with Python file count reduction or confirmed zero residual count.
 
 ## Validation
+- `find . -name '*.py' -o -name '*.pyi' | sort`
+- `find . -path './.git' -prune -o -name '*.py' -o -name '*.pyi' -print | wc -l`
+- Targeted grep/search for `python`, `python3`, and historical Python entrypoints in `README.md`, `Makefile`, `scripts/`, and `bigclaw-go/scripts/`
+- Any repo-specific smoke checks for the Go replacement scripts referenced by the updated docs
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1326 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1326/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1326/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1326/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1326/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1326/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1326(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
-- 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
-- 2026-04-05: This execution therefore focuses on refreshing lane evidence and regression validation rather than deleting in-branch Python files.
+## Results
+- `find . -name '*.py' -o -name '*.pyi' | sort` -> no output
+- `find . -path './.git' -prune -o -name '*.py' -o -name '*.pyi' -print | wc -l` -> `0`
+- `bash scripts/dev_bootstrap.sh` -> `ok   bigclaw-go/cmd/bigclawctl`, `smoke_ok local`, `ok   bigclaw-go/internal/bootstrap`, `BigClaw Go environment is ready.`
+- `bash bigclaw-go/scripts/e2e/ray_smoke.sh` -> script reached `go run ./cmd/bigclawctl automation e2e run-task-smoke` with the shell default entrypoint; execution failed later because the local Ray dashboard was unavailable at `127.0.0.1:8265`
