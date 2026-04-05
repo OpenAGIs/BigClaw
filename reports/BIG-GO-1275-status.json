@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1275",
     "title": "Heartbeat refill lane 1275: remaining Python asset sweep 5/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "1dcf6229",
+    "latest_commit": "2aa4455f",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -50,6 +50,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files."
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "`branch.latest_commit` records the code-bearing lane commit; follow-up metadata sync is tracked in git history."
   ]
 }
