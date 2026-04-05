@@ -90,7 +90,7 @@ ok  	bigclaw-go/internal/regression	0.489s
 - Code commit: `git log --oneline --grep 'BIG-GO-1276: add zero-python heartbeat artifacts' -n 1`
 - Final metadata commit: `git log --oneline --grep 'BIG-GO-1276' -n 1`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1276'`
-- Push target: `origin/main`
+- Push target: `origin/BIG-GO-1276`
 
 ## Residual Risk
 
