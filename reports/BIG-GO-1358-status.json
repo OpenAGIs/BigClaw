@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1358",
+    "title": "Go-only refill 1358: legacy model/runtime module replacement",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1358-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1358-legacy-model-runtime-module-replacement.md",
+    "replacement_registry": "bigclaw-go/internal/migration/legacy_model_runtime_modules.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1358_legacy_model_runtime_replacement_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "replacements": [
+    {
+      "retired_python_module": "src/bigclaw/models.py",
+      "replacement_kind": "go-package-split",
+      "go_replacements": [
+        "bigclaw-go/internal/domain/task.go",
+        "bigclaw-go/internal/domain/priority.go",
+        "bigclaw-go/internal/risk/assessment.go",
+        "bigclaw-go/internal/triage/record.go",
+        "bigclaw-go/internal/billing/statement.go",
+        "bigclaw-go/internal/workflow/model.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/runtime.py",
+      "replacement_kind": "go-runtime-mainline",
+      "go_replacements": [
+        "bigclaw-go/internal/worker/runtime.go",
+        "bigclaw-go/internal/worker/runtime_runonce.go",
+        "bigclaw-go/internal/worker/runtime_test.go"
+      ]
+    }
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1358LegacyModelRuntimeReplacement(ManifestMatchesRetiredModules|ReplacementPathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.209s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1358 changes."
+  },
+  "notes": [
+    "This lane lands a Go-native ownership registry for the retired legacy model/runtime modules.",
+    "The branch baseline was already Python-free, so the acceptance path is a concrete Go/native replacement artifact rather than a lower in-branch .py count.",
+    "Baseline HEAD before lane changes was `f8cbae1c`."
+  ]
+}
