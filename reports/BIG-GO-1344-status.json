@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "no output; repository-wide Python file count remained 0",
       "priority_dir_inventory": "no output; priority residual directories remained Python-free",
-      "regression_tests": "ok   bigclaw-go/internal/regression 0.496s"
+      "regression_tests": "ok   bigclaw-go/internal/regression 0.509s"
     }
   },
   "blocker": {
