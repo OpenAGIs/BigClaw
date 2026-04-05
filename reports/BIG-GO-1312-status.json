@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "65b83c6b",
+    "latest_commit": "tracked in git history",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -52,6 +52,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `65b83c6b`.",
-    "Lane commit `ba74ced0` was pushed to `origin/main`."
+    "Push transition recorded: `git push origin main` -> `65b83c6b..ba74ced0  main -> main`.",
+    "Push transition recorded: `git push origin main` -> `ba74ced0..b0727d64  main -> main`."
   ]
 }
