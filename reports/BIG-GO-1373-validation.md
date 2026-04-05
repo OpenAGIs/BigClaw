@@ -87,13 +87,27 @@ Result:
 ok  	bigclaw-go/internal/regression	1.176s
 ```
 
+### Post-rebase regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1373/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1373(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|CrossRepoNativeHelperPathsRemainAvailable|LaneReportCapturesSweepState)$'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	1.062s
+```
+
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `f1d2fa35`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1373'`
-- Final pushed lane commit: `9435c833`
-- Push target: `origin/BIG-GO-1373`
+- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1373'`
+- Push target: `origin/BIG-GO-1373-r2`
 
 ## Residual Risk
 
@@ -101,4 +115,4 @@ ok  	bigclaw-go/internal/regression	1.176s
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
 - `origin/main` advanced repeatedly during push attempts, so the finalized lane
-  was pushed to the dedicated issue branch instead of directly to `origin/main`.
+  was pushed to a dedicated issue branch instead of directly to `origin/main`.
