@@ -6,8 +6,8 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 ## Implemented surfaces
 
-- Shadow comparison for one task via `scripts/migration/shadow_compare.py`
-- Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
+- Shadow comparison for one task via `scripts/migration/shadow_compare/main.go`
+- Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix/main.go`
 - Repo-native live shadow mirror scorecard via `scripts/migration/live_shadow_scorecard/main.go`
 - Repo-native live shadow bundle/index via `scripts/migration/export_live_shadow_bundle/main.go`
 - An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
@@ -18,8 +18,8 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - `docs/migration.md`
 - `docs/migration-shadow.md`
-- `scripts/migration/shadow_compare.py`
-- `scripts/migration/shadow_matrix.py`
+- `scripts/migration/shadow_compare/main.go`
+- `scripts/migration/shadow_matrix/main.go`
 - `scripts/migration/live_shadow_scorecard/main.go`
 - `scripts/migration/export_live_shadow_bundle/main.go`
 - `docs/reports/rollback-trigger-surface.json`

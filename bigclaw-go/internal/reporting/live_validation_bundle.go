@@ -1088,6 +1088,9 @@ func mapOrEmpty(value any) map[string]any {
 }
 
 func anyToMapSlice(value any) []map[string]any {
+	if typed, ok := value.([]map[string]any); ok {
+		return typed
+	}
 	items := asSlice(value)
 	if len(items) == 0 {
 		return nil

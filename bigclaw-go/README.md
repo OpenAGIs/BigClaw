@@ -83,7 +83,8 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 - `scripts/e2e/ray_smoke.sh` runs a real Ray Jobs API smoke task through BigClaw
 - `scripts/e2e/run_task_smoke/main.go` is the generic submit/poll helper used by all wrappers
 - `scripts/e2e/export_validation_bundle` exports repo-native evidence bundles, latest report copies, and the validation index
-- `scripts/migration/shadow_compare.py` compares primary vs shadow BigClaw endpoints
+- `scripts/migration/shadow_compare/main.go` compares primary vs shadow BigClaw endpoints
+- `scripts/migration/shadow_matrix/main.go` aggregates fixture-backed and corpus-overlay shadow comparisons
 - `scripts/benchmark/run_suite.sh` regenerates benchmark evidence
 - Full instructions live in `docs/e2e-validation.md` and `docs/migration-shadow.md`
 
