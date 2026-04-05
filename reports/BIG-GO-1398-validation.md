@@ -82,7 +82,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1398/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.655s
+ok  	bigclaw-go/internal/regression	0.619s
 ```
 
 ## Git
@@ -93,6 +93,7 @@ ok  	bigclaw-go/internal/regression	0.655s
 - Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1398'`
 - Push target: `origin/main`
 - Rebase note: initial commit `af7362cd` was replayed onto fetched `origin/main` at `c71fe8ca`, producing local lane HEAD `7590d279`.
+- Rebase note: the two-commit lane stack was then replayed onto fetched `origin/main` at `3db3516b`, producing local lane HEAD `131a3877`.
 
 ## Residual Risk
 
