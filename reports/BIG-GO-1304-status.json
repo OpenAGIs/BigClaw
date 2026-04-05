@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1304",
-    "latest_commit": "dc4b60a7 BIG-GO-1304: refresh validation metadata",
+    "latest_commit": "See branch HEAD in git history; pushed lane commits include 1bb01a2d, dc4b60a7, and c3e98261.",
     "push_target": "origin/BIG-GO-1304"
   },
   "artifacts": {
