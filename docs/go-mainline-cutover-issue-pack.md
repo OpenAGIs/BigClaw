@@ -208,6 +208,11 @@ Acceptance focus:
 - port the reporting and observability surfaces required for runtime closeout and reviewer evidence
 - keep data shapes consistent with the Go runtime outputs
 
+Current repo progress:
+- `bigclaw-go/internal/reporting/reporting.go` and `bigclaw-go/internal/reporting/reporting_test.go` now cover the Go-owned reporting contract for reviewer-facing summaries and evidence rollups.
+- `bigclaw-go/internal/regression/*` now guards checked-in reporting artifacts such as live-validation bundles, shared-queue summaries, live-shadow indexes, broker validation summaries, and related follow-up digests directly from Go.
+- The residual Python report-surface unit tests under `bigclaw-go/scripts/benchmark/*_test.py` and `bigclaw-go/scripts/e2e/*_test.py` can be deleted when their evidence paths are already asserted by the Go reporting/regression packages instead of Python-only harnesses.
+
 Dependencies:
 - depends on `BIG-GOM-301`
 - depends on `BIG-GOM-303`
