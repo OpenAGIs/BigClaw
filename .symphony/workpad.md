@@ -31,3 +31,4 @@
 - 2026-04-06: Published lane commit `0a121744` (`BIG-GO-1440: add zero-python heartbeat artifacts`) to `origin/BIG-GO-1440`.
 - 2026-04-06: Final metadata verification re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1440/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1440(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` after close-out updates and observed `ok  	bigclaw-go/internal/regression	0.248s`.
 - 2026-04-06: Published lane commit `02d173b3` (`BIG-GO-1440: finalize lane metadata`) to `origin/BIG-GO-1440`.
+- 2026-04-06: Published lane commit `94b8f716` (`BIG-GO-1440: close lane metadata`) to `origin/BIG-GO-1440`.
