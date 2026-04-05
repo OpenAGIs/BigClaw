@@ -44,3 +44,15 @@
   - output included `usage: bigclawctl symphony [flags] [args...]`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && find . -name '*.py' | wc -l`
   - `0`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354/bigclaw-go && go test -count=1 ./internal/regression`
+  - `ok  	bigclaw-go/internal/regression	0.450s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclawctl github-sync status --json`
+  - `{"ahead":0,"behind":0,"branch":"BIG-GO-1354","dirty":false,"diverged":false,"local_sha":"111aafb6492d415376630d78538ac358e6e3d791","pushed":true,"remote_exists":true,"remote_sha":"111aafb6492d415376630d78538ac358e6e3d791","status":"ok","synced":true}`
+
+## Remaining Blocker
+
+- GitHub PR creation is blocked by missing authentication in this workspace.
+- `gh auth status`
+  - result: `You are not logged into any GitHub hosts. To log in, run: gh auth login`
+- Public PR search for `head:BIG-GO-1354` showed no existing pull request.
+- The GitHub PR creation URL for `BIG-GO-1354` redirects to the GitHub sign-in page, so no further unattended repo-side action is available from this environment.
