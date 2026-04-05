@@ -91,7 +91,7 @@ ok  	bigclaw-go/internal/regression	1.970s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c5450aef`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1382'`
-- Final pushed lane commit: `d11b8c0d`
+- Final pushed lane commit: `def2632d`
 - Push target: `origin/main`
 - Initial push rejection: remote `main` advanced to `2b00b910`
 - First rebased lane HEAD: `cb64af0f`
@@ -104,6 +104,7 @@ ok  	bigclaw-go/internal/regression	1.970s
 - Final full-stack rebase base: `0dea7c0b`
 - Final full-stack rebased lane HEAD before push: `d11b8c0d`
 - Final push result: initial TLS failure on first attempt, then successful push to `origin/main`
+- Metadata closeout push: `def2632d`
 
 ## Residual Risk
 

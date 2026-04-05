@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "d11b8c0d",
+    "latest_commit": "def2632d",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -58,6 +58,7 @@
     "A second remote advance to `ea03f42d` required replaying the lane commits again; the next rebased tip before push was `e2099121`.",
     "A continuation rebase onto `6fc610a2` produced local tip `e8117e01`, which passed the targeted regression guard in `0.188s`.",
     "The lane was finally replayed as a full five-commit stack onto `origin/main` base `0dea7c0b`, producing pushed tip `d11b8c0d`.",
-    "The first final push attempt failed with a transient GitHub TLS error, but the immediate retry succeeded and published the lane to `origin/main`."
+    "The first final push attempt failed with a transient GitHub TLS error, but the immediate retry succeeded and published the lane to `origin/main`.",
+    "The metadata closeout commit is `def2632d`, which is the final pushed tip on `origin/main`."
   ]
 }
