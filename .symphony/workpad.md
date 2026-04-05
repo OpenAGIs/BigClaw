@@ -30,3 +30,4 @@
 - 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
 - 2026-04-05: This execution therefore focuses on lane evidence and a Go regression guard rather than deleting in-branch Python files.
 - 2026-04-05: Re-ran the recorded validation commands; both `find` sweeps returned no output and `go test -count=1 ./internal/regression -run 'TestBIGGO1342(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` passed with `ok  	bigclaw-go/internal/regression	0.175s`.
+- 2026-04-05: Refreshed lane metadata after the final artifact sync commit `53387631dd9d8f284478b45caeb51128f4e08f53` so the reports and branch state stay aligned.
