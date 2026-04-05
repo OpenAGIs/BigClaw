@@ -9,10 +9,11 @@ issue.
 Copy these files into the target repository:
 
 - `scripts/ops/bigclawctl`
-- `src/<your_package>/workspace_bootstrap.py`
-- `src/<your_package>/workspace_bootstrap_cli.py`
+- `workflow.md`
 
-The shell entrypoint is generic; only the Python compatibility package path is repo-specific while a repo is still mid-migration.
+The shell entrypoint is generic and the bootstrap flow is Go/shell-only. Do not
+reintroduce repo-local Python bootstrap compatibility shims; `scripts/ops/bigclawctl`
+owns bootstrap, cleanup, and validation.
 
 ## Workflow hook template
 
@@ -71,3 +72,4 @@ BigClaw uses the same template with defaults baked in:
 - repo URL default: `git@github.com:OpenAGIs/BigClaw.git`
 - cache key default: `openagis-bigclaw`
 - workflow example: `workflow.md`
+- Go ownership: `scripts/ops/bigclawctl`, `bigclaw-go/internal/bootstrap/*`

@@ -312,6 +312,7 @@ Current repo progress:
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic with tracker-neutral `TrackedIssue` records, while `cmd/bigclawctl refill` handles backend-specific polling and promotion
 - `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` invoke the Go-first toolchain by default, and the legacy `scripts/ops/bigclaw_github_sync.py` wrapper has been removed
 - the final root workspace Python wrappers have since been removed, so the default operator path is now Go-only under `bash scripts/ops/bigclawctl`
+- `docs/symphony-repo-bootstrap-template.md` now reflects the same cutover and no longer instructs downstream repos to keep `workspace_bootstrap.py` compatibility files alive
 
 Milestone:
 - `Python Retirement & Cutover Validation`

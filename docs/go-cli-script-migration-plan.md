@@ -44,6 +44,10 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+The shared repo bootstrap template is now aligned with that zero-Python
+baseline as well: `docs/symphony-repo-bootstrap-template.md` no longer asks
+downstream repos to keep `workspace_bootstrap.py` compatibility files alive.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
@@ -107,6 +111,9 @@ operator docs and external automation references finish the direct cutover to
   first automation batch. The remaining backlog is tracked in
   `bigclaw-go/docs/go-cli-script-migration.md`.
 - Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
+- Keep the shared repo bootstrap template Go-only so downstream workspaces do not
+  recreate `workspace_bootstrap.py`-style compatibility assets after the root
+  repository has reached zero tracked `.py` files.
 
 ## Validation Commands
 
