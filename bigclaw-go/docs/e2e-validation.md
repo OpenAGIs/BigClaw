@@ -5,7 +5,6 @@ This document covers real cluster smoke validation for the `Kubernetes` and `Ray
 ## Prerequisites
 
 - `go`
-- `python3`
 - BigClaw Go dependencies installed via `go mod tidy`
 - For `Kubernetes`:
   - a reachable cluster
@@ -261,7 +260,7 @@ export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
 Optional overrides:
 
 ```bash
-export BIGCLAW_RAY_SMOKE_ENTRYPOINT='python -c "print(123)"'
+export BIGCLAW_RAY_SMOKE_ENTRYPOINT="sh -c 'echo 123'"
 export BIGCLAW_RAY_RUNTIME_ENV_JSON='{"env_vars":{"BIGCLAW_SMOKE":"1"}}'
 export BIGCLAW_RAY_SMOKE_REPORT_PATH=docs/reports/ray-live-smoke-report.json
 ./scripts/e2e/ray_smoke.sh
