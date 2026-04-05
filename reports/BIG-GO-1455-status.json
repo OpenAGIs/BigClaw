@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1455",
-    "latest_commit": "pending-push",
+    "latest_commit": "125d6c1",
     "push_target": "origin/BIG-GO-1455"
   },
   "artifacts": {
@@ -54,6 +54,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `aeab7a1`.",
-    "Branch metadata will be finalized with the pushed commit SHA in the lane close-out summary."
+    "Published lane commit `125d6c1` (`BIG-GO-1455: add zero-python heartbeat artifacts`) to `origin/BIG-GO-1455`."
   ]
 }
