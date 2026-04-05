@@ -1,27 +1,49 @@
-## Codex Workpad
+# BIG-GO-1480 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+1. Audit the repository working tree, git state, and physical Python file count to establish the real baseline for this workspace.
+2. Identify any remaining physical Python assets or stale migration references that can be deleted within the issue scope.
+3. Apply only the minimal repo-scoped changes supported by the observed repository reality.
+4. Run targeted validation commands that prove the resulting Python file count and repository state.
+5. Commit the issue-scoped changes and push the branch to the configured remote.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+- Document the observed repository reality for this workspace, including the current physical Python file count.
+- Delete any issue-scoped stale Python assets or migration residue if present.
+- Record exact validation commands and results showing the repository moved closer to or is already at Go-only status.
+- Leave a commit on the issue branch and push it to the remote.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
+- `git status --short`
+- `find . -type f \\( -name '*.py' -o -name '*.pyi' -o -name '*.pyw' \\) | sed 's#^./##' | sort`
+- `git ls-files | rg '\\.(py|pyi|pyw)$'`
+- Additional git inspection commands as needed to verify branch and remote state
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+## Outcome
 
-### Notes
+- Baseline tracked Python count: `138`
+- Post-sweep tracked Python count: `23`
+- Net reduction: `115`
+- Deleted root Python ownership surfaces:
+  - `src/bigclaw/*.py`
+  - `tests/*.py`
+  - `scripts/create_issues.py`
+  - `scripts/dev_smoke.py`
+  - `scripts/ops/*.py` compatibility wrappers
+  - `setup.py`
+  - `bigclaw-go/internal/legacyshim/*`
+- Added audit record: `docs/reports/BIG-GO-1480-python-reality-audit.md`
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation Results
+
+- `find . -type f \( -name '*.py' -o -name '*.pyi' -o -name '*.pyw' \) | sed 's#^./##' | sort | wc -l`
+  - Result: `23`
+- `git ls-files | rg '\.(py|pyi|pyw)$' | wc -l`
+  - Result: `23`
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/bootstrap ./internal/githubsync ./internal/refill`
+  - Result: passed
+- `cd bigclaw-go && go test ./...`
+  - Result: passed

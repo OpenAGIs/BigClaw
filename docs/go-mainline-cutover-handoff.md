@@ -23,8 +23,7 @@ cutover set.
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
-- `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- `bash scripts/dev_bootstrap.sh`
 
 ## Completed scope
 
@@ -36,8 +35,9 @@ cutover set.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
-- The default mainline posture is Go-first, with remaining Python entrypoints
-  marked as migration-only compatibility shims.
+- The default mainline posture is Go-first; later repo-reality sweeps can
+  remove residual Python generators and reports without affecting the control
+  plane implementation.
 
 ## Remaining non-blocking caveats
 
