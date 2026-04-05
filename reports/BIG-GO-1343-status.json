@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "21020ada BIG-GO-1343: refresh validation metadata",
+    "latest_commit": "HEAD at push time (`git rev-parse --short HEAD`)",
     "push_target": "origin/main"
   },
   "artifacts": {
