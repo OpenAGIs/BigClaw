@@ -39,7 +39,7 @@ Every sampled task reached `task.completed`, preserved `trace_id`, and emitted `
 - `docs/reports/capacity-certification-matrix.json`
 - `docs/reports/capacity-certification-report.md`
 - `scripts/benchmark/run_matrix.py`
-- `scripts/benchmark/capacity_certification.py`
+- `scripts/benchmark/capacity_certification/main.go`
 
 ## Bootstrap Meaning
 

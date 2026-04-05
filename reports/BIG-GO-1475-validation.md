@@ -2,7 +2,7 @@
 
 ## Scope
 
-Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, and moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands.
+Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands, and moving the benchmark capacity-certification generator into Go-owned reporting code.
 
 ## Deleted Python Files And Replacements
 
@@ -28,6 +28,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - Replaced by Go-owned reporting logic in `bigclaw-go/internal/reporting/live_shadow.go`, coverage in `bigclaw-go/internal/reporting/live_shadow_test.go`, and the Go entrypoint `bigclaw-go/scripts/migration/live_shadow_scorecard/main.go`.
 - `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
   - Replaced by Go-owned reporting logic in `bigclaw-go/internal/reporting/live_shadow.go`, regression coverage in `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`, and the Go entrypoint `bigclaw-go/scripts/migration/export_live_shadow_bundle/main.go`.
+- `bigclaw-go/scripts/benchmark/capacity_certification.py`
+  - Replaced by Go-owned reporting logic in `bigclaw-go/internal/reporting/capacity.go`, coverage in `bigclaw-go/internal/reporting/capacity_test.go`, and the Go entrypoint `bigclaw-go/scripts/benchmark/capacity_certification/main.go`.
 
 ## Delete Conditions
 
@@ -35,6 +37,7 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
 - The validation-bundle continuation scorecard and policy-gate helpers were deleted because `run_all.sh`, the checked-in report metadata, and the reviewer docs now point at Go-owned entrypoints instead.
 - The shared live-smoke submit/poll helper was deleted because the shell wrappers, live-validation docs, and issue-coverage ownership now point at the Go entrypoint instead.
 - The live-shadow scorecard and bundle exporters were deleted because the migration docs, checked-in scorecard/bundle artifacts, closeout commands, and regression expectations now point at Go entrypoints instead.
+- The benchmark capacity-certification helper was deleted because the benchmark plan, readiness docs, issue-coverage ownership, and checked-in certification matrix now point at the Go entrypoint instead.
 - The earlier Python-only report-surface test helpers were deleted because Go-owned tests already validate the same report artifacts and reviewer evidence paths.
 
 ## Validation
@@ -49,6 +52,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `find . -type f -name '*.py' | sort | wc -l` -> `129`
 - Python inventory after the fourth deletion slice:
   - `find . -type f -name '*.py' | sort | wc -l` -> `127`
+- Python inventory after the fifth deletion slice:
+  - `find . -type f -name '*.py' | sort | wc -l` -> `126`
 - Targeted Go validation:
   - `cd bigclaw-go && go test ./internal/reporting ./internal/regression` -> `ok  	bigclaw-go/internal/reporting	0.801s` and `ok  	bigclaw-go/internal/regression	1.357s`
 - Targeted Go validation after the `run_task_smoke` port:
@@ -64,3 +69,6 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `cd bigclaw-go && go test ./internal/reporting ./internal/regression ./scripts/migration/live_shadow_scorecard ./scripts/migration/export_live_shadow_bundle` -> `ok  	bigclaw-go/internal/reporting	(cached)`, `ok  	bigclaw-go/internal/regression	(cached)`, `?   	bigclaw-go/scripts/migration/live_shadow_scorecard	[no test files]`, and `?   	bigclaw-go/scripts/migration/export_live_shadow_bundle	[no test files]`
 - Targeted Python/report-consumer validation for the live-shadow migration slice:
   - `PYTHONPATH=src python3 -m pytest tests/test_live_shadow_bundle.py tests/test_live_shadow_scorecard.py -q` -> `5 passed`
+- Targeted Go validation for the capacity-certification migration slice:
+  - `cd bigclaw-go && go test ./internal/reporting ./scripts/benchmark/capacity_certification` -> `ok  	bigclaw-go/internal/reporting	0.859s` and `?   	bigclaw-go/scripts/benchmark/capacity_certification	[no test files]`
+  - `cd bigclaw-go && go test ./internal/reporting ./internal/regression ./scripts/benchmark/capacity_certification` -> `ok  	bigclaw-go/internal/reporting	(cached)`, `ok  	bigclaw-go/internal/regression	0.485s`, and `?   	bigclaw-go/scripts/benchmark/capacity_certification	[no test files]`
