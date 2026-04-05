@@ -1,32 +1,17 @@
-# BIG-GO-1345 Workpad
+# BIG-GO-1356 Workpad
 
 ## Plan
-
-1. Reconfirm the remaining physical Python asset inventory for the repository and the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-1345` so this unattended run records the current zero-Python baseline and the available Go replacement paths:
-   - `bigclaw-go/docs/reports/big-go-1345-python-asset-sweep.md`
-   - `reports/BIG-GO-1345-status.json`
-   - `reports/BIG-GO-1345-validation.md`
-   - `bigclaw-go/internal/regression/big_go_1345_zero_python_guard_test.go`
-3. Re-run the targeted regression coverage, record the exact commands and results, then commit and push the lane update.
+- Inspect repo-native Ray smoke entrypoints and checked-in validation artifacts for residual `python -c` usage.
+- Replace the default Ray smoke entrypoint with a shell-native command that preserves the smoke semantics without Python.
+- Add or extend regression coverage to enforce the Go/shell-native Ray smoke path and verify checked-in evidence no longer records Python entrypoints for this flow.
+- Run targeted tests and repository checks, then commit and push the issue branch.
 
 ## Acceptance
-
-- The remaining Python asset inventory is explicit for the whole repository and the priority residual directories.
-- The lane either removes Python assets or, when the checkout is already Python-free, documents and hardens that zero-Python baseline.
-- The Go replacement paths for the retired Python surface are listed in the lane artifacts.
-- Exact validation commands and results are recorded.
-- The change is committed and pushed to the remote branch.
+- Repository reality stays Python-free for physical files: `find . -path '*/.git' -prune -o -name '*.py' -type f -print | wc -l` remains `0`.
+- A concrete native replacement lands for Python entrypoint consolidation removal in the Ray smoke path.
+- Checked-in docs/reports and regression coverage align with the native replacement.
 
 ## Validation
-
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1345(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
-- 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
-- 2026-04-05: This execution therefore focuses on lane evidence and a Go regression guard rather than deleting in-branch Python files.
-- 2026-04-05: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO1345(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok   bigclaw-go/internal/regression 3.200s`.
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | wc -l`
+- `cd bigclaw-go && go test ./internal/regression ./scripts/e2e/... ./cmd/bigclawctl/...` if package layout permits; otherwise narrow to impacted packages.
+- `git diff --stat`

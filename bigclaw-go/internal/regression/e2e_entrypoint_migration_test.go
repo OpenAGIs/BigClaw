@@ -60,3 +60,46 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 		}
 	}
 }
+
+func TestRaySmokeEntrypointStaysNative(t *testing.T) {
+	repoRoot := repoRoot(t)
+	script := readRepoFile(t, repoRoot, "scripts/e2e/ray_smoke.sh")
+	if !strings.Contains(script, `BIGCLAW_RAY_SMOKE_ENTRYPOINT:-echo hello from ray`) {
+		t.Fatalf("scripts/e2e/ray_smoke.sh should default to a shell-native Ray smoke entrypoint")
+	}
+	if strings.Contains(script, `python -c "print('hello from ray')"`) {
+		t.Fatalf("scripts/e2e/ray_smoke.sh should not default to a Python entrypoint")
+	}
+
+	doc := readRepoFile(t, repoRoot, "docs/e2e-validation.md")
+	if !strings.Contains(doc, `export BIGCLAW_RAY_SMOKE_ENTRYPOINT='echo custom ray validation'`) {
+		t.Fatalf("docs/e2e-validation.md should document the shell-native Ray smoke override")
+	}
+	if strings.Contains(doc, `export BIGCLAW_RAY_SMOKE_ENTRYPOINT='python -c "print(123)"'`) {
+		t.Fatalf("docs/e2e-validation.md should not advertise a Python Ray smoke override")
+	}
+}
+
+func TestActiveRayValidationEvidenceAvoidsPythonEntrypoints(t *testing.T) {
+	repoRoot := repoRoot(t)
+	paths := []string{
+		"docs/reports/ray-live-jobs.json",
+		"docs/reports/ray-live-smoke-report.json",
+		"docs/reports/live-validation-index.json",
+		"docs/reports/live-validation-summary.json",
+		"docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
+		"docs/reports/live-validation-runs/20260316T140138Z/summary.json",
+		"docs/reports/live-validation-runs/20260316T140138Z/ray.stdout.log",
+		"docs/reports/live-validation-runs/20260316T140138Z/ray.audit.jsonl",
+	}
+
+	for _, relativePath := range paths {
+		contents := readRepoFile(t, repoRoot, relativePath)
+		if strings.Contains(contents, `python -c "print('hello from ray')"`) {
+			t.Fatalf("%s should not retain the removed Python Ray smoke entrypoint", relativePath)
+		}
+		if !strings.Contains(contents, "echo hello from ray") {
+			t.Fatalf("%s should record the native Ray smoke entrypoint", relativePath)
+		}
+	}
+}
