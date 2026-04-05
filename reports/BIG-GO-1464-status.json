@@ -1,0 +1,68 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1464",
+    "title": "Lane refill: eliminate root and ops Python wrappers/assets still ending in .py with Go-first entrypoints",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "big-go-1464",
+    "latest_commit": "aeab7a1",
+    "push_target": "origin/big-go-1464"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1464-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1464-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1464_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "repo_root": [],
+      "scripts": [],
+      "scripts/ops": [],
+      "bigclaw-go/scripts": []
+    },
+    "retired_python_assets_kept_deleted": [
+      "scripts/create_issues.py",
+      "scripts/dev_smoke.py",
+      "scripts/ops/bigclaw_github_sync.py",
+      "scripts/ops/bigclaw_workspace_bootstrap.py",
+      "scripts/ops/symphony_workspace_bootstrap.py",
+      "scripts/ops/symphony_workspace_validate.py"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1464_zero_python_guard_test.go",
+    "Makefile",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts/ops scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1464(RepositoryHasNoPythonFiles|RootAndOpsPathsStayPythonFree|GoFirstEntrypointsRemainAvailable|LaneReportCapturesRootAndOpsSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "root_ops_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.036s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1464 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory for the repository root and scripts/ops surface and hardens the Go-first state with regression coverage.",
+    "Baseline HEAD before lane changes was `aeab7a1`.",
+    "Validation recorded no `.py` files in the repository and `go test -count=1 ./internal/regression -run 'TestBIGGO1464(RepositoryHasNoPythonFiles|RootAndOpsPathsStayPythonFree|GoFirstEntrypointsRemainAvailable|LaneReportCapturesRootAndOpsSweepState)$'` passed in 1.036s."
+  ]
+}
