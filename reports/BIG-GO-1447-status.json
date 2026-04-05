@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1447",
     "title": "Heartbeat refill lane 1447: remaining Python asset sweep 7/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-1447",
-    "latest_commit": "pending",
+    "latest_commit": "73b9ef1",
     "push_target": "origin/BIG-GO-1447"
   },
   "artifacts": {
@@ -53,6 +53,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Baseline HEAD before lane changes was `aeab7a1`."
+    "Baseline HEAD before lane changes was `aeab7a1`.",
+    "Lane commit `73b9ef1` (`BIG-GO-1447: add zero-python heartbeat artifacts`) is ready to push to `origin/BIG-GO-1447`."
   ]
 }
