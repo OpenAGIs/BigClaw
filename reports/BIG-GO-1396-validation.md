@@ -95,6 +95,7 @@ ok  	bigclaw-go/internal/regression	3.207s
 - Second rebased lane HEAD before final push: `c106acad`
 - Third rebased lane HEAD before final push: `a30424a9`
 - Fourth rebased lane HEAD before final push: `b8a6f0fe`
+- Final pushed lane commit: `6c7c4b0d`
 - Push target: `origin/main`
 
 ## Residual Risk
