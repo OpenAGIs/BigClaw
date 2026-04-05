@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1301",
-    "latest_commit": "tracked in git history after BIG-GO-1301 final sync",
+    "latest_commit": "tracked in git history after BIG-GO-1301 publish sync",
     "push_target": "origin/BIG-GO-1301"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.492s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.450s"
     }
   },
   "blocker": {
@@ -52,6 +52,6 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `389c32cf`.",
-    "Lane commit details are tracked in git history via `git log --oneline --grep 'BIG-GO-1301'`."
+    "Lane commit details are tracked in git history via `git log --oneline --grep 'BIG-GO-1301'` and the publish sync commit."
   ]
 }
