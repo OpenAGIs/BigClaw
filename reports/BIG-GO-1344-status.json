@@ -2,7 +2,7 @@
   "issue": {
     "identifier": "BIG-GO-1344",
     "title": "Heartbeat refill lane 1344: remaining Python asset sweep 4/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "no output; repository-wide Python file count remained 0",
       "priority_dir_inventory": "no output; priority residual directories remained Python-free",
-      "regression_tests": "ok   bigclaw-go/internal/regression 0.183s"
+      "regression_tests": "ok   bigclaw-go/internal/regression 0.496s"
     }
   },
   "blocker": {
