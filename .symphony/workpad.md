@@ -1,24 +1,19 @@
-# BIG-GO-1308 Workpad
+# BIG-GO-1302 Workpad
 
 ## Plan
 
-1. Confirm the remaining physical Python asset inventory for the repository and
-   the priority residual directories: `src/bigclaw`, `tests`, `scripts`, and
-   `bigclaw-go/scripts`.
-2. Add lane-scoped zero-Python sweep artifacts for `BIG-GO-1308`:
-   - `bigclaw-go/docs/reports/big-go-1308-python-asset-sweep.md`
-   - `bigclaw-go/internal/regression/big_go_1308_zero_python_guard_test.go`
-   - `reports/BIG-GO-1308-status.json`
-   - `reports/BIG-GO-1308-validation.md`
-3. Run targeted validation commands, record exact commands and results in the
-   validation artifacts, then commit and push the lane changes.
+1. Confirm the remaining physical Python asset inventory for the full repository and the priority residual directories: `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+2. Add lane-scoped zero-Python sweep artifacts for `BIG-GO-1302`:
+   - `bigclaw-go/docs/reports/big-go-1302-python-asset-sweep.md`
+   - `bigclaw-go/internal/regression/big_go_1302_zero_python_guard_test.go`
+   - `reports/BIG-GO-1302-status.json`
+   - `reports/BIG-GO-1302-validation.md`
+3. Run targeted validation commands, record exact commands and results in the validation artifacts, then commit and push the lane changes.
 
 ## Acceptance
 
-- Produce an explicit remaining Python asset inventory for the repository and
-  the priority residual directories.
-- Reduce physical Python files if any remain, or document and harden the
-  zero-Python baseline if the checkout is already Python-free.
+- Produce an explicit remaining Python asset inventory for the repository and the priority residual directories.
+- Reduce physical Python files if any remain, or document and harden the zero-Python baseline if the checkout is already Python-free.
 - Record the Go replacement paths that cover the retired Python surface.
 - Provide exact validation commands and results.
 - Publish the change as a committed and pushed lane update.
@@ -27,13 +22,9 @@
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1308(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1302(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
-- 2026-04-05: Confirmed repository-wide physical Python inventory is already
-  `0`, including the lane priority directories `src/bigclaw`, `tests`,
-  `scripts`, and `bigclaw-go/scripts`.
-- 2026-04-05: Refreshed lane metadata and validation evidence so the issue
-  records current branch, commit baseline, and targeted regression results for
-  this unattended execution.
+- 2026-04-05: Confirmed repository-wide physical Python inventory is already `0`, including the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- 2026-04-05: Refreshed lane metadata and validation evidence so the issue records the current zero-Python sweep state for this unattended execution.
