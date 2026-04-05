@@ -85,11 +85,11 @@ ok  	bigclaw-go/internal/regression	0.835s
 
 ## Git
 
-- Branch: `main`
+- Branch: `big-go-1318`
 - Baseline HEAD before lane commit: `65b83c6b`
-- Lane commit details: pending post-commit capture
-- Final pushed lane commit: pending post-push capture
-- Push target: `origin/main`
+- Lane commit details: `2cb67b5b` `BIG-GO-1318: record zero-python sweep baseline`
+- Final pushed lane commit: `2cb67b5b`
+- Push target: `origin/big-go-1318`
 
 ## Residual Risk
 
