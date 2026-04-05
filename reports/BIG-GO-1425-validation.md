@@ -90,6 +90,7 @@ ok  	bigclaw-go/internal/regression	0.488s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `c397e505`
+- Lane commit: `40de265f` (`BIG-GO-1425: add zero-python heartbeat artifacts`)
 - Push target: `origin/main`
 
 ## Residual Risk
