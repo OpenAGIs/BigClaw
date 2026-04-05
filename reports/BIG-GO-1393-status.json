@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1393",
     "title": "Heartbeat refill lane 1393: remaining Python asset sweep 3/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "5c545938",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -43,7 +43,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.596s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.529s"
     }
   },
   "blocker": {
@@ -54,6 +54,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `c8e9d79c`.",
-    "The first push was rejected after `origin/main` advanced to `c71fe8ca`; the lane was then rebased and revalidated at `6bcd7118`."
+    "The first push was rejected after `origin/main` advanced to `c71fe8ca`; the lane was then rebased and revalidated at `6bcd7118`.",
+    "A metadata closeout push was rejected after `origin/main` advanced to `f2afdaf3`; the two lane commits were replayed to `1f5924d7` and finally pushed as `5c545938`."
   ]
 }

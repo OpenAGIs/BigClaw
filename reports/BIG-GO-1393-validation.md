@@ -83,7 +83,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1393/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.596s
+ok  	bigclaw-go/internal/regression	0.529s
 ```
 
 ## Git
@@ -91,10 +91,13 @@ ok  	bigclaw-go/internal/regression	0.596s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c8e9d79c`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1393'`
-- Final pushed lane commit: `pending`
+- Final pushed lane commit: `5c545938`
 - Push target: `origin/main`
 - Initial push rejection: remote `main` advanced to `c71fe8ca`
 - Rebasing resolved the expected `.symphony/workpad.md` conflict and replayed the lane to `6bcd7118`
+- Metadata closeout commit `e3c7c7cf` was also rejected on push after `origin/main` advanced to `f2afdaf3`
+- Final rebase replayed the two lane commits to `1f5924d7`
+- Final push succeeded to `origin/main` at `5c545938`
 
 ## Residual Risk
 
