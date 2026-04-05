@@ -89,8 +89,8 @@ ok  	bigclaw-go/internal/regression	0.555s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `c5450aef`
-- Lane commit details: `2b00b910 BIG-GO-1389: guard zero python asset sweep`
-- Final pushed lane commit: `2b00b910`
+- Lane commit details: `git log --oneline --grep 'BIG-GO-1389' -n 2`
+- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1389' -n 1`
 - Push target: `origin/main`
 
 ## Residual Risk
@@ -101,3 +101,5 @@ ok  	bigclaw-go/internal/regression	0.555s
 - The first push attempt was rejected because `origin/main` advanced during the
   lane; the branch was rebased cleanly and the targeted regression guard was
   re-run on the rebased tree.
+- A metadata-only follow-up commit also required rebase because `origin/main`
+  advanced again during closeout.

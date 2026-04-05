@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "2b00b910",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1389' -n 1",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -52,6 +52,6 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `c5450aef`.",
     "The first push attempt was rejected because origin/main advanced; the lane was rebased cleanly onto `2ad75a0d` and revalidated.",
-    "Final pushed lane commit is `2b00b910`."
+    "A metadata-only follow-up commit also required rebase onto `ea03f42d`; use `git log --oneline --grep 'BIG-GO-1389' -n 2` for the final lane commit chain."
   ]
 }
