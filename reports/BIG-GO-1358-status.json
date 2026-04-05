@@ -60,6 +60,6 @@
     "This lane lands a Go-native ownership registry for the retired legacy model/runtime modules.",
     "The branch baseline was already Python-free, so the acceptance path is a concrete Go/native replacement artifact rather than a lower in-branch .py count.",
     "Baseline HEAD before lane changes was `f8cbae1c`.",
-    "Primary lane commit: `7bed6998 BIG-GO-1358: add legacy model runtime replacement registry`."
+    "Primary lane commit: `a3132046 BIG-GO-1358: add legacy model runtime replacement registry`."
   ]
 }
