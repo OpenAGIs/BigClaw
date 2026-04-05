@@ -90,9 +90,9 @@ ok  	bigclaw-go/internal/regression	1.277s
 
 - Branch: `BIG-GO-1448`
 - Baseline HEAD before lane changes: `aeab7a1e`
-- Lane commits: `9dbade442` (`BIG-GO-1448: add zero-python heartbeat artifacts`)
+- Lane commits: `9dbade442` (`BIG-GO-1448: add zero-python heartbeat artifacts`), `075e77959` (`BIG-GO-1448: finalize lane metadata`)
 - Push target: `origin/BIG-GO-1448`
-- Local/remote SHA equality confirmed at `9dbade4420b1c147658fdc9ed85ee8b1e8dfc8f7`
+- Local/remote SHA equality confirmed at `075e77959494a0b18ca566f4a4f935e5c88571ab`
 
 ## Residual Risk
 
