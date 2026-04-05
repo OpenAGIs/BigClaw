@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "957f27a0",
+    "latest_commit": "9745a914",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.159s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.507s"
     }
   },
   "blocker": {
@@ -53,6 +53,6 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `65b83c6b`.",
     "Initial lane commit on `origin/main`: `eef4cedb`.",
-    "Final published metadata commit on `origin/main`: `957f27a0`."
+    "Final published metadata commit prepared for push to `origin/main`: `9745a914`."
   ]
 }
