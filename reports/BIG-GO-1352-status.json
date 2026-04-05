@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "ef6ef3eb BIG-GO-1352: harden tests python-free baseline",
+    "latest_commit": "2d62a5bd BIG-GO-1352: finalize published branch metadata",
     "push_target": "origin/BIG-GO-1352"
   },
   "artifacts": {

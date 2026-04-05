@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.925s
 - Branch: `main`
 - Baseline HEAD before lane commit: `f8cbae1c`
 - Lane commit details: `ef6ef3eb BIG-GO-1352: harden tests python-free baseline`
-- Final pushed lane commit: `ef6ef3eb BIG-GO-1352: harden tests python-free baseline`
+- Final pushed lane commit: `2d62a5bd BIG-GO-1352: finalize published branch metadata`
 - Push target: `origin/BIG-GO-1352`
 
 ## Residual Risk
