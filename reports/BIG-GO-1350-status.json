@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1350'",
+    "latest_commit": "62de4b00 BIG-GO-1350: close out python asset sweep lane",
     "push_target": "origin/main"
   },
   "artifacts": {
