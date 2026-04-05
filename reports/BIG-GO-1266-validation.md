@@ -87,7 +87,7 @@ ok  	bigclaw-go/internal/regression	0.801s
 
 - Branch: `BIG-GO-1266`
 - Commit trail: `git log --oneline --grep 'BIG-GO-1266'`
-- Final publish result: `git push` updated `origin/BIG-GO-1266` to `fbd44497 BIG-GO-1266: finalize validation evidence`
+- Final publish result: `origin/BIG-GO-1266` updated successfully via `git push`; see `git log --oneline --grep 'BIG-GO-1266'` for the final commit trail in this lane.
 
 ## Residual Risk
 

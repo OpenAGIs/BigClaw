@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1266",
-    "latest_commit": "fbd44497 BIG-GO-1266: finalize validation evidence",
+    "latest_commit": "tracked in git history after BIG-GO-1266 final sync",
     "push_target": "origin/BIG-GO-1266"
   },
   "artifacts": {
