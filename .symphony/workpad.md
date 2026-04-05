@@ -22,4 +22,4 @@
   `.py` files.
 - The canonical Go-owned replacement surface is now
   `bigclaw-go/internal/regression/go_only_python_asset_sweep_test.go` plus
-  `bigclaw-go/docs/reports/go-only-python-asset-sweep.md`.
+  `bigclaw-go/docs/reports/go-only-python-asset-audit.md`.
