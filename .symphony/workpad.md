@@ -1,27 +1,19 @@
-## Codex Workpad
+# BIG-GO-1475
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+1. Re-inventory the remaining report-related Python helpers after the continuation-helper slice.
+2. Port the active `scripts/e2e/run_task_smoke.py` report helper to a Go-owned entrypoint and shared reporting package code.
+3. Update shell wrappers, docs, and issue-coverage references to point at the Go entrypoint.
+4. Delete the replaced Python helper and refresh the issue validation report with the next physical Python file-count reduction.
+5. Run targeted Go and report-consumer validation, commit, and push the branch.
 
-### Plan
+## Acceptance
+- The selected active Python helper (`run_task_smoke.py`) is deleted, not just documented.
+- Replacement Go ownership is explicit in repo-native scripts, docs, and validation artifacts.
+- In-scope report import paths and helper references no longer point at the removed Python file.
+- Validation proves the repository moved closer to Go-only by reducing the physical Python file count again.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
-
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation
+- Capture the pre/post Python file inventory with exact commands.
+- Run targeted `go test` coverage for the new reporting helper and regression/report-consumer surfaces it feeds.
+- Record exact command results in `reports/BIG-GO-1475-validation.md`.
