@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "eef4cedb",
+    "latest_commit": "f2c1a248",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.451s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.159s"
     }
   },
   "blocker": {
@@ -52,6 +52,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `65b83c6b`.",
-    "Published lane commit: `eef4cedb` on `origin/main`."
+    "Initial lane commit on `origin/main`: `eef4cedb`.",
+    "Final metadata commit pending push at update time: `f2c1a248`."
   ]
 }
