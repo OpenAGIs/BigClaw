@@ -80,19 +80,21 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1352/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.188s
+ok  	bigclaw-go/internal/regression	0.925s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `f8cbae1c`
-- Lane commit details: pending
-- Final pushed lane commit: pending
-- Push target: `origin/main`
+- Lane commit details: `ef6ef3eb BIG-GO-1352: harden tests python-free baseline`
+- Final pushed lane commit: `ef6ef3eb BIG-GO-1352: harden tests python-free baseline`
+- Push target: `origin/BIG-GO-1352`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1352 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- Direct push to `origin/main` raced with concurrent unattended lane commits,
+  so the lane is published on `origin/BIG-GO-1352` instead of mainline.
