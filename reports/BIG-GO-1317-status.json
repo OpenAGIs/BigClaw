@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1317",
     "title": "Heartbeat refill lane 1317: remaining Python asset sweep 7/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "65b83c6b",
+    "latest_commit": "07b0ce69",
     "push_target": "origin/main"
   },
   "artifacts": {
