@@ -26,6 +26,13 @@
   - `ok  	bigclaw-go/cmd/bigclawctl	3.744s`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354/bigclaw-go && go test ./internal/regression -run TestTopLevelModulePurgeTranche16`
   - `ok  	bigclaw-go/internal/regression	0.487s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354/bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'TestBIGGO1354|TestTopLevelModulePurgeTranche16'`
+  - `ok  	bigclaw-go/cmd/bigclawctl	0.775s [no tests to run]`
+  - `ok  	bigclaw-go/internal/regression	0.438s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+  - no output
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+  - no output
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclaw-issue --help`
   - exit `0`
   - output included `usage: bigclawctl issue [flags] [args...]`
