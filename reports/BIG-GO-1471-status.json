@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1471",
+    "title": "Refill: delete or replace remaining src/bigclaw Python modules and re-export glue with Go-owned surfaces",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1471",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-1471"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1471-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/go-only-python-asset-audit.md",
+    "regression_guard": "bigclaw-go/internal/regression/go_only_python_asset_sweep_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "deleted_glue": {
+    "lane_guard_tests": 147,
+    "python_asset_sweep_reports": 102,
+    "status_json_records": 135
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/go_only_python_asset_sweep_test.go",
+    "bigclaw-go/docs/reports/go-only-python-asset-audit.md",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o \\( -name '*.py' -o -name '*.pyi' \\) -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f \\( -name '*.py' -o -name '*.pyi' \\) 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestGoOnly(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|CanonicalSweepReportCapturesState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "no output; .py/.pyi file count is 0",
+      "priority_dir_inventory": "no output; src/bigclaw, tests, scripts, and bigclaw-go/scripts remain Python-free",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.687s"
+    }
+  },
+  "blocker": {
+    "type": "baseline_consolidation",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace, so BIG-GO-1471 removes the remaining lane-specific migration glue instead of deleting in-branch Python source files."
+  },
+  "notes": [
+    "This issue consolidates repeated Python-sweep evidence into one canonical Go-owned regression/report surface.",
+    "The deleted files were audit glue only and had no runtime ownership role."
+  ]
+}

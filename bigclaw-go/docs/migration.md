@@ -31,3 +31,6 @@
   remaining migration, rollback, and parallel-hardening follow-up digests.
 - For executor-lane validation evidence, start with
   `docs/reports/parallel-validation-matrix.md`.
+- For the canonical retired-Python audit surface, use
+  `docs/reports/go-only-python-asset-audit.md` instead of lane-specific
+  zero-Python sweep artifacts.

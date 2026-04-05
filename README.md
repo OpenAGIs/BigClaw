@@ -75,6 +75,11 @@ bash scripts/dev_bootstrap.sh
 
 That helper runs the Go `bigclawctl dev-smoke` replacement first and then
 `cd bigclaw-go && go test ./internal/bootstrap`.
+
+The canonical post-migration audit for retired `src/bigclaw` ownership now
+lives in [`bigclaw-go/docs/reports/go-only-python-asset-audit.md`](./bigclaw-go/docs/reports/go-only-python-asset-audit.md)
+with regression coverage in
+[`bigclaw-go/internal/regression/go_only_python_asset_sweep_test.go`](./bigclaw-go/internal/regression/go_only_python_asset_sweep_test.go).
 ## Go smoke verify
 
 ```bash
