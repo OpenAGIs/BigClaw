@@ -1,0 +1,56 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1466",
+    "title": "Lane refill: eliminate remaining Python reporting/observability helper surfaces and imports",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1466",
+    "latest_commit": "04b649e",
+    "push_target": "origin/BIG-GO-1466"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1466-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1466-python-reporting-observability-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1466_reporting_surface_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "removed_python_reporting_surfaces": [
+      "python-backed Ray mixed-workload entrypoints",
+      "python-backed Ray live validation report strings",
+      "python-backed Ray bundle report strings",
+      "python-backed Ray driver snapshot in bigclaw-go/docs/reports/ray-live-jobs.json"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_mixed_workload_command.go",
+    "bigclaw-go/internal/regression/big_go_1466_reporting_surface_guard_test.go",
+    "bigclaw-go/scripts/e2e/ray_smoke.sh",
+    "bigclaw-go/docs/e2e-validation.md",
+    "bigclaw-go/docs/reports/ray-live-smoke-report.json",
+    "bigclaw-go/docs/reports/live-validation-summary.json",
+    "bigclaw-go/docs/reports/live-validation-index.json"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "rg -n \"python -c|import ray; ray.init\" bigclaw-go --glob '!**/.git/**' --glob '!bigclaw-go/docs/reports/big-go-1466-python-reporting-observability-sweep.md' --glob '!bigclaw-go/internal/regression/big_go_1466_reporting_surface_guard_test.go' --glob '!bigclaw-go/internal/regression/big_go_1359_zero_python_guard_test.go'",
+      "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/regression -run 'TestBIGGO1466|TestLiveValidation|TestParallelValidationMatrixDocs'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "reporting_surface_grep": "none",
+      "targeted_go_tests": "ok   bigclaw-go/cmd/bigclawctl\t(cached) [no tests to run]; ok   bigclaw-go/internal/regression\t(cached)"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero before BIG-GO-1466 changes, so the lane removed stale Python-linked reporting residue rather than deleting .py files."
+  },
+  "notes": [
+    "This lane is scoped to reporting and observability helper residue, not tracker-only bookkeeping.",
+    "Baseline HEAD before lane changes was `a63c8ec`."
+  ]
+}
