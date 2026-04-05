@@ -23,3 +23,5 @@
 - 2026-04-06: Added lane-scoped zero-Python regression artifacts for `BIG-GO-1452` covering repository inventory, priority residual directories, and Go/native replacement paths.
 - 2026-04-06: Ran repository inventory checks and `go test -count=1 ./internal/regression -run 'TestBIGGO1452(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`, which passed.
 - 2026-04-06: Committed and pushed lane artifacts to `origin/BIG-GO-1452` at `a2ae81d4`.
+- 2026-04-06: Published metadata close-out commit `9281c24` (`BIG-GO-1452: finalize lane metadata`) to `origin/BIG-GO-1452`.
+- 2026-04-06: Re-ran the targeted regression guard after metadata sync and kept lane metadata on stable branch-level references to avoid self-referential SHA churn.
