@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "80943fbd",
+    "latest_commit": "eb94eb08",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -44,7 +44,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.703s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.630s"
     }
   },
   "blocker": {
@@ -56,6 +56,7 @@
     "Baseline HEAD before lane changes was `4a24341d`.",
     "Published lane commit `8ecbccac` (`BIG-GO-1433: add zero-python heartbeat artifacts`) to `origin/main`.",
     "Published metadata close-out commit `80943fbd` (`BIG-GO-1433: finalize lane metadata`) to `origin/main`.",
-    "Local and remote agreed at pushed HEAD `80943fbd` before the metadata refresh."
+    "Published metadata refresh commit `eb94eb08` (`BIG-GO-1433: refresh rebased metadata`) to `origin/main`.",
+    "Local and remote agree at pushed HEAD `eb94eb08`."
   ]
 }
