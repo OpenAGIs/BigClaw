@@ -92,7 +92,7 @@ ok  	bigclaw-go/internal/regression	0.179s
 - Baseline HEAD before lane commit: `aeab7a1`
 - Push target: `origin/BIG-GO-1446`
 - Published lane commit: `8f1a7111` (`BIG-GO-1446: add zero-python heartbeat artifacts`)
-- Local/remote SHA equality confirmed at `8f1a7111`
+- Published metadata close-out commit: `2313b46f` (`BIG-GO-1446: finalize lane metadata`)
 
 ## Residual Risk
 
