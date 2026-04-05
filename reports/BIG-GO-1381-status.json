@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1381'",
+    "latest_commit": "062acfa1",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.576s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.573s"
     }
   },
   "blocker": {
@@ -52,6 +52,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `c5450aef`.",
-    "The first push attempt was rejected because origin/main advanced; the lane was rebased cleanly onto `2ad75a0d` and revalidated."
+    "The first push attempt was rejected because origin/main advanced; the lane was rebased cleanly onto `2ad75a0d` and revalidated.",
+    "A later remote advance required one more clean rebase onto `3d75ee7a`; the final pushed lane head is `062acfa1` on origin/main."
   ]
 }
