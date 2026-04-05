@@ -86,8 +86,8 @@ ok  	bigclaw-go/internal/regression	0.516s
 ## Git
 
 - Branch: `main`
-- Published commit: `pending`
-- Push result: `pending`
+- Published commit: `ee84703a` (`BIG-GO-1271: document zero-python sweep lane`)
+- Push result: `git push origin main` -> `5c40317a..ee84703a  main -> main`
 
 ## Residual Risk
 
