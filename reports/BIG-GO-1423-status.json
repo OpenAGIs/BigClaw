@@ -5,9 +5,9 @@
     "state": "Done"
   },
   "branch": {
-    "name": "main",
-    "latest_commit": "9a0e5e55",
-    "push_target": "origin/main"
+    "name": "big-go-1423",
+    "latest_commit": "dabda9c3",
+    "push_target": "origin/big-go-1423"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1423-validation.md",
@@ -55,6 +55,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `c397e505`.",
     "The targeted regression guard passed after the rebase with `ok  \tbigclaw-go/internal/regression\t0.487s`.",
-    "Rebasing onto fetched `origin/main` advanced the lane commits to `c14a1a40` (`BIG-GO-1423: add zero-python heartbeat artifacts`) and `9a0e5e55` (`BIG-GO-1423: finalize lane metadata`) on top of `564e6e49`."
+    "Rebasing onto fetched `origin/main` advanced the lane commits to `c14a1a40` (`BIG-GO-1423: add zero-python heartbeat artifacts`) and `9a0e5e55` (`BIG-GO-1423: finalize lane metadata`) on top of `564e6e49`.",
+    "Final metadata commit `dabda9c3` (`BIG-GO-1423: refresh rebased validation metadata`) was pushed to `origin/big-go-1423`."
   ]
 }

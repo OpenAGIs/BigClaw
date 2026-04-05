@@ -88,10 +88,11 @@ ok  	bigclaw-go/internal/regression	0.487s
 
 ## Git
 
-- Branch: `main`
+- Branch: `big-go-1423`
 - Baseline HEAD before lane commit: `c397e505`
 - Rebasing over updated `origin/main` advanced the lane commits to `c14a1a40` (`BIG-GO-1423: add zero-python heartbeat artifacts`) and `9a0e5e55` (`BIG-GO-1423: finalize lane metadata`) on top of `564e6e49`
-- Push target: `origin/main`
+- Final metadata commit: `dabda9c3` (`BIG-GO-1423: refresh rebased validation metadata`)
+- Push target: `origin/big-go-1423`
 
 ## Residual Risk
 
