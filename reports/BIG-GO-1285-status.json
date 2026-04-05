@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1285",
-    "latest_commit": "cd2c57d6",
+    "latest_commit": "75e42d38",
     "push_target": "origin/BIG-GO-1285"
   },
   "artifacts": {
@@ -52,6 +52,6 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "The code-bearing lane commit for this issue is `c7938755`.",
-    "`branch.latest_commit` records the final published metadata commit after the code-bearing lane commit `c7938755`."
+    "`branch.latest_commit` records the final published metadata commit `75e42d38` after the code-bearing lane commit `c7938755`."
   ]
 }
