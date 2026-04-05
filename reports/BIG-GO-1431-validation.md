@@ -90,6 +90,7 @@ ok  	bigclaw-go/internal/regression	0.251s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `4a24341d`
+- Artifact commit: `7872d359` (`BIG-GO-1431: add zero-python heartbeat artifacts`)
 - Push target: `origin/main`
 - Push result: pending
 

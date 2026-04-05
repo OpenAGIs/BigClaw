@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1431",
     "title": "Heartbeat refill lane 1431: remaining Python asset sweep 1/10",
-    "state": "Ready to Publish"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "7872d359",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -53,6 +53,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Baseline HEAD before lane changes was `4a24341d`."
+    "Baseline HEAD before lane changes was `4a24341d`.",
+    "Artifact commit `7872d359` captured the lane report, regression guard, and validation artifacts."
   ]
 }
