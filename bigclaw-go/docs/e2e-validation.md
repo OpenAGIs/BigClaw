@@ -104,7 +104,7 @@ This validates one control-plane instance against a more production-like mix of 
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/external_store_validation.py \
+go run ./scripts/e2e/external_store_validation \
   --report-path docs/reports/external-store-validation-report.json
 ```
 

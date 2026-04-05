@@ -2,7 +2,7 @@
 
 ## Scope
 
-Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands, moving the benchmark capacity-certification generator into Go-owned reporting code, porting the live-validation bundle exporter into Go-owned reporting code, porting the shadow compare / matrix migration helpers into Go-owned reporting code, porting the benchmark matrix / local soak helpers into Go-owned reporting code, porting the mixed-workload matrix helper into Go-owned reporting/runtime code, porting the cross-process coordination capability surface helper into Go-owned reporting code, porting the broker failover stub matrix helper into Go-owned reporting code, and porting the deterministic subscriber takeover fault matrix helper into Go-owned reporting code.
+Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands, moving the benchmark capacity-certification generator into Go-owned reporting code, porting the live-validation bundle exporter into Go-owned reporting code, porting the shadow compare / matrix migration helpers into Go-owned reporting code, porting the benchmark matrix / local soak helpers into Go-owned reporting code, porting the mixed-workload matrix helper into Go-owned reporting/runtime code, porting the cross-process coordination capability surface helper into Go-owned reporting code, porting the broker failover stub matrix helper into Go-owned reporting code, porting the deterministic subscriber takeover fault matrix helper into Go-owned reporting code, and porting the external-store validation lane into Go-owned reporting/runtime code.
 
 ## Deleted Python Files And Replacements
 
@@ -54,6 +54,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - Replaced by Go-owned reporting logic in `bigclaw-go/internal/reporting/subscriber_takeover.go`, coverage in `bigclaw-go/internal/reporting/subscriber_takeover_test.go` plus `bigclaw-go/internal/regression/takeover_proof_surface_test.go`, and the Go entrypoint `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix/main.go`.
 - `tests/test_subscriber_takeover_harness.py`
   - Replaced by Go-owned takeover-harness coverage in `bigclaw-go/internal/reporting/subscriber_takeover_test.go`.
+- `bigclaw-go/scripts/e2e/external_store_validation.py`
+  - Replaced by Go-owned reporting/runtime logic in `bigclaw-go/internal/reporting/external_store.go`, coverage in `bigclaw-go/internal/reporting/external_store_test.go` plus `bigclaw-go/internal/regression/external_store_validation_report_test.go`, and the Go entrypoint `bigclaw-go/scripts/e2e/external_store_validation/main.go`.
 
 ## Delete Conditions
 
@@ -69,6 +71,7 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
 - The cross-process coordination surface helper was deleted because the e2e validation docs and follow-up digest now point at the Go entrypoint while Go-owned tests validate the machine-readable coordination surface shape directly.
 - The broker failover stub matrix helper was deleted because the e2e validation docs now point at the Go entrypoint while Go-owned tests validate the deterministic broker proof artifacts and downstream regression consumers continue to validate the checked-in summaries.
 - The deterministic subscriber takeover fault matrix helper was deleted because the e2e validation docs, checked-in takeover report, and follow-up digest now point at the Go entrypoint while Go-owned tests validate the local takeover report shape directly.
+- The external-store validation lane helper was deleted because the e2e validation docs and checked-in external-store report now point at the Go entrypoint while Go-owned tests validate the backend-matrix/report shape and the Go-owned runtime lane refreshes the same evidence contract directly.
 - The earlier Python-only report-surface test helpers were deleted because Go-owned tests already validate the same report artifacts and reviewer evidence paths.
 
 ## Validation
@@ -99,6 +102,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `find . -type f -name '*.py' | sort | wc -l` -> `116`
 - Python inventory after the twelfth deletion slice:
   - `find . -type f -name '*.py' | sort | wc -l` -> `114`
+- Python inventory after the thirteenth deletion slice:
+  - `find . -type f -name '*.py' | sort | wc -l` -> `113`
 - Targeted Go validation:
   - `cd bigclaw-go && go test ./internal/reporting ./internal/regression` -> `ok  	bigclaw-go/internal/reporting	0.801s` and `ok  	bigclaw-go/internal/regression	1.357s`
 - Targeted Go validation after the `run_task_smoke` port:
@@ -140,3 +145,6 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `cd bigclaw-go && go run ./scripts/e2e/subscriber_takeover_fault_matrix --pretty` -> exit `0`; refreshed `bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json`
 - Targeted Python/doc-consumer validation for the subscriber takeover fault matrix migration slice:
   - `PYTHONPATH=src python3 -m pytest tests/test_followup_digests.py -q` -> `2 passed`
+- Targeted Go validation for the external-store validation migration slice:
+  - `cd bigclaw-go && go test ./internal/reporting ./internal/regression ./scripts/e2e/external_store_validation` -> `ok  	bigclaw-go/internal/reporting	2.923s`, `ok  	bigclaw-go/internal/regression	1.325s`, and `?   	bigclaw-go/scripts/e2e/external_store_validation	[no test files]`
+  - `cd bigclaw-go && go run ./scripts/e2e/external_store_validation --report-path docs/reports/external-store-validation-report.json` -> exit `0`; refreshed `bigclaw-go/docs/reports/external-store-validation-report.json`
