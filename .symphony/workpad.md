@@ -51,3 +51,19 @@
   'TestBIGGO1415(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
   after final report and metadata updates and observed
   `ok  	bigclaw-go/internal/regression	0.499s`.
+- 2026-04-06: Added `reports/BIG-GO-1415-validation.md` and
+  `reports/BIG-GO-1415-status.json` so the lane carries the same validation and
+  status bookkeeping as adjacent heartbeat sweep lanes.
+- 2026-04-06: Re-ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1415
+  -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and again
+  observed no output.
+- 2026-04-06: Re-ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1415/src/bigclaw
+  /Users/openagi/code/bigclaw-workspaces/BIG-GO-1415/tests
+  /Users/openagi/code/bigclaw-workspaces/BIG-GO-1415/scripts
+  /Users/openagi/code/bigclaw-workspaces/BIG-GO-1415/bigclaw-go/scripts -type f
+  -name '*.py' 2>/dev/null | sort` and again observed no output.
+- 2026-04-06: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1415/bigclaw-go
+  && go test -count=1 ./internal/regression -run
+  'TestBIGGO1415(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+  after adding the companion lane metadata and observed
+  `ok  	bigclaw-go/internal/regression	0.287s`.
