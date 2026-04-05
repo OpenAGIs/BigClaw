@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "ca026f44 BIG-GO-1338: stabilize git metadata references",
+    "latest_commit": "168ee3a4 BIG-GO-1338: finalize validation evidence",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.483s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.219s"
     }
   },
   "blocker": {
@@ -52,6 +52,6 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `2322b380`.",
-    "Validation evidence was refreshed on `2026-04-05 22:51:35 CST` before the final issue closure commit."
+    "Validation evidence was refreshed on `2026-04-05 23:02:09 CST` after rebasing onto `origin/main@46044e3f` and before the final push."
   ]
 }

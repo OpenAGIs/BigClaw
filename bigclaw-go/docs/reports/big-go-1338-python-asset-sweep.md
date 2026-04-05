@@ -27,10 +27,10 @@ The Go-only replacement surface that remains available for the retired Python as
 
 ## Validation Commands And Results
 
-- Revalidated on `2026-04-05 22:51:35 CST`.
+- Revalidated on `2026-04-05 23:02:09 CST` after rebasing onto `origin/main@46044e3f`.
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
   Result: no output; repository-wide Python file count remained `0`.
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the priority residual directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1338(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.482s`
+  Result: `ok  	bigclaw-go/internal/regression	3.219s`

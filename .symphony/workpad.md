@@ -31,3 +31,4 @@
 - 2026-04-05: This execution therefore focuses on refreshing lane evidence and regression validation rather than deleting in-branch Python files.
 - 2026-04-05 22:19:40 CST: Re-ran the exact lane validation commands; both Python inventory checks stayed empty and the targeted regression guard passed in `0.483s`.
 - 2026-04-05 22:51:35 CST: Revalidated immediately before final issue commit; both Python inventory checks stayed empty and `go test -count=1 ./internal/regression -run 'TestBIGGO1338(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` passed in `0.482s`.
+- 2026-04-05 23:02:09 CST: Revalidated after rebasing onto `origin/main@46044e3f`; both Python inventory checks stayed empty and the targeted regression guard passed in `3.219s`.
