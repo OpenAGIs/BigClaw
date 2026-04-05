@@ -86,8 +86,8 @@ ok  	bigclaw-go/internal/regression	0.292s
 ## Git
 
 - Branch: `BIG-GO-1268`
-- Commit trail: `git log --oneline --grep 'BIG-GO-1268'`
-- Final publish result: `pending until commit and push complete`
+- Commit trail: `6a5bee29 BIG-GO-1268 add zero-python lane guard`
+- Final publish result: `git push -u origin BIG-GO-1268` -> success
 
 ## Residual Risk
 
