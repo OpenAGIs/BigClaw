@@ -82,7 +82,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1381/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.276s
+ok  	bigclaw-go/internal/regression	0.576s
 ```
 
 ## Git
@@ -98,3 +98,6 @@ ok  	bigclaw-go/internal/regression	0.276s
 - The live branch baseline was already Python-free, so BIG-GO-1381 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- The first push attempt was rejected because `origin/main` advanced during the
+  lane; the branch was rebased cleanly onto `2ad75a0d` and the targeted
+  regression guard was re-run on the rebased tree.
