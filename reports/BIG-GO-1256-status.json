@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "a0b0ffd0",
-    "push_target": "origin/big-go-1256"
+    "latest_commit": "8234877f",
+    "push_target": "origin/main"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1256-validation.md",
@@ -48,6 +48,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Concurrent heartbeat lanes repeatedly advanced origin/main during publication, so the lane was first published on origin/big-go-1256 and then rebased again for a clean mainline follow-up."
+    "Concurrent heartbeat lanes repeatedly advanced origin/main during publication, so the lane was first published on origin/big-go-1256 and then rebased onto the latest mainline before the successful final publish to origin/main."
   ]
 }

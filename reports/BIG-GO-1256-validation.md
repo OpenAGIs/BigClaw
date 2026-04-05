@@ -87,8 +87,8 @@ ok  	bigclaw-go/internal/regression	0.501s
 - Branch: `main`
 - Baseline HEAD before lane commit: `66fb290d`
 - Code commit: `5ac63299` (`BIG-GO-1256: add zero-python heartbeat artifacts`)
-- Published lane branch: `origin/big-go-1256` at `1aba075d` (`BIG-GO-1256: finalize lane metadata`)
-- Current rebased follow-up HEAD: `a0b0ffd0` (`BIG-GO-1256: finalize lane metadata`)
+- Published lane branch: `origin/big-go-1256` at `1583aed2` (`BIG-GO-1256: refresh publication metadata`)
+- Final rebased mainline commit: `8234877f` (`BIG-GO-1256: refresh publication metadata`)
 - Push attempts:
   - `git push origin HEAD:main` -> rejected (`fetch first`)
   - `git fetch origin && git rebase origin/main` -> conflict on shared `.symphony/workpad.md`, resolved locally, rebase continued
@@ -97,6 +97,9 @@ ok  	bigclaw-go/internal/regression	0.501s
   - `git push origin HEAD:main` -> success (`27c72bf2..5ac63299  HEAD -> main`)
   - `git push origin HEAD:big-go-1256` -> success (`[new branch] HEAD -> big-go-1256`)
   - `git fetch origin && git rebase origin/main` -> success (`rebased metadata follow-up onto b3ded2fc`)
+  - `git push --force-with-lease origin HEAD:big-go-1256` -> success (`1aba075d...1583aed2 HEAD -> big-go-1256`)
+  - `git rebase origin/main` -> success (`rebased lane commits onto 71fc7aeb`)
+  - `git push origin HEAD:main` -> success (`71fc7aeb..8234877f  HEAD -> main`)
 
 ## Residual Risk
 
