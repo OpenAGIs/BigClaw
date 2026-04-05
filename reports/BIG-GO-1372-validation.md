@@ -84,7 +84,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1372/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	1.219s
+ok  	bigclaw-go/internal/regression	0.659s
 ```
 
 ## Git
