@@ -1,13 +1,13 @@
-# BIG-GO-1253 Workpad
+# BIG-GO-1266 Workpad
 
 ## Plan
 - Reconfirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- Add a lane-specific Go regression guard for `BIG-GO-1253` that keeps the repository and the priority residual directories Python-free while asserting the Go or shell replacement entrypoints still exist.
-- Add a lane report documenting the remaining Python asset inventory, the replacement paths, and the exact validation commands/results for this sweep.
-- Run targeted validation, capture exact command outcomes, then commit and push the lane changes to the remote branch used for this issue.
+- Add a lane-specific Go regression guard for `BIG-GO-1266` that keeps the repository and the priority residual directories Python-free while asserting the Go or shell replacement entrypoints still exist.
+- Add lane documentation under `bigclaw-go/docs/reports` and `reports/` that records the remaining Python asset inventory, replacement paths, and exact validation commands/results for this sweep.
+- Run targeted validation, capture exact command outcomes, then commit and push the lane changes to the remote branch for this issue.
 
 ## Acceptance
-- The `BIG-GO-1253` lane has an explicit, auditable remaining Python asset inventory.
+- The `BIG-GO-1266` lane has an explicit, auditable remaining Python asset inventory.
 - The repository remains free of physical `.py` files, including the priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 - The retained Go or shell replacement paths for removed Python behaviors are documented and enforced by regression coverage.
 - Exact validation commands and outcomes are recorded for this lane.
@@ -27,7 +27,7 @@
 - `bigclaw-go/scripts/e2e/run_all.sh`
 
 ## Validation
-- `find . -type f -name '*.py' | sort`
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1253(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1266(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 - `git status --short`
