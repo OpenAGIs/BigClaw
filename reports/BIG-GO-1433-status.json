@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "8ecbccac",
+    "latest_commit": "80943fbd",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -44,7 +44,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.271s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.703s"
     }
   },
   "blocker": {
@@ -55,6 +55,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `4a24341d`.",
     "Published lane commit `8ecbccac` (`BIG-GO-1433: add zero-python heartbeat artifacts`) to `origin/main`.",
-    "Local and remote agreed at pushed HEAD `8ecbccac` before metadata close-out."
+    "Published metadata close-out commit `80943fbd` (`BIG-GO-1433: finalize lane metadata`) to `origin/main`.",
+    "Local and remote agreed at pushed HEAD `80943fbd` before the metadata refresh."
   ]
 }
