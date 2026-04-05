@@ -2,12 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-1428",
     "title": "Heartbeat refill lane 1428: remaining Python asset sweep 8/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "c397e505",
-    "push_target": "origin/main"
+    "latest_commit": "acab4365",
+    "push_target": "origin/big-go-1428"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1428-validation.md",
@@ -53,6 +53,8 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Baseline HEAD before lane changes was `c397e505`."
+    "Baseline HEAD before lane changes was `c397e505`.",
+    "Published branch head is `acab4365` on `origin/big-go-1428`.",
+    "Latest observed `origin/main` after publication was `3e695d6a`."
   ]
 }

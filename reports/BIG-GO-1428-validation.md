@@ -90,10 +90,15 @@ ok  	bigclaw-go/internal/regression	0.891s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `c397e505`
-- Push target: `origin/main`
+- Published branch head: `acab4365` (`BIG-GO-1428: add zero-python heartbeat artifacts`)
+- Push target: `origin/big-go-1428`
+- Latest observed `origin/main`: `3e695d6a`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1428 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count in this checkout.
+- Concurrent heartbeat lanes kept advancing `origin/main`, so this lane was
+  published to `origin/big-go-1428` instead of racing unsafe fast-forward
+  pushes to `main`.
