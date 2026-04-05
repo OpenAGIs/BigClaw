@@ -90,6 +90,7 @@ ok  	bigclaw-go/internal/regression	0.501s
 - Published lane branch: `origin/big-go-1256` at `1583aed2` (`BIG-GO-1256: refresh publication metadata`)
 - Final rebased mainline commit: `8234877f` (`BIG-GO-1256: refresh publication metadata`)
 - Final metadata sync commit: `b6f695f5` (`BIG-GO-1256: finalize mainline publication metadata`)
+- Final status sync commit: `c1bd7ab7` (`BIG-GO-1256: sync final published commit metadata`)
 - Push attempts:
   - `git push origin HEAD:main` -> rejected (`fetch first`)
   - `git fetch origin && git rebase origin/main` -> conflict on shared `.symphony/workpad.md`, resolved locally, rebase continued
@@ -102,6 +103,7 @@ ok  	bigclaw-go/internal/regression	0.501s
   - `git rebase origin/main` -> success (`rebased lane commits onto 71fc7aeb`)
   - `git push origin HEAD:main` -> success (`71fc7aeb..8234877f  HEAD -> main`)
   - `git push origin HEAD:main` -> success (`8234877f..b6f695f5  HEAD -> main`)
+  - `git push origin HEAD:main` -> success (`b6f695f5..c1bd7ab7  HEAD -> main`)
 
 ## Residual Risk
 
