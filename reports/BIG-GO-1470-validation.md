@@ -119,8 +119,9 @@ ok  	bigclaw-go/internal/regression	1.619s
 - Branch: `BIG-GO-1470`
 - Baseline HEAD before lane commit: `a63c8ec0f999d976a1af890c920a54ac2d6c693a`
 - Lane commit: `025fb05` (`BIG-GO-1470: add zero-python repo audit evidence`)
+- Final metadata commit: `5c2cfe0` (`BIG-GO-1470: finalize audit metadata`)
 - Push target: `origin/BIG-GO-1470`
-- Local/remote SHA equality confirmed at `025fb05`
+- Local/remote SHA equality confirmed at `5c2cfe0`
 
 ## Residual Risk
 
