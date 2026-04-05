@@ -32,4 +32,4 @@
 - 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1390(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	3.217s`.
 - 2026-04-06: Created the lane commit with message `BIG-GO-1390: harden zero-python sweep baseline`; see `git log --oneline --grep 'BIG-GO-1390'`.
 - 2026-04-06: Push contention required rebasing the lane onto `origin/main`; the current replay target is `ea03f42d`.
-- 2026-04-06: Published the finalized lane metadata to `origin/BIG-GO-1390` at `9643d9ec` after repeated `origin/main` fast-forward contention.
+- 2026-04-06: Published the finalized lane metadata to `origin/BIG-GO-1390`; see `git log --oneline --grep 'BIG-GO-1390'` for the final remote head after closeout follow-ups.
