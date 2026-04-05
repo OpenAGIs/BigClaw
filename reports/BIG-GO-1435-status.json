@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "a7ffc7ab",
-    "push_target": "origin/main"
+    "latest_commit": "5203c543",
+    "push_target": "origin/BIG-GO-1435"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1435-validation.md",
@@ -54,6 +54,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `4a24341d`.",
-    "Lane commit `a7ffc7ab` captured the lane-scoped report, regression guard, and validation artifacts."
+    "Lane commit `227d5e29` captured the lane-scoped report, regression guard, and validation artifacts.",
+    "Close-out commit `5203c543` was pushed successfully to `origin/BIG-GO-1435` after repeated non-fast-forward races on `origin/main`."
   ]
 }

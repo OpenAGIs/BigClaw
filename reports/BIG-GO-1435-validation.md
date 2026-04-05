@@ -90,9 +90,9 @@ ok  	bigclaw-go/internal/regression	0.221s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `4a24341d`
-- Published lane commit: `a7ffc7ab`
-- Push target: `origin/main`
-- Push result: pending
+- Published lane commit: `5203c543`
+- Push target: `origin/BIG-GO-1435`
+- Push result: success
 
 ## Residual Risk
 
