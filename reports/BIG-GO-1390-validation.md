@@ -93,7 +93,7 @@ ok  	bigclaw-go/internal/regression	3.217s
 - Baseline HEAD before lane commit: `c5450aef`
 - Rebased onto `origin/main` at: `ea03f42d`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1390'`
-- Final pushed lane commit: `aa3a8e52`
+- Final pushed lane commit: `9643d9ec`
 - Push target: `origin/BIG-GO-1390`
 - `origin/main` note: repeated fast-forward push attempts were rejected because `origin/main` kept advancing during this lane.
 
