@@ -58,3 +58,6 @@
 - The GitHub PR creation URL for `BIG-GO-1354` redirects to the GitHub sign-in page, so no further unattended repo-side action is available from this environment.
 - Public compare URL for reviewer handoff: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1354?expand=1`
   - Public GitHub compare page showed `4 commits`, `13 files changed`, and the expected branch head `BIG-GO-1354`, but pull request creation still requires sign-in.
+- Final branch sync check after the compare-URL note push:
+  - `git status --short --branch` -> `## BIG-GO-1354...origin/BIG-GO-1354`
+  - `bash scripts/ops/bigclawctl github-sync status --json` -> `{"ahead":0,"behind":0,"branch":"BIG-GO-1354","dirty":false,"diverged":false,"local_sha":"80892068ab0256f082352da786220232d8670d79","pushed":true,"remote_exists":true,"remote_sha":"80892068ab0256f082352da786220232d8670d79","status":"ok","synced":true}`
