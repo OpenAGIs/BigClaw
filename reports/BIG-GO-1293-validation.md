@@ -87,7 +87,7 @@ ok  	bigclaw-go/internal/regression	0.568s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `7826d483`
-- Lane commit details: `3e67f1f6 BIG-GO-1293: document zero-python sweep lane`
+- Lane commit details: `4b5a8f6a BIG-GO-1293: document zero-python sweep lane`
 - Final metadata commit: `tracked in git history after BIG-GO-1293 final sync`
 - Push target: `origin/main`
 
