@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1285",
     "title": "Heartbeat refill lane 1285: remaining Python asset sweep 5/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-1285",
-    "latest_commit": "pending",
+    "latest_commit": "pending-final-metadata",
     "push_target": "origin/BIG-GO-1285"
   },
   "artifacts": {
@@ -50,6 +50,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files."
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "The code-bearing lane commit for this issue is `c7938755`."
   ]
 }
