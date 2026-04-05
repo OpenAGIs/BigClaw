@@ -7,6 +7,7 @@
   "branch": {
     "name": "main",
     "baseline_head": "638cdc5f",
+    "latest_commit": "494b73d3",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -50,6 +51,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files."
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "`branch.latest_commit` records the published lane commit after rebasing over concurrent updates on origin/main."
   ]
 }
