@@ -1,0 +1,33 @@
+{
+  "issue": "BIG-GO-1472",
+  "branch": "BIG-GO-1472",
+  "status": "blocked",
+  "summary": "Repo already starts at zero physical Python files; lane hardened and documented the Go-only state instead of reducing the file count further.",
+  "commit": "09b7ee7",
+  "artifacts": [
+    ".symphony/workpad.md",
+    "docs/symphony-repo-bootstrap-template.md",
+    "bigclaw-go/docs/reports/big-go-1472-go-only-guard.md",
+    "bigclaw-go/internal/regression/big_go_1472_go_only_guard_test.go",
+    "reports/BIG-GO-1472-validation.md",
+    "reports/BIG-GO-1472-status.json"
+  ],
+  "validation": [
+    {
+      "command": "find . -type f -name '*.py' | sort",
+      "result": "no output"
+    },
+    {
+      "command": "find . -maxdepth 3 \\( -name 'pytest.ini' -o -name 'conftest.py' -o -name 'pyproject.toml' -o -name 'requirements*.txt' -o -name 'tox.ini' -o -name '.python-version' \\) | sort",
+      "result": "no output"
+    },
+    {
+      "command": "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1472'",
+      "result": "ok   bigclaw-go/internal/regression 0.800s"
+    },
+    {
+      "command": "cd bigclaw-go && go test -count=1 ./internal/regression",
+      "result": "ok   bigclaw-go/internal/regression 1.453s"
+    }
+  ]
+}
