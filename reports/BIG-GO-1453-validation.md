@@ -106,7 +106,7 @@ ok  	bigclaw-go/internal/regression	3.204s
 - Lane commit details:
   - `994a4af BIG-GO-1453: document zero-python heartbeat sweep`
   - `86ddf94 BIG-GO-1453: finalize lane metadata`
-- Final pushed lane commit: `86ddf9410c2dc456f03676cf0890ea39c9d65885`
+- Final pushed lane commit: `see git rev-parse origin/BIG-GO-1453`
 - Push target: `origin/BIG-GO-1453`
 - PR helper URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1453`
 
