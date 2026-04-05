@@ -55,6 +55,7 @@ func TestAutomationUsageListsBIGGO1160GoReplacements(t *testing.T) {
 			args: []string{"e2e"},
 			needles: []string{
 				"run-task-smoke",
+				"run-all",
 				"export-validation-bundle",
 				"continuation-scorecard",
 				"continuation-policy-gate",

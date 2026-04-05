@@ -1,32 +1,33 @@
-# BIG-GO-1345 Workpad
+# BIG-GO-1357 Workpad
 
 ## Plan
 
-1. Reconfirm the remaining physical Python asset inventory for the repository and the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-1345` so this unattended run records the current zero-Python baseline and the available Go replacement paths:
-   - `bigclaw-go/docs/reports/big-go-1345-python-asset-sweep.md`
-   - `reports/BIG-GO-1345-status.json`
-   - `reports/BIG-GO-1345-validation.md`
-   - `bigclaw-go/internal/regression/big_go_1345_zero_python_guard_test.go`
-3. Re-run the targeted regression coverage, record the exact commands and results, then commit and push the lane update.
+1. Inspect the current validation-script surface and confirm whether Python-file count can still decrease.
+2. Replace the remaining `bigclaw-go/scripts/e2e/run_all.sh` orchestration body with a Go-native `bigclawctl automation e2e run-all` entrypoint while keeping compatibility for existing operators.
+3. Update regression/docs coverage so the validation workflow points at the Go-native entrypoint and verifies the shim behavior.
+4. Run targeted validation commands, capture exact commands and outcomes here, then commit and push the branch.
 
 ## Acceptance
 
-- The remaining Python asset inventory is explicit for the whole repository and the priority residual directories.
-- The lane either removes Python assets or, when the checkout is already Python-free, documents and hardens that zero-Python baseline.
-- The Go replacement paths for the retired Python surface are listed in the lane artifacts.
-- Exact validation commands and results are recorded.
-- The change is committed and pushed to the remote branch.
+- Keep changes scoped to the validation-script shrink pass.
+- Since `find . -name '*.py' | wc -l` is already `0`, land a concrete Go/native replacement in git for the validation workflow.
+- `scripts/e2e/run_all.sh` should shrink to a compatibility wrapper or be removed in favor of the Go-native command.
+- Targeted Go tests covering the new command and regression/docs expectations pass.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1345(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- Baseline: `find . -name '*.py' | wc -l`
+- Targeted tests:
+  - `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestAutomationE2ERunAll|TestLegacyShimHelp|TestAutomationE2E'`
+  - `cd bigclaw-go && go test ./internal/regression -run 'TestE2E|TestRootScriptResidualSweep'`
+- Optional command smoke:
+  - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-all --help`
 
-## Execution Notes
+## Results
 
-- 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
-- 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
-- 2026-04-05: This execution therefore focuses on lane evidence and a Go regression guard rather than deleting in-branch Python files.
-- 2026-04-05: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO1345(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok   bigclaw-go/internal/regression 3.200s`.
+- Baseline Python count: `find . -name '*.py' | wc -l` -> `0`
+- Landed Go-native replacement: `bigclawctl automation e2e run-all` now owns the live-validation orchestration; `bigclaw-go/scripts/e2e/run_all.sh` is reduced to an exec shim.
+- Validation:
+  - `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestAutomationUsageListsBIGGO1160GoReplacements|TestAutomationE2ERunAllUsesGoBundleCommandsAndDefaultsHoldMode|TestRunAllShimDelegatesToGoRunAll'` -> `ok  	bigclaw-go/cmd/bigclawctl	2.267s`
+  - `cd bigclaw-go && go test ./internal/regression -run 'TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'` -> `ok  	bigclaw-go/internal/regression	0.439s`
+  - `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-all --help` -> `exit 0`, usage printed with the new `run-all` flags.

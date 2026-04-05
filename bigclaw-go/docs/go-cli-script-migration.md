@@ -12,6 +12,7 @@ for the bundled live-validation workflow.
 | Active entrypoint | Backing command | Purpose |
 | --- | --- | --- |
 | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | `bigclawctl automation e2e run-task-smoke` | Generic submit/poll smoke helper for local, Kubernetes, and Ray paths |
+| `go run ./cmd/bigclawctl automation e2e run-all ...` | `bigclawctl automation e2e run-all` | Preferred live-validation orchestrator for local/Kubernetes/Ray bundle refresh plus continuation gate refresh |
 | `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` | `bigclawctl automation e2e export-validation-bundle` | Export timestamped validation bundles plus latest-summary/index artifacts |
 | `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` | `bigclawctl automation e2e continuation-scorecard` | Regenerate the continuation scorecard from checked-in bundle evidence |
 | `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...` | `bigclawctl automation e2e continuation-policy-gate` | Evaluate continuation readiness from the scorecard surface |
@@ -21,7 +22,7 @@ for the bundled live-validation workflow.
 | `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...` | `bigclawctl automation e2e subscriber-takeover-fault-matrix` | Generate deterministic takeover-fault coverage |
 | `go run ./cmd/bigclawctl automation e2e external-store-validation ...` | `bigclawctl automation e2e external-store-validation` | Exercise the external-store replay/takeover validation lane |
 | `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...` | `bigclawctl automation e2e multi-node-shared-queue` | Generate the live shared-queue companion proof |
-| `./scripts/e2e/run_all.sh` | orchestrates Go subcommands plus smoke wrappers | Run local/Kubernetes/Ray live validation and refresh bundle artifacts |
+| `./scripts/e2e/run_all.sh` | compatibility shim for `automation e2e run-all` | Preserved operator shortcut that now delegates to the Go-native live-validation orchestrator |
 | `./scripts/e2e/kubernetes_smoke.sh` | wraps `automation e2e run-task-smoke` | Run the Kubernetes smoke lane with repo defaults |
 | `./scripts/e2e/ray_smoke.sh` | wraps `automation e2e run-task-smoke` | Run the Ray smoke lane with repo defaults |
 | `go run ./cmd/bigclawctl automation benchmark soak-local|run-matrix|capacity-certification ...` | `bigclawctl automation benchmark ...` | Benchmark and capacity-certification surfaces |
@@ -37,7 +38,7 @@ regression surface focuses on keeping the deletion state sticky.
 | Retired sweep area | Supported replacement |
 | --- | --- |
 | Benchmark soak/matrix/capacity helpers and their Python-side tests | `go run ./cmd/bigclawctl automation benchmark soak-local ...`, `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, `go run ./cmd/bigclawctl automation benchmark capacity-certification ...`, `go test ./cmd/bigclawctl -run TestAutomationBenchmarkCapacityCertificationBuildsReport` |
-| E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `./scripts/e2e/run_all.sh`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` |
+| E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `go run ./cmd/bigclawctl automation e2e run-all ...`, `./scripts/e2e/run_all.sh`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` |
 | Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
 | Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
 
@@ -48,6 +49,7 @@ cd bigclaw-go
 go test ./cmd/bigclawctl/...
 go run ./cmd/bigclawctl automation --help
 go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+go run ./cmd/bigclawctl automation e2e run-all --help
 go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
 go run ./cmd/bigclawctl automation e2e continuation-scorecard --help
 go run ./cmd/bigclawctl automation e2e continuation-policy-gate --help

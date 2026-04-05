@@ -263,81 +263,131 @@ func TestAutomationExportValidationBundleRenderIndexShowsContinuationGate(t *tes
 	}
 }
 
-func TestRunAllUsesGoBundleCommandsAndDefaultsHoldMode(t *testing.T) {
+func TestAutomationE2ERunAllUsesGoBundleCommandsAndDefaultsHoldMode(t *testing.T) {
 	root := t.TempDir()
-	runAllPath := filepath.Join(root, "scripts/e2e/run_all.sh")
-	if err := os.MkdirAll(filepath.Dir(runAllPath), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(runAllPath, mustReadSourceRunAll(t), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	if err := os.MkdirAll(filepath.Join(root, "bin"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	stubGo := `#!/usr/bin/env python3
-import json, pathlib, sys
-args = sys.argv[1:]
-if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'):
-    sub = args[4]
-    if sub == 'run-task-smoke':
-        report_path = pathlib.Path(args[args.index('--report-path') + 1])
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
-        sys.exit(0)
-    if sub == 'export-validation-bundle':
-        root = pathlib.Path(args[args.index('--go-root') + 1])
-        bundle_dir = root / args[args.index('--bundle-dir') + 1]
-        bundle_dir.mkdir(parents=True, exist_ok=True)
-        calls_path = root / 'calls.jsonl'
-        gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
-        payload = {
-            'gate_exists': gate_path.exists(),
-            'run_broker': args[args.index('--run-broker') + 1],
-            'broker_backend': args[args.index('--broker-backend') + 1],
-            'broker_report_path': args[args.index('--broker-report-path') + 1],
-            'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
-        }
-        with calls_path.open('a', encoding='utf-8') as handle:
-            handle.write(json.dumps(payload) + '\n')
-        sys.exit(0)
-    if sub == 'continuation-scorecard':
-        output = pathlib.Path(args[args.index('--output') + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
-        sys.exit(0)
-    if sub == 'continuation-policy-gate':
-        mode = args[args.index('--enforcement-mode') + 1]
-        output = pathlib.Path(args[args.index('--output') + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps({'enforcement': {'mode': mode}, 'status': 'policy-go', 'recommendation': 'go'}), encoding='utf-8')
-        sys.exit(0)
-if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (len(args) >= 2 and args[0] == 'run' and args[1].endswith('/scripts/e2e/broker_bootstrap_summary.go')):
-    output = pathlib.Path(args[args.index('--output') + 1])
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text('{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\n', encoding='utf-8')
-    sys.exit(0)
-raise SystemExit(f'unexpected go args: {args}')
+	stubGo := `#!/usr/bin/env bash
+set -euo pipefail
+args=("$@")
+if [[ "${args[0]-}" == "run" && "${args[1]-}" == */cmd/bigclawctl && "${args[2]-}" == "automation" && "${args[3]-}" == "e2e" ]]; then
+  root=""
+  for ((i=0; i<${#args[@]}; i++)); do
+    if [[ "${args[i]}" == "--go-root" ]]; then
+      root="${args[i+1]}"
+    fi
+  done
+  sub="${args[4]-}"
+  case "$sub" in
+    run-task-smoke)
+      report_path=""
+      for ((i=0; i<${#args[@]}; i++)); do
+        if [[ "${args[i]}" == "--report-path" ]]; then
+          report_path="${args[i+1]}"
+        fi
+      done
+      mkdir -p "$(dirname "$root/$report_path")"
+      printf '%s\n' '{"status":{"state":"succeeded"},"task":{"id":"task-1"},"all_ok":true}' > "$root/$report_path"
+      exit 0
+      ;;
+    export-validation-bundle)
+      bundle_dir=""
+      run_broker=""
+      broker_backend=""
+      broker_report_path=""
+      broker_bootstrap_summary_path=""
+      for ((i=0; i<${#args[@]}; i++)); do
+        case "${args[i]}" in
+          --bundle-dir) bundle_dir="${args[i+1]}" ;;
+          --run-broker) run_broker="${args[i+1]}" ;;
+          --broker-backend) broker_backend="${args[i+1]}" ;;
+          --broker-report-path) broker_report_path="${args[i+1]}" ;;
+          --broker-bootstrap-summary-path) broker_bootstrap_summary_path="${args[i+1]}" ;;
+        esac
+      done
+      mkdir -p "$root/$bundle_dir"
+      gate_path="$root/docs/reports/validation-bundle-continuation-policy-gate.json"
+      printf '{"gate_exists":%s,"run_broker":"%s","broker_backend":"%s","broker_report_path":"%s","broker_bootstrap_summary_path":"%s"}\n' \
+        "$(if [[ -f "$gate_path" ]]; then printf 'true'; else printf 'false'; fi)" \
+        "$run_broker" "$broker_backend" "$broker_report_path" "$broker_bootstrap_summary_path" >> "$root/calls.jsonl"
+      printf '{"status":"ok","bundle_dir":"%s"}\n' "$bundle_dir"
+      exit 0
+      ;;
+    continuation-scorecard)
+      output=""
+      for ((i=0; i<${#args[@]}; i++)); do
+        case "${args[i]}" in
+          --output) output="${args[i+1]}" ;;
+          --output=*) output="${args[i]#--output=}" ;;
+        esac
+      done
+      [[ -n "$root" && -n "$output" ]] || { printf 'missing root/output for continuation-scorecard: %s\n' "$*" >&2; exit 1; }
+      mkdir -p "$(dirname "$root/$output")"
+      printf '%s\n' '{"summary":{},"shared_queue_companion":{"available":true}}' > "$root/$output"
+      printf '%s\n' '{}'
+      exit 0
+      ;;
+    continuation-policy-gate)
+      output=""
+      mode=""
+      for ((i=0; i<${#args[@]}; i++)); do
+        case "${args[i]}" in
+          --output) output="${args[i+1]}" ;;
+          --output=*) output="${args[i]#--output=}" ;;
+          --enforcement-mode) mode="${args[i+1]}" ;;
+          --enforcement-mode=*) mode="${args[i]#--enforcement-mode=}" ;;
+        esac
+      done
+      [[ -n "$root" && -n "$output" ]] || { printf 'missing root/output for continuation-policy-gate: %s\n' "$*" >&2; exit 1; }
+      mkdir -p "$(dirname "$root/$output")"
+      printf '{"enforcement":{"mode":"%s"},"status":"policy-go","recommendation":"go"}\n' "$mode" > "$root/$output"
+      printf '%s\n' '{}'
+      exit 0
+      ;;
+  esac
+fi
+if [[ "${args[0]-}" == "run" && "${args[1]-}" == */scripts/e2e/broker_bootstrap_summary.go ]]; then
+  output=""
+  for ((i=0; i<${#args[@]}; i++)); do
+    if [[ "${args[i]}" == "--output" ]]; then
+      output="${args[i+1]}"
+    fi
+  done
+  mkdir -p "$(dirname "$output")"
+  printf '%s\n' '{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}' > "$output"
+  printf '%s\n' '{}'
+  exit 0
+fi
+printf 'unexpected go args: %s\n' "$*" >&2
+exit 1
 `
 	if err := os.WriteFile(filepath.Join(root, "bin/go"), []byte(stubGo), 0o755); err != nil {
 		t.Fatal(err)
 	}
 
-	env := append(os.Environ(),
-		"BIGCLAW_E2E_RUN_KUBERNETES=0",
-		"BIGCLAW_E2E_RUN_RAY=0",
-		"BIGCLAW_E2E_RUN_LOCAL=1",
-		"BIGCLAW_E2E_RUN_BROKER=1",
-		"BIGCLAW_E2E_BROKER_BACKEND=stub",
-		"BIGCLAW_E2E_BROKER_REPORT_PATH=docs/reports/broker-failover-stub-report.json",
-		"PATH="+filepath.Join(root, "bin")+":"+os.Getenv("PATH"),
-	)
-	cmd := exec.Command(runAllPath)
-	cmd.Dir = root
-	cmd.Env = env
-	output, err := cmd.CombinedOutput()
+	t.Setenv("PATH", filepath.Join(root, "bin")+":"+os.Getenv("PATH"))
+	report, exitCode, err := automationE2ERunAll(automationE2ERunAllOptions{
+		GoRoot:                     root,
+		SummaryPath:                "docs/reports/live-validation-summary.json",
+		IndexPath:                  "docs/reports/live-validation-index.md",
+		ManifestPath:               "docs/reports/live-validation-index.json",
+		ArtifactRootRel:            "docs/reports/live-validation-runs",
+		RunID:                      "20260405T120000Z",
+		RunLocal:                   true,
+		RunKubernetes:              false,
+		RunRay:                     false,
+		RunBroker:                  true,
+		BrokerBackend:              "stub",
+		BrokerReportPath:           "docs/reports/broker-failover-stub-report.json",
+		BrokerBootstrapSummaryPath: "docs/reports/broker-bootstrap-review-summary.json",
+		RefreshContinuation:        true,
+	})
 	if err != nil {
-		t.Fatalf("run run_all.sh: %v\n%s", err, string(output))
+		t.Fatalf("automationE2ERunAll: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("unexpected exit code %d with report %+v", exitCode, report)
 	}
 	callsBody, err := os.ReadFile(filepath.Join(root, "calls.jsonl"))
 	if err != nil {
@@ -357,12 +407,61 @@ raise SystemExit(f'unexpected go args: {args}')
 	if firstCall["gate_exists"] != false || secondCall["gate_exists"] != true {
 		t.Fatalf("unexpected gate existence sequence: %+v %+v", firstCall, secondCall)
 	}
-	gateBody, err := os.ReadFile(filepath.Join(root, "bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json"))
+	if report["bundle_dir"] != "docs/reports/live-validation-runs/20260405T120000Z" {
+		t.Fatalf("unexpected report: %+v", report)
+	}
+	gateBody, err := os.ReadFile(filepath.Join(root, "docs/reports/validation-bundle-continuation-policy-gate.json"))
 	if err != nil {
 		t.Fatalf("read gate file: %v", err)
 	}
-	if !strings.Contains(string(gateBody), `"mode": "hold"`) {
+	if !strings.Contains(string(gateBody), `"mode":"hold"`) {
 		t.Fatalf("expected hold mode gate: %s", string(gateBody))
+	}
+}
+
+func TestRunAllShimDelegatesToGoRunAll(t *testing.T) {
+	root := t.TempDir()
+	runAllPath := filepath.Join(root, "scripts/e2e/run_all.sh")
+	if err := os.MkdirAll(filepath.Dir(runAllPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(runAllPath, mustReadSourceRunAll(t), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stubGo := `#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" > "$TMPDIR/run-all-args.txt"
+`
+	if err := os.WriteFile(filepath.Join(root, "bin/go"), []byte(stubGo), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(runAllPath, "--json=false")
+	cmd.Dir = root
+	cmd.Env = append(os.Environ(),
+		"PATH="+filepath.Join(root, "bin")+":"+os.Getenv("PATH"),
+		"TMPDIR="+root,
+	)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("run shim: %v\n%s", err, string(output))
+	}
+	argsBody, err := os.ReadFile(filepath.Join(root, "run-all-args.txt"))
+	if err != nil {
+		t.Fatalf("read shim args: %v", err)
+	}
+	argsText := string(argsBody)
+	for _, needle := range []string{
+		filepath.Join(root, "cmd", "bigclawctl"),
+		"automation e2e run-all",
+		"--go-root " + root,
+		"--json=false",
+	} {
+		if !strings.Contains(argsText, needle) {
+			t.Fatalf("expected %q in shim args: %s", needle, argsText)
+		}
 	}
 }
 
