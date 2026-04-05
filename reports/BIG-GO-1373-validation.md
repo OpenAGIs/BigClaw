@@ -92,11 +92,13 @@ ok  	bigclaw-go/internal/regression	1.176s
 - Branch: `main`
 - Baseline HEAD before lane commit: `f1d2fa35`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1373'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1373'`
-- Push target: `origin/main`
+- Final pushed lane commit: `9435c833`
+- Push target: `origin/BIG-GO-1373`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1373 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- `origin/main` advanced repeatedly during push attempts, so the finalized lane
+  was pushed to the dedicated issue branch instead of directly to `origin/main`.

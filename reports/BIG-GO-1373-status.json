@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1373'",
-    "push_target": "origin/main"
+    "latest_commit": "9435c833",
+    "push_target": "origin/BIG-GO-1373"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1373-validation.md",
@@ -47,12 +47,13 @@
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1373 changes."
+    "type": "branch-churn",
+    "summary": "The repository-wide physical Python file count was already zero before BIG-GO-1373 changes, and repeated `origin/main` movement prevented a clean direct push there during this lane."
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `f1d2fa35`."
+    "Baseline HEAD before lane changes was `f1d2fa35`.",
+    "The finalized lane commit was pushed to `origin/BIG-GO-1373` after repeated non-fast-forward rejections and one transient GitHub TLS failure during push retries."
   ]
 }
