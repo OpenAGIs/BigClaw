@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "a283764f",
+    "latest_commit": "5a46cfd9",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -44,7 +44,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.274s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.466s"
     }
   },
   "blocker": {
@@ -54,7 +54,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `4a24341d`.",
-    "Lane commit `a283764f` adds the heartbeat artifacts and targeted regression guard.",
-    "Final targeted regression re-run passed in `0.274s` after metadata close-out."
+    "Rebasing over moving `origin/main` rewrote the lane commits to `049a2dbc` and `5a46cfd9`.",
+    "Final targeted regression re-run passed in `0.466s` after rebased metadata close-out."
   ]
 }
