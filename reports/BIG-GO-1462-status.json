@@ -1,0 +1,82 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1462",
+    "title": "Lane refill: eliminate remaining tests/*.py by migrating assertions to go test or deleting dead coverage",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1462",
+    "baseline_commit": "a63c8ec",
+    "push_target": "origin/BIG-GO-1462"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1462-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1462-python-test-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1462_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "tests": [],
+      "src/bigclaw": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "deleted_or_absent_python_tests": [
+    "tests/conftest.py",
+    "tests/test_audit_events.py",
+    "tests/test_connectors.py",
+    "tests/test_console_ia.py",
+    "tests/test_control_center.py",
+    "tests/test_cost_control.py",
+    "tests/test_dashboard_run_contract.py",
+    "tests/test_design_system.py",
+    "tests/test_execution_contract.py",
+    "tests/test_execution_flow.py",
+    "tests/test_followup_digests.py",
+    "tests/test_github_sync.py",
+    "tests/test_governance.py",
+    "tests/test_observability.py",
+    "tests/test_operations.py",
+    "tests/test_orchestration.py",
+    "tests/test_parallel_refill.py",
+    "tests/test_parallel_validation_bundle.py",
+    "tests/test_planning.py",
+    "tests/test_queue.py",
+    "tests/test_reports.py"
+  ],
+  "go_replacements": [
+    "bigclaw-go/internal/observability/audit_test.go",
+    "bigclaw-go/internal/intake/connector_test.go",
+    "bigclaw-go/internal/consoleia/consoleia_test.go",
+    "bigclaw-go/internal/control/controller_test.go",
+    "bigclaw-go/internal/costcontrol/controller_test.go",
+    "bigclaw-go/internal/contract/execution_test.go",
+    "bigclaw-go/internal/workflow/orchestration_test.go",
+    "bigclaw-go/internal/refill/queue_test.go",
+    "bigclaw-go/internal/planning/planning_test.go",
+    "bigclaw-go/internal/reporting/reporting_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find tests src/bigclaw scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1462(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.191s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1462 changes."
+  },
+  "notes": [
+    "This lane documents a no-op delete condition for the historical tests/*.py surface because the checkout was already Python-free.",
+    "Representative Go-native assertion homes remain present and are locked by big_go_1462_zero_python_guard_test.go."
+  ]
+}
