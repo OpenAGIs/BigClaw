@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1467",
     "title": "Lane refill: eliminate remaining Python bootstrap/workspace helper surfaces and validation hooks",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-1467",
-    "latest_commit": "a63c8ec",
+    "latest_commit": "ee7187d",
     "push_target": "origin/BIG-GO-1467"
   },
   "artifacts": {
