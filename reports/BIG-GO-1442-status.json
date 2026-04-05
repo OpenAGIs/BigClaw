@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1442",
-    "latest_commit": "9b208007e",
+    "latest_commit": "703963946",
     "push_target": "origin/BIG-GO-1442"
   },
   "artifacts": {
@@ -57,6 +57,7 @@
     "Validation recorded no repository Python files and no Python files in `src/bigclaw`, `tests`, `scripts`, or `bigclaw-go/scripts`.",
     "Targeted regression guard passed: `ok   bigclaw-go/internal/regression 2.218s`.",
     "Published lane commit `9b208007e` (`BIG-GO-1442: add zero-python heartbeat guard`) to `origin/BIG-GO-1442`.",
-    "Local and remote agree at pushed HEAD `9b208007e`."
+    "Published metadata close-out commit `703963946` (`BIG-GO-1442: finalize lane metadata`) to `origin/BIG-GO-1442`.",
+    "Local and remote agree at pushed HEAD `703963946`."
   ]
 }
