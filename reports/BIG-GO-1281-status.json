@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending final metadata sync",
+    "latest_commit": "dac5d90f",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -51,6 +51,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "`BIG-GO-1281: add zero-python heartbeat artifacts` was replayed as commit `66ab4342` after rebasing onto `origin/main` commit `4406fef0`."
+    "`BIG-GO-1281: add zero-python heartbeat artifacts` was replayed as commit `66ab4342` after rebasing onto `origin/main` commit `4406fef0`.",
+    "`branch.latest_commit` records the final published metadata commit `dac5d90f` (`BIG-GO-1281: sync rebased validation hashes`)."
   ]
 }
