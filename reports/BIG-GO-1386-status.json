@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1386",
-    "latest_commit": "ec5b80e1",
+    "latest_commit": "see git rev-parse --short HEAD",
     "push_target": "origin/BIG-GO-1386"
   },
   "artifacts": {
