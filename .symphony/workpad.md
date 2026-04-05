@@ -64,3 +64,9 @@
 - 2026-04-06: Repeated pushes to `origin/main` were rejected by new upstream
   fast-forwards from parallel lanes, so final publication target switched to
   `origin/BIG-GO-1431`.
+- 2026-04-06: Close-out verification re-ran
+  `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1431/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1431(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+  after remote publication and observed
+  `ok  	bigclaw-go/internal/regression	0.859s`.
+- 2026-04-06: Confirmed `git push origin HEAD:refs/heads/BIG-GO-1431`
+  published commit `4fbf5923` to `origin/BIG-GO-1431`.

@@ -83,7 +83,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1431/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.749s
+ok  	bigclaw-go/internal/regression	0.859s
 ```
 
 ## Git
@@ -92,7 +92,14 @@ ok  	bigclaw-go/internal/regression	0.749s
 - Baseline HEAD before lane commit: `4a24341d`
 - Rebased lane commits: `aebf4ae2` (`BIG-GO-1431: add zero-python heartbeat artifacts`), `16bf6e26` (`BIG-GO-1431: finalize lane metadata`), and `3d42df49` (`BIG-GO-1431: sync rebase metadata`)
 - Push target: `origin/BIG-GO-1431`
-- Push result: pending
+- Published branch head: `4fbf5923` (`BIG-GO-1431: switch publication branch`)
+- Push result: success
+
+## Remote
+
+- `git push origin HEAD:refs/heads/BIG-GO-1431` -> success
+- `git ls-remote --heads origin BIG-GO-1431` -> `4fbf59231bf22fbdd9e766b2f956166b792bd4ca refs/heads/BIG-GO-1431`
+- PR helper URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1431`
 
 ## Residual Risk
 
