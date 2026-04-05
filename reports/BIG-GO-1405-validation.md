@@ -87,7 +87,7 @@ ok  	bigclaw-go/internal/regression	1.067s
 
 - Branch: `big-go-1405`
 - Baseline `origin/main` currently sits ahead of this lane branch.
-- Lane branch head at publication: `089e7398`
+- Lane branch head after adding validation artifacts: `c7104eb8`
 - Push target: `origin/big-go-1405`
 
 ## Residual Risk

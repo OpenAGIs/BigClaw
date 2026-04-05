@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-1405",
-    "latest_commit": "089e7398",
+    "latest_commit": "c7104eb8",
     "push_target": "origin/big-go-1405"
   },
   "artifacts": {
@@ -52,6 +52,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Lane branch was published to `origin/big-go-1405` because `origin/main` advanced during unattended parallel execution.",
     "Lane branch head before adding status artifacts was `089e7398`.",
+    "Validation artifact commit is `c7104eb8`.",
     "Final metadata alignment re-ran the targeted regression guard and kept the lane green."
   ]
 }
