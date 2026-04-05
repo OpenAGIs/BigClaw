@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "3afbbef5",
-    "push_target": "origin/main"
+    "latest_commit": "3d42df49",
+    "push_target": "origin/BIG-GO-1431"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1431-validation.md",
@@ -55,6 +55,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `4a24341d`.",
     "The original local artifact commit was `7872d359` before rebasing onto the updated `origin/main`.",
-    "Rebased lane commits are `1de83107` and `3afbbef5`."
+    "Rebased lane commits are `aebf4ae2`, `16bf6e26`, and `3d42df49`.",
+    "Repeated fast-forward races on `origin/main` moved final publication to `origin/BIG-GO-1431`."
   ]
 }

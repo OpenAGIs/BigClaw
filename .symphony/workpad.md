@@ -61,3 +61,6 @@
 - 2026-04-06: Post-rebase verification re-ran
   `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1431/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1431(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
   and observed `ok  	bigclaw-go/internal/regression	0.749s`.
+- 2026-04-06: Repeated pushes to `origin/main` were rejected by new upstream
+  fast-forwards from parallel lanes, so final publication target switched to
+  `origin/BIG-GO-1431`.

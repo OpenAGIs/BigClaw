@@ -90,8 +90,8 @@ ok  	bigclaw-go/internal/regression	0.749s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `4a24341d`
-- Rebased lane commits: `1de83107` (`BIG-GO-1431: add zero-python heartbeat artifacts`) and `3afbbef5` (`BIG-GO-1431: finalize lane metadata`)
-- Push target: `origin/main`
+- Rebased lane commits: `aebf4ae2` (`BIG-GO-1431: add zero-python heartbeat artifacts`), `16bf6e26` (`BIG-GO-1431: finalize lane metadata`), and `3d42df49` (`BIG-GO-1431: sync rebase metadata`)
+- Push target: `origin/BIG-GO-1431`
 - Push result: pending
 
 ## Residual Risk
@@ -99,3 +99,5 @@ ok  	bigclaw-go/internal/regression	0.749s
 - The live branch baseline was already Python-free, so BIG-GO-1431 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count in this checkout.
+- Concurrent updates on `origin/main` prevented a fast-forward push there, so
+  this lane publishes to its dedicated remote branch instead.
