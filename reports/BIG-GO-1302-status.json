@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "8b0466c0",
+    "latest_commit": "7a103ea8",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.480s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.471s"
     }
   },
   "blocker": {
