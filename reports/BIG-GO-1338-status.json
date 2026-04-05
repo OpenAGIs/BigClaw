@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1338'",
+    "latest_commit": "ca026f44 BIG-GO-1338: stabilize git metadata references",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -52,6 +52,6 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `2322b380`.",
-    "Validation evidence was refreshed on `2026-04-05 22:19:40 CST` before the final metadata sync commit."
+    "Validation evidence was refreshed on `2026-04-05 22:51:35 CST` before the final issue closure commit."
   ]
 }
