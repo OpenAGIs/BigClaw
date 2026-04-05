@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1414",
     "title": "Heartbeat refill lane 1414: remaining Python asset sweep 4/10",
-    "state": "In Progress"
+    "state": "Completed"
   },
   "branch": {
     "name": "BIG-GO-1414",
-    "latest_commit": "d95fbdff",
+    "latest_commit": "git rev-parse HEAD",
     "push_target": "origin/BIG-GO-1414"
   },
   "artifacts": {
