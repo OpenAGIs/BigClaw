@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.682s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.481s"
     }
   },
   "blocker": {
@@ -51,6 +51,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `d6b4f792`.",
-    "The lane was rebased onto fetched `origin/main` at `5822df82`, resolving the expected `.symphony/workpad.md` conflict before the final post-rebase test pass."
+    "The lane was rebased onto fetched `origin/main` at `5822df82`, resolving the expected `.symphony/workpad.md` conflict before the first post-rebase test pass.",
+    "The lane was rebased again onto fetched `origin/main` at `839e2cf6`, resolving the expected `.symphony/workpad.md` conflict before the latest post-rebase test pass."
   ]
 }
