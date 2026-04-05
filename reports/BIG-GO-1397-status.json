@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "c8e9d79c",
-    "push_target": "origin/main"
+    "push_target": "origin/big-go-1397-r1"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1397-validation.md",
@@ -51,6 +51,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `c8e9d79c`.",
-    "Initial push of commit `62b9b6ca` was rejected after `origin/main` advanced to `c71fe8ca`; the lane was rebased and revalidated at `2198f850`."
+    "Initial push of commit `62b9b6ca` was rejected after `origin/main` advanced to `c71fe8ca`; the lane was rebased and revalidated at `2198f850`.",
+    "A second direct push attempt from `29838b5a` to `origin/main` was rejected after the remote advanced again, so the validated lane tip is published on `origin/big-go-1397-r1`."
   ]
 }
