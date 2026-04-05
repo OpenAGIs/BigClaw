@@ -82,7 +82,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1377/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.583s
+ok  	bigclaw-go/internal/regression	0.250s
 ```
 
 ## Git
@@ -90,7 +90,7 @@ ok  	bigclaw-go/internal/regression	0.583s
 - Branch: `main`
 - Baseline HEAD before lane commit: `f6faec68`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1377'`
-- Final pushed lane commit: pending
+- Final pushed lane commit: `4c2f356e` pending push
 - Push target: `origin/main`
 
 ## Residual Risk
@@ -98,3 +98,6 @@ ok  	bigclaw-go/internal/regression	0.583s
 - The live branch baseline was already Python-free, so BIG-GO-1377 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- The first push attempt was rejected because `origin/main` advanced during the
+  lane; the branch was rebased cleanly and the targeted regression guard was
+  re-run on the rebased tree.
