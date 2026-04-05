@@ -1,20 +1,20 @@
-# BIG-GO-1279 Workpad
+# BIG-GO-1275 Workpad
 
 ## Plan
 - Reconfirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- Confirm whether any physical Python assets remain for this lane to delete or replace.
-- If the checkout is already Python-free, codify that state with a lane-specific report and Go regression guard that preserves the replacement surface.
-- Run targeted validation commands, capture exact results, then commit and push the rebased branch tip to `origin/main`.
+- Add a lane-specific Go regression guard for `BIG-GO-1275` that preserves the Python-free repository state and verifies the retained Go or shell replacement entrypoints still exist.
+- Record the lane sweep in durable artifacts under `bigclaw-go/docs/reports` and `reports`, including the remaining Python asset inventory, replacement paths, and exact validation commands.
+- Run the targeted validation commands for this lane, capture the exact results, then commit and push the branch tip to `origin/main`.
 
 ## Acceptance
-- The `BIG-GO-1279` lane records the remaining Python asset inventory for the repository and priority residual directories.
+- The `BIG-GO-1275` lane has an explicit remaining Python asset inventory for the repository and priority residual directories.
 - The repository remains free of physical `.py` files, including `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 - The Go or shell replacement paths for the retired Python surface are documented and enforced by regression coverage.
 - Exact validation commands and outcomes are recorded in the lane artifacts.
 
 ## Inventory
 - Repository-wide physical Python files: `0`
-- `src/bigclaw/*.py`: `0`
+- `src/bigclaw/*.py`: `0` (`src/bigclaw` is absent)
 - `tests/*.py`: `0`
 - `scripts/*.py`: `0`
 - `bigclaw-go/scripts/*.py`: `0`
@@ -28,8 +28,5 @@
 
 ## Validation
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-  - Result: no output; repository-wide Python file count is `0`.
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-  - Result: no output; priority residual directories remain Python-free.
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1279(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  - Result: `ok  	bigclaw-go/internal/regression	0.479s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1275(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
