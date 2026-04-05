@@ -2,7 +2,7 @@
 
 ## Scope
 
-Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands, moving the benchmark capacity-certification generator into Go-owned reporting code, porting the live-validation bundle exporter into Go-owned reporting code, porting the shadow compare / matrix migration helpers into Go-owned reporting code, porting the benchmark matrix / local soak helpers into Go-owned reporting code, porting the mixed-workload matrix helper into Go-owned reporting/runtime code, and porting the cross-process coordination capability surface helper into Go-owned reporting code.
+Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands, moving the benchmark capacity-certification generator into Go-owned reporting code, porting the live-validation bundle exporter into Go-owned reporting code, porting the shadow compare / matrix migration helpers into Go-owned reporting code, porting the benchmark matrix / local soak helpers into Go-owned reporting code, porting the mixed-workload matrix helper into Go-owned reporting/runtime code, porting the cross-process coordination capability surface helper into Go-owned reporting code, and porting the broker failover stub matrix helper into Go-owned reporting code.
 
 ## Deleted Python Files And Replacements
 
@@ -48,6 +48,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - Replaced by Go-owned reporting logic in `bigclaw-go/internal/reporting/coordination_surface.go`, coverage in `bigclaw-go/internal/reporting/coordination_surface_test.go`, and the Go entrypoint `bigclaw-go/scripts/e2e/cross_process_coordination_surface/main.go`.
 - `tests/test_cross_process_coordination_surface.py`
   - Replaced by Go-owned coordination-surface coverage in `bigclaw-go/internal/reporting/coordination_surface_test.go`.
+- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
+  - Replaced by Go-owned reporting logic in `bigclaw-go/internal/reporting/broker_stub.go`, coverage in `bigclaw-go/internal/reporting/broker_stub_test.go`, and the Go entrypoint `bigclaw-go/scripts/e2e/broker_failover_stub_matrix/main.go`.
 
 ## Delete Conditions
 
@@ -61,6 +63,7 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
 - The benchmark matrix and local soak helpers were deleted because the benchmark plan, readiness reports, issue coverage map, and checked-in capacity-certification consumer now point at Go entrypoints while Go-owned tests validate the benchmark parsing and soak artifact shapes directly.
 - The mixed-workload matrix helper was deleted because the e2e validation docs and checked-in mixed-workload report now point at the Go entrypoint while Go-owned tests validate the routing/result artifact shape directly.
 - The cross-process coordination surface helper was deleted because the e2e validation docs and follow-up digest now point at the Go entrypoint while Go-owned tests validate the machine-readable coordination surface shape directly.
+- The broker failover stub matrix helper was deleted because the e2e validation docs now point at the Go entrypoint while Go-owned tests validate the deterministic broker proof artifacts and downstream regression consumers continue to validate the checked-in summaries.
 - The earlier Python-only report-surface test helpers were deleted because Go-owned tests already validate the same report artifacts and reviewer evidence paths.
 
 ## Validation
@@ -87,6 +90,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `find . -type f -name '*.py' | sort | wc -l` -> `119`
 - Python inventory after the tenth deletion slice:
   - `find . -type f -name '*.py' | sort | wc -l` -> `117`
+- Python inventory after the eleventh deletion slice:
+  - `find . -type f -name '*.py' | sort | wc -l` -> `116`
 - Targeted Go validation:
   - `cd bigclaw-go && go test ./internal/reporting ./internal/regression` -> `ok  	bigclaw-go/internal/reporting	0.801s` and `ok  	bigclaw-go/internal/regression	1.357s`
 - Targeted Go validation after the `run_task_smoke` port:
@@ -121,3 +126,5 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `cd bigclaw-go && go test ./internal/reporting ./internal/regression ./scripts/e2e/cross_process_coordination_surface` -> `ok  	bigclaw-go/internal/reporting	2.940s`, `ok  	bigclaw-go/internal/regression	(cached)`, and `?   	bigclaw-go/scripts/e2e/cross_process_coordination_surface	[no test files]`
 - Targeted Python/doc-consumer validation for the cross-process coordination surface migration slice:
   - `PYTHONPATH=src python3 -m pytest tests/test_followup_digests.py -q` -> `2 passed`
+- Targeted Go validation for the broker failover stub matrix migration slice:
+  - `cd bigclaw-go && go test ./internal/reporting ./internal/regression ./scripts/e2e/broker_failover_stub_matrix` -> `ok  	bigclaw-go/internal/reporting	2.622s`, `ok  	bigclaw-go/internal/regression	(cached)`, and `?   	bigclaw-go/scripts/e2e/broker_failover_stub_matrix	[no test files]`
