@@ -94,7 +94,7 @@ export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
 export BIGCLAW_KUBERNETES_NAMESPACE=ray
 export BIGCLAW_KUBERNETES_IMAGE=alpine:3.20
 export BIGCLAW_QUEUE_BACKEND=sqlite
-python3 scripts/e2e/mixed_workload_matrix.py \
+go run ./scripts/e2e/mixed_workload_matrix \
   --report-path docs/reports/mixed-workload-matrix-report.json
 ```
 

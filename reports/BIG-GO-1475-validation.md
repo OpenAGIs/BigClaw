@@ -2,7 +2,7 @@
 
 ## Scope
 
-Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands, moving the benchmark capacity-certification generator into Go-owned reporting code, porting the live-validation bundle exporter into Go-owned reporting code, porting the shadow compare / matrix migration helpers into Go-owned reporting code, and porting the benchmark matrix / local soak helpers into Go-owned reporting code.
+Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by removing redundant Python-only tests, porting the active validation-bundle continuation scorecard / policy-gate helpers to Go-owned reporting commands, replacing the shared live-smoke submit/poll helper with a Go-owned entrypoint, moving the live-shadow scorecard / bundle exporters into Go-owned reporting commands, moving the benchmark capacity-certification generator into Go-owned reporting code, porting the live-validation bundle exporter into Go-owned reporting code, porting the shadow compare / matrix migration helpers into Go-owned reporting code, porting the benchmark matrix / local soak helpers into Go-owned reporting code, and porting the mixed-workload matrix helper into Go-owned reporting/runtime code.
 
 ## Deleted Python Files And Replacements
 
@@ -42,6 +42,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - Replaced by Go-owned reporting/runtime logic in `bigclaw-go/internal/reporting/benchmark_matrix.go`, coverage in `bigclaw-go/internal/reporting/benchmark_matrix_test.go`, and the Go entrypoint `bigclaw-go/scripts/benchmark/run_matrix/main.go`.
 - `bigclaw-go/scripts/benchmark/soak_local.py`
   - Replaced by Go-owned reporting/runtime logic in `bigclaw-go/internal/reporting/benchmark_matrix.go`, coverage in `bigclaw-go/internal/reporting/benchmark_matrix_test.go`, and the Go entrypoint `bigclaw-go/scripts/benchmark/soak_local/main.go`.
+- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
+  - Replaced by Go-owned reporting/runtime logic in `bigclaw-go/internal/reporting/mixed_workload.go`, coverage in `bigclaw-go/internal/reporting/mixed_workload_test.go`, and the Go entrypoint `bigclaw-go/scripts/e2e/mixed_workload_matrix/main.go`.
 
 ## Delete Conditions
 
@@ -53,6 +55,7 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
 - The live-validation bundle exporter was deleted because `run_all.sh`, the README, and the Python report-consumer fixture now invoke the Go entrypoint while the checked-in live-validation summary/index regressions still validate the same artifact surface.
 - The shadow compare and shadow matrix helpers were deleted because the migration docs, coverage map, and checked-in live-shadow artifacts now point at Go entrypoints while Go-owned tests validate the compare, matrix, and corpus-coverage behavior directly.
 - The benchmark matrix and local soak helpers were deleted because the benchmark plan, readiness reports, issue coverage map, and checked-in capacity-certification consumer now point at Go entrypoints while Go-owned tests validate the benchmark parsing and soak artifact shapes directly.
+- The mixed-workload matrix helper was deleted because the e2e validation docs and checked-in mixed-workload report now point at the Go entrypoint while Go-owned tests validate the routing/result artifact shape directly.
 - The earlier Python-only report-surface test helpers were deleted because Go-owned tests already validate the same report artifacts and reviewer evidence paths.
 
 ## Validation
@@ -75,6 +78,8 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `find . -type f -name '*.py' | sort | wc -l` -> `122`
 - Python inventory after the eighth deletion slice:
   - `find . -type f -name '*.py' | sort | wc -l` -> `120`
+- Python inventory after the ninth deletion slice:
+  - `find . -type f -name '*.py' | sort | wc -l` -> `119`
 - Targeted Go validation:
   - `cd bigclaw-go && go test ./internal/reporting ./internal/regression` -> `ok  	bigclaw-go/internal/reporting	0.801s` and `ok  	bigclaw-go/internal/regression	1.357s`
 - Targeted Go validation after the `run_task_smoke` port:
@@ -103,3 +108,5 @@ Collapsed residual Python report-surface helpers in `bigclaw-go/scripts` by remo
   - `PYTHONPATH=src python3 -m pytest tests/test_live_shadow_bundle.py tests/test_live_shadow_scorecard.py -q` -> `2 passed`
 - Targeted Go validation for the benchmark matrix / local soak migration slice:
   - `cd bigclaw-go && go test ./internal/reporting ./scripts/benchmark/run_matrix ./scripts/benchmark/soak_local ./scripts/benchmark/capacity_certification` -> `ok  	bigclaw-go/internal/reporting	1.916s`, `?   	bigclaw-go/scripts/benchmark/run_matrix	[no test files]`, `?   	bigclaw-go/scripts/benchmark/soak_local	[no test files]`, and `?   	bigclaw-go/scripts/benchmark/capacity_certification	[no test files]`
+- Targeted Go validation for the mixed-workload matrix migration slice:
+  - `cd bigclaw-go && go test ./internal/reporting ./scripts/e2e/mixed_workload_matrix ./scripts/benchmark/capacity_certification` -> `ok  	bigclaw-go/internal/reporting	5.544s`, `?   	bigclaw-go/scripts/e2e/mixed_workload_matrix	[no test files]`, and `?   	bigclaw-go/scripts/benchmark/capacity_certification	[no test files]`
