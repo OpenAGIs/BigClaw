@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1270",
     "title": "Heartbeat refill lane 1270: remaining Python asset sweep 10/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "big-go-1270",
-    "latest_commit": "PENDING",
+    "latest_commit": "02839fb4",
     "push_target": "origin/big-go-1270"
   },
   "artifacts": {
@@ -49,6 +49,7 @@
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1270 changes."
   },
   "notes": [
-    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage."
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "`branch.latest_commit` records the stable lane delivery commit before the metadata-only sync commit that marked the issue done."
   ]
 }

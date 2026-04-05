@@ -87,7 +87,7 @@ ok  	bigclaw-go/internal/regression	0.836s
 
 - Branch: `big-go-1270`
 - Baseline HEAD before lane commit: `6aa9dd23`
-- Lane commit: `PENDING`
+- Lane commit: `02839fb4`
 - Push target: `origin/big-go-1270`
 
 ## Residual Risk
