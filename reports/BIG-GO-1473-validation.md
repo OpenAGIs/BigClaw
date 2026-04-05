@@ -8,6 +8,10 @@ physical `scripts/**/*.py` or `bigclaw-go/scripts/**/*.py` assets left to
 delete, so the blocker for a literal file-count reduction is repository state,
 not missing implementation work in this branch.
 
+The lane now also records its machine-readable closeout state in
+`reports/BIG-GO-1473-status.json` so the published branch carries the same
+validation metadata shape used by adjacent refill lanes.
+
 ## Migrated Or Deleted Python Paths And Replacements
 
 The deleted Python entrypoints covered by this lane's migration audit remain
@@ -40,8 +44,10 @@ would regress the Go-only migration state verified here.
   Result: only migration documentation and regression guards reference the retired Python paths; active workflow callers point at `bash scripts/ops/bigclawctl ...` or Go commands.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO1473ZeroPythonBaselineAndReplacementOwnership|BIGGO1473ValidationReportCapturesBlockedPhysicalDeletionState)$'`
   Result: `ok  	bigclaw-go/internal/regression`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO1473ZeroPythonBaselineAndReplacementOwnership|BIGGO1473ValidationReportCapturesBlockedPhysicalDeletionState|BIGGO1473StatusReportCapturesPublishedBranchState)$'`
+  Result: `ok  	bigclaw-go/internal/regression	0.602s`
 - `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|RunHelpAtRootPrintsUsageAndExitsZero)$'`
-  Result: `ok  	bigclaw-go/cmd/bigclawctl`
+  Result: `ok  	bigclaw-go/cmd/bigclawctl	0.589s`
 
 ## Blocker
 

@@ -1,0 +1,77 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1473",
+    "title": "Refill: remove remaining bigclaw-go/scripts Python entrypoints and helpers by switching callers to Go commands",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1473",
+    "latest_commit": "64ea6b7f",
+    "push_target": "origin/BIG-GO-1473"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1473-validation.md",
+    "status_report": "reports/BIG-GO-1473-status.json",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1473_validation_test.go",
+    "migration_plan": "docs/go-cli-script-migration-plan.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "retired_python_paths": [
+    "scripts/create_issues.py",
+    "scripts/dev_smoke.py",
+    "scripts/ops/bigclaw_github_sync.py",
+    "scripts/ops/bigclaw_refill_queue.py",
+    "scripts/ops/bigclaw_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_validate.py",
+    "bigclaw-go/scripts/benchmark/capacity_certification.py",
+    "bigclaw-go/scripts/benchmark/run_matrix.py",
+    "bigclaw-go/scripts/benchmark/soak_local.py",
+    "bigclaw-go/scripts/e2e/run_task_smoke.py",
+    "bigclaw-go/scripts/migration/shadow_compare.py"
+  ],
+  "go_replacements": [
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_benchmark_commands.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/refill/queue.go",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "rg -n \"scripts/create_issues\\\\.py|scripts/dev_smoke\\\\.py|scripts/ops/bigclaw_github_sync\\\\.py|scripts/ops/bigclaw_workspace_bootstrap\\\\.py|scripts/ops/symphony_workspace_bootstrap\\\\.py|scripts/ops/symphony_workspace_validate\\\\.py|bigclaw-go/scripts/.+\\\\.py\" docs/go-cli-script-migration-plan.md workflow.md bigclaw-go/internal/regression",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO1473ZeroPythonBaselineAndReplacementOwnership|BIGGO1473ValidationReportCapturesBlockedPhysicalDeletionState|BIGGO1473StatusReportCapturesPublishedBranchState)$'",
+      "cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|RunHelpAtRootPrintsUsageAndExitsZero)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "caller_reference_audit": "only migration documentation and regression guards reference retired Python paths",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.602s",
+      "command_surface_tests": "ok  \tbigclaw-go/cmd/bigclawctl\t0.589s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1473 changes, so the lane could not truthfully reduce it further."
+  },
+  "notes": [
+    "This lane documents the already-retired Python script surface, its Go ownership, and the zero-Python baseline for the active branch.",
+    "Published lane commit `dac1cd96` (`BIG-GO-1473: lock zero-python script migration baseline`) to `origin/BIG-GO-1473`.",
+    "Published metadata correction commit `64ea6b7f` (`BIG-GO-1473: fix recorded validation commands`) to `origin/BIG-GO-1473`."
+  ]
+}
