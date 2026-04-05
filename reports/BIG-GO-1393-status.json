@@ -43,7 +43,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.521s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.596s"
     }
   },
   "blocker": {
@@ -53,6 +53,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `c8e9d79c`."
+    "Baseline HEAD before lane changes was `c8e9d79c`.",
+    "The first push was rejected after `origin/main` advanced to `c71fe8ca`; the lane was then rebased and revalidated at `6bcd7118`."
   ]
 }
