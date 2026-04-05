@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1314",
     "title": "Heartbeat refill lane 1314: remaining Python asset sweep 4/10",
-    "state": "In Progress"
+    "state": "Completed"
   },
   "branch": {
-    "name": "main",
-    "latest_commit": "65b83c6b",
+    "name": "detached HEAD",
+    "latest_commit": "HEAD",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.777s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.860s"
     }
   },
   "blocker": {
@@ -51,6 +51,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `65b83c6b`."
+    "Baseline HEAD before lane changes was `957f27a0`.",
+    "Final pushed lane commit is reported in the task closeout because amend operations rewrite the commit hash."
   ]
 }
