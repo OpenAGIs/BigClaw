@@ -19,3 +19,11 @@
 
 - `find . -name '*.py' | wc -l`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1364LegacyContractTestReplacement'`
+
+## Execution Notes
+
+- 2026-04-05: The checked-out workspace was already at a repository-wide Python count of `0`, so this lane had to satisfy acceptance by landing concrete Go/native replacement evidence rather than reducing the `.py` count further.
+- 2026-04-05: Added `bigclaw-go/internal/migration/legacy_contract_tests.go` as the Go-native replacement registry for legacy contract-test sweep A.
+- 2026-04-05: Added `bigclaw-go/internal/regression/big_go_1364_legacy_contract_test_replacement_test.go` and `bigclaw-go/docs/reports/big-go-1364-legacy-contract-test-replacement.md` to lock the replacement map and evidence in place.
+- 2026-04-05: Ran `find . -name '*.py' | wc -l` and observed `0`.
+- 2026-04-05: Ran `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1364LegacyContractTestReplacement(ManifestMatchesRetiredTests|PathsExist|LaneReportCapturesReplacementState)$'` and observed `ok  	bigclaw-go/internal/regression	0.634s`.

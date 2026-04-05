@@ -1,0 +1,84 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1364",
+    "title": "Go-only refill 1364: tests legacy contract removal sweep A",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "big-go-1364",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1364' -n 2",
+    "push_target": "origin/big-go-1364"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1364-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1364-legacy-contract-test-replacement.md",
+    "replacement_registry": "bigclaw-go/internal/migration/legacy_contract_tests.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1364_legacy_contract_test_replacement_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "replacements": [
+    {
+      "retired_python_test": "tests/test_execution_contract.py",
+      "replacement_kind": "go-contract-owner",
+      "native_replacements": [
+        "bigclaw-go/internal/contract/execution.go",
+        "bigclaw-go/internal/contract/execution_test.go"
+      ]
+    },
+    {
+      "retired_python_test": "tests/test_dashboard_run_contract.py",
+      "replacement_kind": "go-contract-owner",
+      "native_replacements": [
+        "bigclaw-go/internal/product/dashboard_run_contract.go",
+        "bigclaw-go/internal/product/dashboard_run_contract_test.go"
+      ]
+    },
+    {
+      "retired_python_test": "tests/test_cross_process_coordination_surface.py",
+      "replacement_kind": "go-api-surface",
+      "native_replacements": [
+        "bigclaw-go/internal/api/coordination_surface.go",
+        "bigclaw-go/internal/regression/coordination_contract_surface_test.go"
+      ]
+    },
+    {
+      "retired_python_test": "tests/test_followup_digests.py",
+      "replacement_kind": "repo-native-report-guard",
+      "native_replacements": [
+        "bigclaw-go/docs/reports/parallel-follow-up-index.md",
+        "bigclaw-go/internal/regression/followup_index_docs_test.go"
+      ]
+    },
+    {
+      "retired_python_test": "tests/test_parallel_refill.py",
+      "replacement_kind": "go-queue-and-native-docs",
+      "native_replacements": [
+        "bigclaw-go/internal/refill/queue_test.go",
+        "bigclaw-go/internal/regression/parallel_validation_matrix_docs_test.go"
+      ]
+    }
+  ],
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1364LegacyContractTestReplacement(ManifestMatchesRetiredTests|PathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "0",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.634s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1364 changes."
+  },
+  "notes": [
+    "This lane lands a Go-native ownership registry for legacy contract-test sweep A.",
+    "The branch baseline was already Python-free, so the acceptance path is a concrete Go/native replacement artifact rather than a lower in-branch .py count.",
+    "Baseline HEAD before lane changes was `81654c01`.",
+    "Primary lane commit: `6fdd89f1 BIG-GO-1364: add legacy contract test replacement sweep`."
+  ]
+}
