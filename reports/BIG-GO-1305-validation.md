@@ -80,7 +80,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1305/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.301s
+ok  	bigclaw-go/internal/regression	0.452s
 ```
 
 ## Git
@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.301s
 - Branch: `BIG-GO-1305`
 - Baseline HEAD before lane commit: `389c32cf`
 - Lane commit details before this change: no prior `BIG-GO-1305` commit matched `git log --oneline --grep 'BIG-GO-1305'`
-- Final metadata commit: pending local lane commit
+- First lane commit: `d69c10a8` (`BIG-GO-1305 harden zero-python sweep`)
 - Push target: `origin/BIG-GO-1305`
 
 ## Blocker

@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1305",
-    "latest_commit": "pending local lane commit from baseline 389c32cf",
+    "latest_commit": "d69c10a8",
     "push_target": "origin/BIG-GO-1305"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.301s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.452s"
     }
   },
   "blocker": {
@@ -51,6 +51,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "No prior BIG-GO-1305 lane commit existed before this change; pre-commit baseline HEAD was 389c32cf."
+    "No prior BIG-GO-1305 lane commit existed before this change; pre-commit baseline HEAD was 389c32cf and the first lane commit is d69c10a8."
   ]
 }
