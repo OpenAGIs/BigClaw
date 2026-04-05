@@ -1,9 +1,9 @@
-# BIG-GO-1400 Workpad
+# BIG-GO-1392 Workpad
 
 ## Plan
 
 1. Reconfirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Land lane-scoped report and regression coverage that document the remaining inventory and pin the active Go/native replacement paths for `BIG-GO-1400`.
+2. Land lane-scoped report and regression coverage that document the remaining inventory and pin the active Go/native replacement paths for `BIG-GO-1392`.
 3. Run targeted validation, capture exact commands and results in the lane artifacts, then commit and push the branch.
 
 ## Acceptance
@@ -18,23 +18,18 @@
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1400(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1392(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
 - 2026-04-06: Initial inventory confirmed no physical `.py` files anywhere in the checkout, including `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 - 2026-04-06: This lane is therefore scoped as a documentation and regression-hardening sweep for the existing Go-only baseline.
-- 2026-04-06: Added `bigclaw-go/docs/reports/big-go-1400-python-asset-sweep.md` and `bigclaw-go/internal/regression/big_go_1400_zero_python_guard_test.go` to record and protect the zero-Python baseline for this lane.
-- 2026-04-06: Added `reports/BIG-GO-1400-validation.md` and `reports/BIG-GO-1400-status.json` to capture exact validation evidence and lane state.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
-- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1400(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.504s`.
-- 2026-04-06: Rebasing onto `origin/main` after a push rejection required resolving the expected `.symphony/workpad.md` conflict for this lane.
-- 2026-04-06: Re-ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` after the rebase and again observed no output.
-- 2026-04-06: Re-ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` after the rebase and again observed no output.
-- 2026-04-06: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1400(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` after the rebase and observed `ok  	bigclaw-go/internal/regression	0.622s`.
-- 2026-04-06: Rebasing the lane again onto newer `origin/main` required resolving the same expected `.symphony/workpad.md` conflict before replaying the metadata commit.
-- 2026-04-06: Re-ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` after the second rebase and again observed no output.
-- 2026-04-06: Re-ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` after the second rebase and again observed no output.
-- 2026-04-06: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1400/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1400(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` after the second rebase and observed `ok  	bigclaw-go/internal/regression	2.729s`.
-- 2026-04-06: Rebasing onto `origin/main` yet again after another fast-forward push rejection required resolving the same expected `.symphony/workpad.md` conflict for the lane commit stack.
+- 2026-04-06: Added `bigclaw-go/docs/reports/big-go-1392-python-asset-sweep.md` and `bigclaw-go/internal/regression/big_go_1392_zero_python_guard_test.go` to record and protect the zero-Python baseline for this lane.
+- 2026-04-06: Added `reports/BIG-GO-1392-validation.md` and `reports/BIG-GO-1392-status.json` to capture exact validation evidence and lane state.
+- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
+- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
+- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1392(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.641s`.
+- 2026-04-06: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1392(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` after report finalization and observed `ok  	bigclaw-go/internal/regression	0.374s`.
+- 2026-04-06: Rebased the lane onto `origin/main` after repeated push rejections, resolving the expected `.symphony/workpad.md` conflict and revalidating the regression guard.
+- 2026-04-06: Rebased the lane again onto fetched `origin/main` at `a3549db3`, resolved the recurring `.symphony/workpad.md` conflict, and observed `ok  	bigclaw-go/internal/regression	3.211s` from the post-rebase targeted regression rerun.
+- 2026-04-06: Rebasing the two-commit closeout stack onto fetched `origin/main` `19afd942`; the expected `.symphony/workpad.md` conflict was resolved by keeping the 1392 lane workpad.
