@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "see git log --oneline --grep 'BIG-GO-1323'",
-    "push_target": "origin/main"
+    "push_target": "origin/BIG-GO-1323"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1323-validation.md",
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.976s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.213s"
     }
   },
   "blocker": {

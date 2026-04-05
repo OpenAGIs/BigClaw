@@ -26,4 +26,4 @@
 - 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
 - 2026-04-05: This execution therefore focuses on refreshing lane evidence and regression validation rather than deleting in-branch Python files.
 - 2026-04-05: Added the `BIG-GO-1323` lane report, validation artifacts, and Go regression guard to lock in the zero-Python baseline.
-- 2026-04-05: Validation results recorded for repository inventory (`none`), priority directory inventory (`none`), and targeted regression guard (`ok  	bigclaw-go/internal/regression	0.976s`).
+- 2026-04-05: Validation results recorded for repository inventory (`none`), priority directory inventory (`none`), and targeted regression guard (`ok  	bigclaw-go/internal/regression	3.213s`).
