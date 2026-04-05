@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1447",
-    "latest_commit": "4a7f563",
+    "latest_commit": "8c8b175",
     "push_target": "origin/BIG-GO-1447"
   },
   "artifacts": {
@@ -56,6 +56,7 @@
     "Baseline HEAD before lane changes was `aeab7a1`.",
     "Artifact commit `73b9ef1` (`BIG-GO-1447: add zero-python heartbeat artifacts`) landed the lane deliverables.",
     "Metadata close-out commit `ce007d2` (`BIG-GO-1447: finalize lane metadata`) was pushed to `origin/BIG-GO-1447`.",
-    "Final published metadata commit `4a7f563` (`BIG-GO-1447: sync final published metadata`) is the current branch head on `origin/BIG-GO-1447`."
+    "Published metadata sync commit `4a7f563` (`BIG-GO-1447: sync final published metadata`) was pushed to `origin/BIG-GO-1447`.",
+    "Final published head commit `8c8b175` (`BIG-GO-1447: record published head`) is the current branch head on `origin/BIG-GO-1447`."
   ]
 }
