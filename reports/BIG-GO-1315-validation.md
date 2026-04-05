@@ -101,7 +101,7 @@ ok  	bigclaw-go/internal/regression	0.871s
 ## Git
 
 - Branch: `big-go-1315`
-- Current HEAD before final sync commit: `8fd95c9f`
+- Final lane commit: `7e6fc599`
 - Baseline HEAD before lane commit: `65b83c6b`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1315'`
 - Previous metadata commits: `a47c37ab`, `c7d5df27`, `8fd95c9f`
