@@ -31,5 +31,7 @@ The Go-only replacement surface that remains available for the retired Python as
   Result: no output; repository-wide Python file count remained `0`.
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the priority residual directories remained Python-free.
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1315(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.432s`
+- `git ls-files '*.py'`
+  Result: no output; the tracked repository inventory remained Python-free.
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1315(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|TrackedInventoryHasNoPythonFiles|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+  Result: `ok  	bigclaw-go/internal/regression	0.871s`

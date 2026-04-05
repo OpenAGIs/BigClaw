@@ -37,7 +37,8 @@ and lane-specific validation evidence.
 
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1315(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315 && git ls-files '*.py'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1315(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|TrackedInventoryHasNoPythonFiles|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Validation Results
 
@@ -69,26 +70,41 @@ Result:
 
 ```
 
-### Targeted regression guard
+### Tracked inventory
 
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1315(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315 && git ls-files '*.py'
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.432s
+
+```
+
+### Targeted regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1315/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1315(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|TrackedInventoryHasNoPythonFiles|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.871s
 ```
 
 ## Git
 
 - Branch: `big-go-1315`
+- Current HEAD before final sync commit: `8fd95c9f`
 - Baseline HEAD before lane commit: `65b83c6b`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1315'`
-- Final metadata commit: `c7d5df271085e8563a62a59c3106af1d1df25928`
+- Previous metadata commits: `a47c37ab`, `c7d5df27`, `8fd95c9f`
 - Push target: `origin/big-go-1315`
 
 ## Residual Risk

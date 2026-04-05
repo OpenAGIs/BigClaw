@@ -2,6 +2,7 @@ package regression
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -34,6 +35,20 @@ func TestBIGGO1315PriorityResidualDirectoriesStayPythonFree(t *testing.T) {
 	}
 }
 
+func TestBIGGO1315TrackedInventoryHasNoPythonFiles(t *testing.T) {
+	rootRepo := regressionRepoRoot(t)
+
+	cmd := exec.Command("git", "ls-files", "*.py")
+	cmd.Dir = rootRepo
+	output, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("git ls-files '*.py': %v", err)
+	}
+	if trimmed := strings.TrimSpace(string(output)); trimmed != "" {
+		t.Fatalf("expected tracked Python inventory to be empty, found: %s", trimmed)
+	}
+}
+
 func TestBIGGO1315ReplacementPathsRemainAvailable(t *testing.T) {
 	rootRepo := regressionRepoRoot(t)
 
@@ -63,6 +78,7 @@ func TestBIGGO1315LaneReportCapturesSweepState(t *testing.T) {
 		"`tests`: `0` Python files",
 		"`scripts`: `0` Python files",
 		"`bigclaw-go/scripts`: `0` Python files",
+		"`git ls-files '*.py'`",
 		"`scripts/ops/bigclawctl`",
 		"`scripts/dev_bootstrap.sh`",
 		"`bigclaw-go/cmd/bigclawctl/main.go`",
@@ -70,6 +86,7 @@ func TestBIGGO1315LaneReportCapturesSweepState(t *testing.T) {
 		"`bigclaw-go/scripts/e2e/run_all.sh`",
 		"`find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`",
 		"`find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`",
+		"`git ls-files '*.py'`",
 		"`cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1315",
 	} {
 		if !strings.Contains(report, needle) {
