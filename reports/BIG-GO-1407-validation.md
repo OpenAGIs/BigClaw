@@ -82,7 +82,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1407/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.281s
+ok  	bigclaw-go/internal/regression	0.682s
 ```
 
 ## Git
@@ -92,6 +92,8 @@ ok  	bigclaw-go/internal/regression	0.281s
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1407'`
 - Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1407'`
 - Push target: `origin/main`
+- Rebase note: the lane was rebased onto fetched `origin/main` at `5822df82`, resolving the expected `.symphony/workpad.md` conflict before the post-rebase test rerun.
+- Current rebased lane tip before final push: `6fc4f7c5`
 
 ## Residual Risk
 
