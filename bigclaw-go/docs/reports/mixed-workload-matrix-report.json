@@ -212,7 +212,7 @@
           "trace_id": "mixed-gpu-1773395066",
           "timestamp": "2026-03-13T17:44:33.48013+08:00",
           "payload": {
-            "message": "ray job bigclaw-mixed-gpu-1773395066 succeeded: 2026-03-13 02:44:31,429\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-gpu-1773395066: python -c \"print('gpu via ray')\"\ngpu via ray"
+            "message": "ray job bigclaw-mixed-gpu-1773395066 succeeded: 2026-03-13 02:44:31,429\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-gpu-1773395066: sh -c 'echo gpu via ray'\ngpu via ray"
           }
         }
       ],
@@ -354,7 +354,7 @@
           "trace_id": "mixed-required-ray-1773395066",
           "timestamp": "2026-03-13T17:44:42.458392+08:00",
           "payload": {
-            "message": "ray job bigclaw-mixed-required-ray-1773395066 succeeded: 2026-03-13 02:44:38,415\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-required-ray-1773395066: python -c \"print('required ray')\"\nrequired ray"
+            "message": "ray job bigclaw-mixed-required-ray-1773395066 succeeded: 2026-03-13 02:44:38,415\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-required-ray-1773395066: sh -c 'echo required ray'\nrequired ray"
           }
         }
       ],
