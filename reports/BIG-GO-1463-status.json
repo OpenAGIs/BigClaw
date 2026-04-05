@@ -1,0 +1,63 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1463",
+    "title": "Lane refill: eliminate bigclaw-go/scripts/*.py and remaining Python automation helpers",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1463",
+    "latest_commit": "38fe3e7",
+    "push_target": "origin/BIG-GO-1463"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1463-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1463-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1463_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    },
+    "migrated_files": [],
+    "deleted_files": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1463_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "delete_condition": "Any future Python automation helper added under src/bigclaw, tests, scripts, or bigclaw-go/scripts must be deleted before merge or replaced by an existing Go/native entrypoint with matching validation evidence.",
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1463(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.491s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1463 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python automation inventory and hardens the Go-only state with regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `a63c8ec`.",
+    "Lane commit before push was `38fe3e7` (`BIG-GO-1463: harden zero-python automation baseline`)."
+  ]
+}
