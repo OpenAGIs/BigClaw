@@ -1070,6 +1070,9 @@ func liveValidationNilIfEmpty(value string) any {
 }
 
 func stringSliceFromAny(value any) []string {
+	if typed, ok := value.([]string); ok {
+		return typed
+	}
 	items := asSlice(value)
 	if len(items) == 0 {
 		return []string{}
