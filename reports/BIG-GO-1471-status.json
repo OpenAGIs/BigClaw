@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "BIG-GO-1471",
-    "latest_commit": "pending",
-    "push_target": "origin/BIG-GO-1471"
+    "push_target": "origin/BIG-GO-1471",
+    "last_observed_remote_commit": "6ac15c8e1f17be5f07ebd88f79059279b1ab7be0"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1471-validation.md",
@@ -59,6 +59,7 @@
   },
   "notes": [
     "This issue consolidates repeated Python-sweep evidence into one canonical Go-owned regression/report surface.",
-    "The deleted files were audit glue only and had no runtime ownership role."
+    "The deleted files were audit glue only and had no runtime ownership role.",
+    "The recorded branch SHA is the last remote observation before this metadata sync commit so the status artifact does not invalidate itself on every closeout-only push."
   ]
 }
