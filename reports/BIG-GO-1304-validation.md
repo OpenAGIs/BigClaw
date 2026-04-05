@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.441s
 - Branch: `BIG-GO-1304`
 - Baseline HEAD before lane commit: `389c32cf`
 - Lane commit details: `1bb01a2d BIG-GO-1304: document zero-python sweep lane`
-- Published lane follow-up commits: `dc4b60a7 BIG-GO-1304: refresh validation metadata`; `c3e98261 BIG-GO-1304: finalize validation commit refs`
+- Earlier published lane follow-up commits: `dc4b60a7 BIG-GO-1304: refresh validation metadata`; `c3e98261 BIG-GO-1304: finalize validation commit refs`
 - Push target: `origin/BIG-GO-1304`
 
 ## Residual Risk
