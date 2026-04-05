@@ -52,7 +52,7 @@ find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1320 -path '*/.git' -prune -o
 Result:
 
 ```text
-
+none
 ```
 
 ### Priority directory inventory
@@ -66,7 +66,7 @@ find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1320/src/bigclaw /Users/opena
 Result:
 
 ```text
-
+none
 ```
 
 ### Targeted regression guard
@@ -80,7 +80,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1320/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.446s
+ok  	bigclaw-go/internal/regression	0.837s
 ```
 
 ## Git
@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.446s
 - Branch: `main`
 - Baseline HEAD before lane commit: `65b83c6b`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1320'`
-- Final pushed lane commit: `ee927a48`
+- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1320'`
 - Push target: `origin/main`
 
 ## Residual Risk
