@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1337",
-    "latest_commit": "be7e1879 BIG-GO-1337: record zero-python sweep lane",
+    "latest_commit": "cb63e3d5 BIG-GO-1337: refresh validation evidence",
     "push_target": "origin/BIG-GO-1337"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.180s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.422s"
     }
   },
   "blocker": {
@@ -52,6 +52,6 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `2322b380`.",
-    "Acceptance validation was re-run at `be7e1879`; both Python inventory commands remained empty and the targeted regression passed in `0.180s`."
+    "Acceptance validation was re-run after the refresh and both Python inventory commands remained empty; the targeted regression passed in `0.422s` before the final metadata cleanup."
   ]
 }

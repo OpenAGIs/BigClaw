@@ -29,4 +29,4 @@
 - 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
 - 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
 - 2026-04-05: This execution therefore focuses on refreshing lane evidence and regression validation rather than deleting in-branch Python files.
-- 2026-04-05: Re-ran the acceptance validation at `be7e1879`; both inventory commands again produced no output and the targeted regression passed in `0.180s`.
+- 2026-04-05: Re-ran the acceptance validation at `be7e1879`; both inventory commands again produced no output and the targeted regression passed in `0.422s`.
