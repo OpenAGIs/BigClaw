@@ -91,7 +91,7 @@ ok  	bigclaw-go/internal/regression	0.690s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c8e9d79c`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1399'`
-- Final pushed lane commit: `3f029514`
+- Final pushed lane commit: `4ea9ec0e`
 - Push target: `origin/big-go-1399`
 - Initial push rejection: remote `main` advanced to `3db3516b`
 - Rebasing resolution: `.symphony/workpad.md` conflict resolved by keeping the lane-specific `BIG-GO-1399` workpad
@@ -99,7 +99,8 @@ ok  	bigclaw-go/internal/regression	0.690s
 - Second push rejection: remote `main` advanced to `5c545938`
 - Final rebased lane HEAD before branch publish: `3ce11e38`
 - Metadata closeout commit: `3f029514`
-- Final push result: successful publish and metadata fast-forward on `origin/big-go-1399`
+- Final metadata-sync commit: `4ea9ec0e`
+- Final push result: successful publish and final metadata fast-forward on `origin/big-go-1399`
 
 ## Residual Risk
 
