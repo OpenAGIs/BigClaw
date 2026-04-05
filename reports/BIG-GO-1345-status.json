@@ -11,7 +11,7 @@
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1345-validation.md",
-    "workpad": ".symphony/workpad.md",
+    "workpad": "reports/BIG-GO-1345-workpad.md",
     "lane_report": "bigclaw-go/docs/reports/big-go-1345-python-asset-sweep.md",
     "regression_guard": "bigclaw-go/internal/regression/big_go_1345_zero_python_guard_test.go"
   },

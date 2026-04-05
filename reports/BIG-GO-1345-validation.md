@@ -91,6 +91,10 @@ ok  	bigclaw-go/internal/regression	3.200s
 - Final pushed lane commit: `git log --oneline --grep 'BIG-GO-1345'`
 - Push target: `origin/main`
 
+## Workpad Archive
+
+- Lane workpad snapshot: `reports/BIG-GO-1345-workpad.md`
+
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-1345 can only
