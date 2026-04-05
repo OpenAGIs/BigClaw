@@ -90,9 +90,13 @@ ok  	bigclaw-go/internal/regression	0.892s
 
 - Branch: `BIG-GO-1458`
 - Baseline HEAD before lane commit: `aeab7a1e`
-- Published lane commit: `846e6778` (`BIG-GO-1458: document zero-python heartbeat sweep`)
+- Published lane commits:
+  - `846e6778` (`BIG-GO-1458: document zero-python heartbeat sweep`)
+  - `5b7cfd72` (`BIG-GO-1458: finalize published metadata`)
 - Push target: `origin/BIG-GO-1458`
-- Push status: `git push -u origin BIG-GO-1458-publish:BIG-GO-1458` succeeded and published `846e6778`.
+- Push status:
+  - `git push -u origin BIG-GO-1458-publish:BIG-GO-1458` succeeded and published `846e6778`
+  - `git push` succeeded and advanced `origin/BIG-GO-1458` to `5b7cfd72`
 
 ## Residual Risk
 
