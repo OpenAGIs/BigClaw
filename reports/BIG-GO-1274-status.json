@@ -2,7 +2,7 @@
   "issue": {
     "identifier": "BIG-GO-1274",
     "title": "Heartbeat refill lane 1274: remaining Python asset sweep 4/10",
-    "state": "Done"
+    "state": "Blocked"
   },
   "branch": {
     "name": "main",
