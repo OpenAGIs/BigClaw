@@ -62,7 +62,7 @@ ok  	bigclaw-go/internal/regression	3.209s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `f8cbae1c`
-- Lane commit details: `bca62465 BIG-GO-1358: add legacy model runtime replacement registry`
+- Lane commit details: `7bed6998 BIG-GO-1358: add legacy model runtime replacement registry`
 - Final pushed lane commit: `see git log --oneline --grep 'BIG-GO-1358' -n 2`
 - Push target: `origin/main`
 
