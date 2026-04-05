@@ -80,13 +80,13 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1317/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	1.003s
+ok  	bigclaw-go/internal/regression	0.871s
 ```
 
 ## Git
 
 - Branch: `main`
-- Rebase base before replaying this lane: `ee927a48`
+- Rebase base before replaying this lane: `f309ec30`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1317' -3`
 - Final pushed lane commit: captured from `git rev-parse --short HEAD` after push
 - Push target: `origin/main`

@@ -28,4 +28,4 @@
 
 - 2026-04-05: Confirmed repository-wide physical Python inventory is already `0`, including the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 - 2026-04-05: BIG-GO-1317 therefore lands as a regression-prevention sweep that documents the empty inventory and locks in the Go-only replacement surface for this checkout.
-- 2026-04-05: Targeted regression validation passed after rebase with `ok  	bigclaw-go/internal/regression	1.003s`.
+- 2026-04-05: Targeted regression validation passed after replay onto `origin/main` at `f309ec30` with `ok  	bigclaw-go/internal/regression	0.871s`.
