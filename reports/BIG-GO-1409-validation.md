@@ -80,14 +80,14 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1409/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.647s
+ok  	bigclaw-go/internal/regression	0.474s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `d6b4f792`
-- Lane commit details: `10fa120c` (`BIG-GO-1409: add zero-python heartbeat artifacts`)
+- Rebasing over updated `origin/main` produced lane commits `a6eefe98` (`BIG-GO-1409: add zero-python heartbeat artifacts`) and `386ed104` (`BIG-GO-1409: finalize lane metadata`)
 - Push target: `origin/main`
 
 ## Residual Risk
