@@ -2939,6 +2939,32 @@
       "state": "Done",
       "title": "Refactor worker runtime RunOnce flow",
       "updated_at": "2026-03-23T16:34:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Completed `BIG-GO-1465` on branch `BIG-GO-1465`.\\n\\nLanded artifacts:\\n- `.symphony/workpad.md`\\n- `reports/BIG-GO-1465-validation.md`\\n- `reports/BIG-GO-1465-status.json`\\n\\nWhat changed:\\n- Reduced `src/bigclaw/__init__.py` from a package-root re-export hub to a minimal marker so root-package import glue is no longer the active API surface.\\n- Updated the remaining in-repo root-package consumers to import concrete modules directly.\\n- Added `TestParallelIssueQueueSetRecentBatchReordersAfterDeleteByCanonicalIssueOrder` in `bigclaw-go/internal/refill/queue_test.go` to freeze refill recent-batch delete/reassignment ordering against canonical `IssueOrder`.\\n- Documented the explicit delete condition for the remaining package marker and the frozen Python shims that still exist for migration-only compatibility.\\n\\nValidation:\\n- `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/deprecation.py src/bigclaw/service.py src/bigclaw/roadmap.py tests/test_deprecation.py tests/test_roadmap.py` -> passed\\n- `PYTHONPATH=src python3 -m pytest -q tests/test_deprecation.py tests/test_roadmap.py` -> `6 passed`\\n- `cd bigclaw-go && go test ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` -> passed\\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `9fcbc83d0e1e37343296cd8c2e9040ac90504b06` matches remote SHA `9fcbc83d0e1e37343296cd8c2e9040ac90504b06` with `status: ok` and `synced: true`\\n\\nCommit SHA: `9fcbc83d0e1e37343296cd8c2e9040ac90504b06`\\nPR URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1465`\\nGitHub CLI note: `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-1465 --json url,title,state,number` is blocked in this environment because `gh` is not authenticated.",
+          "created_at": "2026-04-05T20:41:32Z"
+        }
+      ],
+      "created_at": "2026-04-05T20:39:54Z",
+      "description": "P0\\n\\nRefill lane for repository-material Go-only migration. Focus on removing physical Python assets that still exist in the repo, not tracker-only bookkeeping. Acceptance: reduce Python file count materially, document exact files migrated/deleted, provide Go replacements or explicit delete conditions, and record validation commands proving the repo moved closer to Go-only reality.",
+      "id": "big-go-1465",
+      "identifier": "BIG-GO-1465",
+      "labels": [
+        "bigclaw",
+        "go-migration",
+        "parallel",
+        "p0",
+        "repo-refactor",
+        "refill"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "Lane refill: eliminate package re-export/import glue in src/bigclaw and freeze delete order",
+      "updated_at": "2026-04-05T20:41:32Z"
     }
   ]
 }

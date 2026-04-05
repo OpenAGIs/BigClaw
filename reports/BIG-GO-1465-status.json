@@ -1,0 +1,46 @@
+{
+  "identifier": "BIG-GO-1465",
+  "title": "Lane refill: eliminate package re-export/import glue in src/bigclaw and freeze delete order",
+  "state": "Done",
+  "branch": "BIG-GO-1465",
+  "commit": "9fcbc83d0e1e37343296cd8c2e9040ac90504b06",
+  "remote": {
+    "name": "origin/BIG-GO-1465",
+    "sha": "9fcbc83d0e1e37343296cd8c2e9040ac90504b06",
+    "synced": true
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "validation_report": "reports/BIG-GO-1465-validation.md"
+  },
+  "python_glue_reduction": {
+    "file": "src/bigclaw/__init__.py",
+    "action": "reduced_to_marker",
+    "root_reexports_removed": true,
+    "delete_condition": "Delete the marker once repo and CI import resolution no longer depend on a regular package file to beat conflicting installed bigclaw packages."
+  },
+  "refill_order_freeze": {
+    "test": "bigclaw-go/internal/refill/queue_test.go",
+    "case": "TestParallelIssueQueueSetRecentBatchReordersAfterDeleteByCanonicalIssueOrder"
+  },
+  "validation": [
+    {
+      "command": "PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/deprecation.py src/bigclaw/service.py src/bigclaw/roadmap.py tests/test_deprecation.py tests/test_roadmap.py",
+      "result": "passed"
+    },
+    {
+      "command": "PYTHONPATH=src python3 -m pytest -q tests/test_deprecation.py tests/test_roadmap.py",
+      "result": "passed (6 passed)"
+    },
+    {
+      "command": "cd bigclaw-go && go test ./internal/refill ./internal/legacyshim ./cmd/bigclawctl",
+      "result": "passed"
+    },
+    {
+      "command": "python3 - <<'PY' ... pathlib.Path('src/bigclaw').glob('*.py') ... PY",
+      "result": "50"
+    }
+  ],
+  "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1465",
+  "updated_at": "2026-04-05T20:40:21Z"
+}
