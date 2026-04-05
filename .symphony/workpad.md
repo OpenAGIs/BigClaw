@@ -14,4 +14,4 @@
 ## Validation
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `go test ./internal/regression -run TestBIGGO1378ZeroPythonAssetSweep -count=1`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1378(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
