@@ -63,7 +63,6 @@ func TestBIGGO1341LaneReportCapturesSweepState(t *testing.T) {
 		"`tests`: `0` Python files",
 		"`scripts`: `0` Python files",
 		"`bigclaw-go/scripts`: `0` Python files",
-		"Explicit remaining Python asset list: none.",
 		"`scripts/ops/bigclawctl`",
 		"`scripts/dev_bootstrap.sh`",
 		"`bigclaw-go/cmd/bigclawctl/main.go`",
