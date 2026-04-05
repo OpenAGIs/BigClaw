@@ -17,3 +17,9 @@
 - Measure Python file count before and after with repository file inventory commands.
 - Run targeted tests or command checks that cover each touched path.
 - Record exact commands and results for the final report.
+
+## Execution Notes
+- 2026-04-06: Materialized the repository into the workspace, created branch `BIG-GO-1452`, and confirmed the checkout was already at zero physical Python files.
+- 2026-04-06: Added lane-scoped zero-Python regression artifacts for `BIG-GO-1452` covering repository inventory, priority residual directories, and Go/native replacement paths.
+- 2026-04-06: Ran repository inventory checks and `go test -count=1 ./internal/regression -run 'TestBIGGO1452(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`, which passed.
+- 2026-04-06: Committed and pushed lane artifacts to `origin/BIG-GO-1452` at `a2ae81d4`.
