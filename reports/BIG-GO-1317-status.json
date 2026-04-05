@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "0e8f79fb",
+    "latest_commit": "resolve with `git rev-parse --short HEAD` at the published branch tip",
     "push_target": "origin/main"
   },
   "artifacts": {
