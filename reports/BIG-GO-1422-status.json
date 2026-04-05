@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "8594f0e7",
+    "latest_commit": "c03f14fe",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -44,7 +44,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.640s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.446s"
     }
   },
   "blocker": {
@@ -54,6 +54,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `c397e505`.",
-    "Lane commit `8594f0e7` added the BIG-GO-1422 zero-Python heartbeat artifacts."
+    "Rebasing over updated `origin/main` advanced the lane commits to `1a342b40` and `c03f14fe` on top of `564e6e49`."
   ]
 }
