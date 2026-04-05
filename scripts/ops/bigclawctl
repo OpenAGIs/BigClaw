@@ -4,6 +4,19 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/../.." && pwd)
 invocation_dir=$(pwd)
+script_name=$(basename -- "${BASH_SOURCE[0]}")
+
+case "$script_name" in
+  bigclaw-issue)
+    set -- issue "$@"
+    ;;
+  bigclaw-panel)
+    set -- panel "$@"
+    ;;
+  bigclaw-symphony)
+    set -- symphony "$@"
+    ;;
+esac
 
 cd "$repo_root/bigclaw-go"
 

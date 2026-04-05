@@ -1,32 +1,37 @@
-# BIG-GO-1345 Workpad
+# BIG-GO-1354
 
 ## Plan
 
-1. Reconfirm the remaining physical Python asset inventory for the repository and the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-1345` so this unattended run records the current zero-Python baseline and the available Go replacement paths:
-   - `bigclaw-go/docs/reports/big-go-1345-python-asset-sweep.md`
-   - `reports/BIG-GO-1345-status.json`
-   - `reports/BIG-GO-1345-validation.md`
-   - `bigclaw-go/internal/regression/big_go_1345_zero_python_guard_test.go`
-3. Re-run the targeted regression coverage, record the exact commands and results, then commit and push the lane update.
+- Inspect the current `scripts/ops` entrypoints and confirm whether any Python-backed paths remain.
+- Replace redundant compatibility wrappers in `scripts/ops` with a single native dispatcher path that still routes to the Go `bigclawctl` subcommands.
+- Add targeted validation for the replacement path and verify the repo remains free of `.py` assets.
+- Commit the scoped change and push the branch to the configured remote.
 
 ## Acceptance
 
-- The remaining Python asset inventory is explicit for the whole repository and the priority residual directories.
-- The lane either removes Python assets or, when the checkout is already Python-free, documents and hardens that zero-Python baseline.
-- The Go replacement paths for the retired Python surface are listed in the lane artifacts.
-- Exact validation commands and results are recorded.
-- The change is committed and pushed to the remote branch.
+- `scripts/ops/*.py` replacement work lands as a concrete repo change in the ops entrypoint layer.
+- Operator compatibility entrypoints still resolve to the correct Go `bigclawctl` subcommands.
+- Targeted tests pass.
+- `find . -name '*.py' | wc -l` remains at `0` or lower than baseline.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1345/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1345(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `go test ./cmd/bigclawctl`
+- `find . -name '*.py' | wc -l`
+- Manual wrapper checks via `scripts/ops/bigclawctl`
 
-## Execution Notes
+## Validation Results
 
-- 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
-- 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
-- 2026-04-05: This execution therefore focuses on lane evidence and a Go regression guard rather than deleting in-branch Python files.
-- 2026-04-05: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO1345(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok   bigclaw-go/internal/regression 3.200s`.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354/bigclaw-go && go test ./cmd/bigclawctl`
+  - `ok  	bigclaw-go/cmd/bigclawctl	3.744s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclaw-issue --help`
+  - exit `0`
+  - output included `usage: bigclawctl issue [flags] [args...]`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclaw-panel --help`
+  - exit `0`
+  - output included `usage: bigclawctl panel [flags] [args...]`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclaw-symphony --help`
+  - exit `0`
+  - output included `usage: bigclawctl symphony [flags] [args...]`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && find . -name '*.py' | wc -l`
+  - `0`

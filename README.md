@@ -60,7 +60,8 @@ Notes:
   now Go-only and keeps `run_suite.sh` as the retained wrapper; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
-  retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
+  retained as compatibility symlinks into `scripts/ops/bigclawctl`, but the preferred operator path is
+  still `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
