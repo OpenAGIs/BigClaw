@@ -83,7 +83,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1392/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.374s
+ok  	bigclaw-go/internal/regression	3.211s
 ```
 
 ## Git
@@ -91,8 +91,10 @@ ok  	bigclaw-go/internal/regression	0.374s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c8e9d79c`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1392'`
+- Latest rebased lane commit: `488d3a5b`
+- Existing published lane branch before continuation closeout: `origin/big-go-1392-r1` at `35767e19`
 - Final pushed lane commit: `pending`
-- Push target: `origin/main`
+- Push target: `origin/big-go-1392-r2`
 
 ## Residual Risk
 
