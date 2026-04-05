@@ -87,8 +87,8 @@ ok  	bigclaw-go/internal/regression	0.464s
 
 - Branch: `BIG-GO-1301`
 - Baseline HEAD before lane commit: `389c32cf`
-- Lane commit details: `pending`
-- Final metadata commit: `pending`
+- Lane commit details: `0eeaf561 BIG-GO-1301: harden zero-python sweep lane`
+- Final metadata commit: `pending follow-up metadata sync`
 - Push target: `origin/BIG-GO-1301`
 
 ## Residual Risk
