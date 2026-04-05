@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "f2c1a248",
+    "latest_commit": "957f27a0",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -53,6 +53,6 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `65b83c6b`.",
     "Initial lane commit on `origin/main`: `eef4cedb`.",
-    "Final metadata commit pending push at update time: `f2c1a248`."
+    "Final published metadata commit on `origin/main`: `957f27a0`."
   ]
 }
