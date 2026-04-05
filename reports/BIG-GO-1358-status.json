@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1358",
     "title": "Go-only refill 1358: legacy model/runtime module replacement",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1358' -n 2",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -59,6 +59,7 @@
   "notes": [
     "This lane lands a Go-native ownership registry for the retired legacy model/runtime modules.",
     "The branch baseline was already Python-free, so the acceptance path is a concrete Go/native replacement artifact rather than a lower in-branch .py count.",
-    "Baseline HEAD before lane changes was `f8cbae1c`."
+    "Baseline HEAD before lane changes was `f8cbae1c`.",
+    "Primary lane commit: `bca62465 BIG-GO-1358: add legacy model runtime replacement registry`."
   ]
 }
