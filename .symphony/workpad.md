@@ -1,27 +1,28 @@
-## Codex Workpad
-
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## BIG-GO-1465 Workpad
 
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Audit the remaining `src/bigclaw` package-root re-export/import glue and isolate the refill mutation path whose ordering must be frozen.
+- [x] Replace the root package re-export surface with a minimal package marker, convert the remaining imports to direct module imports, and document the delete condition for the marker file.
+- [x] Add a targeted refill regression that locks recent-batch delete/reassignment behavior to canonical `IssueOrder`, then run focused validation.
 
 ### Acceptance Criteria
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] `src/bigclaw/__init__.py` no longer serves as package-root re-export glue, and no in-repo tests depend on root re-exported symbols such as `EpicMilestone`.
+- [x] The refill lane has an explicit regression test proving delete/reassignment keeps recent-batch ordering aligned to canonical `IssueOrder`.
+- [x] Repo documentation records the exact marker-file delete condition, the remaining frozen Python shims, and validation evidence for this slice.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `PYTHONPATH=src python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/deprecation.py src/bigclaw/service.py src/bigclaw/roadmap.py tests/test_deprecation.py tests/test_roadmap.py`
+- [x] `PYTHONPATH=src python3 -m pytest -q tests/test_deprecation.py tests/test_roadmap.py`
+- [x] `cd bigclaw-go && go test ./internal/refill ./internal/legacyshim ./cmd/bigclawctl`
+- [x] `python3 - <<'PY'`
+      `import pathlib`
+      `print(sum(1 for _ in pathlib.Path('src/bigclaw').glob('*.py')))`
+      `PY`
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Scope stayed limited to root-package Python glue removal plus refill ordering freeze coverage.
+- Direct deletion of `src/bigclaw/__init__.py` is deferred because the local environment contains another installed `bigclaw` package, and keeping a minimal marker file ensures the repo checkout wins import resolution during targeted tests.

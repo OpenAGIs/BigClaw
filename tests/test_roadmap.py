@@ -1,6 +1,6 @@
 import pytest
 
-from bigclaw import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
+from bigclaw.roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 
 
 def test_build_execution_pack_roadmap_maps_epics_to_phases():

@@ -1,6 +1,12 @@
 import warnings
 
-from bigclaw import deprecation, orchestration, queue, runtime, scheduler, service, workflow
+from bigclaw import deprecation
+from bigclaw import orchestration
+from bigclaw import queue
+from bigclaw import runtime
+from bigclaw import scheduler
+from bigclaw import service
+from bigclaw import workflow
 
 
 def test_warn_legacy_runtime_surface_emits_deprecation_warning():

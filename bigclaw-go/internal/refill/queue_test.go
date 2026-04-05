@@ -226,6 +226,42 @@ func TestParallelIssueQueueSyncRecentBatchesFromStates(t *testing.T) {
 	}
 }
 
+func TestParallelIssueQueueSetRecentBatchReordersAfterDeleteByCanonicalIssueOrder(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-300", "BIG-PAR-301", "BIG-PAR-302", "BIG-PAR-303"},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-303", "BIG-PAR-300"},
+				Active:    []string{"BIG-PAR-302"},
+				Standby:   []string{"BIG-PAR-301"},
+			},
+		},
+	}
+
+	changed, err := queue.SetRecentBatch("completed", "BIG-PAR-302")
+	if err != nil {
+		t.Fatalf("set recent batch: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected recent batch update to report change")
+	}
+
+	snapshot := queue.RecentBatchesSnapshot()
+	if !stringSlicesEqual(snapshot.Completed, []string{"BIG-PAR-300", "BIG-PAR-302", "BIG-PAR-303"}) {
+		t.Fatalf("unexpected completed ordering after delete+reassign: %+v", snapshot)
+	}
+	if !stringSlicesEqual(snapshot.Active, []string{}) {
+		t.Fatalf("expected active batch to delete reassigned identifier, got %+v", snapshot)
+	}
+	if !stringSlicesEqual(snapshot.Standby, []string{"BIG-PAR-301"}) {
+		t.Fatalf("unexpected standby batch after delete+reassign: %+v", snapshot)
+	}
+}
+
 func TestParallelIssueQueueSaveMarkdownRendersCurrentBatchAndOrder(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	markdownPath := filepath.Join(t.TempDir(), "queue.md")
