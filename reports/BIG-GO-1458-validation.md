@@ -83,18 +83,16 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1458/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.664s
+ok  	bigclaw-go/internal/regression	0.892s
 ```
 
 ## Git
 
 - Branch: `BIG-GO-1458`
 - Baseline HEAD before lane commit: `aeab7a1e`
-- Local lane commits:
-  - `7133eaa3` (`BIG-GO-1458: document zero-python heartbeat sweep`)
-  - `9a9a7a6d` (`BIG-GO-1458: finalize lane metadata`)
+- Published lane commit: `846e6778` (`BIG-GO-1458: document zero-python heartbeat sweep`)
 - Push target: `origin/BIG-GO-1458`
-- Push status: `git push -u origin BIG-GO-1458` did not complete within the timed non-interactive window in this environment.
+- Push status: `git push -u origin BIG-GO-1458-publish:BIG-GO-1458` succeeded and published `846e6778`.
 
 ## Residual Risk
 
