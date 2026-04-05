@@ -1,0 +1,54 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1270",
+    "title": "Heartbeat refill lane 1270: remaining Python asset sweep 10/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "big-go-1270",
+    "latest_commit": "PENDING",
+    "push_target": "origin/big-go-1270"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1270-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1270_zero_python_guard_test.go",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1270-python-asset-sweep.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1270_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -type f -name '*.py' | sort",
+      "for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d \"$dir\" ]; then find \"$dir\" -type f -name '*.py' | sort; fi; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1270(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "",
+      "priority_dir_inventory": "",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.836s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1270 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage."
+  ]
+}
