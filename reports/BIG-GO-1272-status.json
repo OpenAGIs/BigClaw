@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "ecb10cef",
+    "latest_commit": "4870fd1d",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -51,6 +51,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "`branch.latest_commit` records the final published lane tip on origin/main; the code-bearing lane commit remains `4870fd1d` and follow-up metadata commits are tracked in the validation report."
+    "`branch.latest_commit` records the stable code-bearing lane commit; follow-up metadata commits are tracked in the validation report and git history."
   ]
 }
