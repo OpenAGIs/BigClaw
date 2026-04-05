@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1474",
     "title": "Refill: replace or delete root/scripts/ops Python-suffixed wrappers still counted as physical Python assets",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-1474",
-    "latest_commit": "PENDING",
+    "latest_commit": "115e428",
     "push_target": "origin/BIG-GO-1474"
   },
   "artifacts": {
@@ -63,6 +63,7 @@
   "notes": [
     "This lane is scoped to root scripts/ops wrapper cleanup in current docs and regression coverage.",
     "Deleted Python-suffixed ops wrappers are documented as historical removals with Go-owned replacements.",
-    "Baseline HEAD before lane changes was `a63c8ec`."
+    "Baseline HEAD before lane changes was `a63c8ec`.",
+    "Lane commit `115e428` recorded the doc cleanup, lane evidence, and regression guard."
   ]
 }

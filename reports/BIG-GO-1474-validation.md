@@ -113,7 +113,7 @@ ok  	bigclaw-go/internal/regression	1.549s
 
 - Branch: `BIG-GO-1474`
 - Baseline HEAD before lane commit: `a63c8ec`
-- Lane commit: `PENDING`
+- Lane commit: `115e428` (`BIG-GO-1474: pin deleted ops wrapper ownership`)
 - Push target: `origin/BIG-GO-1474`
 
 ## Residual Risk
