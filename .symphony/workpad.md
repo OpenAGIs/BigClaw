@@ -58,3 +58,9 @@
 - 2026-04-06: Re-ran
   `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1422/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1422(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
   after the rebase and observed `ok  	bigclaw-go/internal/regression	0.446s`.
+- 2026-04-06: A final post-push verification run of the same targeted
+  regression command observed `ok  	bigclaw-go/internal/regression	0.191s`.
+- 2026-04-06: Final pushed lane commits are `ca7e98c7`
+  (`BIG-GO-1422: add zero-python heartbeat artifacts`), `60b84709`
+  (`BIG-GO-1422: finalize lane metadata`), and `eb78b6c1`
+  (`BIG-GO-1422: refresh rebased metadata`) on top of `a7a6f451`.
