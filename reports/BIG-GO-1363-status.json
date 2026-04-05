@@ -1,0 +1,62 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1363",
+    "title": "Go-only refill 1363: src/bigclaw runtime/service removal sweep",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1363",
+    "latest_commit": "12f37357",
+    "push_target": "origin/BIG-GO-1363"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1363-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1363-runtime-service-sweep.md",
+    "replacement_registry": "bigclaw-go/internal/migration/runtime_service_surfaces.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1363_runtime_service_replacement_test.go",
+    "service_tests": "bigclaw-go/internal/service/server_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "replacements": [
+    {
+      "retired_python_path": "src/bigclaw/service.py",
+      "replacement_kind": "python-service-entrypoint",
+      "go_replacements": [
+        "bigclaw-go/internal/service/server.go",
+        "bigclaw-go/internal/service/server_test.go"
+      ]
+    },
+    {
+      "retired_python_path": "tests/test_service.py",
+      "replacement_kind": "python-service-regression-tests",
+      "go_replacements": [
+        "bigclaw-go/internal/service/server_test.go"
+      ]
+    }
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/service -run 'TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures|TestServerEntryHealthMetrics|TestEnsureStaticIndex'",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1363RuntimeServiceReplacement(ManifestMatchesRetiredPythonSurfaces|ReplacementPathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "service_tests": "ok  \tbigclaw-go/internal/service\t0.588s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.268s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1363 changes."
+  },
+  "notes": [
+    "This lane lands a Go-native replacement manifest for the retired runtime/service Python surfaces.",
+    "The branch baseline was already Python-free, so the acceptance path is a concrete Go/native replacement artifact rather than a lower in-branch .py count.",
+    "Baseline HEAD before lane changes was `81654c01`.",
+    "Primary lane commit: `12f37357 BIG-GO-1363 runtime service replacement sweep`."
+  ]
+}

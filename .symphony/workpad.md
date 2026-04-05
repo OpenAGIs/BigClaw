@@ -28,6 +28,7 @@
 - 2026-04-05: Added `bigclaw-go/internal/migration/runtime_service_surfaces.go` as the lane-scoped Go-native replacement manifest for the retired Python runtime/service surfaces.
 - 2026-04-05: Added `bigclaw-go/internal/regression/big_go_1363_runtime_service_replacement_test.go` and `bigclaw-go/docs/reports/big-go-1363-runtime-service-sweep.md` to keep the replacement evidence and report aligned.
 - 2026-04-05: Extended `bigclaw-go/internal/service/server_test.go` with `TestEnsureStaticIndex` to cover the static index bootstrap retained in the Go-native service entry.
+- 2026-04-05: Added `reports/BIG-GO-1363-validation.md` and `reports/BIG-GO-1363-status.json` to align lane closeout metadata with adjacent refill sweeps.
 - 2026-04-05: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1363 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output, confirming the repository remains physically Python-free.
 - 2026-04-05: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1363/bigclaw-go && go test -count=1 ./internal/service -run 'TestRepoGovernanceEnforcerBlocksQuotaAndSidecarFailures|TestServerEntryHealthMetrics|TestEnsureStaticIndex'` and observed `ok  	bigclaw-go/internal/service	0.588s`.
 - 2026-04-05: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1363/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1363RuntimeServiceReplacement(ManifestMatchesRetiredPythonSurfaces|ReplacementPathsExist|LaneReportCapturesReplacementState)$'` and observed `ok  	bigclaw-go/internal/regression	0.268s`.
