@@ -66,6 +66,7 @@ func TestBIGGO1473ValidationReportCapturesBlockedPhysicalDeletionState(t *testin
 		"`bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclaw-go/cmd/bigclawctl/automation_commands.go` `automation migration shadow-compare`",
 		"`find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`",
 		"`cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO1473ZeroPythonBaselineAndReplacementOwnership|BIGGO1473ValidationReportCapturesBlockedPhysicalDeletionState)$'`",
+		"`cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|RunHelpAtRootPrintsUsageAndExitsZero)$'`",
 		"cannot honestly claim a fresh file-count reduction in this checkout",
 	} {
 		if !strings.Contains(report, needle) {

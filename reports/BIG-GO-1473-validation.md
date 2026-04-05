@@ -40,7 +40,7 @@ would regress the Go-only migration state verified here.
   Result: only migration documentation and regression guards reference the retired Python paths; active workflow callers point at `bash scripts/ops/bigclawctl ...` or Go commands.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO1473ZeroPythonBaselineAndReplacementOwnership|BIGGO1473ValidationReportCapturesBlockedPhysicalDeletionState)$'`
   Result: `ok  	bigclaw-go/internal/regression`
-- `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'TestAutomationBenchmarkDirectoryContainsNoPythonHelpers|TestRunHelpMentionsCoreCommands'`
+- `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'Test(BenchmarkScriptsStayGoOnly|RunHelpAtRootPrintsUsageAndExitsZero)$'`
   Result: `ok  	bigclaw-go/cmd/bigclawctl`
 
 ## Blocker
