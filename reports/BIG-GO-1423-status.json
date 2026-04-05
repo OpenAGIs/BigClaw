@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "c397e505",
+    "latest_commit": "372bba36",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -54,6 +54,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `c397e505`.",
-    "The targeted regression guard passed after lane changes with `ok  \tbigclaw-go/internal/regression\t0.493s`."
+    "The targeted regression guard passed after lane changes with `ok  \tbigclaw-go/internal/regression\t0.493s`.",
+    "Lane commit recorded before push: `372bba36` (`BIG-GO-1423: add zero-python heartbeat artifacts`)."
   ]
 }
