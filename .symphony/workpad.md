@@ -48,6 +48,17 @@
   - `ok  	bigclaw-go/internal/regression	0.450s`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclawctl github-sync status --json`
   - `{"ahead":0,"behind":0,"branch":"BIG-GO-1354","dirty":false,"diverged":false,"local_sha":"111aafb6492d415376630d78538ac358e6e3d791","pushed":true,"remote_exists":true,"remote_sha":"111aafb6492d415376630d78538ac358e6e3d791","status":"ok","synced":true}`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354/bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'TestBIGGO1354|TestTopLevelModulePurgeTranche16'`
+  - `ok  	bigclaw-go/cmd/bigclawctl	1.417s [no tests to run]`
+  - `ok  	bigclaw-go/internal/regression	0.812s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort && printf 'COUNT=' && find . -name '*.py' | wc -l`
+  - `COUNT=       0`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclaw-issue --help`
+  - output began `usage: bigclawctl issue [flags] [args...]`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclaw-panel --help`
+  - output began `usage: bigclawctl panel [flags] [args...]`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1354 && bash scripts/ops/bigclaw-symphony --help`
+  - output began `usage: bigclawctl symphony [flags] [args...]`
 
 ## Remaining Blocker
 
@@ -61,3 +72,6 @@
 - Final branch sync check after the compare-URL note push:
   - `git status --short --branch` -> `## BIG-GO-1354...origin/BIG-GO-1354`
   - `bash scripts/ops/bigclawctl github-sync status --json` -> `{"ahead":0,"behind":0,"branch":"BIG-GO-1354","dirty":false,"diverged":false,"local_sha":"80892068ab0256f082352da786220232d8670d79","pushed":true,"remote_exists":true,"remote_sha":"80892068ab0256f082352da786220232d8670d79","status":"ok","synced":true}`
+- Latest sync check after continuation validation rerun:
+  - `git rev-parse HEAD` -> `89585c1ea50fd5dd19a3055ed6cc768ba041f37a`
+  - `bash scripts/ops/bigclawctl github-sync status --json` -> `{"ahead":0,"behind":0,"branch":"BIG-GO-1354","detached":false,"dirty":false,"diverged":false,"local_sha":"89585c1ea50fd5dd19a3055ed6cc768ba041f37a","pushed":true,"relation_known":true,"remote_exists":true,"remote_sha":"89585c1ea50fd5dd19a3055ed6cc768ba041f37a","status":"ok","synced":true}`
