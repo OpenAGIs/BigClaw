@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	3.200s
 - Branch: `main`
 - Baseline HEAD before lane commit: `03bc2723`
 - Lane commit details: `14316e14 BIG-GO-1345: harden zero-python sweep baseline`
-- Final pushed lane commit: `372fda1ddf0e18e25158edfbc6f0aaf02ccaf01f`
+- Final pushed lane commit: `git log --oneline --grep 'BIG-GO-1345'`
 - Push target: `origin/main`
 
 ## Residual Risk
