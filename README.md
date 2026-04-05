@@ -111,7 +111,8 @@ bash scripts/dev_bootstrap.sh
 Repository hygiene:
 
 ```bash
-pre-commit run --all-files
+find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort
+bash scripts/dev_bootstrap.sh
 ```
 
 ## Quick verify
