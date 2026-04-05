@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "8a9aac70",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1377'",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -53,6 +53,6 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `f6faec68`.",
     "The first push attempt was rejected because origin/main advanced; the lane was rebased cleanly onto `0dbbbd4f` and revalidated.",
-    "A second remote advance required one more clean rebase onto `4953d467`; the final pushed lane head is `8a9aac70`."
+    "A second remote advance required one more clean rebase onto `4953d467`; the durable lane commit reference is `git log --oneline --grep 'BIG-GO-1377'`."
   ]
 }
