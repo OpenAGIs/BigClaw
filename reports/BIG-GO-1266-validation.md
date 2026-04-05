@@ -87,7 +87,7 @@ ok  	bigclaw-go/internal/regression	0.801s
 
 - Branch: `BIG-GO-1266`
 - Commit trail: `git log --oneline --grep 'BIG-GO-1266'`
-- Final publish result: `pending until commit and push complete`
+- Final publish result: `git push -u origin BIG-GO-1266` created and updated `origin/BIG-GO-1266` at `2c484c1f BIG-GO-1266: document zero-python sweep lane`
 
 ## Residual Risk
 

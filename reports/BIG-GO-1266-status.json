@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1266",
-    "latest_commit": "pending final commit",
+    "latest_commit": "2c484c1f BIG-GO-1266: document zero-python sweep lane",
     "push_target": "origin/BIG-GO-1266"
   },
   "artifacts": {
