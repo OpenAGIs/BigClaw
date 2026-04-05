@@ -80,15 +80,16 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1261/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.214s
+ok  	bigclaw-go/internal/regression	3.212s
 ```
 
 ## Git
 
 - Branch: `big-go-1261`
 - Baseline HEAD before lane commit: `6aa9dd23`
-- Code commit: pending
-- Push target: pending
+- Code commit: `3648d338` (`BIG-GO-1261: add zero-python sweep artifacts`)
+- Published lane branch: `origin/big-go-1261` at `3648d338`
+- Push target: `origin/big-go-1261`
 
 ## Residual Risk
 

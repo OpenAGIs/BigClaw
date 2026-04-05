@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1261",
     "title": "Heartbeat refill lane 1261: remaining Python asset sweep 1/10",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "big-go-1261",
-    "latest_commit": "pending",
+    "latest_commit": "3648d338",
     "push_target": "origin/big-go-1261"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "",
       "priority_dir_inventory": "",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.214s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t3.212s"
     }
   },
   "blocker": {
@@ -50,6 +50,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "The branch baseline was already Python-free, so this lane refreshes zero-Python sweep evidence rather than removing in-branch Python files."
+    "The branch baseline was already Python-free, so this lane refreshes zero-Python sweep evidence rather than removing in-branch Python files.",
+    "`branch.latest_commit` records the stable lane delivery commit that was pushed to origin/big-go-1261."
   ]
 }
