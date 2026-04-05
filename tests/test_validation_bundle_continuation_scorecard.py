@@ -1,24 +1,29 @@
-import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 
-def load_continuation_module():
-    script_path = Path('bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py')
-    sys.path.insert(0, str(script_path.parent))
-    spec = importlib.util.spec_from_file_location('validation_bundle_continuation_scorecard', script_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+def run_scorecard(output_path: Path) -> dict:
+    result = subprocess.run(
+        [
+            "go",
+            "run",
+            "./scripts/e2e/validation_bundle_continuation_scorecard",
+            "--output",
+            str(output_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd="bigclaw-go",
+    )
+    assert result.returncode == 0, result.stderr
+    return json.loads(output_path.read_text())
 
 
-continuation = load_continuation_module()
-
-
-def test_continuation_scorecard_summarizes_recent_bundle_chain() -> None:
-    report = continuation.build_report()
+def test_continuation_scorecard_summarizes_recent_bundle_chain(tmp_path: Path) -> None:
+    report = run_scorecard(tmp_path / "scorecard.json")
 
     assert report['status'] == 'local-continuation-scorecard'
     assert report['summary']['recent_bundle_count'] == 3
@@ -31,8 +36,8 @@ def test_continuation_scorecard_summarizes_recent_bundle_chain() -> None:
     assert report['shared_queue_companion']['summary_path'] == 'docs/reports/shared-queue-companion-summary.json'
 
 
-def test_continuation_scorecard_marks_lane_success_and_manual_boundary() -> None:
-    report = continuation.build_report()
+def test_continuation_scorecard_marks_lane_success_and_manual_boundary(tmp_path: Path) -> None:
+    report = run_scorecard(tmp_path / "scorecard.json")
     lanes = {item['lane']: item for item in report['executor_lanes']}
     manual_boundary = next(item for item in report['continuation_checks'] if item['name'] == 'continuation_surface_is_workflow_triggered')
     repeated_coverage = next(item for item in report['continuation_checks'] if item['name'] == 'all_executor_tracks_have_repeated_recent_coverage')
@@ -45,7 +50,7 @@ def test_continuation_scorecard_marks_lane_success_and_manual_boundary() -> None
     assert lanes['ray']['enabled_runs'] == 2
     assert all(item['all_recent_runs_succeeded'] for item in lanes.values())
     assert repeated_coverage['passed'] is True
-    assert "'ray': 2" in repeated_coverage['detail']
+    assert "ray:2" in repeated_coverage['detail']
     assert manual_boundary['passed'] is True
     assert 'workflow execution' in manual_boundary['detail']
 

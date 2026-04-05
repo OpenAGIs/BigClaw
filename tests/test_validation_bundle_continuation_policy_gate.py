@@ -1,21 +1,26 @@
-import importlib.util
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 
-def load_gate_module():
-    script_path = Path('bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py')
-    sys.path.insert(0, str(script_path.parent))
-    spec = importlib.util.spec_from_file_location('validation_bundle_continuation_policy_gate', script_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-gate = load_gate_module()
+def run_gate(scorecard_path: Path, output_path: Path, *extra_args: str) -> tuple[subprocess.CompletedProcess[str], dict]:
+    result = subprocess.run(
+        [
+            "go",
+            "run",
+            "./scripts/e2e/validation_bundle_continuation_policy_gate",
+            "--scorecard",
+            str(scorecard_path),
+            "--output",
+            str(output_path),
+            *extra_args,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd="bigclaw-go",
+    )
+    return result, json.loads(output_path.read_text())
 
 
 def test_policy_gate_holds_for_partial_lane_history(tmp_path: Path) -> None:
@@ -40,8 +45,9 @@ def test_policy_gate_holds_for_partial_lane_history(tmp_path: Path) -> None:
     scorecard_path = tmp_path / 'scorecard.json'
     scorecard_path.write_text(json.dumps(scorecard), encoding='utf-8')
 
-    report = gate.build_report(scorecard_path=str(scorecard_path))
+    result, report = run_gate(scorecard_path, tmp_path / 'gate.json')
 
+    assert result.returncode != 0
     assert report['status'] == 'policy-hold'
     assert report['recommendation'] == 'hold'
     assert 'repeated_lane_coverage_meets_policy' in report['failing_checks']
@@ -70,8 +76,9 @@ def test_policy_gate_can_allow_partial_lane_history(tmp_path: Path) -> None:
     scorecard_path = tmp_path / 'scorecard.json'
     scorecard_path.write_text(json.dumps(scorecard), encoding='utf-8')
 
-    report = gate.build_report(scorecard_path=str(scorecard_path), require_repeated_lane_coverage=False)
+    result, report = run_gate(scorecard_path, tmp_path / 'gate.json', '--allow-partial-lane-history')
 
+    assert result.returncode == 0
     assert report['status'] == 'policy-go'
     assert report['recommendation'] == 'go'
     assert report['failing_checks'] == []
@@ -87,7 +94,24 @@ def test_checked_in_policy_gate_matches_expected_shape() -> None:
 
 
 def test_policy_gate_cli_returns_zero_for_checked_in_go() -> None:
-    script = Path('bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py')
-    result = subprocess.run([sys.executable, str(script)], check=False, capture_output=True, text=True)
+    output_path = Path('bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json')
+    result = subprocess.run(
+        [
+            'go',
+            'run',
+            './scripts/e2e/validation_bundle_continuation_policy_gate',
+            '--scorecard',
+            'docs/reports/validation-bundle-continuation-scorecard.json',
+            '--output',
+            str(Path(output_path).resolve()),
+            '--allow-partial-lane-history',
+            '--enforcement-mode',
+            'review',
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd='bigclaw-go',
+    )
 
-    assert result.returncode == 0
+    assert result.returncode == 0, result.stderr

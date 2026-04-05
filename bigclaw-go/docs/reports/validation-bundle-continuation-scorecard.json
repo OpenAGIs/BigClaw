@@ -13,7 +13,7 @@
       "bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json"
     ],
     "shared_queue_report_path": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
-    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py"
+    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard/main.go"
   },
   "summary": {
     "recent_bundle_count": 3,
