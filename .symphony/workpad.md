@@ -27,3 +27,6 @@
 - 2026-04-05: Added `bigclaw-go/internal/regression/big_go_1362_repo_module_removal_sweep_test.go` to pin the retired module list, Go replacement paths, and lane report contents in one targeted regression.
 - 2026-04-05: Ran `find . -name '*.py' | wc -l` and observed `0`.
 - 2026-04-05: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1362/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1362RepoModuleRemovalSweep'` and observed `ok  	bigclaw-go/internal/regression	0.943s`.
+- 2026-04-05: Added `reports/BIG-GO-1362-validation.md` and `reports/BIG-GO-1362-status.json` to align the lane with the repository's validation/status reporting convention.
+- 2026-04-05: Re-ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1362 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
+- 2026-04-05: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1362/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1362RepoModuleRemovalSweep'` and observed `ok  	bigclaw-go/internal/regression	0.336s`.

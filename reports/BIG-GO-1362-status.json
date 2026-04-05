@@ -1,0 +1,99 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1362",
+    "title": "Go-only refill 1362: src/bigclaw repo_* module removal sweep",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "7b99a2bc",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1362-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1362-repo-module-removal-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1362_repo_module_removal_sweep_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "replacements": [
+    {
+      "retired_python_module": "src/bigclaw/repo_board.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/board.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_commits.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/commits.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_gateway.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/gateway.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_governance.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/governance.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_links.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/links.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_plane.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/plane.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_registry.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/registry.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_triage.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/triage.go"
+      ]
+    }
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1362RepoModuleRemovalSweep'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.336s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1362 changes."
+  },
+  "notes": [
+    "This lane consolidates the full retired src/bigclaw/repo_*.py module set into one issue-specific regression guard.",
+    "The branch baseline was already Python-free, so acceptance is satisfied by concrete Go/native replacement evidence rather than a lower in-branch .py count.",
+    "Baseline HEAD before lane changes was `81654c01`.",
+    "Primary lane commit: `7b99a2bc BIG-GO-1362 repo module removal sweep`."
+  ]
+}
