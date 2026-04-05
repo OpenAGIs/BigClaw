@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "ef54e749 BIG-GO-1338: refresh validation metadata",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1338'",
     "push_target": "origin/main"
   },
   "artifacts": {
