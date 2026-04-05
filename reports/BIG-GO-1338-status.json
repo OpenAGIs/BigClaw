@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "168ee3a4 BIG-GO-1338: finalize validation evidence",
-    "push_target": "origin/main"
+    "latest_commit": "45ee4fde BIG-GO-1338: refresh rebased validation evidence",
+    "push_target": "origin/BIG-GO-1338"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1338-validation.md",

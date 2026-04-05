@@ -96,7 +96,8 @@ ok  	bigclaw-go/internal/regression	3.219s
   - `c3823e4c BIG-GO-1338: record final sync commit`
   - `e6beb699 BIG-GO-1338: stabilize git metadata references`
   - `168ee3a4 BIG-GO-1338: finalize validation evidence`
-- Push target: `origin/main`
+  - `45ee4fde BIG-GO-1338: refresh rebased validation evidence`
+- Push target: `origin/BIG-GO-1338`
 
 ## Residual Risk
 
