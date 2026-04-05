@@ -1,0 +1,68 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1474",
+    "title": "Refill: replace or delete root/scripts/ops Python-suffixed wrappers still counted as physical Python assets",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-1474",
+    "latest_commit": "PENDING",
+    "push_target": "origin/BIG-GO-1474"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1474-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1474-ops-wrapper-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1474_ops_wrapper_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "ops_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "deleted_wrappers": [
+    "scripts/ops/bigclaw_github_sync.py",
+    "scripts/ops/bigclaw_refill_queue.py",
+    "scripts/ops/bigclaw_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_validate.py"
+  ],
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/internal/githubsync/sync.go",
+    "bigclaw-go/internal/refill/queue.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts/ops -type f -name '*.py' -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1474(OpsDirectoryHasNoPythonFiles|DeletedPythonWrapperPathsStayAbsent|ActiveGoReplacementPathsRemainAvailable|DocsAndLaneReportPinDeletedWrapperState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "ops_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.549s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1474 changes."
+  },
+  "notes": [
+    "This lane is scoped to root scripts/ops wrapper cleanup in current docs and regression coverage.",
+    "Deleted Python-suffixed ops wrappers are documented as historical removals with Go-owned replacements.",
+    "Baseline HEAD before lane changes was `a63c8ec`."
+  ]
+}

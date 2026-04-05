@@ -57,6 +57,15 @@ operator replacements.
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`
 
+Deleted Python-suffixed ops wrappers are historical removals only. They are not
+part of the current physical Python asset inventory for this repository:
+
+- `scripts/ops/bigclaw_github_sync.py` -> deleted; Go ownership: `bigclawctl github-sync` via `bigclaw-go/internal/githubsync/*`
+- `scripts/ops/bigclaw_refill_queue.py` -> deleted; Go ownership: `bigclawctl refill` via `bigclaw-go/internal/refill/*`
+- `scripts/ops/bigclaw_workspace_bootstrap.py` -> deleted; Go ownership: `bigclawctl workspace bootstrap` via `bigclaw-go/internal/bootstrap/*`
+- `scripts/ops/symphony_workspace_bootstrap.py` -> deleted; Go ownership: `bigclawctl workspace bootstrap` via `bigclaw-go/internal/bootstrap/*`
+- `scripts/ops/symphony_workspace_validate.py` -> deleted; Go ownership: `bigclawctl workspace validate` via `bigclaw-go/internal/bootstrap/*`
+
 ### `bigclaw-go/scripts/*` first automation batch
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`

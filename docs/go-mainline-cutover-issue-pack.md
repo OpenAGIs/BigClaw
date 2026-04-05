@@ -289,8 +289,11 @@ Python source:
 - `src/bigclaw/workspace_bootstrap_cli.py`
 - `src/bigclaw/workspace_bootstrap_validation.py`
 - `src/bigclaw/parallel_refill.py`
-- `scripts/ops/bigclaw_github_sync.py`
+- retired `scripts/ops/bigclaw_github_sync.py`; use `bash scripts/ops/bigclawctl github-sync`
+- retired `scripts/ops/bigclaw_refill_queue.py`; use `bash scripts/ops/bigclawctl refill`
+- retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
+- retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`
 
 Go ownership:
 - new `cmd/bigclawctl`
