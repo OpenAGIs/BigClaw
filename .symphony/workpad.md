@@ -29,4 +29,4 @@
 - 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
 - 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
 - 2026-04-05: This execution therefore focuses on lane evidence and a Go regression guard rather than deleting in-branch Python files.
-- 2026-04-05: Re-ran the recorded validation commands; both `find` sweeps returned no output and `go test -count=1 ./internal/regression -run 'TestBIGGO1342(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` passed with `ok  	bigclaw-go/internal/regression	0.626s`.
+- 2026-04-05: Re-ran the recorded validation commands; both `find` sweeps returned no output and `go test -count=1 ./internal/regression -run 'TestBIGGO1342(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` passed with `ok  	bigclaw-go/internal/regression	0.175s`.

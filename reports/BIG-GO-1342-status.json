@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1342",
-    "latest_commit": "0d3b02b3f904ca42d389f13bbb31899dce5e8f70",
+    "latest_commit": "5094bf97279f3683ccf2b66a99e6c2918a7369bf",
     "push_target": "origin/BIG-GO-1342"
   },
   "artifacts": {
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "<no output>",
       "priority_dir_inventory": "<no output>",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.626s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.175s"
     }
   },
   "blocker": {
