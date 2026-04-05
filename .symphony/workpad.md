@@ -29,6 +29,7 @@
 - 2026-04-06: Added `reports/BIG-GO-1390-validation.md` and `reports/BIG-GO-1390-status.json` to capture validation evidence and lane state.
 - 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
 - 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
-- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1390(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.836s`.
+- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1390(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	3.217s`.
 - 2026-04-06: Created the lane commit with message `BIG-GO-1390: harden zero-python sweep baseline`; see `git log --oneline --grep 'BIG-GO-1390'`.
 - 2026-04-06: Push contention required rebasing the lane onto `origin/main`; the current replay target is `ea03f42d`.
+- 2026-04-06: Published the lane to `origin/BIG-GO-1390` at `aa3a8e52` after repeated `origin/main` fast-forward contention.

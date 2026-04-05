@@ -84,7 +84,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1390/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.836s
+ok  	bigclaw-go/internal/regression	3.217s
 ```
 
 ## Git
@@ -93,8 +93,9 @@ ok  	bigclaw-go/internal/regression	0.836s
 - Baseline HEAD before lane commit: `c5450aef`
 - Rebased onto `origin/main` at: `ea03f42d`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1390'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1390'`
-- Push target: `origin/main`
+- Final pushed lane commit: `aa3a8e52`
+- Push target: `origin/BIG-GO-1390`
+- `origin/main` note: repeated fast-forward push attempts were rejected because `origin/main` kept advancing during this lane.
 
 ## Residual Risk
 
