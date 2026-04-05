@@ -89,11 +89,11 @@ ok  	bigclaw-go/internal/regression	0.469s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `5822df82`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-1401'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1401'`
+- Lane commits: `14b20185` (`BIG-GO-1401: add zero-python sweep guard artifacts`), `a5e17805` (`BIG-GO-1401: refresh rebase metadata`)
+- Final pushed lane commit: `a5e17805`
 - Push target: `origin/main`
 - Rebase note: the lane was rebased onto `origin/main` after the first push was rejected by a fast-forward update on the remote branch.
-- Current rebased lane tip before final push: `6a99b699`
+- Final remote branch head after push: `a5e17805`
 
 ## Residual Risk
 
