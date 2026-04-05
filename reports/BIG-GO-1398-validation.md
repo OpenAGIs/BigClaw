@@ -90,10 +90,11 @@ ok  	bigclaw-go/internal/regression	0.619s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c8e9d79c`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1398'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1398'`
-- Push target: `origin/main`
+- Final pushed lane commit: `e496fc9b`
+- Push target: `origin/big-go-1398-r1`
 - Rebase note: initial commit `af7362cd` was replayed onto fetched `origin/main` at `c71fe8ca`, producing local lane HEAD `7590d279`.
 - Rebase note: the two-commit lane stack was then replayed onto fetched `origin/main` at `3db3516b`, producing local lane HEAD `131a3877`.
+- Push note: repeated direct pushes to busy `origin/main` were rejected by concurrent upstream movement, so the validated lane tip was published on `origin/big-go-1398-r1`.
 
 ## Residual Risk
 

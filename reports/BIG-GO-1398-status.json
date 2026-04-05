@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-1398'",
-    "push_target": "origin/main"
+    "latest_commit": "e496fc9b",
+    "push_target": "origin/big-go-1398-r1"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1398-validation.md",
@@ -53,6 +53,7 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `c8e9d79c`.",
     "Commit `af7362cd` was rebased onto `origin/main` at `c71fe8ca`, producing lane HEAD `7590d279` before a second push rejection.",
-    "The two-commit lane stack was then rebased onto `origin/main` at `3db3516b`, producing lane HEAD `131a3877` with refreshed validation."
+    "The two-commit lane stack was then rebased onto `origin/main` at `3db3516b`, producing lane HEAD `131a3877` with refreshed validation.",
+    "After a third direct push rejection on busy `origin/main`, validated lane HEAD `e496fc9b` was published to `origin/big-go-1398-r1`."
   ]
 }
