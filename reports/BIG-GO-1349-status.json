@@ -5,9 +5,9 @@
     "state": "Done"
   },
   "branch": {
-    "name": "main",
+    "name": "BIG-GO-1349",
     "latest_commit": "see git log --oneline --grep 'BIG-GO-1349'",
-    "push_target": "origin/main"
+    "push_target": "origin/BIG-GO-1349"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1349-validation.md",
