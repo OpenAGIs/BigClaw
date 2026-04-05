@@ -92,7 +92,7 @@ ok  	bigclaw-go/internal/regression	0.181s
 - Branch: `big-go-1403`
 - Baseline HEAD before lane commit: `origin/main`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1403'`
-- Published lane commit: `ba7e292a`
+- Published lane commits: see `git log --oneline --grep 'BIG-GO-1403'`
 - Push target: `origin/big-go-1403`
 
 ## Residual Risk

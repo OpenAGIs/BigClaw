@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1403",
     "title": "Heartbeat refill lane 1403: remaining Python asset sweep 3/10",
-    "state": "Review"
+    "state": "Done"
   },
   "branch": {
     "name": "big-go-1403",
-    "latest_commit": "ba7e292a",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1403'",
     "push_target": "origin/big-go-1403"
   },
   "artifacts": {
@@ -53,6 +53,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "The lane was implemented and published on `origin/big-go-1403` at commit `ba7e292a`."
+    "The lane was implemented and published on `origin/big-go-1403`; see `git log --oneline --grep 'BIG-GO-1403'` for the exact lane commit sequence."
   ]
 }
