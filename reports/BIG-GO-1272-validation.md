@@ -87,7 +87,7 @@ ok  	bigclaw-go/internal/regression	1.064s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `1dcf6229`
-- Code commit: `0a410c4c` (`BIG-GO-1272: add zero-python heartbeat artifacts`)
+- Code commit: `4870fd1d` (`BIG-GO-1272: add zero-python heartbeat artifacts`)
 - Final metadata commit: `tracked in git history after BIG-GO-1272 final sync`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1272'`
 - Push target: `origin/main`
