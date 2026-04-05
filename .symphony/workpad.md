@@ -1,13 +1,13 @@
-# BIG-GO-1347 Workpad
+# BIG-GO-1338 Workpad
 
 ## Plan
 
 1. Reconfirm the remaining physical Python asset inventory for the repository and the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-1347` so this unattended run records the empty Python baseline and the available Go replacement paths:
-   - `bigclaw-go/docs/reports/big-go-1347-python-asset-sweep.md`
-   - `reports/BIG-GO-1347-status.json`
-   - `reports/BIG-GO-1347-validation.md`
-   - `bigclaw-go/internal/regression/big_go_1347_zero_python_guard_test.go`
+2. Add the lane-scoped artifacts for `BIG-GO-1338` so this unattended run records the empty Python baseline and the available Go replacement paths:
+   - `bigclaw-go/docs/reports/big-go-1338-python-asset-sweep.md`
+   - `reports/BIG-GO-1338-status.json`
+   - `reports/BIG-GO-1338-validation.md`
+   - `bigclaw-go/internal/regression/big_go_1338_zero_python_guard_test.go`
 3. Re-run the targeted regression coverage, record the exact commands and outputs, then commit and push the lane update.
 
 ## Acceptance
@@ -20,13 +20,14 @@
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1347 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1347/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1347/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1347/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1347/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1347/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1347(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1338 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1338/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1338/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1338/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1338/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1338/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1338(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
 - 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
 - 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
-- 2026-04-05: This execution therefore focuses on lane evidence and a Go regression guard rather than deleting in-branch Python files.
-- 2026-04-05: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO1347(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	3.211s`.
+- 2026-04-05: This execution therefore focuses on refreshing lane evidence and regression validation rather than deleting in-branch Python files.
+- 2026-04-05 22:19:40 CST: Re-ran the exact lane validation commands; both Python inventory checks stayed empty and the targeted regression guard passed in `0.483s`.
+- 2026-04-05 22:51:35 CST: Revalidated immediately before final issue commit; both Python inventory checks stayed empty and `go test -count=1 ./internal/regression -run 'TestBIGGO1338(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` passed in `0.482s`.
