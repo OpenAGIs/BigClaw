@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -154,6 +155,98 @@ func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	worktreeList := gitOut(t, filepath.Join(cacheRoot, "seed"), "worktree", "list", "--porcelain")
 	if strings.Contains(worktreeList, filepath.Clean(workspace)) {
 		t.Fatalf("unexpected lingering worktree registration")
+	}
+}
+
+func TestBuildValidationReportReusesSingleCacheAcrossWorkspaces(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+
+	report, err := BuildValidationReport(
+		remote,
+		filepath.Join(root, "validation-workspaces"),
+		[]string{"OPE-272", "OPE-273", "OPE-274"},
+		"main",
+		"",
+		filepath.Join(root, "repos"),
+		"",
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if report.Summary.WorkspaceCount != 3 {
+		t.Fatalf("expected 3 workspaces, got %d", report.Summary.WorkspaceCount)
+	}
+	if !report.Summary.SingleCacheRootReused || !report.Summary.SingleMirrorReused || !report.Summary.SingleSeedReused {
+		t.Fatalf("expected single shared cache assets, got %+v", report.Summary)
+	}
+	if report.Summary.MirrorCreations != 1 || report.Summary.SeedCreations != 1 {
+		t.Fatalf("expected single warm-up clone, got %+v", report.Summary)
+	}
+	if !report.Summary.CloneSuppressedAfterFirst || !report.Summary.CacheReusedAfterFirst || !report.Summary.CleanupPreservedCache {
+		t.Fatalf("expected cache reuse summary, got %+v", report.Summary)
+	}
+	if len(report.BootstrapResults) != 3 || len(report.CleanupResults) != 3 {
+		t.Fatalf("unexpected bootstrap/cleanup result counts: %+v", report)
+	}
+}
+
+func TestWriteValidationReportWritesJSONAndMarkdown(t *testing.T) {
+	root := t.TempDir()
+	report := ValidationReport{
+		RepoURL:          "git@github.com:OpenAGIs/BigClaw.git",
+		DefaultBranch:    "main",
+		WorkspaceRoot:    filepath.Join(root, "workspaces"),
+		IssueIdentifiers: []string{"BIG-1"},
+		BootstrapResults: []WorkspaceBootstrapStatus{{
+			Workspace:       filepath.Join(root, "workspaces", "BIG-1"),
+			CacheRoot:       filepath.Join(root, "repos", "github.com-openagis-bigclaw"),
+			CacheKey:        "openagis-bigclaw",
+			WorkspaceMode:   "worktree_created",
+			CacheReused:     false,
+			CloneSuppressed: false,
+			MirrorCreated:   true,
+			SeedCreated:     true,
+		}},
+		Summary: ValidationSummary{
+			WorkspaceCount:            1,
+			SingleCacheRootReused:     true,
+			MirrorCreations:           1,
+			SeedCreations:             1,
+			CloneSuppressedAfterFirst: true,
+			CleanupPreservedCache:     true,
+		},
+	}
+
+	jsonPath, err := WriteValidationReport(report, filepath.Join(root, "report.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(jsonPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded ValidationReport
+	if err := json.Unmarshal(body, &decoded); err != nil {
+		t.Fatalf("expected valid JSON report: %v", err)
+	}
+	if decoded.RepoURL != report.RepoURL || decoded.Summary.WorkspaceCount != report.Summary.WorkspaceCount {
+		t.Fatalf("unexpected JSON report contents: %+v", decoded)
+	}
+
+	markdownPath, err := WriteValidationReport(report, filepath.Join(root, "report.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	markdown, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(markdown)
+	if !strings.Contains(text, "# Symphony bootstrap cache validation") || !strings.Contains(text, "openagis-bigclaw") {
+		t.Fatalf("unexpected markdown report contents: %s", text)
 	}
 }
 

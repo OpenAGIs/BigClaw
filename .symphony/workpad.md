@@ -1,27 +1,21 @@
-## Codex Workpad
+# BIG-GO-1476 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+- Confirm the remaining bootstrap/workspace helper Python assets that still overlap the Go CLI implementation.
+- Remove obsolete Python files that are already replaced by `bigclaw-go/internal/bootstrap` and `bigclaw-go/cmd/bigclawctl`.
+- Trim the Python compatibility/test metadata that only existed to support those deleted workspace wrapper surfaces.
+- Add an issue-scoped migration note documenting deleted files, Go ownership, and the resulting Python file-count reduction.
+- Run targeted validation covering Go bootstrap/workspace behavior plus repo-level file-count evidence.
+- Commit the changes and push the branch.
 
-### Plan
+## Acceptance
+- The repository contains fewer physical `.py` files than before the change.
+- Deleted workspace/bootstrap helper surfaces are documented with their Go replacement owner or an explicit delete rationale.
+- No new parallel Python workspace/bootstrap path is introduced.
+- Targeted validation proves the Go CLI still owns bootstrap/workspace behavior after the deletions.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
-
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation
+- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/bootstrap`
+- `python3 -m pytest tests/test_legacy_shim.py`
+- `rg --files -g '*.py' | wc -l`
+- `git diff --stat`

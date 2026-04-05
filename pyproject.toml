@@ -34,9 +34,6 @@ target-version = "py39"
 extend-exclude = [
   "scripts/ops/bigclaw_github_sync.py",
   "scripts/ops/bigclaw_refill_queue.py",
-  "scripts/ops/bigclaw_workspace_bootstrap.py",
-  "scripts/ops/symphony_workspace_bootstrap.py",
-  "scripts/ops/symphony_workspace_validate.py",
 ]
 
 [tool.ruff.lint]
