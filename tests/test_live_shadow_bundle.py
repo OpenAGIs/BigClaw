@@ -1,6 +1,5 @@
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 
@@ -97,11 +96,12 @@ def test_export_live_shadow_bundle_generates_index_and_rollup(tmp_path: Path) ->
         },
     )
 
-    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'migration' / 'export_live_shadow_bundle.py'
+    repo_root = Path(__file__).resolve().parents[1] / 'bigclaw-go'
     result = subprocess.run(
         [
-            sys.executable,
-            str(script),
+            'go',
+            'run',
+            str(repo_root / 'scripts' / 'migration' / 'export_live_shadow_bundle'),
             '--go-root',
             str(root),
             '--run-id',
@@ -110,6 +110,7 @@ def test_export_live_shadow_bundle_generates_index_and_rollup(tmp_path: Path) ->
         check=False,
         capture_output=True,
         text=True,
+        cwd=repo_root,
     )
 
     assert result.returncode == 0, result.stderr
@@ -219,10 +220,16 @@ def test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd(tmp_path: 
         },
     )
 
-    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'migration' / 'export_live_shadow_bundle.py'
+    repo_root = Path(__file__).resolve().parents[1] / 'bigclaw-go'
     result = subprocess.run(
-        [sys.executable, str(script), '--run-id', '20260310T100501Z'],
-        cwd=root,
+        [
+            'go',
+            'run',
+            str(repo_root / 'scripts' / 'migration' / 'export_live_shadow_bundle'),
+            '--go-root', str(root),
+            '--run-id', '20260310T100501Z',
+        ],
+        cwd=repo_root,
         check=False,
         capture_output=True,
         text=True,

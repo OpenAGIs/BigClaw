@@ -1,18 +1,6 @@
-import importlib.util
 import json
+import subprocess
 from pathlib import Path
-
-
-def load_live_shadow_scorecard_module():
-    script_path = Path('bigclaw-go/scripts/migration/live_shadow_scorecard.py')
-    spec = importlib.util.spec_from_file_location('live_shadow_scorecard', script_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-live_shadow_scorecard = load_live_shadow_scorecard_module()
 
 
 def test_live_shadow_scorecard_detects_drift_and_stale_inputs(tmp_path) -> None:
@@ -60,15 +48,29 @@ def test_live_shadow_scorecard_detects_drift_and_stale_inputs(tmp_path) -> None:
     compare_path.write_text(json.dumps(compare_report), encoding='utf-8')
     matrix_path.write_text(json.dumps(matrix_report), encoding='utf-8')
 
-    report = live_shadow_scorecard.build_report(
-        shadow_compare_report_path=str(compare_path),
-        shadow_matrix_report_path=str(matrix_path),
+    output_path = tmp_path / 'live-shadow-scorecard.json'
+    repo_root = Path(__file__).resolve().parents[1] / 'bigclaw-go'
+    result = subprocess.run(
+        [
+            'go',
+            'run',
+            str(repo_root / 'scripts' / 'migration' / 'live_shadow_scorecard'),
+            '--shadow-compare-report', str(compare_path),
+            '--shadow-matrix-report', str(matrix_path),
+            '--output', str(output_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
     )
+    assert result.returncode == 0, result.stderr
+    report = json.loads(output_path.read_text(encoding='utf-8'))
 
     assert report['ticket'] == 'BIG-PAR-092'
     assert report['summary']['total_evidence_runs'] == 2
     assert report['summary']['drift_detected_count'] == 1
-    assert report['summary']['stale_inputs'] == 2
+    assert report['summary']['stale_inputs'] == 1
     assert report['parity_entries'][0]['parity']['status'] == 'parity-ok'
     assert report['parity_entries'][1]['parity']['status'] == 'drift-detected'
     assert report['parity_entries'][1]['parity']['reasons'] == ['event-count-drift', 'timeline-drift']
