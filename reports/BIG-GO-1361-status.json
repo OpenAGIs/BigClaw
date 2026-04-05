@@ -1,0 +1,40 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1361",
+    "title": "Go-only refill 1361: src/bigclaw core module removal sweep",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1361",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1361' -n 1",
+    "push_target": "origin/BIG-GO-1361"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1361-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1361-legacy-core-module-replacement.md",
+    "replacement_registry": "bigclaw-go/internal/migration/legacy_core_modules.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1361_legacy_core_module_replacement_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "validation": {
+    "commands": [
+      "find . -name '*.py' | wc -l",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1361LegacyCoreModuleReplacement(ManifestMatchesRetiredModules|ReplacementPathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "0",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.082s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1361 changes."
+  },
+  "notes": [
+    "This lane lands a Go-native ownership registry for retired src/bigclaw core modules.",
+    "Acceptance follows the concrete replacement-evidence path because the branch baseline was already Python-free."
+  ]
+}
