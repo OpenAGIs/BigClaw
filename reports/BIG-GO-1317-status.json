@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "captured from `git rev-parse --short HEAD` after final push",
+    "latest_commit": "0e8f79fb",
     "push_target": "origin/main"
   },
   "artifacts": {
