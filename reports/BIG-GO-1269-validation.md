@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.510s
 - Branch: `main`
 - Baseline HEAD before lane commit: `6aa9dd23`
 - Code commit: `b753cf92` (`BIG-GO-1269: add zero-python heartbeat artifacts`)
-- Published lane branch: `origin/big-go-1269` at `b753cf92`
+- Published lane branch: `origin/big-go-1269` at `9edb2f84`
 - Push attempts:
   - `git push origin HEAD:big-go-1269` -> rejected by transport (`LibreSSL SSL_connect: SSL_ERROR_SYSCALL`)
   - `git push origin HEAD:big-go-1269` -> success (`[new branch] HEAD -> big-go-1269`)

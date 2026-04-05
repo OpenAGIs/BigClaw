@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "b753cf92",
+    "latest_commit": "9edb2f84",
     "push_target": "origin/big-go-1269"
   },
   "artifacts": {
@@ -50,6 +50,6 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "The lane was published to origin/big-go-1269 from commit b753cf92 after one transient SSL transport failure on the initial push attempt."
+    "The lane was published to origin/big-go-1269 with final tip commit 9edb2f84 after one transient SSL transport failure on the initial push attempt."
   ]
 }
