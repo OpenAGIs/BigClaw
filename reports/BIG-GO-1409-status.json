@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "10fa120c",
+    "latest_commit": "c804a21a",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -51,6 +51,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `d6b4f792`.",
-    "Rebased lane commits are `a6eefe98` and `386ed104`."
+    "Rebased lane commits are `a6eefe98`, `386ed104`, and `c804a21a`.",
+    "Final remote branch head is `c804a21a` on `origin/main`."
   ]
 }
