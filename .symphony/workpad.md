@@ -25,6 +25,7 @@
 - 2026-04-06: Initial inventory confirmed no physical `.py` files anywhere in the checkout, including `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 - 2026-04-06: This lane is therefore scoped as a documentation and regression-hardening sweep for the existing Go-only baseline.
 - 2026-04-06: Added `bigclaw-go/docs/reports/big-go-1408-python-asset-sweep.md` and `bigclaw-go/internal/regression/big_go_1408_zero_python_guard_test.go` to record and protect the zero-Python baseline for this lane.
+- 2026-04-06: Added `reports/BIG-GO-1408-validation.md` and `reports/BIG-GO-1408-status.json` so the lane has standalone validation and status artifacts consistent with the sibling heartbeat refill sweeps.
 - 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1408 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
 - 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1408/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1408/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1408/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1408/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
 - 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1408/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1408(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.506s`.
