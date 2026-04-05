@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -263,61 +262,75 @@ func TestAutomationExportValidationBundleRenderIndexShowsContinuationGate(t *tes
 	}
 }
 
-func TestRunAllUsesGoBundleCommandsAndDefaultsHoldMode(t *testing.T) {
+func TestAutomationRunAllUsesGoBundleCommandsAndDefaultsHoldMode(t *testing.T) {
 	root := t.TempDir()
-	runAllPath := filepath.Join(root, "scripts/e2e/run_all.sh")
-	if err := os.MkdirAll(filepath.Dir(runAllPath), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(runAllPath, mustReadSourceRunAll(t), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	if err := os.MkdirAll(filepath.Join(root, "bin"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	stubGo := `#!/usr/bin/env python3
-import json, pathlib, sys
-args = sys.argv[1:]
-if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'):
-    sub = args[4]
-    if sub == 'run-task-smoke':
-        report_path = pathlib.Path(args[args.index('--report-path') + 1])
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
-        sys.exit(0)
-    if sub == 'export-validation-bundle':
-        root = pathlib.Path(args[args.index('--go-root') + 1])
-        bundle_dir = root / args[args.index('--bundle-dir') + 1]
-        bundle_dir.mkdir(parents=True, exist_ok=True)
-        calls_path = root / 'calls.jsonl'
-        gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
-        payload = {
-            'gate_exists': gate_path.exists(),
-            'run_broker': args[args.index('--run-broker') + 1],
-            'broker_backend': args[args.index('--broker-backend') + 1],
-            'broker_report_path': args[args.index('--broker-report-path') + 1],
-            'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
-        }
-        with calls_path.open('a', encoding='utf-8') as handle:
-            handle.write(json.dumps(payload) + '\n')
-        sys.exit(0)
-    if sub == 'continuation-scorecard':
-        output = pathlib.Path(args[args.index('--output') + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
-        sys.exit(0)
-    if sub == 'continuation-policy-gate':
-        mode = args[args.index('--enforcement-mode') + 1]
-        output = pathlib.Path(args[args.index('--output') + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps({'enforcement': {'mode': mode}, 'status': 'policy-go', 'recommendation': 'go'}), encoding='utf-8')
-        sys.exit(0)
-if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (len(args) >= 2 and args[0] == 'run' and args[1].endswith('/scripts/e2e/broker_bootstrap_summary.go')):
-    output = pathlib.Path(args[args.index('--output') + 1])
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text('{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\n', encoding='utf-8')
-    sys.exit(0)
-raise SystemExit(f'unexpected go args: {args}')
+	stubGo := `#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$#" -lt 4 || "$1" != "run" || "${3:-}" != "automation" || "${4:-}" != "e2e" ]]; then
+  echo "unexpected go args: $*" >&2
+  exit 1
+fi
+shift 4
+sub="$1"
+shift
+
+read_flag() {
+  local name="$1"
+  shift
+  while (($# > 0)); do
+    if [[ "$1" == "$name" ]]; then
+      echo "${2:-}"
+      return 0
+    fi
+    shift
+  done
+  return 1
+}
+
+case "$sub" in
+  run-task-smoke)
+    report_path="$(read_flag --report-path "$@")"
+    mkdir -p "$(dirname "$report_path")"
+    printf '{"status":"succeeded","all_ok":true}\n' >"$report_path"
+    ;;
+  export-validation-bundle)
+    root="$(read_flag --go-root "$@")"
+    bundle_dir="$(read_flag --bundle-dir "$@")"
+    mkdir -p "$root/$bundle_dir"
+    calls_path="$root/calls.jsonl"
+    gate_path="$root/bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json"
+    mkdir -p "$(dirname "$calls_path")"
+    if [[ -f "$gate_path" ]]; then
+      gate_exists=true
+    else
+      gate_exists=false
+    fi
+    printf '{"gate_exists":%s,"run_broker":"%s","broker_backend":"%s","broker_report_path":"%s","broker_bootstrap_summary_path":"%s"}\n' \
+      "$gate_exists" \
+      "$(read_flag --run-broker "$@")" \
+      "$(read_flag --broker-backend "$@")" \
+      "$(read_flag --broker-report-path "$@")" \
+      "$(read_flag --broker-bootstrap-summary-path "$@")" >>"$calls_path"
+    ;;
+  continuation-scorecard)
+    output="$(read_flag --output "$@")"
+    mkdir -p "$(dirname "$output")"
+    printf '{"summary":{},"shared_queue_companion":{"available":true}}\n' >"$output"
+    ;;
+  continuation-policy-gate)
+    mode="$(read_flag --enforcement-mode "$@")"
+    output="$(read_flag --output "$@")"
+    mkdir -p "$(dirname "$output")"
+    printf '{"enforcement":{"mode":"%s"},"status":"policy-go","recommendation":"go"}\n' "$mode" >"$output"
+    ;;
+  *)
+    echo "unexpected go subcommand: $sub" >&2
+    exit 1
+    ;;
+esac
 `
 	if err := os.WriteFile(filepath.Join(root, "bin/go"), []byte(stubGo), 0o755); err != nil {
 		t.Fatal(err)
@@ -332,12 +345,15 @@ raise SystemExit(f'unexpected go args: {args}')
 		"BIGCLAW_E2E_BROKER_REPORT_PATH=docs/reports/broker-failover-stub-report.json",
 		"PATH="+filepath.Join(root, "bin")+":"+os.Getenv("PATH"),
 	)
-	cmd := exec.Command(runAllPath)
-	cmd.Dir = root
-	cmd.Env = env
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("run run_all.sh: %v\n%s", err, string(output))
+	t.Setenv("PATH", filepath.Join(root, "bin")+":"+os.Getenv("PATH"))
+	for _, entry := range env {
+		parts := strings.SplitN(entry, "=", 2)
+		if len(parts) == 2 {
+			t.Setenv(parts[0], parts[1])
+		}
+	}
+	if err := runAutomationRunAllCommand([]string{"--go-root", root}); err != nil {
+		t.Fatalf("run automation e2e run-all: %v", err)
 	}
 	callsBody, err := os.ReadFile(filepath.Join(root, "calls.jsonl"))
 	if err != nil {
@@ -361,12 +377,17 @@ raise SystemExit(f'unexpected go args: {args}')
 	if err != nil {
 		t.Fatalf("read gate file: %v", err)
 	}
-	if !strings.Contains(string(gateBody), `"mode": "hold"`) {
-		t.Fatalf("expected hold mode gate: %s", string(gateBody))
+	var gatePayload map[string]any
+	if err := json.Unmarshal(gateBody, &gatePayload); err != nil {
+		t.Fatalf("decode gate payload: %v", err)
+	}
+	enforcement, _ := gatePayload["enforcement"].(map[string]any)
+	if enforcement["mode"] != "hold" {
+		t.Fatalf("expected hold mode gate: %+v", gatePayload)
 	}
 }
 
-func mustReadSourceRunAll(t *testing.T) []byte {
+func TestRunAllShellWrapperDelegatesToGoCLI(t *testing.T) {
 	t.Helper()
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -377,5 +398,8 @@ func mustReadSourceRunAll(t *testing.T) []byte {
 	if err != nil {
 		t.Fatalf("read source run_all.sh: %v", err)
 	}
-	return body
+	wrapper := string(body)
+	if !strings.Contains(wrapper, `automation e2e run-all --go-root "$ROOT"`) {
+		t.Fatalf("expected run_all.sh to delegate to the Go CLI: %s", wrapper)
+	}
 }

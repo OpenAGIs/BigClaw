@@ -30,3 +30,27 @@
 - 2026-04-05: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1370 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
 - 2026-04-05: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1370/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1370/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1370/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1370/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
 - 2026-04-05: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1370/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1370(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|CrossRepoNativeHelperPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.192s`.
+
+# BIG-GO-1367
+
+## Plan
+- Inspect `bigclaw-go/scripts/e2e` and adjacent tests for remaining Python-era orchestration seams.
+- Replace the `scripts/e2e/run_all.sh` orchestration path with a Go CLI command so the active e2e entrypoint is Go/native rather than script-local orchestration.
+- Move broker bootstrap summary generation behind the Go CLI surface used by the e2e workflow.
+- Remove the Python-based fake `go` test shim in `automation_e2e_bundle_commands_test.go` and replace it with a native shell stub.
+- Run targeted Go tests covering the new command and regression guards.
+- Commit and push the scoped change set.
+
+## Acceptance
+- `find . -name '*.py' | wc -l` remains zero, and git contains concrete Go/native replacement evidence for the `bigclaw-go/scripts/e2e` orchestration surface.
+- `scripts/e2e/run_all.sh` delegates to Go-native orchestration instead of implementing the workflow itself.
+- The broker bootstrap summary generation used by the run-all flow is reachable from `bigclawctl automation e2e ...`.
+- Targeted tests for the new flow pass.
+
+## Validation
+- `find . -name '*.py' | wc -l`
+- Result: `0`
+- `go test ./cmd/bigclawctl -run 'TestAutomationRunAllUsesGoBundleCommandsAndDefaultsHoldMode|TestRunAllShellWrapperDelegatesToGoCLI|TestAutomationUsageListsBIGGO1160GoReplacements'`
+- Result: `ok  	bigclaw-go/cmd/bigclawctl	1.791s`
+- `go test ./internal/regression -run 'TestE2EScriptDirectoryStaysPythonFree|TestE2EMigrationDocListsOnlyActiveEntrypoints'`
+- Result: `ok  	bigclaw-go/internal/regression	3.196s`

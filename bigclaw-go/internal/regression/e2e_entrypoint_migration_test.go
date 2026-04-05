@@ -31,7 +31,9 @@ func TestE2EMigrationDocListsOnlyActiveEntrypoints(t *testing.T) {
 
 	required := []string{
 		"`go run ./cmd/bigclawctl automation e2e run-task-smoke ...`",
+		"`go run ./cmd/bigclawctl automation e2e run-all ...`",
 		"`go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`",
+		"`go run ./cmd/bigclawctl automation e2e broker-bootstrap-summary ...`",
 		"`./scripts/e2e/run_all.sh`",
 		"`./scripts/e2e/kubernetes_smoke.sh`",
 		"`./scripts/e2e/ray_smoke.sh`",
