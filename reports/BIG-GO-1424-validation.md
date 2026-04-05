@@ -90,7 +90,9 @@ ok  	bigclaw-go/internal/regression	0.498s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `c397e505`
+- Lane commit: `3ec04c0d` (`BIG-GO-1424: add zero-python sweep guard`)
 - Push target: `origin/main`
+- Local and remote branch SHA after push: `3ec04c0d`
 
 ## Residual Risk
 
