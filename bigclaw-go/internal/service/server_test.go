@@ -99,6 +99,39 @@ func TestServerEntryHealthMetrics(t *testing.T) {
 	}
 }
 
+func TestEnsureStaticIndex(t *testing.T) {
+	dir := t.TempDir()
+
+	if err := EnsureStaticIndex(dir); err != nil {
+		t.Fatalf("EnsureStaticIndex(): %v", err)
+	}
+
+	indexPath := filepath.Join(dir, "index.html")
+	body, err := os.ReadFile(indexPath)
+	if err != nil {
+		t.Fatalf("read index: %v", err)
+	}
+	if string(body) != "<h1>ok</h1>" {
+		t.Fatalf("unexpected index body: %s", body)
+	}
+
+	custom := []byte("<h1>custom</h1>")
+	if err := os.WriteFile(indexPath, custom, 0o644); err != nil {
+		t.Fatalf("rewrite index: %v", err)
+	}
+	if err := EnsureStaticIndex(dir); err != nil {
+		t.Fatalf("EnsureStaticIndex() preserves existing file: %v", err)
+	}
+
+	body, err = os.ReadFile(indexPath)
+	if err != nil {
+		t.Fatalf("read preserved index: %v", err)
+	}
+	if string(body) != string(custom) {
+		t.Fatalf("expected existing index to be preserved, got %s", body)
+	}
+}
+
 func getBody(t *testing.T, url string) string {
 	t.Helper()
 	resp, err := http.Get(url) //nolint:gosec
