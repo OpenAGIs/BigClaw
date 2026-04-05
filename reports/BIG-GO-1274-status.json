@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending-final-sync",
+    "latest_commit": "aa3a54f7",
     "push_target": "origin/main"
   },
   "artifacts": {
