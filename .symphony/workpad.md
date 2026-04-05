@@ -30,3 +30,6 @@
 - 2026-04-06: Published commit `7e9f9aa` (`BIG-GO-1449: add zero-python sweep guard`) to `origin/BIG-GO-1449`.
 - 2026-04-06: Verified remote branch head with `git ls-remote --heads origin BIG-GO-1449` and observed `7e9f9aa5274798f8633caf88257e1a54c7849a2c refs/heads/BIG-GO-1449`.
 - 2026-04-06: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1449/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1449(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` after metadata close-out and observed `ok  	bigclaw-go/internal/regression	0.887s`.
+- 2026-04-06: Published metadata close-out commit `3eb01e7` (`BIG-GO-1449: finalize lane metadata`) to `origin/BIG-GO-1449`.
+- 2026-04-06: Re-verified remote branch head with `git ls-remote --heads origin BIG-GO-1449` and observed `3eb01e7c59df5d968abb19144719502d4914b700 refs/heads/BIG-GO-1449`.
+- 2026-04-06: Final metadata verification re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1449/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1449(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.492s`.

@@ -83,18 +83,18 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1449/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.887s
+ok  	bigclaw-go/internal/regression	0.492s
 ```
 
 ## Git
 
 - Branch: `BIG-GO-1449`
 - Baseline HEAD before lane commit: `aeab7a1`
-- Published lane commits: `7e9f9aa` (`BIG-GO-1449: add zero-python sweep guard`)
+- Published lane commits: `7e9f9aa` (`BIG-GO-1449: add zero-python sweep guard`) and `3eb01e7` (`BIG-GO-1449: finalize lane metadata`)
 - Push target: `origin/BIG-GO-1449`
-- Local SHA: `7e9f9aa`
-- Remote branch head: `7e9f9aa5274798f8633caf88257e1a54c7849a2c`
-- Local/remote SHA equality confirmed by short SHA match: `7e9f9aa`
+- Local SHA before this metadata refresh: `3eb01e7`
+- Remote branch head: `3eb01e7c59df5d968abb19144719502d4914b700`
+- Local/remote SHA equality confirmed by short SHA match: `3eb01e7`
 
 ## Residual Risk
 
