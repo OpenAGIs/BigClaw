@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "2822ccc7",
+    "latest_commit": "git log --oneline --grep 'BIG-GO-1276: add zero-python heartbeat artifacts' -n 1",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -51,6 +51,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "`branch.latest_commit` records the final rebased code-bearing lane commit published to origin/main; metadata-only follow-up commits are tracked in the validation report."
+    "`branch.latest_commit` records the stable git query for the rebased code-bearing lane commit; metadata-only follow-up commits are tracked in the validation report."
   ]
 }
