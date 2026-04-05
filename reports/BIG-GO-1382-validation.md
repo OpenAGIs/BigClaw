@@ -92,7 +92,7 @@ ok  	bigclaw-go/internal/regression	0.188s
 - Baseline HEAD before lane commit: `c5450aef`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1382'`
 - Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1382'`
-- Push target: `origin/main`
+- Push target: `origin/big-go-1382-r2`
 - Initial push rejection: remote `main` advanced to `2b00b910`
 - First rebased lane HEAD: `cb64af0f`
 - Second push rejection: remote `main` advanced to `ea03f42d`
@@ -100,6 +100,7 @@ ok  	bigclaw-go/internal/regression	0.188s
 - Continuation rebase base: `6fc610a2`
 - Continuation rebased lane HEAD before push: `e8117e01`
 - Continuation direct push result: rejected again because `origin/main` advanced during the push window
+- Existing remote lane branch `origin/big-go-1382` remains on the older pre-rebase history at `c17c0ece`, so the continuation publish target is a fresh branch.
 
 ## Residual Risk
 
