@@ -2,6 +2,8 @@
 
 Date: 2026-04-05
 
+Validation rerun: `2026-04-05 22:19:40 CST`
+
 ## Scope
 
 Issue: `BIG-GO-1338`
@@ -80,15 +82,15 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1338/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	1.245s
+ok  	bigclaw-go/internal/regression	0.483s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `2322b380`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-1338'`
-- Final metadata commit: `tracked in git history after BIG-GO-1338 final sync`
+- Lane implementation commit: `3bfdb77d BIG-GO-1338: add python asset sweep guard`
+- Final metadata sync commit: `tracked in git history after BIG-GO-1338 final sync`
 - Push target: `origin/main`
 
 ## Residual Risk
