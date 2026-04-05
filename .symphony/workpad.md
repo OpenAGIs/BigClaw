@@ -1,36 +1,29 @@
-# BIG-GO-1359 Workpad
+# BIG-GO-1360 Workpad
 
 ## Plan
 
-1. Reconfirm the remaining physical Python asset inventory for the repository and the lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Replace the active Ray smoke validation default away from the inline Python entrypoint and update the corresponding repository-native documentation surfaces:
-   - `bigclaw-go/scripts/e2e/ray_smoke.sh`
-   - `bigclaw-go/docs/e2e-validation.md`
-3. Add the lane-scoped artifacts that record the zero-Python baseline and the native replacement landed for this issue:
-   - `bigclaw-go/docs/reports/big-go-1359-python-asset-sweep.md`
-   - `bigclaw-go/internal/regression/big_go_1359_zero_python_guard_test.go`
-4. Re-run targeted validation, record the exact commands and results, then commit and push the branch.
+1. Reconfirm the remaining physical Python asset inventory for the repository and the priority residual directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+2. Add the lane-scoped `BIG-GO-1360` artifacts that record the zero-Python baseline and its Go/native replacement surface:
+   - `bigclaw-go/docs/reports/big-go-1360-python-asset-sweep.md`
+   - `reports/BIG-GO-1360-status.json`
+   - `reports/BIG-GO-1360-validation.md`
+   - `bigclaw-go/internal/regression/big_go_1360_zero_python_guard_test.go`
+3. Run the targeted validation commands, record exact commands and results, then commit and push the lane update to the remote branch.
 
 ## Acceptance
 
-- The repository-wide physical Python asset inventory remains explicit for the whole repository and the priority residual directories.
-- The active Ray smoke default entrypoint no longer depends on inline Python and the checked-in validation docs reflect the shell-native replacement.
-- The lane-scoped report and regression test capture the replacement path and exact validation commands.
-- Exact validation commands and results are recorded.
+- The repository-wide physical Python inventory is explicit for this checkout.
+- The priority residual directories are confirmed Python-free.
+- The lane lands a concrete Go/native replacement record and a Go regression guard.
+- Exact validation commands and results are captured in repo artifacts.
 - The change is committed and pushed to the remote branch.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1359(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|RaySmokeReplacementPathsRemainAvailable|LaneReportCapturesNativeReplacement)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1360 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1360/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1360/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1360/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1360/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1360/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1360(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
-- 2026-04-05: `find . -name '*.py' | wc -l` already returned `0` in this checkout, so the issue must land via the concrete native-replacement acceptance path instead of a file-count reduction.
-- 2026-04-05: The scoped replacement target is the active Ray smoke entrypoint and its checked-in validation guidance, which still referenced inline Python even though the repository no longer contains `.py` assets.
-- 2026-04-05: Updated `bigclaw-go/scripts/e2e/ray_smoke.sh` to default `BIGCLAW_RAY_SMOKE_ENTRYPOINT` to `sh -c 'echo hello from ray'` and aligned `bigclaw-go/docs/e2e-validation.md` with the same shell-native path.
-- 2026-04-05: Validation results:
-  - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` -> no output
-  - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` -> no output
-  - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1359/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1359(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|RaySmokeReplacementPathsRemainAvailable|LaneReportCapturesNativeReplacement)$'` -> `ok  	bigclaw-go/internal/regression	0.583s`
+- 2026-04-05: `find . -name '*.py'` returned no physical Python files in this checkout, so the lane will harden and document the zero-Python baseline instead of deleting an in-branch `.py` file.
