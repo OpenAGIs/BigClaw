@@ -3,7 +3,7 @@
 ## Scope
 
 - Run date: 2026-03-13
-- Command: `python3 scripts/benchmark/soak_local.py --autostart --count 1000 --workers 24 --timeout-seconds 300 --report-path docs/reports/soak-local-1000x24.json`
+- Command: `go run ./scripts/benchmark/soak_local --autostart --count 1000 --workers 24 --timeout-seconds 300 --report-path docs/reports/soak-local-1000x24.json`
 - Goal: reduce the remaining `OPE-175` closure gap around `1k+` local concurrency evidence.
 
 ## Result

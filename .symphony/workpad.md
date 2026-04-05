@@ -1,14 +1,14 @@
 # BIG-GO-1475
 
 ## Plan
-1. Re-inventory the remaining report-related Python helpers after the live-validation bundle slice.
-2. Port `scripts/migration/shadow_compare.py` and `scripts/migration/shadow_matrix.py` into Go-owned reporting code plus small Go entrypoints.
-3. Update migration docs, issue coverage, and remaining test/report surfaces to point at the Go entrypoints and checked-in artifacts.
+1. Re-inventory the remaining report-related Python helpers after the shadow compare/matrix slice.
+2. Port `scripts/benchmark/run_matrix.py` and `scripts/benchmark/soak_local.py` into Go-owned reporting/runtime code plus small Go entrypoints.
+3. Update benchmark docs, issue coverage, and in-scope report references to point at the Go entrypoints and checked-in artifacts.
 4. Delete the replaced Python helpers and refresh the issue validation report with the next physical Python file-count reduction.
 5. Run targeted Go validation, commit, and push the branch.
 
 ## Acceptance
-- The selected active Python helpers (`shadow_compare.py` and `shadow_matrix.py`) are deleted, not just documented.
+- The selected active Python helpers (`run_matrix.py` and `soak_local.py`) are deleted, not just documented.
 - Replacement Go ownership is explicit in repo-native scripts, docs, and validation artifacts.
 - In-scope report import paths and helper references no longer point at the removed Python file.
 - Validation proves the repository moved closer to Go-only by reducing the physical Python file count again.
