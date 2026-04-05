@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1365",
+    "title": "Go-only refill 1365: tests legacy contract removal sweep B",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "f6faec68 BIG-GO-1365 add legacy test contract sweep B evidence",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1365-validation.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1365-legacy-test-contract-sweep-b.md",
+    "replacement_registry": "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1365_legacy_test_contract_sweep_b_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "bigclaw-go/internal/regression/big_go_1365_legacy_test_contract_sweep_b_test.go",
+    "bigclaw-go/docs/reports/big-go-1365-legacy-test-contract-sweep-b.md",
+    "bigclaw-go/internal/control/controller.go",
+    "bigclaw-go/internal/api/server.go",
+    "bigclaw-go/internal/api/v2.go",
+    "bigclaw-go/internal/product/dashboard_run_contract.go",
+    "bigclaw-go/internal/contract/execution.go",
+    "bigclaw-go/internal/uireview/uireview.go",
+    "bigclaw-go/internal/uireview/builder.go",
+    "bigclaw-go/internal/uireview/render.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1365LegacyTestContractSweepB(ManifestMatchesDeferredLegacyTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.580s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1365 changes."
+  },
+  "notes": [
+    "This lane closes the deferred sweep-B legacy Python test-contract slice recorded in reports/BIG-GO-948-validation.md.",
+    "The branch baseline was already Python-free, so this lane strengthens replacement evidence and regression coverage rather than removing in-branch Python files."
+  ]
+}
