@@ -51,6 +51,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "The code-bearing lane commit is `f1bdbae7`; `branch.latest_commit` is updated by the final metadata sync commit."
+    "Lane commit details are tracked in git history via `git log --oneline --grep 'BIG-GO-1274'`."
   ]
 }
