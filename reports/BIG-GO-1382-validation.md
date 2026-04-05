@@ -83,7 +83,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.188s
+ok  	bigclaw-go/internal/regression	1.970s
 ```
 
 ## Git
@@ -91,8 +91,8 @@ ok  	bigclaw-go/internal/regression	0.188s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c5450aef`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1382'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-1382'`
-- Push target: `origin/big-go-1382-r2`
+- Final pushed lane commit: `d11b8c0d`
+- Push target: `origin/main`
 - Initial push rejection: remote `main` advanced to `2b00b910`
 - First rebased lane HEAD: `cb64af0f`
 - Second push rejection: remote `main` advanced to `ea03f42d`
@@ -101,6 +101,9 @@ ok  	bigclaw-go/internal/regression	0.188s
 - Continuation rebased lane HEAD before push: `e8117e01`
 - Continuation direct push result: rejected again because `origin/main` advanced during the push window
 - Existing remote lane branch `origin/big-go-1382` remains on the older pre-rebase history at `c17c0ece`, so the continuation publish target is a fresh branch.
+- Final full-stack rebase base: `0dea7c0b`
+- Final full-stack rebased lane HEAD before push: `d11b8c0d`
+- Final push result: initial TLS failure on first attempt, then successful push to `origin/main`
 
 ## Residual Risk
 
