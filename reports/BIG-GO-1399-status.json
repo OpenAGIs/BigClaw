@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "3ce11e38",
+    "latest_commit": "3f029514",
     "push_target": "origin/big-go-1399"
   },
   "artifacts": {
@@ -57,7 +57,7 @@
     "The first direct push was rejected after `origin/main` advanced to `3db3516b`.",
     "Rebasing the lane onto `origin/main` produced local tip `5645d197`, which passed the targeted regression guard in `0.595s`.",
     "A second direct push to `origin/main` was rejected after `origin/main` advanced to `5c545938`.",
-    "A second rebase replayed the two lane commits onto `origin/main`, producing published tip `3ce11e38`.",
-    "The final validated lane state was published on `origin/big-go-1399`."
+    "A second rebase replayed the two lane commits onto `origin/main`, producing initial published tip `3ce11e38`.",
+    "The metadata closeout commit `3f029514` is the final published tip on `origin/big-go-1399`."
   ]
 }
