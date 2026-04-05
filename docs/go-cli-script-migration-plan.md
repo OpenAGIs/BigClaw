@@ -44,6 +44,14 @@ Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
 operator replacements.
 
+`BIG-GO-1473` re-audits the same script migration surface and confirms the
+current repository reality is already at zero physical Python assets. That
+means there is no remaining in-branch `scripts/**/*.py` or
+`bigclaw-go/scripts/**/*.py` entrypoint to delete in this checkout; the
+remaining actionable work is to keep callers on the Go-owned commands and
+document the explicit replacement ownership for the already-retired Python
+paths.
+
 ### Repo-root entrypoints
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
