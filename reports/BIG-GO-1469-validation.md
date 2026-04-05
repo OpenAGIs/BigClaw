@@ -96,7 +96,9 @@ ok  	bigclaw-go/internal/regression	3.211s
 
 - Branch: `BIG-GO-1469`
 - Baseline HEAD before lane commit: `aeab7a1`
+- Published lane commit: `9c07ca8` (`BIG-GO-1469: record zero-python residual sweep`)
 - Push target: `origin/BIG-GO-1469`
+- Local/remote SHA equality confirmed at `9c07ca8`
 
 ## Residual Risk
 

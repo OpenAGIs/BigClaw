@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1469",
-    "latest_commit": "pending",
+    "latest_commit": "9c07ca8",
     "push_target": "origin/BIG-GO-1469"
   },
   "artifacts": {
@@ -54,6 +54,7 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
-    "Workspace restoration used the local materialized checkout at ../BIG-GO-1447-materialized because the original BIG-GO-1469 worktree was unborn and remote fetches to origin hung."
+    "Workspace restoration used the local materialized checkout at ../BIG-GO-1447-materialized because the original BIG-GO-1469 worktree was unborn and remote fetches to origin hung.",
+    "Published lane commit `9c07ca8` (`BIG-GO-1469: record zero-python residual sweep`) to `origin/BIG-GO-1469`."
   ]
 }
