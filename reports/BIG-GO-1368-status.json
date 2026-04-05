@@ -1,0 +1,80 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1368",
+    "title": "Go-only refill 1368: bigclaw-go/scripts benchmark python replacement sweep",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "feat/BIG-GO-1368-benchmark-python-replacement",
+    "latest_commit": "see git rev-parse --short HEAD",
+    "push_target": "origin/feat/BIG-GO-1368-benchmark-python-replacement"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1368-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1368-benchmark-python-replacement.md",
+    "replacement_registry": "bigclaw-go/internal/migration/benchmark_script_replacements.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1368_benchmark_python_replacement_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "replacements": [
+    {
+      "retired_python_path": "bigclaw-go/scripts/benchmark/soak_local.py",
+      "replacement_kind": "go-cli-subcommand",
+      "active_paths": [
+        "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+        "bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
+        "bigclaw-go/scripts/benchmark/run_suite.sh"
+      ]
+    },
+    {
+      "retired_python_path": "bigclaw-go/scripts/benchmark/run_matrix.py",
+      "replacement_kind": "go-cli-subcommand",
+      "active_paths": [
+        "bigclaw-go/cmd/bigclawctl/automation_benchmark_commands.go",
+        "bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
+        "bigclaw-go/scripts/benchmark/run_suite.sh"
+      ]
+    },
+    {
+      "retired_python_path": "bigclaw-go/scripts/benchmark/capacity_certification.py",
+      "replacement_kind": "go-cli-subcommand",
+      "active_paths": [
+        "bigclaw-go/cmd/bigclawctl/automation_benchmark_commands.go",
+        "bigclaw-go/cmd/bigclawctl/automation_commands_test.go"
+      ]
+    },
+    {
+      "retired_python_path": "bigclaw-go/scripts/benchmark/capacity_certification_test.py",
+      "replacement_kind": "go-test-coverage",
+      "active_paths": [
+        "bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
+        "bigclaw-go/internal/regression/big_go_1160_script_migration_test.go"
+      ]
+    }
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1368BenchmarkPythonReplacement(ManifestCapturesBenchmarkLane|ReplacementPathsExist|LaneReportCapturesReplacementState)$'",
+      "cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'TestBenchmarkScriptsStayGoOnly|TestAutomationBenchmarkRunMatrixWritesReport|TestAutomationBenchmarkCapacityCertificationBuildsReport'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.022s",
+      "benchmark_cli_tests": "ok  \tbigclaw-go/cmd/bigclawctl\t0.654s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1368 changes."
+  },
+  "notes": [
+    "This lane lands a Go-native ownership registry for the retired benchmark Python helpers and test coverage under bigclaw-go/scripts/benchmark.",
+    "The branch baseline was already Python-free, so the acceptance path is a concrete Go/native replacement artifact rather than a lower in-branch .py count.",
+    "Baseline HEAD before lane changes was `81654c01`.",
+    "Primary lane commit so far: `a0232c6b feat(bigclaw-go): record benchmark python replacement sweep`."
+  ]
+}
