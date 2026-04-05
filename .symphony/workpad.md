@@ -29,4 +29,4 @@
 - 2026-04-05: The repository-wide physical Python inventory in this checkout is already `0`.
 - 2026-04-05: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
 - 2026-04-05: This execution focuses on documenting and hardening the zero-Python baseline because there is no in-branch `.py` asset left to delete.
-- 2026-04-05: Re-ran the targeted regression guard on the final lane tree with `ok  	bigclaw-go/internal/regression	0.872s`.
+- 2026-04-05: Re-ran the targeted regression guard on the rebased final lane tree with `ok  	bigclaw-go/internal/regression	1.206s`.
