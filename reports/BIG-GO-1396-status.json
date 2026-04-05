@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "c106acad",
+    "latest_commit": "a30424a9",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -43,7 +43,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.882s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.772s"
     }
   },
   "blocker": {
@@ -57,6 +57,8 @@
     "A direct push from `4b179a97` to `origin/main` was rejected after the remote advanced; that validated tip remains published on `origin/big-go-1396`.",
     "The lane was then rebased onto fetched `origin/main` base `8e561c4f`, producing local HEAD `92e371e2` and a fresh targeted regression pass in `0.486s`.",
     "A second direct push from metadata-refreshed HEAD `bbf6f322` was rejected after `origin/main` advanced again to `19afd942`.",
-    "The full two-commit lane stack was then replayed onto fetched `origin/main` base `19afd942`, producing local HEAD `c106acad` and a fresh targeted regression pass in `0.882s`."
+    "The full two-commit lane stack was then replayed onto fetched `origin/main` base `19afd942`, producing local HEAD `c106acad` and a fresh targeted regression pass in `0.882s`.",
+    "A follow-up push attempt first failed with a transient GitHub TLS error and then lost the race to a further `origin/main` advance to `0d551a17`.",
+    "The full three-commit lane stack was then replayed onto fetched `origin/main` base `0d551a17`, producing local HEAD `a30424a9` and a fresh targeted regression pass in `0.772s`."
   ]
 }
