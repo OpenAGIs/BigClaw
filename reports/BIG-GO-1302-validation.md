@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.419s
 - Branch: `main`
 - Baseline HEAD before lane commit: `389c32cf`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1302'`
-- Final metadata commit: `pending final lane commit`
+- Final metadata commit: `594aca12`
 - Push target: `origin/main`
 
 ## Residual Risk
