@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "lane implementation commit 3bfdb77d before final metadata sync",
+    "latest_commit": "ef54e749 BIG-GO-1338: refresh validation metadata",
     "push_target": "origin/main"
   },
   "artifacts": {

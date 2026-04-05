@@ -90,7 +90,7 @@ ok  	bigclaw-go/internal/regression	0.483s
 - Branch: `main`
 - Baseline HEAD before lane commit: `2322b380`
 - Lane implementation commit: `3bfdb77d BIG-GO-1338: add python asset sweep guard`
-- Final metadata sync commit: `tracked in git history after BIG-GO-1338 final sync`
+- Final metadata sync commit: `ef54e749 BIG-GO-1338: refresh validation metadata`
 - Push target: `origin/main`
 
 ## Residual Risk
