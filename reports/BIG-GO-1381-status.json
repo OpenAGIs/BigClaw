@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "062acfa1",
+    "latest_commit": "6fc610a2",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -53,6 +53,7 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `c5450aef`.",
     "The first push attempt was rejected because origin/main advanced; the lane was rebased cleanly onto `2ad75a0d` and revalidated.",
-    "A later remote advance required one more clean rebase onto `3d75ee7a`; the final pushed lane head is `062acfa1` on origin/main."
+    "A later remote advance required one more clean rebase onto `3d75ee7a`; the lane was revalidated and pushed to origin/main at `062acfa1`.",
+    "A final metadata-only closeout commit updated the durable pushed lane head to `6fc610a2` on origin/main."
   ]
 }

@@ -35,4 +35,5 @@
 - 2026-04-06: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1381/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1381(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` after rebase and observed `ok  	bigclaw-go/internal/regression	0.576s`.
 - 2026-04-06: Rebased again onto `origin/main` at `3d75ee7a`, producing lane HEAD `062acfa1`.
 - 2026-04-06: Re-ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1381/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1381(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` after the final rebase and observed `ok  	bigclaw-go/internal/regression	0.573s`.
-- 2026-04-06: Pushed final lane commits to `origin/main` at `062acfa1`.
+- 2026-04-06: Pushed lane commits to `origin/main` at `062acfa1`.
+- 2026-04-06: Pushed final metadata closeout commit to `origin/main` at `6fc610a2`.

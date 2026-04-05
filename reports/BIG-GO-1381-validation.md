@@ -90,7 +90,7 @@ ok  	bigclaw-go/internal/regression	0.573s
 - Branch: `main`
 - Baseline HEAD before lane commit: `c5450aef`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1381'`
-- Final pushed lane commit: `062acfa1`
+- Final pushed lane commit: `6fc610a2`
 - Push target: `origin/main`
 
 ## Residual Risk
@@ -104,3 +104,5 @@ ok  	bigclaw-go/internal/regression	0.573s
 - A later remote advance required one more clean rebase onto `3d75ee7a`; the
   lane was revalidated again and then pushed successfully to `origin/main` at
   `062acfa1`.
+- A final metadata-only closeout commit updated the durable pushed lane head to
+  `6fc610a2`.
