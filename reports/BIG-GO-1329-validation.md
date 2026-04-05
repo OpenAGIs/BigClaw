@@ -49,7 +49,7 @@ Command:
 find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1329 -path '*/.git' -prune -o -name '*.py' -type f -print | sort
 ```
 
-Result: pending execution.
+Result: no output.
 
 ### Priority directory inventory
 
@@ -59,7 +59,7 @@ Command:
 find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1329/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1329/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1329/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1329/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort
 ```
 
-Result: pending execution.
+Result: no output.
 
 ### Targeted regression guard
 
@@ -69,15 +69,15 @@ Command:
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1329/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1329(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
 ```
 
-Result: `ok  	bigclaw-go/internal/regression	0.544s`.
+Result: `ok  	bigclaw-go/internal/regression	1.548s`.
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `aea0831f`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-1329'`
-- Final pushed lane commit: reported after the push step
-- Push target: `origin/main`
+- Final pushed lane commit: `420fb19e`
+- Push target: `origin/big-go-1329`
 
 ## Residual Risk
 

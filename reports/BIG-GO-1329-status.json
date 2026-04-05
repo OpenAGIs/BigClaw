@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "aea0831f",
-    "push_target": "origin/main"
+    "latest_commit": "420fb19e",
+    "push_target": "origin/big-go-1329"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1329-validation.md",
@@ -41,7 +41,7 @@
     "results": {
       "repo_py_inventory": "no output",
       "priority_dir_inventory": "no output",
-      "regression_tests": "ok   \tbigclaw-go/internal/regression\t0.544s"
+      "regression_tests": "ok   \tbigclaw-go/internal/regression\t1.548s"
     }
   },
   "blocker": {
@@ -51,6 +51,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `aea0831f`."
+    "Baseline HEAD before lane changes was `aea0831f`.",
+    "Direct pushes to `origin/main` were racing with parallel heartbeat traffic, so the published lane tip is `420fb19e` on `origin/big-go-1329`."
   ]
 }
