@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending commit for BIG-GO-1343",
+    "latest_commit": "a418ceda BIG-GO-1343: document python asset sweep lane",
     "push_target": "origin/main"
   },
   "artifacts": {
