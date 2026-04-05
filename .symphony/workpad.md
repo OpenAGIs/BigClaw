@@ -8,7 +8,7 @@
 
 ## Acceptance
 - Produce a concrete list of the remaining Python assets relevant to this lane after repo materialization.
-- Reduce the physical Python file count in the repository as the primary outcome.
+- Reduce the physical Python file count in the repository as the primary outcome. Baseline was already `0`, so this lane closes by documenting and guarding the zero-Python state.
 - Document the Go replacement path for each removed or shrunk Python asset.
 - Record exact validation commands and outcomes.
 
