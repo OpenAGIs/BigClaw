@@ -56,3 +56,5 @@
   - result: `You are not logged into any GitHub hosts. To log in, run: gh auth login`
 - Public PR search for `head:BIG-GO-1354` showed no existing pull request.
 - The GitHub PR creation URL for `BIG-GO-1354` redirects to the GitHub sign-in page, so no further unattended repo-side action is available from this environment.
+- Public compare URL for reviewer handoff: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1354?expand=1`
+  - Public GitHub compare page showed `4 commits`, `13 files changed`, and the expected branch head `BIG-GO-1354`, but pull request creation still requires sign-in.
