@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "to be recorded from git history for the BIG-GO-1345 lane commit",
+    "latest_commit": "14316e14ccbef3e5aeb624d96f7e1cb2a63d5aa9",
     "push_target": "origin/main"
   },
   "artifacts": {
