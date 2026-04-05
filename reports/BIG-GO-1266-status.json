@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1266",
-    "latest_commit": "2c484c1f BIG-GO-1266: document zero-python sweep lane",
+    "latest_commit": "fbd44497 BIG-GO-1266: finalize validation evidence",
     "push_target": "origin/BIG-GO-1266"
   },
   "artifacts": {
