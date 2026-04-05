@@ -86,10 +86,21 @@ Result:
 ok  	bigclaw-go/internal/regression	0.457s
 ```
 
+Recheck after report finalization:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1438/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1438(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+```
+
+```text
+ok  	bigclaw-go/internal/regression	0.238s
+```
+
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `4a24341d`
+- Content commit: `c44f6526` (`BIG-GO-1438: add zero-python heartbeat artifacts`)
 - Push target: `origin/main`
 
 ## Residual Risk
