@@ -23,16 +23,15 @@ cutover set.
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454RepositoryHasNoPythonFiles$'`
 
 ## Completed scope
 
-- Canonical Go owners now cover the retired Python contract surfaces formerly
-  held in `src/bigclaw/models.py`, `src/bigclaw/connectors.py`,
-  `src/bigclaw/mapping.py`, `src/bigclaw/dsl.py`, and the later runtime slices
-  under `src/bigclaw/governance.py`, `src/bigclaw/observability.py`,
-  `src/bigclaw/operations.py`, `src/bigclaw/orchestration.py`, and
-  `src/bigclaw/pilot.py`.
+- Canonical Go owners now cover the retired Python contract and runtime
+  surfaces that previously lived under `src/bigclaw`, with the active
+  ownership split now documented in the Go parity matrix and migration
+  catalog.
 - Risk, policy, orchestration, reporting, control-center, repo collaboration,
   tooling, and Python-retirement slices are closed in the local tracker.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now

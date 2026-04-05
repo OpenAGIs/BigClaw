@@ -87,9 +87,10 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 
 	requiredRootDoc := []string{
 		"`BIG-GO-1160` extends that migration evidence",
-		"`bigclaw-go/scripts/migration/shadow_compare.py`",
-		"`scripts/create_issues.py`",
-		"`scripts/dev_smoke.py`",
+		"the deleted benchmark helper tranche formerly housed under `bigclaw-go/scripts/benchmark`",
+		"the deleted e2e automation helper tranche formerly housed under `bigclaw-go/scripts/e2e`",
+		"the deleted migration helper tranche formerly housed under `bigclaw-go/scripts/migration`",
+		"the retired repo-root `create-issues` and `dev-smoke` Python shims",
 		"`bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`",
 	}
 	for _, needle := range requiredRootDoc {
