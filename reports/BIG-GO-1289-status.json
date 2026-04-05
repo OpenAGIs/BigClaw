@@ -5,9 +5,9 @@
     "state": "Done"
   },
   "branch": {
-    "name": "main",
+    "name": "big-go-1289",
     "latest_commit": "tracked in git history after BIG-GO-1289 final sync",
-    "push_target": "origin/main"
+    "push_target": "origin/big-go-1289"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1289-validation.md",

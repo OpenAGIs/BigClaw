@@ -4,7 +4,7 @@
 - Reconfirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 - Add a lane-specific Go regression guard for `BIG-GO-1289` that preserves the Python-free repository state and verifies the retained Go or shell replacement entrypoints still exist.
 - Record the lane sweep in durable artifacts under `bigclaw-go/docs/reports` and `reports`, including the remaining Python asset inventory, replacement paths, and exact validation commands.
-- Run the targeted validation commands for this lane, capture the exact results, then commit and push the branch tip to `origin/main`.
+- Run the targeted validation commands for this lane, capture the exact results, then commit and push the branch tip to `origin/big-go-1289`.
 
 ## Acceptance
 - The `BIG-GO-1289` lane has an explicit remaining Python asset inventory for the repository and priority residual directories.
