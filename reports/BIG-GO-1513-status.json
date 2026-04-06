@@ -44,8 +44,8 @@
       "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1513(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
     ],
     "results": {
-      "repo_py_inventory": "none",
-      "priority_dir_inventory": "none",
+      "repo_py_inventory": "no output; repository-wide physical Python file count remained 0",
+      "priority_dir_inventory": "no output; src/bigclaw, tests, scripts, and bigclaw-go/scripts remained Python-free",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.845s"
     }
   },
