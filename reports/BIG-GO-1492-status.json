@@ -1,0 +1,69 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1492",
+    "title": "Refill: largest residual directory sweep for tests Python files and conftest/bootstrap blockers",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1492",
+    "baseline_commit": "a63c8ec",
+    "push_target": "origin/BIG-GO-1492"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1492-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1492-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1492_zero_python_guard_test.go"
+  },
+  "counts": {
+    "repo_py_files_before": 0,
+    "repo_py_files_after": 0,
+    "repo_py_files_deleted": 0
+  },
+  "deleted_files": [],
+  "priority_dirs": {
+    "src/bigclaw": {
+      "before": 0,
+      "after": 0
+    },
+    "tests": {
+      "before": 0,
+      "after": 0
+    },
+    "scripts": {
+      "before": 0,
+      "after": 0
+    },
+    "bigclaw-go/scripts": {
+      "before": 0,
+      "after": 0
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1492_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1492(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.792s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The hydrated origin/main baseline for BIG-GO-1492 already contained zero physical Python files."
+  }
+}
