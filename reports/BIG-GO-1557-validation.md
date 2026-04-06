@@ -98,6 +98,5 @@ ok  	bigclaw-go/internal/regression	5.073s
 
 - Branch: `BIG-GO-1557`
 - Baseline HEAD before lane commit: `646edf33`
-- Latest pushed HEAD: `a9b3a809`
 - Push target: `origin/BIG-GO-1557`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1557?expand=1`
