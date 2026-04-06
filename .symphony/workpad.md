@@ -1,37 +1,36 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1556 Workpad
 
 ## Plan
 
 1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+   `workspace/bootstrap/planning` residual area from the `BIG-GO-1556` branch
+   point.
+2. Write `BIG-GO-1556`-scoped repo-native artifacts with exact before/after
+   counts, the exact removed-file ledger, the active Go/native replacement
+   paths, and the baseline blocker note.
+3. Add focused regression coverage that keeps the repository and the
+   `workspace/bootstrap/planning` residual area Python-free while pinning the
+   `BIG-GO-1556` report contents.
+4. Run targeted validation, record exact commands and results, then commit and
+   push `BIG-GO-1556`.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
+- `BIG-GO-1556` work records repository-wide `.py` counts before and after the
+  lane.
+- `BIG-GO-1556` work records the focused `workspace/bootstrap/planning`
+  residual scan.
+- `BIG-GO-1556` work includes an exact deleted-file ledger, even when it is
+  empty because the baseline is already Python-free.
+- `BIG-GO-1556` work names the active Go/native replacement paths for the
+  retired `workspace/bootstrap/planning` surface.
+- `BIG-GO-1556` work records the blocker that a lower physical `.py` file count
+  cannot be achieved from baseline commit `646edf33` because the repository is
+  already at `0`.
 - Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1556(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedgerAndBlocker)$'`
