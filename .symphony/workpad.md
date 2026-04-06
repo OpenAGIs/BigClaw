@@ -1,30 +1,38 @@
-# BIG-GO-1454 Workpad
+# BIG-GO-1484 Workpad
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Land lane-scoped reporting and regression coverage that document the remaining inventory and pin the active Go/native replacement paths for `BIG-GO-1454`.
-3. Run targeted validation, capture exact commands and results in the lane artifacts, then commit and push the branch.
+- Verify the current repository state and enumerate any physical Python files under `scripts` and `scripts/ops`.
+- If Python wrappers exist in scope, replace them with non-Python equivalents and update any affected invocations.
+- Capture exact before/after evidence for repository-wide `.py` file count and in-scope wrapper count.
+- Run targeted validation for the touched scripts and record exact commands and results.
+- Commit scoped changes and push the branch.
 
 ## Acceptance
-
-- The lane records the remaining Python asset inventory for the repository and the priority residual directories.
-- The lane either removes physical Python files or, if none remain in-branch, documents the zero-Python baseline and keeps the sweep scoped to regression prevention.
-- The lane names the current Go/native replacement paths for the retired Python surface.
-- Exact validation commands and outcomes are recorded.
-- The change is committed and pushed to the remote branch.
+- No physical Python wrapper files remain under `scripts` or `scripts/ops`.
+- Actual repository `.py` file count is reduced by this change.
+- Exact before/after evidence is recorded from repository commands, not tracker metadata.
+- Targeted validation commands complete successfully.
+- Changes remain scoped to this issue.
 
 ## Validation
+- `git ls-files '*.py' | wc -l`
+- `rg --files scripts scripts/ops -g '*.py' | wc -l`
+- `find scripts scripts/ops -maxdepth 3 -type f | sort`
+- Any targeted script smoke tests needed for touched files
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+## Current state
+- On `origin/main` at `a63c8ec0f999d976a1af890c920a54ac2d6c693a`, `git ls-files '*.py' | wc -l` returns `0`.
+- On the same snapshot, `rg --files scripts scripts/ops -g '*.py' | wc -l` returns `0`.
+- Current `scripts` wrappers are already shell-based (`scripts/dev_bootstrap.sh`, `scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-panel`, `scripts/ops/bigclaw-symphony`).
+- Because the repo already contains zero tracked Python files, the required Python-count reduction is currently blocked on upstream state: there is nothing left in scope to remove.
 
-## Execution Notes
-
-- 2026-04-06: Initial inventory on baseline commit `aeab7a1` confirmed no physical `.py` files anywhere in the checkout, including `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- 2026-04-06: This lane is therefore scoped as a documentation and regression-hardening sweep for the existing Go-only baseline.
-- 2026-04-06: Added `bigclaw-go/docs/reports/big-go-1454-python-asset-sweep.md`, `bigclaw-go/internal/regression/big_go_1454_zero_python_guard_test.go`, `reports/BIG-GO-1454-validation.md`, and `reports/BIG-GO-1454-status.json` to record and protect the zero-Python baseline for this lane.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
-- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.778s`.
+## Validation results
+- `git ls-files '*.py' | wc -l` -> `0`
+- `rg --files scripts scripts/ops -g '*.py' | wc -l` -> `0`
+- `find scripts scripts/ops -maxdepth 3 -type f | sort` ->
+  `scripts/dev_bootstrap.sh`
+  `scripts/ops/bigclaw-issue`
+  `scripts/ops/bigclaw-panel`
+  `scripts/ops/bigclaw-symphony`
+  `scripts/ops/bigclawctl`
+- `bash scripts/ops/bigclaw-issue --help` -> exit `0`
