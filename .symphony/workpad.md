@@ -1,57 +1,58 @@
-# BIG-GO-1545
+# BIG-GO-1544
 
 ## Plan
-
-1. Materialize the issue workspace on a valid `BIG-GO-1545` branch from `origin/main`.
-2. Capture baseline `.py` counts for the repository and for the remaining `bigclaw-go/scripts/**/*.py` reporting/observability sweep surface.
-3. Physically delete the in-scope Python files.
-4. Recount after deletion and record the exact removed-file list.
-5. Run targeted validation commands, then commit and push the branch.
+1. Capture baseline tracked `.py` counts for the repository and for the in-scope `scripts/*.py` and `scripts/ops/*.py` residual wrapper surface.
+2. Physically delete only the remaining in-scope script-wrapper Python files.
+3. Recount after deletion and record the exact removed-file list.
+4. Run targeted validation commands on the scoped deletion.
+5. Commit and push `BIG-GO-1544`.
 
 ## Acceptance
-
-- Remaining reporting/observability Python files under `bigclaw-go/scripts` are physically removed.
-- Before/after counts are recorded.
+- Remaining root `scripts/*.py` files are physically removed.
+- Remaining `scripts/ops/*.py` wrapper files are physically removed.
+- Before/after counts are recorded for repo-wide tracked `.py` files and the in-scope script-wrapper subset.
 - The exact removed-file list is recorded.
-- Validation commands and results are recorded.
-- Changes remain scoped to this sweep.
-- The branch is committed and pushed to `origin/BIG-GO-1545`.
+- Validation commands and exact results are recorded.
+- Changes remain scoped to this issue.
 
 ## Validation
+- `git ls-tree -r --name-only HEAD | rg '\\.py$' | wc -l`
+- `git ls-tree -r --name-only HEAD | rg '^scripts(/ops)?/.*\\.py$' | wc -l`
+- `git ls-tree -r --name-only HEAD | rg '^scripts(/ops)?/.*\\.py$' | sort`
+- `git diff --name-only --diff-filter=D | sort`
+- `git status --short`
 
-- `find . -type f -name '*.py' | sort > /tmp/BIG-GO-1545-all-py-before.txt && wc -l < /tmp/BIG-GO-1545-all-py-before.txt | tr -d ' '` -> `138`
-- `find bigclaw-go/scripts -type f -name '*.py' | sort > /tmp/BIG-GO-1545-removed-files-before.txt && wc -l < /tmp/BIG-GO-1545-removed-files-before.txt | tr -d ' '` -> `23`
-- `find . -type f -name '*.py' | sort > /tmp/BIG-GO-1545-all-py-after.txt && wc -l < /tmp/BIG-GO-1545-all-py-after.txt | tr -d ' '` -> `115`
-- `find bigclaw-go/scripts -type f -name '*.py' | sort > /tmp/BIG-GO-1545-in-scope-after.txt && wc -l < /tmp/BIG-GO-1545-in-scope-after.txt | tr -d ' '` -> `0`
-- `git diff --name-only --diff-filter=D | sort` -> 23 deleted files listed below.
+## Baseline
+- Repo-wide tracked `.py` files before deletion: `115`
+- In-scope tracked script-wrapper `.py` files before deletion: `7`
+- In-scope files before deletion:
+  - `scripts/create_issues.py`
+  - `scripts/dev_smoke.py`
+  - `scripts/ops/bigclaw_github_sync.py`
+  - `scripts/ops/bigclaw_refill_queue.py`
+  - `scripts/ops/bigclaw_workspace_bootstrap.py`
+  - `scripts/ops/symphony_workspace_bootstrap.py`
+  - `scripts/ops/symphony_workspace_validate.py`
 
-## Before/After Counts
+## Validation Results
+- `git ls-tree -r --name-only HEAD | rg '\\.py$' | wc -l` -> `115` before deletion
+- `git ls-tree -r --name-only HEAD | rg '^scripts(/ops)?/.*\\.py$' | wc -l` -> `7` before deletion
+- `find . -type f -name '*.py' | sed 's#^./##' | sort | wc -l` -> `108` after deletion in the working tree
+- `find scripts -type f -name '*.py' | sed 's#^./##' | sort | wc -l` -> `0` after deletion in the working tree
+- `find scripts/ops -maxdepth 1 -type f | sed 's#^./##' | sort` -> `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-panel`, `scripts/ops/bigclaw-symphony`, `scripts/ops/bigclawctl`
+- `git diff --name-only --diff-filter=D | sort` -> the seven deleted files listed below
+- `git diff --check` -> no output
 
-- Repository `.py` files: `138 -> 115`
-- In-scope `bigclaw-go/scripts/**/*.py` files: `23 -> 0`
+## Exact Removed-File List
+- `scripts/create_issues.py`
+- `scripts/dev_smoke.py`
+- `scripts/ops/bigclaw_github_sync.py`
+- `scripts/ops/bigclaw_refill_queue.py`
+- `scripts/ops/bigclaw_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_validate.py`
 
-## Removed Files
-
-- `bigclaw-go/scripts/benchmark/capacity_certification.py`
-- `bigclaw-go/scripts/benchmark/capacity_certification_test.py`
-- `bigclaw-go/scripts/benchmark/run_matrix.py`
-- `bigclaw-go/scripts/benchmark/soak_local.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
+## Outcome
+- Repo-wide `.py` filesystem count moved from `115` to `108`.
+- In-scope script-wrapper `.py` filesystem count moved from `7` to `0`.
+- The remaining `scripts/ops` wrappers are non-Python executables only.

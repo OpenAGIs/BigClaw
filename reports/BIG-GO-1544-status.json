@@ -1,0 +1,30 @@
+{
+  "issue": "BIG-GO-1544",
+  "branch": "BIG-GO-1544",
+  "base_commit": "cf29c479ed62ccd8e24d435be7ece9d0846b9559",
+  "status": "done",
+  "scope": "Delete remaining scripts/*.py and scripts/ops/*.py wrapper files",
+  "repo_py_before": 115,
+  "repo_py_after": 108,
+  "in_scope_py_before": 7,
+  "in_scope_py_after": 0,
+  "removed_files": [
+    "scripts/create_issues.py",
+    "scripts/dev_smoke.py",
+    "scripts/ops/bigclaw_github_sync.py",
+    "scripts/ops/bigclaw_refill_queue.py",
+    "scripts/ops/bigclaw_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_validate.py"
+  ],
+  "validation_commands": [
+    "git ls-tree -r --name-only HEAD | rg '\\.py$' | wc -l",
+    "git ls-tree -r --name-only HEAD | rg '^scripts(/ops)?/.*\\.py$' | wc -l",
+    "git ls-tree -r --name-only HEAD | rg '^scripts(/ops)?/.*\\.py$' | sort",
+    "find . -type f -name '*.py' | sed 's#^./##' | sort | wc -l",
+    "find scripts -type f -name '*.py' | sed 's#^./##' | sort | wc -l",
+    "find scripts/ops -maxdepth 1 -type f | sed 's#^./##' | sort",
+    "git diff --name-only --diff-filter=D | sort",
+    "git diff --check"
+  ]
+}
