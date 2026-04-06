@@ -41,3 +41,5 @@
 
 - Branch target: `origin/BIG-GO-1553`
 - Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1553?expand=1`
+- PR creation via `gh pr create` is blocked in this workspace because GitHub
+  CLI is not authenticated (`gh auth login` required).

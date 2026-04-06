@@ -1,0 +1,160 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1553",
+    "title": "Refill: delete remaining bigclaw-go/scripts .py files from disk and report exact before-after count delta",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1553",
+    "baseline_commit": "646edf33",
+    "latest_commit": "6ab29d24",
+    "push_target": "origin/BIG-GO-1553",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1553?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1553-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1553_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1553-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "bigclaw_go_scripts_py_files_before": 23,
+    "bigclaw_go_scripts_py_files_after": 0,
+    "bigclaw_go_scripts_delta": -23
+  },
+  "historical_baseline": {
+    "commit": "fdb20c43",
+    "commit_expression": "8ebdd50d^"
+  },
+  "deleted_file_ledger": [
+    {
+      "commit": "8ebdd50d",
+      "path": "bigclaw-go/scripts/e2e/run_task_smoke.py"
+    },
+    {
+      "commit": "8ebdd50d",
+      "path": "bigclaw-go/scripts/migration/shadow_compare.py"
+    },
+    {
+      "commit": "5afb870f",
+      "path": "bigclaw-go/scripts/migration/shadow_matrix.py"
+    },
+    {
+      "commit": "546c0c64",
+      "path": "bigclaw-go/scripts/migration/live_shadow_scorecard.py"
+    },
+    {
+      "commit": "68221e4e",
+      "path": "bigclaw-go/scripts/migration/export_live_shadow_bundle.py"
+    },
+    {
+      "commit": "da168148",
+      "path": "bigclaw-go/scripts/benchmark/capacity_certification.py"
+    },
+    {
+      "commit": "da168148",
+      "path": "bigclaw-go/scripts/benchmark/capacity_certification_test.py"
+    },
+    {
+      "commit": "da168148",
+      "path": "bigclaw-go/scripts/benchmark/run_matrix.py"
+    },
+    {
+      "commit": "da168148",
+      "path": "bigclaw-go/scripts/benchmark/soak_local.py"
+    },
+    {
+      "commit": "2ed49341",
+      "path": "bigclaw-go/scripts/e2e/export_validation_bundle.py"
+    },
+    {
+      "commit": "2ed49341",
+      "path": "bigclaw-go/scripts/e2e/export_validation_bundle_test.py"
+    },
+    {
+      "commit": "2ed49341",
+      "path": "bigclaw-go/scripts/e2e/run_all_test.py"
+    },
+    {
+      "commit": "2ed49341",
+      "path": "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py"
+    },
+    {
+      "commit": "2ed49341",
+      "path": "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py"
+    },
+    {
+      "commit": "2ed49341",
+      "path": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py"
+    },
+    {
+      "commit": "ed633b9d",
+      "path": "bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py"
+    },
+    {
+      "commit": "ed633b9d",
+      "path": "bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py"
+    },
+    {
+      "commit": "32033874",
+      "path": "bigclaw-go/scripts/e2e/mixed_workload_matrix.py"
+    },
+    {
+      "commit": "1f6e9876",
+      "path": "bigclaw-go/scripts/e2e/cross_process_coordination_surface.py"
+    },
+    {
+      "commit": "3f32b502",
+      "path": "bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py"
+    },
+    {
+      "commit": "c225a50c",
+      "path": "bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py"
+    },
+    {
+      "commit": "ad32285c",
+      "path": "bigclaw-go/scripts/e2e/external_store_validation.py"
+    },
+    {
+      "commit": "42363805",
+      "path": "bigclaw-go/scripts/e2e/multi_node_shared_queue.py"
+    }
+  ],
+  "replacement_paths": [
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh",
+    "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+    "bigclaw-go/scripts/e2e/ray_smoke.sh",
+    "bigclaw-go/scripts/e2e/broker_bootstrap_summary.go",
+    "bigclaw-go/cmd/bigclawctl/automation_benchmark_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_bundle_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_coordination_surface_command.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_external_store_validation_command.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_mixed_workload_command.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_takeover_matrix_command.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/scripts -type f -name '*.py' | sort",
+      "git ls-tree -r --name-only fdb20c43 bigclaw-go/scripts | rg '\\.py$'",
+      "git log --diff-filter=D --summary -- bigclaw-go/scripts",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1553(RepositoryHasNoPythonFiles|BigclawGoScriptsStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesExactDeltaAndLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "bigclaw_go_scripts_py_inventory": "none",
+      "historical_bigclaw_go_scripts_py_inventory_count": 23,
+      "historical_deleted_file_ledger_entries": 23,
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.168s"
+    }
+  },
+  "pull_request": {
+    "state": "blocked",
+    "reason": "GitHub CLI is not authenticated in this workspace (`gh auth login` required).",
+    "suggested_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1553?expand=1"
+  }
+}
