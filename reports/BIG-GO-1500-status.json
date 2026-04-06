@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1500",
+    "title": "Refill: final repo-reality sweep until find-count of Python files drops materially from 130 baseline",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1500",
+    "baseline_commit": "a63c8ec0f999d976a1af890c920a54ac2d6c693a",
+    "push_target": "origin/BIG-GO-1500"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1500-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1500-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1500_zero_python_guard_test.go"
+  },
+  "counts": {
+    "historical_ticket_baseline": 130,
+    "physical_python_before": 0,
+    "physical_python_after": 0
+  },
+  "deleted_python_files": [],
+  "priority_dirs": {
+    "src/bigclaw": [],
+    "tests": [],
+    "scripts": [],
+    "bigclaw-go/scripts": []
+  },
+  "go_ownership_paths": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1500(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoOwnershipPathsRemainAvailable|LaneReportCapturesRepoReality)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.170s"
+    }
+  },
+  "blockers": [
+    "The historical 130-file Python baseline referenced by the ticket is not present on baseline commit a63c8ec0f999d976a1af890c920a54ac2d6c693a; the materialized repository was already at 0 physical Python files before lane changes."
+  ]
+}
