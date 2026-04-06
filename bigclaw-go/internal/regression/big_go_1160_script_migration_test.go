@@ -86,11 +86,15 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 	}
 
 	requiredRootDoc := []string{
-		"`BIG-GO-1160` extends that migration evidence",
-		"`bigclaw-go/scripts/migration/shadow_compare.py`",
-		"`scripts/create_issues.py`",
-		"`scripts/dev_smoke.py`",
+		"`BIG-GO-1160` extended that migration evidence",
 		"`bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`",
+		"### Current `bigclaw-go/scripts` ownership",
+		"`bigclaw-go/scripts/benchmark/run_suite.sh`",
+		"`bigclaw-go/scripts/e2e/run_all.sh`",
+		"`bigclaw-go/scripts/e2e/kubernetes_smoke.sh`",
+		"`bigclaw-go/scripts/e2e/ray_smoke.sh`",
+		"`bigclaw-go/scripts/e2e/broker_bootstrap_summary.go`",
+		"Delete condition for new helper artifacts under `bigclaw-go/scripts`",
 	}
 	for _, needle := range requiredRootDoc {
 		if !strings.Contains(rootDoc, needle) {
