@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1543",
+    "title": "Refill: physical deletion sweep for remaining bigclaw-go/scripts .py files with exact deleted-file list",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1543",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-1543"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1543-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1543-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1543_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "bigclaw_go_scripts_before": [],
+    "bigclaw_go_scripts_after": [],
+    "removed_files": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1543_zero_python_guard_test.go",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/broker_bootstrap_summary.go",
+    "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+    "bigclaw-go/scripts/e2e/ray_smoke.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go"
+  ],
+  "validation": {
+    "commands": [
+      "find bigclaw-go/scripts -type f -name '*.py' | sort",
+      "find bigclaw-go/scripts -type f -name '*.py' | wc -l",
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1543(BigClawGoScriptsStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactSweepState)$'"
+    ],
+    "results": {
+      "bigclaw_go_scripts_inventory": "none",
+      "bigclaw_go_scripts_count": "0",
+      "repo_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.169s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The bigclaw-go/scripts physical Python file count was already zero in this workspace before BIG-GO-1543 changes."
+  },
+  "notes": [
+    "This lane documents an empty exact removed-file list because no bigclaw-go/scripts Python files remained at baseline.",
+    "Baseline HEAD before lane changes was a63c8ec0f999d976a1af890c920a54ac2d6c693a."
+  ]
+}
