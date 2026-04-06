@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1551",
+    "title": "Refill: delete remaining src/bigclaw .py files from disk and report exact before-after count delta",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1551",
+    "baseline_commit": "646edf33",
+    "latest_commit": "pending-commit",
+    "push_target": "origin/BIG-GO-1551",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1551?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1551-src-bigclaw-python-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1551_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1551-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "repository_py_file_delta": 0,
+    "src_bigclaw_py_files_before": 0,
+    "src_bigclaw_py_files_after": 0,
+    "src_bigclaw_py_file_delta": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "historical_src_bigclaw_py_deletions_on_head_ancestry": 50
+  },
+  "blocker": {
+    "active": true,
+    "reason": "The checked-out baseline already has zero physical Python files, so BIG-GO-1551 cannot lower the on-disk .py count further from this branch."
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1551(RepositoryHasNoPythonFiles|SrcBigclawDirectoryStaysPythonFree|HistoricalDeletedFileEvidenceIsRecorded|LaneReportCapturesCurrentDeltaAndBlocker)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "src_bigclaw_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.571s"
+    }
+  }
+}
