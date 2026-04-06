@@ -1,0 +1,59 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1536",
+    "title": "Refill: delete remaining workspace/bootstrap/planning Python files from disk with removed-file ledger",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1536",
+    "baseline_commit": "646edf33f62c20ccbc4af7c99c27312e1a4c6069",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-1536",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1536?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1536-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1536_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1536-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "workspace_bootstrap_planning_py_files_before": 0,
+    "workspace_bootstrap_planning_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "workspace_bootstrap_planning": []
+  },
+  "residual_scan": {
+    "workspace": [],
+    "bootstrap": [],
+    "planning": [],
+    "bigclaw-go/internal/bootstrap": [],
+    "bigclaw-go/internal/planning": []
+  },
+  "replacement_paths": [
+    "docs/symphony-repo-bootstrap-template.md",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/planning/planning.go",
+    "bigclaw-go/internal/api/broker_bootstrap_surface.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1536(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "residual_area_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.200s"
+    }
+  },
+  "notes": [
+    "Current main checkout already has zero physical .py files, so this lane records an exact empty deletion ledger for the requested residual surface."
+  ]
+}
