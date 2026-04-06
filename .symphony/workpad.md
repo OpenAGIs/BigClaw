@@ -1,37 +1,29 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1541 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Confirm the `origin/main` baseline for the remaining `src/bigclaw` Python
+   sweep by recording the exact pre-change file count and exact file list.
+2. Record the physical deletion outcome for this issue, including an exact
+   deleted-file list even if the baseline is already empty.
+3. Add lane-scoped reporting artifacts and a targeted regression guard so the
+   `src/bigclaw` Python-free state remains enforced.
+4. Run targeted validation, record the exact commands and results, then commit
+   and push `BIG-GO-1541`.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- Remaining `src/bigclaw` `.py` files are physically absent from the
+  repository.
+- Before and after counts for `src/bigclaw` `.py` files are recorded.
+- The exact deleted-file list is recorded and matches the files removed by this
+  lane, including the empty-list case.
+- Targeted validation commands and results are recorded in repo-native
+  artifacts.
+- The change is committed and pushed on `BIG-GO-1541`.
 
 ## Validation
 
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `find src/bigclaw -type f -name '*.py' 2>/dev/null | sort`
+- `find src/bigclaw -type f -name '*.py' 2>/dev/null | wc -l`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1541(SrcBigclawHasNoPythonFiles|DeletionLedgerMatchesSweepState|LaneReportCapturesExactDeletedFileList)$'`
