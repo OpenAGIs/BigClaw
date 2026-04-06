@@ -7703,6 +7703,11 @@
           "author": "codex",
           "body": "Operational blocker note: branch `origin/BIG-GO-1516` is pushed and the public compare view is live at `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`, but this environment has no authenticated GitHub CLI session (`gh auth status` fails), so PR creation/inspection cannot be completed unattended from here.",
           "created_at": "2026-04-06T08:32:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Public-web verification note: the compare page at `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1` is reachable and shows the branch diff, but PR creation still requires GitHub authentication. This environment remains unauthenticated (`gh auth status` fails, no `GH_TOKEN` or `GITHUB_TOKEN` is present), so unattended PR creation or inspection cannot proceed.",
+          "created_at": "2026-04-06T08:45:00Z"
         }
       ],
       "created_at": "2026-04-06T08:20:00Z",
@@ -7715,7 +7720,7 @@
       "priority": 1,
       "state": "Done",
       "title": "Refill: workspace/bootstrap/planning residual Python file removal with exact deleted-file ledger",
-      "updated_at": "2026-04-06T08:32:00Z"
+      "updated_at": "2026-04-06T08:45:00Z"
     }
   ]
 }
