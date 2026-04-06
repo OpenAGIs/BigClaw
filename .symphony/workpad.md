@@ -29,6 +29,8 @@
 - The provided workspace started as an unborn repository with only `.git/`, so repository contents were materialized from `origin/main`.
 - A fresh shallow clone of `origin/main` was required because direct `git fetch` from the unborn checkout did not complete in a reasonable time.
 - Repository-wide Python scan on the actual upstream contents returned zero files before any code changes.
+- Remote verification against `origin/main` later in the run confirmed the latest upstream head is still `646edf33f62c20ccbc4af7c99c27312e1a4c6069`.
+- Historical residual-sweep branch `BIG-GO-1050-go-only-final-residual-sweep` still contains Python files, but it is `475` commits behind and `23` commits ahead of current `main`, so rebasing this ticket onto it would be a separate migration effort outside this issue's scope.
 
 ## Validation Results
 - `find . -type f -name '*.py' | wc -l`
@@ -37,6 +39,10 @@
   Result: no output
 - `git ls-files '*.py' | wc -l`
   Result: `0`
+- `git ls-remote --heads origin main`
+  Result: `646edf33f62c20ccbc4af7c99c27312e1a4c6069 refs/heads/main`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516RepositoryHasNoPythonFiles$'`
+  Result: `ok  	bigclaw-go/internal/regression	2.073s`
 - `git status --short`
   Result before commit: `.symphony/workpad.md` modified
 

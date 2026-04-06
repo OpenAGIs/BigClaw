@@ -1,0 +1,16 @@
+{
+  "issue": "BIG-GO-1527",
+  "branch": "BIG-GO-1527",
+  "date": "2026-04-06",
+  "upstream_main": "646edf33f62c20ccbc4af7c99c27312e1a4c6069",
+  "before_py_count": 0,
+  "after_py_count": 0,
+  "deleted_py_files": [],
+  "validation": {
+    "find_py_count": "0",
+    "git_ls_files_py_count": "0",
+    "regression_test": "ok"
+  },
+  "blocked": true,
+  "blocker_reason": "Latest origin/main already contains zero physical Python files, so no in-scope deletion remains available."
+}
