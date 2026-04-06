@@ -1,0 +1,46 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1515",
+    "title": "Refill: reporting and observability residual Python file removal with exact deleted-file ledger",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1515",
+    "push_target": "origin/BIG-GO-1515"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1515-reporting-observability-python-ledger.md",
+    "validation_report": "reports/BIG-GO-1515-validation.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1515_reporting_observability_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_before": 0,
+    "repo_py_after": 0,
+    "reporting_observability_paths": {
+      "reports": [],
+      "bigclaw-go/docs/reports": [],
+      "bigclaw-go/internal/reporting": [],
+      "bigclaw-go/internal/observability": []
+    }
+  },
+  "deleted_file_ledger": [],
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero before BIG-GO-1515 lane work, so there was no residual reporting or observability .py file left to delete."
+  },
+  "validation": {
+    "commands": [
+      "find /tmp/BIG-GO-1515-clone -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /tmp/BIG-GO-1515-clone/reports /tmp/BIG-GO-1515-clone/bigclaw-go/docs/reports /tmp/BIG-GO-1515-clone/bigclaw-go/internal/reporting /tmp/BIG-GO-1515-clone/bigclaw-go/internal/observability -type f -name '*.py' 2>/dev/null | sort",
+      "git diff --name-status --diff-filter=D",
+      "cd /tmp/BIG-GO-1515-clone/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1515(RepositoryPythonInventoryStaysZero|ReportingAndObservabilityPathsStayPythonFree|LedgerCapturesBlockedDeletionState)$'"
+    ],
+    "results": {
+      "repo_inventory": "none",
+      "reporting_observability_inventory": "none",
+      "deleted_file_ledger": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t2.306s"
+    }
+  }
+}
