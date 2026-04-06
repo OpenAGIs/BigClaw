@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1489",
-    "latest_commit": "PENDING_COMMIT",
+    "latest_commit": "defcac5",
     "push_target": "origin/BIG-GO-1489"
   },
   "artifacts": {
