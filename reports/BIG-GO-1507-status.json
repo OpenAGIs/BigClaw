@@ -1,0 +1,42 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1507",
+    "title": "Refill: repo-wide largest-residual Python directory sweep with before-after counts and exact deleted files",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1507",
+    "baseline_commit": "a63c8ec",
+    "push_target": "origin/BIG-GO-1507"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1507-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1507-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1507_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "before_repo_py_files": [],
+    "after_repo_py_files": [],
+    "largest_residual_python_directory": null,
+    "deleted_files": []
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "python_file_count=$(find . -path '*/.git' -prune -o -name '*.py' -type f -print | wc -l | tr -d ' '); printf '%s\\n' \"$python_file_count\"",
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sed 's#^./##' | awk -F/ 'NF { if (NF == 1) print \".\"; else print $1 }' | sort | uniq -c | sort -nr",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1507(RepositoryHasNoPythonFiles|LargestResidualDirectoryIsEmpty|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "repo_py_count": "0",
+      "largest_residual_directory_ranking": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.665s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The checked-out repository-wide physical Python file count was already zero before BIG-GO-1507 changes."
+  }
+}
