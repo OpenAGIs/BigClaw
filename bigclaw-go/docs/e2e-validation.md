@@ -5,7 +5,6 @@ This document covers real cluster smoke validation for the `Kubernetes` and `Ray
 ## Prerequisites
 
 - `go`
-- `python3`
 - BigClaw Go dependencies installed via `go mod tidy`
 - For `Kubernetes`:
   - a reachable cluster
@@ -63,7 +62,7 @@ You can then refresh the rolling continuation overlay from the checked-in bundle
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
+go run ./cmd/bigclawctl automation e2e continuation-scorecard --pretty
 ```
 
 This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` refreshes the scorecard automatically during closeout.
@@ -72,7 +71,7 @@ You can evaluate the checked-in continuation policy gate as a follow-up:
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
+go run ./cmd/bigclawctl automation e2e continuation-policy-gate --pretty
 ```
 
 This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout and now defaults unattended runs to `BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold`, so stale or incomplete evidence exits with code `2`.
@@ -94,7 +93,7 @@ export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
 export BIGCLAW_KUBERNETES_NAMESPACE=ray
 export BIGCLAW_KUBERNETES_IMAGE=alpine:3.20
 export BIGCLAW_QUEUE_BACKEND=sqlite
-python3 scripts/e2e/mixed_workload_matrix.py \
+go run ./cmd/bigclawctl automation e2e mixed-workload-matrix \
   --report-path docs/reports/mixed-workload-matrix-report.json
 ```
 
@@ -104,7 +103,7 @@ This validates one control-plane instance against a more production-like mix of 
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/external_store_validation.py \
+go run ./cmd/bigclawctl automation e2e external-store-validation \
   --report-path docs/reports/external-store-validation-report.json
 ```
 
@@ -116,7 +115,7 @@ The checked-in output lives at `docs/reports/external-store-validation-report.js
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue \
   --count 200 \
   --submit-workers 8 \
   --report-path docs/reports/multi-node-shared-queue-report.json
@@ -141,7 +140,7 @@ Use this deterministic local harness to exercise the same scenario ids without a
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/broker_failover_stub_matrix.py --pretty
+go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --pretty
 ```
 
 This refreshes `docs/reports/broker-failover-stub-report.json` plus per-scenario raw artifacts under `docs/reports/broker-failover-stub-artifacts/`. The stub backend is provider-neutral and deterministic, so sequence accounting, replay resume behavior, ambiguous publish resolution, and checkpoint fencing can be validated before a live Kafka / NATS / Redis adapter exists.
@@ -152,7 +151,7 @@ Use this to regenerate the executable local takeover harness report for lease-aw
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
+go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix --pretty
 ```
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
@@ -161,7 +160,7 @@ For the live proof path, run the shared-queue harness:
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/multi_node_shared_queue.py \
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue \
   --count 200 \
   --submit-workers 8 \
   --report-path docs/reports/multi-node-shared-queue-report.json \
@@ -176,7 +175,7 @@ Use this to regenerate the machine-readable coordination surface that ties toget
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/cross_process_coordination_surface.py --pretty
+go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --pretty
 ```
 
 This refreshes `docs/reports/cross-process-coordination-capability-surface.json` with the current live local proof metrics, takeover harness summary, capability-by-capability state, and the next runtime hooks for a real distributed coordination proof.
@@ -214,7 +213,7 @@ cd bigclaw-go
 export BIGCLAW_QUEUE_BACKEND=sqlite
 export BIGCLAW_QUEUE_SQLITE_PATH=./state/queue.db
 export BIGCLAW_AUDIT_LOG_PATH=./state/audit.jsonl
-python3 scripts/e2e/run_task_smoke.py \
+go run ./cmd/bigclawctl automation e2e run-task-smoke \
   --autostart \
   --go-root "$PWD" \
   --executor local \
@@ -261,7 +260,7 @@ export BIGCLAW_RAY_ADDRESS=ray://127.0.0.1:10001
 Optional overrides:
 
 ```bash
-export BIGCLAW_RAY_SMOKE_ENTRYPOINT='python -c "print(123)"'
+export BIGCLAW_RAY_SMOKE_ENTRYPOINT="sh -c 'echo 123'"
 export BIGCLAW_RAY_RUNTIME_ENV_JSON='{"env_vars":{"BIGCLAW_SMOKE":"1"}}'
 export BIGCLAW_RAY_SMOKE_REPORT_PATH=docs/reports/ray-live-smoke-report.json
 ./scripts/e2e/ray_smoke.sh

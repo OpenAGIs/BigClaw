@@ -1,49 +1,30 @@
-# BIG-GO-1480 Workpad
+# BIG-GO-1487
 
 ## Plan
-
-1. Audit the repository working tree, git state, and physical Python file count to establish the real baseline for this workspace.
-2. Identify any remaining physical Python assets or stale migration references that can be deleted within the issue scope.
-3. Apply only the minimal repo-scoped changes supported by the observed repository reality.
-4. Run targeted validation commands that prove the resulting Python file count and repository state.
-5. Commit the issue-scoped changes and push the branch to the configured remote.
+1. Materialize the repository from `origin` because the local checkout currently has no valid `HEAD` and only contains `.git`.
+2. Measure Python file counts by directory and select the largest directory for a smallest-valid refill sweep.
+3. Delete only Python assets in the chosen directory when they are not required for Go-only migration scope.
+4. Record exact before/after Python counts and the deleted file list in committed evidence.
+5. Run targeted validation commands, then commit and push the branch.
 
 ## Acceptance
-
-- Document the observed repository reality for this workspace, including the current physical Python file count.
-- Delete any issue-scoped stale Python assets or migration residue if present.
-- Record exact validation commands and results showing the repository moved closer to or is already at Go-only status.
-- Leave a commit on the issue branch and push it to the remote.
+- Repository Python file count is reduced in a real commit.
+- The sweep is largest-directory-first based on measured counts.
+- The change includes exact before/after counts and the deleted file list.
+- Validation commands and results are recorded.
+- Changes stay scoped to this issue.
 
 ## Validation
-
+- `git fetch origin`
+- `git checkout -B BIG-GO-1487 origin/main` or the appropriate base branch
+- `find . -type f -name '*.py' | wc -l`
+- Directory-level Python count command to prove largest-directory-first selection
+- `git diff --stat`
+- Targeted tests or validation commands relevant to the deleted assets
 - `git status --short`
-- `find . -type f \\( -name '*.py' -o -name '*.pyi' -o -name '*.pyw' \\) | sed 's#^./##' | sort`
-- `git ls-files | rg '\\.(py|pyi|pyw)$'`
-- Additional git inspection commands as needed to verify branch and remote state
 
-## Outcome
-
-- Baseline tracked Python count: `138`
-- Post-sweep tracked Python count: `23`
-- Net reduction: `115`
-- Deleted root Python ownership surfaces:
-  - `src/bigclaw/*.py`
-  - `tests/*.py`
-  - `scripts/create_issues.py`
-  - `scripts/dev_smoke.py`
-  - `scripts/ops/*.py` compatibility wrappers
-  - `setup.py`
-  - `bigclaw-go/internal/legacyshim/*`
-- Added audit record: `docs/reports/BIG-GO-1480-python-reality-audit.md`
-
-## Validation Results
-
-- `find . -type f \( -name '*.py' -o -name '*.pyi' -o -name '*.pyw' \) | sed 's#^./##' | sort | wc -l`
-  - Result: `23`
-- `git ls-files | rg '\.(py|pyi|pyw)$' | wc -l`
-  - Result: `23`
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/bootstrap ./internal/githubsync ./internal/refill`
-  - Result: passed
-- `cd bigclaw-go && go test ./...`
-  - Result: passed
+## Results
+- Materialized the issue workspace from `origin/BIG-GO-1480`, the nearest recent branch with residual Python assets (`23` total `*.py` files).
+- Largest directory before sweep: `bigclaw-go/scripts/e2e` with `15` Python files.
+- Total Python files after sweep: `8`.
+- Evidence file: `bigclaw-go/docs/reports/big-go-1487-python-asset-sweep.md`.
