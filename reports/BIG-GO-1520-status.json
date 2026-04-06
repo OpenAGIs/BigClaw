@@ -1,0 +1,50 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1520",
+    "title": "Refill: final repo-reality pass focused on reducing find . -name \"*.py\" count below 130",
+    "state": "Blocked"
+  },
+  "branch": {
+    "name": "BIG-GO-1520",
+    "baseline_commit": "a63c8ec",
+    "push_target": "origin/BIG-GO-1520"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1520-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1520_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1520-validation.md"
+  },
+  "counts": {
+    "before_repo_py_files": 0,
+    "after_repo_py_files": 0,
+    "priority_dirs": {
+      "src/bigclaw": 0,
+      "tests": 0,
+      "scripts": 0,
+      "bigclaw-go/scripts": 0
+    }
+  },
+  "deleted_file_evidence": {
+    "command": "git diff --name-status --diff-filter=D",
+    "result": []
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "git diff --name-status --diff-filter=D",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1520(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|LaneReportCapturesBlockedDeletionState)$'"
+    ],
+    "results": {
+      "repo_inventory": "none",
+      "priority_dir_inventory": "none",
+      "deleted_tracked_files": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.417s"
+    }
+  },
+  "blocker": {
+    "type": "repo-reality",
+    "summary": "The checked-out origin/main baseline already has zero physical .py files, so this lane cannot perform a real Python-file deletion."
+  }
+}
