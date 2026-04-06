@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1483",
+    "title": "Refill: remove remaining physical Python files under bigclaw-go/scripts by switching all checked-in callers to Go CLI",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1483",
+    "baseline_commit": "a63c8ec0",
+    "push_target": "origin/BIG-GO-1483"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1483-python-asset-sweep.md",
+    "validation_report": "reports/BIG-GO-1483-validation.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1483_checked_in_caller_cutover_test.go"
+  },
+  "before": {
+    "repo_py_files": 0,
+    "bigclaw_go_scripts_py_files": 0,
+    "checked_in_bigclaw_go_scripts_python_references": 23
+  },
+  "after": {
+    "repo_py_files": 0,
+    "bigclaw_go_scripts_py_files": 0,
+    "checked_in_bigclaw_go_scripts_python_references": 0
+  },
+  "validation": {
+    "commands": [
+      "git show a63c8ec0f999d976a1af890c920a54ac2d6c693a:docs/go-cli-script-migration-plan.md | rg -n 'bigclaw-go/scripts/.*\\.py' | wc -l | tr -d ' '",
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find bigclaw-go/scripts -type f -name '*.py' | sort",
+      "rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\\\\.py' README.md docs scripts .github bigclaw-go | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160|TestBIGGO1483|TestE2E'"
+    ],
+    "results": {
+      "baseline_reference_count": "23",
+      "repo_py_inventory": "none",
+      "bigclaw_go_scripts_py_inventory": "none",
+      "active_reference_scan": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.975s"
+    }
+  },
+  "notes": [
+    "The branch baseline already had zero physical Python files under bigclaw-go/scripts.",
+    "This lane removes the remaining checked-in migration-plan references to retired bigclaw-go/scripts Python entrypoints."
+  ]
+}

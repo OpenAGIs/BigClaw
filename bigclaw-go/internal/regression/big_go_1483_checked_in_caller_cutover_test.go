@@ -48,7 +48,7 @@ func TestBIGGO1483LaneReportCapturesCallerCutoverState(t *testing.T) {
 
 	for _, needle := range []string{
 		"BIG-GO-1483",
-		"Before update checked-in caller references to retired `bigclaw-go/scripts` Python paths: `1`.",
+		"Before update checked-in caller references to retired `bigclaw-go/scripts` Python paths: `23`.",
 		"After update checked-in caller references to retired `bigclaw-go/scripts` Python paths: `0`.",
 		"Before update physical Python files under `bigclaw-go/scripts`: `0`.",
 		"After update physical Python files under `bigclaw-go/scripts`: `0`.",

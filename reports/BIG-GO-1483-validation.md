@@ -1,16 +1,77 @@
 # BIG-GO-1483 Validation
 
+Date: 2026-04-06
+
+## Scope
+
 Issue: `BIG-GO-1483`
 
-## Summary
+Title: `Refill: remove remaining physical Python files under bigclaw-go/scripts by switching all checked-in callers to Go CLI`
 
-The current `BIG-GO-1483` branch baseline is already Python-free for
-`bigclaw-go/scripts` and for the repository as a whole. This lane therefore
-landed the remaining active caller/doc cleanup by removing deleted
-`bigclaw-go/scripts/*.py` path guidance from the live migration plan and
-keeping the supported surface on the Go CLI replacements.
+This lane found `bigclaw-go/scripts` already physically Python-free in the
+checked-out branch baseline, so the scoped implementation removes the last
+checked-in migration-plan references to retired `bigclaw-go/scripts/*.py`
+entrypoints and hardens that caller-cutover state with regression coverage.
 
-## Before / After Evidence
+## Before And After
+
+- Repository-wide physical `.py` files before: `0`
+- Repository-wide physical `.py` files after: `0`
+- `bigclaw-go/scripts/*.py` before: `0`
+- `bigclaw-go/scripts/*.py` after: `0`
+- Checked-in caller references to retired `bigclaw-go/scripts` Python entrypoints before: `23`
+- Checked-in caller references to retired `bigclaw-go/scripts` Python entrypoints after: `0`
+
+## Delivered Changes
+
+- Updated `docs/go-cli-script-migration-plan.md` so the `bigclaw-go/scripts`
+  slice now lists only Go CLI or retained shell/Go entrypoints.
+- Added `bigclaw-go/internal/regression/big_go_1483_checked_in_caller_cutover_test.go`
+  to lock the caller-cutover state and lane evidence.
+- Refreshed `bigclaw-go/internal/regression/big_go_1160_script_migration_test.go`
+  so the older migration guard now rejects stale `bigclaw-go/scripts/*.py`
+  references in the migration plan.
+- Added lane evidence in `bigclaw-go/docs/reports/big-go-1483-python-asset-sweep.md`.
+
+## Validation Commands
+
+- `git show a63c8ec0f999d976a1af890c920a54ac2d6c693a:docs/go-cli-script-migration-plan.md | rg -n 'bigclaw-go/scripts/.*\.py' | wc -l | tr -d ' '`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go/scripts -type f -name '*.py' | sort`
+- `rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\\.py' /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/README.md /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/docs /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160|TestBIGGO1483|TestE2E'`
+
+## Validation Results
+
+### Baseline stale-reference count
+
+Command:
+
+```bash
+git show a63c8ec0f999d976a1af890c920a54ac2d6c693a:docs/go-cli-script-migration-plan.md | rg -n 'bigclaw-go/scripts/.*\.py' | wc -l | tr -d ' '
+```
+
+Result:
+
+```text
+23
+```
+
+### Repository Python inventory
+
+Command:
+
+```bash
+find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483 -path '*/.git' -prune -o -name '*.py' -type f -print | sort
+```
+
+Result:
+
+```text
+
+```
+
+### `bigclaw-go/scripts` Python inventory
 
 Command:
 
@@ -18,114 +79,36 @@ Command:
 find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go/scripts -type f -name '*.py' | sort
 ```
 
-Before:
+Result:
 
 ```text
-<no output>
+
 ```
 
-After:
-
-```text
-<no output>
-```
-
-Count command:
-
-```bash
-find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go/scripts -type f -name '*.py' | wc -l
-```
-
-Count result:
-
-```text
-0
-```
-
-Caller reference command:
-
-```bash
-rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\.py' README.md docs scripts .github bigclaw-go | sort | wc -l
-```
-
-Caller reference result:
-
-```text
-0
-```
+### Active caller references after update
 
 Command:
 
 ```bash
-find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483 -type f -name '*.py' | sort
-```
-
-Before:
-
-```text
-<no output>
-```
-
-After:
-
-```text
-<no output>
-```
-
-Count command:
-
-```bash
-find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483 -type f -name '*.py' | wc -l
-```
-
-Count result:
-
-```text
-0
-```
-
-## Targeted Validation
-
-Command:
-
-```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160(MigrationDocsListGoReplacements|CandidatePythonFilesRemainDeleted)$'
+rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\\.py' /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/README.md /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/docs /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go | sort
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.314s
+
 ```
+
+### Targeted regression guard
 
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestE2EMigrationDocListsOnlyActiveEntrypoints'
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160|TestBIGGO1483|TestE2E'
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.182s
+ok  	bigclaw-go/internal/regression	1.975s
 ```
-
-Command:
-
-```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160(MigrationDocsListGoReplacements|CandidatePythonFilesRemainDeleted)$|TestBIGGO1483(MigrationPlanListsOnlyGoOrShellBigClawScriptEntrypoints|LaneReportCapturesCallerCutoverState)$|TestE2EMigrationDocListsOnlyActiveEntrypoints|TestE2EScriptDirectoryStaysPythonFree'
-```
-
-Result:
-
-```text
-ok  	bigclaw-go/internal/regression	0.284s
-```
-
-## Blocker
-
-The issue requirement to reduce the actual repository Python file count is not
-achievable from this branch baseline because the checked-out repository already
-contains zero tracked `.py` files before the change. This lane is limited to
-cleaning the remaining active Go-migration guidance and recording exact
-baseline evidence.
