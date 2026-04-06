@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1557",
+    "title": "Refill: repo-wide stubborn .py deletion sweep where the only success metric is lower physical file count",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-1557",
+    "baseline_commit": "646edf33",
+    "push_target": "origin/BIG-GO-1557"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1557-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1557_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1557-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "priority_residual_py_files_before": 0,
+    "priority_residual_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "priority_residual": []
+  },
+  "residual_scan": {
+    ".github": [],
+    "docs": [],
+    "scripts": [],
+    "bigclaw-go": []
+  },
+  "replacement_paths": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/internal/regression/regression.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find .github docs scripts bigclaw-go -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1557(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t5.073s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1557 changes, so the requested lower-count success metric cannot be satisfied in-branch."
+  },
+  "notes": [
+    "This lane records exact zero-file evidence and protects the current repo-wide Go-only baseline with a dedicated regression guard."
+  ]
+}
