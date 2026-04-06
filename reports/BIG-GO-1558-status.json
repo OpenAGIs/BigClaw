@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-1558",
     "baseline_commit": "646edf33",
-    "latest_commit": "pending",
+    "latest_commit": "47a860ba",
     "push_target": "origin/BIG-GO-1558",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1558?expand=1"
   },
@@ -47,6 +47,10 @@
       "examples_py_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t2.927s"
     }
+  },
+  "git": {
+    "push_result": "git push -u origin BIG-GO-1558 -> success",
+    "pull_request_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1558"
   },
   "blockers": [
     "Repository baseline already has zero physical .py files, so this lane cannot lower the count further in this checkout."
