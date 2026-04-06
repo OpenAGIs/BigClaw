@@ -345,8 +345,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="product-experience",
                 outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py "
-                    "tests/test_console_ia.py tests/test_ui_review.py -q"
+                    "bash scripts/ops/bigclawctl legacy-python compile-check --json && "
+                    "cd bigclaw-go && go test ./internal/legacyshim ./internal/product"
                 ),
                 capabilities=["release-gate", "console-shell", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
@@ -369,24 +369,6 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         capability="release-gate",
                         note="review objectives, wireframes, interaction coverage, and open questions",
                     ),
-                    EvidenceLink(
-                        label="ui-acceptance-tests",
-                        target="tests/test_design_system.py",
-                        capability="release-gate",
-                        note="role-permission, data accuracy, and performance audits",
-                    ),
-                    EvidenceLink(
-                        label="console-shell-tests",
-                        target="tests/test_console_ia.py",
-                        capability="release-gate",
-                        note="console shell and interaction draft release readiness",
-                    ),
-                    EvidenceLink(
-                        label="review-pack-tests",
-                        target="tests/test_ui_review.py",
-                        capability="release-gate",
-                        note="deterministic review packet validation",
-                    ),
                 ],
             ),
             CandidateEntry(
@@ -397,9 +379,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="engineering-operations",
                 outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
-                    "tests/test_saved_views.py tests/test_workflow.py tests/test_execution_flow.py "
-                    "tests/test_evaluation.py -q"
+                    "bash scripts/ops/bigclawctl legacy-python compile-check --json && "
+                    "cd bigclaw-go && go test ./internal/bootstrap ./internal/workflow ./internal/product ./internal/risk"
                 ),
                 capabilities=["ops-control", "saved-views", "rollback-simulation"],
                 evidence=["weekly-review", "validation-report"],
@@ -409,18 +390,6 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         target="src/bigclaw/operations.py",
                         capability="ops-control",
                         note="queue control center, dashboard builder, weekly review, and regression surfaces",
-                    ),
-                    EvidenceLink(
-                        label="command-center-tests",
-                        target="tests/test_control_center.py",
-                        capability="ops-control",
-                        note="queue control center validation",
-                    ),
-                    EvidenceLink(
-                        label="operations-tests",
-                        target="tests/test_operations.py",
-                        capability="ops-control",
-                        note="dashboard, weekly report, regression, and version-center coverage",
                     ),
                     EvidenceLink(
                         label="approval-contract",
@@ -435,40 +404,16 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         note="approval workflow and closeout flow wiring",
                     ),
                     EvidenceLink(
-                        label="workflow-tests",
-                        target="tests/test_workflow.py",
-                        capability="ops-control",
-                        note="approval flow validation",
-                    ),
-                    EvidenceLink(
-                        label="execution-flow-tests",
-                        target="tests/test_execution_flow.py",
-                        capability="ops-control",
-                        note="approval and execution handoff evidence",
-                    ),
-                    EvidenceLink(
                         label="saved-views-src",
                         target="src/bigclaw/saved_views.py",
                         capability="saved-views",
                         note="saved views, digest subscriptions, and governed filters",
                     ),
                     EvidenceLink(
-                        label="saved-views-tests",
-                        target="tests/test_saved_views.py",
-                        capability="saved-views",
-                        note="saved-view audit coverage",
-                    ),
-                    EvidenceLink(
                         label="simulation-src",
                         target="src/bigclaw/evaluation.py",
                         capability="rollback-simulation",
                         note="simulation, replay, and comparison evidence",
-                    ),
-                    EvidenceLink(
-                        label="simulation-tests",
-                        target="tests/test_evaluation.py",
-                        capability="rollback-simulation",
-                        note="replay and benchmark validation",
                     ),
                 ],
             ),
@@ -480,7 +425,8 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                 owner="orchestration-office",
                 outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
                 validation_command=(
-                    "PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_reports.py -q"
+                    "bash scripts/ops/bigclawctl legacy-python compile-check --json && "
+                    "cd bigclaw-go && go test ./internal/orchestrator ./internal/reporting ./internal/regression"
                 ),
                 capabilities=["commercialization", "handoff", "pilot-rollout"],
                 evidence=["pilot-evidence", "validation-report"],
@@ -496,18 +442,6 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                         target="src/bigclaw/reports.py",
                         capability="commercialization",
                         note="orchestration canvas, portfolio rollups, and narrative exports",
-                    ),
-                    EvidenceLink(
-                        label="orchestration-tests",
-                        target="tests/test_orchestration.py",
-                        capability="commercialization",
-                        note="handoff and policy decision validation",
-                    ),
-                    EvidenceLink(
-                        label="report-studio-tests",
-                        target="tests/test_reports.py",
-                        capability="commercialization",
-                        note="report exports and downstream evidence sharing",
                     ),
                 ],
             ),

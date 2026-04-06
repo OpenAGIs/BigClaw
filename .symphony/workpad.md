@@ -1,27 +1,23 @@
-## Codex Workpad
+# BIG-GO-1482
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+- Inventory the remaining checked-in Python files under `tests` and capture the before count.
+- Delete the legacy `tests` Python tree, including `conftest.py` and bootstrap-related test files.
+- Update live checked-in callers that still point at the deleted Python tests so the repo stays internally consistent.
+- Run targeted validation and record exact before/after evidence plus command results.
+- Commit the scoped changes and push branch `BIG-GO-1482`.
 
-### Plan
+## Acceptance
+- Tracked `.py` files under `tests` are materially reduced from the branch baseline.
+- `tests/conftest.py` and `tests/test_workspace_bootstrap.py` are removed with the rest of the legacy Python test tree.
+- Active repo callers no longer require the deleted `tests/*.py` paths.
+- Targeted validation commands are recorded with exact results.
+- The branch is committed and pushed to `origin/BIG-GO-1482`.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
-
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation
+- `find tests -maxdepth 1 -type f -name '*.py' | sort | wc -l`
+- `find tests -maxdepth 1 -type f -name '*.py' | sort`
+- `cd bigclaw-go && go test ./internal/bootstrap ./internal/legacyshim ./cmd/bigclawctl`
+- `python3 -m compileall src scripts/create_issues.py scripts/dev_smoke.py bigclaw-go/scripts`
+- `git status --short`
+- `git log --oneline -1`

@@ -30,7 +30,6 @@ that have not been cut over yet.
   - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
   - narrative report studio with section composing plus markdown, HTML, and plain-text export
   - v2 design-system token/component inventory with release-readiness audit reporting
-- `tests/`: unit tests
 
 ## Go mainline quick start (recommended)
 
@@ -78,7 +77,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
 pip install -e .[dev]
-python -m pytest
+python -m compileall src scripts/create_issues.py scripts/dev_smoke.py bigclaw-go/scripts
 ```
 
 Or use the legacy bootstrap helper:
@@ -87,12 +86,12 @@ Or use the legacy bootstrap helper:
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
-## Legacy Python local test (without editable install)
+## Legacy Python local validation (without editable install)
 
-If your environment has restrictive system-packages permissions, run tests with `PYTHONPATH`:
+If your environment has restrictive system-packages permissions, run compile checks with `PYTHONPATH`:
 
 ```bash
-PYTHONPATH=src python3 -m pytest
+PYTHONPATH=src python3 -m compileall src
 ```
 
 ## Go smoke verify
@@ -131,8 +130,8 @@ bash scripts/dev_bootstrap.sh
 Legacy Python migration surface:
 
 ```bash
-ruff check src tests scripts
-python -m pytest
+ruff check src scripts bigclaw-go/scripts
+python -m compileall src scripts/create_issues.py scripts/dev_smoke.py bigclaw-go/scripts
 python -m build
 pre-commit run --all-files
 ```

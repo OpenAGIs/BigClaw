@@ -14,7 +14,7 @@ if [ "${BIGCLAW_ENABLE_LEGACY_PYTHON:-0}" = "1" ]; then
   source "$repo_root/.venv/bin/activate"
   python -m pip install -U pip
   pip install -e "$repo_root[dev]"
-  python -m pytest
+  python -m compileall "$repo_root/src" "$repo_root/scripts/create_issues.py" "$repo_root/scripts/dev_smoke.py" "$repo_root/bigclaw-go/scripts"
   echo "BigClaw Go and legacy Python migration environments are ready."
 else
   echo "BigClaw Go development environment is ready."
