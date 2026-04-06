@@ -9,10 +9,13 @@ issue.
 Copy these files into the target repository:
 
 - `scripts/ops/bigclawctl`
-- `src/<your_package>/workspace_bootstrap.py`
-- `src/<your_package>/workspace_bootstrap_cli.py`
+- `workflow.md`
+- a repo-native bootstrap implementation such as `bigclaw-go/internal/bootstrap/bootstrap.go`
+- a repo-native planning implementation such as `bigclaw-go/internal/planning/planning.go`
 
-The shell entrypoint is generic; only the Python compatibility package path is repo-specific while a repo is still mid-migration.
+The shell entrypoint is generic. For Go-only repositories, keep the workspace
+bootstrap and planning flow repo-native instead of reintroducing Python
+compatibility modules that no longer exist on disk.
 
 ## Workflow hook template
 

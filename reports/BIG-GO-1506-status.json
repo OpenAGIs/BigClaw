@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1506",
+    "title": "Refill: remove remaining workspace/bootstrap/planning Python files still present on disk with delete ledger",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1506",
+    "latest_commit": "a73cbf31a72870b993b3e219d1daca4665e35dd6",
+    "push_target": "origin/BIG-GO-1506"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1506-validation.md",
+    "delete_ledger": "reports/BIG-GO-1506-delete-ledger.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1506-workspace-bootstrap-planning-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1506_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files_before": [],
+    "repo_py_files_after": [],
+    "scope_before": {
+      "scripts": [],
+      "bigclaw-go/internal/bootstrap": [],
+      "bigclaw-go/internal/planning": []
+    },
+    "scope_after": {
+      "scripts": [],
+      "bigclaw-go/internal/bootstrap": [],
+      "bigclaw-go/internal/planning": []
+    },
+    "deleted_files": []
+  },
+  "go_replacements": [
+    "docs/symphony-repo-bootstrap-template.md",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "workflow.md",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/planning/planning.go",
+    "bigclaw-go/internal/regression/big_go_1506_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1506(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningPathsStayPythonFree|GoReplacementPathsRemainAvailable|LaneArtifactsCaptureDeleteLedger)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "scope_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.554s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1506 changes."
+  },
+  "notes": [
+    "This lane records an empty delete ledger because the checkout was already physically Python-free.",
+    "The active bootstrap template now points at Go/native workspace/bootstrap/planning paths rather than nonexistent Python compatibility modules.",
+    "Baseline HEAD before lane changes was `a63c8ec`."
+  ]
+}
