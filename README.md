@@ -47,8 +47,9 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `bash scripts/ops/bigclawctl refill ...` is the supported refill entrypoint. The legacy
-  root workspace Python helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
+- `bash scripts/ops/bigclawctl refill ...` is the supported refill entrypoint. The deleted
+  `scripts/ops/bigclaw_refill_queue.py` wrapper stays retired, and the root workspace Python
+  helpers remain replaced by `bash scripts/ops/bigclawctl workspace ...`.
 - GitHub sync is no longer exposed through a Python wrapper; use
   `bash scripts/ops/bigclawctl github-sync ...`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,

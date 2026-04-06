@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1514",
+    "title": "Refill: scripts and scripts/ops deletion-first sweep targeting actual Python wrapper removal",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-1514",
+    "baseline_head": "a63c8ec",
+    "push_target": "origin/BIG-GO-1514"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1514-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1514-refill-wrapper-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1514_refill_wrapper_sweep_test.go"
+  },
+  "counts": {
+    "before_repo_py_files": 0,
+    "after_repo_py_files": 0,
+    "before_scripts_py_files": 0,
+    "after_scripts_py_files": 0
+  },
+  "deleted_file_evidence": {
+    "path": "scripts/ops/bigclaw_refill_queue.py",
+    "deletion_commit": "7f1d265e9deb6e3543bc41f23485d1e3c800c71d",
+    "commit_subject": "Remove legacy refill Python shim",
+    "git_summary_line": "delete mode 100755 scripts/ops/bigclaw_refill_queue.py"
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1514_refill_wrapper_sweep_test.go",
+    "scripts/ops/bigclawctl",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/internal/refill/queue.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts scripts/ops -type f -name '*.py' -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1514(ScriptsDirectoriesRemainPythonFree|RetiredRefillWrapperStaysDeleted|RefillWrapperDeletionEvidenceIsRecorded)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "scripts_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.491s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1514 changes."
+  }
+}
