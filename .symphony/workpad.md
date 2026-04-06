@@ -29,3 +29,11 @@
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+
+## Blocker
+
+- `origin/BIG-GO-1516` is pushed and the compare view is live at
+  `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`.
+- Unattended PR creation or inspection cannot be completed from this
+  environment because `gh auth status` reports no logged-in GitHub host and no
+  `GH_TOKEN` or `GITHUB_TOKEN` environment variable is present.
