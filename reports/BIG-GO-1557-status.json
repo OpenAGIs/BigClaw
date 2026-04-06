@@ -2,12 +2,14 @@
   "issue": {
     "identifier": "BIG-GO-1557",
     "title": "Refill: repo-wide stubborn .py deletion sweep where the only success metric is lower physical file count",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-1557",
     "baseline_commit": "646edf33",
-    "push_target": "origin/BIG-GO-1557"
+    "latest_commit": "75f8b1c3",
+    "push_target": "origin/BIG-GO-1557",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1557?expand=1"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
