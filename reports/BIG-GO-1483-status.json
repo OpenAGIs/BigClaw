@@ -38,7 +38,7 @@
       "repo_py_inventory": "none",
       "bigclaw_go_scripts_py_inventory": "none",
       "active_reference_scan": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.975s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.449s"
     }
   },
   "notes": [

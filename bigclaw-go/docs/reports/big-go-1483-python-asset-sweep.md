@@ -39,4 +39,4 @@ with the active Go CLI and retained wrapper surface.
 - `rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\\.py' README.md docs scripts .github bigclaw-go | sort`
   Result: no output; active checked-in caller references remained `0`.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160|TestBIGGO1483|TestE2E'`
-  Result: `ok  	bigclaw-go/internal/regression	1.975s`
+  Result: `ok  	bigclaw-go/internal/regression	3.449s`
