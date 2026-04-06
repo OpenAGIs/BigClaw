@@ -88,6 +88,8 @@ ok  	bigclaw-go/internal/regression	3.200s
 
 - Branch: `BIG-GO-1536`
 - Baseline HEAD before lane commit: `646edf33f62c20ccbc4af7c99c27312e1a4c6069`
-- Latest pushed HEAD before PR creation: `pending`
+- Latest pushed HEAD before PR creation: `68d9da50280b79f9fb275a1fbe16abee428f453a`
 - Push target: `origin/BIG-GO-1536`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1536?expand=1`
+- PR helper URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1536`
+- PR creation blocker in this environment: `gh` is installed but unauthenticated, so `gh pr view/create` cannot run without `gh auth login` or `GH_TOKEN`.
