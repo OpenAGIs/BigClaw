@@ -1,29 +1,33 @@
-# BIG-GO-1088 Workpad
+# BIG-GO-1511
 
 ## Plan
-- Confirm whether any tracked or untracked Python helpers still exist under `bigclaw-go/scripts/benchmark/`.
-- Trace the default execution path for benchmark automation to verify it is already Go/shell-only.
-- Compare current tree state with prior migration commits to determine whether `BIG-GO-1088` has already been satisfied upstream.
-- Record acceptance status, validation commands, and blocker evidence in a closeout note, then commit and push the scoped documentation update.
+- Capture baseline Python file counts for the repository and `src/bigclaw`.
+- Remove physically deletable Python modules from `src/bigclaw` that are no longer consumed by the active compatibility surface.
+- Trim `src/bigclaw/__init__.py` so package imports do not reference deleted modules.
+- Run targeted validation on the retained Python entrypoints and record exact commands plus results.
+- Commit and push the scoped deletion-first change set.
 
 ## Acceptance
-- `bigclaw-go/scripts/benchmark/` contains no Python files and exposes only Go/shell entrypoints.
-- The default benchmark execution path resolves through Go CLI commands and `run_suite.sh`, not Python helpers.
-- Validation captures the repo-level `.py` count and the benchmark-directory `.py` count with exact commands and outputs.
-- If no benchmark Python files remain to delete, the lane records that the issue's required physical deletion already landed before this branch.
+- The repository-wide `*.py` count decreases from the baseline.
+- The `src/bigclaw` `*.py` count decreases from the baseline.
+- Deleted-file evidence shows actual removals under `src/bigclaw`.
+- Remaining supported Python entrypoints still import/execute for the targeted checks.
+- Changes stay scoped to this issue.
 
 ## Validation
-- `find bigclaw-go/scripts/benchmark -maxdepth 1 -name '*.py' | wc -l`
-- `find . -name '*.py' | wc -l`
-- `git ls-tree -r --name-only HEAD bigclaw-go/scripts/benchmark`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run TestBenchmarkScriptsStayGoOnly -count=1`
-- `git show --stat --summary da168148 | sed -n '1,220p'`
-- `git show --stat --summary 9746a50c | sed -n '1,220p'`
+- `rg --files -g '*.py' | wc -l`
+- `rg --files src/bigclaw -g '*.py' | wc -l`
+- `git diff --name-status --diff-filter=D`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/audit_events.py src/bigclaw/collaboration.py src/bigclaw/deprecation.py src/bigclaw/models.py src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/risk.py src/bigclaw/run_detail.py src/bigclaw/runtime.py`
+- `PYTHONPATH=src python3 -m bigclaw --help`
+- `PYTHONPATH=src python3 - <<'PY' ... import bigclaw ... PY`
 
 ## Validation Results
-- `find bigclaw-go/scripts/benchmark -maxdepth 1 -name '*.py' | wc -l` -> `0`
-- `find . -name '*.py' | wc -l` -> `23`
-- `git ls-tree -r --name-only HEAD bigclaw-go/scripts/benchmark` -> `bigclaw-go/scripts/benchmark/run_suite.sh`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run TestBenchmarkScriptsStayGoOnly -count=1` -> `ok  	bigclaw-go/cmd/bigclawctl	0.415s`
-- `git show --stat --summary da168148 | sed -n '1,220p'` -> shows the original physical deletions of `bigclaw-go/scripts/benchmark/capacity_certification.py`, `bigclaw-go/scripts/benchmark/capacity_certification_test.py`, `bigclaw-go/scripts/benchmark/run_matrix.py`, and `bigclaw-go/scripts/benchmark/soak_local.py`
-- `git show --stat --summary 9746a50c | sed -n '1,220p'` -> shows the later enforcement pass that kept `bigclaw-go/scripts/benchmark/` Go-only and added regression coverage around the retained `run_suite.sh` wrapper
+- `rg --files -g '*.py' | wc -l` before -> `23`
+- `rg --files src/bigclaw -g '*.py' | wc -l` before -> `19`
+- `rg --files -g '*.py' | wc -l` after -> `16`
+- `rg --files src/bigclaw -g '*.py' | wc -l` after -> `12`
+- `git diff --name-status --diff-filter=D` -> deleted `src/bigclaw/console_ia.py`, `src/bigclaw/design_system.py`, `src/bigclaw/evaluation.py`, `src/bigclaw/governance.py`, `src/bigclaw/operations.py`, `src/bigclaw/planning.py`, and `src/bigclaw/ui_review.py`
+- `python3 -m py_compile src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/audit_events.py src/bigclaw/collaboration.py src/bigclaw/deprecation.py src/bigclaw/models.py src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/risk.py src/bigclaw/run_detail.py src/bigclaw/runtime.py` -> success
+- `PYTHONPATH=src python3 -m bigclaw --help` -> success; emitted the expected migration-only deprecation warning and printed CLI help
+- `PYTHONPATH=src python3 - <<'PY' ... import bigclaw ... PY` -> `import_ok True True`
