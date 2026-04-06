@@ -1,0 +1,83 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1534",
+    "title": "Refill: delete remaining scripts and scripts/ops wrapper .py files from disk with exact before-after evidence",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1534",
+    "baseline_commit": "646edf3",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-1534",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1534?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "validation_report": "reports/BIG-GO-1534-validation.md"
+  },
+  "counts": {
+    "historical_scripts_py_before": 7,
+    "historical_scripts_py_after": 0,
+    "current_branch_scripts_py_before": 0,
+    "current_branch_scripts_py_after": 0
+  },
+  "deleted_file_ledger": [
+    {
+      "commit": "997bc9b938a3dcd0462a8b94d3a60c8b3c336755",
+      "files": [
+        "scripts/create_issues.py",
+        "scripts/dev_smoke.py"
+      ]
+    },
+    {
+      "commit": "f63a72384d1474ed00b27403b78b14cb50b47d76",
+      "files": [
+        "scripts/ops/bigclaw_github_sync.py"
+      ]
+    },
+    {
+      "commit": "7f1d265e9deb6e3543bc41f23485d1e3c800c71d",
+      "files": [
+        "scripts/ops/bigclaw_refill_queue.py"
+      ]
+    },
+    {
+      "commit": "261a43fe14a0f801f71d49ebe7be4a6d6f26d5ce",
+      "files": [
+        "scripts/ops/bigclaw_workspace_bootstrap.py",
+        "scripts/ops/symphony_workspace_bootstrap.py",
+        "scripts/ops/symphony_workspace_validate.py"
+      ]
+    }
+  ],
+  "current_inventory": {
+    "scripts_py_files": []
+  },
+  "replacement_paths": [
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/ops/bigclawctl"
+  ],
+  "validation": {
+    "commands": [
+      "git ls-tree -r --name-only 56c8efbda59344f850890bfe2e8d835016ff1b3d -- scripts scripts/ops | rg '\\.py$' | sort",
+      "git ls-tree -r --name-only 56c8efbda59344f850890bfe2e8d835016ff1b3d -- scripts scripts/ops | rg '\\.py$' | sort | wc -l | tr -d ' '",
+      "git log --all --name-status --full-history -- 'scripts/*.py' 'scripts/ops/*.py'",
+      "git ls-tree -r --name-only 261a43fe14a0f801f71d49ebe7be4a6d6f26d5ce -- scripts scripts/ops | rg '\\.py$' | sort | wc -l | tr -d ' '",
+      "git ls-tree -r --name-only HEAD -- scripts scripts/ops | rg '\\.py$' | sort | wc -l | tr -d ' '",
+      "find scripts -type f -name '*.py' | sort | wc -l | tr -d ' '"
+    ],
+    "results": {
+      "historical_before_count": "7",
+      "historical_after_count": "0",
+      "current_head_count": "0",
+      "on_disk_count": "0"
+    }
+  },
+  "notes": [
+    "The physical root-script Python deletions were already present in upstream history before this lane started.",
+    "This lane adds auditable before/after evidence for the completed removal set and verifies the current branch remains free of scripts/*.py and scripts/ops/*.py files."
+  ]
+}

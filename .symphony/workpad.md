@@ -1,37 +1,30 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1534 Workpad
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Verify the current `scripts/` and `scripts/ops/` tree on the issue branch.
+2. Search full git history for `scripts/*.py` and `scripts/ops/*.py` to determine whether any physical deletions remain undone.
+3. Record exact before/after counts and the deleted-file ledger in lane artifacts.
+4. Run targeted validation commands for current inventory and historical deletion evidence.
+5. Commit the lane artifacts and push `BIG-GO-1534` to `origin`.
 
 ## Acceptance
-
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- Exact before/after counts for `scripts/*.py` and `scripts/ops/*.py` are captured.
+- Exact deleted-file evidence is captured with commit references.
+- Current repo state proves no `scripts/*.py` or `scripts/ops/*.py` files remain on disk.
+- The lane result is committed and pushed.
 
 ## Validation
+- `git ls-tree -r --name-only 56c8efbda59344f850890bfe2e8d835016ff1b3d -- scripts scripts/ops | rg '\\.py$' | sort`
+- `git log --all --name-status --full-history -- 'scripts/*.py' 'scripts/ops/*.py'`
+- `git ls-tree -r --name-only HEAD -- scripts scripts/ops | rg '\\.py$' | sort`
+- `find scripts -type f -name '*.py' | sort`
 
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+## Findings
+- Current `HEAD` has `0` tracked or on-disk `.py` files under `scripts/` and `scripts/ops/`.
+- Historical count at `56c8efbda59344f850890bfe2e8d835016ff1b3d` was `7`.
+- Historical deletion ledger:
+  - `997bc9b938a3dcd0462a8b94d3a60c8b3c336755`: `scripts/create_issues.py`, `scripts/dev_smoke.py`
+  - `f63a72384d1474ed00b27403b78b14cb50b47d76`: `scripts/ops/bigclaw_github_sync.py`
+  - `7f1d265e9deb6e3543bc41f23485d1e3c800c71d`: `scripts/ops/bigclaw_refill_queue.py`
+  - `261a43fe14a0f801f71d49ebe7be4a6d6f26d5ce`: `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_validate.py`
+- The branch requires an evidence-only closeout because the physical removals already landed upstream before this lane started.
