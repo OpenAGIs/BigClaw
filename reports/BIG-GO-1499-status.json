@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1499",
-    "latest_commit": "pending",
+    "latest_commit": "d3c69bdf45e84ba27a7b256b3c5bcc7acdb29282",
     "push_target": "origin/BIG-GO-1499"
   },
   "artifacts": {
@@ -59,6 +59,7 @@
   "notes": [
     "This lane records exact before/after counts, an explicit empty deleted-file ledger, and Go ownership or delete conditions for the existing zero-Python baseline.",
     "BIG-GO-1499 is scoped to regression prevention and auditable reporting because the branch entered the lane with no physical .py files.",
-    "Baseline HEAD before lane changes was `a63c8ec0`."
+    "Baseline HEAD before lane changes was `a63c8ec0`.",
+    "Code-bearing lane commit recorded in this status artifact is `d3c69bdf45e84ba27a7b256b3c5bcc7acdb29282`."
   ]
 }
