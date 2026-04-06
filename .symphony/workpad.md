@@ -1,37 +1,28 @@
-# BIG-GO-1516 Workpad
-
 ## Plan
 
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Establish the actual repository baseline from the current `main` tree and record the real `.py` file count.
+2. Inspect the working tree for any physically present Python files that can be removed without broadening scope.
+3. If removable Python files exist, delete only those files and record exact before/after evidence.
+4. Run targeted validation commands that prove the final repository `.py` count and show any removed-file evidence.
+5. Commit the result on `BIG-GO-1530` and push the branch to `origin`.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- The repository shows a verified before/after `.py` file count.
+- Any removed Python files are listed explicitly as exact evidence.
+- Validation commands and their results are recorded.
+- Changes remain scoped to this issue.
+- The branch is committed and pushed.
 
 ## Validation
 
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+- `rg --files -g '*.py' | wc -l`
+- `find . -name '*.py' | sort`
+- `git status --short`
+- If deletions occur: `git diff --name-status --diff-filter=D`
 
-## GitHub
+## Repo Reality
 
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- Current source tree was materialized from `origin/main` commit `646edf33f62c20ccbc4af7c99c27312e1a4c6069`.
+- Baseline `.py` count is currently `0`, which is already below the issue target threshold of `130`.
+- If no Python files are present, the success condition "decreasing the actual number of .py files" is blocked by repository reality and must be reported as such with exact command evidence.
