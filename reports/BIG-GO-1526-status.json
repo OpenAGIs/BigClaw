@@ -6,6 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1526",
+    "latest_commit": "816edad",
     "push_target": "origin/BIG-GO-1526",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1526?expand=1"
   },
@@ -44,5 +45,10 @@
       "residual_area_py_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.772s"
     }
+  },
+  "pull_request": {
+    "helper_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1526",
+    "query_status": "blocked",
+    "query_error": "gh is not authenticated in this environment"
   }
 }

@@ -83,3 +83,17 @@ Result:
 ```text
 ok  	bigclaw-go/internal/regression	0.772s
 ```
+
+## Git
+
+- Branch: `BIG-GO-1526`
+- Latest pushed HEAD: `816edad`
+- Push target: `origin/BIG-GO-1526`
+- Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1526?expand=1`
+- PR helper: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1526`
+
+## GitHub
+
+- `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-1526 --json url,title,state,number`
+  could not run successfully because `gh` is not authenticated in this
+  environment.

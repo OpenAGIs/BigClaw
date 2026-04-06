@@ -30,3 +30,11 @@
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+
+## GitHub
+
+- Branch pushed: `origin/BIG-GO-1526`
+- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1526?expand=1`
+- PR helper: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1526`
+- PR query/create from this environment is blocked because `gh` is not
+  authenticated.
