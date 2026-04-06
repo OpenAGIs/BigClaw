@@ -1,0 +1,8 @@
+{
+  "issue": "BIG-GO-1502",
+  "scope": "tests/bootstrap/conftest python asset sweep",
+  "before_repo_python_count": 0,
+  "after_repo_python_count": 0,
+  "deleted_files": [],
+  "note": "Current repository reality already contains zero physical .py files, so there were no in-scope test/bootstrap/conftest Python files to delete."
+}
