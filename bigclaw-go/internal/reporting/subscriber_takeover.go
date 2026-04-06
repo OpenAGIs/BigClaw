@@ -151,7 +151,7 @@ func BuildSubscriberTakeoverReport(now time.Time) map[string]any {
 				"docs/reports/event-bus-reliability-report.md",
 			},
 			"shared_queue_evidence": []string{
-				"scripts/e2e/multi_node_shared_queue.py",
+				"scripts/e2e/multi_node_shared_queue/main.go",
 				"docs/reports/multi-node-shared-queue-report.json",
 			},
 			"takeover_harness": []string{
