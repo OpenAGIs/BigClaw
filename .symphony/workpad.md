@@ -1,37 +1,20 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1533
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+- Initialize the local worktree from `origin/main` and create a local `BIG-GO-1533` branch if it does not already exist remotely.
+- Identify all remaining `.py` files under the BigClaw Go scripts directory, capture exact before evidence, and verify there are no other required changes outside this scope.
+- Delete the remaining targeted `.py` files from disk, then capture exact after evidence showing the count reaches zero.
+- Run targeted validation commands that prove the before/after counts and the deleted file list.
+- Commit the scoped change and push the branch to `origin`.
 
 ## Acceptance
-
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- Remaining `.py` files in the targeted BigClaw Go scripts directory are physically removed from the repository worktree.
+- Before and after evidence includes exact file paths and exact counts.
+- Changes are limited to the file deletions needed for this issue plus this workpad.
+- A git commit exists on branch `BIG-GO-1533` and is pushed to `origin`.
 
 ## Validation
-
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- Use `find` or `rg --files` to record the exact `.py` files under the target scripts directory before deletion.
+- Use the same command after deletion to confirm zero matching files remain.
+- Use `git status --short` and `git diff --name-status` to confirm only the intended files were removed.
+- Record the exact test and validation commands plus their results in the final report.
