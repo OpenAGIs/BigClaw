@@ -1,0 +1,16 @@
+{
+  "issue": "BIG-GO-1559",
+  "branch": "BIG-GO-1559",
+  "repository_python_count_before": 0,
+  "repository_python_count_after": 0,
+  "largest_residual_directory": "bigclaw-go/internal",
+  "largest_residual_directory_python_count_before": 0,
+  "largest_residual_directory_python_count_after": 0,
+  "deleted_files": [],
+  "validation": {
+    "repository_scan": "no output; count 0",
+    "residual_scan": "no output; count 0",
+    "targeted_go_test": "ok   bigclaw-go/internal/regression 0.484s"
+  },
+  "blocker": "Repository reality is already physically Python-free in this checkout, so the count cannot drop below the current baseline of 0."
+}
