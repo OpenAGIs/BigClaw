@@ -1,0 +1,61 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1486",
+    "title": "Refill: eliminate remaining workspace/bootstrap/planning Python helper files still counted in repo inventory",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1486",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1486'",
+    "push_target": "origin/BIG-GO-1486"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1486-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1486-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1486_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files_before": [],
+    "repo_py_files_after": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "docs/symphony-repo-bootstrap-template.md",
+    "docs/issue-plan.md",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/bootstrap/bootstrap_test.go",
+    "bigclaw-go/internal/planning/planning.go",
+    "bigclaw-go/internal/planning/planning_test.go",
+    "bigclaw-go/internal/regression/big_go_1486_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/bootstrap ./internal/planning ./internal/regression -run 'TestBIGGO1486(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|WorkspaceBootstrapAndPlanningPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory_before": "none",
+      "repo_py_inventory_after": "none",
+      "priority_dir_inventory": "none",
+      "targeted_go_tests": "ok   \tbigclaw-go/internal/bootstrap\t0.163s [no tests to run]\\nok   \tbigclaw-go/internal/planning\t0.254s [no tests to run]\\nok   \tbigclaw-go/internal/regression\t0.286s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1486 changes."
+  },
+  "notes": [
+    "This lane closes the workspace/bootstrap/planning refill gap with regression coverage and exact zero-inventory evidence.",
+    "No in-branch .py helper files remained to delete from the checked-out baseline, so the scope hardened the Go replacement surface instead.",
+    "Baseline HEAD before lane changes was `a63c8ec`."
+  ]
+}
