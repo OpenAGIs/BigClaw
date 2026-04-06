@@ -87,9 +87,9 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 
 	requiredRootDoc := []string{
 		"`BIG-GO-1160` extends that migration evidence",
-		"`bigclaw-go/scripts/migration/shadow_compare.py`",
-		"`scripts/create_issues.py`",
-		"`scripts/dev_smoke.py`",
+		"Those sweep areas are already Python-free in the current branch baseline",
+		"`bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`",
+		"`bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`",
 		"`bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`",
 	}
 	for _, needle := range requiredRootDoc {
