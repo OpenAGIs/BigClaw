@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"bigclaw-go/internal/bootstrap"
@@ -266,21 +267,23 @@ func runWorkspace(args []string) error {
 		return errors.New("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]")
 	}
 	command := args[0]
+	normalizedArgs := normalizeLegacyWorkspaceArgs(command, args[1:])
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
 	repoRoot := flags.String("repo", "..", "repo root")
 	workspace := flags.String("workspace", ".", "workspace")
 	workspaceRoot := flags.String("workspace-root", ".", "workspace root")
 	issue := flags.String("issue", "", "issue identifier")
-	repoURL := flags.String("repo-url", "", "repo url")
+	repoURL := flags.String("repo-url", defaultWorkspaceRepoURL(), "repo url")
 	defaultBranch := flags.String("default-branch", "main", "default branch")
 	cacheRoot := flags.String("cache-root", "", "cache root")
 	cacheBase := flags.String("cache-base", "~/.cache/symphony/repos", "cache base")
-	cacheKey := flags.String("cache-key", "", "cache key")
+	cacheKey := flags.String("cache-key", defaultWorkspaceCacheKey(), "cache key")
 	asJSON := flags.Bool("json", false, "json")
 	issuesCSV := flags.String("issues", "", "comma-separated issues")
 	reportPath := flags.String("report", "", "report path")
+	legacyReportPath := flags.String("report-file", "", "legacy alias for report path")
 	cleanup := flags.Bool("cleanup", true, "cleanup")
-	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl workspace %s [flags]", command), args[1:]); err != nil {
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl workspace %s [flags]", command), normalizedArgs); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			_, _ = os.Stdout.WriteString(helpText)
 			return nil
@@ -290,6 +293,9 @@ func runWorkspace(args []string) error {
 	resolvedRepoRoot := absPath(*repoRoot)
 	resolvedWorkspace := resolvePathAgainstRepoRoot(resolvedRepoRoot, *workspace)
 	resolvedWorkspaceRoot := resolvePathAgainstRepoRoot(resolvedRepoRoot, *workspaceRoot)
+	if *reportPath == "" && *legacyReportPath != "" {
+		*reportPath = *legacyReportPath
+	}
 	resolvedReportPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *reportPath)
 	switch command {
 	case "bootstrap":
@@ -1399,6 +1405,53 @@ func splitCSV(value string) []string {
 		items = append(items, current)
 	}
 	return items
+}
+
+func defaultWorkspaceRepoURL() string {
+	if value := strings.TrimSpace(os.Getenv("BIGCLAW_BOOTSTRAP_REPO_URL")); value != "" {
+		return value
+	}
+	return "git@github.com:OpenAGIs/BigClaw.git"
+}
+
+func defaultWorkspaceCacheKey() string {
+	if value := strings.TrimSpace(os.Getenv("BIGCLAW_BOOTSTRAP_CACHE_KEY")); value != "" {
+		return value
+	}
+	return "openagis-bigclaw"
+}
+
+func normalizeLegacyWorkspaceArgs(command string, args []string) []string {
+	if command != "validate" {
+		return append([]string(nil), args...)
+	}
+	normalized := make([]string, 0, len(args))
+	for i := 0; i < len(args); {
+		arg := args[i]
+		switch {
+		case arg == "--report-file" && i+1 < len(args):
+			normalized = append(normalized, "--report", args[i+1])
+			i += 2
+		case strings.HasPrefix(arg, "--report-file="):
+			normalized = append(normalized, "--report="+strings.SplitN(arg, "=", 2)[1])
+			i++
+		case arg == "--no-cleanup":
+			normalized = append(normalized, "--cleanup=false")
+			i++
+		case arg == "--issues":
+			issues := make([]string, 0, 1)
+			i++
+			for i < len(args) && !strings.HasPrefix(args[i], "-") {
+				issues = append(issues, args[i])
+				i++
+			}
+			normalized = append(normalized, "--issues", strings.Join(issues, ","))
+		default:
+			normalized = append(normalized, arg)
+			i++
+		}
+	}
+	return normalized
 }
 
 func isHelpToken(token string) bool {

@@ -64,8 +64,9 @@ Notes:
 - `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `python3 scripts/ops/bigclaw_refill_queue.py ...` and the legacy
-  `scripts/ops/*workspace*.py` helpers remain compatibility shims over the same Go CLI.
+- Refill and workspace operators should call `bash scripts/ops/bigclawctl refill ...`
+  or `bash scripts/ops/bigclawctl workspace ...` directly; the legacy
+  `scripts/ops/*.py` wrappers are deleted.
 - GitHub sync is no longer exposed through a Python wrapper; use
   `bash scripts/ops/bigclawctl github-sync ...`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
@@ -159,9 +160,8 @@ Repository: https://github.com/OpenAGIs/BigClaw
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
-the Go-first operator entrypoint is `scripts/ops/bigclawctl`; legacy Python
-ops wrappers remain only as compatibility shims during migration, except
-GitHub sync which is now Go/shell-only via `scripts/ops/bigclawctl`.
+the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the repo no
+longer retains Python ops wrappers in `scripts/ops`.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,

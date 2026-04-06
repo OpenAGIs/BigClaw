@@ -314,12 +314,95 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunWorkspaceValidateAcceptsLegacyWrapperFlags(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidateRemote(t, root)
+	workspaceRoot := filepath.Join(root, "legacy->workspaces")
+	cacheBase := filepath.Join(root, "repos")
+	reportPath := filepath.Join(root, "reports", "validate.json")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{
+		"validate",
+		"--workspace-root", workspaceRoot,
+		"--repo-url", remote,
+		"--cache-base", cacheBase,
+		"--issues", "BIG-1", "BIG-2",
+		"--report-file", reportPath,
+		"--no-cleanup",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run workspace validate with legacy flags: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"issue_identifiers"`)) || !bytes.Contains(output, []byte(`"BIG-1"`)) || !bytes.Contains(output, []byte(`"BIG-2"`)) {
+		t.Fatalf("expected legacy issues list in workspace validate output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`"cleanup_results": [`)) && bytes.Contains(output, []byte(`"removed": true`)) {
+		t.Fatalf("expected --no-cleanup legacy flag to suppress cleanup results, got %s", string(output))
+	}
+	if reportBody, err := os.ReadFile(reportPath); err != nil {
+		t.Fatalf("read legacy report path: %v", err)
+	} else if !bytes.Contains(reportBody, []byte(`"issue_identifiers"`)) {
+		t.Fatalf("expected report file to be written with validation payload, got %s", string(reportBody))
+	}
+}
+
+func TestRunWorkspaceBootstrapUsesLegacyWrapperDefaults(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidateRemote(t, root)
+	workspacePath := filepath.Join(root, "workspaces", "BIG-PAR-408")
+	cacheBase := filepath.Join(root, "repos")
+
+	t.Setenv("BIGCLAW_BOOTSTRAP_REPO_URL", remote)
+	t.Setenv("BIGCLAW_BOOTSTRAP_CACHE_KEY", "compat-cache")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{
+		"bootstrap",
+		"--workspace", workspacePath,
+		"--issue", "BIG-PAR-408",
+		"--cache-base", cacheBase,
+		"--json",
+	}); err != nil {
+		t.Fatalf("run workspace bootstrap with legacy defaults: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"cache_key": "compat-cache"`)) {
+		t.Fatalf("expected legacy cache-key default in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(workspacePath)) {
+		t.Fatalf("expected workspace path in bootstrap output, got %s", string(output))
+	}
+}
+
 func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoRoot := filepath.Join(t.TempDir(), "repo->")
 	for _, relativePath := range []string{
 		"src/bigclaw/service.py",
 		"src/bigclaw/__main__.py",
-		"src/bigclaw/legacy_shim.py",
 	} {
 		path := filepath.Join(repoRoot, relativePath)
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
