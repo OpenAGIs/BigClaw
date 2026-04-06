@@ -42,6 +42,12 @@
 ok  	bigclaw-go/internal/regression	0.145s
 ```
 
+`cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1537(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+
+```text
+ok  	bigclaw-go/internal/regression	1.158s
+```
+
 ### Conclusion
 - The checked-out repository already contains zero physical `.py` files.
 - There are no tracked `.py` files left to delete on `HEAD` or `origin/main`.

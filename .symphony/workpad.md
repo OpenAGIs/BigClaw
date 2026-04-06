@@ -20,7 +20,7 @@
 - `find . -type f -name '*.py' | wc -l`
 - `git ls-files '*.py'`
 - `git ls-tree -r --name-only HEAD | rg '\.py$'`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1537(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 

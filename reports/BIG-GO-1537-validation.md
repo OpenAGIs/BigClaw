@@ -30,10 +30,10 @@ The checked-out repository is already at a zero-Python baseline on `BIG-GO-1537`
 [no output]
 ```
 
-### `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+### `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1537(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ```text
-ok  	bigclaw-go/internal/regression	0.145s
+ok  	bigclaw-go/internal/regression	1.158s
 ```
 
 ## Conclusion
