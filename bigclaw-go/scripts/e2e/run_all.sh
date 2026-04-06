@@ -51,7 +51,7 @@ pids=()
 if [[ "$RUN_LOCAL" == "1" ]]; then
   (
     BIGCLAW_QUEUE_BACKEND=sqlite \
-      go run "$ROOT/cmd/bigclawctl" automation e2e run-task-smoke \
+      python3 "$ROOT/scripts/e2e/run_task_smoke.py" \
         --autostart \
         --go-root "$ROOT" \
         --executor local \
@@ -85,7 +85,7 @@ fi
 export_bundle() {
   go run "$ROOT/scripts/e2e/broker_bootstrap_summary.go" \
     --output "$ROOT/$BROKER_BOOTSTRAP_SUMMARY_PATH"
-  go run "$ROOT/cmd/bigclawctl" automation e2e export-validation-bundle \
+  python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
     --go-root "$ROOT" \
     --run-id "$RUN_ID" \
     --bundle-dir "$BUNDLE_DIR_REL" \
@@ -117,13 +117,12 @@ if ! export_bundle; then
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
-  go run "$ROOT/cmd/bigclawctl" automation e2e continuation-scorecard \
+  go run "$ROOT/cmd/bigclawctl" live-validation continuation-scorecard \
     --go-root "$ROOT" \
     --output "$CONTINUATION_SCORECARD_PATH"
 
   gate_status=0
-  if ! go run "$ROOT/cmd/bigclawctl" automation e2e continuation-policy-gate \
-    --go-root "$ROOT" \
+  if ! python3 "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.py" \
     --scorecard "$CONTINUATION_SCORECARD_PATH" \
     --enforcement-mode "$CONTINUATION_GATE_MODE" \
     --output "$CONTINUATION_POLICY_GATE_PATH"; then

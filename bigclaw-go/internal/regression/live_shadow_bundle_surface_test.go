@@ -152,7 +152,7 @@ func TestLiveShadowScorecardBundleStaysAligned(t *testing.T) {
 	if canonical.Ticket != "BIG-PAR-092" || canonical.Status != "repo-native-live-shadow-scorecard" {
 		t.Fatalf("unexpected canonical live-shadow scorecard identity: %+v", canonical)
 	}
-	if canonical.EvidenceInputs.GeneratorScript != "go run ./cmd/bigclawctl automation migration live-shadow-scorecard" {
+	if canonical.EvidenceInputs.GeneratorScript != "cd bigclaw-go && go run ./cmd/bigclawctl live-shadow scorecard" {
 		t.Fatalf("unexpected scorecard generator script: %+v", canonical.EvidenceInputs)
 	}
 	if canonical.Summary.TotalEvidenceRuns != 4 ||
@@ -261,8 +261,8 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 		t.Fatalf("unexpected live-shadow closeout/checkpoint data: checkpoints=%d commands=%d", len(summary.CutoverCheckpoints), len(summary.CloseoutCommands))
 	}
 	for _, command := range []string{
-		"go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
-		"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+		"go run ./cmd/bigclawctl live-shadow scorecard --pretty",
+		"go run ./cmd/bigclawctl live-shadow bundle",
 		"go test ./internal/regression -run TestRollbackDocsStayAligned",
 		"git push origin <branch> && git log -1 --stat",
 	} {

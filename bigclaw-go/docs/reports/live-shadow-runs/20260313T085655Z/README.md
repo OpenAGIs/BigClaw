@@ -39,8 +39,8 @@
 
 ## Workflow closeout commands
 
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty`
-- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
+- `cd bigclaw-go && go run ./cmd/bigclawctl live-shadow scorecard --pretty`
+- `cd bigclaw-go && go run ./cmd/bigclawctl live-shadow bundle`
 - `cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned`
 - `git push origin <branch> && git log -1 --stat`
 
@@ -57,11 +57,9 @@
 
 ## Parallel Follow-up Index
 
-- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
-  remaining live-shadow, rollback, and corpus-coverage follow-up digests behind
-  this run bundle.
-- For the two primary caveat tracks referenced by this bundle, see
-  `OPE-266` / `BIG-PAR-092` in
-  `docs/reports/live-shadow-comparison-follow-up-digest.md` and
-  `OPE-254` / `BIG-PAR-088` in
-  `docs/reports/rollback-safeguard-follow-up-digest.md`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the remaining live-shadow, rollback, and corpus-coverage follow-up digests behind `OPE-266` / `BIG-PAR-092` and `OPE-254` / `BIG-PAR-088`.
+- `docs/reports/live-shadow-comparison-follow-up-digest.md` keeps the `OPE-266` / `BIG-PAR-092` live shadow comparison caveats attached to this bundle.
+- `docs/reports/rollback-safeguard-follow-up-digest.md` keeps the `OPE-254` / `BIG-PAR-088` rollback guardrail caveats attached to this bundle.
+- Use `docs/reports/parallel-validation-matrix.md` first when a shadow review
+  needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the
+  shadow evidence bundle.

@@ -1,30 +1,30 @@
-# BIG-GO-1454 Workpad
+# BIG-GO-1485
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Land lane-scoped reporting and regression coverage that document the remaining inventory and pin the active Go/native replacement paths for `BIG-GO-1454`.
-3. Run targeted validation, capture exact commands and results in the lane artifacts, then commit and push the branch.
+- Establish the tracked Python-file baseline and identify the remaining reporting/observability Python helpers still used by checked-in live-shadow evidence flows.
+- Replace the scoped Python helpers with Go-owned implementations in `bigclaw-go`, update docs/tests/references to the Go entrypoints, and delete the retired Python files.
+- Rebuild the checked-in live-shadow bundle artifacts with the Go tools, run targeted validation, and capture exact before/after inventory evidence.
+- Commit the scoped change set on `BIG-GO-1485` and push the branch to `origin`.
 
 ## Acceptance
-
-- The lane records the remaining Python asset inventory for the repository and the priority residual directories.
-- The lane either removes physical Python files or, if none remain in-branch, documents the zero-Python baseline and keeps the sweep scoped to regression prevention.
-- The lane names the current Go/native replacement paths for the retired Python surface.
-- Exact validation commands and outcomes are recorded.
-- The change is committed and pushed to the remote branch.
+- Repository tracked Python file count decreases from the measured baseline.
+- The remaining live-shadow reporting/bundle workflow no longer depends on `bigclaw-go/scripts/migration/live_shadow_scorecard.py` or `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`.
+- Checked-in docs, JSON artifacts, and regression tests reference the Go-owned workflow.
+- Targeted tests covering the migrated live-shadow reporting/bundle surfaces pass.
 
 ## Validation
+- `rg --files -g '*.py' | wc -l`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadowBundleSurface|TestProductionCorpusSurface'`
+- `cd bigclaw-go && go test ./...`
+- Regenerate the live-shadow scorecard/bundle artifacts with the new Go command(s) and confirm the updated checked-in files match the expected shape.
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+## Results
+- Baseline repository Python inventory: `138` via `rg --files -g '*.py' | wc -l`
+- Final repository Python inventory: `132` via `rg --files -g '*.py' | wc -l`
+- Replaced the live-shadow scorecard/bundle helpers and the validation-bundle continuation scorecard helper with Go-owned `bigclawctl` commands, migrated helper-specific coverage into `bigclaw-go/internal/liveshadow` and `bigclaw-go/internal/validationbundle`, and removed the retired Python-only helper files/tests from the workspace inventory.
+- Regenerated the checked-in live-shadow scorecard and bundle artifacts with fixed historical `--generated-at` timestamps so the migration changes ownership/tooling without drifting the underlying evidence semantics.
 
-## Execution Notes
-
-- 2026-04-06: Initial inventory on baseline commit `aeab7a1` confirmed no physical `.py` files anywhere in the checkout, including `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- 2026-04-06: This lane is therefore scoped as a documentation and regression-hardening sweep for the existing Go-only baseline.
-- 2026-04-06: Added `bigclaw-go/docs/reports/big-go-1454-python-asset-sweep.md`, `bigclaw-go/internal/regression/big_go_1454_zero_python_guard_test.go`, `reports/BIG-GO-1454-validation.md`, and `reports/BIG-GO-1454-status.json` to record and protect the zero-Python baseline for this lane.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
-- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.778s`.
+## Validation Results
+- `cd bigclaw-go && go test ./internal/liveshadow ./cmd/bigclawctl` -> `ok`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBundleFollowUpIndexDocsStayAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowScorecardBundleStaysAligned|TestLiveShadowBundleSummaryAndIndexStayAligned|TestProductionCorpusMatrixManifestAlignment|TestProductionCorpusDriftRollupStaysAligned'` -> `ok`
+- `cd bigclaw-go && go test ./...` -> `ok`

@@ -15,7 +15,10 @@ import (
 
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/githubsync"
+	"bigclaw-go/internal/legacyshim"
+	"bigclaw-go/internal/liveshadow"
 	"bigclaw-go/internal/refill"
+	"bigclaw-go/internal/validationbundle"
 )
 
 const (
@@ -113,22 +116,16 @@ func run(args []string) int {
 		err = runGitHubSync(args[1:])
 	case "workspace":
 		err = runWorkspace(args[1:])
-	case "automation":
-		err = runAutomation(args[1:])
+	case "live-shadow":
+		err = runLiveShadow(args[1:])
+	case "live-validation":
+		err = runLiveValidation(args[1:])
 	case "refill":
 		err = runRefill(args[1:])
 	case "local-issues":
 		err = runLocalIssues(args[1:])
-	case "create-issues":
-		err = runCreateIssues(args[1:])
-	case "dev-smoke":
-		err = runDevSmoke(args[1:])
-	case "symphony":
-		err = runSymphony(args[1:])
-	case "issue":
-		err = runIssue(args[1:])
-	case "panel":
-		err = runPanel(args[1:])
+	case "legacy-python":
+		err = runLegacyPython(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -137,6 +134,57 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runLegacyPython(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check> [flags]\n")
+		return nil
+	}
+	if len(args) == 0 {
+		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
+	repoRoot := flags.String("repo", "..", "repo root")
+	pythonBin := flags.String("python", "python3", "python executable")
+	asJSON := flags.Bool("json", false, "json")
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl legacy-python %s [flags]", command), args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	switch command {
+	case "compile-check":
+		result, err := legacyshim.CompileCheck(absPath(*repoRoot), *pythonBin)
+		if err != nil {
+			payload := map[string]any{
+				"status": "error",
+				"repo":   absPath(*repoRoot),
+				"python": *pythonBin,
+				"files":  result.Files,
+				"error":  err.Error(),
+			}
+			if result.Output != "" {
+				payload["output"] = result.Output
+			}
+			return emit(payload, *asJSON, 1)
+		}
+		payload := map[string]any{
+			"status": "ok",
+			"repo":   absPath(*repoRoot),
+			"python": result.Python,
+			"files":  result.Files,
+		}
+		if result.Output != "" {
+			payload["output"] = result.Output
+		}
+		return emit(payload, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown legacy-python subcommand: %s", command)
+	}
 }
 
 func runGitHubSync(args []string) error {
@@ -263,7 +311,6 @@ func runWorkspace(args []string) error {
 		}
 		if *asJSON {
 			encoder := json.NewEncoder(os.Stdout)
-			encoder.SetEscapeHTML(false)
 			encoder.SetIndent("", "  ")
 			return encoder.Encode(report)
 		}
@@ -271,6 +318,156 @@ func runWorkspace(args []string) error {
 		return err
 	default:
 		return fmt.Errorf("unknown workspace subcommand: %s", command)
+	}
+}
+
+func runLiveShadow(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl live-shadow <scorecard|bundle> [flags]\n")
+		return nil
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("live-shadow "+command, flag.ContinueOnError)
+	repoRoot := flags.String("repo-root", "..", "repo root")
+	goRoot := flags.String("go-root", "bigclaw-go", "bigclaw-go directory relative to repo root")
+	asJSON := flags.Bool("json", false, "json")
+	pretty := flags.Bool("pretty", false, "pretty-print result to stdout")
+	shadowCompareReport := flags.String("shadow-compare-report", "", "shadow compare report path")
+	shadowMatrixReport := flags.String("shadow-matrix-report", "", "shadow matrix report path")
+	output := flags.String("output", "", "scorecard output path")
+	scorecardReport := flags.String("scorecard-report", "docs/reports/live-shadow-mirror-scorecard.json", "scorecard report path")
+	bundleRoot := flags.String("bundle-root", "docs/reports/live-shadow-runs", "bundle root")
+	summaryPath := flags.String("summary-path", "docs/reports/live-shadow-summary.json", "summary path")
+	indexPath := flags.String("index-path", "docs/reports/live-shadow-index.md", "index path")
+	manifestPath := flags.String("manifest-path", "docs/reports/live-shadow-index.json", "manifest path")
+	rollupPath := flags.String("rollup-path", "docs/reports/live-shadow-drift-rollup.json", "rollup path")
+	runID := flags.String("run-id", "", "run id")
+	generatedAtValue := flags.String("generated-at", "", "override generated-at timestamp (RFC3339)")
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl live-shadow %s [flags]", command), args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+
+	resolvedRepoRoot := absPath(*repoRoot)
+	resolvedGoRoot := resolvePathAgainstRepoRoot(resolvedRepoRoot, *goRoot)
+	generatedAt, err := parseOptionalTime(*generatedAtValue)
+	if err != nil {
+		return fmt.Errorf("parse generated-at: %w", err)
+	}
+	switch command {
+	case "scorecard":
+		comparePath := trim(*shadowCompareReport)
+		if comparePath == "" {
+			comparePath = filepath.ToSlash(filepath.Join(*goRoot, "docs/reports/shadow-compare-report.json"))
+		}
+		matrixPath := trim(*shadowMatrixReport)
+		if matrixPath == "" {
+			matrixPath = filepath.ToSlash(filepath.Join(*goRoot, "docs/reports/shadow-matrix-report.json"))
+		}
+		scorecard, err := liveshadow.BuildScorecard(resolvedRepoRoot, comparePath, matrixPath, generatedAt.UTC())
+		if err != nil {
+			return err
+		}
+		destination := trim(*output)
+		if destination == "" {
+			destination = filepath.ToSlash(filepath.Join(*goRoot, "docs/reports/live-shadow-mirror-scorecard.json"))
+		}
+		if err := liveshadow.WriteScorecard(resolvePathAgainstRepoRoot(resolvedRepoRoot, destination), scorecard); err != nil {
+			return err
+		}
+		if *asJSON || *pretty {
+			encoder := json.NewEncoder(os.Stdout)
+			if *pretty {
+				encoder.SetIndent("", "  ")
+			}
+			return encoder.Encode(scorecard)
+		}
+		return nil
+	case "bundle":
+		comparePath := trim(*shadowCompareReport)
+		if comparePath == "" {
+			comparePath = "docs/reports/shadow-compare-report.json"
+		}
+		matrixPath := trim(*shadowMatrixReport)
+		if matrixPath == "" {
+			matrixPath = "docs/reports/shadow-matrix-report.json"
+		}
+		manifest, err := liveshadow.ExportBundle(liveshadow.BundleOptions{
+			GoRoot:            resolvedGoRoot,
+			ShadowComparePath: comparePath,
+			ShadowMatrixPath:  matrixPath,
+			ScorecardPath:     *scorecardReport,
+			BundleRoot:        *bundleRoot,
+			SummaryPath:       *summaryPath,
+			IndexPath:         *indexPath,
+			ManifestPath:      *manifestPath,
+			RollupPath:        *rollupPath,
+			RunID:             *runID,
+		}, generatedAt.UTC())
+		if err != nil {
+			return err
+		}
+		encoder := json.NewEncoder(os.Stdout)
+		if *asJSON || *pretty || true {
+			encoder.SetIndent("", "  ")
+		}
+		return encoder.Encode(manifest)
+	default:
+		return fmt.Errorf("unknown live-shadow subcommand: %s", command)
+	}
+}
+
+func runLiveValidation(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl live-validation <continuation-scorecard> [flags]\n")
+		return nil
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("live-validation "+command, flag.ContinueOnError)
+	goRoot := flags.String("go-root", ".", "bigclaw-go repo root")
+	indexManifestPath := flags.String("index-manifest", "docs/reports/live-validation-index.json", "index manifest path")
+	bundleRootPath := flags.String("bundle-root", "docs/reports/live-validation-runs", "bundle root path")
+	summaryPath := flags.String("summary", "docs/reports/live-validation-summary.json", "latest summary path")
+	sharedQueueReport := flags.String("shared-queue-report", "docs/reports/multi-node-shared-queue-report.json", "shared queue report path")
+	outputPath := flags.String("output", "docs/reports/validation-bundle-continuation-scorecard.json", "output path")
+	pretty := flags.Bool("pretty", false, "pretty-print report to stdout")
+	generatedAtValue := flags.String("generated-at", "", "override generated-at timestamp (RFC3339)")
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl live-validation %s [flags]", command), args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	generatedAt, err := parseOptionalTime(*generatedAtValue)
+	if err != nil {
+		return fmt.Errorf("parse generated-at: %w", err)
+	}
+	switch command {
+	case "continuation-scorecard":
+		report, err := validationbundle.BuildContinuationScorecard(
+			absPath(*goRoot),
+			*indexManifestPath,
+			*bundleRootPath,
+			*summaryPath,
+			*sharedQueueReport,
+			*outputPath,
+			generatedAt.UTC(),
+		)
+		if err != nil {
+			return err
+		}
+		if *pretty {
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetIndent("", "  ")
+			return encoder.Encode(report)
+		}
+		return nil
+	default:
+		return fmt.Errorf("unknown live-validation subcommand: %s", command)
 	}
 }
 
@@ -405,10 +602,6 @@ func runRefillSeed(args []string) error {
 		}
 		return err
 	}
-	visitedFlags := map[string]bool{}
-	flags.Visit(func(flag *flag.Flag) {
-		visitedFlags[flag.Name] = true
-	})
 
 	identifier := trim(*options.identifier)
 	if identifier == "" {
@@ -473,27 +666,7 @@ func runRefillSeed(args []string) error {
 		if existing, found := store.FindIssue(identifier); found {
 			localAction = "exists"
 			localState = existing.State
-			labels := []string{}
-			for _, label := range splitCSV(*options.labelsCSV) {
-				if trimmed := trim(label); trimmed != "" {
-					labels = append(labels, trimmed)
-				}
-			}
-			updatedIssue, metadataChanged, err := store.UpdateIssue(identifier, refill.LocalIssueUpdateParams{
-				Title:            stringPointerIfVisited(title, visitedFlags["title"]),
-				Description:      stringPointerIfVisited(*options.description, visitedFlags["description"]),
-				Priority:         intPointerIfVisited(*options.priority, visitedFlags["priority"]),
-				Labels:           stringSlicePointerIfVisited(labels, visitedFlags["labels"]),
-				AssignedToWorker: boolPointerIfVisited(*options.assigned, visitedFlags["assigned-to-worker"]),
-			}, when)
-			if err != nil {
-				return err
-			}
-			if metadataChanged {
-				existing = updatedIssue
-				localAction = "updated"
-			}
-			if *options.setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(stateName) {
+			if *options.setStateIfExists && existing.State != stateName {
 				localState, err = store.UpdateIssueState(identifier, stateName, when)
 				if err != nil {
 					return err
@@ -576,14 +749,14 @@ func runLocalIssues(args []string) error {
 		issues := store.Issues()
 		stateFilter := map[string]struct{}{}
 		for _, state := range splitCSV(*statesCSV) {
-			if normalized := refill.NormalizeStateName(state); normalized != "" {
-				stateFilter[normalized] = struct{}{}
+			if trimmed := trim(state); trimmed != "" {
+				stateFilter[trimmed] = struct{}{}
 			}
 		}
 		filtered := make([]refill.LocalIssue, 0, len(issues))
 		for _, issue := range issues {
 			if len(stateFilter) != 0 {
-				if _, ok := stateFilter[refill.NormalizeStateName(issue.State)]; !ok {
+				if _, ok := stateFilter[issue.State]; !ok {
 					continue
 				}
 			}
@@ -591,7 +764,6 @@ func runLocalIssues(args []string) error {
 		}
 		if *asJSON {
 			encoder := json.NewEncoder(os.Stdout)
-			encoder.SetEscapeHTML(false)
 			encoder.SetIndent("", "  ")
 			return encoder.Encode(map[string]any{
 				"status":       "ok",
@@ -684,10 +856,6 @@ func runLocalIssues(args []string) error {
 			}
 			return err
 		}
-		visitedFlags := map[string]bool{}
-		flags.Visit(func(flag *flag.Flag) {
-			visitedFlags[flag.Name] = true
-		})
 		trimmedIdentifier := trim(*identifier)
 		if trimmedIdentifier == "" {
 			return errors.New("identifier is required")
@@ -716,21 +884,7 @@ func runLocalIssues(args []string) error {
 		}
 		if found {
 			action = "exists"
-			updatedIssue, metadataChanged, err := store.UpdateIssue(trimmedIdentifier, refill.LocalIssueUpdateParams{
-				Title:            stringPointerIfVisited(*title, visitedFlags["title"]),
-				Description:      stringPointerIfVisited(*description, visitedFlags["description"]),
-				Priority:         intPointerIfVisited(*priority, visitedFlags["priority"]),
-				Labels:           stringSlicePointerIfVisited(labels, visitedFlags["labels"]),
-				AssignedToWorker: boolPointerIfVisited(*assigned, visitedFlags["assigned-to-worker"]),
-			}, when)
-			if err != nil {
-				return err
-			}
-			if metadataChanged {
-				existing = updatedIssue
-				action = "updated"
-			}
-			if *setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(state) {
+			if *setStateIfExists && existing.State != state {
 				if when.IsZero() {
 					when = time.Now()
 				}
@@ -805,20 +959,6 @@ func runLocalIssues(args []string) error {
 		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath))
 		if err != nil {
 			return err
-		}
-		existing, found := store.FindIssue(*issueRef)
-		if !found {
-			return refill.ErrLocalIssueNotFound
-		}
-		if refill.NormalizeStateName(existing.State) == refill.NormalizeStateName(*stateName) {
-			return emit(map[string]any{
-				"status":       "ok",
-				"backend":      "local",
-				"action":       "exists",
-				"issue":        existing.Identifier,
-				"state":        existing.State,
-				"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
-			}, *asJSON, 0)
 		}
 		updatedState, err := store.UpdateIssueState(*issueRef, *stateName, when)
 		if err != nil {
@@ -1073,11 +1213,8 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	queueStatusUpdates := 0
 	queueRecentBatchUpdates := 0
 	queueStatusWritten := false
-	queueStatusSynced := false
-	recentBatchesSynced := false
 	recentBatchesUpdated := false
 	recentBatchesWritten := false
-	markdownWritten := false
 	var allIssues []refill.TrackedIssue
 	var err error
 	if client.backend() == "local" {
@@ -1086,30 +1223,23 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 			return err
 		}
 	}
-	if client.backend() == "local" {
+	if syncQueueStatus && client.backend() == "local" {
 		issueStates := refill.IssueStateMap(allIssues)
-		queueStatusUpdates = queue.StatusSyncUpdatesForStates(issueStates)
-		queueRecentBatchUpdates = queue.RecentBatchSyncUpdatesForStates(issueStates)
-		queueStatusSynced = queueStatusUpdates == 0
-		recentBatchesSynced = queueRecentBatchUpdates == 0
-		if syncQueueStatus {
-			queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
-			queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
-			if apply {
-				queueStatusSynced = true
-				recentBatchesSynced = true
+		queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
+		queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
+		if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
+			if err := queue.Save(); err != nil {
+				return err
 			}
-			if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
-				if err := queue.Save(); err != nil {
-					return err
-				}
-				queueStatusWritten = queueStatusUpdates > 0
-				recentBatchesWritten = queueRecentBatchUpdates > 0
-			}
+			queueStatusWritten = true
 		}
 	}
 
-	statesToFetch := queue.FetchStateNames()
+	refillStates := make([]string, 0, len(queue.RefillStates()))
+	for state := range queue.RefillStates() {
+		refillStates = append(refillStates, state)
+	}
+	statesToFetch := append([]string{"In Progress"}, refillStates...)
 	issues := []refill.TrackedIssue{}
 	if client.backend() == "local" {
 		issues = allIssues
@@ -1121,22 +1251,16 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	}
 	stateMap := refill.IssueStateMap(issues)
 	liveStateMap := stateMap
-	markdownGeneratedAt := time.Now().UTC()
 	if client.backend() == "local" {
 		liveStateMap = refill.IssueStateMap(allIssues)
-		if apply {
-			recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
-			if recentBatchesUpdated {
-				recentBatchesSynced = true
-			}
-		}
+		recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
 	}
 	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {
 		if err := queue.Save(); err != nil {
 			return err
 		}
-		queueStatusWritten = queueStatusWritten || queueStatusUpdates > 0
-		recentBatchesWritten = recentBatchesWritten || recentBatchesUpdated
+		queueStatusWritten = queueStatusUpdates > 0
+		recentBatchesWritten = recentBatchesUpdated
 	}
 	active := map[string]struct{}{}
 	issueIDs := map[string]string{}
@@ -1144,53 +1268,33 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		if issue.Identifier != "" && issue.ID != "" {
 			issueIDs[issue.Identifier] = issue.ID
 		}
-		if refill.NormalizeStateName(issue.StateName) == refill.NormalizeStateName(queue.ActivateStateName()) {
+		if issue.StateName == "In Progress" {
 			active[issue.Identifier] = struct{}{}
 		}
 	}
 	candidates := queue.SelectCandidates(active, stateMap, targetOverride)
-	if client.backend() == "local" && apply && trim(markdownPath) != "" {
-		previewQueue, err := queue.Clone()
-		if err != nil {
-			return err
-		}
-		projectedStates := map[string]string{}
-		for identifier, state := range liveStateMap {
-			projectedStates[identifier] = state
-		}
-		for _, identifier := range candidates {
-			projectedStates[identifier] = queue.ActivateStateName()
-		}
-		previewQueue.SyncStatusFromStates(projectedStates)
-		previewQueue.RefreshRecentBatchesFromStates(projectedStates)
-		markdownWritten, err = previewQueue.MarkdownNeedsWrite(markdownPath, markdownGeneratedAt)
-		if err != nil {
-			return err
-		}
-	}
 	target := queue.TargetInProgress()
 	if targetOverride != nil {
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress":         refill.SortedActive(issues, queue.ActivateStateName()),
+		"active_in_progress":         refill.SortedActive(issues),
 		"backend":                    client.backend(),
 		"target_in_progress":         target,
 		"candidates":                 candidates,
 		"mode":                       map[bool]string{true: "apply", false: "dry-run"}[apply],
-		"recent_batches_synced":      recentBatchesSynced,
+		"recent_batches_synced":      client.backend() == "local",
 		"recent_batches_updated":     recentBatchesUpdated,
 		"recent_batches_written":     recentBatchesWritten,
-		"queue_status_synced":        queueStatusSynced,
+		"queue_status_synced":        syncQueueStatus && client.backend() == "local",
 		"queue_status_updates":       queueStatusUpdates,
 		"queue_recent_batch_updates": queueRecentBatchUpdates,
 		"queue_status_written":       queueStatusWritten,
-		"queue_path":                 absPath(queuePath),
-		"markdown_path":              absPath(markdownPath),
-		"markdown_written":           markdownWritten,
+		"queue_path":                 queuePath,
+		"markdown_path":              markdownPath,
 	}
 	if trim(localIssuesPath) != "" {
-		payload["local_issues_path"] = absPath(localIssuesPath)
+		payload["local_issues_path"] = localIssuesPath
 	}
 	queueRunnable := queue.RunnableCount()
 	if client.backend() == "local" {
@@ -1206,7 +1310,6 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 	}
 	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(payload); err != nil {
 		return err
@@ -1257,8 +1360,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 				return err
 			}
 		}
-		markdownWritten, err = queue.SaveMarkdown(markdownPath, markdownGeneratedAt)
-		if err != nil {
+		if _, err := queue.SaveMarkdown(markdownPath, time.Now().UTC()); err != nil {
 			return err
 		}
 	}
@@ -1268,7 +1370,6 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 func emit(payload map[string]any, asJSON bool, exitCode int) error {
 	if asJSON {
 		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetEscapeHTML(false)
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(payload); err != nil {
 			return err
@@ -1378,19 +1479,16 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|live-shadow|live-validation|refill|local-issues|legacy-python> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
 	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate workspaces using the shared mirror")
-	fmt.Fprintln(w, "  automation      run migrated e2e/benchmark/migration automation entrypoints")
+	fmt.Fprintln(w, "  live-shadow     generate scorecards and reviewer bundles for live-shadow evidence")
+	fmt.Fprintln(w, "  live-validation generate validation-bundle continuation artifacts")
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
-	fmt.Fprintln(w, "  create-issues   seed the GitHub repo with the canned issue plans")
-	fmt.Fprintln(w, "  dev-smoke       run the Go control-plane smoke decision check")
-	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
-	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
-	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
+	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 }
 
 func absPath(path string) string {
@@ -1417,33 +1515,4 @@ func atoiPointer(value string) *int {
 		return nil
 	}
 	return &number
-}
-
-func stringPointerIfVisited(value string, visited bool) *string {
-	if !visited {
-		return nil
-	}
-	return &value
-}
-
-func intPointerIfVisited(value int, visited bool) *int {
-	if !visited {
-		return nil
-	}
-	return &value
-}
-
-func boolPointerIfVisited(value bool, visited bool) *bool {
-	if !visited {
-		return nil
-	}
-	return &value
-}
-
-func stringSlicePointerIfVisited(value []string, visited bool) *[]string {
-	if !visited {
-		return nil
-	}
-	copyValue := append([]string{}, value...)
-	return &copyValue
 }
