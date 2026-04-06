@@ -1,37 +1,45 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1527
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Materialize the repository content from `origin` into this unborn worktree.
+2. Capture the repository-wide baseline count of tracked `*.py` files and list the exact files.
+3. Identify residual Python files that can be deleted without affecting required functionality for the Go-only migration.
+4. Remove the selected Python files and any now-obsolete references if needed.
+5. Recount repository-wide `*.py` files and record exact before/after evidence.
+6. Run targeted validation commands covering the changed areas.
+7. Commit the scoped change and push the branch to `origin`.
 
 ## Acceptance
-
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- The actual repository-wide count of `*.py` files decreases.
+- The removed Python files are shown explicitly in before/after evidence.
+- Changes stay scoped to deleting residual Python artifacts required by this issue.
+- Targeted validation commands are executed and their results are recorded.
+- The branch is committed and pushed successfully.
 
 ## Validation
+- `git fetch origin`
+- `git checkout -B BIG-GO-1527 origin/main` or the appropriate upstream base branch
+- `find . -type f -name '*.py' | sort`
+- `find . -type f -name '*.py' | wc -l`
+- Targeted repository validation based on affected paths
+- `git status --short`
+- `git diff --stat`
 
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+## Execution Notes
+- The provided workspace started as an unborn repository with only `.git/`, so repository contents were materialized from `origin/main`.
+- A fresh shallow clone of `origin/main` was required because direct `git fetch` from the unborn checkout did not complete in a reasonable time.
+- Repository-wide Python scan on the actual upstream contents returned zero files before any code changes.
 
-## GitHub
+## Validation Results
+- `find . -type f -name '*.py' | wc -l`
+  Result: `0`
+- `find . -type f -name '*.py' | sort`
+  Result: no output
+- `git ls-files '*.py' | wc -l`
+  Result: `0`
+- `git status --short`
+  Result before commit: `.symphony/workpad.md` modified
 
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+## Blocker
+- The issue success condition requires decreasing the repository-wide number of `.py` files and showing exact removed-file evidence.
+- On current `origin/main` (`646edf33f62c20ccbc4af7c99c27312e1a4c6069`), the repository already contains zero Python files, so there is no residual Python artifact available to delete without fabricating work outside the issue scope.
