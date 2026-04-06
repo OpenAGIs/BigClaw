@@ -7713,6 +7713,11 @@
           "author": "codex",
           "body": "GitHub closeout update: opened PR #220 for this lane.\n\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/220\nPR title: BIG-GO-1516: record workspace/bootstrap/planning Python ledger\nHead branch: BIG-GO-1516\nBase branch: main",
           "created_at": "2026-04-06T08:36:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "GitHub status snapshot: PR #220 is open, non-draft, and currently mergeable.\n\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/220\nState: open\nDraft: false\nMergeable: true\nMergeable state: unstable\nHead SHA: d44191502146c510536364330620adce07c4e5bd\nBase SHA: a63c8ec0f999d976a1af890c920a54ac2d6c693a",
+          "created_at": "2026-04-06T08:50:00Z"
         }
       ],
       "created_at": "2026-04-06T08:20:00Z",
@@ -7725,7 +7730,7 @@
       "priority": 1,
       "state": "Done",
       "title": "Refill: workspace/bootstrap/planning residual Python file removal with exact deleted-file ledger",
-      "updated_at": "2026-04-06T08:36:00Z"
+      "updated_at": "2026-04-06T08:50:00Z"
     }
   ]
 }

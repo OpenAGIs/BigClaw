@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-1516",
     "baseline_commit": "a63c8ec",
-    "latest_commit": "82777f5d",
+    "latest_commit": "d4419150",
     "push_target": "origin/BIG-GO-1516",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1"
   },
@@ -57,6 +57,11 @@
     "number": 220,
     "url": "https://github.com/OpenAGIs/BigClaw/pull/220",
     "state": "open",
-    "title": "BIG-GO-1516: record workspace/bootstrap/planning Python ledger"
+    "title": "BIG-GO-1516: record workspace/bootstrap/planning Python ledger",
+    "draft": false,
+    "mergeable": true,
+    "mergeable_state": "unstable",
+    "head_sha": "d44191502146c510536364330620adce07c4e5bd",
+    "base_sha": "a63c8ec0f999d976a1af890c920a54ac2d6c693a"
   }
 }
