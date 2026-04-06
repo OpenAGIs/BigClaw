@@ -1,29 +1,29 @@
-# BIG-GO-1088 Workpad
+# BIG-GO-1512
 
 ## Plan
-- Confirm whether any tracked or untracked Python helpers still exist under `bigclaw-go/scripts/benchmark/`.
-- Trace the default execution path for benchmark automation to verify it is already Go/shell-only.
-- Compare current tree state with prior migration commits to determine whether `BIG-GO-1088` has already been satisfied upstream.
-- Record acceptance status, validation commands, and blocker evidence in a closeout note, then commit and push the scoped documentation update.
+
+1. Use the residual Python branch state from `BIG-GO-1511` as the issue base and capture the starting Python file count.
+2. Verify whether any Python test or `conftest.py` blockers still exist on that base.
+3. Delete the remaining root ops Python wrappers so the repository-wide `.py` count decreases physically.
+4. Add regression coverage and doc updates that keep the deleted wrappers absent and point operators at `bash scripts/ops/bigclawctl ...`.
+5. Recount Python files, collect deleted-file evidence, run targeted validation, then commit and push the issue branch.
 
 ## Acceptance
-- `bigclaw-go/scripts/benchmark/` contains no Python files and exposes only Go/shell entrypoints.
-- The default benchmark execution path resolves through Go CLI commands and `run_suite.sh`, not Python helpers.
-- Validation captures the repo-level `.py` count and the benchmark-directory `.py` count with exact commands and outputs.
-- If no benchmark Python files remain to delete, the lane records that the issue's required physical deletion already landed before this branch.
+
+- Physical `.py` file count in the repository decreases from the residual issue base.
+- The change includes actual deleted Python files, not status-only churn.
+- Before and after counts are recorded.
+- Targeted tests or validation commands are run and their exact results are captured.
+- Changes remain scoped to this issue.
+- The branch is committed and pushed to the remote.
 
 ## Validation
-- `find bigclaw-go/scripts/benchmark -maxdepth 1 -name '*.py' | wc -l`
-- `find . -name '*.py' | wc -l`
-- `git ls-tree -r --name-only HEAD bigclaw-go/scripts/benchmark`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run TestBenchmarkScriptsStayGoOnly -count=1`
-- `git show --stat --summary da168148 | sed -n '1,220p'`
-- `git show --stat --summary 9746a50c | sed -n '1,220p'`
 
-## Validation Results
-- `find bigclaw-go/scripts/benchmark -maxdepth 1 -name '*.py' | wc -l` -> `0`
-- `find . -name '*.py' | wc -l` -> `23`
-- `git ls-tree -r --name-only HEAD bigclaw-go/scripts/benchmark` -> `bigclaw-go/scripts/benchmark/run_suite.sh`
-- `cd bigclaw-go && go test ./cmd/bigclawctl -run TestBenchmarkScriptsStayGoOnly -count=1` -> `ok  	bigclaw-go/cmd/bigclawctl	0.415s`
-- `git show --stat --summary da168148 | sed -n '1,220p'` -> shows the original physical deletions of `bigclaw-go/scripts/benchmark/capacity_certification.py`, `bigclaw-go/scripts/benchmark/capacity_certification_test.py`, `bigclaw-go/scripts/benchmark/run_matrix.py`, and `bigclaw-go/scripts/benchmark/soak_local.py`
-- `git show --stat --summary 9746a50c | sed -n '1,220p'` -> shows the later enforcement pass that kept `bigclaw-go/scripts/benchmark/` Go-only and added regression coverage around the retained `run_suite.sh` wrapper
+- `git fetch origin`
+- `git fetch ../BIG-GO-1511 BIG-GO-1511:refs/remotes/local1511/BIG-GO-1511`
+- `git checkout -B BIG-GO-1512 local1511/BIG-GO-1511`
+- `find . -type f -name '*.py' | sort | wc -l`
+- `cd bigclaw-go && go test ./internal/regression -run 'Test(PythonTestTranche14Removed|BIGGO1512RootOpsPythonWrappersRemoved|BIGGO1512RootOpsDocsUseGoEntrypoints)$'`
+- `bash scripts/ops/bigclawctl refill --help >/dev/null && bash scripts/ops/bigclawctl workspace bootstrap --help >/dev/null && bash scripts/ops/bigclawctl workspace validate --help >/dev/null`
+- `git diff --name-status`
+- `git status --short`
