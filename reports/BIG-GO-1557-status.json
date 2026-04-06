@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-1557",
     "baseline_commit": "646edf33",
-    "latest_commit": "75f8b1c3",
+    "latest_commit": "a9b3a809",
     "push_target": "origin/BIG-GO-1557",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1557?expand=1"
   },
