@@ -1,27 +1,20 @@
-# BIG-GO-1080 Workpad
+# BIG-GO-1501
 
 ## Plan
-- Confirm the residual Python test tranche under `tests/` and map each file to the current Go-native replacement surface.
-- Add focused Go coverage where the current replacement is still implicit, especially the `BIG-4204` UI review builder/report path and the release-planning entry that still references `tests/test_ui_review.py`.
-- Remove the residual Python test files for this tranche: `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py`.
-- Update any default execution path or metadata that still points at the deleted Python files so the repo no longer advertises them as the primary validation route.
-- Run targeted Go tests plus repo-level file-count checks, then commit and push the scoped branch.
+- Materialize the repository from `origin/main` in this workspace because the local checkout is currently empty except for `.git`.
+- Measure the current `.py` file count under `src/bigclaw` and identify Python files that are obsolete, replaced by Go, or otherwise safe to delete without broad scope expansion.
+- Remove the chosen file(s) or replace them with Go if needed, keeping changes tightly scoped to reducing the real Python file count.
+- Run targeted validation covering file-count reduction and any directly impacted tests or build checks.
+- Commit the scoped change and push a branch for `BIG-GO-1501`.
 
 ## Acceptance
-- `tests/test_ui_review.py`, `tests/reports_legacy.py`, and `tests/conftest.py` are deleted.
-- Go-native tests cover the removed UI review and report-studio/reporting behaviors strongly enough that this slice is not a cosmetic deletion.
-- No default validation command or candidate metadata continues to reference the deleted Python test files.
-- Repository `.py` count decreases after the deletion.
-- The change set stays scoped to this issue.
+- The actual number of `.py` files under `src/bigclaw` is lower after the change than before.
+- The final report includes exact before/after counts and the deleted or replaced file list.
+- Validation is tied to repository reality with exact commands and outcomes recorded.
+- Changes remain scoped to this migration refill issue.
+- The branch is committed and pushed to `origin`.
 
 ## Validation
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l`
-- `find tests -maxdepth 1 -name '*.py' | sort`
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning`
-- `git status --short`
-
-## Validation Results
-- `find . -name '*.py' | sed 's#^./##' | sort | wc -l` -> `23`
-- `find tests -maxdepth 1 -name '*.py' | sort` -> no output
-- `cd bigclaw-go && go test ./internal/uireview ./internal/reportstudio ./internal/planning ./internal/regression` -> first run failed in `internal/uireview` and `internal/regression` due to a sorted unresolved-question assertion mismatch and a bad regression root helper; reran after fixes and got `ok   bigclaw-go/internal/uireview 0.639s`, `ok   bigclaw-go/internal/reportstudio (cached)`, `ok   bigclaw-go/internal/planning (cached)`, `ok   bigclaw-go/internal/regression 0.974s`
-- `git status --short` -> modified workpad, planning/uireview Go files, deleted `tests/conftest.py`, `tests/reports_legacy.py`, `tests/test_ui_review.py`, added `bigclaw-go/internal/regression/python_test_tranche14_removal_test.go`, plus the in-scope Go replacement file `bigclaw-go/internal/uireview/builder.go`
+- `find src/bigclaw -type f -name '*.py' | wc -l`
+- Additional targeted repo checks based on the specific file(s) removed, such as `go test` for the affected Go package or a repository test script if one directly covers the impacted area.
+- `git status --short` to confirm only intended files changed.

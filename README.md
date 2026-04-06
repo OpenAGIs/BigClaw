@@ -166,7 +166,7 @@ GitHub sync which is now Go/shell-only via `scripts/ops/bigclawctl`.
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
 `src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+migration-only reference use. The legacy `python -m bigclaw` entrypoint at
+`src/bigclaw/__main__.py` is the remaining frozen Python surface; use
+`go run ./bigclaw-go/cmd/bigclawd` for the active local server path. Active
+runtime development belongs in `bigclaw-go/internal/*`.
