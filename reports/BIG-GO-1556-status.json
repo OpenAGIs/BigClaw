@@ -7,6 +7,7 @@
   "branch": {
     "name": "BIG-GO-1556",
     "baseline_commit": "646edf33",
+    "latest_commit": "57b6b312",
     "push_target": "origin/BIG-GO-1556",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1556?expand=1"
   },
@@ -41,6 +42,7 @@
     "bigclaw-go/internal/api/broker_bootstrap_surface.go"
   ],
   "blocker": "Baseline commit 646edf33 is already Python-free, so this lane cannot produce a lower physical .py file count without fabricating files to delete.",
+  "github_blocker": "PR creation is blocked in this environment because gh is unauthenticated and no GH_TOKEN or GITHUB_TOKEN is present.",
   "validation": {
     "commands": [
       "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
@@ -52,5 +54,11 @@
       "residual_area_py_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t12.619s"
     }
+  },
+  "github": {
+    "branch_push": "ok",
+    "pull_request_create_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1556",
+    "pull_request_state": "not_created",
+    "auth_status": "gh unauthenticated"
   }
 }
