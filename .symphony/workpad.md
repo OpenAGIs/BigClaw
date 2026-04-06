@@ -1,37 +1,23 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1549 Workpad
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Bootstrap the repository locally from `origin/main` because the workspace initially lacked a valid `HEAD` and was later wiped during setup.
+2. Measure the current physical `.py` file count and produce a directory-level histogram to identify the largest residual Python directory that can be removed safely.
+3. Delete the selected residual Python files, limiting edits to direct cleanup needed for repository coherence.
+4. Recompute before/after counts, capture the exact removed-file list, and run targeted validation commands for the affected area.
+5. Commit the scoped change on `BIG-GO-1549` and push the branch to `origin`.
 
 ## Acceptance
-
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- Physical `.py` files are removed from the repository.
+- Before and after `.py` counts are captured.
+- The exact removed-file list is captured.
+- Validation commands and results are captured.
+- The change remains scoped to lowering physical Python count.
+- The branch is committed and pushed.
 
 ## Validation
-
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `find . -type f -name '*.py' | LC_ALL=C sort | wc -l`
+- `find . -type f -name '*.py' | LC_ALL=C sort`
+- Targeted tests or checks selected after identifying the deleted directory.
+- `git status --short`
+- `git log --oneline -1`
