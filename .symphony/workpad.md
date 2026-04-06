@@ -1,37 +1,32 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1526 Workpad
 
 ## Plan
 
 1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+   `workspace/bootstrap/planning` residual area on current `main`.
+2. Record the exact before/after counts, deleted-file ledger, and the blocker
+   created by the already-zero baseline in lane-scoped repo-native artifacts.
+3. Re-run the existing focused Go regression guard that protects the
+   `workspace/bootstrap/planning` residual area and record the exact commands
+   and results.
+4. Commit and push the issue branch with the blocker evidence so the refill
+   queue has an exact audit trail for why no further Python deletion is
+   possible on this checkout.
 
 ## Acceptance
 
+- `.symphony/workpad.md` is updated for `BIG-GO-1526` before any code changes.
 - The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- The lane records focused `workspace/bootstrap/planning` residual counts.
+- The lane records the exact removed-file ledger for this branch.
+- The lane documents the hard blocker: current `main` already contains zero
+  physical `.py` files, so the issue success criterion of decreasing the count
+  cannot be satisfied without reintroducing Python solely to delete it.
+- Exact validation commands and outcomes are recorded in checked-in artifacts.
+- The change is committed and pushed on `BIG-GO-1526`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`

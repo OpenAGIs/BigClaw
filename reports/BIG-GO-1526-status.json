@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1526",
+    "title": "Refill: workspace/bootstrap/planning Python residual deletion sweep with exact removed-file ledger",
+    "state": "Blocked"
+  },
+  "branch": {
+    "name": "BIG-GO-1526",
+    "push_target": "origin/BIG-GO-1526",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1526?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1526-python-residual-blocker.md",
+    "validation_report": "reports/BIG-GO-1526-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "workspace_bootstrap_planning_py_files_before": 0,
+    "workspace_bootstrap_planning_py_files_after": 0
+  },
+  "removed_file_ledger": {
+    "lane": [],
+    "workspace_bootstrap_planning": []
+  },
+  "blocker": {
+    "summary": "Current main already contains zero physical .py files, so the lane cannot decrease the count without creating Python files solely to delete them.",
+    "precedent": [
+      "reports/BIG-GO-1516-validation.md",
+      "reports/BIG-GO-1516-status.json",
+      "bigclaw-go/docs/reports/big-go-1516-python-asset-sweep.md",
+      "bigclaw-go/internal/regression/big_go_1516_zero_python_guard_test.go"
+    ]
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "residual_area_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.772s"
+    }
+  }
+}
