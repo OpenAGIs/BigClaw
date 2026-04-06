@@ -1,0 +1,60 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1513",
+    "title": "Refill: bigclaw-go/scripts deletion-first sweep targeting actual Python helper removal",
+    "state": "Blocked"
+  },
+  "branch": {
+    "name": "BIG-GO-1513",
+    "latest_commit": "a63c8ec",
+    "push_target": "origin/BIG-GO-1513"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1513-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1513-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1513_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "before_repo_py_count": 0,
+    "after_repo_py_count": 0,
+    "deleted_python_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1513_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1513(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.845s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1513 changes, so no in-scope Python helper deletion was possible."
+  },
+  "notes": [
+    "This lane records the zero-Python baseline and adds issue-specific regression coverage for the scripts-focused sweep.",
+    "Issue success criteria requiring a lower `.py` count could not be satisfied from the checked-out branch state."
+  ]
+}
