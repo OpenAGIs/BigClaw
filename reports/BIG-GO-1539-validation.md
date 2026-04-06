@@ -87,6 +87,7 @@ Result:
 ```text
 ok  	bigclaw-go/internal/regression	0.193s
 ok  	bigclaw-go/internal/regression	2.380s
+ok  	bigclaw-go/internal/regression	3.517s
 ```
 
 ## Git
@@ -94,6 +95,7 @@ ok  	bigclaw-go/internal/regression	2.380s
 - Branch: `BIG-GO-1539`
 - Baseline HEAD before lane commit: `aeab7a1e`
 - Lane artifact commit: `a7e049f` (`BIG-GO-1539: add zero-python lane artifacts`)
+- Published metadata close-out commit: `e5293c5` (`BIG-GO-1539: finalize lane metadata`)
 - Push target: `origin/BIG-GO-1539`
 
 ## Residual Risk

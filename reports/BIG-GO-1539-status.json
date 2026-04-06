@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1539",
-    "latest_commit": "a7e049f",
+    "latest_commit": "e5293c5",
     "push_target": "origin/BIG-GO-1539"
   },
   "artifacts": {
@@ -46,7 +46,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.193s; rerun after artifact finalization: ok  \tbigclaw-go/internal/regression\t2.380s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.193s; rerun after artifact finalization: ok  \tbigclaw-go/internal/regression\t2.380s; final metadata verification: ok  \tbigclaw-go/internal/regression\t3.517s"
     }
   },
   "blocker": {
@@ -56,6 +56,8 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `aeab7a1e`.",
-    "Created lane artifact commit `a7e049f` (`BIG-GO-1539: add zero-python lane artifacts`)."
+    "Created lane artifact commit `a7e049f` (`BIG-GO-1539: add zero-python lane artifacts`).",
+    "Published metadata close-out commit `e5293c5` (`BIG-GO-1539: finalize lane metadata`).",
+    "Local and remote agree at pushed HEAD `e5293c5`."
   ]
 }

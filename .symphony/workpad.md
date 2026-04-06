@@ -58,3 +58,10 @@
 - 2026-04-06: Created lane artifact commit `a7e049f`
   (`BIG-GO-1539: add zero-python lane artifacts`) for publication to
   `origin/BIG-GO-1539`.
+- 2026-04-06: Published metadata close-out commit `e5293c5`
+  (`BIG-GO-1539: finalize lane metadata`) to `origin/BIG-GO-1539`.
+- 2026-04-06: Final metadata verification re-ran
+  `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1539/bigclaw-go && go
+  test -count=1 ./internal/regression -run
+  'TestBIGGO1539(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+  and observed `ok  	bigclaw-go/internal/regression	3.517s`.
