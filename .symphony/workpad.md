@@ -1,37 +1,33 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1560 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Reconfirm the repository-wide physical Python file baseline in the checked-out
+   workspace and verify whether any deletable `.py` files still exist.
+2. Record issue-scoped evidence for the repo-reality blocker: the baseline count
+   is already below the target threshold and there are no remaining `.py` files
+   to delete in this checkout.
+3. Run targeted validation commands, capture their exact results in repo-native
+   artifacts, then commit and push the issue branch with the blocker evidence.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- The lane records the repository-wide `.py` count observed before and after the
+  lane changes.
+- The lane records exact removed-file evidence, even if the ledger is empty
+  because the workspace is already Python-free.
+- The lane records the repo-reality blocker that prevents a measurable count
+  drop in this checkout.
+- Exact validation commands and outcomes are recorded in checked-in artifacts.
+- The change is committed and pushed on `BIG-GO-1560`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+- `find scripts docs bigclaw-go reports -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test ./...`
 
-## GitHub
+## Notes
 
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- Checked-out baseline currently has no physical `.py` files, so this issue is
+  blocked on repo reality rather than implementation.
