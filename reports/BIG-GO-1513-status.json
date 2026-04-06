@@ -6,7 +6,6 @@
   },
   "branch": {
     "name": "BIG-GO-1513",
-    "latest_commit": "b1ab680",
     "push_target": "origin/BIG-GO-1513"
   },
   "artifacts": {
@@ -58,6 +57,7 @@
   "notes": [
     "This lane records the zero-Python baseline and adds issue-specific regression coverage for the scripts-focused sweep.",
     "Issue success criteria requiring a lower `.py` count could not be satisfied from the checked-out branch state.",
-    "A reachable-history check after deepening main to 353 commits still returned no tracked .py path changes, reinforcing that the deletion work had already landed upstream."
+    "A reachable-history check after deepening main to 353 commits still returned no tracked .py path changes, reinforcing that the deletion work had already landed upstream.",
+    "The branch metadata intentionally avoids embedding a moving tip SHA so the status artifact stays correct across follow-up blocker-only commits."
   ]
 }
