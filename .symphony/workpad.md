@@ -2,7 +2,7 @@
 
 ## Plan
 
-1. Confirm the repository baseline for `bigclaw-go/scripts` and capture exact before counts for physical `.py` files plus any checked-in caller references that still mention those retired Python entrypoints.
+1. Confirm the repository baseline for `bigclaw-go/scripts` and capture exact before counts for physical `.py` files plus checked-in caller references that still mention those retired Python entrypoints.
 2. Update the checked-in migration documentation so the supported paths point only at the Go CLI and retained shell wrappers, without listing `bigclaw-go/scripts/*.py` as active caller targets.
 3. Add lane-scoped regression coverage and evidence artifacts that pin the zero-Python baseline and the checked-in caller cutover state for `bigclaw-go/scripts`.
 4. Run targeted validation, record exact commands and results, then commit and push the scoped change set.
@@ -19,7 +19,7 @@
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find bigclaw-go/scripts -type f -name '*.py' | sort`
-- `rg -n --glob '!reports/**' --glob '!local-issues.json' --glob '!.symphony/**' 'bigclaw-go/scripts/[^[:space:]]+\\.py|python3? [^\\n]*bigclaw-go/scripts/[^[:space:]]+\\.py' README.md docs scripts .github bigclaw-go | sort`
+- `rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\\.py' README.md docs scripts .github bigclaw-go | sort`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160|TestBIGGO1483|TestE2E'`
 
 ## Notes

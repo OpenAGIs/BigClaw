@@ -42,6 +42,18 @@ Count result:
 0
 ```
 
+Caller reference command:
+
+```bash
+rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\.py' README.md docs scripts .github bigclaw-go | sort | wc -l
+```
+
+Caller reference result:
+
+```text
+0
+```
+
 Command:
 
 ```bash
@@ -96,6 +108,18 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	0.182s
+```
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1483/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160(MigrationDocsListGoReplacements|CandidatePythonFilesRemainDeleted)$|TestBIGGO1483(MigrationPlanListsOnlyGoOrShellBigClawScriptEntrypoints|LaneReportCapturesCallerCutoverState)$|TestE2EMigrationDocListsOnlyActiveEntrypoints|TestE2EScriptDirectoryStaysPythonFree'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.284s
 ```
 
 ## Blocker

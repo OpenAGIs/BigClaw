@@ -16,7 +16,9 @@ migration, and root-script sweep areas that were moved behind the Go CLI.
 
 Those sweep areas are already Python-free in the current branch baseline, so
 the active documentation should focus on the supported Go operator surface
-rather than on enumerating deleted Python file names.
+rather than on enumerating deleted Python file names. `BIG-GO-1483` removes the
+remaining checked-in caller references to retired BigClaw script paths from
+this plan.
 
 ### Repo-root entrypoints
 
@@ -36,6 +38,9 @@ rather than on enumerating deleted Python file names.
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
 - benchmark automation now runs through `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
 - migration automation now runs through `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
+- `bigclaw-go/scripts/` are shell or Go entrypoints only:
+  `benchmark/run_suite.sh`, `e2e/run_all.sh`, `e2e/kubernetes_smoke.sh`,
+  `e2e/ray_smoke.sh`, and `e2e/broker_bootstrap_summary.go`
 
 The remaining compatibility layer is intentionally thin:
 
@@ -129,7 +134,7 @@ operator docs and external automation references finish the direct cutover to
 - PR description focus:
   - migrated entrypoints and retained shims
   - exact validation commands and results
-  - explicit note that `bigclaw-go/scripts/*` is deferred to a follow-up migration lane
+  - explicit note that `bigclaw-go/scripts/*` is now a Python-free caller surface
 
 ## Risks
 
