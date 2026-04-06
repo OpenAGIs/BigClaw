@@ -26,3 +26,9 @@
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1550(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|LaneReportCapturesRepoReality)$'`
+
+## GitHub
+
+- Branch pushed: `origin/BIG-GO-1550`
+- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1550?expand=1`
+- PR helper: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1550`
