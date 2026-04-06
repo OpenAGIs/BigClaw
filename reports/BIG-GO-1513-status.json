@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1513",
-    "latest_commit": "a63c8ec",
+    "latest_commit": "374c8ae",
     "push_target": "origin/BIG-GO-1513"
   },
   "artifacts": {
@@ -41,12 +41,14 @@
     "commands": [
       "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
       "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
-      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1513(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1513(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'",
+      "git log --name-status -- '*.py'"
     ],
     "results": {
       "repo_py_inventory": "no output; repository-wide physical Python file count remained 0",
       "priority_dir_inventory": "no output; src/bigclaw, tests, scripts, and bigclaw-go/scripts remained Python-free",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.845s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.845s",
+      "reachable_py_history": "no output within the fetched 353-commit reachable history on main"
     }
   },
   "blocker": {
@@ -55,6 +57,7 @@
   },
   "notes": [
     "This lane records the zero-Python baseline and adds issue-specific regression coverage for the scripts-focused sweep.",
-    "Issue success criteria requiring a lower `.py` count could not be satisfied from the checked-out branch state."
+    "Issue success criteria requiring a lower `.py` count could not be satisfied from the checked-out branch state.",
+    "A reachable-history check after deepening main to 353 commits still returned no tracked .py path changes, reinforcing that the deletion work had already landed upstream."
   ]
 }

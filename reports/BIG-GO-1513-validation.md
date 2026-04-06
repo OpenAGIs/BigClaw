@@ -36,6 +36,7 @@ count of `0`, so no in-scope `.py` helper remained to delete in-branch.
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1513(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513 && git log --name-status -- '*.py'`
 
 ## Validation Results
 
@@ -81,6 +82,20 @@ Result:
 ok  	bigclaw-go/internal/regression	1.845s
 ```
 
+### Reachable Python-path history
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1513 && git log --name-status -- '*.py'
+```
+
+Result:
+
+```text
+
+```
+
 ## Git
 
 - Branch: `BIG-GO-1513`
@@ -92,3 +107,5 @@ ok  	bigclaw-go/internal/regression	1.845s
 - The repository already contained `0` physical `.py` files at lane start, so
   the issue's success condition of reducing the physical `.py` count is not
   achievable from this branch state.
+- After deepening the reachable `main` history to 353 commits, `git log --name-status -- '*.py'`
+  still produced no output, so the missing deletion target is not a shallow-checkout artifact.
