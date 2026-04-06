@@ -1,0 +1,10 @@
+{
+  "issue": "BIG-GO-1538",
+  "base_commit": "aeab7a1",
+  "branch": "BIG-GO-1538",
+  "python_file_count_before": 0,
+  "python_file_count_after": 0,
+  "deleted_python_files": [],
+  "acceptance_blocker": "No physical .py files remain in the checkout, so deleted-file evidence cannot be produced from this snapshot.",
+  "validation_report": "reports/BIG-GO-1538-validation.md"
+}
