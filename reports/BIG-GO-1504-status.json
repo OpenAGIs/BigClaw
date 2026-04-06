@@ -1,0 +1,59 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1504",
+    "title": "Refill: reduce scripts and scripts/ops physical Python wrapper count even when wrappers are compatibility-only",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1504",
+    "latest_commit": "264ea883e1f833e08b9f86c1af8e0b53d16ceb17",
+    "push_target": "origin/BIG-GO-1504"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1504-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1504-script-wrapper-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1504_script_wrapper_sweep_test.go"
+  },
+  "inventory": {
+    "repo_py_before": 0,
+    "repo_py_after": 0,
+    "scripts_py_before": 0,
+    "scripts_py_after": 0,
+    "scripts_ops_py_before": 0,
+    "scripts_ops_py_after": 0,
+    "deleted_py_files": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1504_script_wrapper_sweep_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh"
+  ],
+  "validation": {
+    "commands": [
+      "rg --files | rg '^(scripts|scripts/ops)/.*\\.py$' | wc -l",
+      "rg --files | rg '\\.py$' | wc -l",
+      "find scripts -maxdepth 3 -type f | sort",
+      "sed -n '1,120p' scripts/ops/bigclawctl",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1504(ScriptsAndOpsStayPythonFree|CompatibilityLaunchersRemainNonPython|LaneReportCapturesRepoReality)$'",
+      "git push -u origin BIG-GO-1504"
+    ],
+    "results": {
+      "scripts_py_inventory": "0",
+      "repo_py_inventory": "0",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.185s",
+      "push": "branch 'BIG-GO-1504' set up to track 'origin/BIG-GO-1504'."
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The materialized repository baseline was already fully Python-free, including `scripts/` and `scripts/ops/`, before BIG-GO-1504 changes."
+  },
+  "notes": [
+    "This lane records exact `0 -> 0` wrapper counts, an explicit empty deleted-file ledger, and non-Python ownership of the compatibility launchers.",
+    "Baseline materialized main commit was `a63c8ec0f999d976a1af890c920a54ac2d6c693a`."
+  ]
+}
