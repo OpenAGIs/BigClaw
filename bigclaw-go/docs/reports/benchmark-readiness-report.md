@@ -5,7 +5,7 @@
 - Run date: 2026-03-13
 - Commands:
   - `python3 scripts/benchmark/run_matrix.py --scenario 50:8 --scenario 100:12 --report-path docs/reports/benchmark-matrix-report.json`
-  - `python3 scripts/benchmark/soak_local.py --autostart --count 2000 --workers 24 --timeout-seconds 480 --report-path docs/reports/soak-local-2000x24.json`
+  - `go run ./cmd/bigclawctl automation benchmark soak-local --autostart --count 2000 --workers 24 --timeout-seconds 480 --report-path docs/reports/soak-local-2000x24.json`
 - Goal: refresh `OPE-186` with a repeatable local benchmark matrix plus concurrent and longer-duration soak evidence.
 - Evidence class: bootstrap proof for local benchmark health, not the final certification artifact.
 

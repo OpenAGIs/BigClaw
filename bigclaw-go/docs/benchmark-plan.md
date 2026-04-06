@@ -41,7 +41,7 @@ python3 scripts/benchmark/run_matrix.py \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/soak_local.py \
+go run ./cmd/bigclawctl automation benchmark soak-local \
   --autostart \
   --count 2000 \
   --workers 24 \

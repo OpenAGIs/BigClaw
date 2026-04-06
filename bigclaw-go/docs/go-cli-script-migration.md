@@ -7,7 +7,7 @@ Issue: `BIG-GO-902`
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python shim removed |
-| `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/shadow_matrix.py` | `go run ./cmd/bigclawctl automation migration shadow-matrix ...` | migrated and Python shim removed |
 | `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` | migrated and Python shim removed |
@@ -47,7 +47,7 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - HTTP polling against `/healthz`, `/tasks/:id`, and `/events`
 - Temporary `bigclawd` autostart state wiring for smoke and soak commands
 - Report serialization compatibility for JSON consumers that previously read the Python script output
-- Python shim forwarding for operators still calling the legacy script paths
+- repo-native callers that still compose benchmark matrices around the Go automation command
 
 ## Compatibility Layer Plan
 
