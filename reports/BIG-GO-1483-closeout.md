@@ -1,33 +1,26 @@
 Issue: `BIG-GO-1483`
 
+Final branch head: `eb93ecfc1c80cbaff7afc45c204ab17f9a13579d`
+
 Summary:
-- Current `origin/main` is already Go-only for `bigclaw-go/scripts` and for the full repository Python-file inventory.
-- There are no remaining checked-in `.py` files to migrate or delete from this branch baseline.
-- The live `bigclaw-go/scripts` surface is limited to Go and shell entrypoints that already dispatch through `bigclawctl`.
+- `bigclaw-go/scripts` remains physically Python-free before and after this lane.
+- The remaining checked-in caller references to retired `bigclaw-go/scripts` Python entrypoints were removed from the live migration plan.
+- The active `bigclaw-go/scripts` surface is now documented and guarded as Go CLI, shell, or Go helper entrypoints only.
 
-Exact evidence captured on branch `BIG-GO-1483` at `a63c8ec0f999d976a1af890c920a54ac2d6c693a`:
+Before/after evidence:
+- Repository `.py` files before: `0`
+- Repository `.py` files after: `0`
+- `bigclaw-go/scripts/*.py` before: `0`
+- `bigclaw-go/scripts/*.py` after: `0`
+- Checked-in caller references to retired `bigclaw-go/scripts` Python entrypoints before: `23`
+- Checked-in caller references to retired `bigclaw-go/scripts` Python entrypoints after: `0`
 
-```bash
-find . -type f -name '*.py' | sort | wc -l
-0
-
-find bigclaw-go/scripts -type f -name '*.py' | sort | wc -l
-0
-
-find bigclaw-go/scripts -type f | sort
-bigclaw-go/scripts/benchmark/run_suite.sh
-bigclaw-go/scripts/e2e/broker_bootstrap_summary.go
-bigclaw-go/scripts/e2e/kubernetes_smoke.sh
-bigclaw-go/scripts/e2e/ray_smoke.sh
-bigclaw-go/scripts/e2e/run_all.sh
-```
-
-Checked-in caller state:
-- `bigclaw-go/scripts/benchmark/run_suite.sh` invokes `go test` and `go run ./cmd/bigclawctl automation benchmark run-matrix`.
-- `bigclaw-go/scripts/e2e/kubernetes_smoke.sh` invokes `go run ./cmd/bigclawctl automation e2e run-task-smoke`.
-- `bigclaw-go/scripts/e2e/ray_smoke.sh` invokes `go run ./cmd/bigclawctl automation e2e run-task-smoke`.
-- `bigclaw-go/scripts/e2e/run_all.sh` orchestrates `bigclawctl automation e2e ...` subcommands and `broker_bootstrap_summary.go`.
+Validation:
+- `git show a63c8ec0f999d976a1af890c920a54ac2d6c693a:docs/go-cli-script-migration-plan.md | rg -n 'bigclaw-go/scripts/.*\.py' | wc -l | tr -d ' '` -> `23`
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort` -> no output
+- `find bigclaw-go/scripts -type f -name '*.py' | sort` -> no output
+- `rg -n --glob '!reports/**' --glob '!bigclaw-go/docs/reports/**' --glob '!local-issues.json' --glob '!bigclaw-go/internal/regression/**' --glob '!.symphony/**' 'bigclaw-go/scripts/.*\.py' README.md docs scripts .github bigclaw-go | sort` -> no output
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1160|TestBIGGO1483|TestE2E'` -> `ok  	bigclaw-go/internal/regression	3.449s`
 
 Blocker:
-- The hard requirement to reduce the repository Python file count cannot be satisfied on the current branch baseline because the repository already contains zero checked-in Python files before any change.
-- This issue appears stale relative to `origin/main`; the migration described in the issue was completed by earlier work before `BIG-GO-1483` was created.
+- The repository already started at zero checked-in Python files, so the issue’s requested physical Python-file reduction could not be satisfied in this branch baseline. The completed scope therefore removes the remaining checked-in caller references and records exact before/after evidence instead.
