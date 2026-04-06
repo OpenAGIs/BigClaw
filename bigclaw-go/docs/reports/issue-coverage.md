@@ -32,7 +32,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - `OPE-186` / `BIG-GO-011`
   - Covered by `internal/queue/benchmark_test.go`, `internal/scheduler/benchmark_test.go`, `docs/benchmark-plan.md`, `docs/reports/benchmark-report.md`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, `docs/reports/soak-local-report.json`, `docs/reports/soak-local-50x8.json`, `docs/reports/soak-local-100x12.json`, `docs/reports/soak-local-1000x24.json`, `docs/reports/soak-local-2000x24.json`, `docs/reports/live-validation-summary.json`, `scripts/benchmark/run_suite.sh`, `scripts/benchmark/run_matrix.py`, `scripts/benchmark/soak_local.py`, and `scripts/e2e/run_all.sh`
 - `OPE-3` / `BIG-PAR-098`
-  - Covered by `docs/benchmark-plan.md`, `docs/reports/capacity-certification-report.md`, `docs/reports/capacity-certification-matrix.json`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/long-duration-soak-report.md`, `docs/reports/mixed-workload-matrix-report.json`, `scripts/benchmark/capacity_certification.py`, and `scripts/benchmark/capacity_certification_test.py`
+  - Covered by `docs/benchmark-plan.md`, `docs/reports/capacity-certification-report.md`, `docs/reports/capacity-certification-matrix.json`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/long-duration-soak-report.md`, `docs/reports/mixed-workload-matrix-report.json`, and `scripts/benchmark/capacity_certification.py`
 
 ## Parallel Follow-up Index
 
