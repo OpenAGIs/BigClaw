@@ -88,13 +88,12 @@ ok  	bigclaw-go/internal/regression	0.941s
 
 - Branch: `BIG-GO-1516`
 - Baseline HEAD before lane commit: `a63c8ec`
-- Latest pushed HEAD: `546277bc`
+- Latest pushed HEAD before PR creation: `82777f5d`
 - Push target: `origin/BIG-GO-1516`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
+- PR: `https://github.com/OpenAGIs/BigClaw/pull/220`
 
-## Blocker
+## GitHub
 
-- `gh auth status` fails in this environment because no GitHub host is logged
-  in.
-- The branch is already pushed, but unattended PR creation or inspection cannot
-  be completed without GitHub authentication.
+- Opened PR `#220`: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- PR title: `BIG-GO-1516: record workspace/bootstrap/planning Python ledger`

@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-1516",
     "baseline_commit": "a63c8ec",
-    "latest_commit": "546277bc",
+    "latest_commit": "82777f5d",
     "push_target": "origin/BIG-GO-1516",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1"
   },
@@ -53,13 +53,10 @@
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.941s"
     }
   },
-  "blocker": {
-    "type": "github_auth",
-    "summary": "GitHub PR creation or inspection cannot be completed unattended from this environment because gh is unauthenticated.",
-    "evidence": [
-      "gh auth status -> not logged into any GitHub hosts",
-      "branch pushed to origin/BIG-GO-1516",
-      "public compare view available at https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1"
-    ]
+  "pull_request": {
+    "number": 220,
+    "url": "https://github.com/OpenAGIs/BigClaw/pull/220",
+    "state": "open",
+    "title": "BIG-GO-1516: record workspace/bootstrap/planning Python ledger"
   }
 }
