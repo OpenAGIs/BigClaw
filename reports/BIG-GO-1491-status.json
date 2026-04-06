@@ -1,0 +1,71 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1491",
+    "title": "Refill: largest residual directory sweep for src/bigclaw Python files with before-after repo counts",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1491",
+    "latest_commit": "a63c8ec0",
+    "push_target": "origin/BIG-GO-1491"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1491-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1491-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1491_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files_before": 0,
+    "repo_py_files_after": 0,
+    "deleted_files": [],
+    "priority_dirs": {
+      "src/bigclaw": {
+        "before": 0,
+        "after": 0,
+        "delete_condition": "directory absent on baseline checkout"
+      },
+      "tests": {
+        "before": 0,
+        "after": 0,
+        "delete_condition": "directory absent on baseline checkout"
+      },
+      "scripts": {
+        "before": 0,
+        "after": 0,
+        "ownership": [
+          "scripts/dev_bootstrap.sh",
+          "scripts/ops/bigclawctl",
+          "scripts/ops/bigclaw-issue",
+          "scripts/ops/bigclaw-panel",
+          "scripts/ops/bigclaw-symphony"
+        ]
+      },
+      "bigclaw-go/scripts": {
+        "before": 0,
+        "after": 0,
+        "ownership": [
+          "bigclaw-go/scripts/e2e/run_all.sh",
+          "bigclaw-go/cmd/bigclawctl/main.go",
+          "bigclaw-go/cmd/bigclawd/main.go"
+        ]
+      }
+    }
+  },
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491 -path '*/.git' -prune -o -type f -name '*.py' -print | sed 's#^./##' | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1491(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoOwnershipAndDeleteConditionsRemainDocumented|LaneReportCapturesBeforeAfterCounts)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.439s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The checked-out baseline already had a repository-wide physical Python file count of 0 before BIG-GO-1491 changes."
+  }
+}

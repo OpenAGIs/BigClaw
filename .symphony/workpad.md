@@ -1,30 +1,32 @@
-# BIG-GO-1454 Workpad
+# BIG-GO-1491 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide physical Python asset inventory, with explicit checks for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Land lane-scoped reporting and regression coverage that document the remaining inventory and pin the active Go/native replacement paths for `BIG-GO-1454`.
-3. Run targeted validation, capture exact commands and results in the lane artifacts, then commit and push the branch.
+1. Confirm the repository-wide physical Python inventory and explicitly check the residual sweep targets for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+2. Record the lane outcome with exact before/after counts, deleted file list, and Go ownership or delete conditions for the current Go-only baseline.
+3. Add a targeted regression guard so the lane evidence and zero-Python baseline stay enforced in future changes.
+4. Run targeted validation, capture exact commands and results in the lane artifacts, then commit and push `BIG-GO-1491`.
 
 ## Acceptance
 
-- The lane records the remaining Python asset inventory for the repository and the priority residual directories.
-- The lane either removes physical Python files or, if none remain in-branch, documents the zero-Python baseline and keeps the sweep scoped to regression prevention.
-- The lane names the current Go/native replacement paths for the retired Python surface.
+- The lane records the exact repository-wide physical Python file count before and after the sweep.
+- The lane records the exact counts for `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- The lane records the deleted file list or explicitly states that no physical Python files remained to delete in-branch.
+- The lane records the active Go/native ownership paths or delete conditions for the retired Python surface.
 - Exact validation commands and outcomes are recorded.
-- The change is committed and pushed to the remote branch.
+- The change is committed and pushed to the remote `BIG-GO-1491` branch.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491 -path '*/.git' -prune -o -type f -name '*.py' -print | sed 's#^./##' | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1491(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoOwnershipAndDeleteConditionsRemainDocumented|LaneReportCapturesBeforeAfterCounts)$'`
 
 ## Execution Notes
 
-- 2026-04-06: Initial inventory on baseline commit `aeab7a1` confirmed no physical `.py` files anywhere in the checkout, including `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-- 2026-04-06: This lane is therefore scoped as a documentation and regression-hardening sweep for the existing Go-only baseline.
-- 2026-04-06: Added `bigclaw-go/docs/reports/big-go-1454-python-asset-sweep.md`, `bigclaw-go/internal/regression/big_go_1454_zero_python_guard_test.go`, `reports/BIG-GO-1454-validation.md`, and `reports/BIG-GO-1454-status.json` to record and protect the zero-Python baseline for this lane.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
-- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
-- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1454/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1454(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.778s`.
+- 2026-04-06: Baseline commit `a63c8ec0` already contains no physical `.py` files anywhere in the checkout.
+- 2026-04-06: `src/bigclaw` and `tests` do not exist on the checked-out `main` baseline, so their delete condition is already satisfied by directory absence.
+- 2026-04-06: This lane is limited to documenting the exact `0 -> 0` sweep result and hardening the zero-Python state with a regression guard, because there is no remaining in-branch Python file to delete.
+- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491 -path '*/.git' -prune -o -type f -name '*.py' -print | sed 's#^./##' | sort` and observed no output.
+- 2026-04-06: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` and observed no output.
+- 2026-04-06: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1491/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1491(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoOwnershipAndDeleteConditionsRemainDocumented|LaneReportCapturesBeforeAfterCounts)$'` and observed `ok  	bigclaw-go/internal/regression	0.439s`.
