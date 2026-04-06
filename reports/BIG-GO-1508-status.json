@@ -1,0 +1,47 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1508",
+    "title": "Refill: eliminate Python docs/examples/support assets that still contribute to the repo file count",
+    "state": "Blocked"
+  },
+  "branch": {
+    "name": "BIG-GO-1508",
+    "baseline_commit": "a63c8ec",
+    "push_target": "origin/BIG-GO-1508"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1508-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1508-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1508_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "before_repo_py_count": 0,
+    "after_repo_py_count": 0,
+    "deleted_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1508.clone -path '*/.git' -prune -o -name '*.py' -type f -print | wc -l",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1508.clone -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1508.clone/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1508.clone/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1508.clone/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1508.clone/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1508.clone/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1508(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|IssueReportCapturesBlockedDeletionState)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.213s"
+    }
+  },
+  "blocker": {
+    "type": "upstream-zero-baseline",
+    "summary": "The checked-out upstream repository state already contains zero physical .py files, so BIG-GO-1508 cannot reduce the count further without inventing changes outside issue scope."
+  }
+}
