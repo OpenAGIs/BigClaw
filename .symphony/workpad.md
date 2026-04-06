@@ -1,37 +1,32 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1554 Workpad
 
 ## Plan
 
 1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
+   `scripts` / `scripts/ops` wrapper surface for this refill lane.
 2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+   counts, the exact deleted-file ledger, and the focused residual scan
+   evidence for `scripts` / `scripts/ops`.
+3. Add focused regression coverage so the repository and the `scripts` /
+   `scripts/ops` wrapper surface stay Python-free while the active Go/native
+   replacements remain available.
+4. Run targeted validation, record the exact commands and outcomes, then
+   commit and push the issue branch.
 
 ## Acceptance
 
 - The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
+- The lane records the focused `scripts` / `scripts/ops` `.py` counts before
+  and after the change.
+- The lane includes an exact deleted-file ledger, even if it is empty because
+  the baseline is already Python-free.
 - The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
+  `scripts` / `scripts/ops` wrapper surface.
 - Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- The change is committed and pushed on `BIG-GO-1554`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `find scripts scripts/ops -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1554(RepositoryHasNoPythonFiles|ScriptsOpsWrapperSurfaceStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactCountDeltaAndLedger)$'`

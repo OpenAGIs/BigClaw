@@ -1,0 +1,57 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1554",
+    "title": "Refill: delete remaining scripts and scripts/ops wrapper .py files from disk and report exact before-after count delta",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-1554",
+    "baseline_commit": "646edf33",
+    "latest_commit": "",
+    "push_target": "origin/BIG-GO-1554",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1554?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1554-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1554_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1554-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "scripts_ops_py_files_before": 0,
+    "scripts_ops_py_files_after": 0,
+    "repository_py_delta": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "scripts_ops": []
+  },
+  "residual_scan": {
+    "scripts": [],
+    "scripts_ops": []
+  },
+  "replacement_paths": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts scripts/ops -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1554(RepositoryHasNoPythonFiles|ScriptsOpsWrapperSurfaceStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactCountDeltaAndLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "scripts_ops_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.456s"
+    }
+  },
+  "blocker": "Repository-wide and focused scripts/scripts/ops physical .py counts were already zero on the checked-out baseline, so the lane cannot produce a lower-than-zero count in this workspace."
+}
