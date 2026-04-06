@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-1506",
-    "latest_commit": "a73cbf31a72870b993b3e219d1daca4665e35dd6",
+    "latest_commit": "b5ef537b39cfed09ab3eb8f8484d6667af7f01d8",
     "push_target": "origin/BIG-GO-1506"
   },
   "artifacts": {
