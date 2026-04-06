@@ -1,0 +1,41 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1505",
+    "title": "Refill: remove remaining reporting and observability Python files still present on disk with delete ledger",
+    "state": "Blocked"
+  },
+  "branch": {
+    "name": "BIG-GO-1505",
+    "baseline_head": "a63c8ec",
+    "push_target": "origin/BIG-GO-1505"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1505-python-asset-sweep.md",
+    "delete_ledger": "reports/BIG-GO-1505-delete-ledger.json",
+    "validation_report": "reports/BIG-GO-1505-validation.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1505_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "before_repo_python_count": 0,
+    "after_repo_python_count": 0,
+    "reporting_observability_python_files_found": [],
+    "deleted_files": []
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find . -path '*/.git' -prune -o -type f \\( -path '*/reporting/*.py' -o -path '*/observability/*.py' -o -name '*report*.py' -o -name '*observability*.py' \\) -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1505(RepositoryHasNoPythonFiles|DeleteLedgerCapturesRepositoryReality|LaneReportCapturesBlockedSweepState)$'"
+    ],
+    "results": {
+      "repo_python_inventory": "none",
+      "reporting_observability_inventory": "none",
+      "targeted_regression": "ok  \tbigclaw-go/internal/regression\t3.193s"
+    }
+  },
+  "blocker": {
+    "type": "repository-reality",
+    "summary": "The checked-out repository baseline already contains zero physical .py files, so the requested deletion sweep cannot reduce the count further in this workspace."
+  }
+}

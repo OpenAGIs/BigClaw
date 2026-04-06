@@ -1,0 +1,13 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1505",
+    "title": "Refill: remove remaining reporting and observability Python files still present on disk with delete ledger"
+  },
+  "baseline_commit": "a63c8ec",
+  "before_repo_python_count": 0,
+  "after_repo_python_count": 0,
+  "reporting_observability_python_files_found": [],
+  "deleted_files": [],
+  "blocked": true,
+  "blocker_summary": "The checked-out repository baseline already contains zero physical .py files, so there is no remaining reporting or observability Python file available for deletion in this lane."
+}
