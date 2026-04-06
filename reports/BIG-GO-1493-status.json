@@ -1,0 +1,75 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1493",
+    "title": "Refill: largest residual directory sweep for bigclaw-go/scripts Python files and helper artifacts",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1493",
+    "latest_commit": "50dbc405d7cb1ea58183048650797f154e8c675e",
+    "push_target": "origin/BIG-GO-1493"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1493-validation.md",
+    "status_report": "reports/BIG-GO-1493-status.json",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1493-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1493_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_file_count_before": 0,
+    "repo_py_file_count_after": 0,
+    "deleted_files": [],
+    "target_dir": {
+      "path": "bigclaw-go/scripts",
+      "py_file_count_before": 0,
+      "py_file_count_after": 0
+    },
+    "native_helpers": [
+      "bigclaw-go/scripts/benchmark/run_suite.sh",
+      "bigclaw-go/scripts/e2e/broker_bootstrap_summary.go",
+      "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+      "bigclaw-go/scripts/e2e/ray_smoke.sh",
+      "bigclaw-go/scripts/e2e/run_all.sh"
+    ]
+  },
+  "ownership": {
+    "go_or_native_paths": [
+      "bigclaw-go/scripts/benchmark/run_suite.sh",
+      "bigclaw-go/scripts/e2e/broker_bootstrap_summary.go",
+      "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+      "bigclaw-go/scripts/e2e/ray_smoke.sh",
+      "bigclaw-go/scripts/e2e/run_all.sh",
+      "bigclaw-go/cmd/bigclawctl/main.go"
+    ],
+    "delete_condition": "Delete any new helper artifact under bigclaw-go/scripts if it reintroduces Python or duplicates behavior already owned by bigclawctl or bigclaw-go/internal packages."
+  },
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1493 -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1493/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1493/bigclaw-go/scripts -type f | sed 's#^./##' | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1493/bigclaw-go && go test -count=1 ./internal/regression -run \"TestBIGGO1160MigrationDocsListGoReplacements|TestBIGGO1493(RepositoryHasNoPythonFiles|BigclawGoScriptsStayPythonFree|BigclawGoScriptsKeepNativeHelperSet|LaneReportCapturesZeroDeltaAndOwnership)$\""
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "target_dir_py_inventory": "none",
+      "native_helper_inventory": [
+        "bigclaw-go/scripts/benchmark/run_suite.sh",
+        "bigclaw-go/scripts/e2e/broker_bootstrap_summary.go",
+        "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+        "bigclaw-go/scripts/e2e/ray_smoke.sh",
+        "bigclaw-go/scripts/e2e/run_all.sh"
+      ],
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.114s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The checked-out workspace was already at zero physical Python files before BIG-GO-1493 changes."
+  },
+  "notes": [
+    "This lane documents the zero-Python baseline for bigclaw-go/scripts and hardens it with a helper-set regression guard.",
+    "Migration-plan docs were refreshed to record current bigclaw-go/scripts Go/native ownership instead of stale Python candidate lists."
+  ]
+}
