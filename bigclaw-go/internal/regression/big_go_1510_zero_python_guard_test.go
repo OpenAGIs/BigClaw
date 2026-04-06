@@ -73,7 +73,7 @@ func TestBIGGO1510LaneArtifactsCaptureZeroPythonReality(t *testing.T) {
 		"`scripts`: `0` Python files",
 		"`bigclaw-go/scripts`: `0` Python files",
 		"`find . -path '*/.git' -prune -o -type f -name '*.py' -print | wc -l`",
-		"`cd bigclaw-go && go test -count=1 ./internal/regression -run TestBIGGO1510`",
+		"`cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1510(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneArtifactsCaptureZeroPythonReality)$'`",
 	} {
 		if !strings.Contains(report, needle) {
 			t.Fatalf("lane report missing substring %q", needle)
