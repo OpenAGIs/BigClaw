@@ -36,3 +36,10 @@
   `scripts/ops/bigclaw-symphony`
   `scripts/ops/bigclawctl`
 - `bash scripts/ops/bigclaw-issue --help` -> exit `0`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1484/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1484(ScriptsTreeHasNoPythonWrappers|ShellReplacementPathsRemainAvailable|LaneReportCapturesScriptsWrapperBaseline)$'` -> `ok  	bigclaw-go/internal/regression	2.324s`
+
+## Artifacts
+- `bigclaw-go/internal/regression/big_go_1484_zero_python_wrapper_guard_test.go`
+- `bigclaw-go/docs/reports/big-go-1484-python-wrapper-sweep.md`
+- `reports/BIG-GO-1484-validation.md`
+- `reports/BIG-GO-1484-status.json`

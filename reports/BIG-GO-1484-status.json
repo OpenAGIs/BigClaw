@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1484",
+    "title": "Refill: remove remaining physical Python wrappers under scripts and scripts/ops even if they are compat shims",
+    "state": "Blocked"
+  },
+  "branch": {
+    "name": "BIG-GO-1484",
+    "baseline_commit": "a63c8ec0f999d976a1af890c920a54ac2d6c693a",
+    "latest_commit": "captured by git rev-parse --short HEAD after final lane commit",
+    "push_target": "origin/BIG-GO-1484"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1484-python-wrapper-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1484_zero_python_wrapper_guard_test.go",
+    "validation_report": "reports/BIG-GO-1484-validation.md"
+  },
+  "inventory": {
+    "repo_py_count_before": 0,
+    "repo_py_count_after": 0,
+    "scripts_py_count_before": 0,
+    "scripts_py_count_after": 0
+  },
+  "replacement_paths": [
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "bigclaw-go/cmd/bigclawctl/main.go"
+  ],
+  "validation": {
+    "commands": [
+      "git ls-files '*.py' | wc -l",
+      "rg --files scripts scripts/ops -g '*.py' | wc -l",
+      "find scripts scripts/ops -maxdepth 3 -type f | sort",
+      "bash scripts/ops/bigclaw-issue --help",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1484(ScriptsTreeHasNoPythonWrappers|ShellReplacementPathsRemainAvailable|LaneReportCapturesScriptsWrapperBaseline)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "scripts_py_count": "0",
+      "wrapper_smoke_test": "exit 0",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t2.324s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The checked-out branch already contains zero tracked .py files repository-wide and zero .py files under scripts and scripts/ops."
+  }
+}
