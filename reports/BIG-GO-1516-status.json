@@ -7,7 +7,9 @@
   "branch": {
     "name": "BIG-GO-1516",
     "baseline_commit": "a63c8ec",
-    "push_target": "origin/BIG-GO-1516"
+    "latest_commit": "546277bc",
+    "push_target": "origin/BIG-GO-1516",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -50,5 +52,14 @@
       "residual_area_py_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.941s"
     }
+  },
+  "blocker": {
+    "type": "github_auth",
+    "summary": "GitHub PR creation or inspection cannot be completed unattended from this environment because gh is unauthenticated.",
+    "evidence": [
+      "gh auth status -> not logged into any GitHub hosts",
+      "branch pushed to origin/BIG-GO-1516",
+      "public compare view available at https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1"
+    ]
   }
 }
