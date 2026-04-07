@@ -63,7 +63,7 @@ Result: `ok  	bigclaw-go/internal/regression	5.913s`
 ## GitHub
 
 - Branch: `BIG-GO-1562`
-- Head commit: `ce172d7`
+- Head reference: `origin/BIG-GO-1562`
 - Push target: `origin/BIG-GO-1562`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1562?expand=1`
 - PR status: not opened from this environment because `gh auth status` reports

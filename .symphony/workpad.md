@@ -31,6 +31,7 @@
 
 - Replacement-evidence and regression-hardening landed because the repository
   was already Python-free for the targeted tranche when the lane started.
-- Latest commit pushed: `ce172d7` on `origin/BIG-GO-1562`.
+- Latest branch state pushed on `origin/BIG-GO-1562`; see the compare URL in
+  `reports/BIG-GO-1562-status.json`.
 - PR creation is blocked in this environment because `gh` is installed but not
   authenticated.
