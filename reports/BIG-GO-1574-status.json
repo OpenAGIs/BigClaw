@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-1574",
     "baseline_commit": "59e3046ae66b64c510e88676b8186fe0747a7eb7",
-    "latest_commit": "83985cf5b974a4817b72e9f939d22faba1ce6aa1",
+    "latest_commit": "HEAD",
     "push_target": "origin/BIG-GO-1574",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1574?expand=1"
   },
@@ -36,7 +36,7 @@
     "results": {
       "repository_py_inventory": "none",
       "candidate_path_absence": "success",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.261s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.749s"
     }
   },
   "pull_request": {
