@@ -48,7 +48,10 @@
     }
   },
   "pull_request": {
-    "state": "not_opened",
-    "reason": "gh auth status reported no authenticated GitHub host session"
+    "number": 225,
+    "url": "https://github.com/OpenAGIs/BigClaw/pull/225",
+    "state": "open",
+    "title": "BIG-GO-1562: record src bigclaw tranche B replacement evidence",
+    "draft": false
   }
 }
