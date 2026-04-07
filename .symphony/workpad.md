@@ -89,3 +89,19 @@
 - Targeted validation result:
   - `ok  	bigclaw-go/internal/contract	0.119s`
   - `ok  	bigclaw-go/internal/events	0.354s`
+
+## Git landing note
+- `HEAD` at the start of this continuation had zero committed `*.py` files (`git ls-tree -r --name-only HEAD | rg '\.py$'` returned no paths), while the workspace carried a large staged migration diff that introduced many Python files outside this issue's scope.
+- Because those physical on-disk deletions were not representable as isolated git deletions from `HEAD`, this issue used the acceptance alternative and landed exact Go/native replacement evidence in git on branch `BIG-GO-1564`.
+
+## Final committed validation
+- Commit: `db536116`
+- Targeted validation command:
+  - `cd bigclaw-go && go test ./internal/intake ./internal/githubsync ./internal/bootstrap ./internal/product ./internal/legacyshim ./internal/repo`
+- Targeted validation result:
+  - `ok  	bigclaw-go/internal/intake	(cached)`
+  - `ok  	bigclaw-go/internal/githubsync	(cached)`
+  - `ok  	bigclaw-go/internal/bootstrap	(cached)`
+  - `ok  	bigclaw-go/internal/product	(cached)`
+  - `ok  	bigclaw-go/internal/legacyshim	(cached)`
+  - `ok  	bigclaw-go/internal/repo	(cached)`
