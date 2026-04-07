@@ -69,3 +69,7 @@
   Result: exit `0`, output confirms the migration plan now names the retired root shim set both in the slice summary and in the root compatibility retirement note
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep(Docs)?'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	1.227s`
+- `rg -n 'bash scripts/ops/bigclawctl github-sync\\|refill\\|workspace \\.\\.\\.|bigclaw_github_sync.py|bigclaw_refill_queue.py|bigclaw_workspace_bootstrap.py|symphony_workspace_bootstrap.py|symphony_workspace_validate.py' docs/go-mainline-cutover-handoff.md docs/go-cli-script-migration-plan.md bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go bigclaw-go/internal/regression/big_go_1567_scripts_ops_deletion_tranche_test.go`
+  Result: exit `0`, output confirms the active docs and regressions now use the explicit `github-sync|refill|workspace` `bigclawctl` surface instead of the generic `...` shorthand
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep(Docs)?'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	1.154s`

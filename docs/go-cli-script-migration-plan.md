@@ -102,7 +102,7 @@ The retired root shim set is now removed:
 `scripts/ops/symphony_workspace_bootstrap.py`, and
 `scripts/ops/symphony_workspace_validate.py`. The remaining Bash aliases stay in
 place until operator docs and external automation references finish the direct
-cutover to `bash scripts/ops/bigclawctl ...`.
+cutover to `bash scripts/ops/bigclawctl github-sync|refill|workspace ...`.
 
 ## Remaining Backlog
 
@@ -145,7 +145,7 @@ cutover to `bash scripts/ops/bigclawctl ...`.
   `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`,
   `scripts/ops/symphony_workspace_bootstrap.py`, and
   `scripts/ops/symphony_workspace_validate.py`, and switch to
-  `bash scripts/ops/bigclawctl ...` entrypoints.
+  `bash scripts/ops/bigclawctl github-sync|refill|workspace ...` entrypoints.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
   for the migrated `bigclaw-go/scripts/*` automation callers.

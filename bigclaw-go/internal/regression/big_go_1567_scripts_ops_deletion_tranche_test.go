@@ -100,7 +100,7 @@ func TestBIGGO1567CutoverHandoffCarriesScriptsOpsReplacements(t *testing.T) {
 		"`bigclaw_workspace_bootstrap.py`",
 		"`symphony_workspace_bootstrap.py`",
 		"`symphony_workspace_validate.py`",
-		"`bash scripts/ops/bigclawctl ...`",
+		"`bash scripts/ops/bigclawctl github-sync|refill|workspace ...`",
 	} {
 		if !strings.Contains(contents, needle) {
 			t.Fatalf("docs/go-mainline-cutover-handoff.md missing scripts/ops replacement guidance %q", needle)

@@ -43,7 +43,7 @@ cutover set.
   `bigclaw_github_sync.py`, `bigclaw_refill_queue.py`,
   `bigclaw_workspace_bootstrap.py`, `symphony_workspace_bootstrap.py`, and
   `symphony_workspace_validate.py`; operators should stay on
-  `bash scripts/ops/bigclawctl ...`.
+  `bash scripts/ops/bigclawctl github-sync|refill|workspace ...`.
 
 ## Remaining non-blocking caveats
 

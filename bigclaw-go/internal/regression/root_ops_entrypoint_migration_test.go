@@ -42,6 +42,7 @@ func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 		"`scripts/ops/symphony_workspace_validate.py`, and switch to",
 		"`scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`",
 		"`scripts/ops/symphony_workspace_bootstrap.py`, and",
+		"`bash scripts/ops/bigclawctl github-sync|refill|workspace ...`",
 	}
 	for _, needle := range required {
 		if !strings.Contains(contents, needle) {
