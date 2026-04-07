@@ -26,5 +26,5 @@
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find scripts/ops bigclaw-go/cmd/bigclawctl bigclaw-go/internal/issuearchive -type f -name '*.py' 2>/dev/null | sort`
+- `find scripts/ops bigclaw-go/cmd/bigclawctl bigclaw-go/internal/refill -type f -name '*.py' 2>/dev/null | sort`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1568(RepositoryHasNoPythonFiles|OpsMigrationHelperResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`

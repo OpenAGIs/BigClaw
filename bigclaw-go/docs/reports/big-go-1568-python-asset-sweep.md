@@ -50,4 +50,4 @@ The active Go/native replacement surface for this residual area remains:
   Result: no output; the `scripts/ops` migration-helper residual area remained
   Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1568(RepositoryHasNoPythonFiles|OpsMigrationHelperResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.185s`
+  Result: `ok  	bigclaw-go/internal/regression	1.417s`
