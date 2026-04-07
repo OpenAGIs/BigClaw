@@ -1,37 +1,30 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1568 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+- Confirm the live repository baseline for `*.py` files and verify whether this
+  lane can still delete physical Python files.
+- Audit the remaining `scripts/ops` migration-helper surface and its Go/native
+  replacements to select a narrow, unblocked tranche.
+- Add issue-specific regression coverage and an exact-ledger report proving the
+  `scripts/ops` helper tranche remains Python-free and backed by Go/native
+  entrypoints.
+- Run targeted validation, then commit and push the lane branch.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- `find . -name '*.py' | wc -l` is rechecked and recorded for the current
+  branch baseline.
+- Because the fetched `main` baseline is already at `0`, this lane satisfies
+  acceptance through exact Go/native replacement evidence in git instead of a
+  physical Python-file count drop.
+- The landed evidence stays scoped to the `scripts/ops` migration-helper
+  tranche and does not reopen bookkeeping-only work outside that surface.
+- The branch contains issue-specific artifacts for `BIG-GO-1568`, targeted test
+  execution evidence, and a pushed commit on `origin/BIG-GO-1568`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `find scripts/ops bigclaw-go/cmd/bigclawctl bigclaw-go/internal/issuearchive -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1568(RepositoryHasNoPythonFiles|OpsMigrationHelperResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
