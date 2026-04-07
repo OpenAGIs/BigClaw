@@ -45,6 +45,8 @@
   Result: no output.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1568(RepositoryHasNoPythonFiles|OpsMigrationHelperResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
   Result: `ok  	bigclaw-go/internal/regression	2.188s`
+- `git diff --stat main...BIG-GO-1568`
+  Result: `5 files changed, 358 insertions(+), 25 deletions(-)`.
 
 ## Blockers
 
@@ -52,3 +54,5 @@
   cannot run successfully in this workspace because GitHub CLI is
   unauthenticated. `gh auth login` or `GH_TOKEN` would be required to inspect
   or create the PR and update remote issue state.
+- Public GitHub compare visibility is present for `main...BIG-GO-1568`, but PR
+  creation still requires authenticated GitHub access.

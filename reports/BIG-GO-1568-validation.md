@@ -93,6 +93,8 @@ ok  	bigclaw-go/internal/regression	2.188s
 - Baseline HEAD before lane commit: `646edf3`
 - Push target: `origin/BIG-GO-1568`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1568?expand=1`
+- `git diff --stat main...BIG-GO-1568`:
+  `5 files changed, 358 insertions(+), 25 deletions(-)`
 
 ## Blockers
 
@@ -105,3 +107,6 @@ ok  	bigclaw-go/internal/regression	2.188s
   To get started with GitHub CLI, please run:  gh auth login
   Alternatively, populate the GH_TOKEN environment variable with a GitHub API authentication token.
   ```
+- Public GitHub compare visibility exists for
+  `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1568?expand=1`,
+  but opening or inspecting a PR still requires authenticated GitHub access.
