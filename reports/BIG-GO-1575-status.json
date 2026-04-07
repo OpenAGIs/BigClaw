@@ -1,0 +1,84 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1575",
+    "title": "Go-only residual Python sweep 05",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1575",
+    "baseline_commit": "32ba551",
+    "push_target": "origin/BIG-GO-1575",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1575?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1575-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1575_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1575-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "candidate_paths_present_before": 0,
+    "candidate_paths_present_after": 0
+  },
+  "candidate_paths": [
+    "src/bigclaw/connectors.py",
+    "src/bigclaw/governance.py",
+    "src/bigclaw/planning.py",
+    "src/bigclaw/reports.py",
+    "src/bigclaw/workflow.py",
+    "tests/test_cross_process_coordination_surface.py",
+    "tests/test_governance.py",
+    "tests/test_parallel_refill.py",
+    "tests/test_repo_registry.py",
+    "tests/test_service.py",
+    "scripts/ops/bigclaw_refill_queue.py",
+    "bigclaw-go/scripts/e2e/cross_process_coordination_surface.py",
+    "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py"
+  ],
+  "deleted_file_ledger": {
+    "lane": [],
+    "compatibility_shims": []
+  },
+  "replacement_paths": [
+    "bigclaw-go/internal/intake/connector.go",
+    "bigclaw-go/internal/governance/freeze.go",
+    "bigclaw-go/internal/planning/planning.go",
+    "bigclaw-go/internal/reporting/reporting.go",
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/service/server.go",
+    "bigclaw-go/internal/repo/registry.go",
+    "bigclaw-go/internal/refill/queue.go",
+    "scripts/ops/bigclawctl",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_coordination_surface_command.go",
+    "bigclaw-go/internal/api/validation_bundle_continuation_surface.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "for f in src/bigclaw/connectors.py src/bigclaw/governance.py src/bigclaw/planning.py src/bigclaw/reports.py src/bigclaw/workflow.py tests/test_cross_process_coordination_surface.py tests/test_governance.py tests/test_parallel_refill.py tests/test_repo_registry.py tests/test_service.py scripts/ops/bigclaw_refill_queue.py bigclaw-go/scripts/e2e/cross_process_coordination_surface.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py; do [ -e \"$f\" ] && echo \"EXISTS $f\" || echo \"MISSING $f\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1575(RepositoryHasNoPythonFiles|CandidatePathsRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesCoverage)$'",
+      "cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/intake ./internal/governance ./internal/planning ./internal/reporting ./internal/workflow ./internal/repo ./internal/refill ./internal/service"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "candidate_path_inventory": "all 13 candidate paths missing",
+      "regression_tests": "ok \tbigclaw-go/internal/regression\t3.248s",
+      "replacement_package_tests": [
+        "ok \tbigclaw-go/cmd/bigclawctl\t11.176s",
+        "ok \tbigclaw-go/internal/intake\t3.306s",
+        "ok \tbigclaw-go/internal/governance\t5.207s",
+        "ok \tbigclaw-go/internal/planning\t4.693s",
+        "ok \tbigclaw-go/internal/reporting\t8.673s",
+        "ok \tbigclaw-go/internal/workflow\t7.739s",
+        "ok \tbigclaw-go/internal/repo\t7.235s",
+        "ok \tbigclaw-go/internal/refill\t10.716s",
+        "ok \tbigclaw-go/internal/service\t6.757s"
+      ]
+    }
+  },
+  "residual_risk": [
+    "Historical markdown and status artifacts may continue to reference removed Python paths as migration history, but no physical .py files remain in the repository."
+  ]
+}
