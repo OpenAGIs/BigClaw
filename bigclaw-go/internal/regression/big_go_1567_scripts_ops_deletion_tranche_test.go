@@ -86,3 +86,21 @@ func TestBIGGO1567WorkflowCarriesScriptsOpsReplacements(t *testing.T) {
 		}
 	}
 }
+
+func TestBIGGO1567CutoverHandoffCarriesScriptsOpsReplacements(t *testing.T) {
+	rootRepo := regressionRepoRoot(t)
+	contents := readRepoFile(t, rootRepo, "docs/go-mainline-cutover-handoff.md")
+
+	for _, needle := range []string{
+		"`bigclaw_github_sync.py`",
+		"`bigclaw_refill_queue.py`",
+		"`bigclaw_workspace_bootstrap.py`",
+		"`symphony_workspace_bootstrap.py`",
+		"`symphony_workspace_validate.py`",
+		"`bash scripts/ops/bigclawctl ...`",
+	} {
+		if !strings.Contains(contents, needle) {
+			t.Fatalf("docs/go-mainline-cutover-handoff.md missing scripts/ops replacement guidance %q", needle)
+		}
+	}
+}

@@ -39,7 +39,11 @@ cutover set.
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
 - The default mainline posture is Go-first, and this worktree no longer carries
-  tracked Python source files or Python entrypoint shims.
+  tracked Python source files or the retired root `scripts/ops` shims
+  `bigclaw_github_sync.py`, `bigclaw_refill_queue.py`,
+  `bigclaw_workspace_bootstrap.py`, `symphony_workspace_bootstrap.py`, and
+  `symphony_workspace_validate.py`; operators should stay on
+  `bash scripts/ops/bigclawctl ...`.
 
 ## Remaining non-blocking caveats
 
