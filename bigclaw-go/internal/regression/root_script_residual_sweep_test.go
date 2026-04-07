@@ -65,6 +65,13 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		"Use this to verify the root dev smoke path:",
 		"bash scripts/ops/bigclawctl dev-smoke",
 		"bash scripts/dev_bootstrap.sh",
+		"`scripts/ops/bigclaw_refill_queue.py`",
+		"`scripts/ops/bigclaw_workspace_bootstrap.py`",
+		"`scripts/ops/symphony_workspace_bootstrap.py`",
+		"`scripts/ops/symphony_workspace_validate.py`",
+		"`scripts/ops/bigclaw_github_sync.py`",
+		"`bash scripts/ops/bigclawctl workspace ...`",
+		"`bash scripts/ops/bigclawctl github-sync ...`",
 	}
 	for _, needle := range requiredReadmeEntries {
 		if !strings.Contains(readme, needle) {

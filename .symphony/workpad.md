@@ -41,3 +41,7 @@
   Result: exit `0`, output confirms the migration plan and root-ops regression now carry the exact GitHub sync and refill cutover guidance
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	2.534s`
+- `rg -n 'bigclaw_refill_queue.py|bigclaw_workspace_bootstrap.py|symphony_workspace_bootstrap.py|symphony_workspace_validate.py|bigclaw_github_sync.py|bigclawctl workspace \\.\\.\\.|bigclawctl github-sync \\.\\.\\.' README.md bigclaw-go/internal/regression/root_script_residual_sweep_test.go`
+  Result: exit `0`, output confirms the README now names the retired refill, workspace, and GitHub sync Python shims together with their Go/native replacements
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootScriptResidualSweep(Docs)?|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	1.738s`
