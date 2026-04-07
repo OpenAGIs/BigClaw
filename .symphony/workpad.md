@@ -1,27 +1,24 @@
-## Codex Workpad
+# BIG-GO-1565
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+- Replace `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` with a Go implementation under `bigclaw-go/scripts/e2e`.
+- Replace `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` with a Go implementation under `bigclaw-go/scripts/e2e`.
+- Update local callers/tests/docs that reference the deleted Python continuation scripts so the repo uses the Go/native replacements.
+- Delete the two Python scripts and the Python-only gate test once equivalent Go coverage is in place.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+- `find . -name '*.py' | wc -l` decreases from the current baseline.
+- `bigclaw-go/scripts/e2e/run_all.sh` and checked-in references no longer depend on the deleted continuation Python scripts.
+- Go tests cover the continuation scorecard/gate behavior that was previously exercised by the Python gate test.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Baseline: `find . -name '*.py' | wc -l` -> `138`
+- Final: `find . -name '*.py' | wc -l` -> `135`
+- `cd bigclaw-go && go test ./scripts/e2e/validationbundle/...` -> `ok  	bigclaw-go/scripts/e2e/validationbundle	2.190s`
+- `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_scorecard/main.go --output /tmp/bigclaw-1565-scorecard.json` -> exit `0`
+- `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_policy_gate/main.go --scorecard /tmp/bigclaw-1565-scorecard.json --output /tmp/bigclaw-1565-gate.json --enforcement-mode review` -> exit `0`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLiveValidationIndexStaysAligned|TestLiveValidationIndexContinuationMetadata|TestContinuationPolicyGateReviewerMetadata'` -> `ok  	bigclaw-go/internal/regression	0.188s`
+- `cd bigclaw-go && python3 scripts/e2e/run_all_test.py` -> `Ran 3 tests in 2.503s` / `OK`

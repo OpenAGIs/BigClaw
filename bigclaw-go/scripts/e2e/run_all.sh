@@ -117,11 +117,11 @@ if ! export_bundle; then
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
-  python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
+  go run "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard/main.go" \
     --output "$CONTINUATION_SCORECARD_PATH"
 
   gate_status=0
-  if ! python3 "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.py" \
+  if ! go run "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate/main.go" \
     --scorecard "$CONTINUATION_SCORECARD_PATH" \
     --enforcement-mode "$CONTINUATION_GATE_MODE" \
     --output "$CONTINUATION_POLICY_GATE_PATH"; then
