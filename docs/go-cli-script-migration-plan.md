@@ -93,9 +93,13 @@ The remaining compatibility layer is intentionally thin:
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
-The root Python workspace shims are now removed. The remaining Bash aliases stay in place until
-operator docs and external automation references finish the direct cutover to
-`bash scripts/ops/bigclawctl ...`.
+The retired root shim set is now removed:
+`scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`,
+`scripts/ops/bigclaw_workspace_bootstrap.py`,
+`scripts/ops/symphony_workspace_bootstrap.py`, and
+`scripts/ops/symphony_workspace_validate.py`. The remaining Bash aliases stay in
+place until operator docs and external automation references finish the direct
+cutover to `bash scripts/ops/bigclawctl ...`.
 
 ## Remaining Backlog
 

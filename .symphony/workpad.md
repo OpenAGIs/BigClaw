@@ -57,3 +57,7 @@
   Result: exit `0`, output confirms the cutover handoff doc now names the retired root `scripts/ops` shims and keeps operators on `bash scripts/ops/bigclawctl ...`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootScriptResidualSweep(Docs)?|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	1.247s`
+- `rg -n 'bigclaw_github_sync.py|bigclaw_refill_queue.py|bigclaw_workspace_bootstrap.py|symphony_workspace_bootstrap.py|symphony_workspace_validate.py|bash scripts/ops/bigclawctl \\.\\.\\.' docs/go-cli-script-migration-plan.md bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go`
+  Result: exit `0`, output confirms the migration plan now names the full retired root shim set before the direct `bigclawctl` cutover note
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep(Docs)?'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	3.217s`
