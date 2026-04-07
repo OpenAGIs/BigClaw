@@ -35,5 +35,5 @@
   output, confirming the checkout remains physically Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1580(RepositoryHasNoPythonFiles|CandidatePathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState|GoMainlineCutoverHandoffStaysGoOnly)$'`
   passed with `ok  	bigclaw-go/internal/regression	1.193s`.
-- Commit/push remains pending while git metadata is re-established in this
-  tarball-materialized workspace.
+- Branch `BIG-GO-1580` was committed at `990af2beb93c700bfb87f7acc7eeea9cd69c413a`
+  and pushed to `origin/BIG-GO-1580`.

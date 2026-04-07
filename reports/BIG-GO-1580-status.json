@@ -1,0 +1,79 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1580",
+    "title": "Go-only residual Python sweep 10",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1580",
+    "baseline_commit": "59e3046ae66b64c510e88676b8186fe0747a7eb7",
+    "latest_commit": "990af2beb93c700bfb87f7acc7eeea9cd69c413a",
+    "push_target": "origin/BIG-GO-1580",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1580?expand=1",
+    "pr_helper_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1580"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1580-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1580_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1580-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "candidate_path_py_files_before": 0,
+    "candidate_path_py_files_after": 0
+  },
+  "candidate_paths": [
+    "src/bigclaw/dsl.py",
+    "src/bigclaw/observability.py",
+    "src/bigclaw/repo_governance.py",
+    "src/bigclaw/saved_views.py",
+    "tests/test_audit_events.py",
+    "tests/test_event_bus.py",
+    "tests/test_memory.py",
+    "tests/test_repo_board.py",
+    "tests/test_roadmap.py",
+    "tests/test_workflow.py",
+    "bigclaw-go/scripts/benchmark/capacity_certification_test.py",
+    "bigclaw-go/scripts/e2e/multi_node_shared_queue.py",
+    "bigclaw-go/scripts/migration/shadow_matrix.py"
+  ],
+  "replacement_paths": [
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/workflow/engine.go",
+    "bigclaw-go/internal/observability/audit.go",
+    "bigclaw-go/internal/observability/recorder.go",
+    "bigclaw-go/internal/repo/governance.go",
+    "bigclaw-go/internal/product/saved_views.go",
+    "bigclaw-go/internal/observability/audit_test.go",
+    "bigclaw-go/internal/events/bus_test.go",
+    "bigclaw-go/internal/policy/memory_test.go",
+    "bigclaw-go/internal/repo/repo_surfaces_test.go",
+    "bigclaw-go/internal/regression/roadmap_contract_test.go",
+    "bigclaw-go/internal/workflow/engine_test.go",
+    "bigclaw-go/cmd/bigclawctl/automation_benchmark_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command_test.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands_test.go",
+    "docs/go-mainline-cutover-handoff.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src tests bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1580(RepositoryHasNoPythonFiles|CandidatePathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState|GoMainlineCutoverHandoffStaysGoOnly)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "candidate_area_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.193s"
+    }
+  },
+  "notes": [
+    "The checkout was already physically Python-free, so this lane ships exact-ledger evidence and regression hardening rather than an in-branch deletion batch.",
+    "docs/go-mainline-cutover-handoff.md now uses the repository zero-Python scan instead of a Python shim assertion."
+  ]
+}
