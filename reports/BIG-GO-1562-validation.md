@@ -67,4 +67,6 @@ Result: `ok  	bigclaw-go/internal/regression	5.913s`
 - Push target: `origin/BIG-GO-1562`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1562?expand=1`
 - PR: `https://github.com/OpenAGIs/BigClaw/pull/225`
-- PR state: `open`
+- PR state: `merged`
+- PR merged at: `2026-04-07T16:17:48Z`
+- Merge commit: `59e3046ae66b64c510e88676b8186fe0747a7eb7`

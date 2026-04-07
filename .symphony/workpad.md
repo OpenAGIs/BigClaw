@@ -33,4 +33,4 @@
   was already Python-free for the targeted tranche when the lane started.
 - Latest branch state pushed on `origin/BIG-GO-1562`; see the compare URL in
   `reports/BIG-GO-1562-status.json`.
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/225`
+- PR merged: `https://github.com/OpenAGIs/BigClaw/pull/225`

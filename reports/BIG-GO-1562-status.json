@@ -50,8 +50,10 @@
   "pull_request": {
     "number": 225,
     "url": "https://github.com/OpenAGIs/BigClaw/pull/225",
-    "state": "open",
+    "state": "merged",
     "title": "BIG-GO-1562: record src bigclaw tranche B replacement evidence",
-    "draft": false
+    "draft": false,
+    "merged_at": "2026-04-07T16:17:48Z",
+    "merge_commit_sha": "59e3046ae66b64c510e88676b8186fe0747a7eb7"
   }
 }
