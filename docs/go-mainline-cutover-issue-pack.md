@@ -149,7 +149,7 @@ Current repo progress:
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
-- Python source files remain in place as migration references; BigClaw is still not 100% Go
+- the retired Python source files for this slice are no longer present in the repository checkout, and the Go packages above are the only supported implementation surface
 
 Dependencies:
 - depends on `BIG-GOM-301`
@@ -273,7 +273,7 @@ Dependencies:
 
 Current repo progress:
 - `bigclaw-go/internal/repo/governance.go` now ports `src/bigclaw/repo_governance.py` into a Go-owned repo permission matrix and audit-field contract
-- the remaining repo-collaboration Python surfaces still need Go owners across repo board, registry, gateway, plane, links, commits, and triage packages
+- `bigclaw-go/internal/repo/*` now covers the retired repo board, registry, gateway, plane, links, commits, governance, and triage module set, and the corresponding Python files are absent from the checkout
 
 Milestone:
 - `Governance/Reporting Surface Migration`
