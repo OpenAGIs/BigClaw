@@ -315,7 +315,12 @@ Dependencies:
 - depends on `BIG-GOM-303`
 
 Current repo progress:
-- `scripts/ops/bigclawctl` now routes operators into the Go `cmd/bigclawctl` entrypoint instead of the legacy Python helpers
+- `scripts/ops/bigclawctl` now routes operators into the Go `cmd/bigclawctl`
+  entrypoint instead of the retired `scripts/ops/bigclaw_github_sync.py`,
+  `scripts/ops/bigclaw_refill_queue.py`,
+  `scripts/ops/bigclaw_workspace_bootstrap.py`,
+  `scripts/ops/symphony_workspace_bootstrap.py`, and
+  `scripts/ops/symphony_workspace_validate.py` shims
 - `bigclaw-go/internal/bootstrap/*` now owns shared-mirror bootstrap, cleanup, and validation logic with Go tests
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic with tracker-neutral `TrackedIssue` records, while `cmd/bigclawctl refill` handles backend-specific polling and promotion

@@ -73,3 +73,7 @@
   Result: exit `0`, output confirms the active docs and regressions now use the explicit `github-sync|refill|workspace` `bigclawctl` surface instead of the generic `...` shorthand
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep(Docs)?'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	1.154s`
+- `rg -n 'scripts/ops/bigclawctl.*Go \`cmd/bigclawctl\`|bigclaw_github_sync.py|bigclaw_refill_queue.py|bigclaw_workspace_bootstrap.py|symphony_workspace_bootstrap.py|symphony_workspace_validate.py' docs/go-mainline-cutover-issue-pack.md bigclaw-go/internal/regression/big_go_1567_scripts_ops_deletion_tranche_test.go`
+  Result: exit `0`, output confirms the issue pack no longer uses a generic “legacy Python helpers” phrase for the `scripts/ops` tranche
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep(Docs)?'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	3.222s`

@@ -64,6 +64,7 @@ func TestBIGGO1567CutoverIssuePackCarriesScriptsOpsReplacements(t *testing.T) {
 		"`bash scripts/ops/bigclawctl github-sync|refill|workspace ...`",
 		"`scripts/ops/bigclaw_refill_queue.py`",
 		"`scripts/ops/symphony_workspace_validate.py` remains removed",
+		"`scripts/ops/bigclawctl` now routes operators into the Go `cmd/bigclawctl`",
 	} {
 		if !strings.Contains(contents, needle) {
 			t.Fatalf("docs/go-mainline-cutover-issue-pack.md missing scripts/ops replacement guidance %q", needle)
