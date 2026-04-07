@@ -33,3 +33,7 @@
   Result: exit `0`, output confirms all five retired `scripts/ops` Python replacement lines exist in both docs files
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOps|TestRootScriptResidualSweep'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	3.372s` after resolving the stash-pop merge state
+- `rg -n 'scripts/ops/bigclaw_refill_queue.py|bigclawctl refill' docs/go-cli-script-migration-plan.md bigclaw-go/internal/regression/root_script_residual_sweep_test.go bigclaw-go/docs/reports/big-go-1567-scripts-ops-deletion-tranche.md`
+  Result: exit `0`, output confirms the exact `scripts/ops/bigclaw_refill_queue.py` replacement mapping in the migration plan, residual sweep regression, and 1567 evidence report
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOps|TestRootScriptResidualSweep'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	4.237s` after tightening the refill-path migration wording
