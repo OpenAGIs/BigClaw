@@ -1,37 +1,29 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1567
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+- Bootstrap this workspace into a valid checkout from `origin`.
+- Inspect the remaining Python footprint, with emphasis on any `scripts/ops`-adjacent deletion tranche still present on disk.
+- Remove a narrow unblocked Python tranche only when an equivalent Go/native path exists or the deletion is otherwise repository-safe.
+- Run targeted validation and record exact commands and results.
+- Commit and push the scoped change to the remote branch.
 
 ## Acceptance
-
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- `find . -name '*.py' | wc -l` decreases from the checked-out baseline, or
+- the change lands exact Go/native replacement evidence in git for the removed Python tranche.
 
 ## Validation
+- Capture baseline and final Python file counts.
+- Run targeted repository checks for the touched area.
+- Record exact commands and exit results in this file after implementation.
 
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+## Notes
+- Checked out `origin/main` into local branch `BIG-GO-1567`; repository baseline already has `0` Python files.
+- This issue therefore lands exact `scripts/ops` Go/native replacement evidence with regression coverage instead of a fresh `.py` deletion.
 
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+## Validation Results
+- `find . -name '*.py' | wc -l`
+  Result: exit `0`, output `0`
+- `find scripts/ops -maxdepth 1 -type f | sort`
+  Result: exit `0`, output `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-panel`, `scripts/ops/bigclaw-symphony`, `scripts/ops/bigclawctl`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOps'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	4.903s`
