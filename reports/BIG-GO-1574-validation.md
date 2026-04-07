@@ -77,5 +77,5 @@ paths rather than numerically reduce an already-zero Python count.
 ## Git
 
 - Branch: `BIG-GO-1574`
-- Commit: `25d6e321f662803ed2f81a11bc7b1cd81ba1ddf9` (`BIG-GO-1574 harden residual python sweep 04`)
-- Push: `git push -u origin BIG-GO-1574` -> `Everything up-to-date`
+- Commit: `83985cf5b974a4817b72e9f939d22faba1ce6aa1` (`BIG-GO-1574: refresh validation metadata`)
+- Push: `git push` -> `To https://github.com/OpenAGIs/BigClaw.git; 25d6e32..83985cf  BIG-GO-1574 -> BIG-GO-1574`
