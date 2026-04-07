@@ -7,7 +7,6 @@
   "branch": {
     "name": "BIG-GO-1568",
     "baseline_commit": "646edf33",
-    "latest_commit": "8cb76bc",
     "push_target": "origin/BIG-GO-1568",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1568?expand=1"
   },
@@ -51,12 +50,16 @@
     "results": {
       "repository_py_inventory": "none",
       "residual_area_py_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.417s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t2.188s"
     }
   },
   "blocker": {
     "type": "baseline",
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1568 changes."
+  },
+  "delivery_blocker": {
+    "type": "github_auth",
+    "summary": "GitHub CLI is installed but unauthenticated in this workspace, so PR inspection/creation and remote issue-state updates cannot be completed without GH_TOKEN or gh auth login."
   },
   "notes": [
     "This lane satisfies acceptance through exact Go/native replacement evidence for the scripts/ops migration-helper tranche.",
