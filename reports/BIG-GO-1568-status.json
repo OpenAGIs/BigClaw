@@ -47,14 +47,16 @@
       "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
       "find scripts/ops bigclaw-go/cmd/bigclawctl bigclaw-go/internal/refill -type f -name '*.py' 2>/dev/null | sort",
       "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1568(RepositoryHasNoPythonFiles|OpsMigrationHelperResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'",
-      "git diff --stat main...BIG-GO-1568"
+      "git diff --stat main...BIG-GO-1568",
+      "git ls-remote --heads origin BIG-GO-1568"
     ],
     "results": {
       "repository_py_count_wc": "0",
       "repository_py_inventory": "none",
       "residual_area_py_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t2.188s",
-      "branch_diff_stat": "5 files changed, 358 insertions(+), 25 deletions(-)"
+      "branch_diff_stat": "5 files changed, 358 insertions(+), 25 deletions(-)",
+      "remote_branch_head": "30d4914ea53db2b3014e64c748e468fbefaea699"
     }
   },
   "blocker": {
@@ -69,6 +71,7 @@
     "This lane satisfies acceptance through exact Go/native replacement evidence for the scripts/ops migration-helper tranche.",
     "No physical Python files remained to delete in the fetched baseline.",
     "The public compare view for main...BIG-GO-1568 is reachable, confirming the pushed branch is visible on GitHub even though PR operations are blocked by missing auth.",
-    "The anonymous compare page is incomplete and stale, so authenticated GitHub access is still required to verify PR/head state."
+    "The anonymous compare page is incomplete and stale, so authenticated GitHub access is still required to verify PR/head state.",
+    "The remote branch ref returned by git ls-remote matches local HEAD, confirming the pushed branch tip is synchronized with origin."
   ]
 }
