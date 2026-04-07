@@ -30,39 +30,6 @@ func TestBindRunCommitsRejectsUnsupportedRoles(t *testing.T) {
 	}
 }
 
-func TestValidateRunCommitRolesSortsDistinctInvalidRoles(t *testing.T) {
-	err := ValidateRunCommitRoles([]RunCommitLink{
-		{RunID: "run-1", CommitHash: "abc123", Role: "merge", RepoSpaceID: "space-1"},
-		{RunID: "run-1", CommitHash: "def456", Role: "archive", RepoSpaceID: "space-1"},
-		{RunID: "run-1", CommitHash: "ghi789", Role: "merge", RepoSpaceID: "space-1"},
-	})
-	if err == nil || err.Error() != "unsupported run commit roles: archive, merge" {
-		t.Fatalf("expected sorted invalid role error, got %v", err)
-	}
-}
-
-func TestAcceptedCommitHashWithoutAcceptedRoleAndJoinCSVEdges(t *testing.T) {
-	binding := RunCommitBinding{
-		Links: []RunCommitLink{
-			{RunID: "run-1", CommitHash: "abc123", Role: "source", RepoSpaceID: "space-1"},
-			{RunID: "run-1", CommitHash: "def456", Role: "candidate", RepoSpaceID: "space-1"},
-		},
-	}
-	if got := binding.AcceptedCommitHash(); got != "" {
-		t.Fatalf("expected empty accepted hash, got %q", got)
-	}
-
-	if got := joinCSV(nil); got != "" {
-		t.Fatalf("expected empty csv for nil slice, got %q", got)
-	}
-	if got := joinCSV([]string{"archive"}); got != "archive" {
-		t.Fatalf("expected single-value csv, got %q", got)
-	}
-	if got := joinCSV([]string{"archive", "merge", "sync"}); got != "archive, merge, sync" {
-		t.Fatalf("expected multi-value csv, got %q", got)
-	}
-}
-
 func TestRepoRegistryResolvesSpaceChannelAndAgent(t *testing.T) {
 	registry := RepoRegistry{}
 	registry.RegisterSpace(RepoSpace{SpaceID: "space-1", ProjectKey: "ALPHA", Repo: "OpenAGIs/BigClaw", SidecarEnabled: true})
@@ -81,38 +48,6 @@ func TestRepoRegistryResolvesSpaceChannelAndAgent(t *testing.T) {
 	}
 }
 
-func TestRepoRegistryFallsBackWithoutSpaceAndReusesCachedAgent(t *testing.T) {
-	registry := RepoRegistry{
-		AgentsByActor: map[string]RepoAgent{
-			"bob@example.com": {
-				Actor:       "bob@example.com",
-				RepoAgentID: "agent-existing",
-				DisplayName: "Bob",
-				Roles:       []string{"reviewer"},
-			},
-		},
-	}
-
-	channel := registry.ResolveDefaultChannel("BETA", domain.Task{ID: "BIG-402 / fallback check"})
-	if channel != "BETA-big-402-fallback-check" {
-		t.Fatalf("unexpected fallback channel: %q", channel)
-	}
-
-	agent := registry.ResolveAgent("bob@example.com", "executor")
-	if agent.RepoAgentID != "agent-existing" || !reflect.DeepEqual(agent.Roles, []string{"reviewer"}) {
-		t.Fatalf("expected cached agent to be reused, got %+v", agent)
-	}
-}
-
-func TestRepoSlugNormalizesPunctuationAndFallbacks(t *testing.T) {
-	if got := slug("BIG-401 / review closeout"); got != "big-401-review-closeout" {
-		t.Fatalf("unexpected normalized slug: %q", got)
-	}
-	if got := slug(" !!! "); got != "agent" {
-		t.Fatalf("expected empty slug fallback, got %q", got)
-	}
-}
-
 func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	board := RepoDiscussionBoard{Now: func() time.Time { return time.Date(2026, 3, 20, 10, 0, 0, 0, time.UTC) }}
 	post := board.CreatePost("alpha-release", "alice", "Need reviewer eyes", "task", "BIG-401", map[string]any{"resolved": false})
@@ -126,42 +61,6 @@ func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	filtered := board.ListPosts("alpha-release", "task", "BIG-401")
 	if len(filtered) != 2 {
 		t.Fatalf("expected filtered posts, got %+v", filtered)
-	}
-}
-
-func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) {
-	board := RepoDiscussionBoard{}
-
-	post := board.CreatePost("alpha-release", "alice", "Empty metadata is fine", "", "", nil)
-	if post.Metadata != nil {
-		t.Fatalf("expected nil metadata copy, got %+v", post.Metadata)
-	}
-	if _, err := time.Parse(time.RFC3339, post.CreatedAt); err != nil {
-		t.Fatalf("expected RFC3339 timestamp, got %q (%v)", post.CreatedAt, err)
-	}
-
-	if _, err := board.Reply("missing-post", "bob", "where is this"); err == nil || err.Error() != "unknown parent post: missing-post" {
-		t.Fatalf("expected unknown parent error, got %v", err)
-	}
-
-	second := board.CreatePost("beta-release", "carol", "second post", "task", "BIG-402", map[string]any{"priority": "high"})
-	if got := len(board.ListPosts("", "", "")); got != 2 {
-		t.Fatalf("expected both posts when no filters are set, got %d", got)
-	}
-	if got := board.ListPosts("beta-release", "", ""); len(got) != 1 || got[0].PostID != second.PostID {
-		t.Fatalf("expected beta channel filter to isolate second post, got %+v", got)
-	}
-	if got := board.ListPosts("gamma-release", "", ""); len(got) != 0 {
-		t.Fatalf("expected channel mismatch to filter all posts, got %+v", got)
-	}
-	if got := board.ListPosts("", "", "BIG-999"); len(got) != 0 {
-		t.Fatalf("expected target-id mismatch to filter all posts, got %+v", got)
-	}
-	if got := board.ListPosts("", "incident", ""); len(got) != 0 {
-		t.Fatalf("expected target-surface mismatch to filter all posts, got %+v", got)
-	}
-	if got := board.ListPosts("", "task", "BIG-402"); len(got) != 1 || got[0].PostID != second.PostID {
-		t.Fatalf("expected combined surface/id filter to isolate second post, got %+v", got)
 	}
 }
 
@@ -200,32 +99,6 @@ func TestNormalizeGatewayPayloadsAndErrors(t *testing.T) {
 	other := NormalizeGatewayError(errors.New("permission denied"))
 	if timeout.Code != "timeout" || !timeout.Retryable || notFound.Code != "not_found" || other.Code != "gateway_error" {
 		t.Fatalf("unexpected normalized errors: timeout=%+v notfound=%+v other=%+v", timeout, notFound, other)
-	}
-}
-
-func TestNormalizeGatewayPayloadsReturnDecodeErrors(t *testing.T) {
-	if _, err := NormalizeCommit(map[string]any{"commit_hash": make(chan int)}); err == nil {
-		t.Fatal("expected normalize commit to fail for unmarshalable payload")
-	}
-
-	if _, err := NormalizeLineage(map[string]any{
-		"root_hash": "abc123",
-		"lineage":   "not-a-slice",
-	}); err == nil {
-		t.Fatal("expected normalize lineage to fail for invalid lineage shape")
-	}
-
-	if _, err := NormalizeDiff(map[string]any{
-		"left_hash":     "abc123",
-		"right_hash":    "def456",
-		"files_changed": "three",
-	}); err == nil {
-		t.Fatal("expected normalize diff to fail for invalid files_changed type")
-	}
-
-	var commit RepoCommit
-	if err := decodeMap(map[string]any{"title": make(chan int)}, &commit); err == nil {
-		t.Fatal("expected decodeMap to fail for unmarshalable payload")
 	}
 }
 

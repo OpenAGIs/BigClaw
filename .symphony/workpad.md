@@ -1,37 +1,91 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1564 Workpad
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Inspect the repaired repository state and identify remaining physical Python tests that already have Go/native coverage.
+2. Delete a scoped tranche of unblocked Python test files only, keeping the change limited to tranche B.
+3. Run targeted validation that exercises the replacement Go/native coverage and record exact commands and outcomes.
+4. Commit the change on `BIG-GO-1564` and push to `origin`.
 
 ## Acceptance
-
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- `find . -name '*.py' | wc -l` decreases from the repaired branch baseline.
+- The deleted files are limited to physical Python tests with existing Go/native replacement evidence.
+- Targeted validation is executed and recorded with exact commands and results.
+- Branch is committed and pushed.
 
 ## Validation
+- Baseline count: `find . -name '*.py' | wc -l`
+- Replacement evidence discovery: targeted `rg`, `find`, and `git` inspection
+- Targeted tests: `go test` commands for the native replacement packages covering deleted Python tests
 
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+## Notes
+- Initial workspace bootstrap was broken: only `.git` existed and `HEAD` pointed to `refs/heads/.invalid`.
+- Repository contents were repaired locally by importing a sibling BigClaw checkout and checking out commit `89b08411bc6fabcc5fa0e3692f669bed6f7b8881` onto branch `BIG-GO-1564`.
 
-## GitHub
+## Scoped tranche
+- Delete Python tests with native Go counterparts:
+  - `tests/test_connectors.py` -> `bigclaw-go/internal/intake/connector_test.go`
+  - `tests/test_mapping.py` -> `bigclaw-go/internal/intake/mapping_test.go`
+  - `tests/test_queue.py` -> `bigclaw-go/internal/queue/*_test.go`
+  - `tests/test_github_sync.py` -> `bigclaw-go/internal/githubsync/sync_test.go`
+  - `tests/test_workspace_bootstrap.py` -> `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+  - `tests/test_dashboard_run_contract.py` -> `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+  - `tests/test_saved_views.py` -> `bigclaw-go/internal/product/saved_views_test.go`
 
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+## Results
+- Baseline: `find . -name '*.py' | wc -l` => `138`
+- After deletion: `find . -name '*.py' | wc -l` => `131`
+- Targeted validation command:
+  - `cd bigclaw-go && go test ./internal/intake ./internal/queue ./internal/githubsync ./internal/bootstrap ./internal/product`
+- Targeted validation result:
+  - `ok  	bigclaw-go/internal/intake	3.116s`
+  - `ok  	bigclaw-go/internal/queue	28.424s`
+  - `ok  	bigclaw-go/internal/githubsync	6.319s`
+  - `ok  	bigclaw-go/internal/bootstrap	4.036s`
+  - `ok  	bigclaw-go/internal/product	3.459s`
+
+## Continuation tranche
+- Delete additional Python tests with native Go counterparts already present in the current tree:
+  - `tests/test_legacy_shim.py` -> `bigclaw-go/internal/legacyshim/compilecheck_test.go`
+  - `tests/test_repo_board.py` -> `bigclaw-go/internal/repo/repo_surfaces_test.go`
+  - `tests/test_repo_governance.py` -> `bigclaw-go/internal/repo/governance_test.go`
+  - `tests/test_risk.py` -> `bigclaw-go/internal/risk/risk_test.go`
+
+## Continuation results
+- Before continuation: `find . -name '*.py' | wc -l` => `131`
+- After continuation deletion: `find . -name '*.py' | wc -l` => `127`
+- Targeted validation command:
+  - `cd bigclaw-go && go test ./internal/legacyshim ./internal/repo ./internal/risk`
+- Targeted validation result:
+  - `ok  	bigclaw-go/internal/legacyshim	2.564s`
+  - `ok  	bigclaw-go/internal/repo	4.136s`
+  - `ok  	bigclaw-go/internal/risk	5.280s`
+
+## Repo continuation tranche
+- Delete additional repo-plane Python tests with direct Go/native coverage:
+  - `tests/test_repo_links.py` -> `bigclaw-go/internal/repo/repo_surfaces_test.go`
+  - `tests/test_repo_registry.py` -> `bigclaw-go/internal/repo/repo_surfaces_test.go`
+  - `tests/test_repo_gateway.py` -> `bigclaw-go/internal/repo/repo_surfaces_test.go`
+  - `tests/test_repo_triage.py` -> `bigclaw-go/internal/triage/repo_test.go`
+
+## Repo continuation results
+- Before repo continuation: `find . -name '*.py' | wc -l` => `127`
+- After repo continuation deletion: `find . -name '*.py' | wc -l` => `123`
+- Targeted validation command:
+  - `cd bigclaw-go && go test ./internal/repo ./internal/triage`
+- Targeted validation result:
+  - `ok  	bigclaw-go/internal/repo	(cached)`
+  - `ok  	bigclaw-go/internal/triage	3.161s`
+
+## Contract and bus tranche
+- Delete Python tests with direct Go/native coverage:
+  - `tests/test_execution_contract.py` -> `bigclaw-go/internal/contract/execution_test.go`
+  - `tests/test_event_bus.py` -> `bigclaw-go/internal/events/bus_test.go`
+
+## Contract and bus results
+- Before contract/bus tranche: `find . -name '*.py' | wc -l` => `123`
+- After contract/bus deletion: `find . -name '*.py' | wc -l` => `121`
+- Targeted validation command:
+  - `cd bigclaw-go && go test ./internal/contract ./internal/events`
+- Targeted validation result:
+  - `ok  	bigclaw-go/internal/contract	0.119s`
+  - `ok  	bigclaw-go/internal/events	0.354s`

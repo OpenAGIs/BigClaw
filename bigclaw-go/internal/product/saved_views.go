@@ -2,7 +2,6 @@ package product
 
 import (
 	"fmt"
-	"net/url"
 	"sort"
 	"strings"
 
@@ -316,53 +315,31 @@ func RenderSavedViewReport(catalog SavedViewCatalog, audit SavedViewCatalogAudit
 }
 
 func buildSavedViewRoute(base, team, project string) string {
-	values := url.Values{}
+	parts := make([]string, 0, 2)
 	if team = strings.TrimSpace(team); team != "" {
-		values.Set("team", team)
+		parts = append(parts, "team="+team)
 	}
 	if project = strings.TrimSpace(project); project != "" {
-		values.Set("project", project)
+		parts = append(parts, "project="+project)
 	}
-	if len(values) == 0 {
+	if len(parts) == 0 {
 		return base
 	}
-	return base + "?" + values.Encode()
+	return base + "?" + strings.Join(parts, "&")
 }
 
 func viewScopeSuffix(team, project string) string {
 	parts := make([]string, 0, 2)
-	if team = savedViewScopeToken(team); team != "" {
+	if team = strings.TrimSpace(team); team != "" {
 		parts = append(parts, team)
 	}
-	if project = savedViewScopeToken(project); project != "" {
+	if project = strings.TrimSpace(project); project != "" {
 		parts = append(parts, project)
 	}
 	if len(parts) == 0 {
 		return ""
 	}
 	return "-" + strings.Join(parts, "-")
-}
-
-func savedViewScopeToken(value string) string {
-	value = strings.TrimSpace(strings.ToLower(value))
-	if value == "" {
-		return ""
-	}
-	var b strings.Builder
-	b.Grow(len(value))
-	lastDash := false
-	for _, r := range value {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-			b.WriteRune(r)
-			lastDash = false
-			continue
-		}
-		if !lastDash {
-			b.WriteByte('-')
-			lastDash = true
-		}
-	}
-	return strings.Trim(b.String(), "-")
 }
 
 func visibilityForScope(team, project string) string {

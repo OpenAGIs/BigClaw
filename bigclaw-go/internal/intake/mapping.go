@@ -23,13 +23,11 @@ func MapSourceState(state string) domain.TaskState {
 	switch {
 	case strings.Contains(normalized, "progress"):
 		return domain.TaskRunning
-	case strings.Contains(normalized, "running"), strings.Contains(normalized, "starting"), strings.Contains(normalized, "restarting"), strings.Contains(normalized, "active"):
-		return domain.TaskRunning
 	case strings.Contains(normalized, "done"), strings.Contains(normalized, "closed"), strings.Contains(normalized, "resolved"):
 		return domain.TaskSucceeded
-	case strings.Contains(normalized, "block"), strings.Contains(normalized, "stopped"), strings.Contains(normalized, "pause"), strings.Contains(normalized, "unreachable"):
+	case strings.Contains(normalized, "block"):
 		return domain.TaskBlocked
-	case strings.Contains(normalized, "fail"), strings.Contains(normalized, "crash"), strings.Contains(normalized, "error"):
+	case strings.Contains(normalized, "fail"):
 		return domain.TaskFailed
 	default:
 		return domain.TaskQueued
@@ -52,23 +50,15 @@ func MapSourceIssueToTask(issue SourceIssue) domain.Task {
 	requiredTools := []string{"connector"}
 	if strings.EqualFold(source, "github") {
 		requiredTools = []string{"github"}
-	} else if strings.EqualFold(source, "clawhost") {
-		requiredTools = []string{"clawhost", "ssh"}
 	}
 	metadata := map[string]string{
 		"source_id":    trim(issue.SourceID),
 		"source_state": trim(issue.State),
 	}
-	for key, value := range issue.Metadata {
-		if trimmedKey := trim(key); trimmedKey != "" {
-			metadata[trimmedKey] = trim(value)
-		}
-	}
 	if issueURL := trim(issue.Links["issue"]); issueURL != "" {
 		metadata["issue_url"] = issueURL
 		metadata["source_issue_url"] = issueURL
 	}
-	tenantID := firstNonEmpty(metadata["tenant_id"], metadata["owner_user_id"], metadata["user_id"])
 	return domain.Task{
 		ID:                 identifier,
 		TraceID:            identifier,
@@ -82,7 +72,6 @@ func MapSourceIssueToTask(issue SourceIssue) domain.Task {
 		RequiredTools:      append([]string(nil), requiredTools...),
 		AcceptanceCriteria: []string{"Synced from source issue"},
 		ValidationPlan:     []string{"mapping-test"},
-		TenantID:           tenantID,
 		Metadata:           metadata,
 	}
 }

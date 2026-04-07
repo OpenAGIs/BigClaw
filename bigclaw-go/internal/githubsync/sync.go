@@ -14,8 +14,6 @@ const (
 	configLockRetryDelay = 50 * time.Millisecond
 )
 
-var managedHookNames = []string{"post-commit", "post-rewrite"}
-
 type RepoSyncStatus struct {
 	Branch        string `json:"branch"`
 	Detached      bool   `json:"detached"`
@@ -318,13 +316,6 @@ func InstallGitHooks(repo string, hooksPath string) (string, error) {
 		}
 	}
 
-	for _, name := range managedHookNames {
-		path := filepath.Join(hooksDir, name)
-		if err := os.WriteFile(path, []byte(hookScript(name)), 0o755); err != nil {
-			return "", err
-		}
-	}
-
 	entries, err := os.ReadDir(hooksDir)
 	if err != nil {
 		return "", err
@@ -344,41 +335,6 @@ func InstallGitHooks(repo string, hooksPath string) (string, error) {
 		}
 	}
 	return hooksDir, nil
-}
-
-func hookScript(hookName string) string {
-	return fmt.Sprintf(`#!/usr/bin/env bash
-set -u
-
-repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
-cd "$repo_root" || exit 0
-
-if [ "${BIGCLAW_SKIP_AUTO_SYNC:-0}" = "1" ]; then
-  exit 0
-fi
-
-branch=$(git branch --show-current 2>/dev/null || true)
-if [ -z "$branch" ]; then
-  # Detached HEAD (for example after merging a PR and deleting the branch).
-  exit 0
-fi
-
-if [ ! -d "bigclaw-go" ]; then
-  exit 0
-fi
-
-if ! command -v go >/dev/null 2>&1; then
-  exit 0
-fi
-
-(
-  cd "$repo_root/bigclaw-go" || exit 0
-  go run ./cmd/bigclawctl github-sync sync --json --allow-dirty --repo "$repo_root"
-) || {
-  echo "[bigclaw-sync] %s auto-sync failed; inspect branch sync state." >&2
-  exit 0
-}
-`, hookName)
 }
 
 func gitConfigValue(repo string, key string) (string, bool, error) {

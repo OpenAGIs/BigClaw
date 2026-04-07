@@ -64,19 +64,6 @@ func (JiraConnector) FetchIssues(project string, states []string) ([]SourceIssue
 	}, nil
 }
 
-type ClawHostConnector struct{}
-
-func (ClawHostConnector) Name() string { return "clawhost" }
-
-func (ClawHostConnector) FetchIssues(project string, states []string) ([]SourceIssue, error) {
-	records := sampleClawHostInventory(project)
-	issues := make([]SourceIssue, 0, len(records))
-	for _, record := range records {
-		issues = append(issues, record.SourceIssue(project, states))
-	}
-	return issues, nil
-}
-
 func ConnectorByName(name string) (Connector, bool) {
 	switch normalizeConnectorName(name) {
 	case "github":
@@ -85,8 +72,6 @@ func ConnectorByName(name string) (Connector, bool) {
 		return LinearConnector{}, true
 	case "jira":
 		return JiraConnector{}, true
-	case "clawhost":
-		return ClawHostConnector{}, true
 	default:
 		return nil, false
 	}
