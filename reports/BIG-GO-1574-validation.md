@@ -65,7 +65,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1574/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	1.749s
+ok  	bigclaw-go/internal/regression	0.261s
 ```
 
 ## Residual Risk
@@ -73,3 +73,9 @@ ok  	bigclaw-go/internal/regression	1.749s
 The branch baseline already has zero physical Python files, so BIG-GO-1574 can
 only harden deletion enforcement and replacement evidence for the candidate
 paths rather than numerically reduce an already-zero Python count.
+
+## Git
+
+- Branch: `BIG-GO-1574`
+- Commit: `25d6e321f662803ed2f81a11bc7b1cd81ba1ddf9` (`BIG-GO-1574 harden residual python sweep 04`)
+- Push: `git push -u origin BIG-GO-1574` -> `Everything up-to-date`

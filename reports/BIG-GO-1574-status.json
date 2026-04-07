@@ -36,7 +36,7 @@
     "results": {
       "repository_py_inventory": "none",
       "candidate_path_absence": "success",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.749s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.261s"
     }
   },
   "pull_request": {
