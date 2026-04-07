@@ -1,37 +1,35 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1561 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Confirm the live repository baseline for physical Python files, with explicit
+   focus on the requested `src/bigclaw` deletion tranche.
+2. Add lane-scoped evidence that the tranche is already absent on disk and that
+   the active Go/native replacement paths remain available.
+3. Run targeted validation, record the exact commands and results, then commit
+   and push the lane branch.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- Repository reality is captured exactly for `BIG-GO-1561`.
+- The lane records that `src/bigclaw` and the repository root already contain
+  `0` physical `.py` files in this checkout.
+- Exact Go/native replacement evidence for the retired `src/bigclaw` tranche
+  lands in git.
+- Targeted validation commands and outcomes are recorded.
+- Changes are committed and pushed on `BIG-GO-1561`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
+- `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1561(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
-## GitHub
+## Current Findings
 
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- The recovered branch baseline already has `0` physical `.py` files
+  repository-wide.
+- `src/bigclaw` is not present on disk in this checkout.
+- Prior migration lanes already moved the repo to a Go-only posture, so this
+  issue can only ship exact replacement evidence and refreshed validation for
+  the requested tranche.
