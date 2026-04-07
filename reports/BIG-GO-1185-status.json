@@ -1,0 +1,41 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1185",
+    "title": "Heartbeat refill lane 1185: remaining Python asset sweep 5/10",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "recorded in git history for BIG-GO-1185",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1185-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1185_zero_python_guard_test.go"
+  },
+  "remaining_python_assets": {
+    "repository": [],
+    "src/bigclaw": [],
+    "tests": [],
+    "scripts": [],
+    "bigclaw-go/scripts": []
+  },
+  "go_replacement_path": [
+    "bigclaw-go/internal/regression/big_go_1185_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1185 -name '*.py' | wc -l",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1185/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1185(RemainingPythonAssetInventoryIsEmpty|PriorityResidualDirectoriesStayPythonFree)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.494s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1185 changes."
+  }
+}

@@ -1,0 +1,1819 @@
+{
+  "project": {
+    "name": "BigClaw v5.3 Go Mainline Consolidation",
+    "slug_id": "53e33900c67e",
+    "team": "OpenAGI",
+    "team_key": "OPE",
+    "epic": "[Epic] BigClaw Go Mainline Cutover and Python Migration (draft blocked by issue quota)"
+  },
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
+    "activate_state_name": "In Progress",
+    "refill_states": [
+      "Backlog",
+      "Todo"
+    ],
+    "blocked_reason": "Linear workspace issue quota still blocks new Linear issues, but the active BigClaw tracker now runs from local-issues.json and this queue remains the refill source of truth"
+  },
+  "recent_batches": {
+    "completed": [
+      "BIG-GOM-301",
+      "BIG-GOM-302",
+      "BIG-GOM-303",
+      "BIG-GOM-304",
+      "BIG-GOM-305",
+      "BIG-GOM-306",
+      "BIG-GOM-307",
+      "BIG-GOM-308",
+      "BIG-PAR-219",
+      "BIG-PAR-220",
+      "BIG-PAR-221",
+      "BIG-PAR-222",
+      "BIG-PAR-223",
+      "BIG-PAR-224",
+      "BIG-PAR-225",
+      "BIG-PAR-226",
+      "BIG-PAR-227",
+      "BIG-PAR-228",
+      "BIG-PAR-229",
+      "BIG-PAR-230",
+      "BIG-PAR-231",
+      "BIG-PAR-234",
+      "BIG-PAR-235",
+      "BIG-PAR-236",
+      "BIG-PAR-237",
+      "BIG-PAR-238",
+      "BIG-PAR-239",
+      "BIG-PAR-240",
+      "BIG-PAR-241",
+      "BIG-PAR-242",
+      "BIG-PAR-243",
+      "BIG-PAR-244",
+      "BIG-PAR-245",
+      "BIG-PAR-246",
+      "BIG-PAR-247",
+      "BIG-PAR-248",
+      "BIG-PAR-249",
+      "BIG-PAR-250",
+      "BIG-PAR-251",
+      "BIG-PAR-252",
+      "BIG-PAR-253",
+      "BIG-PAR-254",
+      "BIG-PAR-255",
+      "BIG-PAR-256",
+      "BIG-PAR-257",
+      "BIG-PAR-258",
+      "BIG-PAR-259",
+      "BIG-PAR-260",
+      "BIG-PAR-261",
+      "BIG-PAR-268",
+      "BIG-PAR-269",
+      "BIG-PAR-270",
+      "BIG-PAR-271",
+      "BIG-PAR-272",
+      "BIG-PAR-273",
+      "BIG-PAR-274",
+      "BIG-PAR-275",
+      "BIG-PAR-276",
+      "BIG-PAR-277",
+      "BIG-PAR-278",
+      "BIG-PAR-279",
+      "BIG-PAR-280",
+      "BIG-PAR-283",
+      "BIG-PAR-282",
+      "BIG-PAR-284",
+      "BIG-PAR-285",
+      "BIG-PAR-286",
+      "BIG-PAR-287",
+      "BIG-PAR-288",
+      "BIG-PAR-289",
+      "BIG-PAR-290",
+      "BIG-PAR-291",
+      "BIG-PAR-292",
+      "BIG-PAR-293",
+      "BIG-PAR-294",
+      "BIG-PAR-295",
+      "BIG-PAR-296",
+      "BIG-PAR-297",
+      "BIG-PAR-298",
+      "BIG-PAR-299",
+      "BIG-PAR-300",
+      "BIG-PAR-301",
+      "BIG-PAR-302",
+      "BIG-PAR-303",
+      "BIG-PAR-304",
+      "BIG-PAR-305",
+      "BIG-PAR-306",
+      "BIG-PAR-307",
+      "BIG-PAR-308",
+      "BIG-PAR-309",
+      "BIG-PAR-310",
+      "BIG-PAR-311",
+      "BIG-PAR-312",
+      "BIG-PAR-313",
+      "BIG-PAR-314",
+      "BIG-PAR-315",
+      "BIG-PAR-316",
+      "BIG-PAR-317",
+      "BIG-PAR-318",
+      "BIG-PAR-319",
+      "BIG-PAR-320",
+      "BIG-PAR-321",
+      "BIG-PAR-322",
+      "BIG-PAR-323",
+      "BIG-PAR-324",
+      "BIG-PAR-325",
+      "BIG-PAR-326",
+      "BIG-PAR-327",
+      "BIG-PAR-328",
+      "BIG-PAR-329",
+      "BIG-PAR-330",
+      "BIG-PAR-331",
+      "BIG-PAR-332",
+      "BIG-PAR-333",
+      "BIG-PAR-334",
+      "BIG-PAR-335",
+      "BIG-PAR-336",
+      "BIG-PAR-337",
+      "BIG-PAR-338",
+      "BIG-PAR-339",
+      "BIG-PAR-340",
+      "BIG-PAR-341",
+      "BIG-PAR-342",
+      "BIG-PAR-343",
+      "BIG-PAR-344",
+      "BIG-PAR-345",
+      "BIG-PAR-346",
+      "BIG-PAR-347",
+      "BIG-PAR-348",
+      "BIG-PAR-349",
+      "BIG-PAR-350",
+      "BIG-PAR-351",
+      "BIG-PAR-352",
+      "BIG-PAR-353",
+      "BIG-PAR-354",
+      "BIG-PAR-355",
+      "BIG-PAR-356",
+      "BIG-PAR-357",
+      "BIG-PAR-358",
+      "BIG-PAR-359",
+      "BIG-PAR-360",
+      "BIG-PAR-361",
+      "BIG-PAR-362",
+      "BIG-PAR-363",
+      "BIG-PAR-364",
+      "BIG-PAR-365",
+      "BIG-PAR-366",
+      "BIG-PAR-367",
+      "BIG-PAR-368",
+      "BIG-PAR-369",
+      "BIG-PAR-370",
+      "BIG-PAR-371",
+      "BIG-PAR-372",
+      "BIG-PAR-373",
+      "BIG-PAR-374",
+      "BIG-PAR-375",
+      "BIG-PAR-376",
+      "BIG-PAR-377",
+      "BIG-PAR-378",
+      "BIG-PAR-379",
+      "BIG-PAR-380",
+      "BIG-PAR-381",
+      "BIG-PAR-382",
+      "BIG-PAR-383",
+      "BIG-PAR-384",
+      "BIG-PAR-385",
+      "BIG-PAR-386",
+      "BIG-PAR-387",
+      "BIG-PAR-388",
+      "BIG-PAR-389",
+      "BIG-PAR-390",
+      "BIG-PAR-391",
+      "BIG-PAR-392",
+      "BIG-PAR-393",
+      "BIG-PAR-394",
+      "BIG-PAR-395",
+      "BIG-PAR-396",
+      "BIG-PAR-398",
+      "BIG-PAR-397",
+      "BIG-PAR-399",
+      "BIG-PAR-400",
+      "BIG-PAR-401",
+      "BIG-PAR-402",
+      "BIG-PAR-403",
+      "BIG-PAR-404",
+      "BIG-PAR-405",
+      "BIG-PAR-406",
+      "BIG-PAR-407",
+      "BIG-PAR-408",
+      "BIG-PAR-409",
+      "BIG-PAR-410",
+      "BIG-PAR-412",
+      "BIG-PAR-411",
+      "BIG-PAR-413",
+      "BIG-PAR-414",
+      "BIG-PAR-415",
+      "BIG-PAR-416",
+      "BIG-PAR-417",
+      "BIG-PAR-418",
+      "BIG-PAR-420",
+      "BIG-PAR-419",
+      "BIG-PAR-422",
+      "BIG-PAR-421",
+      "BIG-PAR-423",
+      "BIG-PAR-424",
+      "BIG-PAR-425",
+      "BIG-PAR-426",
+      "BIG-PAR-427",
+      "BIG-PAR-429",
+      "BIG-PAR-430",
+      "BIG-PAR-431",
+      "BIG-PAR-432",
+      "BIG-PAR-434",
+      "BIG-PAR-433",
+      "BIG-PAR-435",
+      "BIG-PAR-436",
+      "BIG-PAR-437",
+      "BIG-PAR-438",
+      "BIG-PAR-439",
+      "BIG-PAR-440"
+    ],
+    "active": [],
+    "standby": []
+  },
+  "issue_order": [
+    "BIG-GOM-301",
+    "BIG-GOM-302",
+    "BIG-GOM-303",
+    "BIG-GOM-304",
+    "BIG-GOM-305",
+    "BIG-GOM-306",
+    "BIG-GOM-307",
+    "BIG-GOM-308",
+    "BIG-PAR-219",
+    "BIG-PAR-220",
+    "BIG-PAR-221",
+    "BIG-PAR-222",
+    "BIG-PAR-223",
+    "BIG-PAR-224",
+    "BIG-PAR-225",
+    "BIG-PAR-226",
+    "BIG-PAR-227",
+    "BIG-PAR-228",
+    "BIG-PAR-229",
+    "BIG-PAR-230",
+    "BIG-PAR-231",
+    "BIG-PAR-234",
+    "BIG-PAR-235",
+    "BIG-PAR-236",
+    "BIG-PAR-237",
+    "BIG-PAR-238",
+    "BIG-PAR-239",
+    "BIG-PAR-240",
+    "BIG-PAR-241",
+    "BIG-PAR-242",
+    "BIG-PAR-243",
+    "BIG-PAR-244",
+    "BIG-PAR-245",
+    "BIG-PAR-246",
+    "BIG-PAR-247",
+    "BIG-PAR-248",
+    "BIG-PAR-249",
+    "BIG-PAR-250",
+    "BIG-PAR-251",
+    "BIG-PAR-252",
+    "BIG-PAR-253",
+    "BIG-PAR-254",
+    "BIG-PAR-255",
+    "BIG-PAR-256",
+    "BIG-PAR-257",
+    "BIG-PAR-258",
+    "BIG-PAR-259",
+    "BIG-PAR-260",
+    "BIG-PAR-261",
+    "BIG-PAR-268",
+    "BIG-PAR-269",
+    "BIG-PAR-270",
+    "BIG-PAR-271",
+    "BIG-PAR-272",
+    "BIG-PAR-273",
+    "BIG-PAR-274",
+    "BIG-PAR-275",
+    "BIG-PAR-276",
+    "BIG-PAR-277",
+    "BIG-PAR-278",
+    "BIG-PAR-279",
+    "BIG-PAR-280",
+    "BIG-PAR-283",
+    "BIG-PAR-282",
+    "BIG-PAR-284",
+    "BIG-PAR-285",
+    "BIG-PAR-286",
+    "BIG-PAR-287",
+    "BIG-PAR-288",
+    "BIG-PAR-289",
+    "BIG-PAR-290",
+    "BIG-PAR-291",
+    "BIG-PAR-292",
+    "BIG-PAR-293",
+    "BIG-PAR-294",
+    "BIG-PAR-295",
+    "BIG-PAR-296",
+    "BIG-PAR-297",
+    "BIG-PAR-298",
+    "BIG-PAR-299",
+    "BIG-PAR-300",
+    "BIG-PAR-301",
+    "BIG-PAR-302",
+    "BIG-PAR-303",
+    "BIG-PAR-304",
+    "BIG-PAR-305",
+    "BIG-PAR-306",
+    "BIG-PAR-307",
+    "BIG-PAR-308",
+    "BIG-PAR-309",
+    "BIG-PAR-310",
+    "BIG-PAR-311",
+    "BIG-PAR-312",
+    "BIG-PAR-313",
+    "BIG-PAR-314",
+    "BIG-PAR-315",
+    "BIG-PAR-316",
+    "BIG-PAR-317",
+    "BIG-PAR-318",
+    "BIG-PAR-319",
+    "BIG-PAR-320",
+    "BIG-PAR-321",
+    "BIG-PAR-322",
+    "BIG-PAR-323",
+    "BIG-PAR-324",
+    "BIG-PAR-325",
+    "BIG-PAR-326",
+    "BIG-PAR-327",
+    "BIG-PAR-328",
+    "BIG-PAR-329",
+    "BIG-PAR-330",
+    "BIG-PAR-331",
+    "BIG-PAR-332",
+    "BIG-PAR-333",
+    "BIG-PAR-334",
+    "BIG-PAR-335",
+    "BIG-PAR-336",
+    "BIG-PAR-337",
+    "BIG-PAR-338",
+    "BIG-PAR-339",
+    "BIG-PAR-340",
+    "BIG-PAR-341",
+    "BIG-PAR-342",
+    "BIG-PAR-343",
+    "BIG-PAR-344",
+    "BIG-PAR-345",
+    "BIG-PAR-346",
+    "BIG-PAR-347",
+    "BIG-PAR-348",
+    "BIG-PAR-349",
+    "BIG-PAR-350",
+    "BIG-PAR-351",
+    "BIG-PAR-352",
+    "BIG-PAR-353",
+    "BIG-PAR-354",
+    "BIG-PAR-355",
+    "BIG-PAR-356",
+    "BIG-PAR-357",
+    "BIG-PAR-358",
+    "BIG-PAR-359",
+    "BIG-PAR-360",
+    "BIG-PAR-361",
+    "BIG-PAR-362",
+    "BIG-PAR-363",
+    "BIG-PAR-364",
+    "BIG-PAR-365",
+    "BIG-PAR-366",
+    "BIG-PAR-367",
+    "BIG-PAR-368",
+    "BIG-PAR-369",
+    "BIG-PAR-370",
+    "BIG-PAR-371",
+    "BIG-PAR-372",
+    "BIG-PAR-373",
+    "BIG-PAR-374",
+    "BIG-PAR-375",
+    "BIG-PAR-376",
+    "BIG-PAR-377",
+    "BIG-PAR-378",
+    "BIG-PAR-379",
+    "BIG-PAR-380",
+    "BIG-PAR-381",
+    "BIG-PAR-382",
+    "BIG-PAR-383",
+    "BIG-PAR-384",
+    "BIG-PAR-385",
+    "BIG-PAR-386",
+    "BIG-PAR-387",
+    "BIG-PAR-388",
+    "BIG-PAR-389",
+    "BIG-PAR-390",
+    "BIG-PAR-391",
+    "BIG-PAR-392",
+    "BIG-PAR-393",
+    "BIG-PAR-394",
+    "BIG-PAR-395",
+    "BIG-PAR-396",
+    "BIG-PAR-398",
+    "BIG-PAR-397",
+    "BIG-PAR-399",
+    "BIG-PAR-400",
+    "BIG-PAR-401",
+    "BIG-PAR-402",
+    "BIG-PAR-403",
+    "BIG-PAR-404",
+    "BIG-PAR-405",
+    "BIG-PAR-406",
+    "BIG-PAR-407",
+    "BIG-PAR-408",
+    "BIG-PAR-409",
+    "BIG-PAR-410",
+    "BIG-PAR-412",
+    "BIG-PAR-411",
+    "BIG-PAR-413",
+    "BIG-PAR-414",
+    "BIG-PAR-415",
+    "BIG-PAR-416",
+    "BIG-PAR-417",
+    "BIG-PAR-418",
+    "BIG-PAR-420",
+    "BIG-PAR-419",
+    "BIG-PAR-422",
+    "BIG-PAR-421",
+    "BIG-PAR-423",
+    "BIG-PAR-424",
+    "BIG-PAR-425",
+    "BIG-PAR-426",
+    "BIG-PAR-427",
+    "BIG-PAR-429",
+    "BIG-PAR-430",
+    "BIG-PAR-431",
+    "BIG-PAR-432",
+    "BIG-PAR-434",
+    "BIG-PAR-433",
+    "BIG-PAR-435",
+    "BIG-PAR-436",
+    "BIG-PAR-437",
+    "BIG-PAR-438",
+    "BIG-PAR-439",
+    "BIG-PAR-440"
+  ],
+  "issues": [
+    {
+      "identifier": "BIG-GOM-301",
+      "title": "Unified domain model and intake contract migration",
+      "track": "Control/Workflow Surface Migration",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-302",
+      "title": "Risk, policy, and approval semantics migration",
+      "track": "Control/Workflow Surface Migration",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-303",
+      "title": "Workflow orchestration and scheduler loop migration",
+      "track": "Control/Workflow Surface Migration",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-304",
+      "title": "Observability, reporting, and weekly operations surface migration",
+      "track": "Governance/Reporting Surface Migration",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-305",
+      "title": "Control center, triage, and operations view migration",
+      "track": "Governance/Reporting Surface Migration",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-306",
+      "title": "Repo collaboration and lineage surface migration",
+      "track": "Governance/Reporting Surface Migration",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-307",
+      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
+      "track": "Python Retirement & Cutover Validation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-308",
+      "title": "Python deprecation and Go-only mainline switch",
+      "track": "Python Retirement & Cutover Validation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-219",
+      "title": "Expose ahead/behind relation in github-sync status payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-220",
+      "title": "Go-first traceability refresh for issue plan evidence pointers",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-221",
+      "title": "Draft parallel validation matrix artifact for local/k8s/ray",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-222",
+      "title": "Add fast compile-check path for frozen legacy Python shims",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-223",
+      "title": "Link planning docs to validation matrix",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-224",
+      "title": "Reconcile tracker and refill queue follow-up state",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-225",
+      "title": "Publish canonical parallel follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-226",
+      "title": "Rewire maintained reports to canonical follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-227",
+      "title": "Rewire migration plan review notes to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-228",
+      "title": "Rewire per-run bundle READMEs to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-229",
+      "title": "Rename maintained follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-230",
+      "title": "Rename bundle README follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-231",
+      "title": "Restore required follow-up digest references for CI",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-234",
+      "title": "bigclawctl: support --help at root and subcommands",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-235",
+      "title": "cap workflow agent fanout after 429s",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-236",
+      "title": "harden local tracker recovery and serialization",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-237",
+      "title": "emit queue-drained recovery hints in refill output",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-238",
+      "title": "bigclawctl refill: seed queue entries from CLI",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-239",
+      "title": "bigclawctl refill: sync recent_batches metadata from local tracker",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-240",
+      "title": "Document queue seeding and drained-batch recovery workflow",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-241",
+      "title": "Serialize local tracker writes with an explicit lock",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-242",
+      "title": "Sync refill recent-batch metadata from the local tracker",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-243",
+      "title": "Reload local tracker state on each refill fetch",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-244",
+      "title": "Refresh refill queue docs for current local-backend behavior",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-245",
+      "title": "Open PR for tracker and refill hardening branch",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-246",
+      "title": "Refresh PR branch against main",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-247",
+      "title": "bigclawctl refill: sync queue markdown from canonical state",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-248",
+      "title": "Expand SQLite queue reliability proof to 10k tasks",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-249",
+      "title": "Refresh queue reliability references after 10k proof",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-250",
+      "title": "Refresh Go-mainline handoff note for merged cutover state",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-251",
+      "title": "Fix rollback follow-up issue ID drift in gap analysis",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-252",
+      "title": "Add observability follow-up doc regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-253",
+      "title": "Add migration and validation follow-up doc regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-254",
+      "title": "Add runtime report follow-up ID coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-255",
+      "title": "Align live validation bundle follow-up IDs",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-256",
+      "title": "Align live validation index JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-257",
+      "title": "Align continuation gate JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-258",
+      "title": "Align rollback trigger JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-259",
+      "title": "Align live shadow JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-260",
+      "title": "Align live shadow bundle follow-up IDs",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-261",
+      "title": "Align migration readiness live-shadow follow-up ID",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-262",
+      "title": "Add canonical follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-263",
+      "title": "Add migration follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-264",
+      "title": "Add runtime follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-265",
+      "title": "Add bundle follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-266",
+      "title": "Add planning follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-268",
+      "title": "Rewire readiness reports to canonical follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-269",
+      "title": "Add canonical validation matrix regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-270",
+      "title": "Add live validation summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-271",
+      "title": "Add broker validation summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-272",
+      "title": "Add shared queue companion summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-273",
+      "title": "Add live validation index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-274",
+      "title": "Add shared queue report regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-275",
+      "title": "Add observability follow-up regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-276",
+      "title": "Add coordination contract-only regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-277",
+      "title": "Add live-shadow rollback bundle regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-278",
+      "title": "Add production corpus coverage regression surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-279",
+      "title": "Add subscriber takeover proof regression surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-280",
+      "title": "Add durability rollout review bundle regression surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-283",
+      "title": "Add provider live handoff isolation regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-282",
+      "title": "Add sequence and retention surface regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-284",
+      "title": "Refactor control center response assembly",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-285",
+      "title": "Refactor distributed diagnostics builders",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-286",
+      "title": "Refactor worker runtime RunOnce flow",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-287",
+      "title": "Add ClawHost fleet inventory and control-plane source",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-288",
+      "title": "Add parallel ClawHost rollout planner",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-289",
+      "title": "Add ClawHost skills channels and device approval workflows",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-290",
+      "title": "Add ClawHost provider defaults and tenant policy surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-291",
+      "title": "Add ClawHost proxy subdomain and admin validation lane",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-292",
+      "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-293",
+      "title": "Add control-center regression coverage for ClawHost recovery surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-294",
+      "title": "Add control-center regression coverage for ClawHost workflow surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-295",
+      "title": "Add control-center regression coverage for ClawHost readiness surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-296",
+      "title": "Add control-center regression coverage for ClawHost policy surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-297",
+      "title": "Add aggregate control-center regression for ClawHost surface bundle",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-298",
+      "title": "Add ClawHost policy report and export surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-299",
+      "title": "Scope ClawHost policy surface by team and project",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-300",
+      "title": "Scope ClawHost control-center surfaces by active filters",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-301",
+      "title": "Reuse one ClawHost snapshot across debug status surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-302",
+      "title": "Add team and project scoping to ClawHost debug surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-303",
+      "title": "Add team and project scoping to ClawHost fleet surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-304",
+      "title": "Harden scoped ClawHost expansion export regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-305",
+      "title": "Add product regression coverage for ClawHost fleet filtering",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-306",
+      "title": "Add product regression coverage for scoped ClawHost recovery scorecards",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-307",
+      "title": "Add product regression coverage for scoped ClawHost workflow lanes",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-308",
+      "title": "Add product regression coverage for scoped ClawHost rollout planners",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-309",
+      "title": "Add product regression coverage for ClawHost workflow review reasons",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-310",
+      "title": "Add product regression coverage for ClawHost workflow review ordering",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-311",
+      "title": "Add product regression coverage for idle ClawHost workflow surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-312",
+      "title": "Add product regression coverage for ClawHost workflow lane concurrency",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-313",
+      "title": "Add product regression coverage for idle ClawHost workflow lane signals",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-314",
+      "title": "Add product regression coverage for empty ClawHost fleet reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-315",
+      "title": "Add product regression coverage for empty ClawHost recovery reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-316",
+      "title": "Add product regression coverage for fallback ClawHost rollout reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-317",
+      "title": "Add product regression coverage for empty ClawHost workflow lane reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-318",
+      "title": "Add product regression coverage for empty ClawHost rollout audits",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-319",
+      "title": "Add product regression coverage for empty ClawHost recovery audits",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-320",
+      "title": "Add product regression coverage for ClawHost fleet compatibility aliases",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-321",
+      "title": "Add product regression coverage for default ClawHost fleet compatibility alias",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-322",
+      "title": "Add product regression coverage for ClawHost workflow parsing defaults",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-323",
+      "title": "Add product regression coverage for ClawHost workflow pairing defaults",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-324",
+      "title": "Add product regression coverage for ClawHost workflow metadata precedence",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-325",
+      "title": "Add product regression coverage for ClawHost workflow lane compatibility alias",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-326",
+      "title": "Expose ClawHost workflow report filters and operational signals",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-327",
+      "title": "Expose ClawHost rollout report filters",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-328",
+      "title": "Expose ClawHost recovery report filters",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-329",
+      "title": "Expose ClawHost policy report filters",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-330",
+      "title": "Expose ClawHost fleet report filters",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-331",
+      "title": "Add filters to ClawHost policy surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-332",
+      "title": "Add filters to ClawHost rollout surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-333",
+      "title": "Add filters to ClawHost recovery surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-334",
+      "title": "Add filters to ClawHost readiness surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-335",
+      "title": "Thread filters into ClawHost workflow surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-336",
+      "title": "Add workflow filter assertions to API regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-337",
+      "title": "Add scoped debug filter assertions for remaining ClawHost surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-338",
+      "title": "Add unscoped bundle filter assertions for remaining ClawHost surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-339",
+      "title": "Add policy filter assertions to bundle regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-340",
+      "title": "Add policy filter assertions to standalone API regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-341",
+      "title": "Add scoped debug policy filter assertion",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-342",
+      "title": "Pin default ClawHost product filter maps in regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-343",
+      "title": "Pin default fleet filter maps in regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-344",
+      "title": "Add policy report fallback filter regression",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-345",
+      "title": "Pin workflow-lane idle filter maps in regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-346",
+      "title": "Add policy surface empty-state unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-347",
+      "title": "ClawHost expansion endpoints preserve default unscoped reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-348",
+      "title": "Add ClawHost expansion helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-349",
+      "title": "Add ClawHost expansion method guard coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-350",
+      "title": "Add ClawHost readiness surface unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-351",
+      "title": "Add ClawHost recovery surface unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-352",
+      "title": "Add ClawHost rollout surface unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-353",
+      "title": "Add ClawHost workflow surface payload unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-354",
+      "title": "Add ClawHost parsing helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-355",
+      "title": "Add ClawHost policy helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-356",
+      "title": "Add ClawHost fleet helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-357",
+      "title": "Add ClawHost rollout helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-358",
+      "title": "Add ClawHost workflow helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-359",
+      "title": "Add ClawHost recovery report edge-case coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-360",
+      "title": "Extract ClawHost recovery builder for direct inventory coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-361",
+      "title": "Add ClawHost workflow max helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-362",
+      "title": "Add ClawHost workflow report edge-case coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-363",
+      "title": "Add ClawHost rollout report edge-case coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-364",
+      "title": "Add ClawHost fleet report edge-case coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-365",
+      "title": "Add product console unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-366",
+      "title": "Add saved-view helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-367",
+      "title": "Add dashboard run contract path helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-368",
+      "title": "Broaden direct recovery builder coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-369",
+      "title": "Add saved-view audit and report edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-370",
+      "title": "Broaden saved-view audit duplicate coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-371",
+      "title": "Add saved-view digest recipient helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-372",
+      "title": "Add saved-view audit visibility and ordering coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-373",
+      "title": "Broaden direct recovery builder branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-374",
+      "title": "Add billing usage unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-375",
+      "title": "Add expansion helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-376",
+      "title": "Add event stream helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-377",
+      "title": "Add checkpoint error helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-378",
+      "title": "Add bootstrap helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-379",
+      "title": "Add bootstrap joinLines helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-380",
+      "title": "Add domain task state helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-381",
+      "title": "Add control snapshot helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-382",
+      "title": "Add broker stub trace/task helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-383",
+      "title": "Add consumer dedup key validation coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-384",
+      "title": "Add run commit role validation coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-385",
+      "title": "Add broker stub backend and clone coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-386",
+      "title": "Add run commit helper edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-387",
+      "title": "Add repo discussion board edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-388",
+      "title": "Add broker stub checkpoint edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-389",
+      "title": "Finish repo board filter branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-390",
+      "title": "Add repo gateway decode error coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-391",
+      "title": "Add repo registry fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-392",
+      "title": "Add domain fallback helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-393",
+      "title": "Add governance audit field coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-394",
+      "title": "Add task state normalization helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-395",
+      "title": "Add repo slug fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-396",
+      "title": "Add consumer dedup result fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-398",
+      "title": "Add task JSON unmarshal edge-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-397",
+      "title": "Add task JSON marshal optional-field coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-399",
+      "title": "Add local tracker normalization helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-400",
+      "title": "Add refill queue batch-helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-401",
+      "title": "Add local tracker scalar helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-402",
+      "title": "Add refill queue identifier helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-403",
+      "title": "Add local tracker accessor coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-404",
+      "title": "Add refill queue selection helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-405",
+      "title": "Add local tracker decode helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-406",
+      "title": "Add refill queue status sync coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-407",
+      "title": "Add local tracker read/load coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-408",
+      "title": "Add refill queue load/save helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-409",
+      "title": "Add local tracker save/write-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-410",
+      "title": "Add refill markdown helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-412",
+      "title": "Add refill runnable-count edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-411",
+      "title": "Add local tracker state-update edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-413",
+      "title": "Add local tracker comment-path edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-414",
+      "title": "Add refill save and runnable-count edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-415",
+      "title": "Add local tracker helper edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-416",
+      "title": "Add refill markdown edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-417",
+      "title": "Add local tracker directory-failure coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-418",
+      "title": "Add refill save-parent failure coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-420",
+      "title": "Add local tracker load-path edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-419",
+      "title": "Add refill recent-batch mutation coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-422",
+      "title": "Add refill markdown rendering coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-421",
+      "title": "Add refill queue upsert coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-423",
+      "title": "Add local tracker lock retry coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-424",
+      "title": "Add refill live-state merge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-425",
+      "title": "Make refill queue save failures testable",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-426",
+      "title": "Make local tracker save failures testable",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-427",
+      "title": "Add refill temp-save branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-429",
+      "title": "Add refill remaining save branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-430",
+      "title": "Add local tracker lock-open failure coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-431",
+      "title": "Add refill final save branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-432",
+      "title": "Add local tracker final lock branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-434",
+      "title": "Add local tracker final load-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-433",
+      "title": "Add refill final load-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-435",
+      "title": "Add refill remaining save-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-436",
+      "title": "Add local tracker remaining save-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-437",
+      "title": "Add markdown queue remaining save coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-438",
+      "title": "Add refill recent-batch helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-439",
+      "title": "Add local tracker final lock fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-440",
+      "title": "Reconcile final refill queue history",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    }
+  ]
+}

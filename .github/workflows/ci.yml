@@ -1,0 +1,19 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: bigclaw-go/go.mod
+      - name: Test Go Mainline
+        run: cd bigclaw-go && go test ./...
+      - name: Verify Go GitHub Sync Entrypoint
+        run: bash scripts/ops/bigclawctl github-sync --help >/dev/null

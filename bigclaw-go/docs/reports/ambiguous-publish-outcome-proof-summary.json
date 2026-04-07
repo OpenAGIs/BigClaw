@@ -1,0 +1,94 @@
+{
+  "generated_at": "2026-03-17T12:05:00Z",
+  "ticket": "OPE-260",
+  "track": "BIG-PAR-104",
+  "title": "Ambiguous publish outcome proof summary",
+  "status": "repo-proof-summary",
+  "source_validation": {
+    "scenario_id": "BF-05",
+    "stub_report": "bigclaw-go/docs/reports/broker-failover-stub-report.json",
+    "validation_pack": "bigclaw-go/docs/reports/broker-failover-fault-injection-validation-pack.md",
+    "rollout_contract": "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
+    "review_readiness": "bigclaw-go/docs/reports/review-readiness.md",
+    "code_paths": [
+      "bigclaw-go/internal/api/distributed.go",
+      "bigclaw-go/internal/api/v2.go",
+      "bigclaw-go/internal/events/durability.go"
+    ],
+    "validation_tests": [
+      "bigclaw-go/internal/api/expansion_test.go",
+      "bigclaw-go/internal/api/server_test.go",
+      "bigclaw-go/internal/regression/ambiguous_publish_proof_test.go"
+    ]
+  },
+  "scenario_snapshot": {
+    "fault": "producer_timeout_after_commit_ambiguity",
+    "published_count": 3,
+    "committed_count": 2,
+    "replayed_count": 2,
+    "duplicate_count": 0,
+    "missing_event_ids": [],
+    "publish_outcomes": {
+      "committed": 1,
+      "rejected": 1,
+      "unknown_commit": 1
+    }
+  },
+  "classification_summary": [
+    {
+      "outcome": "committed",
+      "proof_rule": "The publish attempt becomes committed when replay shows the event after the BF-05 timeout window and the attempt ledger can map that replayed identity back to the client write.",
+      "required_evidence": [
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/publish-attempt-ledger.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/replay-capture.json"
+      ],
+      "operator_action": "Treat the write as durable and use stable event identity to reconcile any client retry."
+    },
+    {
+      "outcome": "rejected",
+      "proof_rule": "The publish attempt is rejected when the ledger records rejection and replay never shows the event crossing the durable boundary.",
+      "required_evidence": [
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/publish-attempt-ledger.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/backend-health.json"
+      ],
+      "operator_action": "Retry or surface failure because the event never committed."
+    },
+    {
+      "outcome": "unknown_commit",
+      "proof_rule": "The publish attempt remains unknown_commit when the client timed out inside the fault window and current replay plus audit evidence has not yet resolved committed versus rejected.",
+      "required_evidence": [
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/fault-timeline.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/publish-attempt-ledger.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/replay-capture.json"
+      ],
+      "operator_action": "Keep the ambiguity explicit until replay and audit evidence can resolve the final durable outcome."
+    }
+  ],
+  "reviewer_checks": [
+    {
+      "name": "bf05_tracks_one_of_each_outcome_class",
+      "status": "pass",
+      "evidence": "bigclaw-go/docs/reports/broker-failover-stub-report.json"
+    },
+    {
+      "name": "rollout_contract_requires_committed_rejected_unknown_commit_verdicts",
+      "status": "pass",
+      "evidence": "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md"
+    },
+    {
+      "name": "distributed_diagnostics_exports_the_bf05_proof_reference",
+      "status": "pass",
+      "evidence": "bigclaw-go/internal/api/distributed.go"
+    }
+  ],
+  "review_surfaces": {
+    "distributed_export": "/v2/reports/distributed/export",
+    "distributed_payload": "/v2/reports/distributed",
+    "control_center": "/v2/control-center"
+  },
+  "current_limitations": [
+    "This is a checked-in deterministic stub proof, not a live broker-backed runtime report.",
+    "Future live adapters still need provider-native publish ledgers and replay captures that satisfy the same BF-05 classification rules.",
+    "unknown_commit remains a first-class reviewer verdict until live evidence can close the ambiguity window deterministically."
+  ]
+}

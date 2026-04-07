@@ -1,0 +1,113 @@
+# BIG-GO-1382 Validation
+
+Date: 2026-04-06
+
+## Scope
+
+Issue: `BIG-GO-1382`
+
+Title: `Heartbeat refill lane 1382: remaining Python asset sweep 2/10`
+
+This lane audited the remaining physical Python asset inventory with explicit
+priority on `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`, then
+pinned the surviving Go/native replacement paths that now cover that surface.
+
+The checked-out workspace was already at a repository-wide Python file count of
+`0`, so there was no physical `.py` asset left to delete or replace in-branch.
+The delivered work hardens that zero-Python baseline with a lane-specific
+regression guard and fresh validation evidence.
+
+## Remaining Python Asset Inventory
+
+- Repository-wide physical `.py` files: `none`
+- `src/bigclaw/*.py`: `none`
+- `tests/*.py`: `none`
+- `scripts/*.py`: `none`
+- `bigclaw-go/scripts/*.py`: `none`
+
+## Go Replacement Paths
+
+- Repository sweep verification: `bigclaw-go/internal/regression/big_go_1382_zero_python_guard_test.go`
+- Root operator entrypoint: `scripts/ops/bigclawctl`
+- Root issue helper alias: `scripts/ops/bigclaw-issue`
+- Root panel helper alias: `scripts/ops/bigclaw-panel`
+- Root symphony helper alias: `scripts/ops/bigclaw-symphony`
+- Root bootstrap verification: `scripts/dev_bootstrap.sh`
+- Go CLI entrypoint: `bigclaw-go/cmd/bigclawctl/main.go`
+- Shell end-to-end entrypoint: `bigclaw-go/scripts/e2e/run_all.sh`
+
+## Validation Commands
+
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1382(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+
+## Validation Results
+
+### Repository Python inventory
+
+Command:
+
+```bash
+find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382 -path '*/.git' -prune -o -name '*.py' -type f -print | sort
+```
+
+Result:
+
+```text
+none
+```
+
+### Priority directory inventory
+
+Command:
+
+```bash
+find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort
+```
+
+Result:
+
+```text
+none
+```
+
+### Targeted regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1382/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1382(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	1.970s
+```
+
+## Git
+
+- Branch: `main`
+- Baseline HEAD before lane commit: `c5450aef`
+- Lane commit details: `git log --oneline --grep 'BIG-GO-1382'`
+- Final pushed lane commit: `def2632d`
+- Push target: `origin/main`
+- Initial push rejection: remote `main` advanced to `2b00b910`
+- First rebased lane HEAD: `cb64af0f`
+- Second push rejection: remote `main` advanced to `ea03f42d`
+- Final rebased lane HEAD before push: `e2099121`
+- Continuation rebase base: `6fc610a2`
+- Continuation rebased lane HEAD before push: `e8117e01`
+- Continuation direct push result: rejected again because `origin/main` advanced during the push window
+- Existing remote lane branch `origin/big-go-1382` remains on the older pre-rebase history at `c17c0ece`, so the continuation publish target is a fresh branch.
+- Final full-stack rebase base: `0dea7c0b`
+- Final full-stack rebased lane HEAD before push: `d11b8c0d`
+- Final push result: initial TLS failure on first attempt, then successful push to `origin/main`
+- Metadata closeout push: `def2632d`
+
+## Residual Risk
+
+- The live branch baseline was already Python-free, so BIG-GO-1382 can only
+  lock in and document the Go-only state rather than numerically lower the
+  repository `.py` count.

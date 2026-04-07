@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1250",
+    "title": "Heartbeat refill lane 1250: remaining Python asset sweep 10/10",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "tracked in git history after BIG-GO-1250 final sync",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1250-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1250_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1250_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl",
+    "bigclaw-go/internal/bootstrap/bootstrap.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -name '*.py' -type f | wc -l",
+      "for dir in src/bigclaw tests scripts bigclaw-go/scripts; do if [ -d \"$dir\" ]; then find \"$dir\" -name '*.py' -type f; fi; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1250(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable)$'"
+    ],
+    "results": {
+      "repo_py_count": "0",
+      "priority_dir_inventory": "",
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.464s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1250 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "The lane rebased repeatedly against concurrent heartbeat updates and landed on origin/main after the final BIG-GO-1250 metadata sync.",
+    "Published BIG-GO-1250 commits are recorded in git history via `git log --grep 'BIG-GO-1250'`."
+  ]
+}

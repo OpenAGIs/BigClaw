@@ -1,0 +1,26 @@
+[
+  {
+    "durable_sequence": 3,
+    "event_id": "bf08-event-03",
+    "trace_id": "trace-bf08",
+    "delivery_phase": "replay",
+    "source_node": "broker-b",
+    "duplicate": true
+  },
+  {
+    "durable_sequence": 3,
+    "event_id": "bf08-event-03",
+    "trace_id": "trace-bf08",
+    "delivery_phase": "replay_duplicate",
+    "source_node": "broker-b",
+    "duplicate": true
+  },
+  {
+    "durable_sequence": 4,
+    "event_id": "bf08-event-04",
+    "trace_id": "trace-bf08",
+    "delivery_phase": "replay",
+    "source_node": "broker-b",
+    "duplicate": false
+  }
+]

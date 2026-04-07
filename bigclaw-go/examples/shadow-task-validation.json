@@ -1,0 +1,13 @@
+{
+  "id": "shadow-validation-sample",
+  "title": "Shadow compare validation sample",
+  "required_executor": "local",
+  "entrypoint": "echo hello from validation shadow compare",
+  "execution_timeout_seconds": 60,
+  "acceptance_criteria": ["command completes successfully"],
+  "validation_plan": ["compare primary and shadow terminal states", "compare event type sequence"],
+  "metadata": {
+    "sample": "true",
+    "scenario": "validation"
+  }
+}

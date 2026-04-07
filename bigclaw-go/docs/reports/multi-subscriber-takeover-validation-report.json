@@ -1,0 +1,701 @@
+{
+  "current_primitives": {
+    "lease_aware_checkpoints": [
+      "internal/events/subscriber_leases.go",
+      "internal/events/subscriber_leases_test.go",
+      "docs/reports/event-bus-reliability-report.md"
+    ],
+    "shared_queue_evidence": [
+      "cmd/bigclawctl/automation_e2e_multi_node_shared_queue_command.go",
+      "docs/reports/multi-node-shared-queue-report.json"
+    ],
+    "takeover_harness": [
+      "cmd/bigclawctl/automation_e2e_takeover_matrix_command.go",
+      "docs/reports/multi-subscriber-takeover-validation-report.json"
+    ]
+  },
+  "generated_at": "2026-03-30T15:06:25.472639Z",
+  "harness_mode": "deterministic_local_simulation",
+  "implementation_path": [
+    "wire the same ownership and rejection schema into the shared multi-node harness",
+    "emit real per-node audit artifacts from live takeover runs instead of synthetic report paths",
+    "export duplicate replay candidates and stale-writer rejection counters from live event-log APIs",
+    "prove the same report contract against an actual cross-process subscriber group"
+  ],
+  "remaining_gaps": [
+    "The harness is deterministic and local; it does not yet orchestrate live bigclawd takeover between separate processes.",
+    "Audit log paths in the report are normalized artifact targets, not emitted runtime files from a multi-node run.",
+    "Shared durable subscriber-group coordination still needs a full cross-process proof before the follow-up digest can be closed as done."
+  ],
+  "required_report_sections": [
+    "scenario metadata",
+    "fault injection steps",
+    "audit assertions",
+    "checkpoint assertions",
+    "replay assertions",
+    "per-node audit artifacts",
+    "final owner and replay cursor summary",
+    "duplicate delivery accounting",
+    "open blockers and follow-up implementation hooks"
+  ],
+  "scenarios": [
+    {
+      "all_assertions_passed": true,
+      "assertion_results": {
+        "audit": [
+          {
+            "label": "ownership handoff is visible in the audit timeline",
+            "passed": true
+          },
+          {
+            "label": "audit timeline contains takeover-specific events",
+            "passed": true
+          },
+          {
+            "label": "audit timeline stays ordered by timestamp",
+            "passed": true
+          }
+        ],
+        "checkpoint": [
+          {
+            "label": "checkpoint never regresses across takeover",
+            "passed": true
+          },
+          {
+            "label": "final checkpoint owner matches the final lease owner",
+            "passed": true
+          },
+          {
+            "label": "stale writers do not replace the accepted checkpoint owner",
+            "passed": true
+          }
+        ],
+        "replay": [
+          {
+            "label": "replay restarts from the durable checkpoint boundary",
+            "passed": true
+          },
+          {
+            "label": "replay end cursor advances to the final durable checkpoint",
+            "passed": true
+          },
+          {
+            "label": "duplicate replay candidates are counted explicitly",
+            "passed": true
+          }
+        ]
+      },
+      "audit_assertions": [
+        "Audit log shows one ownership handoff from primary to standby.",
+        "Audit log records the primary interruption reason before standby completion.",
+        "Audit log links takeover to the same task or trace identifier across both subscribers."
+      ],
+      "audit_log_paths": [
+        "artifacts/takeover-after-primary-crash/subscriber-a-audit.jsonl",
+        "artifacts/takeover-after-primary-crash/subscriber-b-audit.jsonl"
+      ],
+      "audit_timeline": [
+        {
+          "action": "lease_acquired",
+          "details": {
+            "lease_epoch": 1
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:30:00Z"
+        },
+        {
+          "action": "checkpoint_committed",
+          "details": {
+            "event_id": "evt-40",
+            "offset": 40
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:30:05Z"
+        },
+        {
+          "action": "processed_uncheckpointed_tail",
+          "details": {
+            "event_id": "evt-41",
+            "offset": 41
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:30:07Z"
+        },
+        {
+          "action": "primary_crashed",
+          "details": {
+            "reason": "terminated before checkpoint flush"
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:30:08Z"
+        },
+        {
+          "action": "lease_acquired",
+          "details": {
+            "lease_epoch": 2,
+            "takeover": true
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:30:31Z"
+        },
+        {
+          "action": "replay_started",
+          "details": {
+            "from_event_id": "evt-40",
+            "from_offset": 40
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:30:32Z"
+        },
+        {
+          "action": "checkpoint_committed",
+          "details": {
+            "event_id": "evt-41",
+            "offset": 41,
+            "replayed_tail": true
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:30:33Z"
+        }
+      ],
+      "checkpoint_after": {
+        "event_id": "evt-41",
+        "lease_epoch": 2,
+        "lease_token": "lease-2",
+        "offset": 41,
+        "owner": "subscriber-b",
+        "updated_at": "2026-03-16T10:30:33Z"
+      },
+      "checkpoint_assertions": [
+        "Checkpoint after takeover is greater than or equal to the last durable checkpoint from the primary.",
+        "Standby checkpoint commit is attributed to the new lease owner.",
+        "No checkpoint update is accepted from the crashed primary after takeover."
+      ],
+      "checkpoint_before": {
+        "event_id": "evt-40",
+        "lease_epoch": 1,
+        "lease_token": "lease-1",
+        "offset": 40,
+        "owner": "subscriber-a",
+        "updated_at": "2026-03-16T10:30:05Z"
+      },
+      "duplicate_delivery_count": 1,
+      "duplicate_events": [
+        "evt-41"
+      ],
+      "event_log_excerpt": [
+        {
+          "delivered_by": [
+            "subscriber-a"
+          ],
+          "delivery_kind": "durable",
+          "event_id": "evt-40"
+        },
+        {
+          "delivered_by": [
+            "subscriber-a",
+            "subscriber-b"
+          ],
+          "delivery_kind": "uncheckpointed_tail_replay",
+          "event_id": "evt-41"
+        }
+      ],
+      "id": "takeover-after-primary-crash",
+      "lease_owner_timeline": [
+        {
+          "checkpoint_event_id": "",
+          "checkpoint_offset": 0,
+          "event": "lease_acquired",
+          "lease_epoch": 1,
+          "owner": "subscriber-a",
+          "timestamp": "2026-03-16T10:30:00Z"
+        },
+        {
+          "checkpoint_event_id": "evt-40",
+          "checkpoint_offset": 40,
+          "event": "takeover_acquired",
+          "lease_epoch": 2,
+          "owner": "subscriber-b",
+          "timestamp": "2026-03-16T10:30:31Z"
+        }
+      ],
+      "local_limitations": [
+        "Deterministic local harness only; no live bigclawd processes participate in this proof.",
+        "Per-node audit paths are report artifacts rather than emitted runtime JSONL files."
+      ],
+      "primary_subscriber": "subscriber-a",
+      "replay_assertions": [
+        "Replay resumes from the last durable checkpoint, not from the last in-memory event processed by the crashed primary.",
+        "At most one duplicate delivery is tolerated for the uncheckpointed tail and it is visible in the report.",
+        "Replay window closes once the standby checkpoint advances past the tail."
+      ],
+      "replay_end_cursor": {
+        "event_id": "evt-41",
+        "offset": 41
+      },
+      "replay_start_cursor": {
+        "event_id": "evt-40",
+        "offset": 40
+      },
+      "stale_write_rejections": 0,
+      "subscriber_group": "group-takeover-crash",
+      "takeover_subscriber": "subscriber-b",
+      "task_or_trace_id": "trace-takeover-crash",
+      "title": "Primary subscriber crashes after processing but before checkpoint flush"
+    },
+    {
+      "all_assertions_passed": true,
+      "assertion_results": {
+        "audit": [
+          {
+            "label": "ownership handoff is visible in the audit timeline",
+            "passed": true
+          },
+          {
+            "label": "audit timeline contains takeover-specific events",
+            "passed": true
+          },
+          {
+            "label": "audit timeline stays ordered by timestamp",
+            "passed": true
+          }
+        ],
+        "checkpoint": [
+          {
+            "label": "checkpoint never regresses across takeover",
+            "passed": true
+          },
+          {
+            "label": "final checkpoint owner matches the final lease owner",
+            "passed": true
+          },
+          {
+            "label": "stale writers do not replace the accepted checkpoint owner",
+            "passed": true
+          }
+        ],
+        "replay": [
+          {
+            "label": "replay restarts from the durable checkpoint boundary",
+            "passed": true
+          },
+          {
+            "label": "replay end cursor advances to the final durable checkpoint",
+            "passed": true
+          },
+          {
+            "label": "duplicate replay candidates are counted explicitly",
+            "passed": true
+          }
+        ]
+      },
+      "audit_assertions": [
+        "Audit log records lease expiry for the former owner and acquisition by the standby.",
+        "Audit log records the stale write rejection with both attempted and accepted owners.",
+        "Audit log keeps the rejection and accepted takeover in the same ordered timeline."
+      ],
+      "audit_log_paths": [
+        "artifacts/lease-expiry-stale-writer-rejected/subscriber-a-audit.jsonl",
+        "artifacts/lease-expiry-stale-writer-rejected/subscriber-b-audit.jsonl"
+      ],
+      "audit_timeline": [
+        {
+          "action": "lease_acquired",
+          "details": {
+            "lease_epoch": 1
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:35:00Z"
+        },
+        {
+          "action": "checkpoint_committed",
+          "details": {
+            "event_id": "evt-80",
+            "offset": 80
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:35:03Z"
+        },
+        {
+          "action": "lease_expired",
+          "details": {
+            "last_offset": 80
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:35:31Z"
+        },
+        {
+          "action": "lease_acquired",
+          "details": {
+            "lease_epoch": 2,
+            "takeover": true
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:35:31Z"
+        },
+        {
+          "action": "lease_fenced",
+          "details": {
+            "accepted_owner": "subscriber-b",
+            "attempted_event_id": "evt-81",
+            "attempted_offset": 81
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:35:32Z"
+        },
+        {
+          "action": "replay_started",
+          "details": {
+            "from_event_id": "evt-80",
+            "from_offset": 80
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:35:33Z"
+        },
+        {
+          "action": "checkpoint_committed",
+          "details": {
+            "event_id": "evt-82",
+            "offset": 82,
+            "stale_writer_rejected": true
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:35:34Z"
+        }
+      ],
+      "checkpoint_after": {
+        "event_id": "evt-82",
+        "lease_epoch": 2,
+        "lease_token": "lease-2",
+        "offset": 82,
+        "owner": "subscriber-b",
+        "updated_at": "2026-03-16T10:35:34Z"
+      },
+      "checkpoint_assertions": [
+        "Checkpoint sequence never decreases after the standby acquires ownership.",
+        "Late primary acknowledgement is rejected or ignored without mutating durable checkpoint state.",
+        "Accepted checkpoint owner always matches the active lease holder."
+      ],
+      "checkpoint_before": {
+        "event_id": "evt-80",
+        "lease_epoch": 1,
+        "lease_token": "lease-1",
+        "offset": 80,
+        "owner": "subscriber-a",
+        "updated_at": "2026-03-16T10:35:03Z"
+      },
+      "duplicate_delivery_count": 1,
+      "duplicate_events": [
+        "evt-81"
+      ],
+      "event_log_excerpt": [
+        {
+          "delivered_by": [
+            "subscriber-a"
+          ],
+          "delivery_kind": "durable",
+          "event_id": "evt-80"
+        },
+        {
+          "delivered_by": [
+            "subscriber-a",
+            "subscriber-b"
+          ],
+          "delivery_kind": "stale_overlap_candidate",
+          "event_id": "evt-81"
+        },
+        {
+          "delivered_by": [
+            "subscriber-b"
+          ],
+          "delivery_kind": "takeover_replay_commit",
+          "event_id": "evt-82"
+        }
+      ],
+      "id": "lease-expiry-stale-writer-rejected",
+      "lease_owner_timeline": [
+        {
+          "checkpoint_event_id": "",
+          "checkpoint_offset": 0,
+          "event": "lease_acquired",
+          "lease_epoch": 1,
+          "owner": "subscriber-a",
+          "timestamp": "2026-03-16T10:35:00Z"
+        },
+        {
+          "checkpoint_event_id": "evt-80",
+          "checkpoint_offset": 80,
+          "event": "takeover_acquired",
+          "lease_epoch": 2,
+          "owner": "subscriber-b",
+          "timestamp": "2026-03-16T10:35:31Z"
+        }
+      ],
+      "local_limitations": [
+        "Deterministic local harness only; live lease expiry still needs a real two-node integration proof.",
+        "Stale writer rejection count is produced by the harness rather than the live control-plane API."
+      ],
+      "primary_subscriber": "subscriber-a",
+      "replay_assertions": [
+        "Replay after stale write rejection starts from the accepted durable checkpoint only.",
+        "No event acknowledged only by the stale writer disappears from the replay timeline.",
+        "Replay report exposes any duplicate event IDs caused by the overlap window."
+      ],
+      "replay_end_cursor": {
+        "event_id": "evt-82",
+        "offset": 82
+      },
+      "replay_start_cursor": {
+        "event_id": "evt-80",
+        "offset": 80
+      },
+      "stale_write_rejections": 1,
+      "subscriber_group": "group-stale-writer",
+      "takeover_subscriber": "subscriber-b",
+      "task_or_trace_id": "trace-stale-writer",
+      "title": "Lease expires and the former owner attempts a stale checkpoint write"
+    },
+    {
+      "all_assertions_passed": true,
+      "assertion_results": {
+        "audit": [
+          {
+            "label": "ownership handoff is visible in the audit timeline",
+            "passed": true
+          },
+          {
+            "label": "audit timeline contains takeover-specific events",
+            "passed": true
+          },
+          {
+            "label": "audit timeline stays ordered by timestamp",
+            "passed": true
+          }
+        ],
+        "checkpoint": [
+          {
+            "label": "checkpoint never regresses across takeover",
+            "passed": true
+          },
+          {
+            "label": "final checkpoint owner matches the final lease owner",
+            "passed": true
+          },
+          {
+            "label": "stale writers do not replace the accepted checkpoint owner",
+            "passed": true
+          }
+        ],
+        "replay": [
+          {
+            "label": "replay restarts from the durable checkpoint boundary",
+            "passed": true
+          },
+          {
+            "label": "replay end cursor advances to the final durable checkpoint",
+            "passed": true
+          },
+          {
+            "label": "duplicate replay candidates are counted explicitly",
+            "passed": true
+          }
+        ]
+      },
+      "audit_assertions": [
+        "Combined audit timeline shows overlapping replay attempts and identifies the surviving owner.",
+        "Audit evidence includes per-node file paths and normalized subscriber identities.",
+        "The final report highlights whether duplicate replay attempts were observed or only simulated."
+      ],
+      "audit_log_paths": [
+        "artifacts/split-brain-dual-replay-window/subscriber-a-audit.jsonl",
+        "artifacts/split-brain-dual-replay-window/subscriber-b-audit.jsonl"
+      ],
+      "audit_timeline": [
+        {
+          "action": "lease_acquired",
+          "details": {
+            "lease_epoch": 1
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:40:00Z"
+        },
+        {
+          "action": "checkpoint_committed",
+          "details": {
+            "event_id": "evt-120",
+            "offset": 120
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:40:02Z"
+        },
+        {
+          "action": "overlap_window_started",
+          "details": {
+            "candidate_events": [
+              "evt-121",
+              "evt-122"
+            ]
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:40:29Z"
+        },
+        {
+          "action": "lease_acquired",
+          "details": {
+            "lease_epoch": 2,
+            "takeover": true
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:40:31Z"
+        },
+        {
+          "action": "replay_started",
+          "details": {
+            "candidate_events": [
+              "evt-121",
+              "evt-122"
+            ],
+            "from_offset": 120
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:40:32Z"
+        },
+        {
+          "action": "lease_fenced",
+          "details": {
+            "accepted_owner": "subscriber-b",
+            "attempted_offset": 122,
+            "overlap": true
+          },
+          "subscriber": "subscriber-a",
+          "timestamp": "2026-03-16T10:40:33Z"
+        },
+        {
+          "action": "checkpoint_committed",
+          "details": {
+            "event_id": "evt-122",
+            "offset": 122,
+            "winning_owner": "subscriber-b"
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:40:34Z"
+        },
+        {
+          "action": "overlap_window_closed",
+          "details": {
+            "duplicate_events": [
+              "evt-121",
+              "evt-122"
+            ],
+            "winning_owner": "subscriber-b"
+          },
+          "subscriber": "subscriber-b",
+          "timestamp": "2026-03-16T10:40:35Z"
+        }
+      ],
+      "checkpoint_after": {
+        "event_id": "evt-122",
+        "lease_epoch": 2,
+        "lease_token": "lease-2",
+        "offset": 122,
+        "owner": "subscriber-b",
+        "updated_at": "2026-03-16T10:40:34Z"
+      },
+      "checkpoint_assertions": [
+        "Only the winning owner can advance the durable checkpoint.",
+        "Losing owner leaves durable checkpoint unchanged once fencing is applied.",
+        "Report includes the exact checkpoint sequence where overlap began and ended."
+      ],
+      "checkpoint_before": {
+        "event_id": "evt-120",
+        "lease_epoch": 1,
+        "lease_token": "lease-1",
+        "offset": 120,
+        "owner": "subscriber-a",
+        "updated_at": "2026-03-16T10:40:02Z"
+      },
+      "duplicate_delivery_count": 2,
+      "duplicate_events": [
+        "evt-121",
+        "evt-122"
+      ],
+      "event_log_excerpt": [
+        {
+          "delivered_by": [
+            "subscriber-a"
+          ],
+          "delivery_kind": "durable",
+          "event_id": "evt-120"
+        },
+        {
+          "delivered_by": [
+            "subscriber-a",
+            "subscriber-b"
+          ],
+          "delivery_kind": "overlap_candidate",
+          "event_id": "evt-121"
+        },
+        {
+          "delivered_by": [
+            "subscriber-a",
+            "subscriber-b"
+          ],
+          "delivery_kind": "overlap_candidate",
+          "event_id": "evt-122"
+        }
+      ],
+      "id": "split-brain-dual-replay-window",
+      "lease_owner_timeline": [
+        {
+          "checkpoint_event_id": "",
+          "checkpoint_offset": 0,
+          "event": "lease_acquired",
+          "lease_epoch": 1,
+          "owner": "subscriber-a",
+          "timestamp": "2026-03-16T10:40:00Z"
+        },
+        {
+          "checkpoint_event_id": "evt-120",
+          "checkpoint_offset": 120,
+          "event": "takeover_acquired",
+          "lease_epoch": 2,
+          "owner": "subscriber-b",
+          "timestamp": "2026-03-16T10:40:31Z"
+        }
+      ],
+      "local_limitations": [
+        "Deterministic local harness only; duplicate replay candidates are modeled rather than captured from a live shared queue.",
+        "Real cross-process subscriber membership and per-node replay metrics remain follow-up work."
+      ],
+      "primary_subscriber": "subscriber-a",
+      "replay_assertions": [
+        "Replay output groups duplicate candidate deliveries by event ID.",
+        "Final replay cursor belongs to the winning owner only.",
+        "Validation reports whether overlapping replay created observable duplicate deliveries."
+      ],
+      "replay_end_cursor": {
+        "event_id": "evt-122",
+        "offset": 122
+      },
+      "replay_start_cursor": {
+        "event_id": "evt-120",
+        "offset": 120
+      },
+      "stale_write_rejections": 1,
+      "subscriber_group": "group-split-brain",
+      "takeover_subscriber": "subscriber-b",
+      "task_or_trace_id": "trace-split-brain",
+      "title": "Two subscribers briefly believe they can replay the same tail"
+    }
+  ],
+  "status": "local-executable",
+  "summary": {
+    "duplicate_delivery_count": 4,
+    "failing_scenarios": 0,
+    "passing_scenarios": 3,
+    "scenario_count": 3,
+    "stale_write_rejections": 2
+  },
+  "ticket": "OPE-269",
+  "title": "Multi-subscriber takeover executable local harness report"
+}

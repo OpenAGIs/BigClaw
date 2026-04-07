@@ -1,0 +1,137 @@
+# BigClaw
+
+BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
+
+`bigclaw-go` is the current implementation mainline for new development. The
+repository root now exposes Go-only build and operator entrypoints.
+
+## What is included
+
+- `workflow.md`: Linear-driven unattended workflow configuration
+- `bigclaw-go`: current Go implementation mainline
+  - `cmd/bigclawd`: service entrypoint
+  - `internal/*`: queue, scheduler, worker, events, API, reporting, and control-plane packages
+  - `docs/*`: Go control-plane validation and migration evidence
+- `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
+- `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
+
+## Root Go quick start (recommended)
+
+```bash
+cd BigClaw
+make test
+make build
+make run
+curl localhost:8080/healthz
+bash scripts/ops/bigclawctl github-sync status --json
+bash scripts/ops/bigclawctl dev-smoke
+```
+
+## Local orchestration quick start
+
+BigClaw now defaults to a repo-native local tracker in [`local-issues.json`](./local-issues.json).
+Use these entrypoints to keep the remaining Go-mainline migration slices moving without waiting on
+Linear issue capacity:
+
+```bash
+bash scripts/ops/bigclawctl issue list
+bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
+bash scripts/ops/bigclawctl symphony
+bash scripts/ops/bigclawctl panel
+```
+
+Notes:
+
+- `bash scripts/ops/bigclawctl symphony` starts Symphony against [`workflow.md`](./workflow.md) and
+  serves the local issue dashboard at `http://127.0.0.1:4000/`.
+- `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
+- `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
+  issue creation and state changes stay pinned to this repository's tracker file.
+- `bash scripts/ops/bigclawctl refill ...` is the supported refill entrypoint. The legacy
+  root workspace Python helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
+- GitHub sync is no longer exposed through a Python wrapper; use
+  `bash scripts/ops/bigclawctl github-sync ...`.
+- `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...`,
+  `go run ./bigclaw-go/cmd/bigclawctl automation benchmark capacity-certification ...`,
+  and `go run ./bigclaw-go/cmd/bigclawctl automation migration shadow-compare ...`
+  are the supported automation entrypoints. `bigclaw-go/scripts/benchmark/` is
+  now Go-only and keeps `run_suite.sh` as the retained wrapper; the migration matrix lives in
+  [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
+- `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
+  retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
+- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
+  queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
+
+## Python asset status
+
+The repository root no longer carries physical `.py` assets. Validate the
+Go-only posture with the root bootstrap helper:
+
+```bash
+bash scripts/dev_bootstrap.sh
+```
+
+That helper runs the Go `bigclawctl dev-smoke` replacement first and then
+`cd bigclaw-go && go test ./internal/bootstrap`.
+## Go smoke verify
+
+```bash
+cd BigClaw
+make test
+make run &
+curl localhost:8080/healthz
+bash scripts/ops/bigclawctl github-sync status --json
+```
+
+## Go Dev Smoke Verify
+
+Use this to verify the root dev smoke path:
+
+```bash
+bash scripts/ops/bigclawctl dev-smoke
+```
+
+## Quality gates
+
+Go mainline:
+
+```bash
+make test
+make build
+```
+
+Go-first bootstrap helper:
+
+```bash
+bash scripts/dev_bootstrap.sh
+```
+
+Repository hygiene:
+
+```bash
+pre-commit run --all-files
+```
+
+## Quick verify
+
+```bash
+git log -1 --stat
+git remote -v
+git push origin main
+```
+
+Repository: https://github.com/OpenAGIs/BigClaw
+
+## Repo-agnostic bootstrap template
+
+Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
+reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
+The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
+the Go-first operator entrypoint is `scripts/ops/bigclawctl`; retired root
+Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
+`scripts/ops/bigclawctl`.
+
+Active runtime development belongs in `bigclaw-go/internal/*`; use
+`go run ./bigclaw-go/cmd/bigclawd` for the local server path.

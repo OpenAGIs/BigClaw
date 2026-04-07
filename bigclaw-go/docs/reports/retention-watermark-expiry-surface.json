@@ -1,0 +1,124 @@
+{
+  "generated_at": "2026-03-17T23:10:00Z",
+  "ticket": "OPE-21",
+  "track": "BIG-DUR-103",
+  "title": "Retention watermark and expiry surface",
+  "status": "checked_in_surface",
+  "source_reports": [
+    "bigclaw-go/docs/reports/replay-retention-semantics-report.md",
+    "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json",
+    "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
+    "bigclaw-go/docs/reports/external-store-validation-report.json"
+  ],
+  "reviewer_links": [
+    "bigclaw-go/docs/reports/replay-retention-semantics-report.md",
+    "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json"
+  ],
+  "summary": {
+    "backend_count": 5,
+    "runtime_visible_backends": 4,
+    "persisted_boundary_backends": 2,
+    "fail_closed_expiry_backends": 3,
+    "contract_only_backends": 1
+  },
+  "backends": [
+    {
+      "backend": "memory",
+      "runtime_readiness": "live_proven",
+      "retained_boundary_visible": true,
+      "persisted_boundaries": false,
+      "fail_closed_expiry": false,
+      "replay_boundary_source": "in-process replay history watermark when a bounded local window exists",
+      "checkpoint_expiry_handling": "not durable; subscriber checkpoint expiry is not provider-backed in pure memory mode",
+      "checkpoint_cleanup_policy": "ephemeral runtime restart clears local history separately from explicit durable checkpoint reset workflows",
+      "source_report_links": [
+        "bigclaw-go/internal/events/bus.go",
+        "bigclaw-go/docs/reports/replay-retention-semantics-report.md"
+      ],
+      "notes": [
+        "Provides the baseline replay-boundary vocabulary used by durable backends.",
+        "Does not claim provider-backed fail-closed checkpoint expiry."
+      ]
+    },
+    {
+      "backend": "sqlite",
+      "runtime_readiness": "live_proven",
+      "retained_boundary_visible": true,
+      "persisted_boundaries": true,
+      "fail_closed_expiry": true,
+      "replay_boundary_source": "retention_watermark with oldest/newest retained event IDs and durable trimmed-through sequence",
+      "checkpoint_expiry_handling": "saved checkpoints fail closed once event_sequence falls behind trimmed_through_sequence",
+      "checkpoint_cleanup_policy": "history retention advances replay boundaries; checkpoint cleanup remains explicit reset or inactivity-driven cleanup",
+      "source_report_links": [
+        "bigclaw-go/internal/events/sqlite_log.go",
+        "bigclaw-go/docs/reports/replay-retention-semantics-report.md",
+        "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json"
+      ],
+      "notes": [
+        "Persisted retention boundaries survive restart and stay operator-visible.",
+        "Expired checkpoints require explicit reset before replay resumes."
+      ]
+    },
+    {
+      "backend": "http",
+      "runtime_readiness": "live_proven",
+      "retained_boundary_visible": true,
+      "persisted_boundaries": true,
+      "fail_closed_expiry": true,
+      "replay_boundary_source": "remote event-log service watermark mirrored through the HTTP adapter",
+      "checkpoint_expiry_handling": "remote checkpoints inherit the same fail-closed expiry contract and reset guidance as the durable service backend",
+      "checkpoint_cleanup_policy": "service-level retention policy is reported independently from subscriber checkpoint reset history and manual cleanup",
+      "source_report_links": [
+        "bigclaw-go/internal/events/http_log.go",
+        "bigclaw-go/docs/e2e-validation.md",
+        "bigclaw-go/docs/reports/external-store-validation-report.json"
+      ],
+      "notes": [
+        "Proves provider-backed replay boundaries through a repo-native remote service boundary.",
+        "Operators can inspect retained oldest/newest boundaries without reading raw backend state."
+      ]
+    },
+    {
+      "backend": "broker_stub",
+      "runtime_readiness": "harness_proven",
+      "retained_boundary_visible": true,
+      "persisted_boundaries": false,
+      "fail_closed_expiry": true,
+      "replay_boundary_source": "stub retention floor and event sequence summary captured in checked-in proof artifacts",
+      "checkpoint_expiry_handling": "stale checkpoints fail closed and require explicit reset to the retained floor proven by BF-07",
+      "checkpoint_cleanup_policy": "retention-boundary failure is reviewed separately from checkpoint deletion or lease inactivity cleanup",
+      "source_report_links": [
+        "bigclaw-go/internal/events/broker_stub_log.go",
+        "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json",
+        "bigclaw-go/docs/reports/replicated-broker-durability-rollout-spike.md"
+      ],
+      "notes": [
+        "Harness evidence freezes the expiry guidance before a real replicated provider is wired.",
+        "Still not treated as the rollout-ready provider-backed adapter."
+      ]
+    },
+    {
+      "backend": "broker_replicated",
+      "runtime_readiness": "contract_only",
+      "retained_boundary_visible": false,
+      "persisted_boundaries": false,
+      "fail_closed_expiry": false,
+      "replay_boundary_source": "future provider watermark exposing oldest/newest retained replay boundaries",
+      "checkpoint_expiry_handling": "future adapter must reject resumes behind the provider retention floor instead of silently fast-forwarding",
+      "checkpoint_cleanup_policy": "future provider implementation must keep replay retention policy separate from checkpoint cleanup and inactivity TTLs",
+      "source_report_links": [
+        "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
+        "bigclaw-go/docs/reports/replay-retention-semantics-report.md"
+      ],
+      "notes": [
+        "No real provider-backed retention watermark is wired yet.",
+        "Remains contract_only until the first adapter proves persisted boundaries and fail-closed expiry end to end."
+      ]
+    }
+  ],
+  "policy_split": [
+    "Retention policy advances oldest/newest retained replay boundaries and is reported through retention_watermark.",
+    "Checkpoint cleanup is a separate reset or inactivity-management workflow and must not be conflated with replay compaction.",
+    "Expired checkpoints fail closed with reset guidance instead of silently skipping truncated history."
+  ]
+}

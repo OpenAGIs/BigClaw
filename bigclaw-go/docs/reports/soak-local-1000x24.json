@@ -1,0 +1,235 @@
+{
+  "count": 1000,
+  "workers": 24,
+  "elapsed_seconds": 104.0909423828125,
+  "throughput_tasks_per_sec": 9.6069838269148,
+  "succeeded": 1000,
+  "failed": 0,
+  "sample_status": [
+    {
+      "events": [
+        {
+          "id": "soak-0-1773392686-queued",
+          "type": "task.queued",
+          "task_id": "soak-0-1773392686",
+          "trace_id": "soak-0-1773392686",
+          "timestamp": "2026-03-13T17:04:49.842603+08:00",
+          "payload": {
+            "executor": "local",
+            "title": "soak task 0"
+          }
+        },
+        {
+          "id": "soak-0-1773392686-leased",
+          "type": "task.leased",
+          "task_id": "soak-0-1773392686",
+          "trace_id": "soak-0-1773392686",
+          "timestamp": "2026-03-13T17:04:50.058781+08:00"
+        },
+        {
+          "id": "soak-0-1773392686-routed",
+          "type": "scheduler.routed",
+          "task_id": "soak-0-1773392686",
+          "trace_id": "soak-0-1773392686",
+          "timestamp": "2026-03-13T17:04:50.058825+08:00",
+          "payload": {
+            "executor": "local",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "required executor=local"
+          }
+        },
+        {
+          "id": "soak-0-1773392686-started",
+          "type": "task.started",
+          "task_id": "soak-0-1773392686",
+          "trace_id": "soak-0-1773392686",
+          "timestamp": "2026-03-13T17:04:50.058854+08:00",
+          "payload": {
+            "executor": "local"
+          }
+        },
+        {
+          "id": "soak-0-1773392686-completed",
+          "type": "task.completed",
+          "task_id": "soak-0-1773392686",
+          "trace_id": "soak-0-1773392686",
+          "timestamp": "2026-03-13T17:04:50.103325+08:00",
+          "payload": {
+            "message": "local execution completed"
+          }
+        }
+      ],
+      "latest_event": {
+        "id": "soak-0-1773392686-completed",
+        "type": "task.completed",
+        "task_id": "soak-0-1773392686",
+        "trace_id": "soak-0-1773392686",
+        "timestamp": "2026-03-13T17:04:50.103325+08:00",
+        "payload": {
+          "message": "local execution completed"
+        }
+      },
+      "state": "succeeded",
+      "task_id": "soak-0-1773392686",
+      "trace_id": "soak-0-1773392686"
+    },
+    {
+      "events": [
+        {
+          "id": "soak-1-1773392686-queued",
+          "type": "task.queued",
+          "task_id": "soak-1-1773392686",
+          "trace_id": "soak-1-1773392686",
+          "timestamp": "2026-03-13T17:04:49.842574+08:00",
+          "payload": {
+            "executor": "local",
+            "title": "soak task 1"
+          }
+        },
+        {
+          "id": "soak-1-1773392686-leased",
+          "type": "task.leased",
+          "task_id": "soak-1-1773392686",
+          "trace_id": "soak-1-1773392686",
+          "timestamp": "2026-03-13T17:04:49.948671+08:00"
+        },
+        {
+          "id": "soak-1-1773392686-routed",
+          "type": "scheduler.routed",
+          "task_id": "soak-1-1773392686",
+          "trace_id": "soak-1-1773392686",
+          "timestamp": "2026-03-13T17:04:49.94873+08:00",
+          "payload": {
+            "executor": "local",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "required executor=local"
+          }
+        },
+        {
+          "id": "soak-1-1773392686-started",
+          "type": "task.started",
+          "task_id": "soak-1-1773392686",
+          "trace_id": "soak-1-1773392686",
+          "timestamp": "2026-03-13T17:04:49.948777+08:00",
+          "payload": {
+            "executor": "local"
+          }
+        },
+        {
+          "id": "soak-1-1773392686-completed",
+          "type": "task.completed",
+          "task_id": "soak-1-1773392686",
+          "trace_id": "soak-1-1773392686",
+          "timestamp": "2026-03-13T17:04:49.98346+08:00",
+          "payload": {
+            "message": "local execution completed"
+          }
+        }
+      ],
+      "latest_event": {
+        "id": "soak-1-1773392686-completed",
+        "type": "task.completed",
+        "task_id": "soak-1-1773392686",
+        "trace_id": "soak-1-1773392686",
+        "timestamp": "2026-03-13T17:04:49.98346+08:00",
+        "payload": {
+          "message": "local execution completed"
+        }
+      },
+      "state": "succeeded",
+      "task_id": "soak-1-1773392686",
+      "trace_id": "soak-1-1773392686"
+    },
+    {
+      "events": [
+        {
+          "id": "soak-2-1773392686-queued",
+          "type": "task.queued",
+          "task_id": "soak-2-1773392686",
+          "trace_id": "soak-2-1773392686",
+          "timestamp": "2026-03-13T17:04:49.843009+08:00",
+          "payload": {
+            "executor": "local",
+            "title": "soak task 2"
+          }
+        },
+        {
+          "id": "soak-2-1773392686-leased",
+          "type": "task.leased",
+          "task_id": "soak-2-1773392686",
+          "trace_id": "soak-2-1773392686",
+          "timestamp": "2026-03-13T17:04:50.452053+08:00"
+        },
+        {
+          "id": "soak-2-1773392686-routed",
+          "type": "scheduler.routed",
+          "task_id": "soak-2-1773392686",
+          "trace_id": "soak-2-1773392686",
+          "timestamp": "2026-03-13T17:04:50.452094+08:00",
+          "payload": {
+            "executor": "local",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "required executor=local"
+          }
+        },
+        {
+          "id": "soak-2-1773392686-started",
+          "type": "task.started",
+          "task_id": "soak-2-1773392686",
+          "trace_id": "soak-2-1773392686",
+          "timestamp": "2026-03-13T17:04:50.452121+08:00",
+          "payload": {
+            "executor": "local"
+          }
+        },
+        {
+          "id": "soak-2-1773392686-completed",
+          "type": "task.completed",
+          "task_id": "soak-2-1773392686",
+          "trace_id": "soak-2-1773392686",
+          "timestamp": "2026-03-13T17:04:50.517761+08:00",
+          "payload": {
+            "message": "local execution completed"
+          }
+        }
+      ],
+      "latest_event": {
+        "id": "soak-2-1773392686-completed",
+        "type": "task.completed",
+        "task_id": "soak-2-1773392686",
+        "trace_id": "soak-2-1773392686",
+        "timestamp": "2026-03-13T17:04:50.517761+08:00",
+        "payload": {
+          "message": "local execution completed"
+        }
+      },
+      "state": "succeeded",
+      "task_id": "soak-2-1773392686",
+      "trace_id": "soak-2-1773392686"
+    }
+  ]
+}

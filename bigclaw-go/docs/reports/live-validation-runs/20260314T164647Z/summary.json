@@ -1,0 +1,620 @@
+{
+  "run_id": "20260314T164647Z",
+  "generated_at": "2026-03-14T16:46:57.671520+00:00",
+  "status": "succeeded",
+  "bundle_path": "docs/reports/live-validation-runs/20260314T164647Z",
+  "closeout_commands": [
+    "cd bigclaw-go && ./scripts/e2e/run_all.sh",
+    "cd bigclaw-go && go test ./...",
+    "git push origin <branch> && git log -1 --stat"
+  ],
+  "local": {
+    "enabled": true,
+    "bundle_report_path": "docs/reports/live-validation-runs/20260314T164647Z/sqlite-smoke-report.json",
+    "canonical_report_path": "docs/reports/sqlite-smoke-report.json",
+    "report": {
+      "autostarted": true,
+      "base_url": "http://127.0.0.1:53346",
+      "task": {
+        "id": "local-smoke-1773506812",
+        "trace_id": "local-smoke-1773506812",
+        "title": "SQLite smoke",
+        "state": "queued",
+        "required_executor": "local",
+        "entrypoint": "echo hello from sqlite",
+        "metadata": {
+          "executor": "local",
+          "smoke_test": "true"
+        },
+        "execution_timeout_seconds": 180,
+        "created_at": "2026-03-15T00:46:52.571701+08:00",
+        "updated_at": "2026-03-15T00:46:52.571701+08:00"
+      },
+      "status": {
+        "events": [
+          {
+            "id": "local-smoke-1773506812-queued",
+            "type": "task.queued",
+            "task_id": "local-smoke-1773506812",
+            "trace_id": "local-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.571701+08:00",
+            "payload": {
+              "executor": "local",
+              "title": "SQLite smoke"
+            }
+          },
+          {
+            "id": "local-smoke-1773506812-leased",
+            "type": "task.leased",
+            "task_id": "local-smoke-1773506812",
+            "trace_id": "local-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.579603+08:00"
+          },
+          {
+            "id": "local-smoke-1773506812-routed",
+            "type": "scheduler.routed",
+            "task_id": "local-smoke-1773506812",
+            "trace_id": "local-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.57972+08:00",
+            "payload": {
+              "executor": "local",
+              "quota": {
+                "TenantID": "",
+                "ConcurrentLimit": 32,
+                "CurrentRunning": 0,
+                "BudgetRemaining": 1000,
+                "QueueDepth": 0,
+                "MaxQueueDepth": 0,
+                "PreemptibleExecutions": 0
+              },
+              "reason": "required executor=local"
+            }
+          },
+          {
+            "id": "local-smoke-1773506812-started",
+            "type": "task.started",
+            "task_id": "local-smoke-1773506812",
+            "trace_id": "local-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.579798+08:00",
+            "payload": {
+              "executor": "local",
+              "required_tools": null
+            }
+          },
+          {
+            "id": "local-smoke-1773506812-completed",
+            "type": "task.completed",
+            "task_id": "local-smoke-1773506812",
+            "trace_id": "local-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.591566+08:00",
+            "payload": {
+              "artifacts": [
+                "stdout.log"
+              ],
+              "executor": "local",
+              "finished_at": "2026-03-14T16:46:52Z",
+              "message": "local execution completed"
+            }
+          }
+        ],
+        "latest_event": {
+          "id": "local-smoke-1773506812-completed",
+          "type": "task.completed",
+          "task_id": "local-smoke-1773506812",
+          "trace_id": "local-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.591566+08:00",
+          "payload": {
+            "artifacts": [
+              "stdout.log"
+            ],
+            "executor": "local",
+            "finished_at": "2026-03-14T16:46:52Z",
+            "message": "local execution completed"
+          }
+        },
+        "state": "succeeded",
+        "task": {
+          "id": "local-smoke-1773506812",
+          "trace_id": "local-smoke-1773506812",
+          "title": "SQLite smoke",
+          "state": "succeeded",
+          "required_executor": "local",
+          "entrypoint": "echo hello from sqlite",
+          "metadata": {
+            "executor": "local",
+            "smoke_test": "true"
+          },
+          "execution_timeout_seconds": 180,
+          "created_at": "2026-03-15T00:46:52.571701+08:00",
+          "updated_at": "2026-03-15T00:46:52.591566+08:00"
+        },
+        "task_id": "local-smoke-1773506812",
+        "trace_id": "local-smoke-1773506812"
+      },
+      "events": [
+        {
+          "id": "local-smoke-1773506812-queued",
+          "type": "task.queued",
+          "task_id": "local-smoke-1773506812",
+          "trace_id": "local-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.571701+08:00",
+          "payload": {
+            "executor": "local",
+            "title": "SQLite smoke"
+          }
+        },
+        {
+          "id": "local-smoke-1773506812-leased",
+          "type": "task.leased",
+          "task_id": "local-smoke-1773506812",
+          "trace_id": "local-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.579603+08:00"
+        },
+        {
+          "id": "local-smoke-1773506812-routed",
+          "type": "scheduler.routed",
+          "task_id": "local-smoke-1773506812",
+          "trace_id": "local-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.57972+08:00",
+          "payload": {
+            "executor": "local",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "required executor=local"
+          }
+        },
+        {
+          "id": "local-smoke-1773506812-started",
+          "type": "task.started",
+          "task_id": "local-smoke-1773506812",
+          "trace_id": "local-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.579798+08:00",
+          "payload": {
+            "executor": "local",
+            "required_tools": null
+          }
+        },
+        {
+          "id": "local-smoke-1773506812-completed",
+          "type": "task.completed",
+          "task_id": "local-smoke-1773506812",
+          "trace_id": "local-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.591566+08:00",
+          "payload": {
+            "artifacts": [
+              "stdout.log"
+            ],
+            "executor": "local",
+            "finished_at": "2026-03-14T16:46:52Z",
+            "message": "local execution completed"
+          }
+        }
+      ],
+      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-0a6f2beb",
+      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-4debbv7g.log"
+    },
+    "status": "succeeded",
+    "stdout_path": "docs/reports/live-validation-runs/20260314T164647Z/local.stdout.log",
+    "stderr_path": "docs/reports/live-validation-runs/20260314T164647Z/local.stderr.log",
+    "task_id": "local-smoke-1773506812",
+    "base_url": "http://127.0.0.1:53346",
+    "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-0a6f2beb",
+    "audit_log_path": "docs/reports/live-validation-runs/20260314T164647Z/local.audit.jsonl",
+    "service_log_path": "docs/reports/live-validation-runs/20260314T164647Z/local.service.log"
+  },
+  "kubernetes": {
+    "enabled": true,
+    "bundle_report_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes-live-smoke-report.json",
+    "canonical_report_path": "docs/reports/kubernetes-live-smoke-report.json",
+    "report": {
+      "autostarted": true,
+      "base_url": "http://127.0.0.1:53344",
+      "task": {
+        "id": "kubernetes-smoke-1773506812",
+        "trace_id": "kubernetes-smoke-1773506812",
+        "title": "Kubernetes smoke test",
+        "state": "queued",
+        "required_executor": "kubernetes",
+        "container_image": "alpine:3.20",
+        "entrypoint": "echo hello from kubernetes",
+        "metadata": {
+          "executor": "kubernetes",
+          "smoke_test": "true"
+        },
+        "execution_timeout_seconds": 180,
+        "created_at": "2026-03-15T00:46:52.567439+08:00",
+        "updated_at": "2026-03-15T00:46:52.567439+08:00"
+      },
+      "status": {
+        "events": [
+          {
+            "id": "kubernetes-smoke-1773506812-queued",
+            "type": "task.queued",
+            "task_id": "kubernetes-smoke-1773506812",
+            "trace_id": "kubernetes-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.567439+08:00",
+            "payload": {
+              "executor": "kubernetes",
+              "title": "Kubernetes smoke test"
+            }
+          },
+          {
+            "id": "kubernetes-smoke-1773506812-leased",
+            "type": "task.leased",
+            "task_id": "kubernetes-smoke-1773506812",
+            "trace_id": "kubernetes-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.576384+08:00"
+          },
+          {
+            "id": "kubernetes-smoke-1773506812-routed",
+            "type": "scheduler.routed",
+            "task_id": "kubernetes-smoke-1773506812",
+            "trace_id": "kubernetes-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.576479+08:00",
+            "payload": {
+              "executor": "kubernetes",
+              "quota": {
+                "TenantID": "",
+                "ConcurrentLimit": 32,
+                "CurrentRunning": 0,
+                "BudgetRemaining": 1000,
+                "QueueDepth": 0,
+                "MaxQueueDepth": 0,
+                "PreemptibleExecutions": 0
+              },
+              "reason": "required executor=kubernetes"
+            }
+          },
+          {
+            "id": "kubernetes-smoke-1773506812-started",
+            "type": "task.started",
+            "task_id": "kubernetes-smoke-1773506812",
+            "trace_id": "kubernetes-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.577808+08:00",
+            "payload": {
+              "executor": "kubernetes",
+              "required_tools": null
+            }
+          },
+          {
+            "id": "kubernetes-smoke-1773506812-completed",
+            "type": "task.completed",
+            "task_id": "kubernetes-smoke-1773506812",
+            "trace_id": "kubernetes-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:56.646488+08:00",
+            "payload": {
+              "artifacts": [
+                "k8s://jobs/ray/bigclaw-kubernetes-smoke-1773506812-1773506812",
+                "k8s://pods/ray/bigclaw-kubernetes-smoke-1773506812-1773506812-krbvv"
+              ],
+              "executor": "kubernetes",
+              "finished_at": "2026-03-14T16:46:56Z",
+              "message": "kubernetes job bigclaw-kubernetes-smoke-1773506812-1773506812 succeeded: hello from kubernetes"
+            }
+          }
+        ],
+        "latest_event": {
+          "id": "kubernetes-smoke-1773506812-completed",
+          "type": "task.completed",
+          "task_id": "kubernetes-smoke-1773506812",
+          "trace_id": "kubernetes-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:56.646488+08:00",
+          "payload": {
+            "artifacts": [
+              "k8s://jobs/ray/bigclaw-kubernetes-smoke-1773506812-1773506812",
+              "k8s://pods/ray/bigclaw-kubernetes-smoke-1773506812-1773506812-krbvv"
+            ],
+            "executor": "kubernetes",
+            "finished_at": "2026-03-14T16:46:56Z",
+            "message": "kubernetes job bigclaw-kubernetes-smoke-1773506812-1773506812 succeeded: hello from kubernetes"
+          }
+        },
+        "state": "succeeded",
+        "task": {
+          "id": "kubernetes-smoke-1773506812",
+          "trace_id": "kubernetes-smoke-1773506812",
+          "title": "Kubernetes smoke test",
+          "state": "succeeded",
+          "required_executor": "kubernetes",
+          "container_image": "alpine:3.20",
+          "entrypoint": "echo hello from kubernetes",
+          "metadata": {
+            "executor": "kubernetes",
+            "smoke_test": "true"
+          },
+          "execution_timeout_seconds": 180,
+          "created_at": "2026-03-15T00:46:52.567439+08:00",
+          "updated_at": "2026-03-15T00:46:56.646488+08:00"
+        },
+        "task_id": "kubernetes-smoke-1773506812",
+        "trace_id": "kubernetes-smoke-1773506812"
+      },
+      "events": [
+        {
+          "id": "kubernetes-smoke-1773506812-queued",
+          "type": "task.queued",
+          "task_id": "kubernetes-smoke-1773506812",
+          "trace_id": "kubernetes-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.567439+08:00",
+          "payload": {
+            "executor": "kubernetes",
+            "title": "Kubernetes smoke test"
+          }
+        },
+        {
+          "id": "kubernetes-smoke-1773506812-leased",
+          "type": "task.leased",
+          "task_id": "kubernetes-smoke-1773506812",
+          "trace_id": "kubernetes-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.576384+08:00"
+        },
+        {
+          "id": "kubernetes-smoke-1773506812-routed",
+          "type": "scheduler.routed",
+          "task_id": "kubernetes-smoke-1773506812",
+          "trace_id": "kubernetes-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.576479+08:00",
+          "payload": {
+            "executor": "kubernetes",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "required executor=kubernetes"
+          }
+        },
+        {
+          "id": "kubernetes-smoke-1773506812-started",
+          "type": "task.started",
+          "task_id": "kubernetes-smoke-1773506812",
+          "trace_id": "kubernetes-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.577808+08:00",
+          "payload": {
+            "executor": "kubernetes",
+            "required_tools": null
+          }
+        },
+        {
+          "id": "kubernetes-smoke-1773506812-completed",
+          "type": "task.completed",
+          "task_id": "kubernetes-smoke-1773506812",
+          "trace_id": "kubernetes-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:56.646488+08:00",
+          "payload": {
+            "artifacts": [
+              "k8s://jobs/ray/bigclaw-kubernetes-smoke-1773506812-1773506812",
+              "k8s://pods/ray/bigclaw-kubernetes-smoke-1773506812-1773506812-krbvv"
+            ],
+            "executor": "kubernetes",
+            "finished_at": "2026-03-14T16:46:56Z",
+            "message": "kubernetes job bigclaw-kubernetes-smoke-1773506812-1773506812 succeeded: hello from kubernetes"
+          }
+        }
+      ],
+      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-zwon1z4t",
+      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-qtjud5_3.log"
+    },
+    "status": "succeeded",
+    "stdout_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes.stdout.log",
+    "stderr_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes.stderr.log",
+    "task_id": "kubernetes-smoke-1773506812",
+    "base_url": "http://127.0.0.1:53344",
+    "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-zwon1z4t",
+    "audit_log_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes.audit.jsonl",
+    "service_log_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes.service.log"
+  },
+  "ray": {
+    "enabled": true,
+    "bundle_report_path": "docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json",
+    "canonical_report_path": "docs/reports/ray-live-smoke-report.json",
+    "report": {
+      "autostarted": true,
+      "base_url": "http://127.0.0.1:53347",
+      "task": {
+        "id": "ray-smoke-1773506812",
+        "trace_id": "ray-smoke-1773506812",
+        "title": "Ray smoke test",
+        "state": "queued",
+        "required_executor": "ray",
+        "entrypoint": "python -c \"print('hello from ray')\"",
+        "metadata": {
+          "executor": "ray",
+          "smoke_test": "true"
+        },
+        "execution_timeout_seconds": 180,
+        "created_at": "2026-03-15T00:46:52.571917+08:00",
+        "updated_at": "2026-03-15T00:46:52.571917+08:00"
+      },
+      "status": {
+        "events": [
+          {
+            "id": "ray-smoke-1773506812-queued",
+            "type": "task.queued",
+            "task_id": "ray-smoke-1773506812",
+            "trace_id": "ray-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.571917+08:00",
+            "payload": {
+              "executor": "ray",
+              "title": "Ray smoke test"
+            }
+          },
+          {
+            "id": "ray-smoke-1773506812-leased",
+            "type": "task.leased",
+            "task_id": "ray-smoke-1773506812",
+            "trace_id": "ray-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.665974+08:00"
+          },
+          {
+            "id": "ray-smoke-1773506812-routed",
+            "type": "scheduler.routed",
+            "task_id": "ray-smoke-1773506812",
+            "trace_id": "ray-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.666096+08:00",
+            "payload": {
+              "executor": "ray",
+              "quota": {
+                "TenantID": "",
+                "ConcurrentLimit": 32,
+                "CurrentRunning": 0,
+                "BudgetRemaining": 1000,
+                "QueueDepth": 0,
+                "MaxQueueDepth": 0,
+                "PreemptibleExecutions": 0
+              },
+              "reason": "required executor=ray"
+            }
+          },
+          {
+            "id": "ray-smoke-1773506812-started",
+            "type": "task.started",
+            "task_id": "ray-smoke-1773506812",
+            "trace_id": "ray-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:52.666214+08:00",
+            "payload": {
+              "executor": "ray",
+              "required_tools": null
+            }
+          },
+          {
+            "id": "ray-smoke-1773506812-completed",
+            "type": "task.completed",
+            "task_id": "ray-smoke-1773506812",
+            "trace_id": "ray-smoke-1773506812",
+            "timestamp": "2026-03-15T00:46:56.003827+08:00",
+            "payload": {
+              "artifacts": [
+                "ray://jobs/bigclaw-ray-smoke-1773506812"
+              ],
+              "executor": "ray",
+              "finished_at": "2026-03-14T16:46:56Z",
+              "message": "ray job bigclaw-ray-smoke-1773506812 succeeded: 2026-03-14 09:46:52,857\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773506812: python -c \"print('hello from ray')\"\nhello from ray"
+            }
+          }
+        ],
+        "latest_event": {
+          "id": "ray-smoke-1773506812-completed",
+          "type": "task.completed",
+          "task_id": "ray-smoke-1773506812",
+          "trace_id": "ray-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:56.003827+08:00",
+          "payload": {
+            "artifacts": [
+              "ray://jobs/bigclaw-ray-smoke-1773506812"
+            ],
+            "executor": "ray",
+            "finished_at": "2026-03-14T16:46:56Z",
+            "message": "ray job bigclaw-ray-smoke-1773506812 succeeded: 2026-03-14 09:46:52,857\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773506812: python -c \"print('hello from ray')\"\nhello from ray"
+          }
+        },
+        "state": "succeeded",
+        "task": {
+          "id": "ray-smoke-1773506812",
+          "trace_id": "ray-smoke-1773506812",
+          "title": "Ray smoke test",
+          "state": "succeeded",
+          "required_executor": "ray",
+          "entrypoint": "python -c \"print('hello from ray')\"",
+          "metadata": {
+            "executor": "ray",
+            "smoke_test": "true"
+          },
+          "execution_timeout_seconds": 180,
+          "created_at": "2026-03-15T00:46:52.571917+08:00",
+          "updated_at": "2026-03-15T00:46:56.003827+08:00"
+        },
+        "task_id": "ray-smoke-1773506812",
+        "trace_id": "ray-smoke-1773506812"
+      },
+      "events": [
+        {
+          "id": "ray-smoke-1773506812-queued",
+          "type": "task.queued",
+          "task_id": "ray-smoke-1773506812",
+          "trace_id": "ray-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.571917+08:00",
+          "payload": {
+            "executor": "ray",
+            "title": "Ray smoke test"
+          }
+        },
+        {
+          "id": "ray-smoke-1773506812-leased",
+          "type": "task.leased",
+          "task_id": "ray-smoke-1773506812",
+          "trace_id": "ray-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.665974+08:00"
+        },
+        {
+          "id": "ray-smoke-1773506812-routed",
+          "type": "scheduler.routed",
+          "task_id": "ray-smoke-1773506812",
+          "trace_id": "ray-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.666096+08:00",
+          "payload": {
+            "executor": "ray",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "required executor=ray"
+          }
+        },
+        {
+          "id": "ray-smoke-1773506812-started",
+          "type": "task.started",
+          "task_id": "ray-smoke-1773506812",
+          "trace_id": "ray-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:52.666214+08:00",
+          "payload": {
+            "executor": "ray",
+            "required_tools": null
+          }
+        },
+        {
+          "id": "ray-smoke-1773506812-completed",
+          "type": "task.completed",
+          "task_id": "ray-smoke-1773506812",
+          "trace_id": "ray-smoke-1773506812",
+          "timestamp": "2026-03-15T00:46:56.003827+08:00",
+          "payload": {
+            "artifacts": [
+              "ray://jobs/bigclaw-ray-smoke-1773506812"
+            ],
+            "executor": "ray",
+            "finished_at": "2026-03-14T16:46:56Z",
+            "message": "ray job bigclaw-ray-smoke-1773506812 succeeded: 2026-03-14 09:46:52,857\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773506812: python -c \"print('hello from ray')\"\nhello from ray"
+          }
+        }
+      ],
+      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-dmvx6qwa",
+      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-v8eiu2gv.log"
+    },
+    "status": "succeeded",
+    "stdout_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.stdout.log",
+    "stderr_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.stderr.log",
+    "task_id": "ray-smoke-1773506812",
+    "base_url": "http://127.0.0.1:53347",
+    "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-dmvx6qwa",
+    "audit_log_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.audit.jsonl",
+    "service_log_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.service.log"
+  },
+  "summary_path": "docs/reports/live-validation-runs/20260314T164647Z/summary.json"
+}

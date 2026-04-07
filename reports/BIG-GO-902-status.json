@@ -1,0 +1,90 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-902",
+    "title": "脚本层迁移到 Go CLI",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "feat/BIG-GO-902-go-cli-script-migration",
+    "latest_code_migration_commit": "3fe203ebcd99f0f054911c84cf6929a42af18f64",
+    "last_root_shim_verified_head": "834f6441cd06fff89bb6b9305b27fa3ca0ddd21f"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-902-closeout.md",
+    "validation_report": "reports/BIG-GO-902-validation.md",
+    "pr_draft": "reports/BIG-GO-902-pr.md",
+    "migration_plan": "docs/go-cli-script-migration-plan.md",
+    "automation_migration_matrix": "bigclaw-go/docs/go-cli-script-migration.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "links": {
+    "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/215",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1",
+    "pr_seed_url": "https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration"
+  },
+  "pull_request": {
+    "number": 215,
+    "state": "open",
+    "draft": false,
+    "mergeable": true,
+    "mergeable_state": "clean",
+    "head_ref": "feat/BIG-GO-902-go-cli-script-migration",
+    "last_observed_head_sha": "e7bf6b88bc5d368d65e96b0a5980c1e8c745d75d",
+    "observation_note": "PR head advances whenever BIG-GO-902 tracker/report metadata commits are pushed. This field records the last observed live GitHub PR head instead of chasing every subsequent report-only commit.",
+    "base_ref": "main",
+    "review_comments": 0,
+    "commits": 37,
+    "reviews_total": 0,
+    "latest_review_states": {},
+    "combined_status_state": "pending",
+    "check_runs_total": 1,
+    "check_runs": [
+      {
+        "name": "test",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "status_observation_note": "GitHub check-runs show the single `test` run completed successfully, but the combined commit status API still reports `pending`, so the aggregate status appears temporarily stale."
+  },
+  "validation": {
+    "commands": [
+      "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill",
+      "python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py",
+      "python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py",
+      "bash scripts/ops/bigclawctl dev-smoke",
+      "python3 scripts/dev_smoke.py",
+      "python3 scripts/create_issues.py --help",
+      "bash scripts/ops/bigclawctl issue --help",
+      "python3 scripts/ops/bigclaw_github_sync.py --help",
+      "python3 scripts/ops/bigclaw_workspace_bootstrap.py --help",
+      "python3 scripts/ops/symphony_workspace_bootstrap.py --help",
+      "python3 scripts/ops/bigclaw_refill_queue.py --help",
+      "python3 scripts/ops/symphony_workspace_validate.py --help",
+      "python3 scripts/ops/bigclaw_github_sync.py status --json",
+      "cd bigclaw-go && go test ./cmd/bigclawctl/...",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help"
+    ]
+  },
+  "blocker": {
+    "type": "external_review_and_ci",
+    "summary": "No additional in-repo implementation work remains. PR #215 is still open with no reviews recorded, no requested reviewers configured, and GitHub currently reports an unstable/pending aggregate reviewability state while CI metadata catches up. The repository collaborator list currently exposes only the owner account `OpenAGIs`, so there is no separate reviewer that can be auto-requested from this workspace."
+  },
+  "external_verification": {
+    "date": "2026-03-28",
+    "public_pr_found": true,
+    "public_open_prs_seen": ["215", "185", "184", "183"],
+    "compare_url_reachable": true,
+    "compare_page_state": "stale compare rendering",
+    "notes": "Authenticated GitHub API creation succeeded for PR #215. The compare page remains reachable but diff generation is still incomplete in-browser, emits repeated 'Uh oh!' load failures, and the rendered compare summary still appears stale, showing only 14 commits and 26 files changed instead of the latest branch tip."
+  },
+  "auth_environment": {
+    "date": "2026-03-28",
+    "gh_installed": false,
+    "github_token_present": false,
+    "gh_token_present": false
+  }
+}

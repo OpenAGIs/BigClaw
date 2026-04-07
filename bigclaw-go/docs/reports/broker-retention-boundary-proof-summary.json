@@ -1,0 +1,74 @@
+{
+  "generated_at": "2026-03-17T12:00:00Z",
+  "ticket": "OPE-230",
+  "title": "Retention boundary proof summary from broker failover stub matrix",
+  "source_report": "bigclaw-go/docs/reports/broker-failover-stub-report.json",
+  "summary_schema_version": "2026-03-17",
+  "proof_family": "retention_boundary",
+  "status": "passed",
+  "rollout_gate_statuses": [
+    {
+      "name": "durable_publish_ack",
+      "status": "unknown",
+      "detail": "Retention-boundary evidence does not independently classify replicated publish acknowledgements.",
+      "scenario_ids": []
+    },
+    {
+      "name": "replay_checkpoint_alignment",
+      "status": "passed",
+      "detail": "Expired checkpoints fail closed and require an explicit reset before replay resumes from the retained sequence domain.",
+      "scenario_ids": [
+        "BF-07"
+      ]
+    },
+    {
+      "name": "retention_boundary_visibility",
+      "status": "passed",
+      "detail": "The scenario surfaces the retention floor, marks the stale checkpoint as expired, and requires an explicit operator reset.",
+      "scenario_ids": [
+        "BF-07"
+      ]
+    },
+    {
+      "name": "live_fanout_isolation",
+      "status": "unknown",
+      "detail": "Retention-boundary validation does not measure live fanout lag isolation.",
+      "scenario_ids": []
+    }
+  ],
+  "focus_scenarios": [
+    {
+      "scenario_id": "BF-07",
+      "fault": "retention_boundary_intersects_stale_checkpoint",
+      "status": "passed",
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 1
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "operator-reset",
+        "lease_id": "manual-reset",
+        "lease_epoch": 2,
+        "durable_sequence": 3
+      },
+      "retention_floor": 3,
+      "reset_required": true,
+      "operator_guidance": "checkpoint expired behind retention floor; explicit reset to sequence 3 required",
+      "artifacts": {
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/backend-health.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/checkpoint-transition-log.json"
+      }
+    }
+  ],
+  "summary": {
+    "scenario_count": 1,
+    "passing_scenarios": 1,
+    "failing_scenarios": 0,
+    "retention_floor": 3,
+    "expired_checkpoint_sequence": 1,
+    "reset_target_sequence": 3
+  }
+}

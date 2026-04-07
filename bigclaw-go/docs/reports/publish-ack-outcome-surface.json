@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-03-17T22:00:00Z",
+  "ticket": "OPE-5",
+  "track": "BIG-DUR-101",
+  "title": "Publish acknowledgement outcome ledger surface",
+  "status": "checked_in_surface",
+  "summary": {
+    "scenario_id": "BF-05",
+    "proof_status": "repo-proof-summary",
+    "required_outcomes": [
+      "committed",
+      "rejected",
+      "unknown_commit"
+    ],
+    "committed_count": 1,
+    "rejected_count": 1,
+    "unknown_commit_count": 1
+  },
+  "source_reports": [
+    "docs/reports/ambiguous-publish-outcome-proof-summary.json",
+    "docs/reports/broker-failover-stub-report.json",
+    "docs/reports/broker-failover-fault-injection-validation-pack.md",
+    "docs/reports/replicated-event-log-durability-rollout-contract.md"
+  ],
+  "reviewer_links": [
+    "/debug/status",
+    "/v2/control-center",
+    "/v2/reports/distributed",
+    "/v2/reports/distributed/export",
+    "docs/reports/ambiguous-publish-outcome-proof-summary.json"
+  ],
+  "outcomes": [
+    {
+      "outcome": "committed",
+      "proof_rule": "The publish attempt becomes committed when replay shows the event after the BF-05 timeout window and the attempt ledger can map that replayed identity back to the client write.",
+      "required_evidence": [
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/publish-attempt-ledger.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/replay-capture.json"
+      ],
+      "operator_action": "Treat the write as durable and use stable event identity to reconcile any client retry."
+    },
+    {
+      "outcome": "rejected",
+      "proof_rule": "The publish attempt is rejected when the ledger records rejection and replay never shows the event crossing the durable boundary.",
+      "required_evidence": [
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/publish-attempt-ledger.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/backend-health.json"
+      ],
+      "operator_action": "Retry or surface failure because the event never committed."
+    },
+    {
+      "outcome": "unknown_commit",
+      "proof_rule": "The publish attempt remains unknown_commit when the client timed out inside the fault window and current replay plus audit evidence has not yet resolved committed versus rejected.",
+      "required_evidence": [
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/fault-timeline.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/publish-attempt-ledger.json",
+        "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/replay-capture.json"
+      ],
+      "operator_action": "Keep the ambiguity explicit until replay and audit evidence can resolve the final durable outcome."
+    }
+  ],
+  "limitations": [
+    "This is a checked-in deterministic stub proof, not a live broker-backed runtime report.",
+    "Future live adapters still need provider-native publish ledgers and replay captures that satisfy the same BF-05 classification rules.",
+    "unknown_commit remains a first-class reviewer verdict until live evidence can close the ambiguity window deterministically."
+  ]
+}

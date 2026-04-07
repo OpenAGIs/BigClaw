@@ -1,0 +1,40 @@
+{
+  "identifier": "BIG-GO-1075",
+  "title": "Go-replacement AI: convert git hooks away from python sync",
+  "status": "done",
+  "summary": "Switched repository git auto-sync hooks and the github-sync installer to the canonical Go CLI entrypoint so hook execution no longer routes through scripts/ops/bigclawctl.",
+  "python_file_count": {
+    "before": 43,
+    "after": 43,
+    "delta": 0
+  },
+  "entrypoint_change": {
+    "before": "bash scripts/ops/bigclawctl github-sync sync --json --allow-dirty",
+    "after": "cd \"$repo_root/bigclaw-go\" && go run ./cmd/bigclawctl github-sync sync --json --allow-dirty --repo \"$repo_root\""
+  },
+  "validation": [
+    {
+      "command": "find . -name '*.py' | wc -l",
+      "result": "43"
+    },
+    {
+      "command": "cd bigclaw-go && go test ./internal/githubsync ./cmd/bigclawctl",
+      "result": "passed"
+    },
+    {
+      "command": "bash .githooks/post-commit",
+      "result": "passed; emitted status ok/synced true"
+    },
+    {
+      "command": "bash .githooks/post-rewrite",
+      "result": "passed; emitted status ok/synced true"
+    },
+    {
+      "command": "bash scripts/ops/bigclawctl github-sync status --json",
+      "result": "intermittent; observed both success and a transient LibreSSL SSL_connect network failure while contacting GitHub"
+    }
+  ],
+  "commits": {
+    "implementation": "b2491287d0eda1ec77d72cd3e49f89a407a9575f"
+  }
+}

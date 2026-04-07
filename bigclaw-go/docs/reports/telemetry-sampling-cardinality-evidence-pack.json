@@ -1,0 +1,89 @@
+{
+  "generated_at": "2026-03-16T15:20:00Z",
+  "ticket": "OPE-265",
+  "track": "BIG-PAR-076",
+  "title": "Telemetry sampling and cardinality control evidence pack",
+  "status": "repo-evidence-pack",
+  "evidence_inputs": {
+    "observability_report": "bigclaw-go/docs/reports/go-control-plane-observability-report.md",
+    "follow_up_digest": "bigclaw-go/docs/reports/telemetry-pipeline-controls-follow-up-digest.md",
+    "review_readiness": "bigclaw-go/docs/reports/review-readiness.md",
+    "issue_coverage": "bigclaw-go/docs/reports/issue-coverage.md",
+    "code_paths": [
+      "bigclaw-go/internal/observability/recorder.go",
+      "bigclaw-go/internal/api/metrics.go",
+      "bigclaw-go/internal/api/server.go",
+      "bigclaw-go/internal/worker/runtime.go"
+    ],
+    "validation_tests": [
+      "bigclaw-go/internal/observability/recorder_test.go",
+      "bigclaw-go/internal/api/server_test.go",
+      "bigclaw-go/internal/regression/telemetry_evidence_pack_test.go"
+    ]
+  },
+  "current_controls": {
+    "sampling_policy": {
+      "state": "implicit_full_capture",
+      "event_capture": "Recorder.Record appends every event to the in-memory log and forwards every event to configured sinks.",
+      "trace_capture": "Trace summaries are derived from the full in-memory event log rather than from a sampled trace stream.",
+      "metrics_capture": "Metrics snapshots are derived from aggregate recorder counters and current worker/control-plane state at scrape time.",
+      "audit_fanout": "JSONL audit sinks receive every recorded event; there is no configurable audit sampling or export throttling."
+    },
+    "cardinality_controls": {
+      "state": "low_cardinality_metrics_only",
+      "allowed_metric_dimensions": [
+        "event_type",
+        "executor",
+        "worker_id",
+        "state",
+        "current_executor"
+      ],
+      "blocked_metric_dimensions": [
+        "task_id",
+        "trace_id",
+        "tenant_id",
+        "subscriber_id"
+      ],
+      "current_guardrails": [
+        "Prometheus metrics export aggregate counters and gauges only; per-task and per-trace identifiers stay in event/debug payloads instead of metric labels.",
+        "Trace count is emitted as a single gauge derived from in-memory trace summaries.",
+        "Detailed task_id and trace_id values remain query-time payload fields on /events and /debug/traces endpoints."
+      ]
+    }
+  },
+  "reviewer_posture": {
+    "current_runtime_posture": "Treat the current telemetry path as local diagnostics and rollout evidence, not a production-grade observability pipeline.",
+    "intended_production_posture": [
+      "Add an explicit sampling contract for traces, metrics, and audit export fan-out.",
+      "Introduce label-budget or dimension-allowlist policy before exporting tenant, task, or trace-scoped dimensions to shared backends.",
+      "Back telemetry with a remote-write or OpenTelemetry-native pipeline that defines batching, retry, and retention behavior."
+    ]
+  },
+  "reviewer_checks": [
+    {
+      "name": "metrics_surface_avoids_task_and_trace_labels",
+      "status": "pass",
+      "evidence": "bigclaw-go/internal/api/metrics.go"
+    },
+    {
+      "name": "trace_and_task_identifiers_stay_in_debug_payloads",
+      "status": "pass",
+      "evidence": "bigclaw-go/internal/api/server.go"
+    },
+    {
+      "name": "sampling_policy_is_not_configurable_yet",
+      "status": "pass",
+      "evidence": "bigclaw-go/docs/reports/telemetry-pipeline-controls-follow-up-digest.md"
+    },
+    {
+      "name": "review_docs_call_out_non_production_posture",
+      "status": "pass",
+      "evidence": "bigclaw-go/docs/reports/review-readiness.md"
+    }
+  ],
+  "current_ceiling": [
+    "No configurable sampling policy exists for traces, event-derived metrics, or audit fan-out.",
+    "No exporter-side cardinality budget, dimension allowlist, or remote aggregation policy exists.",
+    "No OpenTelemetry-native collector, OTLP exporter, or backend retention contract exists for the current telemetry surfaces."
+  ]
+}

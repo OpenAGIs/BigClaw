@@ -1,0 +1,56 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1290",
+    "title": "Heartbeat refill lane 1290: remaining Python asset sweep 10/10",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "tracked in git history after BIG-GO-1290 final sync",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1290-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1290-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1290_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1290_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1290(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "",
+      "priority_dir_inventory": "",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.436s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1290 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Lane commit details are tracked in git history via `git log --oneline --grep 'BIG-GO-1290'`."
+  ]
+}
