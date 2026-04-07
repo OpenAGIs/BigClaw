@@ -39,6 +39,7 @@ replacement evidence for the already-zero baseline.
 
 ## Validation Commands
 
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1568 -name '*.py' | wc -l`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1568 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1568/scripts/ops /Users/openagi/code/bigclaw-workspaces/BIG-GO-1568/bigclaw-go/cmd/bigclawctl /Users/openagi/code/bigclaw-workspaces/BIG-GO-1568/bigclaw-go/internal/refill -type f -name '*.py' 2>/dev/null | sort`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1568/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1568(RepositoryHasNoPythonFiles|OpsMigrationHelperResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
@@ -46,6 +47,20 @@ replacement evidence for the already-zero baseline.
 ## Validation Results
 
 ### Repository Python inventory
+
+Command:
+
+```bash
+find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1568 -name '*.py' | wc -l
+```
+
+Result:
+
+```text
+0
+```
+
+### Repository Python inventory detail
 
 Command:
 

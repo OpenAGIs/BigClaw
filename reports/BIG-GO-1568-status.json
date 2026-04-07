@@ -43,12 +43,14 @@
   ],
   "validation": {
     "commands": [
+      "find . -name '*.py' | wc -l",
       "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
       "find scripts/ops bigclaw-go/cmd/bigclawctl bigclaw-go/internal/refill -type f -name '*.py' 2>/dev/null | sort",
       "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1568(RepositoryHasNoPythonFiles|OpsMigrationHelperResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'",
       "git diff --stat main...BIG-GO-1568"
     ],
     "results": {
+      "repository_py_count_wc": "0",
       "repository_py_inventory": "none",
       "residual_area_py_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t2.188s",
