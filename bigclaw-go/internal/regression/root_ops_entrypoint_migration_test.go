@@ -38,6 +38,8 @@ func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 		"`bash scripts/ops/bigclawctl github-sync status --json`",
 		"`bash scripts/ops/bigclawctl refill --help`",
 		"`bash scripts/ops/bigclawctl workspace validate --help`",
+		"`bigclaw_github_sync.py`, `bigclaw_refill_queue.py`",
+		"`scripts/ops/symphony_workspace_validate.py`, and switch to",
 		"`scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`",
 		"`scripts/ops/symphony_workspace_bootstrap.py`, and",
 	}

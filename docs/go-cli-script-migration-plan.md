@@ -9,7 +9,10 @@ operator cutover window.
 ## This Slice
 
 The implemented migration batches in this issue moved these entrypoints behind the Go CLI and
-retired the final root Python workspace shims.
+retired the final root `scripts/ops` shim set:
+`bigclaw_github_sync.py`, `bigclaw_refill_queue.py`,
+`bigclaw_workspace_bootstrap.py`, `symphony_workspace_bootstrap.py`, and
+`symphony_workspace_validate.py`.
 
 `BIG-GO-1160` extends that migration evidence by hardening the benchmark, e2e,
 migration, and root-script sweep candidate set that previously included:
@@ -138,7 +141,10 @@ cutover to `bash scripts/ops/bigclawctl ...`.
 - Local tracker shortcuts:
   `issue state/comment` positional shortcuts must still map onto the same local-issues behaviors.
 - Root compatibility retirement:
-  repo operators must stop invoking removed root Python workspace shims and switch to
+  repo operators must stop invoking removed `scripts/ops/bigclaw_github_sync.py`,
+  `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`,
+  `scripts/ops/symphony_workspace_bootstrap.py`, and
+  `scripts/ops/symphony_workspace_validate.py`, and switch to
   `bash scripts/ops/bigclawctl ...` entrypoints.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
