@@ -1,0 +1,66 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1578",
+    "title": "Go-only residual Python sweep 08",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1578",
+    "baseline_commit": "59e3046",
+    "latest_commit": "HEAD",
+    "push_target": "origin/BIG-GO-1578",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1578?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1578-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1578_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1578-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "candidate_set_py_files_before": 0,
+    "candidate_set_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "candidate_set": []
+  },
+  "compatibility_shims": [],
+  "replacement_paths": [
+    "bigclaw-go/internal/product/dashboard_run_contract.go",
+    "bigclaw-go/internal/policy/memory.go",
+    "bigclaw-go/internal/collaboration/thread.go",
+    "bigclaw-go/internal/observability/task_run.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/workflow/definition_test.go",
+    "bigclaw-go/internal/planning/planning_test.go",
+    "bigclaw-go/internal/reporting/reporting_test.go",
+    "bigclaw-go/internal/uireview/uireview_test.go",
+    "scripts/ops/bigclawctl",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_external_store_validation_command.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/docs/migration-shadow.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src tests scripts/ops bigclaw-go/scripts/e2e bigclaw-go/scripts/migration -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1578(RepositoryHasNoPythonFiles|CandidatePathsStayAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "candidate_set_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.152s"
+    }
+  },
+  "pull_request": {
+    "number": null,
+    "url": "",
+    "state": "not_opened",
+    "title": "",
+    "draft": false
+  }
+}
