@@ -1,36 +1,34 @@
-# BIG-GO-1562 Workpad
+# BIG-GO-1574 Workpad
 
 ## Plan
 
-1. Confirm the repository-wide physical Python baseline and the focused
-   `src/bigclaw` workflow-orchestration tranche-B surface.
-2. Record the exact Go/native replacement paths that now own the retired
-   `src/bigclaw` tranche-B modules.
-3. Add a lane-specific regression guard that keeps the repository Python-free,
-   keeps the tranche-B source paths absent, and asserts the replacement paths
-   remain available.
-4. Run targeted validation, record the exact commands and results, then commit
-   and push `BIG-GO-1562`.
+1. Confirm the BIG-GO-1574 candidate Python file inventory and current
+   repository Python baseline.
+2. Add a lane-specific report and regression guard for the exact candidate
+   ledger and mapped Go/native replacement evidence.
+3. Run the targeted validation commands, record exact results, then commit and
+   push `BIG-GO-1574`.
 
 ## Acceptance
 
-- Physical Python files on disk decrease, or exact Go/native replacement
-  evidence lands in git for the targeted `src/bigclaw` tranche-B surface.
-- The focused tranche stays scoped to the workflow/scheduler orchestration
-  modules formerly under `src/bigclaw`.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1562`.
+- The BIG-GO-1574 candidate Python file ledger is explicit in repo-native
+  artifacts.
+- Candidate Python files are deleted, migrated, or replaced by Go/native
+  ownership evidence.
+- If a candidate could not be deleted, it would be reduced to a thin shim with
+  a clear deletion condition. Current expectation: no shim remains because the
+  candidate paths are already absent.
+- Exact validation commands and outcomes are recorded.
+- The change is committed and pushed on `BIG-GO-1574`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find src/bigclaw -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1562(RepositoryHasNoPythonFiles|WorkflowOrchestrationTrancheBStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`
+- `for f in src/bigclaw/collaboration.py src/bigclaw/github_sync.py src/bigclaw/pilot.py src/bigclaw/repo_triage.py src/bigclaw/validation_policy.py tests/test_cost_control.py tests/test_github_sync.py tests/test_orchestration.py tests/test_repo_links.py tests/test_scheduler.py scripts/ops/bigclaw_github_sync.py bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py; do test ! -e "$f" || echo "$f"; done`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1574ResidualPythonSweep04'`
 
-## Outcome
+## Notes
 
-- Replacement-evidence and regression-hardening landed because the repository
-  was already Python-free for the targeted tranche when the lane started.
-- Latest branch state pushed on `origin/BIG-GO-1562`; see the compare URL in
-  `reports/BIG-GO-1562-status.json`.
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/225`
+- Baseline discovery shows the candidate Python files are already absent on the
+  checked-out repository snapshot, so this lane hardens deletion evidence
+  rather than reducing a non-zero Python file count.

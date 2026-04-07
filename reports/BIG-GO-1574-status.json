@@ -1,0 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1574",
+    "title": "Go-only residual Python sweep 04",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1574",
+    "baseline_commit": "59e3046ae66b64c510e88676b8186fe0747a7eb7",
+    "latest_commit": "HEAD",
+    "push_target": "origin/BIG-GO-1574",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1574?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1574-residual-python-sweep-04.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1574_residual_python_sweep_04_test.go",
+    "validation_report": "reports/BIG-GO-1574-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "candidate_py_files_before": 0,
+    "candidate_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "compatibility_shims": []
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "for f in src/bigclaw/collaboration.py src/bigclaw/github_sync.py src/bigclaw/pilot.py src/bigclaw/repo_triage.py src/bigclaw/validation_policy.py tests/test_cost_control.py tests/test_github_sync.py tests/test_orchestration.py tests/test_repo_links.py tests/test_scheduler.py scripts/ops/bigclaw_github_sync.py bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py; do test ! -e \"$f\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1574ResidualPythonSweep04'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "candidate_path_absence": "success",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.749s"
+    }
+  },
+  "pull_request": {
+    "number": null,
+    "url": null,
+    "state": "not_opened",
+    "title": null,
+    "draft": false
+  }
+}
