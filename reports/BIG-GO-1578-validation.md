@@ -52,3 +52,11 @@ Result: `ok  	bigclaw-go/internal/regression	0.152s`
   owners still exist.
 - The lane does not change runtime behavior because the targeted Python assets were already removed
   in the starting baseline.
+
+## GitHub
+
+- Branch: `BIG-GO-1578`
+- Head reference: `origin/BIG-GO-1578`
+- Push target: `origin/BIG-GO-1578`
+- Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1578?expand=1`
+- PR creation URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1578`

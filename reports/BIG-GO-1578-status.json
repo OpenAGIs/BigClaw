@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-1578",
     "baseline_commit": "59e3046",
-    "latest_commit": "HEAD",
+    "latest_commit": "1252944",
     "push_target": "origin/BIG-GO-1578",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1578?expand=1"
   },
@@ -58,9 +58,9 @@
   },
   "pull_request": {
     "number": null,
-    "url": "",
+    "url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1578",
     "state": "not_opened",
-    "title": "",
+    "title": "BIG-GO-1578: harden zero-python residual sweep 08",
     "draft": false
   }
 }
