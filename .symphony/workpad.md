@@ -105,3 +105,8 @@
   - `ok  	bigclaw-go/internal/product	(cached)`
   - `ok  	bigclaw-go/internal/legacyshim	(cached)`
   - `ok  	bigclaw-go/internal/repo	(cached)`
+
+## Terminal acceptance check
+- Branch reattached to `BIG-GO-1564` at `67ec4fdc6e102f668722595d31b661dbf994144e`.
+- `find . -name '*.py' | wc -l` => `0`
+- `git ls-tree -r --name-only HEAD | rg '\.py$'` => no output
