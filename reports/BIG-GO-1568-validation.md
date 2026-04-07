@@ -110,3 +110,6 @@ ok  	bigclaw-go/internal/regression	2.188s
 - Public GitHub compare visibility exists for
   `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1568?expand=1`,
   but opening or inspecting a PR still requires authenticated GitHub access.
+- The anonymous compare page is incomplete: it reports loading errors, suggests
+  running `git diff main...BIG-GO-1568` locally, and only lists the first 5
+  branch commits, so it is not reliable for confirming current PR/head state.

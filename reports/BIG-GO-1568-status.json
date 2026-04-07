@@ -66,6 +66,7 @@
   "notes": [
     "This lane satisfies acceptance through exact Go/native replacement evidence for the scripts/ops migration-helper tranche.",
     "No physical Python files remained to delete in the fetched baseline.",
-    "The public compare view for main...BIG-GO-1568 is reachable, confirming the pushed branch is visible on GitHub even though PR operations are blocked by missing auth."
+    "The public compare view for main...BIG-GO-1568 is reachable, confirming the pushed branch is visible on GitHub even though PR operations are blocked by missing auth.",
+    "The anonymous compare page is incomplete and stale, so authenticated GitHub access is still required to verify PR/head state."
   ]
 }

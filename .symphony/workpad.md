@@ -56,3 +56,6 @@
   or create the PR and update remote issue state.
 - Public GitHub compare visibility is present for `main...BIG-GO-1568`, but PR
   creation still requires authenticated GitHub access.
+- The anonymous compare page is incomplete and stale: it errors while loading
+  the diff and only lists the first 5 branch commits, so it cannot be treated
+  as authoritative PR-state evidence.
