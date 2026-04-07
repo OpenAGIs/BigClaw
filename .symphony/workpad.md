@@ -49,3 +49,7 @@
   Result: exit `0`, output confirms the README footer now names all retired root ops shims and ties them back to `scripts/ops/bigclawctl`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootScriptResidualSweep(Docs)?|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	1.281s`
+- `rg -n 'bigclaw_refill_queue.py|bigclaw_workspace_bootstrap.py|symphony_workspace_bootstrap.py|symphony_workspace_validate.py|bigclaw_github_sync.py|bigclawctl refill --apply --watch|bigclawctl github-sync' workflow.md bigclaw-go/internal/regression/big_go_1567_scripts_ops_deletion_tranche_test.go`
+  Result: exit `0`, output confirms `workflow.md` now names the retired refill, workspace, and GitHub sync shims alongside the active `bigclawctl` replacements
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootScriptResidualSweep(Docs)?|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	1.142s`

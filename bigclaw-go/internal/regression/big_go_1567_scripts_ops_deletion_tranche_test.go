@@ -67,3 +67,22 @@ func TestBIGGO1567CutoverIssuePackCarriesScriptsOpsReplacements(t *testing.T) {
 		}
 	}
 }
+
+func TestBIGGO1567WorkflowCarriesScriptsOpsReplacements(t *testing.T) {
+	rootRepo := regressionRepoRoot(t)
+	contents := readRepoFile(t, rootRepo, "workflow.md")
+
+	for _, needle := range []string{
+		"`bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json`",
+		"retired `scripts/ops/bigclaw_refill_queue.py` shim",
+		"`scripts/ops/bigclaw_workspace_bootstrap.py`",
+		"`scripts/ops/symphony_workspace_bootstrap.py`",
+		"`scripts/ops/symphony_workspace_validate.py`",
+		"`bash scripts/ops/bigclawctl github-sync ...`",
+		"`scripts/ops/bigclaw_github_sync.py`",
+	} {
+		if !strings.Contains(contents, needle) {
+			t.Fatalf("workflow.md missing scripts/ops replacement guidance %q", needle)
+		}
+	}
+}

@@ -76,12 +76,12 @@ Primary operating mode:
 - Use `Backlog` rather than `Todo` for standby slices that should not be picked up immediately; Symphony treats `Todo` as runnable work.
 - Keep each parallel slice small, code-backed, and independently verifiable.
 - If agent orchestration starts returning `429 Too Many Requests`, immediately reduce child-agent fanout and continue the active slice locally instead of queueing more delegated work.
-- Use `docs/parallel-refill-queue.json` as the canonical refill order and `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json` as the reusable manual/automated refill entrypoint.
+- Use `docs/parallel-refill-queue.json` as the canonical refill order and `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json` as the reusable manual/automated refill entrypoint; do not reintroduce the retired `scripts/ops/bigclaw_refill_queue.py` shim.
 - Use `docs/go-mainline-cutover-issue-pack.md` as the canonical project brief behind the local tracker issue set.
 - Mirror `elixir/WORKFLOW.md`'s unattended posture: keep ticket state current, keep GitHub current throughout execution, and avoid leaving active work without a synced branch state.
 
 Hook-backed GitHub sync:
-- Workspace `after_create` now uses the Go-first `scripts/ops/bigclawctl workspace bootstrap` entrypoint, with repo URL / branch / cache location supplied via `SYMPHONY_BOOTSTRAP_*` env vars.
+- Workspace `after_create` now uses the Go-first `scripts/ops/bigclawctl workspace bootstrap` entrypoint, with repo URL / branch / cache location supplied via `SYMPHONY_BOOTSTRAP_*` env vars; do not call the retired `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, or `scripts/ops/symphony_workspace_validate.py` shims.
 - GitHub sync install/status/sync in this workflow is Go-only through `bash scripts/ops/bigclawctl github-sync ...`; do not call the removed `scripts/ops/bigclaw_github_sync.py` shim.
 - Workspace `before_run` re-applies `core.hooksPath=.githooks` and auto-pushes any clean unsynced branch head at the start of every turn.
 - Repository `.githooks/post-commit` and `.githooks/post-rewrite` now invoke `go run ./cmd/bigclawctl github-sync sync --repo "$repo_root"` from `bigclaw-go`, so hook-driven sync stays on the canonical Go entrypoint after each commit or amend.
