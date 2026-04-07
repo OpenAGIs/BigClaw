@@ -2,12 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-1562",
     "title": "Go-only refill 1562: new unblocked src/bigclaw deletion tranche B",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-1562",
     "baseline_commit": "646edf3",
-    "latest_commit": "",
+    "latest_commit": "add324f",
     "push_target": "origin/BIG-GO-1562",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1562?expand=1"
   },
@@ -46,5 +46,9 @@
       "src_bigclaw_tranche_b_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t5.913s"
     }
+  },
+  "pull_request": {
+    "state": "not_opened",
+    "reason": "gh auth status reported no authenticated GitHub host session"
   }
 }
