@@ -1,37 +1,28 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1569 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Verify the checked-out `origin/main` baseline for residual Python files and
+   confirm whether any physical validation-helper `.py` files still exist.
+2. Because the validation-helper Python surface is already absent in the branch
+   baseline, add lane-scoped evidence that records the exact zero-file state and
+   the Go/native replacement entrypoint for `workspace validate`.
+3. Add a focused regression test that keeps the retired validation helper path
+   deleted and the replacement surface available.
+4. Run targeted validation, record exact commands and results, then commit and
+   push `BIG-GO-1569`.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- Repository reality is recorded for the validation-helper tranche.
+- Either `.py` count drops or exact Go/native replacement evidence lands in git.
+- Targeted validation commands and outcomes are recorded exactly.
+- Changes stay scoped to `BIG-GO-1569`.
+- The branch is committed and pushed to `origin/BIG-GO-1569`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `find scripts scripts/ops bigclaw-go/cmd/bigclawctl -type f -name '*.py' 2>/dev/null | sort`
+- `bash scripts/ops/bigclawctl workspace validate --help`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1569(RepositoryHasNoPythonFiles|ValidationHelperPathsStayDeleted|ValidationHelperGoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
