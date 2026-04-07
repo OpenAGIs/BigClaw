@@ -1,37 +1,32 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1563 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Reconfirm the repository-wide physical Python baseline and the specific
+   Python-test residual surfaces relevant to "new unblocked tests deletion
+   tranche A", including whether any `.py` test files still exist on disk.
+2. Record lane-scoped evidence for the already-zero Python baseline, including
+   exact before/after counts, an exact deleted-file ledger, and the Go/native
+   replacement paths that now cover tranche A test behavior.
+3. Add a focused regression guard that fails if Python files reappear or if the
+   tranche A replacement surface/report disappears.
+4. Run targeted validation, record the exact commands and outcomes in checked-in
+   artifacts, then commit and push `BIG-GO-1563`.
 
 ## Acceptance
 
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
+- The repository-wide physical `.py` file count is recorded before and after
+  the lane.
+- The lane records the focused tranche A test residual scan and exact
+  deleted-file ledger, even if the ledger is empty because the checkout is
+  already Python-free.
+- The lane names the Go/native replacement evidence that covers tranche A test
+  behavior.
 - Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- The change is committed and pushed on `BIG-GO-1563`.
 
 ## Validation
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `find bigclaw-go/internal/observability bigclaw-go/internal/intake bigclaw-go/internal/planning bigclaw-go/internal/reporting bigclaw-go/internal/orchestrator bigclaw-go/internal/regression -type f \\( -name 'audit_test.go' -o -name 'connector_test.go' -o -name 'planning_test.go' -o -name 'reporting_test.go' -o -name 'loop_test.go' -o -name 'python_test_tranche17_removal_test.go' \\) | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1563(RepositoryHasNoPythonFiles|PythonTestsDirectoryStaysRemoved|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
