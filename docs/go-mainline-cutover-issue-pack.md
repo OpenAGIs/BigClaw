@@ -302,7 +302,13 @@ Go ownership:
 - new `bigclaw-go/internal/refill/*`
 
 Acceptance focus:
-- replace Python workflow/bootstrap/refill helpers needed for Go-only operation
+- replace the retired `scripts/ops/bigclaw_github_sync.py`,
+  `scripts/ops/bigclaw_refill_queue.py`,
+  `scripts/ops/bigclaw_workspace_bootstrap.py`,
+  `scripts/ops/symphony_workspace_bootstrap.py`, and
+  `scripts/ops/symphony_workspace_validate.py` helpers with the Go/native
+  `bash scripts/ops/bigclawctl github-sync|refill|workspace ...` surfaces needed
+  for Go-only operation
 - keep the same shared-mirror and GitHub sync guarantees as the current workflow
 
 Dependencies:
@@ -314,7 +320,11 @@ Current repo progress:
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic with tracker-neutral `TrackedIssue` records, while `cmd/bigclawctl refill` handles backend-specific polling and promotion
 - `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` invoke the Go-first toolchain by default, and the legacy `scripts/ops/bigclaw_github_sync.py` wrapper has been removed
-- the final root workspace Python wrappers have since been removed, so the default operator path is now Go-only under `bash scripts/ops/bigclawctl`
+- the retired root shim set `scripts/ops/bigclaw_refill_queue.py`,
+  `scripts/ops/bigclaw_workspace_bootstrap.py`,
+  `scripts/ops/symphony_workspace_bootstrap.py`, and
+  `scripts/ops/symphony_workspace_validate.py` remains removed, so the default
+  operator path is now Go-only under `bash scripts/ops/bigclawctl`
 
 Milestone:
 - `Python Retirement & Cutover Validation`

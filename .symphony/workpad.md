@@ -61,3 +61,7 @@
   Result: exit `0`, output confirms the migration plan now names the full retired root shim set before the direct `bigclawctl` cutover note
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep(Docs)?'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	3.217s`
+- `rg -n 'bigclaw_github_sync.py|bigclaw_refill_queue.py|bigclaw_workspace_bootstrap.py|symphony_workspace_bootstrap.py|symphony_workspace_validate.py|bigclawctl github-sync\\|refill\\|workspace \\.\\.\\.|remains removed' docs/go-mainline-cutover-issue-pack.md bigclaw-go/internal/regression/big_go_1567_scripts_ops_deletion_tranche_test.go`
+  Result: exit `0`, output confirms the cutover issue pack now names the retired root `scripts/ops` shim set in both acceptance and current-progress sections
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep(Docs)?'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	0.188s`
