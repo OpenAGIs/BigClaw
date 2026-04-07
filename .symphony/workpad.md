@@ -37,3 +37,7 @@
   Result: exit `0`, output confirms the exact `scripts/ops/bigclaw_refill_queue.py` replacement mapping in the migration plan, residual sweep regression, and 1567 evidence report
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOps|TestRootScriptResidualSweep'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	4.237s` after tightening the refill-path migration wording
+- `rg -n 'bigclaw_github_sync.py|bigclaw_refill_queue.py|bigclawctl github-sync status --json|bigclawctl refill --help|Refill cutover' docs/go-cli-script-migration-plan.md bigclaw-go/internal/regression/root_ops_entrypoint_migration_test.go`
+  Result: exit `0`, output confirms the migration plan and root-ops regression now carry the exact GitHub sync and refill cutover guidance
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweep'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	2.534s`

@@ -147,6 +147,9 @@ operator docs and external automation references finish the direct cutover to
 - GitHub sync cutover:
   `scripts/ops/bigclaw_github_sync.py` must stay deleted and hooks/workflow/CI should invoke
   `bash scripts/ops/bigclawctl github-sync ...` directly.
+- Refill cutover:
+  `scripts/ops/bigclaw_refill_queue.py` must stay deleted and operators should invoke
+  `bash scripts/ops/bigclawctl refill ...` directly.
 
 ## Branch and PR Suggestion
 

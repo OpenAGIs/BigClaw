@@ -30,9 +30,13 @@ func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 	contents := readRepoFile(t, repoRoot, "docs/go-cli-script-migration-plan.md")
 
 	required := []string{
+		"retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`",
+		"retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`",
 		"retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
 		"retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
 		"retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`",
+		"`bash scripts/ops/bigclawctl github-sync status --json`",
+		"`bash scripts/ops/bigclawctl refill --help`",
 		"`bash scripts/ops/bigclawctl workspace validate --help`",
 	}
 	for _, needle := range required {
