@@ -133,7 +133,9 @@ Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-ma
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; retired root
-Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
+ops shims `scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`,
+`scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`,
+and `scripts/ops/symphony_workspace_validate.py` should stay deleted and replaced by
 `scripts/ops/bigclawctl`.
 
 Active runtime development belongs in `bigclaw-go/internal/*`; use

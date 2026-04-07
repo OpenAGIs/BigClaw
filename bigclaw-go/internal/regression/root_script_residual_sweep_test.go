@@ -72,6 +72,7 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		"`scripts/ops/bigclaw_github_sync.py`",
 		"`bash scripts/ops/bigclawctl workspace ...`",
 		"`bash scripts/ops/bigclawctl github-sync ...`",
+		"`scripts/ops/bigclawctl`; retired root",
 	}
 	for _, needle := range requiredReadmeEntries {
 		if !strings.Contains(readme, needle) {
