@@ -6,7 +6,7 @@ Use this helper to compare two BigClaw control-plane endpoints with the same tas
 
 ```bash
 cd bigclaw-go
-go run ./cmd/bigclawctl automation migration shadow-compare \
+python3 scripts/migration/shadow_compare.py \
   --primary http://127.0.0.1:8080 \
   --shadow http://127.0.0.1:8081 \
   --task-file ./examples/shadow-task.json \
@@ -20,7 +20,7 @@ so the resulting timelines stay easy to correlate in audit/event tooling.
 
 ```bash
 cd bigclaw-go
-go run ./cmd/bigclawctl automation migration shadow-matrix \
+python3 scripts/migration/shadow_matrix.py \
   --primary http://127.0.0.1:8080 \
   --shadow http://127.0.0.1:8081 \
   --task-file ./examples/shadow-task.json \
@@ -41,7 +41,7 @@ surface, generate the repo-native live shadow mirror scorecard:
 
 ```bash
 cd bigclaw-go
-go run ./cmd/bigclawctl automation migration live-shadow-scorecard \
+python3 scripts/migration/live_shadow_scorecard.py \
   --shadow-compare-report ./docs/reports/shadow-compare-report.json \
   --shadow-matrix-report ./docs/reports/shadow-matrix-report.json \
   --output ./docs/reports/live-shadow-mirror-scorecard.json
@@ -56,7 +56,7 @@ the parity drift rollup, export the live shadow bundle/index:
 
 ```bash
 cd bigclaw-go
-go run ./cmd/bigclawctl automation migration export-live-shadow-bundle
+python3 scripts/migration/export_live_shadow_bundle
 ```
 
 This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into
