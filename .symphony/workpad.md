@@ -1,37 +1,18 @@
-# BIG-GO-1516 Workpad
+# BIG-GO-1570
 
 ## Plan
-
-1. Reconfirm the repository-wide physical Python file baseline and the focused
-   `workspace` / `bootstrap` / `planning` residual area, including the Go
-   replacement surfaces that now own that behavior.
-2. Add lane-scoped reporting artifacts that record the exact before/after
-   counts, the exact deleted-file ledger, and the validation evidence for this
-   refill slice.
-3. Add focused regression coverage so the repository and the
-   `workspace/bootstrap/planning` residual area stay Python-free.
-4. Run targeted validation, record the exact commands and results in checked-in
-   artifacts, then commit and push the issue branch.
+1. Work from `origin/main` on a local `BIG-GO-1570` branch.
+2. Measure the repository-wide physical Python footprint with `find . -name '*.py' | wc -l` and confirm whether any repo-local `.py` assets remain.
+3. Since this checkout is already at `0`, land issue-scoped evidence in git with a lane report plus a Go regression test that proves the repo stays physically Python-free and that the documented Go/native replacement paths remain available.
+4. Run targeted validation, record exact commands and results, then commit and push `BIG-GO-1570`.
 
 ## Acceptance
-
-- The lane records repository-wide `.py` counts before and after the change.
-- The lane records the focused `workspace/bootstrap/planning` residual scan.
-- The lane includes an exact deleted-file ledger, even if the ledger is empty
-  because the baseline is already Python-free.
-- The lane names the active Go/native replacement paths for the retired
-  `workspace/bootstrap/planning` surface.
-- Exact validation commands and outcomes are recorded in repo-native artifacts.
-- The change is committed and pushed on `BIG-GO-1516`.
+- `find . -name '*.py' | wc -l` remains `0`, or exact Go/native replacement evidence lands in git.
+- Changes stay scoped to `BIG-GO-1570` and do not reopen unrelated bookkeeping-only work.
+- Targeted validation runs successfully, and the branch is committed and pushed to `origin`.
 
 ## Validation
-
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find workspace bootstrap planning bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1516(RepositoryHasNoPythonFiles|WorkspaceBootstrapPlanningResidualAreaStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`
-
-## GitHub
-
-- Branch pushed: `origin/BIG-GO-1516`
-- Compare view: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1516?expand=1`
-- PR opened: `https://github.com/OpenAGIs/BigClaw/pull/220`
+- `find . -name '*.py' | wc -l`
+- `rg --files -g '*.py'`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1570(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `git status --short`
