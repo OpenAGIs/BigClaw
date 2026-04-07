@@ -27,3 +27,9 @@
   Result: exit `0`, output `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-panel`, `scripts/ops/bigclaw-symphony`, `scripts/ops/bigclawctl`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOps'`
   Result: exit `0`, output `ok  	bigclaw-go/internal/regression	4.903s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOps|TestRootScriptResidualSweep'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	5.372s`
+- `for f in docs/go-mainline-cutover-issue-pack.md bigclaw-go/docs/reports/big-go-1567-scripts-ops-deletion-tranche.md; do echo "$f"; grep -F 'retired \`scripts/ops/bigclaw_github_sync.py\`; use \`bigclawctl github-sync\`' "$f"; grep -F 'retired \`scripts/ops/bigclaw_refill_queue.py\`; use \`bigclawctl refill\`' "$f"; grep -F 'retired \`scripts/ops/bigclaw_workspace_bootstrap.py\`; use \`bash scripts/ops/bigclawctl workspace bootstrap\`' "$f"; grep -F 'retired \`scripts/ops/symphony_workspace_bootstrap.py\`; use \`bash scripts/ops/bigclawctl workspace bootstrap\`' "$f"; grep -F 'retired \`scripts/ops/symphony_workspace_validate.py\`; use \`bash scripts/ops/bigclawctl workspace validate\`' "$f"; done`
+  Result: exit `0`, output confirms all five retired `scripts/ops` Python replacement lines exist in both docs files
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1567|TestRootOps|TestRootScriptResidualSweep'`
+  Result: exit `0`, output `ok  	bigclaw-go/internal/regression	3.372s` after resolving the stash-pop merge state

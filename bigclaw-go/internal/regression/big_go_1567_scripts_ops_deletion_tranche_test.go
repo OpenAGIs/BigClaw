@@ -36,6 +36,8 @@ func TestBIGGO1567ScriptsOpsReplacementReport(t *testing.T) {
 		"`scripts/ops/bigclaw-issue` maps to `bash scripts/ops/bigclawctl issue`.",
 		"`scripts/ops/bigclaw-panel` maps to `bash scripts/ops/bigclawctl panel`.",
 		"`scripts/ops/bigclaw-symphony` maps to `bash scripts/ops/bigclawctl symphony`.",
+		"retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`.",
+		"retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`.",
 		"retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`.",
 		"retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`.",
 		"retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`.",
@@ -45,6 +47,23 @@ func TestBIGGO1567ScriptsOpsReplacementReport(t *testing.T) {
 	} {
 		if !strings.Contains(report, needle) {
 			t.Fatalf("report missing substring %q", needle)
+		}
+	}
+}
+
+func TestBIGGO1567CutoverIssuePackCarriesScriptsOpsReplacements(t *testing.T) {
+	rootRepo := regressionRepoRoot(t)
+	contents := readRepoFile(t, rootRepo, "docs/go-mainline-cutover-issue-pack.md")
+
+	for _, needle := range []string{
+		"retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`",
+		"retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`",
+		"retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
+		"retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
+		"retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`",
+	} {
+		if !strings.Contains(contents, needle) {
+			t.Fatalf("docs/go-mainline-cutover-issue-pack.md missing scripts/ops replacement guidance %q", needle)
 		}
 	}
 }

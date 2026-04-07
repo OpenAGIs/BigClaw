@@ -14,6 +14,8 @@ Repository-wide Python file count: `0`.
 - `scripts/ops/bigclaw-issue` maps to `bash scripts/ops/bigclawctl issue`.
 - `scripts/ops/bigclaw-panel` maps to `bash scripts/ops/bigclawctl panel`.
 - `scripts/ops/bigclaw-symphony` maps to `bash scripts/ops/bigclawctl symphony`.
+- retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`.
+- retired `scripts/ops/bigclaw_refill_queue.py`; use `bigclawctl refill`.
 - retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`.
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`.
 - retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`.
