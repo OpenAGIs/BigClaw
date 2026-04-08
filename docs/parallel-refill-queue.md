@@ -21,10 +21,6 @@ longer waits on Linear to keep issue execution moving.
 - Local dashboard/orchestrator:
   - `bash scripts/ops/bigclawctl symphony`
   - `bash scripts/ops/bigclawctl panel`
-- Compatibility wrappers retained during cutover:
-  - `bash scripts/ops/bigclaw-issue ...`
-  - `bash scripts/ops/bigclaw-symphony`
-  - `bash scripts/ops/bigclaw-panel`
 
 ## Policy
 

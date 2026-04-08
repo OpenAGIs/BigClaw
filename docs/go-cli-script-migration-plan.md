@@ -48,9 +48,9 @@ operator replacements.
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
 - root dev smoke path is Go-only: use `bigclawctl dev-smoke`
-- `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
-- `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
-- `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
+- root `symphony` operator path: `bash scripts/ops/bigclawctl symphony`
+- root `issue` operator path: `bash scripts/ops/bigclawctl issue`
+- root `panel` operator path: `bash scripts/ops/bigclawctl panel`
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
 - retired the refill Python wrapper; use `bigclawctl refill`
 - retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
@@ -65,7 +65,7 @@ operator replacements.
 
 The remaining compatibility layer is intentionally thin:
 
-- Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
+- The retained root shell surface is `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
 
 ## First-Batch Change List
@@ -87,15 +87,9 @@ The remaining compatibility layer is intentionally thin:
 - `panel`
   - proxies `symphony panel --workflow workflow.md`
 
-### Compatibility shims kept in place
-
-- `scripts/ops/bigclaw-symphony`
-- `scripts/ops/bigclaw-issue`
-- `scripts/ops/bigclaw-panel`
-
-The root Python workspace shims are now removed. The remaining Bash aliases stay in place until
-operator docs and external automation references finish the direct cutover to
-`bash scripts/ops/bigclawctl ...`.
+The root Python workspace shims are now removed, and the redundant Bash helper aliases have also
+been retired. Root operator docs and automation should call `bash scripts/ops/bigclawctl ...`
+directly.
 
 ## Remaining Backlog
 

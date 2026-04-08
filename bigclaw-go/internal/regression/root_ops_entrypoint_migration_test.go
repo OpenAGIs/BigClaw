@@ -25,6 +25,20 @@ func TestRootOpsDirectoryStaysPythonFree(t *testing.T) {
 	}
 }
 
+func TestRootOpsDirectoryRetiresRedundantHelperWrappers(t *testing.T) {
+	repoRoot := filepath.Clean(filepath.Join(repoRoot(t), ".."))
+
+	for _, relativePath := range []string{
+		"scripts/ops/bigclaw-issue",
+		"scripts/ops/bigclaw-panel",
+		"scripts/ops/bigclaw-symphony",
+	} {
+		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
+			t.Fatalf("expected redundant root helper wrapper to stay absent: %s", relativePath)
+		}
+	}
+}
+
 func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 	repoRoot := filepath.Clean(filepath.Join(repoRoot(t), ".."))
 	contents := readRepoFile(t, repoRoot, "docs/go-cli-script-migration-plan.md")
@@ -33,6 +47,9 @@ func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 		"retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
 		"retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
 		"retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`",
+		"root `issue` operator path: `bash scripts/ops/bigclawctl issue`",
+		"root `panel` operator path: `bash scripts/ops/bigclawctl panel`",
+		"root `symphony` operator path: `bash scripts/ops/bigclawctl symphony`",
 		"`bash scripts/ops/bigclawctl workspace validate --help`",
 	}
 	for _, needle := range required {
@@ -42,6 +59,9 @@ func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 	}
 
 	disallowed := []string{
+		"`scripts/ops/bigclaw-symphony`",
+		"`scripts/ops/bigclaw-issue`",
+		"`scripts/ops/bigclaw-panel`",
 		"- `scripts/ops/bigclaw_workspace_bootstrap.py`",
 		"- `scripts/ops/symphony_workspace_bootstrap.py`",
 		"- `scripts/ops/symphony_workspace_validate.py`",

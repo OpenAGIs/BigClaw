@@ -31,7 +31,6 @@ func TestTopLevelModulePurgeTranche16(t *testing.T) {
 		"bigclaw-go/internal/refill/queue.go",
 		"bigclaw-go/internal/bootstrap/bootstrap.go",
 		"scripts/ops/bigclawctl",
-		"scripts/ops/bigclaw-symphony",
 		"scripts/dev_bootstrap.sh",
 	}
 	for _, relativePath := range goReplacementFiles {

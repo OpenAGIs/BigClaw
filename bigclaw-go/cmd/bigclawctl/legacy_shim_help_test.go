@@ -64,3 +64,48 @@ func TestRunDevSmokeHelpPrintsUsageAndExitsZero(t *testing.T) {
 		t.Fatalf("unexpected dev-smoke help output: %s", string(output))
 	}
 }
+
+func TestRunSymphonyHelpPrintsUsageAndExitsZero(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		if code := run([]string{"symphony", "--help"}); code != 0 {
+			t.Fatalf("expected exit 0, got %d", code)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("run symphony help: %v", err)
+	}
+	if !strings.Contains(string(output), "usage: bigclawctl symphony [flags] [args...]") {
+		t.Fatalf("unexpected symphony help output: %s", string(output))
+	}
+}
+
+func TestRunIssueHelpPrintsUsageAndExitsZero(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		if code := run([]string{"issue", "--help"}); code != 0 {
+			t.Fatalf("expected exit 0, got %d", code)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("run issue help: %v", err)
+	}
+	if !strings.Contains(string(output), "usage: bigclawctl issue [flags] [args...]") {
+		t.Fatalf("unexpected issue help output: %s", string(output))
+	}
+}
+
+func TestRunPanelHelpPrintsUsageAndExitsZero(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		if code := run([]string{"panel", "--help"}); code != 0 {
+			t.Fatalf("expected exit 0, got %d", code)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("run panel help: %v", err)
+	}
+	if !strings.Contains(string(output), "usage: bigclawctl panel [flags] [args...]") {
+		t.Fatalf("unexpected panel help output: %s", string(output))
+	}
+}

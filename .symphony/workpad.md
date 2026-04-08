@@ -1,29 +1,32 @@
-# BIG-GO-100 Workpad
+Issue: BIG-GO-114
 
-## Context
-- Issue: `BIG-GO-100`
-- Goal: land a convergence sweep that preserves the practical Go-only repository state and records explicit evidence for the remaining physical Python file count.
-- Current repo state on entry: repository-wide physical `.py` file inventory is already `0`, including the priority residual directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+Plan
+- Audit the remaining root operator wrappers and helper references under `scripts/ops/`, repo docs, and regression tests.
+- Remove the redundant helper wrappers that only proxy into `scripts/ops/bigclawctl`.
+- Update docs and regression coverage so `bash scripts/ops/bigclawctl ...` is the only supported root operator path.
+- Run targeted validation commands, capture exact commands and results, then commit and push.
 
-## Scope
-- `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_100_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-100-python-asset-sweep.md`
-- `reports/BIG-GO-100-status.json`
-- `reports/BIG-GO-100-validation.md`
+Acceptance
+- `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-panel`, and `scripts/ops/bigclaw-symphony` are removed.
+- Supported docs no longer describe those wrappers as retained compatibility entrypoints.
+- Targeted regression tests assert the wrapper removal and direct `bigclawctl` guidance.
+- Targeted validation commands complete successfully and their exact commands/results are recorded.
 
-## Plan
-1. Replace the stale workpad with issue-specific scope, acceptance, and validation targets before any code edits.
-2. Add a lane-specific regression guard and Python-asset sweep report that document the existing zero-Python baseline and required Go/native replacement paths.
-3. Run targeted inventory and regression commands, record exact commands and results, then commit and push the lane branch to `origin/main`.
+Validation
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootOpsDirectoryStaysPythonFree|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
+- `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'TestRun(Issue|Panel|Symphony)'`
+- `bash scripts/ops/bigclawctl issue --help`
+- `bash scripts/ops/bigclawctl panel --help`
+- `bash scripts/ops/bigclawctl symphony --help`
 
-## Acceptance
-- `BIG-GO-100` has a lane-specific workpad, regression guard, sweep report, status artifact, and validation report.
-- The regression guard verifies repository-wide Python file count `0`, Python-free priority residual directories, required Go/native replacement paths, and the lane report content.
-- Validation records exact commands and exact results for repository inventory, priority directory inventory, and targeted regression coverage.
-- Changes remain scoped to `BIG-GO-100` convergence artifacts only.
-
-## Validation
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO100(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+Results
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootOpsDirectory(StaysPythonFree|RetiresRedundantHelperWrappers)|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestTopLevelModulePurgeTranche16|TestBIGGO(100|1353|1370|1371|1374|1376|1380|1382|1383|1385|1392|1393|1396|1406|1410|1419|1422|1424|1425|1426|1427|1430|1433|1436|1439|1454)(GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+  - `ok  	bigclaw-go/internal/regression	0.187s`
+- `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'TestRun(GitHubSyncHelpPrintsUsageAndExitsZero|WorkspaceHelpPrintsUsageAndExitsZero|CreateIssuesHelpPrintsUsageAndExitsZero|DevSmokeHelpPrintsUsageAndExitsZero|SymphonyHelpPrintsUsageAndExitsZero|IssueHelpPrintsUsageAndExitsZero|PanelHelpPrintsUsageAndExitsZero|IssueRoutesStateShortcutToLocalIssues|PanelUsesSymphonyFromPATH)$'`
+  - `ok  	bigclaw-go/cmd/bigclawctl	1.090s`
+- `bash scripts/ops/bigclawctl issue --help`
+  - `usage: bigclawctl issue [flags] [args...]`
+- `bash scripts/ops/bigclawctl panel --help`
+  - `usage: bigclawctl panel [flags] [args...]`
+- `bash scripts/ops/bigclawctl symphony --help`
+  - `usage: bigclawctl symphony [flags] [args...]`

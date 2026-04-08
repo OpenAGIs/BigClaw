@@ -39,9 +39,6 @@ func TestBIGGO1406GoReplacementPathsRemainAvailable(t *testing.T) {
 
 	goReplacementPaths := []string{
 		"scripts/ops/bigclawctl",
-		"scripts/ops/bigclaw-issue",
-		"scripts/ops/bigclaw-panel",
-		"scripts/ops/bigclaw-symphony",
 		"scripts/dev_bootstrap.sh",
 		"bigclaw-go/cmd/bigclawctl/main.go",
 		"bigclaw-go/scripts/e2e/run_all.sh",
@@ -66,9 +63,6 @@ func TestBIGGO1406LaneReportCapturesSweepState(t *testing.T) {
 		"`scripts`: `0` Python files",
 		"`bigclaw-go/scripts`: `0` Python files",
 		"`scripts/ops/bigclawctl`",
-		"`scripts/ops/bigclaw-issue`",
-		"`scripts/ops/bigclaw-panel`",
-		"`scripts/ops/bigclaw-symphony`",
 		"`scripts/dev_bootstrap.sh`",
 		"`bigclaw-go/cmd/bigclawctl/main.go`",
 		"`bigclaw-go/scripts/e2e/run_all.sh`",
