@@ -1,29 +1,29 @@
-# BIG-GO-100 Workpad
+# BIG-GO-118 Workpad
 
 ## Context
-- Issue: `BIG-GO-100`
-- Goal: land a convergence sweep that preserves the practical Go-only repository state and records explicit evidence for the remaining physical Python file count.
-- Current repo state on entry: repository-wide physical `.py` file inventory is already `0`, including the priority residual directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- Issue: `BIG-GO-118`
+- Goal: complete a follow-up repository-wide Python reduction sweep by documenting and guarding the existing Go-only baseline.
+- Current repo state on entry: repository-wide physical `.py` inventory is already `0`, including the priority residual directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
 
 ## Scope
 - `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_100_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-100-python-asset-sweep.md`
-- `reports/BIG-GO-100-status.json`
-- `reports/BIG-GO-100-validation.md`
+- `bigclaw-go/internal/regression/big_go_118_zero_python_guard_test.go`
+- `bigclaw-go/docs/reports/big-go-118-python-asset-sweep.md`
+- `reports/BIG-GO-118-status.json`
+- `reports/BIG-GO-118-validation.md`
 
 ## Plan
-1. Replace the stale workpad with issue-specific scope, acceptance, and validation targets before any code edits.
-2. Add a lane-specific regression guard and Python-asset sweep report that document the existing zero-Python baseline and required Go/native replacement paths.
-3. Run targeted inventory and regression commands, record exact commands and results, then commit and push the lane branch to `origin/main`.
+1. Add `BIG-GO-118` lane artifacts that capture the current zero-Python repository inventory and the Go/native replacement surface.
+2. Implement a lane-specific regression guard that fails if repository Python files reappear, if priority residual directories regain Python assets, or if the lane report drifts from the expected sweep evidence.
+3. Run targeted inventory and regression commands, record the exact commands and results, then commit and push the branch.
 
 ## Acceptance
-- `BIG-GO-100` has a lane-specific workpad, regression guard, sweep report, status artifact, and validation report.
-- The regression guard verifies repository-wide Python file count `0`, Python-free priority residual directories, required Go/native replacement paths, and the lane report content.
+- `BIG-GO-118` has a lane-specific workpad, regression guard, sweep report, status artifact, and validation report.
+- The regression guard verifies repository-wide Python file count `0`, Python-free priority residual directories, required Go/native replacement paths, and lane report coverage.
 - Validation records exact commands and exact results for repository inventory, priority directory inventory, and targeted regression coverage.
-- Changes remain scoped to `BIG-GO-100` convergence artifacts only.
+- Changes remain scoped to `BIG-GO-118` sweep artifacts only.
 
 ## Validation
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO100(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO118(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
