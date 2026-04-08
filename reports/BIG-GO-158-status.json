@@ -1,0 +1,53 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-158",
+    "title": "Broad repo Python reduction sweep V",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-158",
+    "latest_commit": "pending_commit",
+    "push_target": "origin/BIG-GO-158"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-158-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-158-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_158_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "focused_dirs": {
+      "reports": [],
+      "docs/reports": [],
+      "bigclaw-go/docs/reports": [],
+      "bigclaw-go/examples": []
+    }
+  },
+  "retained_native_assets": [
+    "reports/BIG-GO-139-validation.md",
+    "docs/reports/bootstrap-cache-validation.md",
+    "bigclaw-go/docs/reports/live-shadow-index.md",
+    "bigclaw-go/examples/shadow-task.json"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find reports docs/reports bigclaw-go/docs/reports bigclaw-go/examples -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO158(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|MirroredReportAndExampleSurfacesStayPythonFree|RetainedNativeAssetsRemainAvailable|LaneReportDocumentsPythonAssetSweep)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "focused_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.184s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-158 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with focused regression coverage over mirrored report/example surfaces.",
+    "Baseline HEAD before lane changes was `cf4219c9`."
+  ]
+}
