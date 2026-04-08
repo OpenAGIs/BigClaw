@@ -1,44 +1,32 @@
-# BIG-GO-124 Workpad
+# BIG-GO-149 Workpad
 
 ## Context
-- Issue: `BIG-GO-124`
-- Title: `Residual scripts Python sweep H`
-- Goal: remove or replace the remaining Python migration wrapper, wrapper references, and task entrypoints that still advertise Python execution in the Go-only repository.
-- Current repo state on entry: the repository is already extension-level Python-free for `*.py`, but `bigclaw-go/scripts/migration/export_live_shadow_bundle` was still an extensionless Python script and the migration/live-shadow docs and checked-in artifacts still pointed at Python-based commands.
+- Issue: `BIG-GO-149`
+- Title: `Residual auxiliary Python sweep K`
+- Goal: verify that hidden, nested, and otherwise overlooked repository areas still contain no residual physical Python files, then harden that zero-Python baseline with lane-specific evidence and regression coverage.
+- Current repo state on entry: repository-wide physical Python scan returned `0` files, so this lane is expected to ship as focused guard/report coverage rather than an in-branch deletion batch.
 
 ## Scope
 - `.symphony/workpad.md`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle`
-- `bigclaw-go/docs/migration-shadow.md`
-- `bigclaw-go/docs/reports/migration-readiness-report.md`
-- `bigclaw-go/docs/reports/live-shadow-mirror-scorecard.json`
-- `bigclaw-go/docs/reports/live-shadow-summary.json`
-- `bigclaw-go/docs/reports/live-shadow-index.json`
-- `bigclaw-go/docs/reports/live-shadow-index.md`
-- `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/live-shadow-mirror-scorecard.json`
-- `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json`
-- `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md`
-- `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
-- `bigclaw-go/internal/regression/big_go_124_zero_python_guard_test.go`
-- `bigclaw-go/internal/regression/big_go_1577_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-124-python-asset-sweep.md`
-- `reports/BIG-GO-124-status.json`
-- `reports/BIG-GO-124-validation.md`
+- `bigclaw-go/internal/regression/big_go_149_zero_python_guard_test.go`
+- `bigclaw-go/docs/reports/big-go-149-python-asset-sweep.md`
+- `reports/BIG-GO-149-validation.md`
+- `reports/BIG-GO-149-status.json`
 
 ## Plan
-1. Replace the stale workpad with this issue-specific plan, acceptance criteria, and validation targets before editing code or docs.
-2. Remove the residual Python migration wrapper and update checked-in migration/live-shadow surfaces to use the existing Go automation entrypoints exposed through `bigclawctl`.
-3. Add lane-specific regression coverage and sweep/report artifacts documenting the retired wrapper path and the required Go/native replacements, including the historical `BIG-GO-1577` guard that still referenced the deleted wrapper.
-4. Run targeted commands, record exact commands and results, then commit and push the scoped lane changes to the remote branch.
+1. Replace the stale workpad with this issue-specific context, acceptance criteria, and validation plan before editing any code or reports.
+2. Add a focused regression guard for hidden and nested residual directories that are easy to miss in top-level sweeps: `.githooks`, `.github`, `.symphony`, `bigclaw-go/examples`, `bigclaw-go/docs/reports/live-shadow-runs`, `bigclaw-go/docs/reports/live-validation-runs`, and `reports`.
+3. Record the lane sweep in a checked-in report plus validation/status artifacts, including exact repository-wide and focused-directory Python inventory results and the retained native replacement/control assets that should remain present.
+4. Run the targeted inventory and regression commands, capture exact commands and results, then commit and push the scoped lane branch.
 
 ## Acceptance
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle` no longer exists as a Python task entrypoint.
-- Migration shadow docs and checked-in live-shadow artifacts refer to `bigclawctl automation migration ...` instead of Python script commands.
-- Regression coverage enforces the retired residual path stays absent and the Go migration replacement paths remain available and aligned with checked-in artifacts.
-- Validation captures exact commands and exact results for the scoped Python-reference sweep and the targeted regression tests.
-- Changes stay scoped to `BIG-GO-124` residual migration-script cleanup artifacts plus the directly impacted historical `BIG-GO-1577` guard/report alignment.
+- Repository-wide physical Python inventory remains `0`.
+- The hidden and nested residual directories audited by this lane remain Python-free.
+- Lane-specific regression coverage exists for the focused residual directories and for the retained native/non-Python assets in those directories.
+- Validation artifacts record exact commands and exact results for the repository-wide scan, the focused hidden-directory scan, and the targeted regression test run.
+- Changes remain scoped to `BIG-GO-149` sweep evidence and regression hardening.
 
 ## Validation
-- `rg -n "python3 scripts/migration|scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard)\\.py|scripts/migration/export_live_shadow_bundle" bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/migration-readiness-report.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
-- `test ! -e bigclaw-go/scripts/migration/export_live_shadow_bundle`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(LiveShadowScorecardBundleStaysAligned|LiveShadowBundleSummaryAndIndexStayAligned|BIGGO124(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)|BIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState))$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-149 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/.githooks /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/.symphony /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/reports -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-149/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO149(RepositoryHasNoPythonFiles|HiddenAndNestedResidualDirectoriesStayPythonFree|RetainedNativeAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
