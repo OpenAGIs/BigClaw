@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "aa382379",
+    "latest_commit": "67612956",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -56,6 +56,7 @@
   },
   "notes": [
     "This lane is scoped to report-heavy auxiliary directories and their retained non-Python evidence assets.",
-    "Implementation commit aa382379 was rebased onto origin/main before push because the remote branch advanced during lane execution."
+    "Implementation commit aa382379 was rebased onto origin/main before push because the remote branch advanced during lane execution.",
+    "Metadata closeout commit 67612956 is the pushed tip after issue completion."
   ]
 }

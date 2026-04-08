@@ -86,8 +86,9 @@ ok  	bigclaw-go/internal/regression	0.189s
 ## Git
 
 - Implementation commit: `aa382379` (`BIG-GO-139: add auxiliary python sweep guard`)
+- Metadata commit: `67612956` (`BIG-GO-139: finalize lane metadata`)
 - Push command: `git push origin main`
-- Push result: implementation commit pushed to `origin/main` after rebasing onto remote tip `52a22a80`
+- Push result: commits `aa382379` and `67612956` were pushed to `origin/main`; the implementation commit was rebased onto remote tip `52a22a80` before push
 
 ## Residual Risk
 
