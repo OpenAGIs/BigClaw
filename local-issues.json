@@ -7746,6 +7746,27 @@
       "state": "Done",
       "title": "Refill: workspace/bootstrap/planning residual Python file removal with exact deleted-file ledger",
       "updated_at": "2026-04-06T09:15:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Completed the BIG-GO-135 residual tooling Python sweep lane.\n\nWhat changed:\n- updated `bigclaw-go/internal/regression/root_script_residual_sweep_test.go` so the retired root Python build helpers `setup.py` and `pyproject.toml` must stay absent alongside the already-retired root Python script shims.\n- refreshed `README.md` to state that the repository root no longer carries Python build metadata.\n- replaced the stale carried-over `.symphony/workpad.md` with an issue-specific plan, acceptance criteria, and exact validation log.\n\nValidation:\n- `git ls-files 'scripts/*.py' 'scripts/ops/*.py' 'setup.py' 'pyproject.toml' | sort` -> no output\n- `find . -path './.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sed 's#^./##' | sort` -> no output\n- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'` -> `ok  \\tbigclaw-go/internal/regression\\t0.190s`\n\nCommit SHA:\n- `bddb50e`\n\nBranch:\n- `BIG-GO-135`",
+          "created_at": "2026-04-08T17:18:33Z"
+        }
+      ],
+      "created_at": "2026-04-08T17:18:33Z",
+      "description": "Reduce Python tooling, build helpers, and dev utilities still checked in.",
+      "id": "big-go-135",
+      "identifier": "BIG-GO-135",
+      "labels": [
+        "go-onlypython-removallegacy-normalized"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Residual tooling Python sweep I",
+      "updated_at": "2026-04-08T17:18:33Z"
     }
   ]
 }
