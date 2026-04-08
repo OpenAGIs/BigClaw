@@ -127,6 +127,7 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
 
 - Branch: `BIG-GO-125`
 - Published commits:
+  - `f90388b0` (`BIG-GO-125 refresh published commit metadata`)
   - `6d2cc025` (`BIG-GO-125 sync workpad blocker`)
   - `2b7adcae` (`BIG-GO-125 add compare handoff link`)
   - `c1cb7bcf` (`BIG-GO-125 record public pr status`)
