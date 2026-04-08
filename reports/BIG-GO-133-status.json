@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-133",
-    "latest_commit": "c22d5a65 BIG-GO-133 add residual python sweep guard",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-133'",
     "push_target": "origin/BIG-GO-133"
   },
   "artifacts": {
