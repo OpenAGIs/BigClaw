@@ -93,7 +93,7 @@ ok  	bigclaw-go/internal/regression	0.185s
 
 - Branch: `BIG-GO-159`
 - Baseline HEAD before lane commit: `06d6f195`
-- Final pushed lane commit: pending
+- Final pushed lane commit: `6cd20492` (`BIG-GO-159: harden auxiliary python sweep`)
 - Push target: `origin/BIG-GO-159`
 
 ## Residual Risk
