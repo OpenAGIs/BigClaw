@@ -1,0 +1,56 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1581",
+    "title": "Strict bucket lane 1581: src/bigclaw/*.py bucket A",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1581",
+    "baseline_commit": "77c11439",
+    "latest_commit": "HEAD",
+    "push_target": "origin/BIG-GO-1581",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1581?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1581-src-bigclaw-bucket-a.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1581_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1581-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "src_bigclaw_bucket_a_py_files_before": 0,
+    "src_bigclaw_bucket_a_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "src_bigclaw_bucket_a": []
+  },
+  "replacement_paths": [
+    "bigclaw-go/internal/costcontrol/controller.go",
+    "bigclaw-go/internal/issuearchive/archive.go",
+    "bigclaw-go/internal/githubsync/sync.go",
+    "docs/go-mainline-cutover-issue-pack.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw scripts/ops -type f \\( -name 'cost_control.py' -o -name 'issue_archive.py' -o -name 'github_sync.py' -o -name 'bigclaw_github_sync.py' \\) 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1581(RepositoryHasNoPythonFiles|BucketARetiredPythonPathsStayAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "src_bigclaw_bucket_a_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.182s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1581 changes."
+  },
+  "notes": [
+    "This lane records bucket-A replacement evidence and adds an issue-scoped regression guard for the retired src/bigclaw top-level modules.",
+    "The branch baseline was already Python-free, so the acceptance path is exact replacement evidence rather than an in-branch decrease in .py count."
+  ]
+}
