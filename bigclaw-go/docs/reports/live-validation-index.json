@@ -479,7 +479,7 @@
           "title": "Ray smoke test",
           "state": "queued",
           "required_executor": "ray",
-          "entrypoint": "python -c \"print('hello from ray')\"",
+          "entrypoint": "sh -c 'echo hello from ray'",
           "metadata": {
             "executor": "ray",
             "smoke_test": "true"
@@ -551,7 +551,7 @@
                 ],
                 "executor": "ray",
                 "finished_at": "2026-03-16T14:01:45Z",
-                "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: python -c \"print('hello from ray')\"\nhello from ray"
+                "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: sh -c 'echo hello from ray'\nhello from ray"
               }
             }
           ],
@@ -567,7 +567,7 @@
               ],
               "executor": "ray",
               "finished_at": "2026-03-16T14:01:45Z",
-              "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: python -c \"print('hello from ray')\"\nhello from ray"
+              "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: sh -c 'echo hello from ray'\nhello from ray"
             }
           },
           "state": "succeeded",
@@ -577,7 +577,7 @@
             "title": "Ray smoke test",
             "state": "succeeded",
             "required_executor": "ray",
-            "entrypoint": "python -c \"print('hello from ray')\"",
+            "entrypoint": "sh -c 'echo hello from ray'",
             "metadata": {
               "executor": "ray",
               "smoke_test": "true"
@@ -671,7 +671,7 @@
               ],
               "executor": "ray",
               "finished_at": "2026-03-16T14:01:45Z",
-              "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: python -c \"print('hello from ray')\"\nhello from ray"
+              "message": "ray job bigclaw-ray-smoke-1773669703 succeeded: 2026-03-16 05:35:29,401\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773669703: sh -c 'echo hello from ray'\nhello from ray"
             },
             "delivery": {
               "mode": "replay",

@@ -2,6 +2,7 @@ package regression
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -109,5 +110,29 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 	}
 	if summary.SharedQueueCompanion.SubmittedByNode["node-a"] != 100 || summary.SharedQueueCompanion.SubmittedByNode["node-b"] != 100 || summary.SharedQueueCompanion.CompletedByNode["node-a"] != 73 || summary.SharedQueueCompanion.CompletedByNode["node-b"] != 127 {
 		t.Fatalf("unexpected shared-queue per-node counts: submitted=%+v completed=%+v", summary.SharedQueueCompanion.SubmittedByNode, summary.SharedQueueCompanion.CompletedByNode)
+	}
+
+	summaryContents := readRepoFile(t, repoRoot, "docs/reports/live-validation-summary.json")
+	if strings.Contains(summaryContents, "python -c \"print('hello from ray')\"") {
+		t.Fatal("live-validation-summary.json should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(summaryContents, "sh -c 'echo hello from ray'") {
+		t.Fatal("live-validation-summary.json should retain the shell-native ray smoke entrypoint")
+	}
+
+	canonicalRayReport := readRepoFile(t, repoRoot, "docs/reports/ray-live-smoke-report.json")
+	if strings.Contains(canonicalRayReport, "python -c \"print('hello from ray')\"") {
+		t.Fatal("ray-live-smoke-report.json should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(canonicalRayReport, "sh -c 'echo hello from ray'") {
+		t.Fatal("ray-live-smoke-report.json should retain the shell-native ray smoke entrypoint")
+	}
+
+	bundledRayReport := readRepoFile(t, repoRoot, "docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json")
+	if strings.Contains(bundledRayReport, "python -c \"print('hello from ray')\"") {
+		t.Fatal("bundled ray-live-smoke-report.json should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(bundledRayReport, "sh -c 'echo hello from ray'") {
+		t.Fatal("bundled ray-live-smoke-report.json should retain the shell-native ray smoke entrypoint")
 	}
 }

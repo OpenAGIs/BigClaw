@@ -2,6 +2,7 @@ package regression
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -167,5 +168,21 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 	}
 	if index.RecentRuns[2].RunID != "20260314T163430Z" || index.RecentRuns[2].GeneratedAt != "2026-03-14T16:34:42.080370+00:00" || index.RecentRuns[2].Status != "succeeded" || index.RecentRuns[2].BundlePath != "docs/reports/live-validation-runs/20260314T163430Z" || index.RecentRuns[2].SummaryPath != "docs/reports/live-validation-runs/20260314T163430Z/summary.json" {
 		t.Fatalf("unexpected third recent run: %+v", index.RecentRuns[2])
+	}
+
+	indexContents := readRepoFile(t, repoRoot, "docs/reports/live-validation-index.json")
+	if strings.Contains(indexContents, "python -c \"print('hello from ray')\"") {
+		t.Fatal("live-validation-index.json should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(indexContents, "sh -c 'echo hello from ray'") {
+		t.Fatal("live-validation-index.json should retain the shell-native ray smoke entrypoint")
+	}
+
+	bundledSummary := readRepoFile(t, repoRoot, "docs/reports/live-validation-runs/20260316T140138Z/summary.json")
+	if strings.Contains(bundledSummary, "python -c \"print('hello from ray')\"") {
+		t.Fatal("bundled live-validation summary should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(bundledSummary, "sh -c 'echo hello from ray'") {
+		t.Fatal("bundled live-validation summary should retain the shell-native ray smoke entrypoint")
 	}
 }
