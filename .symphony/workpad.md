@@ -1,41 +1,25 @@
-# BIG-GO-1577 Workpad
+# BIG-GO-1 Workpad
 
 ## Context
-- Issue: `BIG-GO-1577`
-- Goal: perform a Go-only residual Python sweep over the specified candidate files, preferring deletion or Go replacements; if removal is not yet possible, reduce Python to a thin compatibility shim and document deletion conditions.
-- Current repo state on entry: workspace contains only `.git` metadata and no checked-out tree yet; repository content must be fetched from `origin` before code changes.
-
-## Scope
-- `src/bigclaw/cost_control.py`
-- `src/bigclaw/mapping.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/roadmap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `tests/test_design_system.py`
-- `tests/test_live_shadow_bundle.py`
-- `tests/test_pilot.py`
-- `tests/test_repo_triage.py`
-- `tests/test_subscriber_takeover_harness.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+- Issue: `BIG-GO-1`
+- Goal: close out the residual `src/bigclaw` Python sweep by validating the current branch state and locking in a regression guard for the now Python-free tree.
+- Current repo state on entry: the assigned workspace bootstrapped into a partial promisor checkout, so the implementation is limited to issue-scoped audit artifacts and a targeted Go regression guard on top of `main`.
 
 ## Plan
-1. Fetch and check out the actual repository contents from `origin`.
-2. Inspect the candidate Python files and repo references to determine which can be deleted, replaced by Go commands, or reduced to shims.
-3. Implement the smallest scoped changes that remove physical Python assets where feasible.
-4. Run targeted validation commands covering touched Go commands/tests and any compatibility paths left behind.
+1. Verify the live tree no longer contains physical Python files, with explicit focus on `src/bigclaw` and the historical residual directories.
+2. Add a `BIG-GO-1` regression guard in Go so future changes cannot silently reintroduce Python files under `src/bigclaw` or the broader repository.
+3. Record the closeout evidence and exact validation commands in a lane-specific report.
+4. Run the targeted inventory commands and Go regression test.
 5. Commit and push the issue branch.
 
 ## Acceptance
-- Enumerate which candidate Python files were covered in this sweep.
-- Remove, migrate, or replace Python files with Go implementations/commands wherever feasible.
-- Any unavoidable residual Python must be reduced to a thin compatibility layer with explicit deletion conditions documented inline or nearby.
-- Record exact validation commands and their outcomes.
-- Note residual risks only if they remain after targeted validation.
+- Repository-wide physical `.py` files remain at `0`.
+- `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` remain free of physical Python files.
+- The Go/native replacement paths for the removed Python surface remain present.
+- Exact validation commands and outcomes are recorded for this issue.
+- The diff stays scoped to `BIG-GO-1` audit and regression-guard artifacts.
 
 ## Validation
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestLiveShadowBundleSurface'`
-  - Result: `ok  	bigclaw-go/internal/regression	0.179s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - Result: `14 passed`
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
