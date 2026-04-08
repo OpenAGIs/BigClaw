@@ -275,49 +275,90 @@ func TestRunAllUsesGoBundleCommandsAndDefaultsHoldMode(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, "bin"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	stubGo := `#!/usr/bin/env python3
-import json, pathlib, sys
-args = sys.argv[1:]
-if args[:4] == ['run', './cmd/bigclawctl', 'automation', 'e2e'] or (len(args) >= 4 and args[0] == 'run' and args[1].endswith('/cmd/bigclawctl') and args[2] == 'automation' and args[3] == 'e2e'):
-    sub = args[4]
-    if sub == 'run-task-smoke':
-        report_path = pathlib.Path(args[args.index('--report-path') + 1])
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
-        sys.exit(0)
-    if sub == 'export-validation-bundle':
-        root = pathlib.Path(args[args.index('--go-root') + 1])
-        bundle_dir = root / args[args.index('--bundle-dir') + 1]
-        bundle_dir.mkdir(parents=True, exist_ok=True)
-        calls_path = root / 'calls.jsonl'
-        gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
-        payload = {
-            'gate_exists': gate_path.exists(),
-            'run_broker': args[args.index('--run-broker') + 1],
-            'broker_backend': args[args.index('--broker-backend') + 1],
-            'broker_report_path': args[args.index('--broker-report-path') + 1],
-            'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
-        }
-        with calls_path.open('a', encoding='utf-8') as handle:
-            handle.write(json.dumps(payload) + '\n')
-        sys.exit(0)
-    if sub == 'continuation-scorecard':
-        output = pathlib.Path(args[args.index('--output') + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
-        sys.exit(0)
-    if sub == 'continuation-policy-gate':
-        mode = args[args.index('--enforcement-mode') + 1]
-        output = pathlib.Path(args[args.index('--output') + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps({'enforcement': {'mode': mode}, 'status': 'policy-go', 'recommendation': 'go'}), encoding='utf-8')
-        sys.exit(0)
-if args[:2] == ['run', './scripts/e2e/broker_bootstrap_summary.go'] or (len(args) >= 2 and args[0] == 'run' and args[1].endswith('/scripts/e2e/broker_bootstrap_summary.go')):
-    output = pathlib.Path(args[args.index('--output') + 1])
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text('{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\n', encoding='utf-8')
-    sys.exit(0)
-raise SystemExit(f'unexpected go args: {args}')
+	stubGo := `#!/bin/sh
+set -eu
+
+flag_value() {
+  key="$1"
+  shift
+  while [ "$#" -gt 0 ]; do
+    if [ "$1" = "$key" ]; then
+      if [ "$#" -lt 2 ]; then
+        return 1
+      fi
+      printf '%s\n' "$2"
+      return 0
+    fi
+    shift
+  done
+  return 1
+}
+
+write_json_file() {
+  path="$1"
+  body="$2"
+  mkdir -p "$(dirname "$path")"
+  printf '%s\n' "$body" >"$path"
+}
+
+if [ "$#" -ge 5 ] && [ "$1" = "run" ] && [ "$3" = "automation" ] && [ "$4" = "e2e" ]; then
+  case "$2" in
+    ./cmd/bigclawctl|*/cmd/bigclawctl)
+      sub="$5"
+      shift 5
+      case "$sub" in
+        run-task-smoke)
+          report_path="$(flag_value --report-path "$@")"
+          write_json_file "$report_path" '{"status":"succeeded","all_ok":true}'
+          exit 0
+          ;;
+        export-validation-bundle)
+          root="$(flag_value --go-root "$@")"
+          bundle_dir_rel="$(flag_value --bundle-dir "$@")"
+          mkdir -p "$root/$bundle_dir_rel"
+          calls_path="$root/calls.jsonl"
+          gate_path="$root/bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json"
+          gate_exists=false
+          if [ -f "$gate_path" ]; then
+            gate_exists=true
+          fi
+          run_broker="$(flag_value --run-broker "$@")"
+          broker_backend="$(flag_value --broker-backend "$@")"
+          broker_report_path="$(flag_value --broker-report-path "$@")"
+          broker_bootstrap_summary_path="$(flag_value --broker-bootstrap-summary-path "$@")"
+          printf '{"gate_exists":%s,"run_broker":"%s","broker_backend":"%s","broker_report_path":"%s","broker_bootstrap_summary_path":"%s"}\n' \
+            "$gate_exists" "$run_broker" "$broker_backend" "$broker_report_path" "$broker_bootstrap_summary_path" >>"$calls_path"
+          exit 0
+          ;;
+        continuation-scorecard)
+          output="$(flag_value --output "$@")"
+          write_json_file "$output" '{"summary":{},"shared_queue_companion":{"available":true}}'
+          exit 0
+          ;;
+		continuation-policy-gate)
+			mode="$(flag_value --enforcement-mode "$@")"
+			output="$(flag_value --output "$@")"
+			write_json_file "$output" "{\"enforcement\": {\"mode\": \"$mode\"}, \"status\": \"policy-go\", \"recommendation\": \"go\"}"
+			exit 0
+			;;
+      esac
+      ;;
+  esac
+fi
+
+if [ "$#" -ge 2 ] && [ "$1" = "run" ]; then
+  case "$2" in
+    ./scripts/e2e/broker_bootstrap_summary.go|*/scripts/e2e/broker_bootstrap_summary.go)
+      shift 2
+      output="$(flag_value --output "$@")"
+      write_json_file "$output" '{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}'
+      exit 0
+      ;;
+  esac
+fi
+
+printf 'unexpected go args: %s\n' "$*" >&2
+exit 1
 `
 	if err := os.WriteFile(filepath.Join(root, "bin/go"), []byte(stubGo), 0o755); err != nil {
 		t.Fatal(err)

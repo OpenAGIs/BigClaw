@@ -26,6 +26,20 @@ func TestAutomationMixedWorkloadMatrixBuildsReport(t *testing.T) {
 				t.Fatalf("decode task: %v", err)
 			}
 			id := task["id"].(string)
+			entrypoint, _ := task["entrypoint"].(string)
+			switch {
+			case strings.Contains(id, "gpu"):
+				if entrypoint != "sh -c 'echo gpu via ray'" {
+					t.Fatalf("expected shell-native gpu entrypoint, got %q", entrypoint)
+				}
+			case strings.Contains(id, "required-ray"):
+				if entrypoint != "sh -c 'echo required ray'" {
+					t.Fatalf("expected shell-native required-ray entrypoint, got %q", entrypoint)
+				}
+			}
+			if strings.Contains(entrypoint, "python") {
+				t.Fatalf("mixed workload task should not require python: %q", entrypoint)
+			}
 			expected := "local"
 			switch {
 			case strings.Contains(id, "browser"), strings.Contains(id, "risk"):

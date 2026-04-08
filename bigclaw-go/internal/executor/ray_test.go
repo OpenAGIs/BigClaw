@@ -36,7 +36,7 @@ func TestRayRunnerExecuteUsesJobsAPI(t *testing.T) {
 		t.Fatalf("parse server url: %v", err)
 	}
 	runner := NewRayRunnerWithClient(RayConfig{Address: server.URL, PollInterval: time.Millisecond, HTTPTimeout: time.Second}, server.Client(), parsed)
-	result := runner.Execute(context.Background(), domain.Task{ID: "OPE-182", Title: "run on ray", Entrypoint: "python app.py"})
+	result := runner.Execute(context.Background(), domain.Task{ID: "OPE-182", Title: "run on ray", Entrypoint: "sh -c 'echo hello from ray'"})
 	if !result.Success {
 		t.Fatalf("expected success, got %+v", result)
 	}
