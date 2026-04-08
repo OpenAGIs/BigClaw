@@ -30,3 +30,4 @@
 - 2026-04-09: Added `reports/BIG-GO-144-validation.md` and `reports/BIG-GO-144-status.json` so the lane matches the repo-root reporting format used by adjacent Python-sweep issues.
 - 2026-04-09: Reconciled the repo-root metadata to the current pushed branch head `b8a62e1b`.
 - 2026-04-09: Corrected the repo-root metadata again so the recorded branch head matches `dd131b03`.
+- 2026-04-09: Replaced the self-referential `latest_commit` status field with stable commit-chain bookkeeping to stop further metadata churn.

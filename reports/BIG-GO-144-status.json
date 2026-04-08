@@ -6,8 +6,13 @@
   },
   "branch": {
     "name": "symphony/BIG-GO-144",
-    "latest_commit": "dd131b03",
     "push_target": "origin/symphony/BIG-GO-144"
+  },
+  "commits": {
+    "implementation": "35916c5a",
+    "metadata_followup": "b8a62e1b",
+    "metadata_reconciliation": "dd131b03",
+    "current_artifact_revision_note": "Status metadata records the stable lane commit chain rather than a self-referential mutable branch tip."
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-144-validation.md",

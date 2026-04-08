@@ -92,9 +92,11 @@ ok  	bigclaw-go/internal/regression	3.213s
 ## Git
 
 - Branch: `symphony/BIG-GO-144`
-- Published lane commit before metadata follow-up: `35916c5a`
-- Published metadata follow-up commit: `b8a62e1b`
-- Published metadata reconciliation commit: `dd131b03`
+- Implementation commit: `35916c5a`
+- Metadata follow-up commit: `b8a62e1b`
+- Metadata reconciliation commit: `dd131b03`
+- Current artifact revision note: the repo-root metadata records the stable lane
+  commit chain instead of a mutable self-referential branch-tip field.
 - Push target: `origin/symphony/BIG-GO-144`
 
 ## Residual Risk
