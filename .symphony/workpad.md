@@ -1,41 +1,33 @@
-# BIG-GO-1577 Workpad
+# BIG-GO-123 Workpad
 
 ## Context
-- Issue: `BIG-GO-1577`
-- Goal: perform a Go-only residual Python sweep over the specified candidate files, preferring deletion or Go replacements; if removal is not yet possible, reduce Python to a thin compatibility shim and document deletion conditions.
-- Current repo state on entry: workspace contains only `.git` metadata and no checked-out tree yet; repository content must be fetched from `origin` before code changes.
+- Issue: `BIG-GO-123`
+- Title: `Residual tests Python sweep P`
+- Goal: add scoped regression evidence for the already-retired parallel-validation Python test slice so the repository keeps that residual test surface Go-only.
 
 ## Scope
-- `src/bigclaw/cost_control.py`
-- `src/bigclaw/mapping.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/roadmap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `tests/test_design_system.py`
-- `tests/test_live_shadow_bundle.py`
-- `tests/test_pilot.py`
-- `tests/test_repo_triage.py`
-- `tests/test_subscriber_takeover_harness.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+- `tests/test_parallel_validation_bundle.py`
+- `tests/test_validation_bundle_continuation_scorecard.py`
+- `tests/test_followup_digests.py`
+- `tests/test_parallel_refill.py`
+- `bigclaw-go/internal/regression/big_go_123_parallel_test_sweep_p_test.go`
+- `bigclaw-go/docs/reports/big-go-123-parallel-test-sweep-p.md`
 
 ## Plan
-1. Fetch and check out the actual repository contents from `origin`.
-2. Inspect the candidate Python files and repo references to determine which can be deleted, replaced by Go commands, or reduced to shims.
-3. Implement the smallest scoped changes that remove physical Python assets where feasible.
-4. Run targeted validation commands covering touched Go commands/tests and any compatibility paths left behind.
-5. Commit and push the issue branch.
+1. Confirm the targeted legacy Python tests are absent and identify the current Go-native report and contract coverage that replaced them.
+2. Add a narrow regression guard that asserts the retired Python paths stay absent and that the replacement Go/report surfaces remain present.
+3. Add the issue report documenting the sweep scope, replacement paths, and exact validation commands/results.
+4. Run targeted validation for the new regression guard and the underlying report-contract packages.
+5. Commit the scoped changes and push the issue branch to the remote.
 
 ## Acceptance
-- Enumerate which candidate Python files were covered in this sweep.
-- Remove, migrate, or replace Python files with Go implementations/commands wherever feasible.
-- Any unavoidable residual Python must be reduced to a thin compatibility layer with explicit deletion conditions documented inline or nearby.
-- Record exact validation commands and their outcomes.
-- Note residual risks only if they remain after targeted validation.
+- The targeted parallel-validation Python tests are explicitly documented as retired in this lane.
+- A Go regression test locks the slice by checking both deleted Python paths and current replacement surfaces.
+- The lane report captures scope, replacements, and validation evidence for `BIG-GO-123`.
+- Exact validation commands and results are recorded.
+- Changes remain limited to this issue slice.
 
 ## Validation
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestLiveShadowBundleSurface'`
-  - Result: `ok  	bigclaw-go/internal/regression	0.179s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - Result: `14 passed`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO123ParallelTestSweepP(ResidualPythonTestsStayAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestParallelValidationMatrixDocsStayAligned|TestSharedQueueCompanionSummaryStaysAligned|TestLane8ValidationBundleContinuationScorecardStaysAligned|TestLane8FollowupDigestsStayAligned'`
+- `cd bigclaw-go && go test -count=1 ./internal/refill -run 'TestParallelIssueQueueRepoFixtureSelectionStaysAligned'`
