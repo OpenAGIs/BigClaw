@@ -89,7 +89,7 @@ ok  	bigclaw-go/internal/regression	5.144s
 
 ## Git
 
-- Commits: `657f6105`, `2dfd472e`, `5d8f48cc`
+- Commits: lane implementation and closeout metadata were pushed to `origin/main`; read the current pushed tip from `git rev-parse --short HEAD`
 - Push: `git push origin main`
 
 ## Residual Risk
