@@ -1,0 +1,56 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1584",
+    "title": "Strict bucket lane 1584: tests/*.py bucket B",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1584",
+    "baseline_commit": "main",
+    "latest_commit": "HEAD",
+    "push_target": "origin/BIG-GO-1584",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1584?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1584-tests-bucket-b.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1584_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1584-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "tests_bucket_b_py_files_before": 0,
+    "tests_bucket_b_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "tests_bucket_b": []
+  },
+  "replacement_paths": [
+    "bigclaw-go/internal/designsystem/designsystem_test.go",
+    "bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
+    "bigclaw-go/internal/pilot/rollout_test.go",
+    "bigclaw-go/internal/triage/repo_test.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_takeover_matrix_command_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find tests -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1584(RepositoryHasNoPythonFiles|StrictBucketBTestsStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesStrictBucketState)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "tests_bucket_b_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.221s"
+    }
+  },
+  "pull_request": {
+    "number": null,
+    "url": null,
+    "state": "not_opened",
+    "title": null,
+    "draft": null
+  }
+}

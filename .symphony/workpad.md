@@ -1,27 +1,37 @@
-# BIG-GO-142 Workpad
+# BIG-GO-1584 Workpad
 
 ## Plan
 
-1. Inspect the existing regression and report patterns for residual Python-heavy test sweeps to determine the narrowest lane-specific change shape for `BIG-GO-142`.
-2. Add only the artifacts required for this lane, keeping scope to residual test directories and their Go/native replacements.
-3. Run targeted validation commands, record exact commands and outcomes in lane artifacts, then commit and push the branch.
+1. Inspect the existing strict test-bucket regression/report patterns and
+   confirm the current `tests/*.py` bucket-B baseline in this checkout.
+2. Add only the lane-specific `BIG-GO-1584` artifacts needed to prove the
+   repository remains Python-free and that the retained Go-native test owners
+   for bucket B still exist.
+3. Run targeted validation commands, record exact commands and outcomes in the
+   issue artifacts, then commit and push the branch.
 
 ## Acceptance
 
-- `BIG-GO-142` has lane-specific artifacts documenting the residual Python-heavy test sweep scope.
-- Regression coverage enforces the intended test-directory Python-free baseline and any retained Go/native replacement surfaces this lane depends on.
+- `BIG-GO-1584` adds lane-specific proof for the strict `tests/*.py` bucket-B
+  sweep without broadening scope beyond the issue artifacts.
+- Regression coverage proves the repository remains physically Python-free and
+  that the bucket-B Go/native replacement paths remain available.
 - Exact validation commands and results are captured.
-- The resulting change is committed and pushed to the remote branch.
+- The resulting change is committed and pushed to the remote `BIG-GO-1584`
+  branch.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO142(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1584 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1584/tests -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1584/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1584(RepositoryHasNoPythonFiles|StrictBucketBTestsStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesStrictBucketState)$'`
 
 ## Execution Notes
 
-- 2026-04-09: Initial inspection shows the repository is already on a zero-physical-Python baseline, so this lane is expected to add documentation and regression hardening rather than perform in-branch `.py` deletions.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` produced no output.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` produced no output.
-- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO142(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 5.285s`.
+- 2026-04-09: Initial inspection showed the repository already had zero
+  physical `.py` files and no `tests/` directory, so this lane is implemented
+  as exact-ledger documentation plus regression hardening rather than an
+  in-branch deletion batch.
+- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1584 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` produced no output.
+- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1584/tests -type f -name '*.py' 2>/dev/null | sort` produced no output.
+- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1584/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1584(RepositoryHasNoPythonFiles|StrictBucketBTestsStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesStrictBucketState)$'` returned `ok  	bigclaw-go/internal/regression	3.221s`.
