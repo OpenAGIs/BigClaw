@@ -26,7 +26,10 @@ reviewer evidence that still embedded inline-Python entrypoints outside the
 main live-validation bundle. A third follow-up then removed Python-specific
 bootstrap-template wording from the active Symphony workspace bootstrap guide.
 A fourth follow-up then normalized the active refill queue planning guidance to
-use Go-first legacy wording instead of Python-specific path language.
+use Go-first legacy wording instead of Python-specific path language. A fifth
+follow-up then normalized the maintained legacy-mainline compatibility manifest
+to use generic legacy runtime wording instead of Python-specific mainline
+phrasing.
 
 ## Active Replacement Paths
 
@@ -36,6 +39,7 @@ use Go-first legacy wording instead of Python-specific path language.
 - Historical cutover validation note: archival-only wording in `docs/go-mainline-cutover-handoff.md`
 - Bootstrap template guidance: `docs/symphony-repo-bootstrap-template.md`
 - Refill queue guidance: `docs/parallel-refill-queue.md`
+- Legacy mainline compatibility manifest: `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 - Migration shadow compare: `go run ./cmd/bigclawctl automation migration shadow-compare`
 - Migration shadow matrix: `go run ./cmd/bigclawctl automation migration shadow-matrix`
 - Migration shadow scorecard: `go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
@@ -75,6 +79,8 @@ use Go-first legacy wording instead of Python-specific path language.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python paths are migration-only unless explicitly marked otherwise|legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise' docs/parallel-refill-queue.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'legacy Python runtime surface|legacy pre-cutover runtime surface' bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -285,6 +291,45 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	3.237s
+```
+
+### Compatibility manifest scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'legacy Python runtime surface|legacy pre-cutover runtime surface' bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json
+```
+
+Result:
+
+```text
+3:  "guidance": "bigclaw-go is the sole implementation mainline for active development; the legacy pre-cutover runtime surface remains migration-only.",
+7:      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy pre-cutover runtime surface remains migration-only."
+11:      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy pre-cutover runtime surface remains migration-only."
+15:      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy pre-cutover runtime surface remains migration-only."
+19:      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy pre-cutover runtime surface remains migration-only."
+23:      "legacy_mainline_status": "bigclaw-go is the sole implementation mainline for active development; the legacy pre-cutover runtime surface remains migration-only."
+```
+
+Observed result:
+
+```text
+Only the normalized legacy pre-cutover runtime wording matched.
+```
+
+### Compatibility manifest regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	3.234s
 ```
 
 ### GitHub publication visibility

@@ -26,6 +26,12 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 	if !strings.Contains(manifest.Guidance, "sole implementation mainline") || !strings.Contains(manifest.Guidance, "migration-only") {
 		t.Fatalf("unexpected guidance: %q", manifest.Guidance)
 	}
+	if strings.Contains(manifest.Guidance, "legacy Python runtime surface") {
+		t.Fatalf("manifest guidance should use Go-first legacy wording, got %q", manifest.Guidance)
+	}
+	if !strings.Contains(manifest.Guidance, "legacy pre-cutover runtime surface") {
+		t.Fatalf("manifest guidance should keep the normalized legacy runtime wording, got %q", manifest.Guidance)
+	}
 
 	expectedReplacements := map[string]string{
 		"runtime":       "bigclaw-go/internal/worker/runtime.go",
@@ -44,6 +50,12 @@ func TestLegacyMainlineCompatibilityManifestStaysAligned(t *testing.T) {
 		}
 		if !strings.Contains(got.LegacyMainlineStatus, "sole implementation mainline") {
 			t.Fatalf("module %s legacy status missing mainline guidance: %+v", module, got)
+		}
+		if strings.Contains(got.LegacyMainlineStatus, "legacy Python runtime surface") {
+			t.Fatalf("module %s legacy status should not use Python-specific runtime wording: %+v", module, got)
+		}
+		if !strings.Contains(got.LegacyMainlineStatus, "legacy pre-cutover runtime surface") {
+			t.Fatalf("module %s legacy status missing normalized legacy runtime wording: %+v", module, got)
 		}
 	}
 }

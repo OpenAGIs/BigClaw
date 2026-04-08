@@ -12,6 +12,7 @@ The sweep is limited to:
 - bootstrap operator template guidance in `docs/symphony-repo-bootstrap-template.md`
 - refill planning guidance in `docs/parallel-refill-queue.md`
 - active migration-shadow operator guidance in `docs/migration-shadow.md`
+- maintained compatibility status in `docs/reports/legacy-mainline-compatibility-manifest.json`
 - checked-in live shadow reviewer indexes in `docs/reports/live-shadow-index.md`
   and `docs/reports/live-shadow-index.json`
 - checked-in live shadow summary artifacts in `docs/reports/live-shadow-summary.json`
@@ -50,6 +51,8 @@ The active non-Python tooling surface for this lane is:
   paths generically instead of framing the active path around Python shims
 - refill planning guidance now describes legacy migration-only paths generically
   instead of framing the default repo workflow around Python-specific paths
+- maintained compatibility status now uses generic legacy runtime wording
+  instead of Python-specific mainline phrasing where archival specificity is not needed
 
 ## Validation Commands
 
@@ -64,6 +67,8 @@ The active non-Python tooling surface for this lane is:
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i '\bpython\b|workspace_bootstrap\.py|workspace_bootstrap_cli\.py' docs/symphony-repo-bootstrap-template.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python paths are migration-only unless explicitly marked otherwise|legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise' docs/parallel-refill-queue.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'legacy Python runtime surface|legacy pre-cutover runtime surface' bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
@@ -105,6 +110,12 @@ Result: only the new Go-first legacy wording matched at `docs/parallel-refill-qu
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 Result: `ok  	bigclaw-go/internal/regression	3.237s`
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'legacy Python runtime surface|legacy pre-cutover runtime surface' bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+Result: only the normalized `legacy pre-cutover runtime surface` wording matched in the manifest guidance and module status entries
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+Result: `ok  	bigclaw-go/internal/regression	3.234s`
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 Result: not logged into any GitHub hosts, exit code `1`
