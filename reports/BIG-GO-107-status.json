@@ -29,7 +29,10 @@
     }
   ],
   "commits": {
-    "implementation": "652dcb300ed5840d2160d0fa57a365052bdc5006"
+    "implementation": "652dcb300ed5840d2160d0fa57a365052bdc5006",
+    "closeout_artifacts": "c5a7062876efaa0e1b97c11722b5755f8744fe3c"
   },
-  "branch": "BIG-GO-107"
+  "branch": "BIG-GO-107",
+  "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-107?expand=1",
+  "pr_helper_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-107"
 }
