@@ -100,7 +100,6 @@ ok  	bigclaw-go/internal/regression	4.631s
 
 - Branch: `BIG-GO-1583`
 - Baseline HEAD before lane commit: `cf4219c9`
-- Latest pushed HEAD before PR creation: `6d60438c`
 - Push target: `origin/BIG-GO-1583`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1583?expand=1`
 - PR creation URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1583`
