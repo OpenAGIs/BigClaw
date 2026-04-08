@@ -37,11 +37,12 @@
 - `.symphony/workpad.md` exists before code changes and reflects the active lane plan.
 - The sweep stays scoped to `BIG-GO-101` and only adds migration evidence/regression hardening for the selected retired `src/bigclaw` modules.
 - The repository gains a dedicated structured Go replacement ledger and a matching lane report for the selected modules.
+- The repository carries root-level validation and status artifacts for `BIG-GO-101`.
 - Targeted tests pass and exact commands/results are recorded.
 - The branch is committed and pushed to `origin/BIG-GO-101`.
 
 ## Validation
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`
-  - Result: `ok  	bigclaw-go/internal/regression	3.215s`
+  - Result: `ok  	bigclaw-go/internal/regression	4.990s`
 - `cd bigclaw-go && go test -count=1 ./internal/migration`
   - Result: `?   	bigclaw-go/internal/migration	[no test files]`

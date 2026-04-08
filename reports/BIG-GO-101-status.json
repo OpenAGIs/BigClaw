@@ -1,0 +1,51 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-101",
+    "title": "Residual src/bigclaw Python sweep G",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-101",
+    "baseline_commit": "11d9f75d",
+    "latest_commit": "20973903ad3e916bf259dbf1b3a3c30311ba3e92",
+    "push_target": "origin/BIG-GO-101",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-101?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-101-residual-src-bigclaw-python-sweep-g.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_101_residual_src_bigclaw_sweep_g_test.go",
+    "validation_report": "reports/BIG-GO-101-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "src_bigclaw_sweep_g_py_files_before": 0,
+    "src_bigclaw_sweep_g_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "src_bigclaw_sweep_g": []
+  },
+  "structured_registries": [
+    "bigclaw-go/internal/migration/legacy_reporting_ops_modules.go",
+    "bigclaw-go/internal/migration/legacy_policy_governance_modules.go",
+    "bigclaw-go/internal/migration/legacy_operator_product_modules.go",
+    "bigclaw-go/internal/migration/legacy_bootstrap_sync_modules.go",
+    "bigclaw-go/internal/migration/legacy_collaboration_intake_modules.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'",
+      "cd bigclaw-go && go test -count=1 ./internal/migration"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "src_bigclaw_sweep_g_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t4.990s",
+      "migration_package": "?   \tbigclaw-go/internal/migration\t[no test files]"
+    }
+  }
+}
