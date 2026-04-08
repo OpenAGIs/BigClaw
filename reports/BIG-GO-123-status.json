@@ -1,0 +1,60 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-123",
+    "title": "Residual tests Python sweep P",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "big-go-123",
+    "latest_commit": "9bd5e253 BIG-GO-123 add parallel residual test sweep guard",
+    "push_target": "origin/big-go-123"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-123-validation.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-123-parallel-test-sweep-p.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_123_parallel_test_sweep_p_test.go"
+  },
+  "inventory": {
+    "retired_python_tests": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_123_parallel_test_sweep_p_test.go",
+    "bigclaw-go/docs/reports/big-go-123-parallel-test-sweep-p.md",
+    "bigclaw-go/internal/regression/parallel_validation_matrix_docs_test.go",
+    "bigclaw-go/docs/reports/parallel-validation-matrix.md",
+    "bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go",
+    "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
+    "bigclaw-go/docs/reports/tracing-backend-follow-up-digest.md",
+    "bigclaw-go/docs/reports/telemetry-pipeline-controls-follow-up-digest.md",
+    "bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md",
+    "bigclaw-go/internal/refill/queue_repo_fixture_test.go",
+    "docs/parallel-refill-queue.json"
+  ],
+  "validation": {
+    "commands": [
+      "for path in tests/test_parallel_validation_bundle.py tests/test_validation_bundle_continuation_scorecard.py tests/test_followup_digests.py tests/test_parallel_refill.py; do if [ -e \"$path\" ]; then echo \"present:$path\"; else echo \"absent:$path\"; fi; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO123ParallelTestSweepP(ResidualPythonTestsStayAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestParallelValidationMatrixDocsStayAligned|TestSharedQueueCompanionSummaryStaysAligned|TestLane8ValidationBundleContinuationScorecardStaysAligned|TestLane8FollowupDigestsStayAligned'",
+      "cd bigclaw-go && go test -count=1 ./internal/refill -run 'TestParallelIssueQueueRepoFixtureSelectionStaysAligned'"
+    ],
+    "results": {
+      "targeted_python_tests": [
+        "absent:tests/test_parallel_validation_bundle.py",
+        "absent:tests/test_validation_bundle_continuation_scorecard.py",
+        "absent:tests/test_followup_digests.py",
+        "absent:tests/test_parallel_refill.py"
+      ],
+      "sweep_regression_guard": "ok  \tbigclaw-go/internal/regression\t6.095s",
+      "replacement_surface_regressions": "ok  \tbigclaw-go/internal/regression\t5.992s",
+      "parallel_refill_fixture": "ok  \tbigclaw-go/internal/refill\t3.079s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The targeted Python tests were already absent in this workspace before BIG-GO-123 changes."
+  },
+  "notes": [
+    "This lane hardens the retired parallel-validation Python test slice with a focused regression guard and lane report.",
+    "The workspace baseline already reflected the deletion, so the lane records and locks replacement evidence rather than performing a fresh in-branch Python removal."
+  ]
+}
