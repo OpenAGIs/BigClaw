@@ -89,8 +89,8 @@ ok  	bigclaw-go/internal/regression	5.144s
 
 ## Git
 
-- Commit: pending
-- Push: pending
+- Commit: `657f6105`
+- Push: `git push origin main`
 
 ## Residual Risk
 
