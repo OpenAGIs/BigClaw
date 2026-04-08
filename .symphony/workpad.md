@@ -25,6 +25,8 @@
 
 ## Results
 
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+  - no output
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO112ResidualTestContractSweepM(ManifestMatchesRetiredTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'`
   - `ok  	bigclaw-go/internal/regression	4.466s`
 - `cd bigclaw-go && go test -count=1 ./internal/migration ./internal/regression`
@@ -32,7 +34,14 @@
   - `FAIL	bigclaw-go/internal/regression`
   - Unrelated existing failure: `TestLiveShadowScorecardBundleStaysAligned` expected a different live-shadow generator script string and reported `GeneratorScript:go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
 - `git status --short`
-  - `M .symphony/workpad.md`
-  - `?? bigclaw-go/docs/reports/big-go-112-residual-test-contract-sweep-m.md`
-  - `?? bigclaw-go/internal/migration/residual_test_contract_sweep_m.go`
-  - `?? bigclaw-go/internal/regression/big_go_112_residual_test_contract_sweep_m_test.go`
+  - no output
+- `git rev-parse HEAD`
+  - `e061c089094874e4edb3089dab7904ce42e04e69`
+- `git rev-parse origin/symphony/BIG-GO-112`
+  - `e061c089094874e4edb3089dab7904ce42e04e69`
+- `bash scripts/ops/bigclawctl github-sync status --json`
+  - `status: ok`
+  - `synced: true`
+  - `branch: symphony/BIG-GO-112`
+  - `local_sha: e061c089094874e4edb3089dab7904ce42e04e69`
+  - `remote_sha: e061c089094874e4edb3089dab7904ce42e04e69`
