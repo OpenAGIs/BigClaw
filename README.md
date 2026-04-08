@@ -105,12 +105,12 @@ curl localhost:8080/healthz
 bash ../scripts/ops/bigclawctl github-sync status --json
 ```
 
-## Legacy Python smoke verify
+## Go smoke verify helper
 
-Use this only when validating a frozen migration-reference path:
+Use the repo-native shell helper when you want a quick Go-mainline smoke pass:
 
 ```bash
-PYTHONPATH=src python3 scripts/dev_smoke.py
+bash scripts/dev-smoke
 ```
 
 ## Quality gates
@@ -152,7 +152,8 @@ Repository: https://github.com/OpenAGIs/BigClaw
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
-bootstrap wrappers remain only as compatibility shims during migration.
+bootstrap wrappers have been retired in favor of shell entrypoints and the
+Go-native `bigclawctl` surface.
 
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
