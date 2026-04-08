@@ -1524,7 +1524,7 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 			"automated_rollback_trigger": automationBool(lookupMap(rollbackReport, "summary", "automated_rollback_trigger")),
 			"distinctions":               lookupMap(rollbackReport, "summary", "distinctions"),
 			"issue":                      lookupMap(rollbackReport, "issue"),
-			"digest_path":                rollbackReport["digest_path"],
+			"digest_path":                firstNonEmptyString(lookupMap(rollbackReport, "reviewer_path", "digest_path"), lookupMap(rollbackReport, "shared_guardrail_summary", "digest_path"), rollbackReport["digest_path"]),
 			"summary_path":               relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
 		},
 		"compare_trace_id":    compareReport["trace_id"],
@@ -1657,8 +1657,7 @@ func renderLiveShadowIndex(latest map[string]any, recentRuns []map[string]any, r
 	}
 	lines = append(lines, "", "## Latest run summary", "")
 	lines = append(lines, fmt.Sprintf("- Compare trace: `%v`", latest["compare_trace_id"]))
-	matrixTraceIDs, _ := latest["matrix_trace_ids"].([]any)
-	lines = append(lines, fmt.Sprintf("- Matrix trace count: `%d`", len(matrixTraceIDs)))
+	lines = append(lines, fmt.Sprintf("- Matrix trace count: `%d`", automationSliceLen(latest["matrix_trace_ids"])))
 	summary, _ := latest["summary"].(map[string]any)
 	for _, item := range []struct{ Key, Label string }{
 		{"total_evidence_runs", "Evidence runs"},
@@ -1674,7 +1673,7 @@ func renderLiveShadowIndex(latest map[string]any, recentRuns []map[string]any, r
 	rollback, _ := latest["rollback_trigger_surface"].(map[string]any)
 	lines = append(lines, fmt.Sprintf("- Rollback trigger surface status: `%v`", rollback["status"]))
 	lines = append(lines, fmt.Sprintf("- Rollback automation boundary: `%v`", rollback["automation_boundary"]))
-	lines = append(lines, fmt.Sprintf("- Rollback trigger distinctions: `%v`", rollback["distinctions"]))
+	lines = append(lines, fmt.Sprintf("- Rollback trigger distinctions: `%s`", renderAutomationDistinctions(rollback["distinctions"])))
 	lines = append(lines, "", "## Parity drift rollup", "")
 	rollupSummary, _ := rollup["summary"].(map[string]any)
 	lines = append(lines, fmt.Sprintf("- Status: `%v`", rollup["status"]))
@@ -1697,9 +1696,11 @@ func renderLiveShadowIndex(latest map[string]any, recentRuns []map[string]any, r
 	lines = append(lines, "", "## Parallel Follow-up Index", "")
 	lines = append(lines, "- `docs/reports/parallel-follow-up-index.md` is the canonical index for the")
 	lines = append(lines, "  remaining live-shadow, rollback, and corpus-coverage follow-up digests.")
-	lines = append(lines, "- Use `docs/reports/parallel-validation-matrix.md` first when a shadow review")
-	lines = append(lines, "  needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the")
-	lines = append(lines, "  shadow evidence bundle.")
+	lines = append(lines, "- For the two primary caveat tracks referenced by this bundle, see")
+	lines = append(lines, "  `OPE-266` / `BIG-PAR-092` in")
+	lines = append(lines, "  `docs/reports/live-shadow-comparison-follow-up-digest.md` and")
+	lines = append(lines, "  `OPE-254` / `BIG-PAR-088` in")
+	lines = append(lines, "  `docs/reports/rollback-safeguard-follow-up-digest.md`.")
 	lines = append(lines, "")
 	return strings.Join(lines, "\n")
 }
@@ -2195,6 +2196,37 @@ func automationInt(value any, fallback int) int {
 func automationBool(value any) bool {
 	typed, _ := value.(bool)
 	return typed
+}
+
+func firstNonEmptyString(values ...any) string {
+	for _, value := range values {
+		if text := trim(fmt.Sprint(value)); text != "" && text != "<nil>" {
+			return text
+		}
+	}
+	return ""
+}
+
+func automationSliceLen(value any) int {
+	switch typed := value.(type) {
+	case []any:
+		return len(typed)
+	case []string:
+		return len(typed)
+	default:
+		return 0
+	}
+}
+
+func renderAutomationDistinctions(value any) string {
+	switch typed := value.(type) {
+	case map[string]any:
+		return fmt.Sprintf("{'blockers': %v, 'warnings': %v, 'manual_only_paths': %v}", typed["blockers"], typed["warnings"], typed["manual_only_paths"])
+	case map[string]int:
+		return fmt.Sprintf("{'blockers': %d, 'warnings': %d, 'manual_only_paths': %d}", typed["blockers"], typed["warnings"], typed["manual_only_paths"])
+	default:
+		return fmt.Sprint(value)
+	}
 }
 
 func cloneMap(value map[string]any) map[string]any {

@@ -1,7 +1,7 @@
 # Live Shadow Mirror Index
 
 - Latest run: `20260313T085655Z`
-- Generated at: `2026-03-17T02:35:33.529497Z`
+- Generated at: `2026-04-08T16:49:43.599711Z`
 - Status: `parity-ok`
 - Severity: `none`
 - Bundle: `docs/reports/live-shadow-runs/20260313T085655Z`
@@ -39,14 +39,14 @@
 
 ## Workflow closeout commands
 
-- `cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty`
-- `cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 - `cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned`
 - `git push origin <branch> && git log -1 --stat`
 
 ## Recent bundles
 
-- `20260313T085655Z` · `parity-ok` · `none` · `2026-03-17T02:35:33.529497Z` · `docs/reports/live-shadow-runs/20260313T085655Z`
+- `20260313T085655Z` · `parity-ok` · `none` · `2026-04-08T16:49:43.599711Z` · `docs/reports/live-shadow-runs/20260313T085655Z`
 
 ## Linked migration docs
 
@@ -59,6 +59,8 @@
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining live-shadow, rollback, and corpus-coverage follow-up digests.
-- Use `docs/reports/parallel-validation-matrix.md` first when a shadow review
-  needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the
-  shadow evidence bundle.
+- For the two primary caveat tracks referenced by this bundle, see
+  `OPE-266` / `BIG-PAR-092` in
+  `docs/reports/live-shadow-comparison-follow-up-digest.md` and
+  `OPE-254` / `BIG-PAR-088` in
+  `docs/reports/rollback-safeguard-follow-up-digest.md`.

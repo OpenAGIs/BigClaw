@@ -1,29 +1,29 @@
 {
-  "generated_at": "2026-03-17T02:35:33.537339Z",
-  "status": "parity-ok",
-  "window_size": 5,
-  "summary": {
-    "recent_run_count": 1,
-    "drift_detected_runs": 0,
-    "stale_runs": 0,
-    "highest_severity": "none",
-    "status_counts": {
-      "parity_ok": 1,
-      "attention_needed": 0
-    },
-    "latest_run_id": "20260313T085655Z"
-  },
+  "generated_at": "2026-04-08T16:49:43.599711Z",
   "recent_runs": [
     {
-      "run_id": "20260313T085655Z",
-      "generated_at": "2026-03-17T02:35:33.529497Z",
-      "status": "parity-ok",
-      "severity": "none",
-      "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
-      "drift_detected_count": 0,
-      "stale_inputs": 0,
       "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
+      "drift_detected_count": 0,
+      "generated_at": "2026-04-08T16:49:43.599711Z",
+      "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+      "run_id": "20260313T085655Z",
+      "severity": "none",
+      "stale_inputs": 0,
+      "status": "parity-ok",
       "summary_path": "docs/reports/live-shadow-runs/20260313T085655Z/summary.json"
     }
-  ]
+  ],
+  "status": "parity-ok",
+  "summary": {
+    "drift_detected_runs": 0,
+    "highest_severity": "none",
+    "latest_run_id": "20260313T085655Z",
+    "recent_run_count": 1,
+    "stale_runs": 0,
+    "status_counts": {
+      "attention_needed": 0,
+      "parity_ok": 1
+    }
+  },
+  "window_size": 5
 }

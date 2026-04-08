@@ -1,29 +1,34 @@
-# BIG-GO-100 Workpad
-
-## Context
-- Issue: `BIG-GO-100`
-- Goal: land a convergence sweep that preserves the practical Go-only repository state and records explicit evidence for the remaining physical Python file count.
-- Current repo state on entry: repository-wide physical `.py` file inventory is already `0`, including the priority residual directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-
-## Scope
-- `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_100_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-100-python-asset-sweep.md`
-- `reports/BIG-GO-100-status.json`
-- `reports/BIG-GO-100-validation.md`
+# BIG-GO-120 Workpad
 
 ## Plan
-1. Replace the stale workpad with issue-specific scope, acceptance, and validation targets before any code edits.
-2. Add a lane-specific regression guard and Python-asset sweep report that document the existing zero-Python baseline and required Go/native replacement paths.
-3. Run targeted inventory and regression commands, record exact commands and results, then commit and push the lane branch to `origin/main`.
+
+1. Audit the remaining migration-shadow bundle export surface and identify any paths,
+   docs, or checked-in artifacts that still depend on Python execution.
+2. Replace the `bigclaw-go/scripts/migration/export_live_shadow_bundle` Python
+   implementation with a non-Python compatibility wrapper that delegates to the
+   existing Go CLI command.
+3. Update the narrow regression/docs/artifact expectations that still pin
+   `python3 ... export_live_shadow_bundle` so they reflect the Go-native entrypoint.
+4. Run targeted regression and command tests, record exact commands and results,
+   then commit and push the branch.
 
 ## Acceptance
-- `BIG-GO-100` has a lane-specific workpad, regression guard, sweep report, status artifact, and validation report.
-- The regression guard verifies repository-wide Python file count `0`, Python-free priority residual directories, required Go/native replacement paths, and the lane report content.
-- Validation records exact commands and exact results for repository inventory, priority directory inventory, and targeted regression coverage.
-- Changes remain scoped to `BIG-GO-100` convergence artifacts only.
+
+- The repository no longer contains a Python-implemented
+  `bigclaw-go/scripts/migration/export_live_shadow_bundle` shim.
+- The supported bundle export path is Go-native via
+  `bigclawctl automation migration export-live-shadow-bundle`, with the
+  compatibility wrapper remaining non-Python.
+- Checked-in migration-shadow docs, bundle summaries, and regression tests align on
+  the Go-native command surface.
+- Targeted tests covering the migration automation command and live-shadow
+  regression surfaces pass.
 
 ## Validation
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO100(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+
+- `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'TestAutomationExportLiveShadowBundleBuildsManifest$'`
+  Result: `ok  	bigclaw-go/cmd/bigclawctl	3.119s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO1577GoReplacementPathsRemainAvailable|LiveShadowBundleSummaryAndIndexStayAligned|LiveShadowRuntimeDocsStayAligned)$'`
+  Result: `ok  	bigclaw-go/internal/regression	2.265s`
+- `find bigclaw-go/scripts/migration -maxdepth 1 -type f | sort`
+  Result: `bigclaw-go/scripts/migration/export_live_shadow_bundle`
