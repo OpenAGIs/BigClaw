@@ -66,8 +66,8 @@ Notes:
 
 ## Python asset status
 
-The repository root no longer carries physical `.py` assets. Validate the
-Go-only posture with the root bootstrap helper:
+The repository root no longer carries physical `.py` assets or Python build
+metadata. Validate the Go-only posture with the root bootstrap helper:
 
 ```bash
 bash scripts/dev_bootstrap.sh

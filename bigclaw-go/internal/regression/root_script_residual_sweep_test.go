@@ -25,6 +25,16 @@ func TestRootScriptResidualSweep(t *testing.T) {
 		}
 	}
 
+	deletedPythonBuildHelpers := []string{
+		"setup.py",
+		"pyproject.toml",
+	}
+	for _, relativePath := range deletedPythonBuildHelpers {
+		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
+			t.Fatalf("expected retired root Python build helper to be absent: %s", relativePath)
+		}
+	}
+
 	goCompatibilityFiles := []string{
 		"bigclaw-go/cmd/bigclawctl/main.go",
 		"bigclaw-go/cmd/bigclawctl/migration_commands.go",
@@ -62,6 +72,8 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 
 	readme := readRepoFile(t, repoRoot, "README.md")
 	requiredReadmeEntries := []string{
+		"The repository root no longer carries physical `.py` assets",
+		"Python build",
 		"Use this to verify the root dev smoke path:",
 		"bash scripts/ops/bigclawctl dev-smoke",
 		"bash scripts/dev_bootstrap.sh",
