@@ -8,7 +8,6 @@
     "name": "BIG-GO-135",
     "rebased_baseline_commit": "77c1143",
     "direct_landing_commit": "f3ae698",
-    "final_metadata_sync_commit": "a572f15",
     "push_targets": [
       "origin/BIG-GO-135",
       "origin/BIG-GO-135-merge",
@@ -47,7 +46,7 @@
     "method": "direct_push",
     "target_branch": "main",
     "direct_landing_commit": "f3ae698",
-    "final_metadata_sync_commit": "a572f15"
+    "followup": "metadata-only closeout commits were rebased as needed while main continued moving"
   },
   "pull_requests": [
     {
@@ -55,7 +54,6 @@
       "url": "https://github.com/OpenAGIs/BigClaw/pull/226",
       "state": "closed",
       "head_branch": "BIG-GO-135",
-      "current_branch_head_sha": "a572f15",
       "close_reason": "superseded by direct landing on main"
     },
     {
@@ -63,7 +61,6 @@
       "url": "https://github.com/OpenAGIs/BigClaw/pull/227",
       "state": "closed",
       "head_branch": "BIG-GO-135-merge",
-      "current_branch_head_sha": "a572f15",
       "close_reason": "superseded by direct landing on main"
     }
   ],

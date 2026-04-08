@@ -106,9 +106,8 @@ exit 0
 - Branch: `BIG-GO-135`
 - Rebased baseline before direct landing: `77c1143`
 - Direct landing commit on `main`: `f3ae698`
-- Final landed metadata sync commit on `main`: `a572f15`
-- Refreshed remote issue branches:
-  `origin/BIG-GO-135` and `origin/BIG-GO-135-merge` both updated to `a572f15`
+- Follow-up metadata-only closeout commits were rebased as needed while `main`
+  continued moving.
 - Push targets used during closeout:
   `origin/BIG-GO-135`, `origin/BIG-GO-135-merge`, and `origin/main`
 - Compare URL:
@@ -119,7 +118,8 @@ exit 0
 - Direct push to `main` succeeded:
   `git push origin HEAD:refs/heads/main` -> `77c1143..f3ae698`
 - Final landed metadata sync push succeeded:
-  `git push origin HEAD:refs/heads/main` -> `06d6f19..a572f15`
+  `git push origin HEAD:refs/heads/main` succeeded after rebasing the
+  metadata-only closeout commit onto the then-current `main`
 - PR `#226` was closed with a superseded note after the direct landing:
   `https://github.com/OpenAGIs/BigClaw/pull/226`
 - PR `#227` was closed with a superseded note after the direct landing:
