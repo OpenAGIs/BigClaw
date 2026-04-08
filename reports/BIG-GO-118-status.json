@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-118",
-    "latest_commit": "pending",
+    "latest_commit": "3a6cbc7d",
     "push_target": "origin/BIG-GO-118"
   },
   "artifacts": {
@@ -44,7 +44,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.200s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.192s"
     }
   },
   "blocker": {
@@ -54,6 +54,6 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `959fbc5d`.",
-    "Lane changes are committed and pushed on branch `BIG-GO-118`."
+    "Lane changes are committed and pushed on branch `BIG-GO-118` at `3a6cbc7d`."
   ]
 }
