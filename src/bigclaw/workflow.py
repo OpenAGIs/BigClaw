@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .audit_events import APPROVAL_RECORDED_EVENT
 from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
@@ -20,6 +19,7 @@ from .reports import (
     write_report,
 )
 from .scheduler import ExecutionRecord, Scheduler
+from .service import LEGACY_RUNTIME_GUIDANCE
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE

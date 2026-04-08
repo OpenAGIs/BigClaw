@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
+from .service import LEGACY_RUNTIME_GUIDANCE
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE

@@ -9,8 +9,7 @@ from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Deque, Dict, List
-
-from .deprecation import warn_legacy_runtime_surface
+import warnings
 
 
 GO_MAINLINE_REPLACEMENT = "bigclaw-go/cmd/bigclawd/main.go"
@@ -18,6 +17,20 @@ LEGACY_MAINLINE_STATUS = (
     "bigclaw-go is the sole implementation mainline for active development; "
     "service.py remains migration-only compatibility scaffolding."
 )
+LEGACY_RUNTIME_GUIDANCE = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "the legacy Python runtime surface remains migration-only."
+)
+
+
+def legacy_runtime_message(surface: str, replacement: str) -> str:
+    return f"{surface} is frozen for migration-only use. {LEGACY_RUNTIME_GUIDANCE} Use {replacement} instead."
+
+
+def warn_legacy_runtime_surface(surface: str, replacement: str) -> str:
+    message = legacy_runtime_message(surface, replacement)
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return message
 
 
 def warn_legacy_service_surface(surface: str = "python -m bigclaw serve") -> str:

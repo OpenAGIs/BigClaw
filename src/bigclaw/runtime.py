@@ -3,9 +3,9 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
 from .observability import TaskRun
+from .service import LEGACY_RUNTIME_GUIDANCE
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE

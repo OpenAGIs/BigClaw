@@ -3,8 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import RiskLevel, Task
+from .service import LEGACY_RUNTIME_GUIDANCE
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE

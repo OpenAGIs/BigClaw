@@ -1,5 +1,19 @@
-from .connectors import SourceIssue
+from dataclasses import dataclass
+from typing import Dict, List
+
 from .models import Priority, RiskLevel, Task, TaskState
+
+
+@dataclass
+class SourceIssue:
+    source: str
+    source_id: str
+    title: str
+    description: str
+    labels: List[str]
+    priority: str
+    state: str
+    links: Dict[str, str]
 
 
 def map_priority(p: str) -> Priority:

@@ -1,8 +1,8 @@
 """Legacy Python smoke check retained only for migration-reference validation."""
 
-from bigclaw.deprecation import warn_legacy_runtime_surface
 from bigclaw.models import Task
 from bigclaw.scheduler import Scheduler
+from bigclaw.service import warn_legacy_runtime_surface
 
 
 def main() -> None:

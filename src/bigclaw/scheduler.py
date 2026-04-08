@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .audit_events import (
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
@@ -23,6 +22,7 @@ from .orchestration import (
 from .reports import render_task_run_detail_page, render_task_run_report, write_report
 from .risk import RiskScore, RiskScorer
 from .runtime import ClawWorkerRuntime, ToolCallResult
+from .service import LEGACY_RUNTIME_GUIDANCE
 
 
 LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
