@@ -2,12 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-149",
     "title": "Residual auxiliary Python sweep K",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-149",
     "baseline_commit": "cfa2ec24",
-    "latest_commit": "pending",
+    "latest_commit": "98c5cbb4",
     "push_target": "origin/BIG-GO-149",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-149?expand=1"
   },
@@ -55,13 +55,13 @@
   },
   "pull_request": {
     "number": null,
-    "url": "pending",
-    "state": "pending",
-    "title": "pending",
+    "url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-149",
+    "state": "not_opened",
+    "title": "BIG-GO-149: add hidden python sweep guard",
     "draft": null,
     "mergeable": null,
-    "mergeable_state": "pending",
-    "head_sha": "pending",
+    "mergeable_state": "not_opened",
+    "head_sha": "98c5cbb415e4a868e718c0306fd5efcbdfa2f164",
     "base_sha": "cfa2ec24b07c100b9fabaf5d736d20fedf437744"
   }
 }
