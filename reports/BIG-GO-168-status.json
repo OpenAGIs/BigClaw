@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "9ed97bcd",
+    "latest_commit": "see git log -1 --oneline",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -67,7 +67,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `38cd17b3`.",
-    "Final pushed lane commit is `9ed97bcd` on `origin/main`.",
-    "Local and remote `main` agree at `9ed97bcd`."
+    "Final lane history is recorded in `git log --oneline --grep 'BIG-GO-168'`.",
+    "Local and remote `main` agree; verify with `git rev-parse --short HEAD` and `git ls-remote --heads origin main`."
   ]
 }
