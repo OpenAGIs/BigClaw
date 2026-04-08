@@ -76,7 +76,7 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 		"`go run ./cmd/bigclawctl automation migration shadow-matrix ...`",
 		"`bash scripts/ops/bigclawctl create-issues ...`",
 		"`bash scripts/ops/bigclawctl dev-smoke`",
-		"Benchmark soak/matrix/capacity helpers and their Python-side tests",
+		"Benchmark soak/matrix/capacity helpers and their retired script-side tests",
 		"E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates",
 	}
 	for _, needle := range requiredGoDoc {

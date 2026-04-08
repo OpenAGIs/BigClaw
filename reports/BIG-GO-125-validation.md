@@ -29,7 +29,9 @@ A fourth follow-up then normalized the active refill queue planning guidance to
 use Go-first legacy wording instead of Python-specific path language. A fifth
 follow-up then normalized the maintained legacy-mainline compatibility manifest
 to use generic legacy runtime wording instead of Python-specific mainline
-phrasing.
+phrasing. A sixth follow-up then tightened the active Go CLI script-migration
+guide so current-state replacement sections use generic legacy-script wording
+instead of unnecessary Python-specific phrasing.
 
 ## Active Replacement Paths
 
@@ -40,6 +42,7 @@ phrasing.
 - Bootstrap template guidance: `docs/symphony-repo-bootstrap-template.md`
 - Refill queue guidance: `docs/parallel-refill-queue.md`
 - Legacy mainline compatibility manifest: `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+- Go CLI script migration guide: `bigclaw-go/docs/go-cli-script-migration.md`
 - Migration shadow compare: `go run ./cmd/bigclawctl automation migration shadow-compare`
 - Migration shadow matrix: `go run ./cmd/bigclawctl automation migration shadow-matrix`
 - Migration shadow scorecard: `go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
@@ -81,6 +84,8 @@ phrasing.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'legacy Python runtime surface|legacy pre-cutover runtime surface' bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-side tests|Python script output|retired script-side tests|legacy script output' bigclaw-go/docs/go-cli-script-migration.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -330,6 +335,41 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	3.234s
+```
+
+### Go CLI migration wording scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-side tests|Python script output|retired script-side tests|legacy script output' bigclaw-go/docs/go-cli-script-migration.md
+```
+
+Result:
+
+```text
+39:| Benchmark soak/matrix/capacity helpers and their retired script-side tests | `go run ./cmd/bigclawctl automation benchmark soak-local ...`, `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, `go run ./cmd/bigclawctl automation benchmark capacity-certification ...`, `go test ./cmd/bigclawctl -run TestAutomationBenchmarkCapacityCertificationBuildsReport` |
+74:- Report serialization compatibility for JSON consumers that previously read the legacy script output
+```
+
+Observed result:
+
+```text
+Only the normalized legacy-script wording matched in the active Go CLI script-migration guide.
+```
+
+### Go CLI migration regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.179s
 ```
 
 ### GitHub publication visibility
