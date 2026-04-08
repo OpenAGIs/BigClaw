@@ -1,32 +1,32 @@
-# BIG-GO-170 Workpad
+# BIG-GO-17
+
+## Context
+- Issue: `BIG-GO-17`
+- Title: `Sweep auxiliary nested Python modules batch B`
+- Goal: harden the Go-only repository state for nested auxiliary report and evidence directories outside the primary source and script paths.
+- Current repo state on entry: the checked-out workspace already has a repository-wide physical Python file count of `0`, so this lane is expected to add targeted regression coverage and auditable evidence rather than delete live `.py` assets.
+
+## Scope
+- `.symphony/workpad.md`
+- `bigclaw-go/internal/regression/big_go_17_auxiliary_nested_python_sweep_b_test.go`
+- `bigclaw-go/docs/reports/big-go-17-auxiliary-nested-python-sweep-b.md`
+- `reports/BIG-GO-17-validation.md`
+- `reports/BIG-GO-17-status.json`
 
 ## Plan
-
-1. Reconfirm the repository-wide Python asset inventory and the priority residual directories relevant to this convergence lane: `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-170` so this unattended run records the current zero-Python baseline and the available Go replacement paths:
-   - `bigclaw-go/docs/reports/big-go-170-python-asset-sweep.md`
-   - `reports/BIG-GO-170-status.json`
-   - `reports/BIG-GO-170-validation.md`
-   - `bigclaw-go/internal/regression/big_go_170_zero_python_guard_test.go`
-3. Re-run the targeted regression coverage, record the exact commands and results, then commit and push the lane update.
+1. Replace the stale carried-over workpad with issue-specific context, acceptance criteria, and validation commands before editing tracked files.
+2. Add a `BIG-GO-17` regression guard that verifies the selected nested auxiliary directories remain Python-free and that representative retained evidence assets still exist.
+3. Add a lane report plus status and validation artifacts that document the zero-Python inventory and exact validation results for this sweep.
+4. Run targeted inventory checks and the issue-specific regression tests, then commit and push the lane.
 
 ## Acceptance
-
-- The remaining Python asset inventory is explicit for the whole repository and the priority residual directories.
-- The lane either removes Python assets or, when the checkout is already Python-free, documents and hardens that zero-Python baseline.
-- The Go replacement paths for the retired Python surface are listed in the lane artifacts.
-- Exact validation commands and results are recorded.
-- The change is committed and pushed to the remote branch.
+- `.symphony/workpad.md` is specific to `BIG-GO-17`.
+- `bigclaw-go/internal/regression/big_go_17_auxiliary_nested_python_sweep_b_test.go` fails if Python files reappear under the selected nested auxiliary directories.
+- The lane report documents the scoped directories, representative retained native assets, and the exact validation commands for `BIG-GO-17`.
+- `reports/BIG-GO-17-validation.md` and `reports/BIG-GO-17-status.json` record exact commands and exact results from this lane.
+- Changes remain scoped to `BIG-GO-17`.
 
 ## Validation
-
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-170 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-170/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-170/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-170/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-170/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-170/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO170(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-09: The repository-wide physical Python inventory in this checkout is already `0`.
-- 2026-04-09: The lane priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts` are also already Python-free.
-- 2026-04-09: This execution therefore focuses on lane evidence and a Go regression guard rather than deleting in-branch Python files.
-- 2026-04-09: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO170(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok   bigclaw-go/internal/regression 0.510s`.
+- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `find docs/reports bigclaw-go/docs/reports/broker-failover-stub-artifacts bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts bigclaw-go/docs/reports/live-shadow-runs bigclaw-go/docs/reports/live-validation-runs -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO17(NestedAuxiliaryDirectoriesStayPythonFree|RetainedNativeEvidenceAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
