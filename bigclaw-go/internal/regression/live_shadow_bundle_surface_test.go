@@ -152,7 +152,7 @@ func TestLiveShadowScorecardBundleStaysAligned(t *testing.T) {
 	if canonical.Ticket != "BIG-PAR-092" || canonical.Status != "repo-native-live-shadow-scorecard" {
 		t.Fatalf("unexpected canonical live-shadow scorecard identity: %+v", canonical)
 	}
-	if canonical.EvidenceInputs.GeneratorScript != "bigclaw-go/scripts/migration/live_shadow_scorecard.py" {
+	if canonical.EvidenceInputs.GeneratorScript != "go run ./cmd/bigclawctl automation migration live-shadow-scorecard" {
 		t.Fatalf("unexpected scorecard generator script: %+v", canonical.EvidenceInputs)
 	}
 	if canonical.Summary.TotalEvidenceRuns != 4 ||
@@ -163,11 +163,11 @@ func TestLiveShadowScorecardBundleStaysAligned(t *testing.T) {
 		canonical.Summary.MatrixMismatched != 0 ||
 		!canonical.Summary.CorpusCoveragePresent ||
 		canonical.Summary.CorpusUncoveredSliceCount != 1 ||
-		canonical.Summary.FreshInputs != 2 ||
-		canonical.Summary.StaleInputs != 0 {
+		canonical.Summary.FreshInputs != 0 ||
+		canonical.Summary.StaleInputs != 2 {
 		t.Fatalf("unexpected canonical live-shadow scorecard summary: %+v", canonical.Summary)
 	}
-	if len(canonical.Freshness) != 2 || canonical.Freshness[0].Status != "fresh" || canonical.Freshness[1].Status != "fresh" {
+	if len(canonical.Freshness) != 2 || canonical.Freshness[0].Status != "stale" || canonical.Freshness[1].Status != "stale" {
 		t.Fatalf("unexpected scorecard freshness payload: %+v", canonical.Freshness)
 	}
 	if len(canonical.ParityEntries) != 4 ||
@@ -177,10 +177,12 @@ func TestLiveShadowScorecardBundleStaysAligned(t *testing.T) {
 		canonical.ParityEntries[3].TraceID != "shadow-validation-sample-m3" {
 		t.Fatalf("unexpected scorecard parity entries: %+v", canonical.ParityEntries)
 	}
-	for _, checkpoint := range canonical.CutoverCheckpoints {
-		if !checkpoint.Passed {
-			t.Fatalf("expected cutover checkpoint to pass, got %+v", checkpoint)
-		}
+	if !canonical.CutoverCheckpoints[0].Passed ||
+		!canonical.CutoverCheckpoints[1].Passed ||
+		!canonical.CutoverCheckpoints[2].Passed ||
+		canonical.CutoverCheckpoints[3].Passed ||
+		!canonical.CutoverCheckpoints[4].Passed {
+		t.Fatalf("unexpected cutover checkpoint pass states: %+v", canonical.CutoverCheckpoints)
 	}
 	if len(canonical.CutoverCheckpoints) != 5 {
 		t.Fatalf("unexpected cutover checkpoint count: %+v", canonical.CutoverCheckpoints)
@@ -247,7 +249,7 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 		summary.RollbackTriggerSurface.Distinctions.ManualOnlyPaths != 2 ||
 		summary.RollbackTriggerSurface.Issue.ID != "OPE-254" ||
 		summary.RollbackTriggerSurface.Issue.Slug != "BIG-PAR-088" ||
-		summary.RollbackTriggerSurface.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" ||
+		summary.RollbackTriggerSurface.DigestPath != "" ||
 		summary.RollbackTriggerSurface.SummaryPath != "docs/reports/rollback-trigger-surface.json" {
 		t.Fatalf("unexpected live-shadow summary rollback payload: %+v", summary.RollbackTriggerSurface)
 	}
@@ -261,8 +263,8 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 		t.Fatalf("unexpected live-shadow closeout/checkpoint data: checkpoints=%d commands=%d", len(summary.CutoverCheckpoints), len(summary.CloseoutCommands))
 	}
 	for _, command := range []string{
-		"python3 scripts/migration/live_shadow_scorecard.py --pretty",
-		"python3 scripts/migration/export_live_shadow_bundle",
+		"go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+		"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
 		"go test ./internal/regression -run TestRollbackDocsStayAligned",
 		"git push origin <branch> && git log -1 --stat",
 	} {

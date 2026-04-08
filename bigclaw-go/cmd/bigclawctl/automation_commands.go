@@ -1531,7 +1531,7 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 		"matrix_trace_ids":    matrixTraceIDs,
 		"cutover_checkpoints": scorecardReport["cutover_checkpoints"],
 		"closeout_commands": []string{
-			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
+			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
 			"cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
 			"cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned",
 			"git push origin <branch> && git log -1 --stat",

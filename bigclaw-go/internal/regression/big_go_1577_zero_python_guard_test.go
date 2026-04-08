@@ -45,7 +45,6 @@ func TestBIGGO1577GoReplacementPathsRemainAvailable(t *testing.T) {
 		"bigclaw-go/internal/repo/triage.go",
 		"bigclaw-go/internal/bootstrap/bootstrap.go",
 		"bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
-		"bigclaw-go/scripts/migration/export_live_shadow_bundle",
 	}
 
 	for _, relativePath := range replacements {

@@ -1,30 +1,21 @@
-# BIG-GO-119 Workpad
-
-## Context
-- Issue: `BIG-GO-119`
-- Goal: harden the zero-Python repository baseline by sweeping residual auxiliary surfaces in nested, hidden, and lower-priority directories.
-- Current repo state on entry: repository-wide physical `.py` inventory is already `0`, including the main priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-
-## Scope
-- `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_119_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-119-python-asset-sweep.md`
-- `reports/BIG-GO-119-status.json`
-- `reports/BIG-GO-119-validation.md`
+# BIG-GO-134 Workpad
 
 ## Plan
-1. Replace the stale workpad with issue-specific scope, acceptance, and validation targets before code edits.
-2. Add a lane-specific regression guard for repository-wide zero Python, priority residual directories, and the hidden or lower-priority directories audited by this lane.
-3. Add lane reports that capture the zero-Python inventory, hidden-directory sweep coverage, and active Go or shell-native replacement surfaces.
-4. Run targeted inventory and regression commands, record exact commands and exact results, then commit and push the lane branch to `origin/main`.
+- Inspect the repository for residual Python scripts, wrappers, and CLI helpers that fall within the issue scope.
+- Replace or remove any remaining Python-based entrypoints with repo-native alternatives while keeping changes tightly scoped to this issue.
+- Run targeted validation for the affected paths and record the exact commands and outcomes.
+- Commit the scoped changes and push the branch to the remote.
 
 ## Acceptance
-- `BIG-GO-119` has an issue-specific workpad, regression guard, lane report, status artifact, and validation report.
-- The regression guard verifies repository-wide Python file count `0`, keeps priority directories Python-free, and locks down the hidden or lower-priority sweep directories audited in this lane.
-- Validation records exact commands and exact results for repository inventory, hidden-directory inventory, and targeted regression coverage.
-- Changes remain scoped to `BIG-GO-119` artifacts only.
+- No in-scope Python scripts, wrappers, or CLI helpers remain in the affected area after the sweep.
+- Any replacement path is implemented in the repository's primary toolchain and wired consistently.
+- Validation covers the changed paths and is recorded with exact commands and results.
+- Changes are committed and pushed to the remote branch.
 
 ## Validation
-- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find .github .githooks .symphony docs bigclaw-go/docs bigclaw-go/examples scripts/ops -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO119(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|HiddenAndAuxiliaryDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportDocumentsPythonAssetSweep)$'`
+- Start with repository inspection to identify in-scope Python artifacts.
+- Run targeted tests or command checks only for the modified paths.
+- Record every validation command and its result in the final report.
+
+## Notes
+- Initial inspection found an empty local repository with only `.git` metadata present. A remote fetch may be required before in-scope code changes can be made.
