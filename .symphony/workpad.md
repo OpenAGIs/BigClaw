@@ -1,32 +1,30 @@
-# BIG-GO-1587 Workpad
-
-## Context
-- Issue: `BIG-GO-1587`
-- Title: `Strict bucket lane 1587: bigclaw-go/scripts/migration/*.py bucket`
-- Goal: keep the `bigclaw-go/scripts/migration` Python bucket physically absent and record lane-specific regression evidence.
-- Current repo state on entry: `bigclaw-go/scripts/migration` does not exist and `find bigclaw-go -type f -name '*.py'` returns no files.
-
-## Scope
-- `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_1587_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-1587-python-asset-sweep.md`
-- `reports/BIG-GO-1587-status.json`
-- `reports/BIG-GO-1587-validation.md`
+# BIG-GO-152 Workpad
 
 ## Plan
-1. Replace the stale workpad with `BIG-GO-1587` execution details before any code edits.
-2. Add a lane-specific regression test that verifies repository-wide zero Python, keeps `bigclaw-go/scripts/migration` absent and Python-free, and ensures the active Go migration replacements remain available.
-3. Add issue-scoped report, status, and validation artifacts that capture the current bucket state and the exact validation commands/results.
-4. Run targeted inventory and regression commands, record exact outputs, then commit and push the branch.
+
+1. Inspect the existing residual Python sweep patterns and confirm the current repository baseline for Python-heavy test directories.
+2. Add only the lane-specific evidence for `BIG-GO-152`: a regression guard plus a sweep report documenting the zero-Python state and the retained Go/native replacement surfaces.
+3. Run targeted validation, record exact commands and results in lane artifacts, then commit and push the branch.
 
 ## Acceptance
-- `BIG-GO-1587` has an issue-specific workpad, regression guard, lane report, status artifact, and validation report.
-- The physical `.py` count under `bigclaw-go/scripts/migration` remains `0` because the directory is absent and no replacement Python files exist elsewhere under `bigclaw-go`.
-- The regression guard proves the repository stays Python-free, the `bigclaw-go/scripts/migration` bucket stays absent/Python-free, and the Go migration replacements remain available.
-- Validation artifacts record the exact commands and exact results used for this lane.
+
+- `BIG-GO-152` has lane-specific artifacts covering the residual Python-heavy test directory sweep.
+- Regression coverage enforces the repository-wide zero-Python baseline and the Python-free state of the priority residual test directories.
+- The lane report records the replacement surfaces and exact validation commands/results.
+- The resulting change is committed and pushed to the remote branch.
 
 ## Validation
-- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find bigclaw-go/scripts/migration -type f -name '*.py' 2>/dev/null | sort`
-- `test ! -d bigclaw-go/scripts/migration`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1587(RepositoryHasNoPythonFiles|MigrationBucketStaysAbsentAndPythonFree|GoMigrationReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-152 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/internal/migration /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/internal/regression /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO152(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+
+## Execution Notes
+
+- 2026-04-09: Initial inspection shows the repository is already at a zero-physical-Python baseline, so this lane will harden and document the residual test-directory sweep state rather than delete in-branch `.py` files.
+- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-152 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` produced no output.
+- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/internal/migration /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/internal/regression /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort` produced no output.
+- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO152(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 0.158s`.
+- 2026-04-09: Added `reports/BIG-GO-152-status.json` to capture repo-native closeout state because this lane did not yet have a status artifact.
+- 2026-04-09: `python3 -m json.tool reports/BIG-GO-152-status.json >/dev/null` returned success.
+- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-152/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO152(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 0.157s` during metadata closeout.

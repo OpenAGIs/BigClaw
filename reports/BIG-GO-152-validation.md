@@ -93,4 +93,5 @@ ok  	bigclaw-go/internal/regression	0.158s
 ## Git
 
 - Branch: `main`
+- Landed lane commit: `06d6f195 BIG-GO-152 add residual test python sweep guard`
 - Push target: `origin/main`
