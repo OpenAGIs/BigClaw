@@ -92,8 +92,8 @@ ok  	bigclaw-go/internal/regression	0.171s
 
 - Branch: `main`
 - Baseline HEAD before lane changes: `f3ae6981`
-- Lane commit details: `pending`
-- Final pushed lane commit: `pending`
+- Lane commit details: `485e9140 BIG-GO-162: add residual python test sweep guard`
+- Final pushed lane commit: `git log --oneline --grep 'BIG-GO-162'`
 - Push target: `origin/main`
 
 ## Workpad Archive

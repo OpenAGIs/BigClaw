@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "working tree not yet committed",
+    "latest_commit": "485e9140 BIG-GO-162: add residual python test sweep guard",
     "push_target": "origin/main"
   },
   "artifacts": {
