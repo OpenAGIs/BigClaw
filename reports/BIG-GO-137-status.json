@@ -1,0 +1,72 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-137",
+    "title": "Broad repo Python reduction sweep Q",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-137-validation.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-137-python-asset-sweep.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_137_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    },
+    "high_impact_dirs": {
+      ".github": [],
+      ".githooks": [],
+      ".symphony": [],
+      "docs": [],
+      "docs/reports": [],
+      "reports": [],
+      "scripts/ops": [],
+      "bigclaw-go/docs": [],
+      "bigclaw-go/docs/reports": [],
+      "bigclaw-go/examples": []
+    }
+  },
+  "replacement_paths": [
+    ".github/workflows/ci.yml",
+    ".githooks/post-commit",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/docs/go-cli-script-migration.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find .github .githooks .symphony docs docs/reports reports scripts/ops bigclaw-go/docs bigclaw-go/docs/reports bigclaw-go/examples -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO137(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|BroadRepoHighImpactDirectoriesStayPythonFree|GoNativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "",
+      "high_impact_inventory": "",
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.220s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-137 changes."
+  },
+  "notes": [
+    "This lane hardens the zero-Python baseline for broad high-impact directories rather than deleting in-branch `.py` files.",
+    "Read the current pushed tip from `git rev-parse --short HEAD` after final push."
+  ]
+}
