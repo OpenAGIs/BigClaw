@@ -1,0 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-154",
+    "title": "Residual scripts Python sweep K",
+    "state": "Done"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-154-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_154_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-154-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "residual_script_py_files_before": 0,
+    "residual_script_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "residual_script_surface": []
+  },
+  "residual_scan": {
+    "scripts": [],
+    "scripts/ops": [],
+    "bigclaw-go/scripts": []
+  },
+  "replacement_paths": [
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/docs/go-cli-script-migration.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts scripts/ops bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO154(RepositoryHasNoPythonFiles|ResidualScriptAreasStayPythonFree|SupportedRootHelpersRemainAvailable|RootHelperInventoryMatchesContract|LaneReportCapturesExactLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "residual_script_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.188s"
+    }
+  }
+}

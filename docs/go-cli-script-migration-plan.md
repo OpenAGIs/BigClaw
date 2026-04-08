@@ -2,9 +2,9 @@
 
 ## Goal
 
-Move the remaining repo-level script automation entrypoints onto `bigclaw-go/cmd/bigclawctl`
-subcommands, while preserving the existing file names as compatibility shims during the
-operator cutover window.
+Move the remaining repo-level script automation entrypoints onto
+`bigclaw-go/cmd/bigclawctl` subcommands while keeping the supported repo-root
+helper surface limited to a small shell-only inventory.
 
 ## This Slice
 
@@ -93,9 +93,17 @@ The remaining compatibility layer is intentionally thin:
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
-The root Python workspace shims are now removed. The remaining Bash aliases stay in place until
-operator docs and external automation references finish the direct cutover to
-`bash scripts/ops/bigclawctl ...`.
+The root Python workspace shims are now removed. The remaining repo-root shell
+helpers are intentionally limited to:
+
+- `scripts/dev_bootstrap.sh`
+- `scripts/ops/bigclawctl`
+- `scripts/ops/bigclaw-issue`
+- `scripts/ops/bigclaw-panel`
+- `scripts/ops/bigclaw-symphony`
+
+All other root or `scripts/ops` wrappers should stay retired, and operator docs
+should point directly at `bash scripts/ops/bigclawctl ...`.
 
 ## Remaining Backlog
 
