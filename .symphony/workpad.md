@@ -1,30 +1,31 @@
-# BIG-GO-119 Workpad
+# BIG-GO-131 Workpad
 
 ## Context
-- Issue: `BIG-GO-119`
-- Goal: harden the zero-Python repository baseline by sweeping residual auxiliary surfaces in nested, hidden, and lower-priority directories.
-- Current repo state on entry: repository-wide physical `.py` inventory is already `0`, including the main priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
+- Issue: `BIG-GO-131`
+- Title: `Residual src/bigclaw Python sweep J`
+- Goal: record and harden a broad residual `src/bigclaw` control-center and reporting tranche after the repo reached a zero-physical-Python baseline.
+- Current repo state on entry: repository-wide physical `.py` inventory is already `0`, and `src/bigclaw` is not present in this checkout.
 
 ## Scope
 - `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_119_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-119-python-asset-sweep.md`
-- `reports/BIG-GO-119-status.json`
-- `reports/BIG-GO-119-validation.md`
+- `bigclaw-go/internal/regression/big_go_131_src_bigclaw_sweep_j_test.go`
+- `bigclaw-go/docs/reports/big-go-131-src-bigclaw-sweep-j.md`
+- `reports/BIG-GO-131-validation.md`
+- `reports/BIG-GO-131-status.json`
 
 ## Plan
 1. Replace the stale workpad with issue-specific scope, acceptance, and validation targets before code edits.
-2. Add a lane-specific regression guard for repository-wide zero Python, priority residual directories, and the hidden or lower-priority directories audited by this lane.
-3. Add lane reports that capture the zero-Python inventory, hidden-directory sweep coverage, and active Go or shell-native replacement surfaces.
-4. Run targeted inventory and regression commands, record exact commands and exact results, then commit and push the lane branch to `origin/main`.
+2. Add an issue-local regression guard that keeps the selected residual `src/bigclaw` tranche absent and pins the active Go replacement paths.
+3. Add an issue-local lane report plus validation and status artifacts that document the before/after zero-Python baseline, the retired module ledger, and the exact test commands/results.
+4. Run the targeted inventory and regression commands, capture exact outputs, then commit and push `BIG-GO-131`.
 
 ## Acceptance
-- `BIG-GO-119` has an issue-specific workpad, regression guard, lane report, status artifact, and validation report.
-- The regression guard verifies repository-wide Python file count `0`, keeps priority directories Python-free, and locks down the hidden or lower-priority sweep directories audited in this lane.
-- Validation records exact commands and exact results for repository inventory, hidden-directory inventory, and targeted regression coverage.
-- Changes remain scoped to `BIG-GO-119` artifacts only.
+- `BIG-GO-131` has an issue-specific workpad, regression guard, lane report, validation report, and status artifact.
+- The regression guard proves the selected residual `src/bigclaw` tranche remains absent and that the mapped Go/native replacement paths still exist.
+- Validation records exact commands and exact results for repository Python inventory, focused `src/bigclaw` inventory, and the issue-local regression run.
+- Changes remain scoped to `BIG-GO-131` artifacts only.
 
 ## Validation
-- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find .github .githooks .symphony docs bigclaw-go/docs bigclaw-go/examples scripts/ops -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO119(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|HiddenAndAuxiliaryDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportDocumentsPythonAssetSweep)$'`
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find src/bigclaw -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO131(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepJStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`

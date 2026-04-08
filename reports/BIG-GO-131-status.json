@@ -1,0 +1,89 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-131",
+    "title": "Residual src/bigclaw Python sweep J",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-131",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-131"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-131-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-131-src-bigclaw-sweep-j.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_131_src_bigclaw_sweep_j_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "src_bigclaw_sweep_j": []
+  },
+  "replacements": [
+    {
+      "retired_python_module": "src/bigclaw/reports.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/reporting/reporting.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/operations.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/product/dashboard_run_contract.go",
+        "bigclaw-go/internal/api/server.go",
+        "bigclaw-go/internal/api/v2.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/run_detail.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/observability/task_run.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/dashboard_run_contract.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/product/dashboard_run_contract.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/saved_views.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/product/saved_views.go"
+      ]
+    },
+    {
+      "retired_python_module": "src/bigclaw/repo_triage.py",
+      "replacement_kind": "go-package-surface",
+      "go_replacements": [
+        "bigclaw-go/internal/repo/triage.go"
+      ]
+    }
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO131(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepJStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "src_bigclaw_sweep_j_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.213s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-131 changes."
+  },
+  "notes": [
+    "This lane consolidates a broad retired src/bigclaw control-center and reporting tranche into one issue-specific regression guard.",
+    "The branch baseline was already Python-free, so acceptance is satisfied by concrete Go/native replacement evidence rather than a lower in-branch .py count.",
+    "Baseline HEAD before lane changes was `5d8f48cc`."
+  ]
+}
