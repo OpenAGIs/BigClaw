@@ -1,0 +1,7 @@
+{
+  "issue": "BIG-GO-151",
+  "title": "Residual src/bigclaw Python sweep L",
+  "branch": "BIG-GO-151",
+  "status": "validated",
+  "summary": "Added issue-scoped regression and validation evidence for the already-zero src/bigclaw tranche-L Python surface."
+}
