@@ -39,3 +39,5 @@ Covered residual Python tests:
 
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO102(ResidualPythonTestsStayAbsent|ReplacementSurfacesRemainAvailable|LaneReportCapturesSweepState)$'`
   Result: `ok  	bigclaw-go/internal/regression	0.140s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO102(ResidualPythonTestsStayAbsent|ReplacementSurfacesRemainAvailable|LaneReportCapturesSweepState)|BIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)|PythonTestTranche17Removed)$'`
+  Result: `ok  	bigclaw-go/internal/regression	0.205s`
