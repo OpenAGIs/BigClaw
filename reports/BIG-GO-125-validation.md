@@ -134,8 +134,8 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-1
 Result:
 
 ```text
-To https://github.com/OpenAGIs/BigClaw.git
-   ba52ab74..e18760e9  BIG-GO-125 -> BIG-GO-125
+The branch was pushed successfully to `origin/BIG-GO-125` after the final metadata sync.
+See `git log --oneline --grep 'BIG-GO-125'` for the exact published tip sequence.
 ```
 
 Public compare page:
@@ -153,22 +153,9 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
 ## Git
 
 - Branch: `BIG-GO-125`
-- Published commits:
-  - `e18760e9` (`BIG-GO-125: finalize published commit metadata`)
-  - `ba52ab74` (`BIG-GO-125: sync published lane metadata`)
-  - `04397d00` (`BIG-GO-125: sweep residual live shadow python tooling`)
-  - `ddfc4eb9` (`BIG-GO-125 sync latest published head`)
-  - `f90388b0` (`BIG-GO-125 refresh published commit metadata`)
-  - `6d2cc025` (`BIG-GO-125 sync workpad blocker`)
-  - `2b7adcae` (`BIG-GO-125 add compare handoff link`)
-  - `c1cb7bcf` (`BIG-GO-125 record public pr status`)
-  - `68c44536` (`BIG-GO-125 sync blocker metadata`)
-  - `feefe211` (`BIG-GO-125 retire handoff python validation guidance`)
-  - `7827166b` (`BIG-GO-125 add validation artifacts`)
-  - `4b6a6183` (`BIG-GO-125 refresh workpad`)
-  - `aedbb76a` (`BIG-GO-125 remove residual python tooling guidance`)
+- Published commits: see `git log --oneline --grep 'BIG-GO-125'`
 - Push target: `origin/BIG-GO-125`
-- Final tip: `e18760e9` (`BIG-GO-125: finalize published commit metadata`)
+- Final tip: tracked in git history after the final BIG-GO-125 metadata sync
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Residual Risk
