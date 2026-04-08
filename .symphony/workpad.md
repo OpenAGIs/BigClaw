@@ -4,7 +4,7 @@
 
 - State: done
 - Branch: `BIG-GO-154`
-- Commit: `c24bdfbcd9de7da7c6591ed44a2bde1befb196e2`
+- Commit: `4e58d825a6f0c6b0b9b39d7e8ec2ce665c78017c`
 - PR: `https://github.com/OpenAGIs/BigClaw/pull/228`
 
 ## Plan
