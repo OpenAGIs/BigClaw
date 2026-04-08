@@ -39,8 +39,8 @@
 
 ## Workflow closeout commands
 
-- `cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty`
-- `cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 - `cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned`
 - `git push origin <branch> && git log -1 --stat`
 

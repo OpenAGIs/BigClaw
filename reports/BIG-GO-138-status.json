@@ -1,0 +1,35 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-138",
+    "title": "Broad repo Python reduction sweep R",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "feat/BIG-GO-138-python-guidance-sweep",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-138'",
+    "push_target": "origin/feat/BIG-GO-138-python-guidance-sweep"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-138-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-138-python-guidance-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_138_python_guidance_sweep_test.go"
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO138MigrationGuidancePrefersGoAutomation|BIGGO138LaneReportCapturesSweepState|LiveShadowBundleSummaryAndIndexStayAligned)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.190s"
+    }
+  },
+  "notes": [
+    "This sweep is scoped to active live-shadow migration docs and report indexes that still advertised retired Python commands.",
+    "The supported Go replacements were already implemented in bigclawctl; this lane removes stale guidance and hardens it with regression coverage."
+  ],
+  "blocker": null
+}

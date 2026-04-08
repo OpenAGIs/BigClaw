@@ -1,30 +1,21 @@
-# BIG-GO-119 Workpad
-
-## Context
-- Issue: `BIG-GO-119`
-- Goal: harden the zero-Python repository baseline by sweeping residual auxiliary surfaces in nested, hidden, and lower-priority directories.
-- Current repo state on entry: repository-wide physical `.py` inventory is already `0`, including the main priority directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-
-## Scope
-- `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_119_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-119-python-asset-sweep.md`
-- `reports/BIG-GO-119-status.json`
-- `reports/BIG-GO-119-validation.md`
+# BIG-GO-138 Workpad
 
 ## Plan
-1. Replace the stale workpad with issue-specific scope, acceptance, and validation targets before code edits.
-2. Add a lane-specific regression guard for repository-wide zero Python, priority residual directories, and the hidden or lower-priority directories audited by this lane.
-3. Add lane reports that capture the zero-Python inventory, hidden-directory sweep coverage, and active Go or shell-native replacement surfaces.
-4. Run targeted inventory and regression commands, record exact commands and exact results, then commit and push the lane branch to `origin/main`.
+
+1. Inspect active repo docs, reports, and regression guards for stale Python-era operator guidance that still appears in the current mainline surface.
+2. Update the scoped active documentation/reporting surface to describe Go/Bash entrypoints as the only supported path while preserving historical references only where they are explicitly marked retired.
+3. Add or extend regression coverage for the sweep so the targeted stale Python guidance does not reappear unnoticed.
+4. Run targeted inventory and regression validation, then commit and push the branch.
 
 ## Acceptance
-- `BIG-GO-119` has an issue-specific workpad, regression guard, lane report, status artifact, and validation report.
-- The regression guard verifies repository-wide Python file count `0`, keeps priority directories Python-free, and locks down the hidden or lower-priority sweep directories audited in this lane.
-- Validation records exact commands and exact results for repository inventory, hidden-directory inventory, and targeted regression coverage.
-- Changes remain scoped to `BIG-GO-119` artifacts only.
+
+- Active repo documentation touched by this issue does not present removed Python operator entrypoints as runnable current workflow.
+- `BIG-GO-138` has a dedicated scoped report/guard artifact consistent with the existing Python-reduction lane pattern.
+- Targeted regression coverage passes and validates the intended Go-first guidance.
+- Validation commands and exact results are captured for closeout.
 
 ## Validation
-- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find .github .githooks .symphony docs bigclaw-go/docs bigclaw-go/examples scripts/ops -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO119(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|HiddenAndAuxiliaryDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportDocumentsPythonAssetSweep)$'`
+
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(BIGGO138|RootOps|BIGGO902)'`
