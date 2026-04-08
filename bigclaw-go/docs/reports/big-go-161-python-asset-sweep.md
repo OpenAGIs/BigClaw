@@ -36,13 +36,13 @@ The active Go/native replacement surface covering this sweep remains:
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/bigclaw-go/internal/events -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; `src/bigclaw` remained Python-free and no Python modules exist under the Go event replacement surface.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO161(RepositoryHasNoPythonFiles|SrcBigclawStaysPythonFree|RemovedEventBusModuleStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche13$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.199s`
+  Result: `ok  	bigclaw-go/internal/regression	0.157s`
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
   Result: no output; repository-wide Python file count remained `0`.
 - `find src/bigclaw bigclaw-go/internal/events -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; `src/bigclaw` remained Python-free and no Python modules exist under the Go event replacement surface.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO161(RepositoryHasNoPythonFiles|SrcBigclawStaysPythonFree|RemovedEventBusModuleStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche13$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.199s`
+  Result: `ok  	bigclaw-go/internal/regression	0.157s`
 
 ## Residual Risk
 

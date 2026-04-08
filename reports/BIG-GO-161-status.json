@@ -1,0 +1,53 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-161",
+    "title": "Residual src/bigclaw Python sweep M",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "94bd71a3 BIG-GO-161: sweep residual src bigclaw tranche",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_161_zero_python_guard_test.go",
+    "lane_report": "bigclaw-go/docs/reports/big-go-161-python-asset-sweep.md",
+    "validation_report": "reports/BIG-GO-161-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_directories": {
+      "src/bigclaw": [],
+      "bigclaw-go/internal/events": []
+    },
+    "retired_python_paths": [
+      "src/bigclaw/event_bus.py"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/events/transition_bus.go",
+    "bigclaw-go/internal/events/transition_bus_test.go",
+    "bigclaw-go/internal/regression/top_level_module_purge_tranche13_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw bigclaw-go/internal/events -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO161(RepositoryHasNoPythonFiles|SrcBigclawStaysPythonFree|RemovedEventBusModuleStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche13$'"
+    ],
+    "results": {
+      "repo_python_inventory": "no output",
+      "focused_python_inventory": "no output",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.157s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide Python inventory and the target src/bigclaw tranche were already at zero on entry, so this lane hardens the state instead of reducing a nonzero count."
+  },
+  "notes": [
+    "This lane records the tranche-13 removal state for src/bigclaw/event_bus.py.",
+    "The surviving Go replacement surface remains centered on transition_bus.go and its regression coverage."
+  ]
+}
