@@ -70,8 +70,10 @@ Result: `ok  	bigclaw-go/internal/regression	0.182s`
 
 - Branch: `BIG-GO-1581`
 - Baseline HEAD before lane commit: `77c11439`
+- Final pushed lane commit: `09642812 BIG-GO-1581: add src bigclaw bucket A regression evidence`
 - Push target: `origin/BIG-GO-1581`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1581?expand=1`
+- PR helper URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1581`
 
 ## Residual Risk
 

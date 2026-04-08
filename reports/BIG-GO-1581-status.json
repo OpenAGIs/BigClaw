@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-1581",
     "baseline_commit": "77c11439",
-    "latest_commit": "HEAD",
+    "latest_commit": "09642812",
     "push_target": "origin/BIG-GO-1581",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1581?expand=1"
   },
@@ -51,6 +51,7 @@
   },
   "notes": [
     "This lane records bucket-A replacement evidence and adds an issue-scoped regression guard for the retired src/bigclaw top-level modules.",
-    "The branch baseline was already Python-free, so the acceptance path is exact replacement evidence rather than an in-branch decrease in .py count."
+    "The branch baseline was already Python-free, so the acceptance path is exact replacement evidence rather than an in-branch decrease in .py count.",
+    "Lane commit: `09642812 BIG-GO-1581: add src bigclaw bucket A regression evidence`."
   ]
 }
