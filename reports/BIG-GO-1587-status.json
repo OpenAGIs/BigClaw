@@ -1,0 +1,35 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1587",
+    "title": "Strict bucket lane 1587: bigclaw-go/scripts/migration/*.py bucket",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1587_zero_python_guard_test.go",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1587-python-asset-sweep.md",
+    "validation_report": "reports/BIG-GO-1587-validation.md"
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/scripts/migration -type f -name '*.py' 2>/dev/null | sort",
+      "test ! -d bigclaw-go/scripts/migration",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1587(RepositoryHasNoPythonFiles|MigrationBucketStaysAbsentAndPythonFree|GoMigrationReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_python_inventory": "no output",
+      "bucket_python_inventory": "no output",
+      "bucket_absence_check": "absent",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.183s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The target bucket and repository-wide Python inventory were already at zero on entry, so this lane hardens the state instead of reducing a nonzero count."
+  }
+}
