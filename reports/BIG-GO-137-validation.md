@@ -102,7 +102,7 @@ ok  	bigclaw-go/internal/regression	3.187s
 
 ## Git
 
-- Branch: `main`
+- Branch: `BIG-GO-137`
 - Baseline HEAD before final lane replay onto `origin/main`: `afbc21d0`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-137' -n 1`
 - Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-137' -n 1`

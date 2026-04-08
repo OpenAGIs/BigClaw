@@ -5,7 +5,7 @@
     "state": "Done"
   },
   "branch": {
-    "name": "main",
+    "name": "BIG-GO-137",
     "latest_commit": "see `git log --oneline --grep 'BIG-GO-137' -n 1`",
     "push_target": "origin/BIG-GO-137"
   },
