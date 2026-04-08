@@ -36,4 +36,3 @@
 ## Execution Notes
 - Added the lane report and regression guard for the operator/control-plane slice plus matching closeout artifacts under `reports/`.
 - Branch `BIG-GO-107` is pushed to `origin/BIG-GO-107`.
-- Current branch head: `6649f059c9ead8c4d32ceda37ed0009fc700d674`.
