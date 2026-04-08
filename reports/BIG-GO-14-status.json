@@ -74,7 +74,7 @@
     "results": {
       "repo_py_inventory": "none",
       "scoped_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.185s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.191s"
     }
   },
   "blocker": {
@@ -84,6 +84,6 @@
   "notes": [
     "This lane documents the already-empty scripts and automation Python inventory and hardens it with issue-specific regression coverage.",
     "Baseline HEAD before lane changes was `cf4219c9`.",
-    "The lane was rebased onto `origin/main` `9f6b05fb` and revalidated before final publication."
+    "The lane was rebased onto `origin/main` `c68372b6` and revalidated before final publication."
   ]
 }

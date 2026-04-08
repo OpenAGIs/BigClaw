@@ -71,4 +71,4 @@ The retained Go/native operator surface validated by this lane is:
 - `find scripts bigclaw-go/scripts/benchmark bigclaw-go/scripts/e2e bigclaw-go/scripts/migration -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the scoped scripts and automation directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO14(ScriptAndAutomationDirectoriesStayPythonFree|RetiredScriptAndAutomationHelpersRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.185s`
+  Result: `ok  	bigclaw-go/internal/regression	0.191s`
