@@ -1,0 +1,35 @@
+{
+  "identifier": "BIG-GO-107",
+  "title": "Broad repo Python reduction sweep K",
+  "status": "done",
+  "summary": "Added operator/control-plane Python sweep regression coverage and an exact-lane report so the retired collaboration, issue archive, console IA, design-system, dashboard, and UI review Python ownership slice stays Go/native only.",
+  "python_file_count": {
+    "before": 0,
+    "after": 0,
+    "delta": 0
+  },
+  "focused_python_file_count": {
+    "scope": "src/bigclaw + bigclaw-go/internal/{api,product,consoleia,designsystem,uireview,collaboration,issuearchive}",
+    "before": 0,
+    "after": 0,
+    "delta": 0
+  },
+  "validation": [
+    {
+      "command": "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "result": "no output"
+    },
+    {
+      "command": "find src/bigclaw bigclaw-go/internal/api bigclaw-go/internal/product bigclaw-go/internal/consoleia bigclaw-go/internal/designsystem bigclaw-go/internal/uireview bigclaw-go/internal/collaboration bigclaw-go/internal/issuearchive -type f -name '*.py' 2>/dev/null | sort",
+      "result": "no output"
+    },
+    {
+      "command": "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO107(RepositoryHasNoPythonFiles|OperatorControlPlaneDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'",
+      "result": "ok   bigclaw-go/internal/regression 0.186s"
+    }
+  ],
+  "commits": {
+    "implementation": "652dcb300ed5840d2160d0fa57a365052bdc5006"
+  },
+  "branch": "BIG-GO-107"
+}
