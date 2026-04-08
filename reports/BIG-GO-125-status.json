@@ -25,6 +25,8 @@
       "bigclaw-go/docs/reports/live-validation-summary.json",
       "bigclaw-go/docs/reports/ray-live-smoke-report.json",
       "bigclaw-go/docs/reports/ray-live-jobs.json",
+      "bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md",
+      "bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
@@ -56,8 +58,9 @@
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestLiveValidationIndexStaysAligned|TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c \\\"print\\\\\\(' bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"sh -c 'echo hello from ray'\" bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c \\\"print\\\\\\(' bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"sh -c 'echo hello from ray'\" bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'ray-live-smoke-report.json|executor disabled; no Ray smoke report was produced for this bundle' bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json",
       "public compare page: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
     ],
     "results": {
@@ -67,14 +70,16 @@
       "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4",
       "public_pr_query": "[]",
       "git_push": "branch published to origin/BIG-GO-125 after the final metadata sync; see git history for the exact tip",
-      "live_validation_regression_tests": "ok   bigclaw-go/internal/regression\t0.167s",
+      "live_validation_regression_tests": "ok   bigclaw-go/internal/regression\t0.255s",
       "ray_smoke_python_scan": "no matches; exit code 1",
       "ray_smoke_shell_scan": "live-validation reviewer artifacts, ray jobs snapshot, and both recent bundled ray evidence surfaces retain the shell-native ray smoke entrypoint",
+      "skipped_ray_bundle_scan": "only the disabled-lane reason matched in README.md:36 and summary.json:421; no skipped-bundle ray-live-smoke-report.json reference remains",
       "public_compare_page": "reachable without auth; shows the BIG-GO-125 compare stack against main"
     }
   },
   "notes": [
     "This lane cleaned checked-in live-shadow workflow guidance rather than historical archived evidence.",
+    "The final follow-up also normalized a skipped Ray bundle so reviewer-facing docs no longer imply nonexistent Ray smoke report artifacts for disabled lanes.",
     "BIG-GO-125 is not present in the local issue tracker store for this workspace, so closeout lives in git artifacts and the pushed branch state.",
     "The branch is pushed, but PR inspection or creation cannot be completed from this workspace because GitHub CLI authentication is unavailable.",
     "An unauthenticated public GitHub API query currently returns no PR for head branch BIG-GO-125."

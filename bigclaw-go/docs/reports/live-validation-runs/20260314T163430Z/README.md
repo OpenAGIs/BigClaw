@@ -33,8 +33,7 @@
 ### ray
 - Enabled: `False`
 - Status: `skipped`
-- Bundle report: `docs/reports/live-validation-runs/20260314T163430Z/ray-live-smoke-report.json`
-- Latest report: `docs/reports/ray-live-smoke-report.json`
+- Reason: `executor disabled; no Ray smoke report was produced for this bundle`
 
 ## Workflow closeout commands
 

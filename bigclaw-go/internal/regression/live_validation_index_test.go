@@ -193,4 +193,20 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 	if !strings.Contains(previousBundledSummary, "sh -c 'echo hello from ray'") {
 		t.Fatal("previous bundled live-validation summary should retain the shell-native ray smoke entrypoint")
 	}
+
+	skippedRaySummary := readRepoFile(t, repoRoot, "docs/reports/live-validation-runs/20260314T163430Z/summary.json")
+	if strings.Contains(skippedRaySummary, "ray-live-smoke-report.json") {
+		t.Fatal("skipped ray bundle summary should not imply a Ray smoke report artifact was produced")
+	}
+	if !strings.Contains(skippedRaySummary, "\"reason\": \"executor disabled; no Ray smoke report was produced for this bundle\"") {
+		t.Fatal("skipped ray bundle summary should explain why the Ray smoke report artifact is absent")
+	}
+
+	skippedRayReadme := readRepoFile(t, repoRoot, "docs/reports/live-validation-runs/20260314T163430Z/README.md")
+	if strings.Contains(skippedRayReadme, "ray-live-smoke-report.json") {
+		t.Fatal("skipped ray bundle README should not imply a Ray smoke report artifact was produced")
+	}
+	if !strings.Contains(skippedRayReadme, "executor disabled; no Ray smoke report was produced for this bundle") {
+		t.Fatal("skipped ray bundle README should explain why the Ray smoke report artifact is absent")
+	}
 }

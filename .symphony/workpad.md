@@ -22,6 +22,8 @@
 - `bigclaw-go/docs/reports/ray-live-jobs.json`
 - `bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json`
 - `bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json`
+- `bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md`
+- `bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json`
 - `bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json`
 - `bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json`
 - `bigclaw-go/internal/regression/root_script_residual_sweep_test.go`
@@ -36,12 +38,14 @@
 3. Remove stale root repository hygiene guidance that still points at `pre-commit`.
 4. Retire any remaining active documentation that still presents Python validation commands as current workflow guidance.
 5. Align checked-in live-validation reviewer artifacts with the shell-native Ray smoke default already documented elsewhere in the repo.
-6. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance.
-7. Run targeted regression and grep validation, then commit and push the follow-up branch state.
+6. Normalize skipped live-validation bundles so they do not imply Ray smoke report artifacts were produced when the lane was disabled.
+7. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance or misleading skipped-lane report links.
+8. Run targeted regression and grep validation, then commit and push the follow-up branch state.
 
 ## Acceptance
 - Active docs and checked-in reviewer indexes/summaries no longer direct developers to retired Python tooling for migration-shadow helpers or root hygiene.
 - Checked-in live-validation reviewer artifacts no longer advertise the retired inline-Python Ray smoke default where the active docs already require the shell-native replacement.
+- Checked-in skipped live-validation bundles no longer point reviewers at Ray smoke report artifacts that were never produced.
 - Active docs no longer present retired Python validation commands as current workflow guidance.
 - Regression coverage explicitly guards the touched active docs against reintroducing those references.
 - Validation records exact commands and exact results for the targeted regression tests and focused residual-reference searches.
@@ -52,6 +56,7 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c \"print\\(' bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "sh -c 'echo hello from ray'" bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'ray-live-smoke-report.json|executor disabled; no Ray smoke report was produced for this bundle' bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125`
 
 ## Final Blocker

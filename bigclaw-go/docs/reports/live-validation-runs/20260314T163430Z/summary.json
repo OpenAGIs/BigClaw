@@ -417,9 +417,8 @@
   },
   "ray": {
     "enabled": false,
-    "bundle_report_path": "docs/reports/live-validation-runs/20260314T163430Z/ray-live-smoke-report.json",
-    "canonical_report_path": "docs/reports/ray-live-smoke-report.json",
-    "status": "skipped"
+    "status": "skipped",
+    "reason": "executor disabled; no Ray smoke report was produced for this bundle"
   },
   "summary_path": "docs/reports/live-validation-runs/20260314T163430Z/summary.json"
 }
