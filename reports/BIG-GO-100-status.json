@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending final lane commit",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-100'",
     "push_target": "origin/main"
   },
   "artifacts": {
