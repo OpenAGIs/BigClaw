@@ -1,26 +1,32 @@
-# BIG-GO-161 Workpad
+# BIG-GO-1586 Workpad
+
+## Context
+- Issue: `BIG-GO-1586`
+- Title: `Strict bucket lane 1586: bigclaw-go/scripts/benchmark/*.py bucket`
+- Goal: keep `bigclaw-go/scripts/benchmark` physically free of Python assets and land lane-specific regression evidence with an issue commit.
+- Current repo state on entry: `bigclaw-go/scripts/benchmark` contains only `run_suite.sh`; no `.py` files are present in that bucket.
+
+## Scope
+- `.symphony/workpad.md`
+- `bigclaw-go/internal/regression/big_go_1586_zero_python_guard_test.go`
+- `bigclaw-go/docs/reports/big-go-1586-python-asset-sweep.md`
+- `reports/BIG-GO-1586-status.json`
+- `reports/BIG-GO-1586-validation.md`
 
 ## Plan
-
-1. Inspect the existing residual Python sweep and tranche-13 module-purge coverage for `src/bigclaw/event_bus.py` and confirm the current repository baseline.
-2. Add lane-specific regression coverage for `BIG-GO-161` that records the zero-Python state for `src/bigclaw` and validates the surviving Go replacement surface under `bigclaw-go/internal/events`.
-3. Add the matching lane report under `bigclaw-go/docs/reports`, then run targeted validation, record exact commands and results, and commit and push the branch.
+1. Replace the stale workpad with `BIG-GO-1586` execution details before any code edits.
+2. Add a benchmark-bucket regression guard that proves the repository remains Python-free, the retired benchmark Python helpers stay absent, and the surviving native benchmark entrypoints remain available.
+3. Add issue-scoped lane report, status, and validation artifacts that record the benchmark bucket inventory and exact verification commands/results.
+4. Run targeted inventory and regression commands, then commit and push the lane to `origin/main`.
 
 ## Acceptance
-
-- `BIG-GO-161` has lane-specific regression coverage for the residual `src/bigclaw` tranche-13 sweep.
-- The guard enforces that `src/bigclaw` stays Python-free and that `src/bigclaw/event_bus.py` remains absent.
-- The lane report documents the zero-Python inventory, the `transition_bus` Go replacement files, and the exact validation commands/results.
-- The resulting change is committed and pushed to the remote branch.
+- `BIG-GO-1586` has an issue-specific workpad, regression guard, lane report, status artifact, and validation report.
+- `bigclaw-go/scripts/benchmark` remains at `0` physical `.py` files.
+- Retired benchmark Python helpers stay absent and the remaining benchmark native entrypoints stay available.
+- Validation artifacts record the exact commands and exact results used for this lane.
+- A scoped lane commit is pushed to the remote branch.
 
 ## Validation
-
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-161 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/bigclaw-go/internal/events -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO161(RepositoryHasNoPythonFiles|SrcBigclawStaysPythonFree|RemovedEventBusModuleStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche13$'`
-
-## Execution Notes
-
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-161 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` produced no output.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/bigclaw-go/internal/events -type f -name '*.py' 2>/dev/null | sort` produced no output.
-- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-161/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO161(RepositoryHasNoPythonFiles|SrcBigclawStaysPythonFree|RemovedEventBusModuleStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche13$'` returned `ok   bigclaw-go/internal/regression 0.199s`.
+- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `find bigclaw-go/scripts/benchmark -type f -name '*.py' -print | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1586(RepositoryHasNoPythonFiles|BenchmarkBucketStaysPythonFree|RetiredBenchmarkPythonHelpersRemainAbsent|BenchmarkReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`

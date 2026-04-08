@@ -1,0 +1,62 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1586",
+    "title": "Strict bucket lane 1586: bigclaw-go/scripts/benchmark/*.py bucket",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending final BIG-GO-1586 commit",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1586-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1586-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1586_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "bucket": {
+      "bigclaw-go/scripts/benchmark": []
+    },
+    "retired_benchmark_python_helpers": [
+      "bigclaw-go/scripts/benchmark/capacity_certification.py",
+      "bigclaw-go/scripts/benchmark/capacity_certification_test.py",
+      "bigclaw-go/scripts/benchmark/run_matrix.py",
+      "bigclaw-go/scripts/benchmark/soak_local.py"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1586_zero_python_guard_test.go",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/cmd/bigclawctl/automation_benchmark_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
+    "bigclaw-go/internal/queue/benchmark_test.go",
+    "bigclaw-go/internal/scheduler/benchmark_test.go",
+    "bigclaw-go/docs/reports/benchmark-report.md",
+    "bigclaw-go/docs/reports/benchmark-matrix-report.json",
+    "bigclaw-go/docs/reports/long-duration-soak-report.md",
+    "bigclaw-go/docs/reports/soak-local-50x8.json"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/scripts/benchmark -type f -name '*.py' -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1586(RepositoryHasNoPythonFiles|BenchmarkBucketStaysPythonFree|RetiredBenchmarkPythonHelpersRemainAbsent|BenchmarkReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "no output",
+      "benchmark_bucket_inventory": "no output",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t4.124s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The benchmark bucket and repository-wide physical Python file count were already zero in this workspace before BIG-GO-1586 changes."
+  },
+  "notes": [
+    "This lane documents an already-empty benchmark Python bucket and hardens that state with issue-scoped regression coverage.",
+    "Lane commit details are tracked in git history via `git log --oneline --grep 'BIG-GO-1586'` after commit and push."
+  ]
+}
