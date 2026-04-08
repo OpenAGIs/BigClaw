@@ -81,14 +81,14 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-129/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	3.214s
+ok  	bigclaw-go/internal/regression	0.192s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `ced066a9`
-- Code-bearing lane commit: `f34368c8` (`BIG-GO-129: add residual Python sweep guard`)
+- Rebasing over updated `origin/main` rewrote the code-bearing lane commit to `795c0670` (`BIG-GO-129: add residual Python sweep guard`)
 - Metadata follow-up commit: `git log --oneline --grep 'BIG-GO-129'`
 - Push target: `origin/main`
 
