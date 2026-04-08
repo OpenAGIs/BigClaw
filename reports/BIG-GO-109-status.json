@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-109",
+    "title": "Residual auxiliary Python sweep G",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-109-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-109-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_109_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "hidden_nested_dirs": {
+      ".githooks": [],
+      ".github": [],
+      ".symphony": [],
+      "bigclaw-go/examples": [],
+      "bigclaw-go/docs/reports/live-validation-runs": [],
+      "reports": []
+    }
+  },
+  "retained_native_assets": [
+    ".githooks/post-commit",
+    ".githooks/post-rewrite",
+    ".github/workflows/ci.yml",
+    "bigclaw-go/examples/shadow-task.json",
+    "bigclaw-go/examples/shadow-corpus-manifest.json"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) -print | sort",
+      "find .githooks .github .symphony bigclaw-go/examples bigclaw-go/docs/reports/live-validation-runs reports -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO109(RepositoryHasNoPythonFiles|HiddenAndNestedResidualDirectoriesStayPythonFree|HiddenAndNestedNativeAssetsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "hidden_nested_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.181s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-109 changes."
+  },
+  "notes": [
+    "This lane adds issue-specific regression coverage and evidence for hidden and nested residual sweep surfaces."
+  ]
+}

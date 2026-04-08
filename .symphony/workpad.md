@@ -1,29 +1,21 @@
-# BIG-GO-100 Workpad
-
-## Context
-- Issue: `BIG-GO-100`
-- Goal: land a convergence sweep that preserves the practical Go-only repository state and records explicit evidence for the remaining physical Python file count.
-- Current repo state on entry: repository-wide physical `.py` file inventory is already `0`, including the priority residual directories `src/bigclaw`, `tests`, `scripts`, and `bigclaw-go/scripts`.
-
-## Scope
-- `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_100_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-100-python-asset-sweep.md`
-- `reports/BIG-GO-100-status.json`
-- `reports/BIG-GO-100-validation.md`
+# BIG-GO-109 Workpad
 
 ## Plan
-1. Replace the stale workpad with issue-specific scope, acceptance, and validation targets before any code edits.
-2. Add a lane-specific regression guard and Python-asset sweep report that document the existing zero-Python baseline and required Go/native replacement paths.
-3. Run targeted inventory and regression commands, record exact commands and results, then commit and push the lane branch to `origin/main`.
+
+1. Confirm the repository has no remaining physical Python files, including hidden and nested paths outside the primary sweep directories.
+2. Add a regression test for the overlooked surfaces relevant to this checkout.
+3. Record the sweep outcome in issue-specific report and validation artifacts.
+4. Run targeted validation, then commit and push the lane changes.
 
 ## Acceptance
-- `BIG-GO-100` has a lane-specific workpad, regression guard, sweep report, status artifact, and validation report.
-- The regression guard verifies repository-wide Python file count `0`, Python-free priority residual directories, required Go/native replacement paths, and the lane report content.
-- Validation records exact commands and exact results for repository inventory, priority directory inventory, and targeted regression coverage.
-- Changes remain scoped to `BIG-GO-100` convergence artifacts only.
+
+- Repository-wide Python file inventory remains zero.
+- Hidden or nested residual surfaces called out by this issue are explicitly covered by regression tests.
+- Issue-specific report, status, and validation artifacts record the sweep scope and exact command results.
+- Validation commands complete successfully.
 
 ## Validation
-- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO100(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+
+- `find . -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) -print | sort`
+- `find . -path '*/.git' -prune -o -type d \\( -name '.githooks' -o -name '.github' -o -name '.symphony' -o -path './bigclaw-go/examples' \\) -print | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO109'`
