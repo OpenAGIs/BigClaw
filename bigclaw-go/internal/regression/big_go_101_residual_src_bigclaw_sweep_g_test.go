@@ -24,8 +24,9 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 	replacements := append([]migration.LegacyModuleReplacement{}, migration.LegacyReportingOpsModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyOperatorProductModuleReplacements()...)
-	if len(replacements) != 14 {
-		t.Fatalf("expected 14 retired module replacements, got %d", len(replacements))
+	replacements = append(replacements, migration.LegacyBootstrapSyncModuleReplacements()...)
+	if len(replacements) != 21 {
+		t.Fatalf("expected 21 retired module replacements, got %d", len(replacements))
 	}
 
 	expected := map[string]struct {
@@ -206,6 +207,93 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 			},
 			statusNeedle: "Go design token library",
 		},
+		"src/bigclaw/github_sync.py": {
+			replacementKind: "go-github-sync",
+			goReplacements: []string{
+				"bigclaw-go/internal/githubsync/sync.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/githubsync/sync_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go GitHub sync install",
+		},
+		"src/bigclaw/workspace_bootstrap.py": {
+			replacementKind: "go-workspace-bootstrap",
+			goReplacements: []string{
+				"bigclaw-go/internal/bootstrap/bootstrap.go",
+				"bigclaw-go/cmd/bigclawctl/main.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/bootstrap/bootstrap_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go bootstrap engine",
+		},
+		"src/bigclaw/workspace_bootstrap_cli.py": {
+			replacementKind: "go-bootstrap-cli",
+			goReplacements: []string{
+				"bigclaw-go/internal/bootstrap/bootstrap.go",
+				"bigclaw-go/cmd/bigclawctl/main.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/bootstrap/bootstrap_test.go",
+				"bigclaw-go/cmd/bigclawctl/main_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go bootstrap engine",
+		},
+		"src/bigclaw/workspace_bootstrap_validation.py": {
+			replacementKind: "go-bootstrap-validation",
+			goReplacements: []string{
+				"bigclaw-go/internal/bootstrap/bootstrap.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/bootstrap/bootstrap_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go bootstrap validation",
+		},
+		"src/bigclaw/parallel_refill.py": {
+			replacementKind: "go-refill-queue",
+			goReplacements: []string{
+				"bigclaw-go/internal/refill/queue.go",
+				"bigclaw-go/internal/refill/local_store.go",
+				"bigclaw-go/cmd/bigclawctl/main.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/refill/queue_test.go",
+				"bigclaw-go/internal/refill/local_store_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go refill queue",
+		},
+		"src/bigclaw/service.py": {
+			replacementKind: "go-mainline-service",
+			goReplacements: []string{
+				"bigclaw-go/cmd/bigclawd/main.go",
+				"bigclaw-go/cmd/bigclawctl/main.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/cmd/bigclawd/main_test.go",
+				"bigclaw-go/cmd/bigclawctl/main_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go bigclawd daemon",
+		},
+		"src/bigclaw/__main__.py": {
+			replacementKind: "go-mainline-entrypoint",
+			goReplacements: []string{
+				"bigclaw-go/cmd/bigclawd/main.go",
+				"bigclaw-go/cmd/bigclawctl/main.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/cmd/bigclawd/main_test.go",
+				"bigclaw-go/cmd/bigclawctl/main_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go daemon and operator CLIs",
+		},
 	}
 
 	for _, replacement := range replacements {
@@ -233,6 +321,7 @@ func TestBIGGO101GoReplacementPathsRemainAvailable(t *testing.T) {
 	replacements := append([]migration.LegacyModuleReplacement{}, migration.LegacyReportingOpsModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyOperatorProductModuleReplacements()...)
+	replacements = append(replacements, migration.LegacyBootstrapSyncModuleReplacements()...)
 	for _, replacement := range replacements {
 		for _, relativePath := range replacement.GoReplacements {
 			if _, err := os.Stat(filepath.Join(rootRepo, filepath.FromSlash(relativePath))); err != nil {
@@ -274,9 +363,17 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`src/bigclaw/saved_views.py`",
 		"`src/bigclaw/console_ia.py`",
 		"`src/bigclaw/design_system.py`",
+		"`src/bigclaw/github_sync.py`",
+		"`src/bigclaw/workspace_bootstrap.py`",
+		"`src/bigclaw/workspace_bootstrap_cli.py`",
+		"`src/bigclaw/workspace_bootstrap_validation.py`",
+		"`src/bigclaw/parallel_refill.py`",
+		"`src/bigclaw/service.py`",
+		"`src/bigclaw/__main__.py`",
 		"`bigclaw-go/internal/migration/legacy_reporting_ops_modules.go`",
 		"`bigclaw-go/internal/migration/legacy_policy_governance_modules.go`",
 		"`bigclaw-go/internal/migration/legacy_operator_product_modules.go`",
+		"`bigclaw-go/internal/migration/legacy_bootstrap_sync_modules.go`",
 		"`bigclaw-go/internal/observability/recorder.go`",
 		"`bigclaw-go/internal/reporting/reporting.go`",
 		"`bigclaw-go/internal/reportstudio/reportstudio.go`",
@@ -297,6 +394,12 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`bigclaw-go/internal/consoleia/consoleia.go`",
 		"`bigclaw-go/internal/designsystem/designsystem.go`",
 		"`bigclaw-go/internal/product/console.go`",
+		"`bigclaw-go/internal/githubsync/sync.go`",
+		"`bigclaw-go/internal/bootstrap/bootstrap.go`",
+		"`bigclaw-go/internal/refill/queue.go`",
+		"`bigclaw-go/internal/refill/local_store.go`",
+		"`bigclaw-go/cmd/bigclawctl/main.go`",
+		"`bigclaw-go/cmd/bigclawd/main.go`",
 		"`bigclaw-go/docs/reports/v2-phase1-operations-foundation-report.md`",
 		"`docs/go-mainline-cutover-issue-pack.md`",
 		"`find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`",

@@ -3,8 +3,9 @@
 ## Scope
 
 This refill lane records exact Go replacement evidence for the largest retired
-`src/bigclaw` reporting, operations, policy, governance, operator, and product
-modules that still merit explicit replacement tracking in this checkout:
+`src/bigclaw` reporting, operations, policy, governance, operator, product,
+bootstrap, and sync modules that still merit explicit replacement tracking in
+this checkout:
 
 - `src/bigclaw/observability.py`
 - `src/bigclaw/reports.py`
@@ -20,6 +21,13 @@ modules that still merit explicit replacement tracking in this checkout:
 - `src/bigclaw/saved_views.py`
 - `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
+- `src/bigclaw/github_sync.py`
+- `src/bigclaw/workspace_bootstrap.py`
+- `src/bigclaw/workspace_bootstrap_cli.py`
+- `src/bigclaw/workspace_bootstrap_validation.py`
+- `src/bigclaw/parallel_refill.py`
+- `src/bigclaw/service.py`
+- `src/bigclaw/__main__.py`
 
 ## Before And After Counts
 
@@ -55,6 +63,13 @@ Focused sweep-G ledger: `[]`
 - `src/bigclaw/saved_views.py`
 - `src/bigclaw/console_ia.py`
 - `src/bigclaw/design_system.py`
+- `src/bigclaw/github_sync.py`
+- `src/bigclaw/workspace_bootstrap.py`
+- `src/bigclaw/workspace_bootstrap_cli.py`
+- `src/bigclaw/workspace_bootstrap_validation.py`
+- `src/bigclaw/parallel_refill.py`
+- `src/bigclaw/service.py`
+- `src/bigclaw/__main__.py`
 
 ## Structured Replacement Ledger
 
@@ -66,6 +81,9 @@ It also adds the structured replacement registry at
 
 It also adds the structured replacement registry at
 `bigclaw-go/internal/migration/legacy_operator_product_modules.go`.
+
+It also adds the structured replacement registry at
+`bigclaw-go/internal/migration/legacy_bootstrap_sync_modules.go`.
 
 ### `src/bigclaw/observability.py`
 
@@ -211,6 +229,79 @@ It also adds the structured replacement registry at
   - `bigclaw-go/internal/product/console_test.go`
   - `docs/go-mainline-cutover-issue-pack.md`
 
+### `src/bigclaw/github_sync.py`
+
+- Replacement kind: `go-github-sync`
+- Go replacements:
+  - `bigclaw-go/internal/githubsync/sync.go`
+- Evidence:
+  - `bigclaw-go/internal/githubsync/sync_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/workspace_bootstrap.py`
+
+- Replacement kind: `go-workspace-bootstrap`
+- Go replacements:
+  - `bigclaw-go/internal/bootstrap/bootstrap.go`
+  - `bigclaw-go/cmd/bigclawctl/main.go`
+- Evidence:
+  - `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/workspace_bootstrap_cli.py`
+
+- Replacement kind: `go-bootstrap-cli`
+- Go replacements:
+  - `bigclaw-go/internal/bootstrap/bootstrap.go`
+  - `bigclaw-go/cmd/bigclawctl/main.go`
+- Evidence:
+  - `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+  - `bigclaw-go/cmd/bigclawctl/main_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/workspace_bootstrap_validation.py`
+
+- Replacement kind: `go-bootstrap-validation`
+- Go replacements:
+  - `bigclaw-go/internal/bootstrap/bootstrap.go`
+- Evidence:
+  - `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/parallel_refill.py`
+
+- Replacement kind: `go-refill-queue`
+- Go replacements:
+  - `bigclaw-go/internal/refill/queue.go`
+  - `bigclaw-go/internal/refill/local_store.go`
+  - `bigclaw-go/cmd/bigclawctl/main.go`
+- Evidence:
+  - `bigclaw-go/internal/refill/queue_test.go`
+  - `bigclaw-go/internal/refill/local_store_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/service.py`
+
+- Replacement kind: `go-mainline-service`
+- Go replacements:
+  - `bigclaw-go/cmd/bigclawd/main.go`
+  - `bigclaw-go/cmd/bigclawctl/main.go`
+- Evidence:
+  - `bigclaw-go/cmd/bigclawd/main_test.go`
+  - `bigclaw-go/cmd/bigclawctl/main_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/__main__.py`
+
+- Replacement kind: `go-mainline-entrypoint`
+- Go replacements:
+  - `bigclaw-go/cmd/bigclawd/main.go`
+  - `bigclaw-go/cmd/bigclawctl/main.go`
+- Evidence:
+  - `bigclaw-go/cmd/bigclawd/main_test.go`
+  - `bigclaw-go/cmd/bigclawctl/main_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
 ## Validation Commands And Results
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
@@ -218,6 +309,6 @@ It also adds the structured replacement registry at
 - `find src/bigclaw -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the focused `src/bigclaw` sweep-G surface remained absent.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.189s`
+  Result: `ok  	bigclaw-go/internal/regression	5.910s`
 - `cd bigclaw-go && go test -count=1 ./internal/migration`
   Result: `?   	bigclaw-go/internal/migration	[no test files]`
