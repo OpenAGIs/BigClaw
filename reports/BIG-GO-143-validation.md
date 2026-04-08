@@ -94,7 +94,6 @@ ok  	bigclaw-go/internal/regression	0.196s
 - Rebased remote main before publish: `97a3fb0a`
 - Published lane commit: `ee2b8a5d` (`BIG-GO-143: add residual python sweep guard`)
 - Final metadata commit: `4fff9526` (`BIG-GO-143: refresh landed metadata`)
-- Local/remote SHA equality confirmed at `4fff9526`
 
 ## Residual Risk
 
