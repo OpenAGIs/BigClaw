@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "67612956",
+    "latest_commit": "read the current pushed tip from `git rev-parse --short HEAD`",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -57,6 +57,6 @@
   "notes": [
     "This lane is scoped to report-heavy auxiliary directories and their retained non-Python evidence assets.",
     "Implementation commit aa382379 was rebased onto origin/main before push because the remote branch advanced during lane execution.",
-    "Metadata closeout commit 67612956 is the pushed tip after issue completion."
+    "Metadata closeout commits 67612956 and 4e974e49 were pushed after the implementation commit; read the current pushed tip directly from `git rev-parse --short HEAD`."
   ]
 }
