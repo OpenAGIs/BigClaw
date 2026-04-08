@@ -93,6 +93,7 @@ ok  	bigclaw-go/internal/regression	3.213s
 
 - Branch: `symphony/BIG-GO-144`
 - Published lane commit before metadata follow-up: `35916c5a`
+- Published metadata follow-up commit: `b8a62e1b`
 - Push target: `origin/symphony/BIG-GO-144`
 
 ## Residual Risk
