@@ -19,8 +19,8 @@ func TestE2EScriptDirectoryStaysPythonFree(t *testing.T) {
 		if entry.IsDir() {
 			continue
 		}
-		if strings.HasSuffix(entry.Name(), ".py") {
-			t.Fatalf("expected no Python helper in scripts/e2e, found %s", entry.Name())
+		if isPythonAssetPath(entry.Name()) {
+			t.Fatalf("expected no Python asset in scripts/e2e, found %s", entry.Name())
 		}
 	}
 }

@@ -27,8 +27,9 @@ func TestBenchmarkScriptsStayGoOnly(t *testing.T) {
 		t.Fatalf("expected benchmark wrapper files in %s", benchmarkDir)
 	}
 	for _, entry := range entries {
-		if strings.HasSuffix(entry.Name(), ".py") {
-			t.Fatalf("benchmark directory must not contain Python helpers: %s", entry.Name())
+		switch strings.ToLower(filepath.Ext(entry.Name())) {
+		case ".py", ".pyw", ".pyi", ".ipynb":
+			t.Fatalf("benchmark directory must not contain Python assets: %s", entry.Name())
 		}
 	}
 	body, err := os.ReadFile(filepath.Join(benchmarkDir, "run_suite.sh"))

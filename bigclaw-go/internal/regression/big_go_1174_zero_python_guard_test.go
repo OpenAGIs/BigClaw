@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -48,7 +49,7 @@ func collectPythonFiles(t *testing.T, root string) []string {
 		if d.IsDir() {
 			return nil
 		}
-		if filepath.Ext(path) != ".py" {
+		if !isPythonAssetPath(path) {
 			return nil
 		}
 		relative, relErr := filepath.Rel(root, path)
@@ -64,4 +65,13 @@ func collectPythonFiles(t *testing.T, root string) []string {
 
 	sort.Strings(entries)
 	return entries
+}
+
+func isPythonAssetPath(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".py", ".pyw", ".pyi", ".ipynb":
+		return true
+	default:
+		return false
+	}
 }

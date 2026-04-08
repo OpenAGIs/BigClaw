@@ -19,8 +19,8 @@ func TestRootOpsDirectoryStaysPythonFree(t *testing.T) {
 		if entry.IsDir() {
 			continue
 		}
-		if strings.HasSuffix(entry.Name(), ".py") {
-			t.Fatalf("expected no Python helper in scripts/ops, found %s", entry.Name())
+		if isPythonAssetPath(entry.Name()) {
+			t.Fatalf("expected no Python asset in scripts/ops, found %s", entry.Name())
 		}
 	}
 }
