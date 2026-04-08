@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "symphony/BIG-GO-144",
-    "latest_commit": "b8a62e1b",
+    "latest_commit": "dd131b03",
     "push_target": "origin/symphony/BIG-GO-144"
   },
   "artifacts": {
@@ -56,6 +56,7 @@
   "notes": [
     "This lane documents the residual shell-wrapper and CLI-helper sweep instead of deleting physical Python assets in-branch.",
     "Published initial lane commit `35916c5a` to `origin/symphony/BIG-GO-144` before adding repo-root metadata artifacts.",
-    "Published follow-up metadata commit `b8a62e1b` to keep the repo-root reporting pair aligned with the final branch head."
+    "Published follow-up metadata commit `b8a62e1b` to add the repo-root reporting pair.",
+    "Published reconciliation commit `dd131b03` to align the recorded branch metadata with the pushed branch head."
   ]
 }

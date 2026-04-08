@@ -29,3 +29,4 @@
 - 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-144/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO144(ResidualPythonWrappersAndHelpersStayAbsent|GoWrapperAndCLIReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok  	bigclaw-go/internal/regression	3.213s` on the latest rerun.
 - 2026-04-09: Added `reports/BIG-GO-144-validation.md` and `reports/BIG-GO-144-status.json` so the lane matches the repo-root reporting format used by adjacent Python-sweep issues.
 - 2026-04-09: Reconciled the repo-root metadata to the current pushed branch head `b8a62e1b`.
+- 2026-04-09: Corrected the repo-root metadata again so the recorded branch head matches `dd131b03`.
