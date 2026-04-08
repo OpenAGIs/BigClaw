@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-133",
-    "latest_commit": "pending",
+    "latest_commit": "c22d5a65 BIG-GO-133 add residual python sweep guard",
     "push_target": "origin/BIG-GO-133"
   },
   "artifacts": {
@@ -53,6 +53,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `ced066a9`."
+    "Baseline HEAD before lane changes was `ced066a9`.",
+    "Lane commit after targeted validation was `c22d5a65 BIG-GO-133 add residual python sweep guard`."
   ]
 }

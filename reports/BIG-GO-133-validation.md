@@ -90,7 +90,7 @@ ok  	bigclaw-go/internal/regression	0.183s
 
 - Branch: `BIG-GO-133`
 - Baseline HEAD before lane commit: `ced066a9`
-- Landed lane commit: pending
+- Landed lane commit: `c22d5a65 BIG-GO-133 add residual python sweep guard`
 - Final metadata commit: pending
 - Push target: `origin/BIG-GO-133`
 
