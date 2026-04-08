@@ -7,7 +7,8 @@
   "branch": {
     "name": "BIG-GO-135",
     "rebased_baseline_commit": "77c1143",
-    "landing_commit": "2b19412",
+    "direct_landing_commit": "f3ae698",
+    "final_metadata_sync_commit": "a572f15",
     "push_targets": [
       "origin/BIG-GO-135",
       "origin/BIG-GO-135-merge",
@@ -45,7 +46,8 @@
   "landing": {
     "method": "direct_push",
     "target_branch": "main",
-    "landing_commit": "2b19412"
+    "direct_landing_commit": "f3ae698",
+    "final_metadata_sync_commit": "a572f15"
   },
   "pull_requests": [
     {
@@ -53,7 +55,7 @@
       "url": "https://github.com/OpenAGIs/BigClaw/pull/226",
       "state": "closed",
       "head_branch": "BIG-GO-135",
-      "head_sha": "2b19412",
+      "current_branch_head_sha": "a572f15",
       "close_reason": "superseded by direct landing on main"
     },
     {
@@ -61,7 +63,7 @@
       "url": "https://github.com/OpenAGIs/BigClaw/pull/227",
       "state": "closed",
       "head_branch": "BIG-GO-135-merge",
-      "head_sha": "2b19412",
+      "current_branch_head_sha": "a572f15",
       "close_reason": "superseded by direct landing on main"
     }
   ],
