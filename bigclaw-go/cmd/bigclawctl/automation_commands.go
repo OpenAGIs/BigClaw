@@ -1524,7 +1524,7 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 			"automated_rollback_trigger": automationBool(lookupMap(rollbackReport, "summary", "automated_rollback_trigger")),
 			"distinctions":               lookupMap(rollbackReport, "summary", "distinctions"),
 			"issue":                      lookupMap(rollbackReport, "issue"),
-			"digest_path":                rollbackReport["digest_path"],
+			"digest_path":                lookupMap(rollbackReport, "shared_guardrail_summary", "digest_path"),
 			"summary_path":               relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
 		},
 		"compare_trace_id":    compareReport["trace_id"],
@@ -1657,8 +1657,14 @@ func renderLiveShadowIndex(latest map[string]any, recentRuns []map[string]any, r
 	}
 	lines = append(lines, "", "## Latest run summary", "")
 	lines = append(lines, fmt.Sprintf("- Compare trace: `%v`", latest["compare_trace_id"]))
-	matrixTraceIDs, _ := latest["matrix_trace_ids"].([]any)
-	lines = append(lines, fmt.Sprintf("- Matrix trace count: `%d`", len(matrixTraceIDs)))
+	matrixTraceCount := 0
+	switch traceIDs := latest["matrix_trace_ids"].(type) {
+	case []any:
+		matrixTraceCount = len(traceIDs)
+	case []string:
+		matrixTraceCount = len(traceIDs)
+	}
+	lines = append(lines, fmt.Sprintf("- Matrix trace count: `%d`", matrixTraceCount))
 	summary, _ := latest["summary"].(map[string]any)
 	for _, item := range []struct{ Key, Label string }{
 		{"total_evidence_runs", "Evidence runs"},
@@ -1696,10 +1702,13 @@ func renderLiveShadowIndex(latest map[string]any, recentRuns []map[string]any, r
 	}
 	lines = append(lines, "", "## Parallel Follow-up Index", "")
 	lines = append(lines, "- `docs/reports/parallel-follow-up-index.md` is the canonical index for the")
-	lines = append(lines, "  remaining live-shadow, rollback, and corpus-coverage follow-up digests.")
-	lines = append(lines, "- Use `docs/reports/parallel-validation-matrix.md` first when a shadow review")
-	lines = append(lines, "  needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the")
-	lines = append(lines, "  shadow evidence bundle.")
+	lines = append(lines, "  remaining live-shadow, rollback, and corpus-coverage follow-up digests behind")
+	lines = append(lines, "  this run bundle.")
+	lines = append(lines, "- For the two primary caveat tracks referenced by this bundle, see")
+	lines = append(lines, "  `OPE-266` / `BIG-PAR-092` in")
+	lines = append(lines, "  `docs/reports/live-shadow-comparison-follow-up-digest.md` and")
+	lines = append(lines, "  `OPE-254` / `BIG-PAR-088` in")
+	lines = append(lines, "  `docs/reports/rollback-safeguard-follow-up-digest.md`.")
 	lines = append(lines, "")
 	return strings.Join(lines, "\n")
 }
