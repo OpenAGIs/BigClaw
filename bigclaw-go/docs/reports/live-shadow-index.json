@@ -1,138 +1,139 @@
 {
-  "latest": {
-    "run_id": "20260313T085655Z",
-    "generated_at": "2026-03-17T02:35:33.529497Z",
+  "drift_rollup": {
+    "generated_at": "2026-04-08T16:34:50.045654Z",
+    "recent_runs": [
+      {
+        "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
+        "drift_detected_count": 0,
+        "generated_at": "2026-04-08T16:34:50.045654Z",
+        "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+        "run_id": "20260313T085655Z",
+        "severity": "none",
+        "stale_inputs": 0,
+        "status": "parity-ok",
+        "summary_path": "docs/reports/live-shadow-runs/20260313T085655Z/summary.json"
+      }
+    ],
     "status": "parity-ok",
-    "severity": "none",
-    "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
-    "summary_path": "docs/reports/live-shadow-runs/20260313T085655Z/summary.json",
-    "artifacts": {
-      "shadow_compare_report_path": "docs/reports/live-shadow-runs/20260313T085655Z/shadow-compare-report.json",
-      "shadow_matrix_report_path": "docs/reports/live-shadow-runs/20260313T085655Z/shadow-matrix-report.json",
-      "live_shadow_scorecard_path": "docs/reports/live-shadow-runs/20260313T085655Z/live-shadow-mirror-scorecard.json",
-      "rollback_trigger_surface_path": "docs/reports/live-shadow-runs/20260313T085655Z/rollback-trigger-surface.json"
+    "summary": {
+      "drift_detected_runs": 0,
+      "highest_severity": "none",
+      "latest_run_id": "20260313T085655Z",
+      "recent_run_count": 1,
+      "stale_runs": 0,
+      "status_counts": {
+        "attention_needed": 0,
+        "parity_ok": 1
+      }
     },
-    "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+    "window_size": 5
+  },
+  "latest": {
+    "artifacts": {
+      "live_shadow_scorecard_path": "docs/reports/live-shadow-runs/20260313T085655Z/live-shadow-mirror-scorecard.json",
+      "rollback_trigger_surface_path": "docs/reports/live-shadow-runs/20260313T085655Z/rollback-trigger-surface.json",
+      "shadow_compare_report_path": "docs/reports/live-shadow-runs/20260313T085655Z/shadow-compare-report.json",
+      "shadow_matrix_report_path": "docs/reports/live-shadow-runs/20260313T085655Z/shadow-matrix-report.json"
+    },
+    "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
+    "closeout_commands": [
+      "cd bigclaw-go \u0026\u0026 go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
+      "cd bigclaw-go \u0026\u0026 go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+      "cd bigclaw-go \u0026\u0026 go test ./internal/regression -run TestRollbackDocsStayAligned",
+      "git push origin \u003cbranch\u003e \u0026\u0026 git log -1 --stat"
+    ],
+    "compare_trace_id": "shadow-compare-sample",
+    "cutover_checkpoints": [
+      {
+        "detail": "trace_id=shadow-compare-sample",
+        "name": "single_compare_matches_terminal_state_and_event_sequence",
+        "passed": true
+      },
+      {
+        "detail": "matched=3 mismatched=0",
+        "name": "matrix_reports_no_state_or_event_sequence_mismatches",
+        "passed": true
+      },
+      {
+        "detail": "parity_ok=4 drift_detected=0",
+        "name": "scorecard_detects_no_parity_drift",
+        "passed": true
+      },
+      {
+        "detail": "freshness_statuses=['fresh', 'fresh']",
+        "name": "checked_in_evidence_is_fresh_enough_for_review",
+        "passed": true
+      },
+      {
+        "detail": "corpus_slice_count=4",
+        "name": "matrix_includes_corpus_coverage_overlay",
+        "passed": true
+      }
+    ],
     "freshness": [
       {
-        "name": "shadow-compare-report",
-        "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
-        "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
         "age_hours": 80.08,
         "freshness_slo_hours": 168,
+        "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
+        "name": "shadow-compare-report",
+        "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
         "status": "fresh"
       },
       {
-        "name": "shadow-matrix-report",
-        "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
-        "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
         "age_hours": 79.02,
         "freshness_slo_hours": 168,
+        "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+        "name": "shadow-matrix-report",
+        "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
         "status": "fresh"
       }
     ],
-    "summary": {
-      "total_evidence_runs": 4,
-      "parity_ok_count": 4,
-      "drift_detected_count": 0,
-      "matrix_total": 3,
-      "matrix_mismatched": 0,
-      "stale_inputs": 0,
-      "fresh_inputs": 2
-    },
-    "rollback_trigger_surface": {
-      "status": "manual-review-required",
-      "automation_boundary": "manual_only",
-    "automated_rollback_trigger": false,
-    "distinctions": {
-      "blockers": 3,
-      "warnings": 1,
-      "manual_only_paths": 2
-    },
-    "issue": {
-      "id": "OPE-254",
-      "slug": "BIG-PAR-088"
-    },
-    "digest_path": "docs/reports/rollback-safeguard-follow-up-digest.md",
-    "summary_path": "docs/reports/rollback-trigger-surface.json"
-  },
-    "compare_trace_id": "shadow-compare-sample",
+    "generated_at": "2026-04-08T16:34:50.045654Z",
+    "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
     "matrix_trace_ids": [
       "shadow-compare-sample-m1",
       "shadow-budget-sample-m2",
       "shadow-validation-sample-m3"
     ],
-    "cutover_checkpoints": [
-      {
-        "name": "single_compare_matches_terminal_state_and_event_sequence",
-        "passed": true,
-        "detail": "trace_id=shadow-compare-sample"
+    "rollback_trigger_surface": {
+      "automated_rollback_trigger": false,
+      "automation_boundary": "manual_only",
+      "digest_path": null,
+      "distinctions": {
+        "blockers": 3,
+        "manual_only_paths": 2,
+        "warnings": 1
       },
-      {
-        "name": "matrix_reports_no_state_or_event_sequence_mismatches",
-        "passed": true,
-        "detail": "matched=3 mismatched=0"
+      "issue": {
+        "id": "OPE-254",
+        "slug": "BIG-PAR-088",
+        "title": "tenant-scoped rollback guardrails and trigger surface"
       },
-      {
-        "name": "scorecard_detects_no_parity_drift",
-        "passed": true,
-        "detail": "parity_ok=4 drift_detected=0"
-      },
-      {
-        "name": "checked_in_evidence_is_fresh_enough_for_review",
-        "passed": true,
-        "detail": "freshness_statuses=['fresh', 'fresh']"
-      },
-      {
-        "name": "matrix_includes_corpus_coverage_overlay",
-        "passed": true,
-        "detail": "corpus_slice_count=4"
-      }
-    ],
-    "closeout_commands": [
-      "cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty",
-      "cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle",
-      "cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned",
-      "git push origin <branch> && git log -1 --stat"
-    ]
+      "status": "manual-review-required",
+      "summary_path": "docs/reports/rollback-trigger-surface.json"
+    },
+    "run_id": "20260313T085655Z",
+    "severity": "none",
+    "status": "parity-ok",
+    "summary": {
+      "drift_detected_count": 0,
+      "fresh_inputs": 2,
+      "matrix_mismatched": 0,
+      "matrix_total": 3,
+      "parity_ok_count": 4,
+      "stale_inputs": 0,
+      "total_evidence_runs": 4
+    },
+    "summary_path": "docs/reports/live-shadow-runs/20260313T085655Z/summary.json"
   },
   "recent_runs": [
     {
-      "run_id": "20260313T085655Z",
-      "generated_at": "2026-03-17T02:35:33.529497Z",
-      "status": "parity-ok",
-      "severity": "none",
       "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
+      "generated_at": "2026-04-08T16:34:50.045654Z",
+      "run_id": "20260313T085655Z",
+      "severity": "none",
+      "status": "parity-ok",
       "summary_path": "docs/reports/live-shadow-runs/20260313T085655Z/summary.json"
     }
-  ],
-  "drift_rollup": {
-    "generated_at": "2026-03-17T02:35:33.537339Z",
-    "status": "parity-ok",
-    "window_size": 5,
-    "summary": {
-      "recent_run_count": 1,
-      "drift_detected_runs": 0,
-      "stale_runs": 0,
-      "highest_severity": "none",
-      "status_counts": {
-        "parity_ok": 1,
-        "attention_needed": 0
-      },
-      "latest_run_id": "20260313T085655Z"
-    },
-    "recent_runs": [
-      {
-        "run_id": "20260313T085655Z",
-        "generated_at": "2026-03-17T02:35:33.529497Z",
-        "status": "parity-ok",
-        "severity": "none",
-        "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
-        "drift_detected_count": 0,
-        "stale_inputs": 0,
-        "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
-        "summary_path": "docs/reports/live-shadow-runs/20260313T085655Z/summary.json"
-      }
-    ]
-  }
+  ]
 }

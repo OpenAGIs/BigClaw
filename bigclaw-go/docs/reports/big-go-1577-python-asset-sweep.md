@@ -35,16 +35,10 @@ imported the retired modules:
   retired Python implementations.
 - Retired the legacy operator wrapper path `scripts/ops/symphony_workspace_bootstrap.py`
   in favor of `scripts/ops/bigclawctl workspace bootstrap`.
-- Renamed `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` to the
-  extensionless compatibility path `bigclaw-go/scripts/migration/export_live_shadow_bundle`
-  so the physical `.py` asset is gone while the documented CLI entrypoint
-  remains usable during migration.
-
-Explicit remaining shim deletion condition:
-
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle` should be deleted once
-  the current branch adopts the `bigclawctl automation migration export-live-shadow-bundle`
-  command family that already exists on newer Go-only baselines.
+- The temporary compatibility shim for
+  `bigclaw-go/scripts/migration/export_live_shadow_bundle` has since been fully
+  retired in favor of the Go-native
+  `bigclawctl automation migration export-live-shadow-bundle` command family.
 
 ## Go Or Native Replacement Paths
 
@@ -54,7 +48,8 @@ Explicit remaining shim deletion condition:
 - `bigclaw-go/internal/repo/triage.go`
 - `bigclaw-go/internal/bootstrap/bootstrap.go`
 - `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle`
+- `bigclaw-go/cmd/bigclawctl/automation_commands.go`
+- `bigclaw-go/cmd/bigclawctl/automation_commands_test.go`
 
 ## Validation Commands And Results
 
@@ -67,7 +62,6 @@ Explicit remaining shim deletion condition:
 
 ## Residual Risk
 
-- The live-shadow bundle exporter is still implemented in Python semantics under
-  an extensionless migration shim. The physical `.py` asset is gone, but full
-  deletion still depends on landing the newer `bigclawctl automation migration`
-  replacement surface in this branch lineage.
+- Historical lane note: the live-shadow bundle exporter shim documented here has
+  been superseded by the Go-native `bigclawctl automation migration` surface in
+  later cleanup lanes.

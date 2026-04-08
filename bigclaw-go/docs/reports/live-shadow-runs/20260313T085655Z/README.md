@@ -1,7 +1,7 @@
 # Live Shadow Mirror Index
 
 - Latest run: `20260313T085655Z`
-- Generated at: `2026-03-17T02:35:33.529497Z`
+- Generated at: `2026-04-08T16:34:50.045654Z`
 - Status: `parity-ok`
 - Severity: `none`
 - Bundle: `docs/reports/live-shadow-runs/20260313T085655Z`
@@ -17,7 +17,7 @@
 ## Latest run summary
 
 - Compare trace: `shadow-compare-sample`
-- Matrix trace count: `3`
+- Matrix trace count: `0`
 - Evidence runs: `4`
 - Parity-ok entries: `4`
 - Drift-detected entries: `0`
@@ -27,7 +27,7 @@
 - Stale inputs: `0`
 - Rollback trigger surface status: `manual-review-required`
 - Rollback automation boundary: `manual_only`
-- Rollback trigger distinctions: `{'blockers': 3, 'warnings': 1, 'manual_only_paths': 2}`
+- Rollback trigger distinctions: `map[blockers:3 manual_only_paths:2 warnings:1]`
 
 ## Parity drift rollup
 
@@ -39,14 +39,14 @@
 
 ## Workflow closeout commands
 
-- `cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty`
-- `cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 - `cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned`
 - `git push origin <branch> && git log -1 --stat`
 
 ## Recent bundles
 
-- `20260313T085655Z` · `parity-ok` · `none` · `2026-03-17T02:35:33.529497Z` · `docs/reports/live-shadow-runs/20260313T085655Z`
+- `20260313T085655Z` · `parity-ok` · `none` · `2026-04-08T16:34:50.045654Z` · `docs/reports/live-shadow-runs/20260313T085655Z`
 
 ## Linked migration docs
 
@@ -58,10 +58,7 @@
 ## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
-  remaining live-shadow, rollback, and corpus-coverage follow-up digests behind
-  this run bundle.
-- For the two primary caveat tracks referenced by this bundle, see
-  `OPE-266` / `BIG-PAR-092` in
-  `docs/reports/live-shadow-comparison-follow-up-digest.md` and
-  `OPE-254` / `BIG-PAR-088` in
-  `docs/reports/rollback-safeguard-follow-up-digest.md`.
+  remaining live-shadow, rollback, and corpus-coverage follow-up digests.
+- Use `docs/reports/parallel-validation-matrix.md` first when a shadow review
+  needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the
+  shadow evidence bundle.

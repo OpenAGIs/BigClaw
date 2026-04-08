@@ -91,8 +91,9 @@ type liveShadowBundleSummarySurface struct {
 			ManualOnlyPaths int `json:"manual_only_paths"`
 		} `json:"distinctions"`
 		Issue struct {
-			ID   string `json:"id"`
-			Slug string `json:"slug"`
+			ID    string `json:"id"`
+			Slug  string `json:"slug"`
+			Title string `json:"title"`
 		} `json:"issue"`
 		DigestPath  string `json:"digest_path"`
 		SummaryPath string `json:"summary_path"`
@@ -152,7 +153,7 @@ func TestLiveShadowScorecardBundleStaysAligned(t *testing.T) {
 	if canonical.Ticket != "BIG-PAR-092" || canonical.Status != "repo-native-live-shadow-scorecard" {
 		t.Fatalf("unexpected canonical live-shadow scorecard identity: %+v", canonical)
 	}
-	if canonical.EvidenceInputs.GeneratorScript != "bigclaw-go/scripts/migration/live_shadow_scorecard.py" {
+	if canonical.EvidenceInputs.GeneratorScript != "go run ./cmd/bigclawctl automation migration live-shadow-scorecard" {
 		t.Fatalf("unexpected scorecard generator script: %+v", canonical.EvidenceInputs)
 	}
 	if canonical.Summary.TotalEvidenceRuns != 4 ||
@@ -247,7 +248,8 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 		summary.RollbackTriggerSurface.Distinctions.ManualOnlyPaths != 2 ||
 		summary.RollbackTriggerSurface.Issue.ID != "OPE-254" ||
 		summary.RollbackTriggerSurface.Issue.Slug != "BIG-PAR-088" ||
-		summary.RollbackTriggerSurface.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" ||
+		summary.RollbackTriggerSurface.Issue.Title != "tenant-scoped rollback guardrails and trigger surface" ||
+		summary.RollbackTriggerSurface.DigestPath != "" ||
 		summary.RollbackTriggerSurface.SummaryPath != "docs/reports/rollback-trigger-surface.json" {
 		t.Fatalf("unexpected live-shadow summary rollback payload: %+v", summary.RollbackTriggerSurface)
 	}
@@ -261,8 +263,8 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 		t.Fatalf("unexpected live-shadow closeout/checkpoint data: checkpoints=%d commands=%d", len(summary.CutoverCheckpoints), len(summary.CloseoutCommands))
 	}
 	for _, command := range []string{
-		"python3 scripts/migration/live_shadow_scorecard.py --pretty",
-		"python3 scripts/migration/export_live_shadow_bundle",
+		"go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty",
+		"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
 		"go test ./internal/regression -run TestRollbackDocsStayAligned",
 		"git push origin <branch> && git log -1 --stat",
 	} {
@@ -297,6 +299,7 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 	}
 	if index.Latest.RollbackTriggerSurface.Issue.ID != "OPE-254" ||
 		index.Latest.RollbackTriggerSurface.Issue.Slug != "BIG-PAR-088" ||
+		index.Latest.RollbackTriggerSurface.Issue.Title != "tenant-scoped rollback guardrails and trigger surface" ||
 		index.Latest.RollbackTriggerSurface.SummaryPath != "docs/reports/rollback-trigger-surface.json" {
 		t.Fatalf("unexpected latest index rollback payload: %+v", index.Latest.RollbackTriggerSurface)
 	}

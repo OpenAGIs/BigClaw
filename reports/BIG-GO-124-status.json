@@ -1,0 +1,54 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-124",
+    "title": "Residual scripts Python sweep H",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "PENDING",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-124-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-124-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_124_zero_python_guard_test.go"
+  },
+  "retired_paths": [
+    "bigclaw-go/scripts/migration/export_live_shadow_bundle",
+    "bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+    "bigclaw-go/scripts/migration/live_shadow_scorecard.py",
+    "bigclaw-go/scripts/migration/shadow_compare.py",
+    "bigclaw-go/scripts/migration/shadow_matrix.py"
+  ],
+  "go_replacements": [
+    "go run ./cmd/bigclawctl automation migration shadow-compare",
+    "go run ./cmd/bigclawctl automation migration shadow-matrix",
+    "go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+    "go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
+    "bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
+    "bigclaw-go/internal/regression/big_go_124_zero_python_guard_test.go",
+    "bigclaw-go/internal/regression/big_go_1577_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "rg -n \"python3 scripts/migration|scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard)\\.py|scripts/migration/export_live_shadow_bundle\" bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/migration-readiness-report.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
+      "test ! -e bigclaw-go/scripts/migration/export_live_shadow_bundle",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(LiveShadowScorecardBundleStaysAligned|LiveShadowBundleSummaryAndIndexStayAligned|BIGGO124(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)|BIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState))$'"
+    ],
+    "results": {
+      "scoped_python_reference_sweep": "no matches (rg exit 1)",
+      "residual_wrapper_absence": "wrapper absent (test exit 0)",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
+    }
+  },
+  "notes": [
+    "BIG-GO-124 removes the final migration-area extensionless Python wrapper and rewires the scoped live-shadow closeout/documentation surfaces to Go-native automation commands.",
+    "Baseline HEAD before lane changes was `959fbc5d`.",
+    "Final commit and push metadata will replace `PENDING` after git completion."
+  ],
+  "blockers": []
+}
