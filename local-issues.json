@@ -7764,6 +7764,11 @@
           "author": "codex",
           "body": "Landed BIG-GO-135 directly on `main` at `f3ae698` after rebasing the scoped three-commit lane onto current `origin/main`.\n\nSuperseded PRs #226 and #227 were closed after the direct landing.\n\nValidation rerun on the rebased head:\n- `git ls-files 'scripts/*.py' 'scripts/ops/*.py' 'setup.py' 'pyproject.toml' | sort` -> no output\n- `find . -path './.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sed 's#^./##' | sort` -> no output\n- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'` -> `ok   bigclaw-go/internal/regression 0.192s`\n- `python3 -m json.tool local-issues.json >/dev/null` -> exit 0\n- `python3 -m json.tool reports/BIG-GO-135-status.json >/dev/null` -> exit 0",
           "created_at": "2026-04-08T20:32:14Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final BIG-GO-135 metadata sync complete.\n\nThe landed-state artifacts and remote issue branches were synced to the final `main` head `2b19412` after the direct landing commit `f3ae698`.\n\nMetadata updates:\n- `reports/BIG-GO-135-status.json` now records `landing_commit` `2b19412` and the closed PR head SHAs at `2b19412`\n- `reports/BIG-GO-135-validation.md` now records the final metadata-sync push `f3ae698..2b19412`",
+          "created_at": "2026-04-08T20:50:02Z"
         }
       ],
       "created_at": "2026-04-08T17:18:33Z",
@@ -7776,7 +7781,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Residual tooling Python sweep I",
-      "updated_at": "2026-04-08T20:32:14Z"
+      "updated_at": "2026-04-08T20:50:02Z"
     }
   ]
 }
