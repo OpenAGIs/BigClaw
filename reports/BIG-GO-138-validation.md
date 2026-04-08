@@ -57,7 +57,8 @@ ok  	bigclaw-go/internal/regression	0.190s
 ## Git
 
 - Branch: `feat/BIG-GO-138-python-guidance-sweep`
-- Commit: `ebd03799af31643fdaf21fb81ace048e273fce6e`
+- Initial implementation commit: `ebd03799af31643fdaf21fb81ace048e273fce6e`
+- Final branch head: `42c5ddfe8f5ab29c70812750db156b0b352bf28c`
 - Push:
 
 ```text
@@ -69,4 +70,8 @@ remote:
 To https://github.com/OpenAGIs/BigClaw.git
  * [new branch]        feat/BIG-GO-138-python-guidance-sweep -> feat/BIG-GO-138-python-guidance-sweep
 branch 'feat/BIG-GO-138-python-guidance-sweep' set up to track 'origin/feat/BIG-GO-138-python-guidance-sweep'.
+
+git push
+To https://github.com/OpenAGIs/BigClaw.git
+   ebd03799..42c5ddfe  feat/BIG-GO-138-python-guidance-sweep -> feat/BIG-GO-138-python-guidance-sweep
 ```
