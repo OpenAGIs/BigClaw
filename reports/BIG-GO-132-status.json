@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-132'",
-    "push_target": "origin/main"
+    "latest_commit": "2ef550c1",
+    "push_target": "origin/BIG-GO-132"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-132-validation.md",

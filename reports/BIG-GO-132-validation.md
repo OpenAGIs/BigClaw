@@ -90,8 +90,8 @@ ok  	bigclaw-go/internal/regression	0.193s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `ced066a9`
-- Landed lane commit: `see git log --oneline --grep 'BIG-GO-132'`
-- Push target: `origin/main`
+- Landed lane commit: `2ef550c1 BIG-GO-132 add residual python sweep guard`
+- Push target: `origin/BIG-GO-132`
 
 ## Residual Risk
 
