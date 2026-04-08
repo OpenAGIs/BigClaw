@@ -30,7 +30,9 @@
   ],
   "commits": {
     "implementation": "652dcb300ed5840d2160d0fa57a365052bdc5006",
-    "closeout_artifacts": "c5a7062876efaa0e1b97c11722b5755f8744fe3c"
+    "closeout_artifacts": "c5a7062876efaa0e1b97c11722b5755f8744fe3c",
+    "metadata_finalize": "6649f059c9ead8c4d32ceda37ed0009fc700d674",
+    "workpad_sync": "e7067421d790d77d8495edc384d7abe8e97744f3"
   },
   "branch": "BIG-GO-107",
   "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-107?expand=1",
