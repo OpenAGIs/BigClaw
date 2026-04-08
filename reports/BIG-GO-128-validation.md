@@ -91,7 +91,7 @@ ok  	bigclaw-go/internal/regression	1.072s
 - Branch: `big-go-128-python-sweep`
 - Baseline HEAD before lane commit: `ced066a9`
 - Code commit: `c9266383` (`BIG-GO-128 add broad repo python sweep guard`)
-- Final metadata commit: `PENDING`
+- Final metadata commit: `461d8fe5` (`BIG-GO-128 finalize sweep metadata`)
 - Push target: `origin/big-go-128-python-sweep`
 
 ## Residual Risk

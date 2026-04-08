@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-128-python-sweep",
-    "latest_commit": "PENDING",
+    "latest_commit": "461d8fe5",
     "push_target": "origin/big-go-128-python-sweep"
   },
   "artifacts": {
