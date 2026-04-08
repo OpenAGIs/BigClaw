@@ -74,7 +74,7 @@
     "results": {
       "repo_py_inventory": "none",
       "scoped_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.190s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t2.887s"
     }
   },
   "blocker": {
