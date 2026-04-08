@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-123",
-    "latest_commit": "9bd5e253 BIG-GO-123 add parallel residual test sweep guard",
+    "latest_commit": "55b28b24 BIG-GO-123 add validation closeout artifacts",
     "push_target": "origin/big-go-123"
   },
   "artifacts": {

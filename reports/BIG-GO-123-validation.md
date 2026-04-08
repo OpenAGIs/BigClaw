@@ -112,7 +112,7 @@ ok  	bigclaw-go/internal/refill	3.079s
 
 - Branch: `big-go-123`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-123'`
-- Final pushed lane commit at validation time: `9bd5e253 BIG-GO-123 add parallel residual test sweep guard`
+- Final pushed lane commit at validation time: `55b28b24 BIG-GO-123 add validation closeout artifacts`
 - Push target: `origin/big-go-123`
 
 ## Residual Risk
