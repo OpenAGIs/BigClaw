@@ -1,39 +1,38 @@
-# BIG-GO-176 Workpad
+# BIG-GO-188 Workpad
 
 ## Plan
 
-1. Confirm the current repository Python baseline and inspect the residual
-support-asset surfaces relevant to this lane: `bigclaw-go/examples`,
-`bigclaw-go/docs/reports/live-shadow-runs`,
-`bigclaw-go/docs/reports/live-validation-runs`, and `scripts/ops`.
-2. Add lane-specific regression coverage for `BIG-GO-176` that locks those
-support-asset directories at zero Python files while asserting that the
-retained non-Python example, fixture, demo, and helper assets still exist.
-3. Add the matching lane report plus `reports/BIG-GO-176-{validation,status}`
+1. Confirm the repository-wide Python baseline and inspect the repo-root
+control metadata surface relevant to this lane: `.symphony`, `README.md`,
+`workflow.md`, `Makefile`, `local-issues.json`, `.pre-commit-config.yaml`,
+and `.gitignore`.
+2. Add lane-specific regression coverage for `BIG-GO-188` that locks the
+repo-root control metadata surface at zero Python files while asserting that
+the retained non-Python root assets still exist.
+3. Add the matching lane report plus `reports/BIG-GO-188-{validation,status}`
 artifacts, run targeted validation, record exact commands and results, then
 commit and push the scoped change set.
 
 ## Acceptance
 
-- `BIG-GO-176` has lane-specific regression coverage for residual support
-  assets.
-- The guard enforces that `bigclaw-go/examples`,
-  `bigclaw-go/docs/reports/live-shadow-runs`,
-  `bigclaw-go/docs/reports/live-validation-runs`, and `scripts/ops` remain
-  Python-free.
-- The lane report and `reports/BIG-GO-176-{validation,status}` artifacts
-  document the zero-Python support-asset inventory, the retained non-Python
-  support assets, and the exact validation commands/results.
+- `BIG-GO-188` has lane-specific regression coverage for the repo-root control
+  metadata surface.
+- The guard enforces that `.symphony` and the repo root remain Python-free.
+- The lane report and `reports/BIG-GO-188-{validation,status}` artifacts
+  document the zero-Python repo-root inventory, the retained native root
+  assets, and the exact validation commands/results.
 - The resulting change is committed and pushed to the remote branch.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/scripts/ops -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO176(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-188 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-188/.symphony -type f -name '*.py' 2>/dev/null | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-188 -maxdepth 1 -type f -name '*.py' | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-188/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO188(RepositoryHasNoPythonFiles|RepoRootControlMetadataStaysPythonFree|RetainedRootAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176 -path '*/.git' -prune -o -type f -name '*.py' -print | sort` produced no output.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/scripts/ops -type f -name '*.py' 2>/dev/null | sort` produced no output.
-- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO176(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 3.219s`.
+- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-188 -path '*/.git' -prune -o -type f -name '*.py' -print | sort` produced no output.
+- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-188/.symphony -type f -name '*.py' 2>/dev/null | sort` produced no output.
+- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-188 -maxdepth 1 -type f -name '*.py' | sort` produced no output.
+- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-188/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO188(RepositoryHasNoPythonFiles|RepoRootControlMetadataStaysPythonFree|RetainedRootAssetsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 0.187s`.
