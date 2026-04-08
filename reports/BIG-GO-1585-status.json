@@ -1,0 +1,51 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1585",
+    "title": "Strict bucket lane 1585: bigclaw-go/scripts/e2e/*.py bucket",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1585'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1585-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1585-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1585_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "scoped_dirs": {
+      "bigclaw-go/scripts/e2e": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/scripts/e2e/broker_bootstrap_summary.go",
+    "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+    "bigclaw-go/scripts/e2e/ray_smoke.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/docs/go-cli-script-migration.md",
+    "bigclaw-go/internal/regression/big_go_1585_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/scripts/e2e -type f -name '*.py' 2>/dev/null | sort",
+      "test -d bigclaw-go/scripts/e2e",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1585(RepositoryHasNoPythonFiles|E2EBucketStaysPythonFree|ActiveE2EReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "bucket_inventory": "none",
+      "bucket_presence": "present",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.192s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The target bucket already contained zero physical Python files at branch entry, so this lane hardens the state instead of reducing the count further."
+  }
+}
