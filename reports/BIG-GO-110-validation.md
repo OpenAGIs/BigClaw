@@ -88,7 +88,9 @@ ok  	bigclaw-go/internal/regression	0.192s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `959fbc5d`
-- Push target: `origin/main`
+- Push target: `origin/BIG-GO-110`
+- Published lane commit: `c2fdc396` (`BIG-GO-110: add python budget convergence sweep`)
+- Local/remote SHA equality confirmed at `c2fdc396`
 
 ## Residual Risk
 

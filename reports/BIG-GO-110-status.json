@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "959fbc5d",
-    "push_target": "origin/main"
+    "latest_commit": "c2fdc396",
+    "push_target": "origin/BIG-GO-110"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-110-validation.md",
@@ -54,6 +54,8 @@
   },
   "notes": [
     "This lane documents a practical repository Python-file budget of <=1 while proving the current checkout remains at 0.",
-    "Baseline HEAD before lane changes was `959fbc5d`."
+    "Baseline HEAD before lane changes was `959fbc5d`.",
+    "Published lane commit `c2fdc396` (`BIG-GO-110: add python budget convergence sweep`) to `origin/BIG-GO-110`.",
+    "Local and remote agree at pushed HEAD `c2fdc396`."
   ]
 }
