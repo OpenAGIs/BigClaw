@@ -23,8 +23,9 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 
 	replacements := append([]migration.LegacyModuleReplacement{}, migration.LegacyReportingOpsModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
-	if len(replacements) != 8 {
-		t.Fatalf("expected 8 retired module replacements, got %d", len(replacements))
+	replacements = append(replacements, migration.LegacyOperatorProductModuleReplacements()...)
+	if len(replacements) != 14 {
+		t.Fatalf("expected 14 retired module replacements, got %d", len(replacements))
 	}
 
 	expected := map[string]struct {
@@ -135,6 +136,76 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 			},
 			statusNeedle: "Go audit event registry",
 		},
+		"src/bigclaw/issue_archive.py": {
+			replacementKind: "go-issue-archive-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/issuearchive/archive.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/issuearchive/archive_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go issue priority archive",
+		},
+		"src/bigclaw/run_detail.py": {
+			replacementKind: "go-run-detail-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/observability/task_run.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/observability/task_run_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go task-run detail",
+		},
+		"src/bigclaw/dashboard_run_contract.py": {
+			replacementKind: "go-dashboard-contract",
+			goReplacements: []string{
+				"bigclaw-go/internal/product/dashboard_run_contract.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/product/dashboard_run_contract_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go dashboard and run-detail contract",
+		},
+		"src/bigclaw/saved_views.py": {
+			replacementKind: "go-saved-views-catalog",
+			goReplacements: []string{
+				"bigclaw-go/internal/product/saved_views.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/product/saved_views_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go saved-view catalog",
+		},
+		"src/bigclaw/console_ia.py": {
+			replacementKind: "go-console-ia-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/consoleia/consoleia.go",
+				"bigclaw-go/internal/product/console.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/consoleia/consoleia_test.go",
+				"bigclaw-go/internal/product/console_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go console interaction architecture",
+		},
+		"src/bigclaw/design_system.py": {
+			replacementKind: "go-design-system-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/designsystem/designsystem.go",
+				"bigclaw-go/internal/product/console.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/designsystem/designsystem_test.go",
+				"bigclaw-go/internal/product/console_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go design token library",
+		},
 	}
 
 	for _, replacement := range replacements {
@@ -161,6 +232,7 @@ func TestBIGGO101GoReplacementPathsRemainAvailable(t *testing.T) {
 
 	replacements := append([]migration.LegacyModuleReplacement{}, migration.LegacyReportingOpsModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
+	replacements = append(replacements, migration.LegacyOperatorProductModuleReplacements()...)
 	for _, replacement := range replacements {
 		for _, relativePath := range replacement.GoReplacements {
 			if _, err := os.Stat(filepath.Join(rootRepo, filepath.FromSlash(relativePath))); err != nil {
@@ -196,8 +268,15 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`src/bigclaw/governance.py`",
 		"`src/bigclaw/execution_contract.py`",
 		"`src/bigclaw/audit_events.py`",
+		"`src/bigclaw/issue_archive.py`",
+		"`src/bigclaw/run_detail.py`",
+		"`src/bigclaw/dashboard_run_contract.py`",
+		"`src/bigclaw/saved_views.py`",
+		"`src/bigclaw/console_ia.py`",
+		"`src/bigclaw/design_system.py`",
 		"`bigclaw-go/internal/migration/legacy_reporting_ops_modules.go`",
 		"`bigclaw-go/internal/migration/legacy_policy_governance_modules.go`",
+		"`bigclaw-go/internal/migration/legacy_operator_product_modules.go`",
 		"`bigclaw-go/internal/observability/recorder.go`",
 		"`bigclaw-go/internal/reporting/reporting.go`",
 		"`bigclaw-go/internal/reportstudio/reportstudio.go`",
@@ -212,6 +291,12 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`bigclaw-go/internal/api/policy_runtime.go`",
 		"`bigclaw-go/internal/observability/audit.go`",
 		"`bigclaw-go/internal/observability/audit_spec.go`",
+		"`bigclaw-go/internal/issuearchive/archive.go`",
+		"`bigclaw-go/internal/product/dashboard_run_contract.go`",
+		"`bigclaw-go/internal/product/saved_views.go`",
+		"`bigclaw-go/internal/consoleia/consoleia.go`",
+		"`bigclaw-go/internal/designsystem/designsystem.go`",
+		"`bigclaw-go/internal/product/console.go`",
 		"`bigclaw-go/docs/reports/v2-phase1-operations-foundation-report.md`",
 		"`docs/go-mainline-cutover-issue-pack.md`",
 		"`find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`",
