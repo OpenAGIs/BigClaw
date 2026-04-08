@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "a082a408 BIG-GO-162: finalize validation metadata",
+    "latest_commit": "5c884926 BIG-GO-162: refresh final lane metadata",
     "push_target": "origin/main"
   },
   "artifacts": {

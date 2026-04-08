@@ -92,8 +92,8 @@ ok  	bigclaw-go/internal/regression	0.171s
 
 - Branch: `main`
 - Baseline HEAD before lane changes: `f3ae6981`
-- Lane commit details: `a082a408 BIG-GO-162: finalize validation metadata`
-- Final pushed lane commit: `git log --oneline --grep 'BIG-GO-162'`
+- Lane commit details: `5c884926 BIG-GO-162: refresh final lane metadata`
+- Final pushed lane commit: `5c884926 BIG-GO-162: refresh final lane metadata`
 - Push target: `origin/main`
 
 ## Workpad Archive
