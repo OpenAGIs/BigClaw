@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending final BIG-GO-1586 commit",
+    "latest_commit": "tracked in git history via `git log --oneline --grep 'BIG-GO-1586'`",
     "push_target": "origin/main"
   },
   "artifacts": {
