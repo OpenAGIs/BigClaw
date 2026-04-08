@@ -2,7 +2,7 @@
 
 ## Plan
 1. Record the current repository state for this refill lane and keep the sweep scoped to retired `src/bigclaw` module evidence only.
-2. Add dedicated Go replacement ledgers for the largest remaining retired `src/bigclaw` reporting/operations, policy/governance, operator/product, and bootstrap/sync modules:
+2. Add dedicated Go replacement ledgers for the largest remaining retired `src/bigclaw` reporting/operations, policy/governance, operator/product, bootstrap/sync, and collaboration/intake modules:
    - `src/bigclaw/observability.py`
    - `src/bigclaw/reports.py`
    - `src/bigclaw/evaluation.py`
@@ -24,6 +24,12 @@
    - `src/bigclaw/parallel_refill.py`
    - `src/bigclaw/service.py`
    - `src/bigclaw/__main__.py`
+   - `src/bigclaw/collaboration.py`
+   - `src/bigclaw/connectors.py`
+   - `src/bigclaw/dsl.py`
+   - `src/bigclaw/planning.py`
+   - `src/bigclaw/pilot.py`
+   - `src/bigclaw/ui_review.py`
 3. Add targeted regression coverage that asserts those retired Python paths remain absent, the mapped Go owners still exist, and the lane report captures exact evidence.
 4. Run targeted validation commands, record exact commands and outcomes here and in the lane report, then commit and push `BIG-GO-101`.
 
@@ -36,6 +42,6 @@
 
 ## Validation
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`
-  - Result: `ok  	bigclaw-go/internal/regression	5.910s`
+  - Result: `ok  	bigclaw-go/internal/regression	3.215s`
 - `cd bigclaw-go && go test -count=1 ./internal/migration`
   - Result: `?   	bigclaw-go/internal/migration	[no test files]`

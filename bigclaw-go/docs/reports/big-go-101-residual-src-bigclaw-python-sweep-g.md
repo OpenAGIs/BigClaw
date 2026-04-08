@@ -4,8 +4,8 @@
 
 This refill lane records exact Go replacement evidence for the largest retired
 `src/bigclaw` reporting, operations, policy, governance, operator, product,
-bootstrap, and sync modules that still merit explicit replacement tracking in
-this checkout:
+bootstrap, sync, collaboration, intake, planning, and review modules that
+still merit explicit replacement tracking in this checkout:
 
 - `src/bigclaw/observability.py`
 - `src/bigclaw/reports.py`
@@ -28,6 +28,12 @@ this checkout:
 - `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/service.py`
 - `src/bigclaw/__main__.py`
+- `src/bigclaw/collaboration.py`
+- `src/bigclaw/connectors.py`
+- `src/bigclaw/dsl.py`
+- `src/bigclaw/planning.py`
+- `src/bigclaw/pilot.py`
+- `src/bigclaw/ui_review.py`
 
 ## Before And After Counts
 
@@ -70,6 +76,12 @@ Focused sweep-G ledger: `[]`
 - `src/bigclaw/parallel_refill.py`
 - `src/bigclaw/service.py`
 - `src/bigclaw/__main__.py`
+- `src/bigclaw/collaboration.py`
+- `src/bigclaw/connectors.py`
+- `src/bigclaw/dsl.py`
+- `src/bigclaw/planning.py`
+- `src/bigclaw/pilot.py`
+- `src/bigclaw/ui_review.py`
 
 ## Structured Replacement Ledger
 
@@ -84,6 +96,9 @@ It also adds the structured replacement registry at
 
 It also adds the structured replacement registry at
 `bigclaw-go/internal/migration/legacy_bootstrap_sync_modules.go`.
+
+It also adds the structured replacement registry at
+`bigclaw-go/internal/migration/legacy_collaboration_intake_modules.go`.
 
 ### `src/bigclaw/observability.py`
 
@@ -302,6 +317,68 @@ It also adds the structured replacement registry at
   - `bigclaw-go/cmd/bigclawctl/main_test.go`
   - `docs/go-mainline-cutover-issue-pack.md`
 
+### `src/bigclaw/collaboration.py`
+
+- Replacement kind: `go-collaboration-thread`
+- Go replacements:
+  - `bigclaw-go/internal/collaboration/thread.go`
+  - `bigclaw-go/internal/flow/flow.go`
+- Evidence:
+  - `bigclaw-go/internal/collaboration/thread_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/connectors.py`
+
+- Replacement kind: `go-intake-connectors`
+- Go replacements:
+  - `bigclaw-go/internal/intake/connector.go`
+  - `bigclaw-go/internal/intake/types.go`
+  - `bigclaw-go/internal/prd/intake.go`
+- Evidence:
+  - `bigclaw-go/internal/intake/connector_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/dsl.py`
+
+- Replacement kind: `go-workflow-definition`
+- Go replacements:
+  - `bigclaw-go/internal/workflow/definition.go`
+  - `bigclaw-go/internal/prd/intake.go`
+- Evidence:
+  - `bigclaw-go/internal/workflow/definition_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/planning.py`
+
+- Replacement kind: `go-planning-surface`
+- Go replacements:
+  - `bigclaw-go/internal/planning/planning.go`
+- Evidence:
+  - `bigclaw-go/internal/planning/planning_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/pilot.py`
+
+- Replacement kind: `go-pilot-rollout`
+- Go replacements:
+  - `bigclaw-go/internal/pilot/report.go`
+  - `bigclaw-go/internal/pilot/rollout.go`
+- Evidence:
+  - `bigclaw-go/internal/pilot/report_test.go`
+  - `bigclaw-go/internal/pilot/rollout_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/ui_review.py`
+
+- Replacement kind: `go-ui-review-surface`
+- Go replacements:
+  - `bigclaw-go/internal/uireview/uireview.go`
+  - `bigclaw-go/internal/uireview/builder.go`
+  - `bigclaw-go/internal/uireview/render.go`
+- Evidence:
+  - `bigclaw-go/internal/uireview/uireview_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
 ## Validation Commands And Results
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
@@ -309,6 +386,6 @@ It also adds the structured replacement registry at
 - `find src/bigclaw -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the focused `src/bigclaw` sweep-G surface remained absent.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`
-  Result: `ok  	bigclaw-go/internal/regression	5.910s`
+  Result: `ok  	bigclaw-go/internal/regression	3.215s`
 - `cd bigclaw-go && go test -count=1 ./internal/migration`
   Result: `?   	bigclaw-go/internal/migration	[no test files]`

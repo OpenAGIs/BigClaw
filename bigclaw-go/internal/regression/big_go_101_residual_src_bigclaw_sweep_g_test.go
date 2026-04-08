@@ -25,8 +25,9 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyOperatorProductModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyBootstrapSyncModuleReplacements()...)
-	if len(replacements) != 21 {
-		t.Fatalf("expected 21 retired module replacements, got %d", len(replacements))
+	replacements = append(replacements, migration.LegacyCollaborationIntakeModuleReplacements()...)
+	if len(replacements) != 27 {
+		t.Fatalf("expected 27 retired module replacements, got %d", len(replacements))
 	}
 
 	expected := map[string]struct {
@@ -294,6 +295,80 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 			},
 			statusNeedle: "Go daemon and operator CLIs",
 		},
+		"src/bigclaw/collaboration.py": {
+			replacementKind: "go-collaboration-thread",
+			goReplacements: []string{
+				"bigclaw-go/internal/collaboration/thread.go",
+				"bigclaw-go/internal/flow/flow.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/collaboration/thread_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go collaboration thread",
+		},
+		"src/bigclaw/connectors.py": {
+			replacementKind: "go-intake-connectors",
+			goReplacements: []string{
+				"bigclaw-go/internal/intake/connector.go",
+				"bigclaw-go/internal/intake/types.go",
+				"bigclaw-go/internal/prd/intake.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/intake/connector_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go intake connector registry",
+		},
+		"src/bigclaw/dsl.py": {
+			replacementKind: "go-workflow-definition",
+			goReplacements: []string{
+				"bigclaw-go/internal/workflow/definition.go",
+				"bigclaw-go/internal/prd/intake.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/workflow/definition_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go workflow-definition renderer",
+		},
+		"src/bigclaw/planning.py": {
+			replacementKind: "go-planning-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/planning/planning.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/planning/planning_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go planning release-candidate",
+		},
+		"src/bigclaw/pilot.py": {
+			replacementKind: "go-pilot-rollout",
+			goReplacements: []string{
+				"bigclaw-go/internal/pilot/report.go",
+				"bigclaw-go/internal/pilot/rollout.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/pilot/report_test.go",
+				"bigclaw-go/internal/pilot/rollout_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go pilot report",
+		},
+		"src/bigclaw/ui_review.py": {
+			replacementKind: "go-ui-review-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/uireview/uireview.go",
+				"bigclaw-go/internal/uireview/builder.go",
+				"bigclaw-go/internal/uireview/render.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/uireview/uireview_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go review-pack builder",
+		},
 	}
 
 	for _, replacement := range replacements {
@@ -322,6 +397,7 @@ func TestBIGGO101GoReplacementPathsRemainAvailable(t *testing.T) {
 	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyOperatorProductModuleReplacements()...)
 	replacements = append(replacements, migration.LegacyBootstrapSyncModuleReplacements()...)
+	replacements = append(replacements, migration.LegacyCollaborationIntakeModuleReplacements()...)
 	for _, replacement := range replacements {
 		for _, relativePath := range replacement.GoReplacements {
 			if _, err := os.Stat(filepath.Join(rootRepo, filepath.FromSlash(relativePath))); err != nil {
@@ -370,10 +446,17 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`src/bigclaw/parallel_refill.py`",
 		"`src/bigclaw/service.py`",
 		"`src/bigclaw/__main__.py`",
+		"`src/bigclaw/collaboration.py`",
+		"`src/bigclaw/connectors.py`",
+		"`src/bigclaw/dsl.py`",
+		"`src/bigclaw/planning.py`",
+		"`src/bigclaw/pilot.py`",
+		"`src/bigclaw/ui_review.py`",
 		"`bigclaw-go/internal/migration/legacy_reporting_ops_modules.go`",
 		"`bigclaw-go/internal/migration/legacy_policy_governance_modules.go`",
 		"`bigclaw-go/internal/migration/legacy_operator_product_modules.go`",
 		"`bigclaw-go/internal/migration/legacy_bootstrap_sync_modules.go`",
+		"`bigclaw-go/internal/migration/legacy_collaboration_intake_modules.go`",
 		"`bigclaw-go/internal/observability/recorder.go`",
 		"`bigclaw-go/internal/reporting/reporting.go`",
 		"`bigclaw-go/internal/reportstudio/reportstudio.go`",
@@ -400,6 +483,18 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`bigclaw-go/internal/refill/local_store.go`",
 		"`bigclaw-go/cmd/bigclawctl/main.go`",
 		"`bigclaw-go/cmd/bigclawd/main.go`",
+		"`bigclaw-go/internal/collaboration/thread.go`",
+		"`bigclaw-go/internal/flow/flow.go`",
+		"`bigclaw-go/internal/intake/connector.go`",
+		"`bigclaw-go/internal/intake/types.go`",
+		"`bigclaw-go/internal/prd/intake.go`",
+		"`bigclaw-go/internal/workflow/definition.go`",
+		"`bigclaw-go/internal/planning/planning.go`",
+		"`bigclaw-go/internal/pilot/report.go`",
+		"`bigclaw-go/internal/pilot/rollout.go`",
+		"`bigclaw-go/internal/uireview/uireview.go`",
+		"`bigclaw-go/internal/uireview/builder.go`",
+		"`bigclaw-go/internal/uireview/render.go`",
 		"`bigclaw-go/docs/reports/v2-phase1-operations-foundation-report.md`",
 		"`docs/go-mainline-cutover-issue-pack.md`",
 		"`find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`",
