@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "485e9140 BIG-GO-162: add residual python test sweep guard",
+    "latest_commit": "a082a408 BIG-GO-162: finalize validation metadata",
     "push_target": "origin/main"
   },
   "artifacts": {
