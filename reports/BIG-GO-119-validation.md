@@ -89,9 +89,10 @@ ok  	bigclaw-go/internal/regression	5.144s
 
 ## Git
 
-- Commit: `657f6105`
+- Commits: `657f6105`, `2dfd472e`
 - Push: `git push origin main`
 
 ## Residual Risk
 
 - The repository baseline was already Python-free in this workspace, so `BIG-GO-119` can only harden and document the zero-Python state rather than reduce a nonzero `.py` count.
+- Final metadata closeout commits may advance the branch after the lane implementation commit; read the current pushed tip from `git rev-parse --short HEAD`.

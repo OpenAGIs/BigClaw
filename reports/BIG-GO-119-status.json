@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "657f6105",
+    "latest_commit": "read the current pushed tip from `git rev-parse --short HEAD`",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -57,5 +57,8 @@
   "blocker": {
     "type": "baseline",
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-119 changes."
-  }
+  },
+  "notes": [
+    "Final metadata closeout commits may advance the branch after the lane implementation commit; read the current pushed tip directly from `git rev-parse --short HEAD`."
+  ]
 }
