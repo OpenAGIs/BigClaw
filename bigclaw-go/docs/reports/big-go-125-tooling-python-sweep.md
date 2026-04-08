@@ -33,6 +33,7 @@ The active non-Python tooling surface for this lane is:
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
+- Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
 
@@ -47,3 +48,6 @@ Result: not logged into any GitHub hosts, exit code `1`
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
 Result: `[]`
+
+Command: compare URL
+Result: reachable without auth and shows the `BIG-GO-125` compare stack against `main`

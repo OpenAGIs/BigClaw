@@ -35,6 +35,7 @@ no longer reads as an active workflow.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
+- Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
 
@@ -110,6 +111,18 @@ Result:
 ]
 ```
 
+Public compare page:
+
+```text
+https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1
+```
+
+Observed result:
+
+```text
+Reachable without auth; shows the BIG-GO-125 compare stack against main and can be used as the manual PR handoff link.
+```
+
 ## Git
 
 - Branch: `BIG-GO-125`
@@ -119,6 +132,7 @@ Result:
   - `4b6a6183` (`BIG-GO-125 refresh workpad`)
   - `aedbb76a` (`BIG-GO-125 remove residual python tooling guidance`)
 - Push target: `origin/BIG-GO-125`
+- Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Residual Risk
 
@@ -130,3 +144,5 @@ Result:
   pushed to `origin/BIG-GO-125`.
 - The public GitHub API currently reports no PR for head branch `BIG-GO-125`,
   so manual authenticated PR creation remains the only external remaining step.
+- The public compare page is reachable and can be used as the manual PR
+  creation handoff URL once authenticated access is available.

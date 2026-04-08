@@ -6,8 +6,9 @@
   },
   "branch": {
     "name": "BIG-GO-125",
-    "latest_commit": "feefe211",
-    "push_target": "origin/BIG-GO-125"
+    "latest_commit": "c1cb7bcf",
+    "push_target": "origin/BIG-GO-125",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-125-validation.md",
@@ -38,14 +39,16 @@
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<\" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'"
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'",
+      "public compare page: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
     ],
     "results": {
       "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t0.187s",
       "active_doc_reference_scan": "no matches; exit code 1",
       "gh_auth_status": "not logged into any GitHub hosts; exit code 1",
       "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4",
-      "public_pr_query": "[]"
+      "public_pr_query": "[]",
+      "public_compare_page": "reachable without auth; shows the BIG-GO-125 compare stack against main"
     }
   },
   "notes": [
