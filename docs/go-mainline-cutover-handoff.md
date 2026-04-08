@@ -23,7 +23,9 @@ cutover set.
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- Historical cutover validation also included legacy shim assertions at merge
+  time, but that Python-side check is now retired and should not be used as an
+  active developer workflow.
 
 ## Completed scope
 

@@ -15,6 +15,7 @@
     "lane_report": "bigclaw-go/docs/reports/big-go-125-tooling-python-sweep.md",
     "touched_docs": [
       "README.md",
+      "docs/go-mainline-cutover-handoff.md",
       "bigclaw-go/docs/migration-shadow.md"
     ],
     "regression_guards": [
@@ -34,10 +35,10 @@
   "validation": {
     "commands": [
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)\" README.md bigclaw-go/docs/migration-shadow.md"
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<\" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md"
     ],
     "results": {
-      "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t(cached)",
+      "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t0.187s",
       "active_doc_reference_scan": "no matches; exit code 1"
     }
   },

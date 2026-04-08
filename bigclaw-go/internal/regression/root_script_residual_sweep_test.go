@@ -82,4 +82,24 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 	if strings.Contains(readme, "legacy-python compile-check") {
 		t.Fatalf("README.md should not reference retired legacy-python compile-check guidance")
 	}
+
+	cutoverHandoff := readRepoFile(t, repoRoot, "docs/go-mainline-cutover-handoff.md")
+	requiredHandoffEntries := []string{
+		"Historical cutover validation also included legacy shim assertions at merge",
+		"that Python-side check is now retired",
+		"active developer workflow",
+	}
+	for _, needle := range requiredHandoffEntries {
+		if !strings.Contains(cutoverHandoff, needle) {
+			t.Fatalf("docs/go-mainline-cutover-handoff.md missing retired Python validation guidance %q", needle)
+		}
+	}
+	disallowedHandoffEntries := []string{
+		"PYTHONPATH=src python3 - <<",
+	}
+	for _, needle := range disallowedHandoffEntries {
+		if strings.Contains(cutoverHandoff, needle) {
+			t.Fatalf("docs/go-mainline-cutover-handoff.md should not present retired Python validation command %q", needle)
+		}
+	}
 }

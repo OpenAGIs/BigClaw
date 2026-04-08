@@ -13,13 +13,16 @@ docs and locks the replacement surface with targeted regression coverage.
 
 The delivered change updates the root repository hygiene instructions and the
 active migration-shadow helper commands so they point at the live Go and
-shell-native entrypoints instead of retired Python helpers.
+shell-native entrypoints instead of retired Python helpers. It also converts a
+remaining cutover handoff Python validation command into archival wording so it
+no longer reads as an active workflow.
 
 ## Active Replacement Paths
 
 - Repository hygiene: `git diff --check`
 - Repository hygiene: `make test`
 - Repository hygiene: `make build`
+- Historical cutover validation note: archival-only wording in `docs/go-mainline-cutover-handoff.md`
 - Migration shadow compare: `go run ./cmd/bigclawctl automation migration shadow-compare`
 - Migration shadow matrix: `go run ./cmd/bigclawctl automation migration shadow-matrix`
 - Migration shadow scorecard: `go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
@@ -28,7 +31,7 @@ shell-native entrypoints instead of retired Python helpers.
 ## Validation Commands
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)" README.md bigclaw-go/docs/migration-shadow.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md`
 
 ## Validation Results
 
@@ -43,7 +46,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./int
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	(cached)
+ok  	bigclaw-go/internal/regression	0.187s
 ```
 
 ### Residual active-doc reference search
@@ -51,7 +54,7 @@ ok  	bigclaw-go/internal/regression	(cached)
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)" README.md bigclaw-go/docs/migration-shadow.md
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md
 ```
 
 Result:
@@ -73,4 +76,4 @@ exit code 1
 
 - Historical reports and archived regression fixtures still mention retired
   Python tooling as evidence, but the active developer-facing docs covered by
-  this lane no longer do.
+  this lane no longer present those commands as current workflow guidance.
