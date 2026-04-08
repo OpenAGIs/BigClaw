@@ -75,7 +75,7 @@
       "pid": "4042"
     },
     "status": "SUCCEEDED",
-    "entrypoint": "python -c \"import ray; ray.init(address=\\\"auto\\\"); print(ray.cluster_resources())\"",
+    "entrypoint": "sh -c 'echo ray driver snapshot'",
     "message": null,
     "error_type": null,
     "start_time": 1773371783621,

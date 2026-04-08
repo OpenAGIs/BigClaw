@@ -36,4 +36,15 @@ func TestParallelValidationMatrixDocsStayAligned(t *testing.T) {
 			t.Fatalf("docs/reports/parallel-validation-matrix.md missing substring %q", needle)
 		}
 	}
+
+	mixedWorkloadReport := readRepoFile(t, repoRoot, "docs/reports/mixed-workload-matrix-report.json")
+	if strings.Contains(mixedWorkloadReport, "python -c") {
+		t.Fatal("mixed-workload-matrix-report.json should not retain inline-Python ray entrypoints in checked-in reviewer evidence")
+	}
+	if !strings.Contains(mixedWorkloadReport, "sh -c 'echo gpu via ray'") {
+		t.Fatal("mixed-workload-matrix-report.json should retain the shell-native gpu ray entrypoint")
+	}
+	if !strings.Contains(mixedWorkloadReport, "sh -c 'echo required ray'") {
+		t.Fatal("mixed-workload-matrix-report.json should retain the shell-native required-ray entrypoint")
+	}
 }

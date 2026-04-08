@@ -21,7 +21,9 @@ their Ray smoke evidence now matches the shell-native default already
 documented in `docs/e2e-validation.md` instead of advertising the retired
 inline-Python smoke entrypoint. The final follow-up also normalizes a skipped
 Ray bundle so reviewer-facing docs do not point at Ray smoke report artifacts
-that were never produced.
+that were never produced. A second follow-up then swept adjacent checked-in Ray
+reviewer evidence that still embedded inline-Python entrypoints outside the
+main live-validation bundle.
 
 ## Active Replacement Paths
 
@@ -42,6 +44,7 @@ that were never produced.
 - Live validation summary JSON: `bigclaw-go/docs/reports/live-validation-summary.json`
 - Canonical Ray smoke report: `bigclaw-go/docs/reports/ray-live-smoke-report.json`
 - Ray jobs snapshot: `bigclaw-go/docs/reports/ray-live-jobs.json`
+- Mixed workload matrix report: `bigclaw-go/docs/reports/mixed-workload-matrix-report.json`
 - Previous bundled Ray smoke report: `bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json`
 - Previous bundled live validation summary: `bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json`
 - Skipped bundled live validation README: `bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md`
@@ -61,6 +64,8 @@ that were never produced.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c \"print\\(' bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "sh -c 'echo hello from ray'" bigclaw-go/docs/reports/live-validation-index.json bigclaw-go/docs/reports/live-validation-summary.json bigclaw-go/docs/reports/ray-live-smoke-report.json bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'ray-live-smoke-report.json|executor disabled; no Ray smoke report was produced for this bundle' bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c|sh -c '\''echo (gpu via ray|required ray|ray driver snapshot)'\''' bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/mixed-workload-matrix-report.json`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -172,6 +177,42 @@ Observed result:
 
 ```text
 Only the disabled-lane reason matched. No skipped-bundle ray-live-smoke-report.json reference remains in the checked-in reviewer bundle.
+```
+
+### Adjacent Ray evidence regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.211s
+```
+
+### Adjacent Ray evidence scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c|sh -c '\''echo (gpu via ray|required ray|ray driver snapshot)'\''' bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/mixed-workload-matrix-report.json
+```
+
+Result:
+
+```text
+bigclaw-go/docs/reports/ray-live-jobs.json:78:    "entrypoint": "sh -c 'echo ray driver snapshot'",
+bigclaw-go/docs/reports/mixed-workload-matrix-report.json:215:            "message": "ray job bigclaw-mixed-gpu-1773395066 succeeded: 2026-03-13 02:44:31,429\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-gpu-1773395066: sh -c 'echo gpu via ray'\ngpu via ray"
+bigclaw-go/docs/reports/mixed-workload-matrix-report.json:357:            "message": "ray job bigclaw-mixed-required-ray-1773395066 succeeded: 2026-03-13 02:44:38,415\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-required-ray-1773395066: sh -c 'echo required ray'\nrequired ray"
+```
+
+Observed result:
+
+```text
+No python -c match remains. Only the shell-native ray driver snapshot, gpu via ray, and required ray strings matched in the checked-in reviewer artifacts.
 ```
 
 ### GitHub publication visibility

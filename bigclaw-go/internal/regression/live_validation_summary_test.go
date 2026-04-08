@@ -145,10 +145,13 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 	}
 
 	rayJobsSnapshot := readRepoFile(t, repoRoot, "docs/reports/ray-live-jobs.json")
-	if strings.Contains(rayJobsSnapshot, "python -c \"print('hello from ray')\"") {
-		t.Fatal("ray-live-jobs.json should not advertise the retired inline-Python ray smoke default")
+	if strings.Contains(rayJobsSnapshot, "python -c") {
+		t.Fatal("ray-live-jobs.json should not advertise inline-Python ray entrypoints in checked-in reviewer snapshots")
 	}
 	if !strings.Contains(rayJobsSnapshot, "sh -c 'echo hello from ray'") {
 		t.Fatal("ray-live-jobs.json should retain the shell-native ray smoke entrypoint for checked-in submission snapshots")
+	}
+	if !strings.Contains(rayJobsSnapshot, "sh -c 'echo ray driver snapshot'") {
+		t.Fatal("ray-live-jobs.json should keep the shell-native driver snapshot placeholder instead of a Python probe")
 	}
 }
