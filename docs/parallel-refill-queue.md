@@ -42,7 +42,7 @@ longer waits on Linear to keep issue execution moving.
 
 - Current mainline expectation:
   - new implementation work lands in `bigclaw-go`
-  - Python paths are migration-only unless explicitly marked otherwise
+  - legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise
 - Current tracker expectation:
   - issue state lives in `local-issues.json`
   - queue promotion is handled by `bigclawctl refill`

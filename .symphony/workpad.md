@@ -11,6 +11,7 @@
 - `README.md`
 - `docs/go-mainline-cutover-handoff.md`
 - `docs/symphony-repo-bootstrap-template.md`
+- `docs/parallel-refill-queue.md`
 - `bigclaw-go/docs/migration-shadow.md`
 - `bigclaw-go/docs/reports/live-shadow-index.md`
 - `bigclaw-go/docs/reports/live-shadow-index.json`
@@ -43,8 +44,9 @@
 6. Normalize skipped live-validation bundles so they do not imply Ray smoke report artifacts were produced when the lane was disabled.
 7. Sweep adjacent checked-in reviewer evidence that still embeds inline-Python Ray entrypoints outside the main live-validation summary/index surfaces.
 8. Remove any remaining live template wording that still frames current bootstrap guidance in Python-specific terms.
-9. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance or misleading skipped-lane report links.
-10. Run targeted regression and grep validation, then commit and push the follow-up branch state.
+9. Normalize any remaining active planning surfaces that still phrase the default workflow around Python-specific paths instead of Go-first legacy wording.
+10. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance or misleading skipped-lane report links.
+11. Run targeted regression and grep validation, then commit and push the follow-up branch state.
 
 ## Acceptance
 - Active docs and checked-in reviewer indexes/summaries no longer direct developers to retired Python tooling for migration-shadow helpers or root hygiene.
@@ -52,6 +54,7 @@
 - Checked-in skipped live-validation bundles no longer point reviewers at Ray smoke report artifacts that were never produced.
 - Adjacent checked-in reviewer evidence no longer embeds stale inline-Python Ray entrypoints outside the canonical live-validation summary/index surfaces.
 - Live bootstrap templates no longer frame the current workspace bootstrap path as Python-specific guidance.
+- Active refill planning guidance no longer frames the default repo workflow around Python-specific path language.
 - Active docs no longer present retired Python validation commands as current workflow guidance.
 - Regression coverage explicitly guards the touched active docs against reintroducing those references.
 - Validation records exact commands and exact results for the targeted regression tests and focused residual-reference searches.
@@ -65,6 +68,7 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'ray-live-smoke-report.json|executor disabled; no Ray smoke report was produced for this bundle' bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c|sh -c '\''echo (gpu via ray|required ray|ray driver snapshot)'\''' bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/mixed-workload-matrix-report.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i '\bpython\b|workspace_bootstrap\.py|workspace_bootstrap_cli\.py' docs/symphony-repo-bootstrap-template.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python paths are migration-only unless explicitly marked otherwise|legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise' docs/parallel-refill-queue.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125`
 
 ## Final Blocker

@@ -106,6 +106,21 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		}
 	}
 
+	refillQueue := readRepoFile(t, repoRoot, "docs/parallel-refill-queue.md")
+	requiredRefillQueueEntries := []string{
+		"new implementation work lands in `bigclaw-go`",
+		"legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise",
+		"queue promotion is handled by `bigclawctl refill`",
+	}
+	for _, needle := range requiredRefillQueueEntries {
+		if !strings.Contains(refillQueue, needle) {
+			t.Fatalf("docs/parallel-refill-queue.md missing active refill guidance %q", needle)
+		}
+	}
+	if strings.Contains(refillQueue, "Python paths are migration-only unless explicitly marked otherwise") {
+		t.Fatal("docs/parallel-refill-queue.md should not frame the active refill workflow around Python-specific path guidance")
+	}
+
 	cutoverHandoff := readRepoFile(t, repoRoot, "docs/go-mainline-cutover-handoff.md")
 	requiredHandoffEntries := []string{
 		"Historical cutover validation also included legacy shim assertions at merge",

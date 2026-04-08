@@ -16,6 +16,7 @@
     "lane_report": "bigclaw-go/docs/reports/big-go-125-tooling-python-sweep.md",
     "touched_docs": [
       "docs/symphony-repo-bootstrap-template.md",
+      "docs/parallel-refill-queue.md",
       "bigclaw-go/docs/migration-shadow.md",
       "bigclaw-go/docs/reports/live-shadow-index.md",
       "bigclaw-go/docs/reports/live-shadow-index.json",
@@ -68,6 +69,8 @@
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c|sh -c '\\''echo (gpu via ray|required ray|ray driver snapshot)'\\''' bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/mixed-workload-matrix-report.json",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i '\\bpython\\b|workspace_bootstrap\\.py|workspace_bootstrap_cli\\.py' docs/symphony-repo-bootstrap-template.md",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python paths are migration-only unless explicitly marked otherwise|legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise' docs/parallel-refill-queue.md",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'",
       "public compare page: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
     ],
     "results": {
@@ -85,6 +88,8 @@
       "adjacent_ray_evidence_scan": "no python -c match remains; only the shell-native ray driver snapshot, gpu via ray, and required ray strings matched in ray-live-jobs.json and mixed-workload-matrix-report.json",
       "bootstrap_template_scan": "no matches; exit code 1",
       "bootstrap_template_regression_tests": "ok   bigclaw-go/internal/regression\t0.183s",
+      "refill_queue_scan": "only the new Go-first legacy wording matched at docs/parallel-refill-queue.md:45",
+      "refill_queue_regression_tests": "ok   bigclaw-go/internal/regression\t3.237s",
       "public_compare_page": "reachable without auth; shows the BIG-GO-125 compare stack against main"
     }
   },
@@ -93,6 +98,7 @@
     "The final follow-up also normalized a skipped Ray bundle so reviewer-facing docs no longer imply nonexistent Ray smoke report artifacts for disabled lanes.",
     "A second follow-up swept adjacent checked-in Ray reviewer evidence after discovering stale inline-Python entrypoints in ray-live-jobs.json and mixed-workload-matrix-report.json.",
     "A third follow-up removed Python-specific wording from the active Symphony bootstrap template and locked it with the root residual-sweep regression guard.",
+    "A fourth follow-up normalized the active refill queue planning guidance to use Go-first legacy wording instead of Python-specific path language.",
     "BIG-GO-125 is not present in the local issue tracker store for this workspace, so closeout lives in git artifacts and the pushed branch state.",
     "The branch is pushed, but PR inspection or creation cannot be completed from this workspace because GitHub CLI authentication is unavailable.",
     "An unauthenticated public GitHub API query currently returns no PR for head branch BIG-GO-125."

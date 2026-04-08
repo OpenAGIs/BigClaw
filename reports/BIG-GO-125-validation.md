@@ -25,6 +25,8 @@ that were never produced. A second follow-up then swept adjacent checked-in Ray
 reviewer evidence that still embedded inline-Python entrypoints outside the
 main live-validation bundle. A third follow-up then removed Python-specific
 bootstrap-template wording from the active Symphony workspace bootstrap guide.
+A fourth follow-up then normalized the active refill queue planning guidance to
+use Go-first legacy wording instead of Python-specific path language.
 
 ## Active Replacement Paths
 
@@ -33,6 +35,7 @@ bootstrap-template wording from the active Symphony workspace bootstrap guide.
 - Repository hygiene: `make build`
 - Historical cutover validation note: archival-only wording in `docs/go-mainline-cutover-handoff.md`
 - Bootstrap template guidance: `docs/symphony-repo-bootstrap-template.md`
+- Refill queue guidance: `docs/parallel-refill-queue.md`
 - Migration shadow compare: `go run ./cmd/bigclawctl automation migration shadow-compare`
 - Migration shadow matrix: `go run ./cmd/bigclawctl automation migration shadow-matrix`
 - Migration shadow scorecard: `go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
@@ -69,6 +72,8 @@ bootstrap-template wording from the active Symphony workspace bootstrap guide.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c|sh -c '\''echo (gpu via ray|required ray|ray driver snapshot)'\''' bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/mixed-workload-matrix-report.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i '\bpython\b|workspace_bootstrap\.py|workspace_bootstrap_cli\.py' docs/symphony-repo-bootstrap-template.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python paths are migration-only unless explicitly marked otherwise|legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise' docs/parallel-refill-queue.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
@@ -246,6 +251,40 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	0.183s
+```
+
+### Refill queue scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python paths are migration-only unless explicitly marked otherwise|legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise' docs/parallel-refill-queue.md
+```
+
+Result:
+
+```text
+45:  - legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise
+```
+
+Observed result:
+
+```text
+Only the new Go-first legacy wording matched.
+```
+
+### Refill queue regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	3.237s
 ```
 
 ### GitHub publication visibility
