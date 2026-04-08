@@ -107,6 +107,9 @@ ok  	bigclaw-go/internal/regression	3.187s
 - Lane commit details: `git log --oneline --grep 'BIG-GO-137' -n 1`
 - Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-137' -n 1`
 - Push target: `origin/BIG-GO-137`
+- Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-137?expand=1`
+- PR helper URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-137`
+- GitHub CLI note: `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-137 --json number,title,url,state,headRefName,baseRefName` failed because this environment is not authenticated with GitHub CLI.
 
 ## Residual Risk
 

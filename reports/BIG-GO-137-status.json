@@ -67,6 +67,9 @@
   },
   "notes": [
     "This lane hardens the zero-Python baseline for broad high-impact directories rather than deleting in-branch `.py` files.",
-    "Read the current pushed tip from `git rev-parse --short HEAD` after final push."
+    "Read the current pushed tip from `git rev-parse --short HEAD` after final push.",
+    "Compare URL: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-137?expand=1",
+    "PR helper URL: https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-137",
+    "Automatic PR creation was not possible in this environment because `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-137 --json number,title,url,state,headRefName,baseRefName` failed with unauthenticated GitHub CLI."
   ]
 }
