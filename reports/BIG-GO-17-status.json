@@ -10,6 +10,7 @@
     "push_target": "origin/main"
   },
   "artifacts": {
+    "closeout_index": "reports/BIG-GO-17-closeout.md",
     "validation_report": "reports/BIG-GO-17-validation.md",
     "workpad": ".symphony/workpad.md",
     "lane_report": "bigclaw-go/docs/reports/big-go-17-auxiliary-nested-python-sweep-b.md",
@@ -48,5 +49,9 @@
   "blocker": {
     "type": "baseline",
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-17 changes."
-  }
+  },
+  "notes": [
+    "No BIG-GO-17 record exists in local-issues.json, so any remaining active issue state is external to this workspace.",
+    "The repo-native implementation and validation artifacts for BIG-GO-17 are complete on main."
+  ]
 }

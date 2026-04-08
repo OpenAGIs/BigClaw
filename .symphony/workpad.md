@@ -10,6 +10,7 @@
 - `.symphony/workpad.md`
 - `bigclaw-go/internal/regression/big_go_17_auxiliary_nested_python_sweep_b_test.go`
 - `bigclaw-go/docs/reports/big-go-17-auxiliary-nested-python-sweep-b.md`
+- `reports/BIG-GO-17-closeout.md`
 - `reports/BIG-GO-17-validation.md`
 - `reports/BIG-GO-17-status.json`
 
@@ -17,12 +18,13 @@
 1. Replace the stale carried-over workpad with issue-specific context, acceptance criteria, and validation commands before editing tracked files.
 2. Add a `BIG-GO-17` regression guard that verifies the selected nested auxiliary directories remain Python-free and that representative retained evidence assets still exist.
 3. Add a lane report plus status and validation artifacts that document the zero-Python inventory and exact validation results for this sweep.
-4. Run targeted inventory checks and the issue-specific regression tests, then commit and push the lane.
+4. Record repo-native closeout state for the missing local tracker entry, then commit and push the lane.
 
 ## Acceptance
 - `.symphony/workpad.md` is specific to `BIG-GO-17`.
 - `bigclaw-go/internal/regression/big_go_17_auxiliary_nested_python_sweep_b_test.go` fails if Python files reappear under the selected nested auxiliary directories.
 - The lane report documents the scoped directories, representative retained native assets, and the exact validation commands for `BIG-GO-17`.
+- The closeout note explains that no writable `BIG-GO-17` tracker record exists in this workspace.
 - `reports/BIG-GO-17-validation.md` and `reports/BIG-GO-17-status.json` record exact commands and exact results from this lane.
 - Changes remain scoped to `BIG-GO-17`.
 
