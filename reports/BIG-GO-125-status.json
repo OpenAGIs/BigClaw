@@ -15,9 +15,9 @@
     "workpad": ".symphony/workpad.md",
     "lane_report": "bigclaw-go/docs/reports/big-go-125-tooling-python-sweep.md",
     "touched_docs": [
-      "README.md",
-      "docs/go-mainline-cutover-handoff.md",
-      "bigclaw-go/docs/migration-shadow.md"
+      "bigclaw-go/docs/migration-shadow.md",
+      "bigclaw-go/docs/reports/live-shadow-index.md",
+      "bigclaw-go/docs/reports/live-shadow-index.json"
     ],
     "regression_guards": [
       "bigclaw-go/internal/regression/root_script_residual_sweep_test.go",
@@ -36,15 +36,15 @@
   "validation": {
     "commands": [
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<\" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)\" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'",
       "public compare page: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
     ],
     "results": {
-      "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t0.187s",
-      "active_doc_reference_scan": "no matches; exit code 1",
+      "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t0.205s",
+      "active_doc_reference_scan": "matches only the active Go CLI migration commands in bigclaw-go/docs/migration-shadow.md, bigclaw-go/docs/reports/live-shadow-index.md, and bigclaw-go/docs/reports/live-shadow-index.json; no retired Python command matched",
       "gh_auth_status": "not logged into any GitHub hosts; exit code 1",
       "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4",
       "public_pr_query": "[]",
@@ -52,7 +52,7 @@
     }
   },
   "notes": [
-    "This lane cleaned active tooling guidance rather than historical archived evidence.",
+    "This lane cleaned checked-in live-shadow workflow guidance rather than historical archived evidence.",
     "BIG-GO-125 is not present in the local issue tracker store for this workspace, so closeout lives in git artifacts and the pushed branch state.",
     "The branch is pushed, but PR inspection or creation cannot be completed from this workspace because GitHub CLI authentication is unavailable.",
     "An unauthenticated public GitHub API query currently returns no PR for head branch BIG-GO-125."

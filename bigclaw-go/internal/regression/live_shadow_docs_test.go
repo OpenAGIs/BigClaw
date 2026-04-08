@@ -25,6 +25,22 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 			},
 		},
 		{
+			path: "docs/reports/live-shadow-index.md",
+			substrings: []string{
+				"go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+				"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+				"go test ./internal/regression -run TestRollbackDocsStayAligned",
+			},
+		},
+		{
+			path: "docs/reports/live-shadow-index.json",
+			substrings: []string{
+				"go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+				"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+				"go test ./internal/regression -run TestRollbackDocsStayAligned",
+			},
+		},
+		{
 			path: "docs/reports/migration-readiness-report.md",
 			substrings: []string{
 				"OPE-266` / `BIG-PAR-092",
@@ -61,7 +77,7 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 				t.Fatalf("%s missing substring %q", tc.path, needle)
 			}
 		}
-		if tc.path == "docs/migration-shadow.md" {
+		if tc.path == "docs/migration-shadow.md" || tc.path == "docs/reports/live-shadow-index.md" || tc.path == "docs/reports/live-shadow-index.json" {
 			for _, needle := range []string{
 				"python3 scripts/migration/shadow_compare.py",
 				"python3 scripts/migration/shadow_matrix.py",
