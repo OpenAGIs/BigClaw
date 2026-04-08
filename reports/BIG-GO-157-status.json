@@ -56,7 +56,7 @@
     "results": {
       "repo_py_inventory": "none",
       "broad_sweep_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.224s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.204s"
     }
   },
   "blocker": {
