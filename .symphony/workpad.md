@@ -1,27 +1,31 @@
-# BIG-GO-142 Workpad
+# BIG-GO-153 Workpad
 
 ## Plan
 
-1. Inspect the existing regression and report patterns for residual Python-heavy test sweeps to determine the narrowest lane-specific change shape for `BIG-GO-142`.
-2. Add only the artifacts required for this lane, keeping scope to residual test directories and their Go/native replacements.
-3. Run targeted validation commands, record exact commands and outcomes in lane artifacts, then commit and push the branch.
+1. Inspect the existing zero-Python and residual test sweep regression patterns
+   to identify the smallest established artifact shape that matches this lane.
+2. Add a lane-specific regression guard under
+   `bigclaw-go/internal/regression/` that documents the already-zero Python
+   baseline and locks the chosen residual Go test surface in place.
+3. Add the paired lane report under `bigclaw-go/docs/reports/` with exact
+   repository and focused-directory scan commands plus the targeted regression
+   test command.
+4. Run targeted validation commands, capture exact commands/results, then commit
+   and push the lane head to the remote branch.
 
 ## Acceptance
 
-- `BIG-GO-142` has lane-specific artifacts documenting the residual Python-heavy test sweep scope.
-- Regression coverage enforces the intended test-directory Python-free baseline and any retained Go/native replacement surfaces this lane depends on.
-- Exact validation commands and results are captured.
-- The resulting change is committed and pushed to the remote branch.
+- `.symphony/workpad.md` is present and issue-specific before code edits.
+- `BIG-GO-153` adds only scoped regression/report artifacts for this residual
+  test sweep lane.
+- The new regression guard passes and asserts the repository remains physically
+  Python-free while the chosen residual Go replacement surface still exists.
+- The paired lane report contains the exact validation commands and expected
+  zero-inventory ledger for this lane.
+- The resulting changes are committed and pushed to the remote branch.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO142(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-09: Initial inspection shows the repository is already on a zero-physical-Python baseline, so this lane is expected to add documentation and regression hardening rather than perform in-branch `.py` deletions.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` produced no output.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` produced no output.
-- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-142/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO142(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 5.285s`.
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO153(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
