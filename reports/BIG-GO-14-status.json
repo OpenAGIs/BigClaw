@@ -1,0 +1,88 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-14",
+    "title": "Sweep scripts and automation Python batch B",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-14'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-14-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-14-scripts-automation-sweep-b.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_14_scripts_automation_sweep_b_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "scoped_dirs": {
+      "scripts": [],
+      "scripts/ops": [],
+      "bigclaw-go/scripts/benchmark": [],
+      "bigclaw-go/scripts/e2e": [],
+      "bigclaw-go/scripts/migration": []
+    }
+  },
+  "retired_paths": [
+    "scripts/create_issues.py",
+    "scripts/dev_smoke.py",
+    "scripts/ops/bigclaw_github_sync.py",
+    "scripts/ops/bigclaw_refill_queue.py",
+    "scripts/ops/bigclaw_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_bootstrap.py",
+    "scripts/ops/symphony_workspace_validate.py",
+    "bigclaw-go/scripts/benchmark/capacity_certification.py",
+    "bigclaw-go/scripts/benchmark/run_matrix.py",
+    "bigclaw-go/scripts/benchmark/soak_local.py",
+    "bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py",
+    "bigclaw-go/scripts/e2e/cross_process_coordination_surface.py",
+    "bigclaw-go/scripts/e2e/export_validation_bundle.py",
+    "bigclaw-go/scripts/e2e/external_store_validation.py",
+    "bigclaw-go/scripts/e2e/mixed_workload_matrix.py",
+    "bigclaw-go/scripts/e2e/multi_node_shared_queue.py",
+    "bigclaw-go/scripts/e2e/run_task_smoke.py",
+    "bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py",
+    "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py",
+    "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py",
+    "bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+    "bigclaw-go/scripts/migration/live_shadow_scorecard.py",
+    "bigclaw-go/scripts/migration/shadow_compare.py",
+    "bigclaw-go/scripts/migration/shadow_matrix.py"
+  ],
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands_test.go",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh",
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/internal/regression/big_go_14_scripts_automation_sweep_b_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find scripts bigclaw-go/scripts/benchmark bigclaw-go/scripts/e2e bigclaw-go/scripts/migration -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO14(ScriptAndAutomationDirectoriesStayPythonFree|RetiredScriptAndAutomationHelpersRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "scoped_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.190s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-14 changes."
+  },
+  "notes": [
+    "This lane documents the already-empty scripts and automation Python inventory and hardens it with issue-specific regression coverage.",
+    "Baseline HEAD before lane changes was `cf4219c9`."
+  ]
+}
