@@ -49,7 +49,7 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		"retired `scripts/create_issues.py`; use `bigclawctl create-issues`",
 		"root dev smoke path is Go-only: use `bigclawctl dev-smoke`",
 		"retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`",
-		"retired the refill Python wrapper; use `bigclawctl refill`",
+		"retired the refill wrapper; use `bigclawctl refill`",
 		"retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
 		"retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
 		"retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`",

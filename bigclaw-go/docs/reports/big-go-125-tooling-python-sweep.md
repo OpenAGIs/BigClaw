@@ -11,6 +11,7 @@ The sweep is limited to:
 - historical cutover handoff guidance in `docs/go-mainline-cutover-handoff.md`
 - bootstrap operator template guidance in `docs/symphony-repo-bootstrap-template.md`
 - refill planning guidance in `docs/parallel-refill-queue.md`
+- root Go CLI migration plan guidance in `docs/go-cli-script-migration-plan.md`
 - active migration-shadow operator guidance in `docs/migration-shadow.md`
 - maintained compatibility status in `docs/reports/legacy-mainline-compatibility-manifest.json`
 - checked-in live shadow reviewer indexes in `docs/reports/live-shadow-index.md`
@@ -55,6 +56,8 @@ The active non-Python tooling surface for this lane is:
   instead of Python-specific mainline phrasing where archival specificity is not needed
 - active Go CLI migration guidance now uses generic legacy-script wording in
   current-state replacement sections instead of unnecessary Python-specific phrasing
+- the root Go CLI migration plan now uses generic legacy-script wording in
+  current-state replacement bullets instead of unnecessary Python-specific phrasing
 
 ## Validation Commands
 
@@ -73,6 +76,8 @@ The active non-Python tooling surface for this lane is:
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-side tests|Python script output|retired script-side tests|legacy script output' bigclaw-go/docs/go-cli-script-migration.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'retired the refill Python wrapper|retired the refill wrapper|retired benchmark Python helpers|retired benchmark script helpers|retired migration Python helpers|retired migration script helpers|root Python workspace shims|root workspace shims' docs/go-cli-script-migration-plan.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweepDocs'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
@@ -126,6 +131,12 @@ Result: only the normalized legacy-script wording matched at `bigclaw-go/docs/go
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 Result: `ok  	bigclaw-go/internal/regression	0.179s`
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'retired the refill Python wrapper|retired the refill wrapper|retired benchmark Python helpers|retired benchmark script helpers|retired migration Python helpers|retired migration script helpers|root Python workspace shims|root workspace shims' docs/go-cli-script-migration-plan.md`
+Result: only the normalized root migration-plan legacy-script wording matched at `docs/go-cli-script-migration-plan.md:12`, `:55`, `:63`, `:64`, `:96`, and `:137`
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweepDocs'`
+Result: `ok  	bigclaw-go/internal/regression	0.202s`
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 Result: not logged into any GitHub hosts, exit code `1`

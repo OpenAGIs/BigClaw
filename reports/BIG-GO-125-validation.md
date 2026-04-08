@@ -31,7 +31,10 @@ follow-up then normalized the maintained legacy-mainline compatibility manifest
 to use generic legacy runtime wording instead of Python-specific mainline
 phrasing. A sixth follow-up then tightened the active Go CLI script-migration
 guide so current-state replacement sections use generic legacy-script wording
-instead of unnecessary Python-specific phrasing.
+instead of unnecessary Python-specific phrasing. A seventh follow-up then
+tightened the root Go CLI migration plan so current-state replacement bullets
+use generic legacy-script wording instead of unnecessary Python-specific
+phrasing.
 
 ## Active Replacement Paths
 
@@ -41,6 +44,7 @@ instead of unnecessary Python-specific phrasing.
 - Historical cutover validation note: archival-only wording in `docs/go-mainline-cutover-handoff.md`
 - Bootstrap template guidance: `docs/symphony-repo-bootstrap-template.md`
 - Refill queue guidance: `docs/parallel-refill-queue.md`
+- Root Go CLI migration plan guidance: `docs/go-cli-script-migration-plan.md`
 - Legacy mainline compatibility manifest: `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 - Go CLI script migration guide: `bigclaw-go/docs/go-cli-script-migration.md`
 - Migration shadow compare: `go run ./cmd/bigclawctl automation migration shadow-compare`
@@ -86,6 +90,8 @@ instead of unnecessary Python-specific phrasing.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-side tests|Python script output|retired script-side tests|legacy script output' bigclaw-go/docs/go-cli-script-migration.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'retired the refill Python wrapper|retired the refill wrapper|retired benchmark Python helpers|retired benchmark script helpers|retired migration Python helpers|retired migration script helpers|root Python workspace shims|root workspace shims' docs/go-cli-script-migration-plan.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweepDocs'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -370,6 +376,45 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	0.179s
+```
+
+### Root migration-plan wording scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'retired the refill Python wrapper|retired the refill wrapper|retired benchmark Python helpers|retired benchmark script helpers|retired migration Python helpers|retired migration script helpers|root Python workspace shims|root workspace shims' docs/go-cli-script-migration-plan.md
+```
+
+Result:
+
+```text
+12:retired the final root workspace shims.
+55:- retired the refill wrapper; use `bigclawctl refill`
+63:- retired benchmark script helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
+64:- retired migration script helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
+96:The root workspace shims are now removed. The remaining Bash aliases stay in place until
+137:  repo operators must stop invoking removed root workspace shims and switch to
+```
+
+Observed result:
+
+```text
+Only the normalized root migration-plan legacy-script wording matched.
+```
+
+### Root migration-plan regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweepDocs'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.202s
 ```
 
 ### GitHub publication visibility

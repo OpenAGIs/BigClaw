@@ -12,6 +12,7 @@
 - `docs/go-mainline-cutover-handoff.md`
 - `docs/symphony-repo-bootstrap-template.md`
 - `docs/parallel-refill-queue.md`
+- `docs/go-cli-script-migration-plan.md`
 - `bigclaw-go/docs/migration-shadow.md`
 - `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 - `bigclaw-go/docs/go-cli-script-migration.md`
@@ -49,8 +50,9 @@
 9. Normalize any remaining active planning surfaces that still phrase the default workflow around Python-specific paths instead of Go-first legacy wording.
 10. Normalize maintained compatibility reports so they use Go-first legacy runtime wording instead of Python-specific mainline phrasing where archival specificity is not required.
 11. Tighten any remaining active Go CLI migration wording so current-state replacement sections use generic legacy-script language instead of unnecessary Python-specific phrasing.
-12. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance or misleading skipped-lane report links.
-13. Run targeted regression and grep validation, then commit and push the follow-up branch state.
+12. Tighten the root Go CLI migration plan so active replacement bullets use generic legacy-script wording instead of unnecessary Python-specific labels.
+13. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance or misleading skipped-lane report links.
+14. Run targeted regression and grep validation, then commit and push the follow-up branch state.
 
 ## Acceptance
 - Active docs and checked-in reviewer indexes/summaries no longer direct developers to retired Python tooling for migration-shadow helpers or root hygiene.
@@ -61,6 +63,7 @@
 - Active refill planning guidance no longer frames the default repo workflow around Python-specific path language.
 - Maintained compatibility reports no longer frame the current mainline contract around Python-specific runtime wording where generic legacy wording is sufficient.
 - Active Go CLI migration docs no longer use unnecessary Python-specific phrasing in current-state replacement sections when generic legacy-script wording is sufficient.
+- The root Go CLI migration plan no longer uses unnecessary Python-specific phrasing in current-state replacement bullets when generic legacy-script wording is sufficient.
 - Active docs no longer present retired Python validation commands as current workflow guidance.
 - Regression coverage explicitly guards the touched active docs against reintroducing those references.
 - Validation records exact commands and exact results for the targeted regression tests and focused residual-reference searches.
@@ -77,7 +80,8 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python paths are migration-only unless explicitly marked otherwise|legacy migration-only paths stay out of the default developer workflow unless explicitly marked otherwise' docs/parallel-refill-queue.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'legacy Python runtime surface|legacy pre-cutover runtime surface' bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-side tests|Python script output|retired script-side tests|legacy script output' bigclaw-go/docs/go-cli-script-migration.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'retired the refill Python wrapper|retired the refill wrapper|retired benchmark Python helpers|retired benchmark script helpers|retired migration Python helpers|retired migration script helpers|root Python workspace shims|root workspace shims' docs/go-cli-script-migration-plan.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125`
 
 ## Final Blocker
-- None. Repository work is complete and the branch is pushed to `origin/BIG-GO-125`.
+- None.

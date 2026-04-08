@@ -9,7 +9,7 @@ operator cutover window.
 ## This Slice
 
 The implemented migration batches in this issue moved these entrypoints behind the Go CLI and
-retired the final root Python workspace shims.
+retired the final root workspace shims.
 
 `BIG-GO-1160` extends that migration evidence by hardening the benchmark, e2e,
 migration, and root-script sweep candidate set that previously included:
@@ -52,7 +52,7 @@ operator replacements.
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
-- retired the refill Python wrapper; use `bigclawctl refill`
+- retired the refill wrapper; use `bigclawctl refill`
 - retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`
@@ -60,8 +60,8 @@ operator replacements.
 ### `bigclaw-go/scripts/*` first automation batch
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
-- retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
-- retired migration Python helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
+- retired benchmark script helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
+- retired migration script helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
@@ -93,7 +93,7 @@ The remaining compatibility layer is intentionally thin:
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
-The root Python workspace shims are now removed. The remaining Bash aliases stay in place until
+The root workspace shims are now removed. The remaining Bash aliases stay in place until
 operator docs and external automation references finish the direct cutover to
 `bash scripts/ops/bigclawctl ...`.
 
@@ -134,7 +134,7 @@ operator docs and external automation references finish the direct cutover to
 - Local tracker shortcuts:
   `issue state/comment` positional shortcuts must still map onto the same local-issues behaviors.
 - Root compatibility retirement:
-  repo operators must stop invoking removed root Python workspace shims and switch to
+  repo operators must stop invoking removed root workspace shims and switch to
   `bash scripts/ops/bigclawctl ...` entrypoints.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible

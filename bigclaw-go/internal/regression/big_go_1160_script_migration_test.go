@@ -90,6 +90,8 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 		"`bigclaw-go/scripts/migration/shadow_compare.py`",
 		"`scripts/create_issues.py`",
 		"`scripts/dev_smoke.py`",
+		"retired benchmark script helpers",
+		"retired migration script helpers",
 		"`bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`",
 	}
 	for _, needle := range requiredRootDoc {
