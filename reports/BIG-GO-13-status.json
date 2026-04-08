@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-13",
+    "title": "Sweep tests Python residuals batch D",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-13'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-13-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-13-legacy-test-contract-sweep-d.md",
+    "replacement_registry": "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_13_legacy_test_contract_sweep_d_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "bigclaw-go/internal/regression/big_go_13_legacy_test_contract_sweep_d_test.go",
+    "bigclaw-go/docs/reports/big-go-13-legacy-test-contract-sweep-d.md",
+    "bigclaw-go/internal/designsystem/designsystem.go",
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/evaluation/evaluation.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_bundle_commands.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find tests bigclaw-go/docs/reports -type f \\( -name '*.py' -o -name 'validation-bundle-continuation-scorecard.json' -o -name 'validation-bundle-continuation-policy-gate.json' -o -name 'shared-queue-companion-summary.json' \\) 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO13LegacyTestContractSweepD(ManifestMatchesDeferredLegacyTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "fixture_inventory": "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json; bigclaw-go/docs/reports/shared-queue-companion-summary.json; bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json; bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.188s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-13 changes."
+  },
+  "notes": [
+    "This lane closes a deferred Python test-contract slice from reports/BIG-GO-948-validation.md using Go-native replacement evidence.",
+    "The branch baseline was already Python-free, so this lane strengthens replacement evidence and regression coverage rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `ced066a9`."
+  ]
+}
