@@ -185,4 +185,12 @@ func TestLiveValidationIndexStaysAligned(t *testing.T) {
 	if !strings.Contains(bundledSummary, "sh -c 'echo hello from ray'") {
 		t.Fatal("bundled live-validation summary should retain the shell-native ray smoke entrypoint")
 	}
+
+	previousBundledSummary := readRepoFile(t, repoRoot, "docs/reports/live-validation-runs/20260314T164647Z/summary.json")
+	if strings.Contains(previousBundledSummary, "python -c \"print('hello from ray')\"") {
+		t.Fatal("previous bundled live-validation summary should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(previousBundledSummary, "sh -c 'echo hello from ray'") {
+		t.Fatal("previous bundled live-validation summary should retain the shell-native ray smoke entrypoint")
+	}
 }

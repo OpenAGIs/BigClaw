@@ -24,6 +24,9 @@
       "bigclaw-go/docs/reports/live-validation-index.json",
       "bigclaw-go/docs/reports/live-validation-summary.json",
       "bigclaw-go/docs/reports/ray-live-smoke-report.json",
+      "bigclaw-go/docs/reports/ray-live-jobs.json",
+      "bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json",
+      "bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json"
     ],
@@ -64,9 +67,9 @@
       "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4",
       "public_pr_query": "[]",
       "git_push": "branch published to origin/BIG-GO-125 after the final metadata sync; see git history for the exact tip",
-      "live_validation_regression_tests": "ok   bigclaw-go/internal/regression\t3.231s",
+      "live_validation_regression_tests": "ok   bigclaw-go/internal/regression\t0.167s",
       "ray_smoke_python_scan": "no matches; exit code 1",
-      "ray_smoke_shell_scan": "live-validation reviewer artifacts retain the shell-native ray smoke entrypoint",
+      "ray_smoke_shell_scan": "live-validation reviewer artifacts, ray jobs snapshot, and both recent bundled ray evidence surfaces retain the shell-native ray smoke entrypoint",
       "public_compare_page": "reachable without auth; shows the BIG-GO-125 compare stack against main"
     }
   },

@@ -135,4 +135,20 @@ func TestLiveValidationSummaryStaysAligned(t *testing.T) {
 	if !strings.Contains(bundledRayReport, "sh -c 'echo hello from ray'") {
 		t.Fatal("bundled ray-live-smoke-report.json should retain the shell-native ray smoke entrypoint")
 	}
+
+	previousBundledRayReport := readRepoFile(t, repoRoot, "docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json")
+	if strings.Contains(previousBundledRayReport, "python -c \"print('hello from ray')\"") {
+		t.Fatal("previous bundled ray-live-smoke-report.json should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(previousBundledRayReport, "sh -c 'echo hello from ray'") {
+		t.Fatal("previous bundled ray-live-smoke-report.json should retain the shell-native ray smoke entrypoint")
+	}
+
+	rayJobsSnapshot := readRepoFile(t, repoRoot, "docs/reports/ray-live-jobs.json")
+	if strings.Contains(rayJobsSnapshot, "python -c \"print('hello from ray')\"") {
+		t.Fatal("ray-live-jobs.json should not advertise the retired inline-Python ray smoke default")
+	}
+	if !strings.Contains(rayJobsSnapshot, "sh -c 'echo hello from ray'") {
+		t.Fatal("ray-live-jobs.json should retain the shell-native ray smoke entrypoint for checked-in submission snapshots")
+	}
 }
