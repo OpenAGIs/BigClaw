@@ -307,7 +307,7 @@
         "primary_timeline_seconds": 0.061545,
         "shadow_timeline_seconds": 0.059589
       },
-      "source_file": "./examples/shadow-task.json"
+      "source_file": "archived-fixture:baseline-local"
     },
     {
       "trace_id": "shadow-budget-sample-m2",
@@ -608,7 +608,7 @@
         "primary_timeline_seconds": 0.047967,
         "shadow_timeline_seconds": 0.046084
       },
-      "source_file": "./examples/shadow-task-budget.json"
+      "source_file": "archived-fixture:budget"
     },
     {
       "trace_id": "shadow-validation-sample-m3",
@@ -909,12 +909,12 @@
         "primary_timeline_seconds": 0.078918,
         "shadow_timeline_seconds": 0.075923
       },
-      "source_file": "./examples/shadow-task-validation.json"
+      "source_file": "archived-fixture:validation"
     }
   ],
   "corpus_coverage": {
     "manifest_name": "anonymized-production-corpus-v1",
-    "manifest_source_file": "bigclaw-go/examples/shadow-corpus-manifest.json",
+    "manifest_source_file": "archived-corpus-metadata (source fixture removed in BIG-GO-136)",
     "generated_at": "2026-03-16T10:00:00Z",
     "fixture_task_count": 3,
     "corpus_slice_count": 4,
@@ -926,7 +926,7 @@
         "task_shape": "executor:local",
         "fixture_task_count": 1,
         "fixture_sources": [
-          "bigclaw-go/examples/shadow-task.json"
+          "archived-fixture:baseline-local"
         ],
         "corpus_slice_count": 1,
         "replayable_slice_count": 1,
@@ -943,7 +943,7 @@
         "task_shape": "executor:local|labels:budget,shadow|budgeted|scenario:budget",
         "fixture_task_count": 1,
         "fixture_sources": [
-          "bigclaw-go/examples/shadow-task-budget.json"
+          "archived-fixture:budget"
         ],
         "corpus_slice_count": 1,
         "replayable_slice_count": 1,
@@ -960,7 +960,7 @@
         "task_shape": "executor:local|acceptance|validation-plan|scenario:validation",
         "fixture_task_count": 1,
         "fixture_sources": [
-          "bigclaw-go/examples/shadow-task-validation.json"
+          "archived-fixture:validation"
         ],
         "corpus_slice_count": 1,
         "replayable_slice_count": 1,

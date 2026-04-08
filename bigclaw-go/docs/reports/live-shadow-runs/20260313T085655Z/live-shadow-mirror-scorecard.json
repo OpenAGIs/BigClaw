@@ -6,7 +6,7 @@
   "evidence_inputs": {
     "shadow_compare_report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
     "shadow_matrix_report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
-    "generator_script": "bigclaw-go/scripts/migration/live_shadow_scorecard.py"
+    "generator_script": "archived-checked-in-evidence (generator removed in BIG-GO-136)"
   },
   "summary": {
     "total_evidence_runs": 4,
@@ -57,9 +57,9 @@
     },
     {
       "entry_type": "matrix-row",
-      "label": "./examples/shadow-task.json",
+      "label": "archived-baseline-local-fixture",
       "trace_id": "shadow-compare-sample-m1",
-      "source_file": "./examples/shadow-task.json",
+      "source_file": "archived-fixture:baseline-local",
       "source_kind": null,
       "task_shape": null,
       "corpus_slice": null,
@@ -74,9 +74,9 @@
     },
     {
       "entry_type": "matrix-row",
-      "label": "./examples/shadow-task-budget.json",
+      "label": "archived-budget-fixture",
       "trace_id": "shadow-budget-sample-m2",
-      "source_file": "./examples/shadow-task-budget.json",
+      "source_file": "archived-fixture:budget",
       "source_kind": null,
       "task_shape": null,
       "corpus_slice": null,
@@ -91,9 +91,9 @@
     },
     {
       "entry_type": "matrix-row",
-      "label": "./examples/shadow-task-validation.json",
+      "label": "archived-validation-fixture",
       "trace_id": "shadow-validation-sample-m3",
-      "source_file": "./examples/shadow-task-validation.json",
+      "source_file": "archived-fixture:validation",
       "source_kind": null,
       "task_shape": null,
       "corpus_slice": null,

@@ -6,11 +6,11 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 ## Implemented surfaces
 
-- Shadow comparison for one task via `scripts/migration/shadow_compare.py`
-- Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
-- Repo-native live shadow mirror scorecard via `scripts/migration/live_shadow_scorecard.py`
-- Repo-native live shadow bundle/index via `scripts/migration/export_live_shadow_bundle.py`
-- An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
+- Checked-in single-run shadow comparison evidence via `docs/reports/shadow-compare-report.json`
+- Checked-in shadow comparison matrix plus corpus-coverage overlay via `docs/reports/shadow-matrix-report.json`
+- Repo-native live shadow mirror scorecard via `docs/reports/live-shadow-mirror-scorecard.json`
+- Repo-native live shadow bundle/index via `docs/reports/live-shadow-summary.json` and `docs/reports/live-shadow-index.json`
+- Archived corpus-coverage metadata preserved inside `docs/reports/shadow-matrix-report.json`
 - Shared `trace_id` correlation across primary/shadow runs
 - JSON reports for single-run and matrix outcomes
 
@@ -18,10 +18,6 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - `docs/migration.md`
 - `docs/migration-shadow.md`
-- `scripts/migration/shadow_compare.py`
-- `scripts/migration/shadow_matrix.py`
-- `scripts/migration/live_shadow_scorecard.py`
-- `scripts/migration/export_live_shadow_bundle.py`
 - `docs/reports/rollback-trigger-surface.json`
 - `docs/reports/shadow-compare-report.json`
 - `docs/reports/shadow-matrix-report.json`
@@ -34,7 +30,6 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - `GET /debug/status` rollback trigger payload
 - `GET /v2/control-center` distributed diagnostics live shadow mirror payload
 - `GET /v2/control-center` migration review rollback trigger payload
-- `examples/shadow-corpus-manifest.json`
 
 ## Validation target
 
@@ -45,7 +40,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - Still no live legacy-vs-Go production traffic comparison; see `OPE-266` / `BIG-PAR-092` in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - The live shadow mirror scorecard and bundle index are repo-native and offline; freshness comes from checked-in artifact timestamps rather than continuous mirrored traffic. Reviewers can inspect the checked-in runtime-facing mirror surface through `GET /debug/status` under `live_shadow_mirror_scorecard` and through `GET /v2/control-center` under `distributed_diagnostics.live_shadow_mirror_scorecard`.
 - No tenant-scoped automated rollback trigger yet; the current trigger surface and manual rollback guardrails for `OPE-254` / `BIG-PAR-088` are documented in `docs/reports/rollback-safeguard-follow-up-digest.md` and summarized machine-readably in `docs/reports/rollback-trigger-surface.json`. Reviewers can inspect the same runtime-facing trigger payload through `GET /debug/status` under `rollback_trigger_surface` and through `GET /v2/control-center` under `distributed_diagnostics.migration_review_pack.rollback_trigger_surface`.
-- Matrix now accepts anonymized corpus manifests, but the checked-in sample still defaults to local fixture tasks and requires operator-supplied corpus slices for real production-weighted evidence; see `docs/reports/production-corpus-migration-coverage-digest.md`.
+- The checked-in matrix still reflects archived fixture/demo coverage rather than real production issue/task distributions; see `docs/reports/production-corpus-migration-coverage-digest.md`.
 
 ## Parallel Follow-up Index
 

@@ -7,7 +7,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - `docs/adr/0001-go-rewrite-control-plane.md`
 - `docs/migration.md`
 - `docs/migration-shadow.md`
-- `scripts/migration/shadow_compare.py`
+- `docs/reports/shadow-compare-report.json`
 
 ## Boundary Decisions
 
@@ -18,7 +18,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 ## Migration Path
 
 1. Stand up the Go control plane alongside the incumbent implementation.
-2. Run shadow comparison and timeline diffing using `scripts/migration/shadow_compare.py`.
+2. Review the checked-in shadow comparison evidence and timeline diffing in `docs/reports/shadow-compare-report.json`.
 3. Validate queue, scheduler, worker, Kubernetes, and Ray paths through local and live smoke reports.
 4. Roll traffic gradually by tenant, task type, or environment.
 5. Use rollback by redirecting submission back to the incumbent control plane and preserving Go reports for postmortem review.
@@ -27,7 +27,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 
 - The Go validation path is isolated enough to be disabled without deleting existing queue or audit reports.
 - Live validation reports persist enough metadata (`base_url`, `state_dir`, `service_log`) to reconstruct a failed rollout attempt.
-- Shadow compare output provides a low-risk read-only verification step before cutover.
+- Checked-in shadow compare output provides a low-risk read-only verification step before cutover.
 - The live shadow bundle index and drift rollup package that verification evidence into a stable reviewer path under `docs/reports/live-shadow-index.md`, and they link the same machine-readable rollback summary in `docs/reports/rollback-trigger-surface.json`.
 - The tenant-scoped trigger surface in `docs/reports/rollback-safeguard-follow-up-digest.md` and `docs/reports/rollback-trigger-surface.json` defines when reviewers should pause rollout and redirect traffic back to the incumbent plane.
 
