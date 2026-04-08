@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-125",
+    "title": "Residual tooling Python sweep H",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-125",
+    "latest_commit": "4b6a6183",
+    "push_target": "origin/BIG-GO-125"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-125-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-125-tooling-python-sweep.md",
+    "touched_docs": [
+      "README.md",
+      "bigclaw-go/docs/migration-shadow.md"
+    ],
+    "regression_guards": [
+      "bigclaw-go/internal/regression/root_script_residual_sweep_test.go",
+      "bigclaw-go/internal/regression/live_shadow_docs_test.go"
+    ]
+  },
+  "replacements": [
+    "git diff --check",
+    "make test",
+    "make build",
+    "go run ./cmd/bigclawctl automation migration shadow-compare",
+    "go run ./cmd/bigclawctl automation migration shadow-matrix",
+    "go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+    "go run ./cmd/bigclawctl automation migration export-live-shadow-bundle"
+  ],
+  "validation": {
+    "commands": [
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)\" README.md bigclaw-go/docs/migration-shadow.md"
+    ],
+    "results": {
+      "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t(cached)",
+      "active_doc_reference_scan": "no matches; exit code 1"
+    }
+  },
+  "notes": [
+    "This lane cleaned active tooling guidance rather than historical archived evidence.",
+    "BIG-GO-125 is not present in the local issue tracker store for this workspace, so closeout lives in git artifacts and the pushed branch state."
+  ]
+}
