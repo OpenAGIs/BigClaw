@@ -48,4 +48,4 @@ The supported root helper and migration-contract surface is limited to:
 - `find scripts scripts/ops bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the residual script/helper surface remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO154(RepositoryHasNoPythonFiles|ResidualScriptAreasStayPythonFree|SupportedRootHelpersRemainAvailable|RootHelperInventoryMatchesContract|LaneReportCapturesExactLedger)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.188s`
+  Result: `ok  	bigclaw-go/internal/regression	0.177s`

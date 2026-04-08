@@ -16,4 +16,4 @@
   - output: none
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO154(RepositoryHasNoPythonFiles|ResidualScriptAreasStayPythonFree|SupportedRootHelpersRemainAvailable|RootHelperInventoryMatchesContract|LaneReportCapturesExactLedger)$'`
   - exit code: `0`
-  - output: `ok  	bigclaw-go/internal/regression	0.188s`
+  - output: `ok  	bigclaw-go/internal/regression	0.177s`

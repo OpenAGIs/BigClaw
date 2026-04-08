@@ -4,6 +4,13 @@
     "title": "Residual scripts Python sweep K",
     "state": "Done"
   },
+  "branch": {
+    "name": "BIG-GO-154",
+    "baseline_commit": "94bd71a332a650936e15a09e5d4d8dae0bffceb4",
+    "latest_commit": "1428c362a4e858e7990db78c56a90a5143f8568a",
+    "push_target": "origin/BIG-GO-154",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-154?expand=1"
+  },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
     "lane_report": "bigclaw-go/docs/reports/big-go-154-python-asset-sweep.md",
@@ -43,7 +50,15 @@
     "results": {
       "repository_py_inventory": "none",
       "residual_script_py_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.188s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.177s"
     }
+  },
+  "pull_request": {
+    "number": 228,
+    "url": "https://github.com/OpenAGIs/BigClaw/pull/228",
+    "state": "open",
+    "title": "BIG-GO-154: harden residual root script sweep",
+    "draft": false,
+    "head_sha": "1428c362a4e858e7990db78c56a90a5143f8568a"
   }
 }
