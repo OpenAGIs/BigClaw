@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.187s
 - Branch: `BIG-GO-126`
 - Baseline HEAD before lane commit: `ced066a9`
 - Code commit: `3fd32bf6` (`BIG-GO-126: add zero-python sweep artifacts`)
-- Final metadata commit: `tracked in git history after BIG-GO-126 final sync`
+- Final metadata commit: `887f7641` (`BIG-GO-126: finalize sweep metadata`)
 - Lane commit details: `git log --oneline --grep 'BIG-GO-126'`
 - Push target: `origin/BIG-GO-126`
 

@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-126",
-    "latest_commit": "tracked in git history after BIG-GO-126 final sync",
+    "latest_commit": "887f7641",
     "push_target": "origin/BIG-GO-126"
   },
   "artifacts": {
@@ -52,6 +52,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "Baseline HEAD before lane changes was `ced066a9`.",
     "Code commit was `3fd32bf6`.",
-    "Final metadata sync is tracked in git history after the lane push."
+    "Final metadata commit was `887f7641`.",
+    "Branch `BIG-GO-126` was pushed to `origin/BIG-GO-126`."
   ]
 }
