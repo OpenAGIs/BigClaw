@@ -127,6 +127,10 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
 
 - Branch: `BIG-GO-125`
 - Published commits:
+  - `6d2cc025` (`BIG-GO-125 sync workpad blocker`)
+  - `2b7adcae` (`BIG-GO-125 add compare handoff link`)
+  - `c1cb7bcf` (`BIG-GO-125 record public pr status`)
+  - `68c44536` (`BIG-GO-125 sync blocker metadata`)
   - `feefe211` (`BIG-GO-125 retire handoff python validation guidance`)
   - `7827166b` (`BIG-GO-125 add validation artifacts`)
   - `4b6a6183` (`BIG-GO-125 refresh workpad`)

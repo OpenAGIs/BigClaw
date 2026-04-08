@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-125",
-    "latest_commit": "c1cb7bcf",
+    "latest_commit": "6d2cc025",
     "push_target": "origin/BIG-GO-125",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
   },
