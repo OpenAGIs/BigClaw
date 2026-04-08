@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-101",
     "baseline_commit": "11d9f75d",
-    "latest_commit": "20973903ad3e916bf259dbf1b3a3c30311ba3e92",
+    "validation_commit": "8ced1a2f2e5aac0d292faa49169e5566bc3ad981",
     "push_target": "origin/BIG-GO-101",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-101?expand=1"
   },
@@ -44,7 +44,7 @@
     "results": {
       "repository_py_inventory": "none",
       "src_bigclaw_sweep_g_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t4.990s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.194s",
       "migration_package": "?   \tbigclaw-go/internal/migration\t[no test files]"
     }
   }

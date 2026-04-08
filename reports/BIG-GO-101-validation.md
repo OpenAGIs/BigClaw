@@ -59,7 +59,7 @@ Result: no output.
 $ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-101/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'
 ```
 
-Result: `ok  	bigclaw-go/internal/regression	4.990s`
+Result: `ok  	bigclaw-go/internal/regression	0.194s`
 
 ```text
 $ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-101/bigclaw-go && go test -count=1 ./internal/migration
@@ -73,4 +73,4 @@ Result: `?   	bigclaw-go/internal/migration	[no test files]`
 - Head reference: `origin/BIG-GO-101`
 - Push target: `origin/BIG-GO-101`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-101?expand=1`
-- Head commit: `20973903ad3e916bf259dbf1b3a3c30311ba3e92`
+- Validation commit: `8ced1a2f2e5aac0d292faa49169e5566bc3ad981`
