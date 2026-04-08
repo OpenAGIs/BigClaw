@@ -1,0 +1,60 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-144",
+    "title": "Residual scripts Python sweep J",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-144",
+    "latest_commit": "35916c5a",
+    "push_target": "origin/symphony/BIG-GO-144"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-144-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-144-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_144_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "scripts": [],
+      "scripts/ops": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_144_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh",
+    "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+    "bigclaw-go/scripts/e2e/ray_smoke.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-144 -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-144/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-144/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-144/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO144(ResidualPythonWrappersAndHelpersStayAbsent|GoWrapperAndCLIReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "scoped_script_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.213s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-144 changes."
+  },
+  "notes": [
+    "This lane documents the residual shell-wrapper and CLI-helper sweep instead of deleting physical Python assets in-branch.",
+    "Published initial lane commit `35916c5a` to `origin/symphony/BIG-GO-144` before adding repo-root metadata artifacts."
+  ]
+}
