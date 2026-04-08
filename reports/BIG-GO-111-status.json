@@ -1,0 +1,14 @@
+{
+  "issue": "BIG-GO-111",
+  "title": "Residual src/bigclaw Python sweep H",
+  "state": "done",
+  "summary": "Issue-scoped exact-ledger guard for the residual src/bigclaw sweep-H surface.",
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw bigclaw-go/internal/consoleia bigclaw-go/internal/issuearchive bigclaw-go/internal/queue bigclaw-go/internal/risk bigclaw-go/internal/bootstrap bigclaw-go/internal/planning -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO111(RepositoryHasNoPythonFiles|SrcBigclawResidualAreaStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepLedger)$'"
+    ],
+    "status": "passed"
+  }
+}
