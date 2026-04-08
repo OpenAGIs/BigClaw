@@ -58,4 +58,4 @@ The active Go/native helper surface covering this sweep remains:
   Result: no output; the support-asset directories remained Python-free and the
   absent baseline directories stayed absent.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO116(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.188s`
+  Result: `ok  	bigclaw-go/internal/regression	0.192s`

@@ -31,7 +31,7 @@
 
 ## Execution Notes
 
-- 2026-04-08: Initial inventory on baseline commit `a63c8ec` confirmed no
+- 2026-04-08: Initial inventory on baseline commit `11d9f75d` confirmed no
   physical `.py` files anywhere in the checkout.
 - 2026-04-08: The support-asset directories present in this checkout are
   `bigclaw-go/examples`, `scripts`, and `bigclaw-go/scripts`; `fixtures` and
@@ -44,4 +44,4 @@
   record and protect the zero-Python support-asset baseline for this lane.
 - 2026-04-08: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-116 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` and observed no output.
 - 2026-04-08: Ran `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-116/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-116/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-116/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-116/fixtures /Users/openagi/code/bigclaw-workspaces/BIG-GO-116/demos -type f -name '*.py' 2>/dev/null | sort` and observed no output.
-- 2026-04-08: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-116/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO116(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.188s`.
+- 2026-04-08: Ran `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-116/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO116(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` and observed `ok  	bigclaw-go/internal/regression	0.192s`.
