@@ -53,3 +53,20 @@ ok  	bigclaw-go/internal/regression	0.190s
   closeout commands already supported by `bigclawctl automation migration`.
 - Regression coverage now pins this guidance so Python-era commands do not
   silently reappear in the active surface.
+
+## Git
+
+- Branch: `feat/BIG-GO-138-python-guidance-sweep`
+- Commit: `ebd03799af31643fdaf21fb81ace048e273fce6e`
+- Push:
+
+```text
+git push -u origin feat/BIG-GO-138-python-guidance-sweep
+remote:
+remote: Create a pull request for 'feat/BIG-GO-138-python-guidance-sweep' on GitHub by visiting:
+remote:      https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-138-python-guidance-sweep
+remote:
+To https://github.com/OpenAGIs/BigClaw.git
+ * [new branch]        feat/BIG-GO-138-python-guidance-sweep -> feat/BIG-GO-138-python-guidance-sweep
+branch 'feat/BIG-GO-138-python-guidance-sweep' set up to track 'origin/feat/BIG-GO-138-python-guidance-sweep'.
+```

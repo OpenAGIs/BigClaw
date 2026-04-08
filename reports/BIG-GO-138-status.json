@@ -6,8 +6,9 @@
   },
   "branch": {
     "name": "feat/BIG-GO-138-python-guidance-sweep",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-138'",
-    "push_target": "origin/feat/BIG-GO-138-python-guidance-sweep"
+    "latest_commit": "ebd03799af31643fdaf21fb81ace048e273fce6e",
+    "push_target": "origin/feat/BIG-GO-138-python-guidance-sweep",
+    "pull_request_helper": "https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-138-python-guidance-sweep"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-138-validation.md",
