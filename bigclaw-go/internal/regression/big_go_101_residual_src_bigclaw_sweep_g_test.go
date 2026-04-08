@@ -21,9 +21,10 @@ func TestBIGGO101RepositoryHasNoPythonFiles(t *testing.T) {
 func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 	rootRepo := regressionRepoRoot(t)
 
-	replacements := migration.LegacyReportingOpsModuleReplacements()
-	if len(replacements) != 4 {
-		t.Fatalf("expected 4 retired module replacements, got %d", len(replacements))
+	replacements := append([]migration.LegacyModuleReplacement{}, migration.LegacyReportingOpsModuleReplacements()...)
+	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
+	if len(replacements) != 8 {
+		t.Fatalf("expected 8 retired module replacements, got %d", len(replacements))
 	}
 
 	expected := map[string]struct {
@@ -84,6 +85,56 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 			},
 			statusNeedle: "Go dashboard contract",
 		},
+		"src/bigclaw/risk.py": {
+			replacementKind: "go-risk-policy-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/risk/risk.go",
+				"bigclaw-go/internal/risk/assessment.go",
+				"bigclaw-go/internal/policy/policy.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/risk/risk_test.go",
+				"bigclaw-go/internal/risk/assessment_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go risk scorer",
+		},
+		"src/bigclaw/governance.py": {
+			replacementKind: "go-governance-freeze",
+			goReplacements: []string{
+				"bigclaw-go/internal/governance/freeze.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/governance/freeze_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go scope-freeze backlog board",
+		},
+		"src/bigclaw/execution_contract.py": {
+			replacementKind: "go-execution-contract",
+			goReplacements: []string{
+				"bigclaw-go/internal/contract/execution.go",
+				"bigclaw-go/internal/api/policy_runtime.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/contract/execution_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go execution contract",
+		},
+		"src/bigclaw/audit_events.py": {
+			replacementKind: "go-audit-spec-surface",
+			goReplacements: []string{
+				"bigclaw-go/internal/observability/audit.go",
+				"bigclaw-go/internal/observability/audit_spec.go",
+			},
+			evidencePaths: []string{
+				"bigclaw-go/internal/observability/audit_test.go",
+				"bigclaw-go/internal/observability/audit_spec_test.go",
+				"docs/go-mainline-cutover-issue-pack.md",
+			},
+			statusNeedle: "Go audit event registry",
+		},
 	}
 
 	for _, replacement := range replacements {
@@ -108,7 +159,9 @@ func TestBIGGO101ResidualSrcBigClawSweepGStaysAbsent(t *testing.T) {
 func TestBIGGO101GoReplacementPathsRemainAvailable(t *testing.T) {
 	rootRepo := regressionRepoRoot(t)
 
-	for _, replacement := range migration.LegacyReportingOpsModuleReplacements() {
+	replacements := append([]migration.LegacyModuleReplacement{}, migration.LegacyReportingOpsModuleReplacements()...)
+	replacements = append(replacements, migration.LegacyPolicyGovernanceModuleReplacements()...)
+	for _, replacement := range replacements {
 		for _, relativePath := range replacement.GoReplacements {
 			if _, err := os.Stat(filepath.Join(rootRepo, filepath.FromSlash(relativePath))); err != nil {
 				t.Fatalf("expected Go replacement path to exist for %s: %s (%v)", replacement.RetiredPythonModule, relativePath, err)
@@ -139,7 +192,12 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`src/bigclaw/reports.py`",
 		"`src/bigclaw/evaluation.py`",
 		"`src/bigclaw/operations.py`",
+		"`src/bigclaw/risk.py`",
+		"`src/bigclaw/governance.py`",
+		"`src/bigclaw/execution_contract.py`",
+		"`src/bigclaw/audit_events.py`",
 		"`bigclaw-go/internal/migration/legacy_reporting_ops_modules.go`",
+		"`bigclaw-go/internal/migration/legacy_policy_governance_modules.go`",
 		"`bigclaw-go/internal/observability/recorder.go`",
 		"`bigclaw-go/internal/reporting/reporting.go`",
 		"`bigclaw-go/internal/reportstudio/reportstudio.go`",
@@ -147,6 +205,13 @@ func TestBIGGO101LaneReportCapturesReplacementEvidence(t *testing.T) {
 		"`bigclaw-go/internal/product/dashboard_run_contract.go`",
 		"`bigclaw-go/internal/contract/execution.go`",
 		"`bigclaw-go/internal/control/controller.go`",
+		"`bigclaw-go/internal/risk/risk.go`",
+		"`bigclaw-go/internal/risk/assessment.go`",
+		"`bigclaw-go/internal/policy/policy.go`",
+		"`bigclaw-go/internal/governance/freeze.go`",
+		"`bigclaw-go/internal/api/policy_runtime.go`",
+		"`bigclaw-go/internal/observability/audit.go`",
+		"`bigclaw-go/internal/observability/audit_spec.go`",
 		"`bigclaw-go/docs/reports/v2-phase1-operations-foundation-report.md`",
 		"`docs/go-mainline-cutover-issue-pack.md`",
 		"`find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`",

@@ -3,13 +3,17 @@
 ## Scope
 
 This refill lane records exact Go replacement evidence for the largest retired
-`src/bigclaw` reporting and operations modules that still merit explicit
-replacement tracking in this checkout:
+`src/bigclaw` reporting, operations, policy, and governance modules that still
+merit explicit replacement tracking in this checkout:
 
 - `src/bigclaw/observability.py`
 - `src/bigclaw/reports.py`
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/operations.py`
+- `src/bigclaw/risk.py`
+- `src/bigclaw/governance.py`
+- `src/bigclaw/execution_contract.py`
+- `src/bigclaw/audit_events.py`
 
 ## Before And After Counts
 
@@ -35,11 +39,18 @@ Focused sweep-G ledger: `[]`
 - `src/bigclaw/reports.py`
 - `src/bigclaw/evaluation.py`
 - `src/bigclaw/operations.py`
+- `src/bigclaw/risk.py`
+- `src/bigclaw/governance.py`
+- `src/bigclaw/execution_contract.py`
+- `src/bigclaw/audit_events.py`
 
 ## Structured Replacement Ledger
 
 This lane adds the structured replacement registry at
 `bigclaw-go/internal/migration/legacy_reporting_ops_modules.go`.
+
+It also adds the structured replacement registry at
+`bigclaw-go/internal/migration/legacy_policy_governance_modules.go`.
 
 ### `src/bigclaw/observability.py`
 
@@ -85,6 +96,48 @@ This lane adds the structured replacement registry at
   - `bigclaw-go/internal/contract/execution_test.go`
   - `bigclaw-go/docs/reports/v2-phase1-operations-foundation-report.md`
 
+### `src/bigclaw/risk.py`
+
+- Replacement kind: `go-risk-policy-surface`
+- Go replacements:
+  - `bigclaw-go/internal/risk/risk.go`
+  - `bigclaw-go/internal/risk/assessment.go`
+  - `bigclaw-go/internal/policy/policy.go`
+- Evidence:
+  - `bigclaw-go/internal/risk/risk_test.go`
+  - `bigclaw-go/internal/risk/assessment_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/governance.py`
+
+- Replacement kind: `go-governance-freeze`
+- Go replacements:
+  - `bigclaw-go/internal/governance/freeze.go`
+- Evidence:
+  - `bigclaw-go/internal/governance/freeze_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/execution_contract.py`
+
+- Replacement kind: `go-execution-contract`
+- Go replacements:
+  - `bigclaw-go/internal/contract/execution.go`
+  - `bigclaw-go/internal/api/policy_runtime.go`
+- Evidence:
+  - `bigclaw-go/internal/contract/execution_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
+### `src/bigclaw/audit_events.py`
+
+- Replacement kind: `go-audit-spec-surface`
+- Go replacements:
+  - `bigclaw-go/internal/observability/audit.go`
+  - `bigclaw-go/internal/observability/audit_spec.go`
+- Evidence:
+  - `bigclaw-go/internal/observability/audit_test.go`
+  - `bigclaw-go/internal/observability/audit_spec_test.go`
+  - `docs/go-mainline-cutover-issue-pack.md`
+
 ## Validation Commands And Results
 
 - `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
@@ -92,6 +145,6 @@ This lane adds the structured replacement registry at
 - `find src/bigclaw -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the focused `src/bigclaw` sweep-G surface remained absent.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.863s`
+  Result: `ok  	bigclaw-go/internal/regression	0.200s`
 - `cd bigclaw-go && go test -count=1 ./internal/migration`
   Result: `?   	bigclaw-go/internal/migration	[no test files]`
