@@ -17,11 +17,15 @@
     "touched_docs": [
       "bigclaw-go/docs/migration-shadow.md",
       "bigclaw-go/docs/reports/live-shadow-index.md",
-      "bigclaw-go/docs/reports/live-shadow-index.json"
+      "bigclaw-go/docs/reports/live-shadow-index.json",
+      "bigclaw-go/docs/reports/live-shadow-summary.json",
+      "bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md",
+      "bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json"
     ],
     "regression_guards": [
       "bigclaw-go/internal/regression/root_script_residual_sweep_test.go",
-      "bigclaw-go/internal/regression/live_shadow_docs_test.go"
+      "bigclaw-go/internal/regression/live_shadow_docs_test.go",
+      "bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go"
     ]
   },
   "replacements": [
@@ -35,8 +39,8 @@
   ],
   "validation": {
     "commands": [
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)\" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)\" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'",
@@ -44,8 +48,8 @@
       "public compare page: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
     ],
     "results": {
-      "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t0.205s",
-      "active_doc_reference_scan": "matches only the active Go CLI migration commands in bigclaw-go/docs/migration-shadow.md, bigclaw-go/docs/reports/live-shadow-index.md, and bigclaw-go/docs/reports/live-shadow-index.json; no retired Python command matched",
+      "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t0.196s",
+      "active_doc_reference_scan": "matches only the active Go CLI migration commands in bigclaw-go/docs/migration-shadow.md, bigclaw-go/docs/reports/live-shadow-index.md, bigclaw-go/docs/reports/live-shadow-index.json, bigclaw-go/docs/reports/live-shadow-summary.json, and bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/{README.md,summary.json}; no retired Python command matched",
       "gh_auth_status": "not logged into any GitHub hosts; exit code 1",
       "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4",
       "public_pr_query": "[]",

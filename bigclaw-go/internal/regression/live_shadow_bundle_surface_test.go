@@ -261,8 +261,8 @@ func TestLiveShadowBundleSummaryAndIndexStayAligned(t *testing.T) {
 		t.Fatalf("unexpected live-shadow closeout/checkpoint data: checkpoints=%d commands=%d", len(summary.CutoverCheckpoints), len(summary.CloseoutCommands))
 	}
 	for _, command := range []string{
-		"python3 scripts/migration/live_shadow_scorecard.py --pretty",
-		"python3 scripts/migration/export_live_shadow_bundle",
+		"go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+		"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
 		"go test ./internal/regression -run TestRollbackDocsStayAligned",
 		"git push origin <branch> && git log -1 --stat",
 	} {

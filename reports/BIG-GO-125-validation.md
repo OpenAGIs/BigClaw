@@ -11,10 +11,11 @@ Title: `Residual tooling Python sweep H`
 This lane removes residual Python tooling guidance from active developer-facing
 docs and locks the replacement surface with targeted regression coverage.
 
-The delivered change refreshes the checked-in live shadow reviewer indexes so
-their workflow closeout commands point at the live Go CLI entrypoints instead
-of retired Python helpers, and it expands targeted regression coverage to guard
-those reviewer-facing files alongside the canonical migration-shadow doc.
+The delivered change refreshes the checked-in live shadow reviewer indexes,
+summary artifacts, and bundled reviewer README so their workflow closeout
+commands point at the live Go CLI entrypoints instead of retired Python
+helpers, and it expands targeted regression coverage to guard those
+reviewer-facing files alongside the canonical migration-shadow doc.
 
 ## Active Replacement Paths
 
@@ -28,11 +29,14 @@ those reviewer-facing files alongside the canonical migration-shadow doc.
 - Migration shadow bundle export: `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 - Checked-in reviewer closeout index: `bigclaw-go/docs/reports/live-shadow-index.md`
 - Checked-in reviewer closeout index JSON: `bigclaw-go/docs/reports/live-shadow-index.json`
+- Checked-in reviewer summary JSON: `bigclaw-go/docs/reports/live-shadow-summary.json`
+- Bundled reviewer run README: `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md`
+- Bundled reviewer run summary JSON: `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json`
 
 ## Validation Commands
 
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
@@ -46,13 +50,13 @@ those reviewer-facing files alongside the canonical migration-shadow doc.
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.205s
+ok  	bigclaw-go/internal/regression	0.196s
 ```
 
 ### Residual active-doc reference search
@@ -60,7 +64,7 @@ ok  	bigclaw-go/internal/regression	0.205s
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json
 ```
 
 Result:
@@ -68,6 +72,12 @@ Result:
 ```text
 bigclaw-go/docs/reports/live-shadow-index.json:93:      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --shadow-compare-report ./docs/reports/shadow-compare-report.json --shadow-matrix-report ./docs/reports/shadow-matrix-report.json --output ./docs/reports/live-shadow-mirror-scorecard.json",
 bigclaw-go/docs/reports/live-shadow-index.json:94:      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+bigclaw-go/docs/reports/live-shadow-summary.json:92:    "cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --shadow-compare-report ./docs/reports/shadow-compare-report.json --shadow-matrix-report ./docs/reports/shadow-matrix-report.json --output ./docs/reports/live-shadow-mirror-scorecard.json",
+bigclaw-go/docs/reports/live-shadow-summary.json:93:    "cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
+bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md:42:- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --shadow-compare-report ./docs/reports/shadow-compare-report.json --shadow-matrix-report ./docs/reports/shadow-matrix-report.json --output ./docs/reports/live-shadow-mirror-scorecard.json`
+bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md:43:- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
+bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json:92:    "cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --shadow-compare-report ./docs/reports/shadow-compare-report.json --shadow-matrix-report ./docs/reports/shadow-matrix-report.json --output ./docs/reports/live-shadow-mirror-scorecard.json",
+bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json:93:    "cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
 bigclaw-go/docs/reports/live-shadow-index.md:42:- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --shadow-compare-report ./docs/reports/shadow-compare-report.json --shadow-matrix-report ./docs/reports/shadow-matrix-report.json --output ./docs/reports/live-shadow-mirror-scorecard.json`
 bigclaw-go/docs/reports/live-shadow-index.md:43:- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 bigclaw-go/docs/migration-shadow.md:44:go run ./cmd/bigclawctl automation migration live-shadow-scorecard \
@@ -77,7 +87,7 @@ bigclaw-go/docs/migration-shadow.md:59:go run ./cmd/bigclawctl automation migrat
 Observed result:
 
 ```text
-Only the active Go CLI migration commands matched. No retired Python migration helper, retired root hygiene, or heredoc-based Python validation command matched in the searched files.
+Only the active Go CLI migration commands matched. No retired Python migration helper, retired root hygiene, or heredoc-based Python validation command matched in the searched files, including the bundled run summary surfaces.
 ```
 
 ### GitHub publication visibility
@@ -163,8 +173,9 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
 - Historical reports and archived regression fixtures still mention retired
   Python tooling as evidence, but the active developer-facing docs covered by
   this lane no longer present those commands as current workflow guidance.
-- Other archived or generated reports outside the touched reviewer-index
-  surfaces may still contain historical Python command strings and remain
+- Other archived or generated reports outside the touched live-shadow summary
+  and reviewer-index surfaces may still contain historical Python command
+  strings and remain
   intentionally out of scope for this lane.
 - GitHub CLI authentication is unavailable in this workspace, so PR inspection
   or creation cannot be completed here even though the branch is already

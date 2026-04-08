@@ -13,8 +13,12 @@
 - `bigclaw-go/docs/migration-shadow.md`
 - `bigclaw-go/docs/reports/live-shadow-index.md`
 - `bigclaw-go/docs/reports/live-shadow-index.json`
+- `bigclaw-go/docs/reports/live-shadow-summary.json`
+- `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md`
+- `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json`
 - `bigclaw-go/internal/regression/root_script_residual_sweep_test.go`
 - `bigclaw-go/internal/regression/live_shadow_docs_test.go`
+- `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
 
 ## Plan
 1. Keep the sweep scoped to active docs and regression guards that still mention retired Python tooling.
@@ -25,7 +29,7 @@
 6. Run targeted regression and grep validation, then commit and push the follow-up branch state.
 
 ## Acceptance
-- Active docs and checked-in reviewer indexes no longer direct developers to retired Python tooling for migration-shadow helpers or root hygiene.
+- Active docs and checked-in reviewer indexes/summaries no longer direct developers to retired Python tooling for migration-shadow helpers or root hygiene.
 - Active docs no longer present retired Python validation commands as current workflow guidance.
 - Regression coverage explicitly guards the touched active docs against reintroducing those references.
 - Validation records exact commands and exact results for the targeted regression tests and focused residual-reference searches.
@@ -33,7 +37,7 @@
 
 ## Validation
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125`
 
 ## Final Blocker

@@ -89,8 +89,8 @@
     }
   ],
   "closeout_commands": [
-    "cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty",
-    "cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle",
+    "cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --shadow-compare-report ./docs/reports/shadow-compare-report.json --shadow-matrix-report ./docs/reports/shadow-matrix-report.json --output ./docs/reports/live-shadow-mirror-scorecard.json",
+    "cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
     "cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned",
     "git push origin <branch> && git log -1 --stat"
   ]
