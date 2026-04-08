@@ -1,0 +1,59 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-110",
+    "title": "Convergence sweep toward <=1 Python file F",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "959fbc5d",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-110-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-110-python-budget-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_110_python_budget_guard_test.go"
+  },
+  "budget": {
+    "repository_python_file_budget": 1,
+    "repository_python_file_count": 0
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_110_python_budget_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO110(RepositoryPythonFileBudgetStaysWithinOne|RepositoryCurrentlyHasZeroPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesBudgetAndSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.192s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-110 changes."
+  },
+  "notes": [
+    "This lane documents a practical repository Python-file budget of <=1 while proving the current checkout remains at 0.",
+    "Baseline HEAD before lane changes was `959fbc5d`."
+  ]
+}
