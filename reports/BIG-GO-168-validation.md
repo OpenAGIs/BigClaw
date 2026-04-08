@@ -94,16 +94,17 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-168/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.162s
+ok  	bigclaw-go/internal/regression	0.201s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `38cd17b3`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-168'`
-- Final pushed lane commit: pending
+- Lane commit details: `9ed97bcd BIG-GO-168: add broad sweep zero-python guard artifacts`
+- Final pushed lane commit: `9ed97bcd`
 - Push target: `origin/main`
+- Remote verification: `git ls-remote --heads origin main` -> `9ed97bcdef9158817feee567917962607cf62405	refs/heads/main`
 
 ## Residual Risk
 

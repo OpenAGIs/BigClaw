@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "9ed97bcd",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -56,7 +56,7 @@
     "results": {
       "repo_py_inventory": "none",
       "broad_sweep_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.162s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.201s"
     }
   },
   "blocker": {
@@ -66,6 +66,8 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `38cd17b3`."
+    "Baseline HEAD before lane changes was `38cd17b3`.",
+    "Final pushed lane commit is `9ed97bcd` on `origin/main`.",
+    "Local and remote `main` agree at `9ed97bcd`."
   ]
 }
