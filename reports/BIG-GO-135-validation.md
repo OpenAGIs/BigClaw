@@ -31,8 +31,8 @@ closeout metadata.
   `bigclaw-go/internal/regression/root_script_residual_sweep_test.go`
 - Root posture docs:
   `README.md`
-- Lane execution log:
-  `.symphony/workpad.md`
+- Lane execution log snapshot:
+  `.symphony/workpad.md` as committed in `5c9b9e0`
 - Repo-native tracker closeout:
   `local-issues.json`
 
@@ -108,6 +108,9 @@ exit 0
 - Direct landing commit on `main`: `f3ae698`
 - Follow-up metadata-only closeout commits were rebased as needed while `main`
   continued moving.
+- The live `.symphony/workpad.md` on `main` was later replaced by subsequent
+  lanes because that file is shared operational state; the `BIG-GO-135`
+  workpad snapshot is preserved in commit `5c9b9e0`.
 - Push targets used during closeout:
   `origin/BIG-GO-135`, `origin/BIG-GO-135-merge`, and `origin/main`
 - Compare URL:

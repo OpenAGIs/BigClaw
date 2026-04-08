@@ -16,7 +16,8 @@
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-135?expand=1"
   },
   "artifacts": {
-    "workpad": ".symphony/workpad.md",
+    "workpad_snapshot_commit": "5c9b9e0",
+    "workpad_note": "The live .symphony/workpad.md is a shared operational file and was later overwritten by subsequent landed lanes on main.",
     "validation_report": "reports/BIG-GO-135-validation.md",
     "tracker": "local-issues.json",
     "regression_guard": "bigclaw-go/internal/regression/root_script_residual_sweep_test.go",
