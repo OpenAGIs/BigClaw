@@ -111,7 +111,8 @@ bash scripts/dev_bootstrap.sh
 Repository hygiene:
 
 ```bash
-pre-commit run --all-files
+git diff --check
+make test
 ```
 
 ## Quick verify
