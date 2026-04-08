@@ -1,0 +1,62 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-173",
+    "title": "Residual tests Python sweep Z",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-173",
+    "latest_commit": "df188c53",
+    "push_target": "origin/BIG-GO-173"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-173-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-173-legacy-test-contract-sweep-z.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_173_legacy_test_contract_sweep_z_test.go",
+    "replacement_registry": "bigclaw-go/internal/migration/legacy_test_contract_sweep_z.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "residual_test_contracts": [
+      "tests/test_repo_collaboration.py",
+      "tests/test_repo_gateway.py",
+      "tests/test_repo_governance.py",
+      "tests/test_repo_registry.py"
+    ]
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/collaboration/thread.go",
+    "bigclaw-go/internal/collaboration/thread_test.go",
+    "bigclaw-go/internal/repo/board.go",
+    "bigclaw-go/internal/repo/gateway.go",
+    "bigclaw-go/internal/repo/commits.go",
+    "bigclaw-go/internal/repo/governance.go",
+    "bigclaw-go/internal/repo/governance_test.go",
+    "bigclaw-go/internal/repo/plane.go",
+    "bigclaw-go/internal/repo/registry.go",
+    "bigclaw-go/internal/repo/links.go",
+    "bigclaw-go/internal/repo/repo_surfaces_test.go",
+    "docs/go-mainline-cutover-issue-pack.md",
+    "docs/go-mainline-cutover-handoff.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO173LegacyTestContractSweepZ(ManifestMatchesDeferredLegacyTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.191s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-173 changes."
+  },
+  "notes": [
+    "This lane documents a residual retired Python test-contract slice and ties each test to an explicit Go-native replacement manifest.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `84692cf5`."
+  ]
+}
