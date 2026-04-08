@@ -1,41 +1,32 @@
-# BIG-GO-1577 Workpad
+# BIG-GO-104 Workpad
 
 ## Context
-- Issue: `BIG-GO-1577`
-- Goal: perform a Go-only residual Python sweep over the specified candidate files, preferring deletion or Go replacements; if removal is not yet possible, reduce Python to a thin compatibility shim and document deletion conditions.
-- Current repo state on entry: workspace contains only `.git` metadata and no checked-out tree yet; repository content must be fetched from `origin` before code changes.
+- Issue: `BIG-GO-104`
+- Goal: remove or replace remaining Python scripts and operational wrappers while keeping changes scoped to the active residual surface.
+- Active residual identified in this checkout: `bigclaw-go/scripts/migration/export_live_shadow_bundle` is still implemented in Python and some docs/tests still describe Python-based migration bundle commands.
 
 ## Scope
-- `src/bigclaw/cost_control.py`
-- `src/bigclaw/mapping.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/roadmap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `tests/test_design_system.py`
-- `tests/test_live_shadow_bundle.py`
-- `tests/test_pilot.py`
-- `tests/test_repo_triage.py`
-- `tests/test_subscriber_takeover_harness.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle`
+- `bigclaw-go/docs/migration-shadow.md`
+- `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
+- Any directly coupled Go/tests/docs needed to keep the exported bundle surface aligned after replacing the Python wrapper
 
 ## Plan
-1. Fetch and check out the actual repository contents from `origin`.
-2. Inspect the candidate Python files and repo references to determine which can be deleted, replaced by Go commands, or reduced to shims.
-3. Implement the smallest scoped changes that remove physical Python assets where feasible.
-4. Run targeted validation commands covering touched Go commands/tests and any compatibility paths left behind.
-5. Commit and push the issue branch.
+1. Replace the Python live-shadow export wrapper with a repo-native shell entrypoint that dispatches to the existing Go migration automation command.
+2. Update the directly coupled docs and regression assertions so the active operator path is Go-only and no longer advertises Python commands.
+3. Run targeted tests for the migration automation and regression surface touched by the change.
+4. Commit the scoped change set and push branch `BIG-GO-104` to `origin`.
 
 ## Acceptance
-- Enumerate which candidate Python files were covered in this sweep.
-- Remove, migrate, or replace Python files with Go implementations/commands wherever feasible.
-- Any unavoidable residual Python must be reduced to a thin compatibility layer with explicit deletion conditions documented inline or nearby.
-- Record exact validation commands and their outcomes.
-- Note residual risks only if they remain after targeted validation.
+- No active Python implementation remains at `bigclaw-go/scripts/migration/export_live_shadow_bundle`.
+- Active docs and regression surfaces point to `bigclawctl automation migration export-live-shadow-bundle` rather than Python execution.
+- Validation records exact commands and results for the touched migration/regression surface.
+- Changes stay scoped to this residual script sweep.
 
 ## Validation
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestLiveShadowBundleSurface'`
-  - Result: `ok  	bigclaw-go/internal/regression	0.179s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - Result: `14 passed`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --go-root .`
+  - Result: command succeeded and refreshed the checked-in live-shadow summary/index bundle artifacts with Go closeout commands.
+- `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run TestAutomationExportLiveShadowBundleBuildsManifest`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	5.137s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO104(ExportWrapperIsShellNative|LaneReportCapturesSweepState)$|TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned|RuntimeDocsStayAligned)$'`
+  - Result: `ok  	bigclaw-go/internal/regression	5.468s`

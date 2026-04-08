@@ -1477,6 +1477,10 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 	if err != nil {
 		return nil, err
 	}
+	rollbackDigestPath, _ := rollbackReport["digest_path"].(string)
+	if trim(rollbackDigestPath) == "" {
+		rollbackDigestPath = "docs/reports/rollback-safeguard-follow-up-digest.md"
+	}
 	scorecardSummary, _ := scorecardReport["summary"].(map[string]any)
 	freshness, _ := scorecardReport["freshness"].([]any)
 	staleInputs := automationInt(scorecardSummary["stale_inputs"], 0)
@@ -1524,7 +1528,7 @@ func buildLiveShadowRunSummary(root string, bundleDir string, runID string, comp
 			"automated_rollback_trigger": automationBool(lookupMap(rollbackReport, "summary", "automated_rollback_trigger")),
 			"distinctions":               lookupMap(rollbackReport, "summary", "distinctions"),
 			"issue":                      lookupMap(rollbackReport, "issue"),
-			"digest_path":                rollbackReport["digest_path"],
+			"digest_path":                rollbackDigestPath,
 			"summary_path":               relAutomationPath(filepath.Join(root, "docs/reports/rollback-trigger-surface.json"), root),
 		},
 		"compare_trace_id":    compareReport["trace_id"],
@@ -1694,6 +1698,9 @@ func renderLiveShadowIndex(latest map[string]any, recentRuns []map[string]any, r
 	for _, item := range liveShadowDocLinks {
 		lines = append(lines, fmt.Sprintf("- `%s` %s", item.Path, item.Description))
 	}
+	lines = append(lines, "", "## Follow-up Digests", "")
+	lines = append(lines, "- `OPE-266` / `BIG-PAR-092` remains tracked in `docs/reports/live-shadow-comparison-follow-up-digest.md`.")
+	lines = append(lines, "- `OPE-254` / `BIG-PAR-088` remains tracked in `docs/reports/rollback-safeguard-follow-up-digest.md`.")
 	lines = append(lines, "", "## Parallel Follow-up Index", "")
 	lines = append(lines, "- `docs/reports/parallel-follow-up-index.md` is the canonical index for the")
 	lines = append(lines, "  remaining live-shadow, rollback, and corpus-coverage follow-up digests.")

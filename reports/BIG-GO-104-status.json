@@ -1,0 +1,44 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-104",
+    "title": "Residual scripts Python sweep F",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-104",
+    "baseline_head": "11d9f75",
+    "latest_commit": "see git log -1 --oneline",
+    "push_target": "origin/BIG-GO-104"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-104-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-104-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_104_zero_python_guard_test.go"
+  },
+  "replacement_surface": [
+    "bigclaw-go/scripts/migration/export_live_shadow_bundle",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/docs/migration-shadow.md",
+    "bigclaw-go/docs/reports/migration-readiness-report.md",
+    "bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
+    "bigclaw-go/internal/regression/big_go_104_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --go-root .",
+      "cd bigclaw-go && go test -count=1 ./cmd/bigclawctl -run TestAutomationExportLiveShadowBundleBuildsManifest",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO104(ExportWrapperIsShellNative|LaneReportCapturesSweepState)$|TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned|RuntimeDocsStayAligned)$'"
+    ],
+    "results": {
+      "export_refresh": "exit 0; refreshed live-shadow summary/index bundle artifacts with Go-native closeout commands and follow-up digest references",
+      "automation_command_test": "ok  \tbigclaw-go/cmd/bigclawctl\t5.137s",
+      "regression_surface_test": "ok  \tbigclaw-go/internal/regression\t5.468s"
+    }
+  },
+  "blockers": [],
+  "notes": [
+    "This lane replaces the residual Python implementation at bigclaw-go/scripts/migration/export_live_shadow_bundle with a shell wrapper over the existing Go automation command.",
+    "The checked-in live-shadow bundle artifacts were refreshed so summary/index closeout commands and follow-up digest links now stay aligned with the Go migration surface."
+  ]
+}
