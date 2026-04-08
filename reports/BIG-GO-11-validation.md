@@ -87,9 +87,9 @@ ok  	bigclaw-go/internal/regression	0.190s
 
 ## Git
 
-- Commit: `95e4fac83d8b7fed6cb53ba897dcf9609c1fbf9d`
+- Commit: recorded in branch history for BIG-GO-11
 - Push: `origin/main`
-- Local/remote SHA equality confirmed at `95e4fac83d8b7fed6cb53ba897dcf9609c1fbf9d`
+- Local/remote SHA equality confirmed after push via `git rev-parse HEAD` and `git ls-remote origin refs/heads/main`
 
 ## Blocker
 
