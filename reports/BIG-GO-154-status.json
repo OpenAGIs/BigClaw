@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-154",
     "baseline_commit": "84692cf5f10232e33a2787d446990476c55cc4ba",
-    "latest_commit": "4e58d825a6f0c6b0b9b39d7e8ec2ce665c78017c",
+    "latest_commit": "0258aa32e5137d8553d037503aa86a238ffc8c86",
     "push_target": "origin/BIG-GO-154",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-154?expand=1"
   },
@@ -59,6 +59,8 @@
     "state": "open",
     "title": "BIG-GO-154: harden residual root script sweep",
     "draft": false,
-    "head_sha": "4e58d825a6f0c6b0b9b39d7e8ec2ce665c78017c"
+    "head_sha": "0258aa32e5137d8553d037503aa86a238ffc8c86",
+    "base_sha": "e3109c6d72cd394fc10e8df4de474ec25a80eea4",
+    "mergeable_state": "unstable"
   }
 }
