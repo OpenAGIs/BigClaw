@@ -99,10 +99,10 @@ ok  	bigclaw-go/internal/regression	3.219s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `f9d02ddf`
-- Lane commit details: `4f4d46ad BIG-GO-176: add support asset python sweep guard`
-- Final pushed lane commit: `4f4d46ad BIG-GO-176: add support asset python sweep guard`
+- Lane commit details: `git log --oneline --grep 'BIG-GO-176'`
+- Final pushed lane commit: `git log -1 --oneline`
 - Push target: `origin/main`
-- Remote verification: `git ls-remote --heads origin main` -> `4f4d46addd75fe6827f365acf39a026757070937 refs/heads/main`
+- Remote verification: `git ls-remote --heads origin main`
 
 ## Residual Risk
 
