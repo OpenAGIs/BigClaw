@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-147",
+    "title": "Broad repo Python reduction sweep S",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-147",
+    "baseline_commit": "cf4219c",
+    "latest_commit": "HEAD",
+    "push_target": "origin/BIG-GO-147",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-147?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-147-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_147_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-147-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "retired_contract_governance_tranche_py_files_before": 0,
+    "retired_contract_governance_tranche_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "retired_contract_governance_tranche": []
+  },
+  "replacement_paths": [
+    "bigclaw-go/internal/domain/task.go",
+    "bigclaw-go/internal/intake/connector.go",
+    "bigclaw-go/internal/intake/types.go",
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/risk/assessment.go",
+    "bigclaw-go/internal/governance/freeze.go",
+    "bigclaw-go/internal/contract/execution.go",
+    "bigclaw-go/internal/observability/audit_spec.go",
+    "docs/go-domain-intake-parity-matrix.md",
+    "docs/go-mainline-cutover-issue-pack.md",
+    "docs/go-mainline-cutover-handoff.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw -type f \\( -name 'models.py' -o -name 'connectors.py' -o -name 'dsl.py' -o -name 'risk.py' -o -name 'governance.py' -o -name 'execution_contract.py' -o -name 'audit_events.py' \\) 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO147(RepositoryHasNoPythonFiles|RetiredContractAndGovernanceTrancheStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "retired_contract_governance_tranche_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.159s"
+    }
+  }
+}
