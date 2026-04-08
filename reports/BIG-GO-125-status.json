@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-125",
-    "latest_commit": "04397d00",
+    "latest_commit": "ba52ab74",
     "push_target": "origin/BIG-GO-125",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
   },
@@ -49,7 +49,7 @@
       "gh_auth_status": "not logged into any GitHub hosts; exit code 1",
       "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4",
       "public_pr_query": "[]",
-      "git_push": "To https://github.com/OpenAGIs/BigClaw.git; 3ce6f501..04397d00 BIG-GO-125 -> BIG-GO-125",
+      "git_push": "To https://github.com/OpenAGIs/BigClaw.git; 04397d00..ba52ab74 BIG-GO-125 -> BIG-GO-125",
       "public_compare_page": "reachable without auth; shows the BIG-GO-125 compare stack against main"
     }
   },

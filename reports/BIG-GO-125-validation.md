@@ -135,7 +135,7 @@ Result:
 
 ```text
 To https://github.com/OpenAGIs/BigClaw.git
-   3ce6f501..04397d00  BIG-GO-125 -> BIG-GO-125
+   04397d00..ba52ab74  BIG-GO-125 -> BIG-GO-125
 ```
 
 Public compare page:
@@ -154,6 +154,7 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
 
 - Branch: `BIG-GO-125`
 - Published commits:
+  - `ba52ab74` (`BIG-GO-125: sync published lane metadata`)
   - `04397d00` (`BIG-GO-125: sweep residual live shadow python tooling`)
   - `ddfc4eb9` (`BIG-GO-125 sync latest published head`)
   - `f90388b0` (`BIG-GO-125 refresh published commit metadata`)
@@ -166,7 +167,7 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
   - `4b6a6183` (`BIG-GO-125 refresh workpad`)
   - `aedbb76a` (`BIG-GO-125 remove residual python tooling guidance`)
 - Push target: `origin/BIG-GO-125`
-- Final tip: `04397d00` (`BIG-GO-125: sweep residual live shadow python tooling`)
+- Final tip: `ba52ab74` (`BIG-GO-125: sync published lane metadata`)
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Residual Risk
