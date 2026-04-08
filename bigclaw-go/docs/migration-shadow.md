@@ -41,7 +41,7 @@ surface, generate the repo-native live shadow mirror scorecard:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/live_shadow_scorecard.py \
+go run ./cmd/bigclawctl automation migration live-shadow-scorecard \
   --shadow-compare-report ./docs/reports/shadow-compare-report.json \
   --shadow-matrix-report ./docs/reports/shadow-matrix-report.json \
   --output ./docs/reports/live-shadow-mirror-scorecard.json
@@ -56,7 +56,7 @@ the parity drift rollup, export the live shadow bundle/index:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/export_live_shadow_bundle
+go run ./cmd/bigclawctl automation migration export-live-shadow-bundle
 ```
 
 This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into

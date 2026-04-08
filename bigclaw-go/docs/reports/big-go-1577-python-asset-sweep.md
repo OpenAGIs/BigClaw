@@ -35,16 +35,12 @@ imported the retired modules:
   retired Python implementations.
 - Retired the legacy operator wrapper path `scripts/ops/symphony_workspace_bootstrap.py`
   in favor of `scripts/ops/bigclawctl workspace bootstrap`.
-- Renamed `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` to the
-  extensionless compatibility path `bigclaw-go/scripts/migration/export_live_shadow_bundle`
-  so the physical `.py` asset is gone while the documented CLI entrypoint
-  remains usable during migration.
-
-Explicit remaining shim deletion condition:
-
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle` should be deleted once
-  the current branch adopts the `bigclawctl automation migration export-live-shadow-bundle`
-  command family that already exists on newer Go-only baselines.
+- The original lane renamed `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+  to an extensionless compatibility path so the physical `.py` asset was gone
+  while the CLI entrypoint remained usable during migration.
+- Follow-up sweep `BIG-GO-115` deletes that compatibility path now that this
+  branch uses the native `bigclawctl automation migration export-live-shadow-bundle`
+  command family directly.
 
 ## Go Or Native Replacement Paths
 
@@ -54,7 +50,7 @@ Explicit remaining shim deletion condition:
 - `bigclaw-go/internal/repo/triage.go`
 - `bigclaw-go/internal/bootstrap/bootstrap.go`
 - `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle`
+- `bigclaw-go/cmd/bigclawctl/automation_commands.go`
 
 ## Validation Commands And Results
 
@@ -67,7 +63,6 @@ Explicit remaining shim deletion condition:
 
 ## Residual Risk
 
-- The live-shadow bundle exporter is still implemented in Python semantics under
-  an extensionless migration shim. The physical `.py` asset is gone, but full
-  deletion still depends on landing the newer `bigclawctl automation migration`
-  replacement surface in this branch lineage.
+- The historical BIG-GO-1577 report now depends on the Go-native exporter path
+  that BIG-GO-115 adopted. If future bundle semantics change, the checked-in
+  live-shadow regression fixtures need to stay aligned with `bigclawctl`.

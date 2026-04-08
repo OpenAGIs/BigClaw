@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-115",
+    "title": "Residual tooling Python sweep G",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-115'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-115-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-115-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_115_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "target_dirs": {
+      "bigclaw-go/scripts": [],
+      "bigclaw-go/docs": [],
+      "bigclaw-go/internal/regression": []
+    },
+    "retired_paths": [
+      "bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+      "bigclaw-go/scripts/migration/export_live_shadow_bundle"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/docs/reports/live-shadow-mirror-scorecard.json",
+    "bigclaw-go/docs/reports/live-shadow-summary.json",
+    "bigclaw-go/docs/reports/live-shadow-index.json",
+    "bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
+    "bigclaw-go/internal/regression/big_go_115_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find bigclaw-go/scripts bigclaw-go/docs bigclaw-go/internal/regression -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(LiveShadowScorecardBundleStaysAligned|LiveShadowBundleSummaryAndIndexStayAligned|BIGGO115(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState))$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "target_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
+    }
+  },
+  "notes": [
+    "This lane removes the extensionless Python compatibility wrapper left behind by BIG-GO-1577.",
+    "The checked-in live-shadow bundle metadata now points at the native bigclawctl migration commands instead of python3 scripts/migration entrypoints.",
+    "Historical BIG-GO-1577 guard/report artifacts were updated because they still treated the deleted wrapper as an expected replacement path."
+  ]
+}

@@ -25,6 +25,7 @@ func TestBIGGO1577TargetResidualPythonPathsAbsent(t *testing.T) {
 		"scripts/ops/symphony_workspace_bootstrap.py",
 		"bigclaw-go/scripts/e2e/export_validation_bundle_test.py",
 		"bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+		"bigclaw-go/scripts/migration/export_live_shadow_bundle",
 	}
 
 	for _, relativePath := range targets {
@@ -45,7 +46,7 @@ func TestBIGGO1577GoReplacementPathsRemainAvailable(t *testing.T) {
 		"bigclaw-go/internal/repo/triage.go",
 		"bigclaw-go/internal/bootstrap/bootstrap.go",
 		"bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
-		"bigclaw-go/scripts/migration/export_live_shadow_bundle",
+		"bigclaw-go/cmd/bigclawctl/automation_commands.go",
 	}
 
 	for _, relativePath := range replacements {
@@ -74,7 +75,7 @@ func TestBIGGO1577LaneReportCapturesSweepState(t *testing.T) {
 		"`bigclaw-go/internal/repo/board.go`",
 		"`bigclaw-go/internal/repo/triage.go`",
 		"`bigclaw-go/internal/bootstrap/bootstrap.go`",
-		"`bigclaw-go/scripts/migration/export_live_shadow_bundle`",
+		"`bigclaw-go/cmd/bigclawctl/automation_commands.go`",
 		"`bigclawctl automation migration export-live-shadow-bundle`",
 		"`find src/bigclaw tests scripts/ops bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`",
 		"`cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1577",
