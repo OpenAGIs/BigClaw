@@ -65,7 +65,7 @@ func TestBIGGO124LaneReportCapturesSweepState(t *testing.T) {
 		"`go run ./cmd/bigclawctl automation migration shadow-matrix`",
 		"`go run ./cmd/bigclawctl automation migration live-shadow-scorecard`",
 		"`go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`",
-		"`rg -n \"python3 scripts/migration|scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard)\\.py|scripts/migration/export_live_shadow_bundle\" bigclaw-go/docs bigclaw-go/internal/regression bigclaw-go/docs/reports`",
+		"`rg -n \"python3 scripts/migration|scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard)\\.py|scripts/migration/export_live_shadow_bundle\" bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/migration-readiness-report.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json bigclaw-go/docs/reports/live-shadow-summary.json bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`",
 		"`test ! -e bigclaw-go/scripts/migration/export_live_shadow_bundle`",
 		"`cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(LiveShadowScorecardBundleStaysAligned|LiveShadowBundleSummaryAndIndexStayAligned|BIGGO124",
 	} {

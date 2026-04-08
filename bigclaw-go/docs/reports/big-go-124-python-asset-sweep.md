@@ -39,7 +39,7 @@ already landed:
 - `test ! -e bigclaw-go/scripts/migration/export_live_shadow_bundle`
   Result: exit `0`; the residual extensionless Python wrapper path is absent.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'Test(LiveShadowScorecardBundleStaysAligned|LiveShadowBundleSummaryAndIndexStayAligned|BIGGO124(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)|BIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState))$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.187s`
+  Result: `ok  	bigclaw-go/internal/regression	0.185s`
 
 ## Residual Risk
 

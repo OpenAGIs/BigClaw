@@ -42,7 +42,7 @@
     "results": {
       "scoped_python_reference_sweep": "no matches (rg exit 1)",
       "residual_wrapper_absence": "wrapper absent (test exit 0)",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.185s"
     }
   },
   "notes": [
