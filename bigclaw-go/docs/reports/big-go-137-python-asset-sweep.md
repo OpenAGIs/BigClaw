@@ -58,4 +58,4 @@ includes:
 - `find .github .githooks .symphony docs docs/reports reports scripts/ops bigclaw-go/docs bigclaw-go/docs/reports bigclaw-go/examples -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; all high-impact directories audited by this lane remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO137(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|BroadRepoHighImpactDirectoriesStayPythonFree|GoNativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.220s`
+  Result: `ok  	bigclaw-go/internal/regression	0.191s`

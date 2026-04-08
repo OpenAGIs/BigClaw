@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "see `git log --oneline --grep 'BIG-GO-137' -n 1`",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -58,7 +58,7 @@
     "results": {
       "repo_py_inventory": "",
       "high_impact_inventory": "",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.220s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.191s"
     }
   },
   "blocker": {
