@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-167",
+    "title": "Broad repo Python reduction sweep W",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-167'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-167-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-167-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_167_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "reference_dense_dirs": {
+      "bigclaw-go/internal/regression": [],
+      "bigclaw-go/internal/migration": [],
+      "bigclaw-go/docs/reports": [],
+      "reports": []
+    }
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go",
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go",
+    "bigclaw-go/internal/regression/root_script_residual_sweep_test.go",
+    "bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go",
+    "bigclaw-go/internal/migration/legacy_model_runtime_modules.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "bigclaw-go/docs/reports/review-readiness.md",
+    "bigclaw-go/docs/reports/big-go-152-python-asset-sweep.md",
+    "bigclaw-go/docs/reports/big-go-157-python-asset-sweep.md",
+    "bigclaw-go/docs/reports/big-go-162-python-asset-sweep.md",
+    "reports/BIG-GO-152-validation.md",
+    "reports/BIG-GO-157-validation.md",
+    "reports/BIG-GO-162-validation.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/internal/regression bigclaw-go/internal/migration bigclaw-go/docs/reports reports -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO167(RepositoryHasNoPythonFiles|ReferenceDenseGoOwnedDirectoriesStayPythonFree|NativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "reference_dense_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.227s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-167 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state around reference-dense evidence directories.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `39a62506`."
+  ]
+}
