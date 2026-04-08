@@ -1,29 +1,30 @@
-# BIG-GO-13 Workpad
+# BIG-GO-155 Workpad
 
 ## Plan
 
-1. Reconstruct the intended "Sweep tests Python residuals batch D" scope from the existing Python-removal reports and regression bundles.
-2. Add lane-scoped artifacts for `BIG-GO-13` that document the targeted retired Python test and fixture surface, its Go/native replacements, and the current validation evidence.
-3. Add a focused regression guard under `bigclaw-go/internal/regression` for the batch-D surface.
-4. Run the targeted validation commands, record exact commands and results, then commit and push the lane update.
+1. Confirm the current repository baseline for checked-in Python assets and inspect the existing root-tooling migration surfaces.
+2. Remove the unused Python-only `ruff-pre-commit` hook from the root `.pre-commit-config.yaml`.
+3. Add a focused `BIG-GO-155` residual tooling/build-helper/dev-utility sweep report under `bigclaw-go/docs/reports/`.
+4. Add a focused regression guard under `bigclaw-go/internal/regression/` that:
+   - keeps the repository Python-free,
+   - keeps the selected tooling/dev-utility residual paths absent,
+   - pins the active Go/native replacement paths, and
+   - verifies the lane report records the exact sweep ledger and validation commands.
+5. Record targeted validation evidence in `reports/BIG-GO-155-validation.md` and `reports/BIG-GO-155-status.json`.
+6. Commit and push branch `BIG-GO-155`.
 
 ## Acceptance
 
-- The batch-D Python test and fixture residual scope is explicitly documented.
-- The targeted retired Python paths for this issue are guarded as absent.
-- The corresponding Go/native replacement paths are guarded as present.
-- Exact validation commands and results are recorded in lane artifacts.
-- The change is committed and pushed to the remote branch.
+- `BIG-GO-155` remains scoped to residual tooling, build-helper, and dev-utility cleanup only.
+- The unused Python-only `ruff-pre-commit` dependency is removed from the root pre-commit configuration.
+- The repository still has no checked-in `.py` files after the change.
+- A new focused regression test protects the selected residual tooling/dev-utility surface from Python reintroduction.
+- A new lane report documents exact before/after counts, focused ledger entries, replacement paths, and validation commands.
+- Validation artifacts capture the exact commands run and their results.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-13 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-13/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-13/bigclaw-go/docs/reports -type f \( -name '*.py' -o -name 'validation-bundle-continuation-scorecard.json' -o -name 'validation-bundle-continuation-policy-gate.json' -o -name 'shared-queue-companion-summary.json' \) 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-13/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO13LegacyTestContractSweepD(ManifestMatchesDeferredLegacyTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'`
-
-## Execution Notes
-
-- 2026-04-09: Initial repo inspection shows the checkout is already effectively on the post-removal baseline, so the lane work is expected to be documentation and regression hardening rather than in-branch Python deletions.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-13 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` produced no output.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-13/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-13/bigclaw-go/docs/reports -type f \( -name '*.py' -o -name 'validation-bundle-continuation-scorecard.json' -o -name 'validation-bundle-continuation-policy-gate.json' -o -name 'shared-queue-companion-summary.json' \) 2>/dev/null | sort` listed only the retained Go-owned continuation fixtures.
-- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-13/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO13LegacyTestContractSweepD(ManifestMatchesDeferredLegacyTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'` returned `ok   bigclaw-go/internal/regression 0.188s`.
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-155 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/.githooks /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/bigclaw-go/cmd/bigclawctl /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/bigclaw-go/internal/githubsync /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/bigclaw-go/internal/refill /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/bigclaw-go/internal/bootstrap -type f -name '*.py' 2>/dev/null | sort`
+- `rg -n 'ruff-pre-commit|ruff-check|ruff-format' /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/.pre-commit-config.yaml`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-155/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO155(RepositoryHasNoPythonFiles|ResidualToolingSurfaceStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'`

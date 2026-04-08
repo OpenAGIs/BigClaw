@@ -1,0 +1,68 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-155",
+    "title": "Residual tooling Python sweep K",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-155",
+    "baseline_commit": "52a22a80",
+    "push_target": "origin/BIG-GO-155",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-155?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-155-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_155_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-155-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "tooling_surface_py_files_before": 0,
+    "tooling_surface_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "removed_tooling_python_hooks": [
+      "ruff-pre-commit",
+      "ruff-check",
+      "ruff-format"
+    ],
+    "tooling_surface": []
+  },
+  "residual_scan": {
+    "scripts": [],
+    ".githooks": [],
+    "bigclaw-go/cmd/bigclawctl": [],
+    "bigclaw-go/internal/githubsync": [],
+    "bigclaw-go/internal/refill": [],
+    "bigclaw-go/internal/bootstrap": []
+  },
+  "replacement_paths": [
+    ".pre-commit-config.yaml",
+    "Makefile",
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    ".githooks/post-commit",
+    ".githooks/post-rewrite",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/internal/githubsync/sync.go",
+    "bigclaw-go/internal/refill/queue.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts .githooks bigclaw-go/cmd/bigclawctl bigclaw-go/internal/githubsync bigclaw-go/internal/refill bigclaw-go/internal/bootstrap -type f -name '*.py' 2>/dev/null | sort",
+      "rg -n 'ruff-pre-commit|ruff-check|ruff-format' .pre-commit-config.yaml",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO155(RepositoryHasNoPythonFiles|ResidualToolingSurfaceStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesExactLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "tooling_surface_py_inventory": "none",
+      "pre_commit_hook_sweep": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.195s"
+    }
+  }
+}
