@@ -14,8 +14,6 @@ entrypoint surface.
 
 ## Delivered
 
-- Replaced `.symphony/workpad.md` with the `BIG-GO-1585` plan, acceptance, and
-  exact validation targets.
 - Added `bigclaw-go/internal/regression/big_go_1585_zero_python_guard_test.go`
   to lock the repository-wide zero-Python state, the Python-free E2E bucket,
   and the active replacement paths.
@@ -76,13 +74,13 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1585/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.192s
+ok  	bigclaw-go/internal/regression	2.824s
 ```
 
 ## Git
 
-- Commit: recorded in git history for this lane.
-- Push target: `origin/main`.
+- Commit: `cb3e94cace015ea10a47407d6c1bf1a22c1c0ac0`
+- Push target: `origin/symphony/BIG-GO-1585`
 
 ## Blocker
 
