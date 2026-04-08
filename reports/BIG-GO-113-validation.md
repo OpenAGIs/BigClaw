@@ -83,15 +83,15 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-113/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.189s
+ok  	bigclaw-go/internal/regression	4.567s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `959fbc5d`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-113'`
-- Final metadata commit: `tracked in git history after BIG-GO-113 final sync`
+- Landed lane commit: `bb0ba9f9 BIG-GO-113 add residual python sweep guard`
+- Final metadata commit: `pending metadata refresh after landed push`
 - Push target: `origin/main`
 
 ## Residual Risk
