@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-176'",
+    "latest_commit": "4f4d46ad BIG-GO-176: add support asset python sweep guard",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -60,6 +60,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state around examples, fixture bundles, demos, and helper entrypoints.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `f9d02ddf`."
+    "Baseline HEAD before lane changes was `f9d02ddf`.",
+    "Final pushed commit is `4f4d46ad` and matches `origin/main`."
   ]
 }
