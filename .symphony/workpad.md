@@ -43,6 +43,6 @@
 
 ## Validation
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO101(RepositoryHasNoPythonFiles|ResidualSrcBigClawSweepGStaysAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesReplacementEvidence)$'`
-  - Result: `ok  	bigclaw-go/internal/regression	4.990s`
+  - Result: `ok  	bigclaw-go/internal/regression	0.194s`
 - `cd bigclaw-go && go test -count=1 ./internal/migration`
   - Result: `?   	bigclaw-go/internal/migration	[no test files]`

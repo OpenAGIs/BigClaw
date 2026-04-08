@@ -100,6 +100,67 @@ It also adds the structured replacement registry at
 It also adds the structured replacement registry at
 `bigclaw-go/internal/migration/legacy_collaboration_intake_modules.go`.
 
+## Cutover Pack Coverage Index
+
+Together with the earlier exact replacement reports already checked into this
+repository, this lane closes the remaining `src/bigclaw` coverage called out by
+`docs/go-mainline-cutover-issue-pack.md`.
+
+Previously covered cutover-pack modules:
+
+- `src/bigclaw/models.py` and `src/bigclaw/runtime.py`:
+  `bigclaw-go/docs/reports/big-go-1358-legacy-model-runtime-module-replacement.md`
+- `src/bigclaw/repo_board.py`
+  `src/bigclaw/repo_commits.py`
+  `src/bigclaw/repo_gateway.py`
+  `src/bigclaw/repo_governance.py`
+  `src/bigclaw/repo_links.py`
+  `src/bigclaw/repo_plane.py`
+  `src/bigclaw/repo_registry.py`
+  `src/bigclaw/repo_triage.py`:
+  `bigclaw-go/docs/reports/big-go-1362-repo-module-removal-sweep.md`
+- `src/bigclaw/scheduler.py`
+  `src/bigclaw/orchestration.py`
+  `src/bigclaw/workflow.py`
+  `src/bigclaw/queue.py`:
+  `bigclaw-go/docs/reports/big-go-1562-src-bigclaw-tranche-b.md`
+- `src/bigclaw/mapping.py`
+  `src/bigclaw/roadmap.py`:
+  `bigclaw-go/docs/reports/big-go-1577-python-asset-sweep.md`
+
+Modules covered directly by this lane:
+
+- `src/bigclaw/observability.py`
+- `src/bigclaw/reports.py`
+- `src/bigclaw/evaluation.py`
+- `src/bigclaw/operations.py`
+- `src/bigclaw/risk.py`
+- `src/bigclaw/governance.py`
+- `src/bigclaw/execution_contract.py`
+- `src/bigclaw/audit_events.py`
+- `src/bigclaw/issue_archive.py`
+- `src/bigclaw/run_detail.py`
+- `src/bigclaw/dashboard_run_contract.py`
+- `src/bigclaw/saved_views.py`
+- `src/bigclaw/console_ia.py`
+- `src/bigclaw/design_system.py`
+- `src/bigclaw/github_sync.py`
+- `src/bigclaw/workspace_bootstrap.py`
+- `src/bigclaw/workspace_bootstrap_cli.py`
+- `src/bigclaw/workspace_bootstrap_validation.py`
+- `src/bigclaw/parallel_refill.py`
+- `src/bigclaw/service.py`
+- `src/bigclaw/__main__.py`
+- `src/bigclaw/collaboration.py`
+- `src/bigclaw/connectors.py`
+- `src/bigclaw/dsl.py`
+- `src/bigclaw/planning.py`
+- `src/bigclaw/pilot.py`
+- `src/bigclaw/ui_review.py`
+
+This combined index accounts for the `src/bigclaw/*.py` module set enumerated
+in the cutover pack for the Go-mainline migration.
+
 ### `src/bigclaw/observability.py`
 
 - Replacement kind: `go-observability-runtime`
