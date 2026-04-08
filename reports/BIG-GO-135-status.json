@@ -6,11 +6,14 @@
   },
   "branch": {
     "name": "BIG-GO-135",
-    "baseline_commit": "2dfd472",
-    "latest_commit": "1b6f45c",
-    "push_target": "origin/BIG-GO-135",
-    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-135?expand=1",
-    "pr_seed_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-135"
+    "rebased_baseline_commit": "77c1143",
+    "landing_commit": "f3ae698",
+    "push_targets": [
+      "origin/BIG-GO-135",
+      "origin/BIG-GO-135-merge",
+      "origin/main"
+    ],
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-135?expand=1"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -26,24 +29,45 @@
   "validation": {
     "commands": [
       "git ls-files 'scripts/*.py' 'scripts/ops/*.py' 'setup.py' 'pyproject.toml' | sort",
-      "find . -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sed 's#^./##' | sort",
+      "find . -path './.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sed 's#^./##' | sort",
       "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'",
-      "python3 -m json.tool local-issues.json >/dev/null"
+      "python3 -m json.tool local-issues.json >/dev/null",
+      "python3 -m json.tool reports/BIG-GO-135-status.json >/dev/null"
     ],
     "results": {
       "tracked_root_tooling_inventory": "none",
       "physical_repo_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.190s",
-      "tracker_json_validation": "exit 0"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.192s",
+      "tracker_json_validation": "exit 0",
+      "status_json_validation": "exit 0"
     }
   },
-  "blocker": {
-    "type": "external_github_auth",
-    "summary": "The branch is pushed and the compare URL is live, but this workspace cannot create or inspect the PR unattended because `gh auth status` reports no login and `GITHUB_TOKEN`/`GH_TOKEN` are unset."
+  "landing": {
+    "method": "direct_push",
+    "target_branch": "main",
+    "landing_commit": "f3ae698"
   },
+  "pull_requests": [
+    {
+      "number": 226,
+      "url": "https://github.com/OpenAGIs/BigClaw/pull/226",
+      "state": "closed",
+      "head_branch": "BIG-GO-135",
+      "head_sha": "2b36a20",
+      "close_reason": "superseded by direct landing on main"
+    },
+    {
+      "number": 227,
+      "url": "https://github.com/OpenAGIs/BigClaw/pull/227",
+      "state": "closed",
+      "head_branch": "BIG-GO-135-merge",
+      "head_sha": "2b36a20",
+      "close_reason": "superseded by direct landing on main"
+    }
+  ],
   "notes": [
     "This lane hardens the already-Go-only root tooling posture instead of deleting newly-discovered Python files from the branch baseline.",
-    "The repo-local tracker now contains BIG-GO-135 as Done with a closeout comment carrying the validation evidence.",
-    "PR creation remains an external GitHub-authentication step from this workspace."
+    "The scoped three-commit BIG-GO-135 lane was rebuilt on top of current origin/main before landing.",
+    "The repo-local tracker contains BIG-GO-135 as Done with the final landed-state comment and rerun validation evidence."
   ]
 }

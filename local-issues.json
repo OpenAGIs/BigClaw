@@ -7759,6 +7759,11 @@
           "author": "codex",
           "body": "GitHub closeout note: branch `BIG-GO-135` is pushed and the public compare URL is `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-135?expand=1`, but unattended PR creation/inspection remains blocked in this workspace because `gh auth status` reports no login and both `GITHUB_TOKEN` and `GH_TOKEN` are unset.",
           "created_at": "2026-04-08T17:41:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Landed BIG-GO-135 directly on `main` at `f3ae698` after rebasing the scoped three-commit lane onto current `origin/main`.\n\nSuperseded PRs #226 and #227 were closed after the direct landing.\n\nValidation rerun on the rebased head:\n- `git ls-files 'scripts/*.py' 'scripts/ops/*.py' 'setup.py' 'pyproject.toml' | sort` -> no output\n- `find . -path './.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sed 's#^./##' | sort` -> no output\n- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'` -> `ok   bigclaw-go/internal/regression 0.192s`\n- `python3 -m json.tool local-issues.json >/dev/null` -> exit 0\n- `python3 -m json.tool reports/BIG-GO-135-status.json >/dev/null` -> exit 0",
+          "created_at": "2026-04-08T20:32:14Z"
         }
       ],
       "created_at": "2026-04-08T17:18:33Z",
@@ -7771,7 +7776,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Residual tooling Python sweep I",
-      "updated_at": "2026-04-08T17:41:30Z"
+      "updated_at": "2026-04-08T20:32:14Z"
     }
   ]
 }
