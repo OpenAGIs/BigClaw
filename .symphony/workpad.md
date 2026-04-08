@@ -1,32 +1,32 @@
-# BIG-GO-1586 Workpad
+# BIG-GO-168 Workpad
 
 ## Context
-- Issue: `BIG-GO-1586`
-- Title: `Strict bucket lane 1586: bigclaw-go/scripts/benchmark/*.py bucket`
-- Goal: keep `bigclaw-go/scripts/benchmark` physically free of Python assets and land lane-specific regression evidence with an issue commit.
-- Current repo state on entry: `bigclaw-go/scripts/benchmark` contains only `run_suite.sh`; no `.py` files are present in that bucket.
+- Issue: `BIG-GO-168`
+- Title: `Broad repo Python reduction sweep X`
+- Goal: keep the repo-wide broad residual surfaces Python-free and record lane-specific regression evidence for the normalized Go-only baseline.
+- Current repo state on entry: `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort` returns no files.
 
 ## Scope
 - `.symphony/workpad.md`
-- `bigclaw-go/internal/regression/big_go_1586_zero_python_guard_test.go`
-- `bigclaw-go/docs/reports/big-go-1586-python-asset-sweep.md`
-- `reports/BIG-GO-1586-status.json`
-- `reports/BIG-GO-1586-validation.md`
+- `bigclaw-go/internal/regression/big_go_168_zero_python_guard_test.go`
+- `bigclaw-go/docs/reports/big-go-168-python-asset-sweep.md`
+- `reports/BIG-GO-168-status.json`
+- `reports/BIG-GO-168-validation.md`
 
 ## Plan
-1. Replace the stale workpad with `BIG-GO-1586` execution details before any code edits.
-2. Add a benchmark-bucket regression guard that proves the repository remains Python-free, the retired benchmark Python helpers stay absent, and the surviving native benchmark entrypoints remain available.
-3. Add issue-scoped lane report, status, and validation artifacts that record the benchmark bucket inventory and exact verification commands/results.
-4. Run targeted inventory and regression commands, then commit and push the lane to `origin/main`.
+1. Replace the stale workpad with `BIG-GO-168` plan, acceptance criteria, and exact validation commands before editing code or reports.
+2. Add a lane-specific regression guard that verifies repository-wide zero Python, the priority residual directories stay Python-free, the broad sweep directories stay Python-free, and the native replacement paths remain available.
+3. Add the issue-scoped lane report, status artifact, and validation report documenting the audited directories, exact commands, and exact validation results.
+4. Run the targeted inventory and regression commands, update the recorded outputs, then commit and push the lane branch.
 
 ## Acceptance
-- `BIG-GO-1586` has an issue-specific workpad, regression guard, lane report, status artifact, and validation report.
-- `bigclaw-go/scripts/benchmark` remains at `0` physical `.py` files.
-- Retired benchmark Python helpers stay absent and the remaining benchmark native entrypoints stay available.
-- Validation artifacts record the exact commands and exact results used for this lane.
-- A scoped lane commit is pushed to the remote branch.
+- `BIG-GO-168` has an issue-specific workpad, regression guard, lane report, status artifact, and validation report.
+- The repository-wide physical `.py` count remains `0`.
+- The audited broad-sweep directories `docs`, `docs/reports`, `reports`, `scripts`, `bigclaw-go/scripts`, `bigclaw-go/docs/reports`, and `bigclaw-go/examples` remain Python-free.
+- The regression guard proves the repo stays Python-free and the native Go/shell replacement paths remain available.
+- Validation artifacts record the exact commands and exact observed results for this lane.
 
 ## Validation
 - `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find bigclaw-go/scripts/benchmark -type f -name '*.py' -print | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1586(RepositoryHasNoPythonFiles|BenchmarkBucketStaysPythonFree|RetiredBenchmarkPythonHelpersRemainAbsent|BenchmarkReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find docs docs/reports reports scripts bigclaw-go/scripts bigclaw-go/docs/reports bigclaw-go/examples -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO168(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|BroadSweepDirectoriesStayPythonFree|NativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
