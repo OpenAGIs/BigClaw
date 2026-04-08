@@ -1,36 +1,34 @@
-# BIG-GO-135
+# BIG-GO-164
 
 ## Context
-- Issue: `BIG-GO-135`
-- Goal: close the remaining root-level Python tooling/build-helper gap by locking down the retired Python build metadata alongside the already-retired root script shims.
-- Current repo state on entry: `main` is already Go-only at the repository root, but the residual-sweep regression tests do not explicitly assert that `setup.py` and `pyproject.toml` stay deleted.
+- Issue: `BIG-GO-164`
+- Goal: harden the residual shell wrapper and CLI-helper surface so the repo stays Go-only for script entrypoints after the Python shim removals already landed.
+- Current repo state on entry: the checkout already has `0` physical `.py` files, so this lane is a scoped regression-prevention sweep rather than a fresh file-deletion batch.
 
 ## Scope
 - `.symphony/workpad.md`
 - `README.md`
-- `bigclaw-go/internal/regression/root_script_residual_sweep_test.go`
-- `local-issues.json`
-- `reports/BIG-GO-135-validation.md`
-- `reports/BIG-GO-135-status.json`
+- `bigclaw-go/internal/regression/big_go_164_zero_python_guard_test.go`
+- `bigclaw-go/docs/reports/big-go-164-python-asset-sweep.md`
+- `reports/BIG-GO-164-validation.md`
+- `reports/BIG-GO-164-status.json`
 
 ## Plan
-1. Replace the stale carried-over workpad with issue-specific plan, acceptance, and validation targets before editing tracked files.
-2. Extend the root residual-sweep regression so it explicitly treats retired Python build helpers as part of the deleted root tooling surface.
-3. Refresh README root-posture guidance so it states the root no longer carries Python build metadata as well as `.py` assets.
-4. Record repo-native closeout state in the local tracker and lane artifacts, then push the refreshed branch.
-5. Rebase or rebuild the lane onto current `origin/main` as needed so the issue stays scoped and lands cleanly.
+1. Replace the stale carried-over workpad with issue-specific plan, acceptance, and validation before editing tracked files.
+2. Add a focused regression guard for the residual script-helper surface: root shell wrappers, root bootstrap helper, and retained benchmark/e2e shell entrypoints.
+3. Refresh README guidance only where needed so the retained helper paths are explicitly documented as Go/shell-only replacements for the retired Python wrappers.
+4. Record exact validation commands and exact results in the lane report and validation/status artifacts.
+5. Commit the scoped change set and push the issue branch to the remote.
 
 ## Acceptance
-- The workpad is specific to `BIG-GO-135`.
-- The root residual-sweep regression explicitly fails if `setup.py` or `pyproject.toml` reappear.
-- README root-posture guidance matches the enforced Go-only build-helper posture.
-- Validation records exact commands and exact results for the regression and root inventory checks.
-- The local tracker and lane artifacts capture the pushed branch and current landing state.
+- The workpad is specific to `BIG-GO-164`.
+- The residual shell helper surface remains Python-free and covered by a focused Go regression guard.
+- The lane report records repository-wide and helper-surface Python inventories as `0`.
+- README guidance explicitly matches the retained Go/shell helper paths for the residual script-helper surface.
+- Validation artifacts record the exact commands run and their exact results.
 - Changes remain scoped to this issue.
 
 ## Validation
-- `git ls-files 'scripts/*.py' 'scripts/ops/*.py' 'setup.py' 'pyproject.toml' | sort`
-- `find . -path './.git' -prune -o -type f \( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \) -print | sed 's#^./##' | sort`
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'`
-- `python3 -m json.tool local-issues.json >/dev/null`
-- `python3 -m json.tool reports/BIG-GO-135-status.json >/dev/null`
+- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `find scripts scripts/ops bigclaw-go/scripts/benchmark bigclaw-go/scripts/e2e -type f -name '*.py' 2>/dev/null | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO164(RepositoryHasNoPythonFiles|ResidualScriptHelperSurfaceStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`

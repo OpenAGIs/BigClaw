@@ -1,0 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-164",
+    "title": "Residual scripts Python sweep L",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-164",
+    "baseline_commit": "f3ae6981",
+    "latest_commit": null,
+    "push_target": "origin/BIG-GO-164",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-164?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-164-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_164_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-164-validation.md"
+  },
+  "counts": {
+    "repository_py_files": 0,
+    "scripts_py_files": 0,
+    "scripts_ops_py_files": 0,
+    "benchmark_scripts_py_files": 0,
+    "e2e_scripts_py_files": 0
+  },
+  "replacement_paths": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find scripts scripts/ops bigclaw-go/scripts/benchmark bigclaw-go/scripts/e2e -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO164(RepositoryHasNoPythonFiles|ResidualScriptHelperSurfaceStaysPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "residual_script_helper_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.142s"
+    }
+  }
+}

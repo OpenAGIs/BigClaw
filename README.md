@@ -59,6 +59,9 @@ Notes:
   are the supported automation entrypoints. `bigclaw-go/scripts/benchmark/` is
   now Go-only and keeps `run_suite.sh` as the retained wrapper; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
+- `bigclaw-go/scripts/e2e/run_all.sh` is the retained shell orchestrator for
+  the Go-owned live validation flow; the wrapper fanout stays in shell/Go and
+  should not regain Python helpers.
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
