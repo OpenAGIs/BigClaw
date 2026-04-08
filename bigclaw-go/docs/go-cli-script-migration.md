@@ -41,6 +41,19 @@ regression surface focuses on keeping the deletion state sticky.
 | Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
 | Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
 
+## Current Repo-Root Helper Inventory
+
+The repo root stays Python-free. The only supported root helper wrappers are:
+
+- `scripts/dev_bootstrap.sh`
+- `scripts/ops/bigclawctl`
+- `scripts/ops/bigclaw-issue`
+- `scripts/ops/bigclaw-panel`
+- `scripts/ops/bigclaw-symphony`
+
+Everything else at the repo root or under `scripts/ops/` should resolve
+through `bash scripts/ops/bigclawctl ...` or remain deleted.
+
 ## Validation Commands
 
 ```bash

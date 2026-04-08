@@ -1,0 +1,78 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-154",
+    "title": "Residual scripts Python sweep K",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-154",
+    "baseline_commit": "84692cf5f10232e33a2787d446990476c55cc4ba",
+    "latest_commit": "75d31d872305e3eb08ce214741e32d95f89878e1",
+    "push_target": "origin/BIG-GO-154",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-154?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-154-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_154_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-154-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "residual_script_py_files_before": 0,
+    "residual_script_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "residual_script_surface": []
+  },
+  "residual_scan": {
+    "scripts": [],
+    "scripts/ops": [],
+    "bigclaw-go/scripts": []
+  },
+  "replacement_paths": [
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/docs/go-cli-script-migration.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts scripts/ops bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO154(RepositoryHasNoPythonFiles|ResidualScriptAreasStayPythonFree|SupportedRootHelpersRemainAvailable|RootHelperInventoryMatchesContract|LaneReportCapturesExactLedger)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "residual_script_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.177s"
+    }
+  },
+  "pull_request": {
+    "number": 228,
+    "url": "https://github.com/OpenAGIs/BigClaw/pull/228",
+    "state": "open",
+    "title": "BIG-GO-154: harden residual root script sweep",
+    "draft": false,
+    "head_sha": "75d31d872305e3eb08ce214741e32d95f89878e1",
+    "base_sha": "e3109c6d72cd394fc10e8df4de474ec25a80eea4",
+    "mergeable": true,
+    "mergeable_state": "unstable"
+  },
+  "blockers": {
+    "ci": {
+      "check_name": "test",
+      "status": "failing on base",
+      "details": [
+        "GitHub Actions reports a failing `test` check for PR #228.",
+        "The same targeted failures reproduce on a clean `origin/main` worktree at `e3109c6d72cd394fc10e8df4de474ec25a80eea4`.",
+        "Failing tests on base: `TestBundleFollowUpIndexDocsStayAligned`, `TestLiveShadowRuntimeDocsStayAligned`, `TestRollbackDocsStayAligned`."
+      ]
+    }
+  }
+}
