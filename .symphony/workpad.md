@@ -28,3 +28,4 @@
 - 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-156/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-156/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-156/reports -type f -name '*.py' 2>/dev/null | sort` produced no output.
 - 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-156/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO156(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedNativeSupportAssetsRemainAvailable|LaneReportDocumentsSupportAssetSweep)$'` returned `ok  	bigclaw-go/internal/regression	0.204s`.
 - 2026-04-09: committed as `af56571a` (`BIG-GO-156: add support asset python sweep guard`) and pushed to `origin/BIG-GO-156`.
+- 2026-04-09: metadata follow-up commit `31096c12` (`BIG-GO-156: finalize support asset sweep metadata`) was pushed to `origin/BIG-GO-156`.

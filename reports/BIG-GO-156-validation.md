@@ -72,4 +72,5 @@ Result: `ok  	bigclaw-go/internal/regression	0.204s`
 - Push target: `origin/BIG-GO-156`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-156?expand=1`
 - Pushed commit: `af56571a` (`BIG-GO-156: add support asset python sweep guard`)
+- Metadata follow-up: `31096c12` (`BIG-GO-156: finalize support asset sweep metadata`)
 - PR creation URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-156`
