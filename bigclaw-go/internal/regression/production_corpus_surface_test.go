@@ -15,6 +15,11 @@ type shadowMatrixReport struct {
 		CorpusSliceCount int    `json:"corpus_slice_count"`
 		ManifestName     string `json:"manifest_name"`
 	} `json:"inputs"`
+	CorpusCoverage struct {
+		ManifestName       string `json:"manifest_name"`
+		ManifestSourceFile string `json:"manifest_source_file"`
+		CorpusSliceCount   int    `json:"corpus_slice_count"`
+	} `json:"corpus_coverage"`
 	Results []struct {
 		TraceID string `json:"trace_id"`
 		Primary struct {
@@ -28,11 +33,6 @@ type shadowMatrixReport struct {
 			} `json:"status"`
 		} `json:"shadow"`
 	} `json:"results"`
-}
-
-type shadowCorpusManifest struct {
-	Name   string        `json:"name"`
-	Slices []interface{} `json:"slices"`
 }
 
 type driftRollup struct {
@@ -57,13 +57,8 @@ type driftRollup struct {
 func TestProductionCorpusMatrixManifestAlignment(t *testing.T) {
 	repoRoot := repoRoot(t)
 	matrixPath := filepath.Join(repoRoot, "docs", "reports", "shadow-matrix-report.json")
-	manifestPath := filepath.Join(repoRoot, "examples", "shadow-corpus-manifest.json")
-
 	var report shadowMatrixReport
 	readJSONFile(t, matrixPath, &report)
-
-	var manifest shadowCorpusManifest
-	readJSONFile(t, manifestPath, &manifest)
 
 	if report.Total != report.Matched+report.Mismatched {
 		t.Fatalf("shadow matrix total %d != matched+mismatched %d+%d", report.Total, report.Matched, report.Mismatched)
@@ -71,11 +66,14 @@ func TestProductionCorpusMatrixManifestAlignment(t *testing.T) {
 	if report.Total != len(report.Results) {
 		t.Fatalf("expected %d results, got %d", report.Total, len(report.Results))
 	}
-	if report.Inputs.ManifestName != manifest.Name {
-		t.Fatalf("matrix manifest %q != manifest name %q", report.Inputs.ManifestName, manifest.Name)
+	if report.CorpusCoverage.ManifestName != "anonymized-production-corpus-v1" {
+		t.Fatalf("unexpected corpus manifest name: %+v", report.CorpusCoverage)
 	}
-	if report.Inputs.CorpusSliceCount != len(manifest.Slices) {
-		t.Fatalf("matrix corpus slice count %d != manifest slices %d", report.Inputs.CorpusSliceCount, len(manifest.Slices))
+	if report.CorpusCoverage.ManifestSourceFile != "operator-supplied-anonymized-corpus-manifest" {
+		t.Fatalf("unexpected corpus manifest source: %+v", report.CorpusCoverage)
+	}
+	if report.Inputs.CorpusSliceCount != report.CorpusCoverage.CorpusSliceCount {
+		t.Fatalf("matrix corpus slice count %d != coverage count %d", report.Inputs.CorpusSliceCount, report.CorpusCoverage.CorpusSliceCount)
 	}
 
 	for _, result := range report.Results {
@@ -119,7 +117,7 @@ func TestProductionCorpusDigestReferencesRemainIntact(t *testing.T) {
 		"docs/migration-shadow.md",
 		"fixture-backed evidence only",
 		"no real production issue/task corpus coverage",
-		"examples/shadow-corpus-manifest.json",
+		"operator-supplied anonymized manifests",
 	}
 	for _, needle := range required {
 		if !strings.Contains(body, needle) {

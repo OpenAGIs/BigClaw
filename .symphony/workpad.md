@@ -1,41 +1,29 @@
-# BIG-GO-1577 Workpad
-
-## Context
-- Issue: `BIG-GO-1577`
-- Goal: perform a Go-only residual Python sweep over the specified candidate files, preferring deletion or Go replacements; if removal is not yet possible, reduce Python to a thin compatibility shim and document deletion conditions.
-- Current repo state on entry: workspace contains only `.git` metadata and no checked-out tree yet; repository content must be fetched from `origin` before code changes.
-
-## Scope
-- `src/bigclaw/cost_control.py`
-- `src/bigclaw/mapping.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/roadmap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `tests/test_design_system.py`
-- `tests/test_live_shadow_bundle.py`
-- `tests/test_pilot.py`
-- `tests/test_repo_triage.py`
-- `tests/test_subscriber_takeover_harness.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+# BIG-GO-16 Workpad
 
 ## Plan
-1. Fetch and check out the actual repository contents from `origin`.
-2. Inspect the candidate Python files and repo references to determine which can be deleted, replaced by Go commands, or reduced to shims.
-3. Implement the smallest scoped changes that remove physical Python assets where feasible.
-4. Run targeted validation commands covering touched Go commands/tests and any compatibility paths left behind.
-5. Commit and push the issue branch.
+1. Normalize the restored workspace onto the `BIG-GO-16` branch from repository mainline.
+2. Identify residual auxiliary Python support/example files relevant to batch B and determine whether each should be converted or deleted.
+3. Apply the minimal scoped changes for this issue only, including any necessary reference cleanup.
+4. Run targeted validation for the touched paths and capture exact commands and results.
+5. Commit the changes on the issue branch and push to the remote branch.
 
 ## Acceptance
-- Enumerate which candidate Python files were covered in this sweep.
-- Remove, migrate, or replace Python files with Go implementations/commands wherever feasible.
-- Any unavoidable residual Python must be reduced to a thin compatibility layer with explicit deletion conditions documented inline or nearby.
-- Record exact validation commands and their outcomes.
-- Note residual risks only if they remain after targeted validation.
+- The workspace is on a valid branch for `BIG-GO-16`.
+- Residual Python support/example files in scope for batch B are removed or converted with no unrelated edits.
+- References affected by those removals/conversions are updated consistently.
+- Targeted validation commands pass, or any unavoidable failure is recorded precisely.
+- Changes are committed and pushed to the remote branch for `BIG-GO-16`.
 
 ## Validation
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestLiveShadowBundleSurface'`
-  - Result: `ok  	bigclaw-go/internal/regression	0.179s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - Result: `14 passed`
+- Inspect `git status` and `git diff --stat` to confirm the change set is scoped.
+- Run targeted repository searches for the removed or converted Python paths to confirm no stale references remain.
+- Run the smallest relevant automated tests or checks for the touched area and record exact commands plus results.
+- Confirm `git status` is clean after commit and verify the push target branch on `origin`.
+
+### Results
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-16/bigclaw-go && go test -count=1 ./internal/regression -run 'Test(LiveShadowRuntimeDocsStayAligned|LiveShadowScorecardBundleStaysAligned|LiveShadowBundleSummaryAndIndexStayAligned|ProductionCorpusMatrixManifestAlignment|ProductionCorpusDriftRollupStaysAligned|ProductionCorpusDigestReferencesRemainIntact|Lane8FollowupDigestsStayAligned|Lane8ShadowMatrixCorpusCoverageStaysAligned|RollbackDocsStayAligned)$'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.197s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-16 && rg -n "examples/shadow-(corpus-manifest|task|task-budget|task-validation)\.json|scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard)\.py" bigclaw-go/docs bigclaw-go/scripts/migration/export_live_shadow_bundle bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go bigclaw-go/internal/regression/production_corpus_surface_test.go bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go -S`
+  - Result: exit `1` with no matches
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-16 && git diff --stat`
+  - Result: scoped to 21 files under `.symphony/` and `bigclaw-go/`, including deletion of the four `bigclaw-go/examples/shadow-*.json` fixtures

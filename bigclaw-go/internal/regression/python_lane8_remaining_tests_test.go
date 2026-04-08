@@ -420,7 +420,7 @@ func TestLane8FollowupDigestsStayAligned(t *testing.T) {
 				"docs/reports/shadow-compare-report.json",
 				"docs/migration-shadow.md",
 				"docs/reports/issue-coverage.md",
-				"examples/shadow-corpus-manifest.json",
+				"docs/reports/live-shadow-drift-rollup.json",
 			},
 			phrases: []string{
 				"fixture-backed evidence only",

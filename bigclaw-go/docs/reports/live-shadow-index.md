@@ -39,8 +39,8 @@
 
 ## Workflow closeout commands
 
-- `cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty`
-- `cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --pretty`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle`
 - `cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned`
 - `git push origin <branch> && git log -1 --stat`
 
@@ -50,7 +50,7 @@
 
 ## Linked migration docs
 
-- `docs/migration-shadow.md` Shadow helper workflow and bundle generation steps.
+- `docs/migration-shadow.md` Shadow automation workflow and bundle generation steps.
 - `docs/reports/migration-readiness-report.md` Migration readiness summary linked to the shadow bundle.
 - `docs/reports/migration-plan-review-notes.md` Review notes tied to the shadow bundle index.
 - `docs/reports/rollback-trigger-surface.json` Machine-readable rollback blockers, warnings, and manual-only paths linked from the shadow bundle.

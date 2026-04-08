@@ -1,15 +1,16 @@
 # BigClaw Go Shadow Comparison
 
-Use this helper to compare two BigClaw control-plane endpoints with the same task payload.
+Use the Go-native automation commands to compare two BigClaw control-plane
+endpoints with the same task payload.
 
 ## Example
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/shadow_compare.py \
+go run ./cmd/bigclawctl automation migration shadow-compare \
   --primary http://127.0.0.1:8080 \
   --shadow http://127.0.0.1:8081 \
-  --task-file ./examples/shadow-task.json \
+  --task-file /tmp/shadow-task.json \
   --report-path ./docs/reports/shadow-compare-report.json
 ```
 
@@ -20,13 +21,13 @@ so the resulting timelines stay easy to correlate in audit/event tooling.
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/shadow_matrix.py \
+go run ./cmd/bigclawctl automation migration shadow-matrix \
   --primary http://127.0.0.1:8080 \
   --shadow http://127.0.0.1:8081 \
-  --task-file ./examples/shadow-task.json \
-  --task-file ./examples/shadow-task-budget.json \
-  --task-file ./examples/shadow-task-validation.json \
-  --corpus-manifest ./examples/shadow-corpus-manifest.json \
+  --task-file /tmp/shadow-task.json \
+  --task-file /tmp/shadow-task-budget.json \
+  --task-file /tmp/shadow-task-validation.json \
+  --corpus-manifest /tmp/shadow-corpus-manifest.json \
   --report-path ./docs/reports/shadow-matrix-report.json
 ```
 
@@ -41,7 +42,7 @@ surface, generate the repo-native live shadow mirror scorecard:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/live_shadow_scorecard.py \
+go run ./cmd/bigclawctl automation migration live-shadow-scorecard \
   --shadow-compare-report ./docs/reports/shadow-compare-report.json \
   --shadow-matrix-report ./docs/reports/shadow-matrix-report.json \
   --output ./docs/reports/live-shadow-mirror-scorecard.json
@@ -56,7 +57,7 @@ the parity drift rollup, export the live shadow bundle/index:
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/export_live_shadow_bundle
+go run ./cmd/bigclawctl automation migration export-live-shadow-bundle
 ```
 
 This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into
@@ -69,9 +70,12 @@ The checked-in bundle summary is also exposed through `GET /debug/status` as
 `distributed_diagnostics.live_shadow_mirror_scorecard`, so reviewers can inspect parity drift,
 freshness, and report links without reopening the standalone migration bundle first.
 
-When a manifest contains approved replay payloads, add `--replay-corpus-slices` to
-submit those corpus-backed slices through the same shadow matrix run. Slices without a
-payload still contribute to the `corpus_coverage` scorecard and uncovered-slice summary.
+When a manifest contains approved replay payloads, add `--replay-corpus-slices`
+to submit those corpus-backed slices through the same shadow matrix run. Slices
+without a payload still contribute to the `corpus_coverage` scorecard and
+uncovered-slice summary. The repo no longer ships sample task or manifest JSON
+under `examples/`; operators are expected to provide their own reviewable task
+payloads and anonymized corpus manifests.
 
 ## Expected output
 
