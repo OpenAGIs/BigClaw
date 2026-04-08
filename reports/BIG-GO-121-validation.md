@@ -78,7 +78,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-121/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.173s
+ok  	bigclaw-go/internal/regression	3.530s
 ```
 
 ## Residual Risk

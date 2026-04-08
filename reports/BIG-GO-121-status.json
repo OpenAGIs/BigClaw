@@ -37,7 +37,7 @@
     "results": {
       "repo_py_count": "0",
       "priority_dir_scan": "<empty>",
-      "regression_tests": "ok   bigclaw-go/internal/regression  0.173s"
+      "regression_tests": "ok   bigclaw-go/internal/regression  3.530s"
     }
   },
   "blocker": {
