@@ -1,41 +1,38 @@
-# BIG-GO-1577 Workpad
-
-## Context
-- Issue: `BIG-GO-1577`
-- Goal: perform a Go-only residual Python sweep over the specified candidate files, preferring deletion or Go replacements; if removal is not yet possible, reduce Python to a thin compatibility shim and document deletion conditions.
-- Current repo state on entry: workspace contains only `.git` metadata and no checked-out tree yet; repository content must be fetched from `origin` before code changes.
-
-## Scope
-- `src/bigclaw/cost_control.py`
-- `src/bigclaw/mapping.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/roadmap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `tests/test_design_system.py`
-- `tests/test_live_shadow_bundle.py`
-- `tests/test_pilot.py`
-- `tests/test_repo_triage.py`
-- `tests/test_subscriber_takeover_harness.py`
-- `scripts/ops/symphony_workspace_bootstrap.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+# BIG-GO-112 Workpad
 
 ## Plan
-1. Fetch and check out the actual repository contents from `origin`.
-2. Inspect the candidate Python files and repo references to determine which can be deleted, replaced by Go commands, or reduced to shims.
-3. Implement the smallest scoped changes that remove physical Python assets where feasible.
-4. Run targeted validation commands covering touched Go commands/tests and any compatibility paths left behind.
-5. Commit and push the issue branch.
+
+- Confirm which deleted Python test contracts from the residual backlog still lack dedicated replacement-registry artifacts.
+- Add a scoped Go-native replacement registry for the remaining deferred contract cluster owned by this issue.
+- Add regression coverage that proves the retired Python tests stay absent, the mapped Go/native replacements still exist, and the lane report stays aligned.
+- Add a `bigclaw-go/docs/reports/` lane report capturing scope, replacement ownership, and validation evidence for `BIG-GO-112`.
+- Run targeted Go validation for the new regression surface and record exact commands and results here and in the lane report.
+- Commit the scoped issue changes and push the branch to the remote tracking branch.
 
 ## Acceptance
-- Enumerate which candidate Python files were covered in this sweep.
-- Remove, migrate, or replace Python files with Go implementations/commands wherever feasible.
-- Any unavoidable residual Python must be reduced to a thin compatibility layer with explicit deletion conditions documented inline or nearby.
-- Record exact validation commands and their outcomes.
-- Note residual risks only if they remain after targeted validation.
+
+- `.symphony/workpad.md` exists before code edits and captures plan, acceptance, and validation for `BIG-GO-112`.
+- `BIG-GO-112` adds only issue-scoped artifacts for the residual Python test cluster and does not modify unrelated sweeps.
+- The repo contains a dedicated `BIG-GO-112` replacement-registry path, regression tests, and lane report for the chosen residual test cluster.
+- Targeted regression validation passes with exact commands and results recorded.
+- The branch is committed and pushed after validation succeeds.
 
 ## Validation
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1577(TargetResidualPythonPathsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestLiveShadowBundleSurface'`
-  - Result: `ok  	bigclaw-go/internal/regression	0.179s`
-- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
-  - Result: `14 passed`
+
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO112'`
+- `cd bigclaw-go && go test -count=1 ./internal/migration ./internal/regression`
+- `git status --short`
+
+## Results
+
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO112ResidualTestContractSweepM(ManifestMatchesRetiredTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'`
+  - `ok  	bigclaw-go/internal/regression	4.466s`
+- `cd bigclaw-go && go test -count=1 ./internal/migration ./internal/regression`
+  - `?   	bigclaw-go/internal/migration	[no test files]`
+  - `FAIL	bigclaw-go/internal/regression`
+  - Unrelated existing failure: `TestLiveShadowScorecardBundleStaysAligned` expected a different live-shadow generator script string and reported `GeneratorScript:go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
+- `git status --short`
+  - `M .symphony/workpad.md`
+  - `?? bigclaw-go/docs/reports/big-go-112-residual-test-contract-sweep-m.md`
+  - `?? bigclaw-go/internal/migration/residual_test_contract_sweep_m.go`
+  - `?? bigclaw-go/internal/regression/big_go_112_residual_test_contract_sweep_m_test.go`
