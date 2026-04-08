@@ -34,6 +34,7 @@ no longer reads as an active workflow.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
 
 ## Validation Results
 
@@ -95,6 +96,20 @@ Alternatively, populate the GH_TOKEN environment variable with a GitHub API auth
 exit code 4
 ```
 
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'
+```
+
+Result:
+
+```json
+[
+
+]
+```
+
 ## Git
 
 - Branch: `BIG-GO-125`
@@ -113,3 +128,5 @@ exit code 4
 - GitHub CLI authentication is unavailable in this workspace, so PR inspection
   or creation cannot be completed here even though the branch is already
   pushed to `origin/BIG-GO-125`.
+- The public GitHub API currently reports no PR for head branch `BIG-GO-125`,
+  so manual authenticated PR creation remains the only external remaining step.

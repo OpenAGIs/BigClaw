@@ -37,18 +37,21 @@
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n \"pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<\" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName"
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'"
     ],
     "results": {
       "targeted_regression_tests": "ok   bigclaw-go/internal/regression\t0.187s",
       "active_doc_reference_scan": "no matches; exit code 1",
       "gh_auth_status": "not logged into any GitHub hosts; exit code 1",
-      "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4"
+      "gh_pr_list": "GitHub CLI requires authentication in this environment; exit code 4",
+      "public_pr_query": "[]"
     }
   },
   "notes": [
     "This lane cleaned active tooling guidance rather than historical archived evidence.",
     "BIG-GO-125 is not present in the local issue tracker store for this workspace, so closeout lives in git artifacts and the pushed branch state.",
-    "The branch is pushed, but PR inspection or creation cannot be completed from this workspace because GitHub CLI authentication is unavailable."
+    "The branch is pushed, but PR inspection or creation cannot be completed from this workspace because GitHub CLI authentication is unavailable.",
+    "An unauthenticated public GitHub API query currently returns no PR for head branch BIG-GO-125."
   ]
 }
