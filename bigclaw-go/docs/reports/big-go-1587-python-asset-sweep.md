@@ -41,4 +41,4 @@ replacement workflow for the retired Python bucket.
 - `test ! -d bigclaw-go/scripts/migration`
   Result: `absent`
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1587(RepositoryHasNoPythonFiles|MigrationBucketStaysAbsentAndPythonFree|GoMigrationReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.183s`
+  Result: `ok  	bigclaw-go/internal/regression	3.220s`

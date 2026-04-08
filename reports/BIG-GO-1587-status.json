@@ -25,7 +25,7 @@
       "repo_python_inventory": "no output",
       "bucket_python_inventory": "no output",
       "bucket_absence_check": "absent",
-      "regression_tests": "ok   bigclaw-go/internal/regression  0.183s"
+      "regression_tests": "ok   bigclaw-go/internal/regression  3.220s"
     }
   },
   "blocker": {
