@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "see `git log --oneline --grep 'BIG-GO-137' -n 1`",
-    "push_target": "origin/main"
+    "push_target": "origin/BIG-GO-137"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-137-validation.md",
@@ -58,7 +58,7 @@
     "results": {
       "repo_py_inventory": "",
       "high_impact_inventory": "",
-      "regression_tests": "ok   bigclaw-go/internal/regression\t0.191s"
+      "regression_tests": "ok   bigclaw-go/internal/regression\t3.187s"
     }
   },
   "blocker": {
