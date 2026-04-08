@@ -1,0 +1,53 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-15",
+    "title": "Sweep packaging/tooling residuals batch B",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-15",
+    "latest_commit": "dd8f238cafbd2941fb3d05cd1d2f50e15549dd36",
+    "push_target": "origin/BIG-GO-15"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-15-validation.md",
+    "workpad": ".symphony/workpad.md"
+  },
+  "removed_residuals": [
+    ".pre-commit-config.yaml",
+    ".gitignore::__pycache__/",
+    ".gitignore::*.py[cod]",
+    ".gitignore::*.egg-info/"
+  ],
+  "go_replacements": [
+    "Makefile",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go"
+  ],
+  "validation": {
+    "commands": [
+      "git diff --check",
+      "make build",
+      "bash scripts/ops/bigclawctl github-sync --help >/dev/null && bash scripts/ops/bigclawctl dev-smoke",
+      "rg -n \"__pycache__|\\\\*\\\\.py\\\\[cod\\\\]|\\\\*\\\\.egg-info/|pre-commit|\\\\.pre-commit-config\\\\.yaml|actions/setup-python|pip install -e|python -m build|pytest-cov|python-version\" .gitignore README.md .github/workflows/ci.yml scripts/dev_bootstrap.sh Makefile --glob '!**/.git/**'",
+      "make test"
+    ],
+    "results": {
+      "git_diff_check": "passed",
+      "make_build": "passed",
+      "root_operator_smoke": "smoke_ok local",
+      "residual_reference_sweep": "no output",
+      "make_test": "failed in pre-existing bigclaw-go/internal/regression checks"
+    }
+  },
+  "blocker": {
+    "type": "unrelated-baseline-failure",
+    "summary": "The repository's full root test path is already red on origin/main because of unrelated regression/doc-alignment failures in bigclaw-go/internal/regression."
+  },
+  "notes": [
+    "This lane is scoped to root packaging/tooling residuals rather than the broader live-shadow regression surface.",
+    "The branch is pushed to origin/BIG-GO-15.",
+    "The validation blocker is documented but intentionally not fixed in this issue."
+  ]
+}
