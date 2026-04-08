@@ -33,9 +33,8 @@
 
 ## Validation
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned'`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<" README.md bigclaw-go/docs/migration-shadow.md docs/go-mainline-cutover-handoff.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n "pre-commit run --all-files|python3 scripts/migration/(shadow_compare|shadow_matrix|live_shadow_scorecard|export_live_shadow_bundle)|PYTHONPATH=src python3 - <<|go run ./cmd/bigclawctl automation migration (live-shadow-scorecard|export-live-shadow-bundle)" README.md docs/go-mainline-cutover-handoff.md bigclaw-go/docs/migration-shadow.md bigclaw-go/docs/reports/live-shadow-index.md bigclaw-go/docs/reports/live-shadow-index.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125`
 
 ## Final Blocker
-- Repository work is complete and the branch is pushed to `origin/BIG-GO-125`.
-- PR creation and authenticated PR inspection remain blocked in this workspace because no GitHub CLI login or GitHub token is configured.
-- Manual handoff URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
+- None. Repository work is complete and the branch is pushed to `origin/BIG-GO-125`.

@@ -36,6 +36,7 @@ those reviewer-facing files alongside the canonical migration-shadow doc.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-125 --json url,title,state,headRefName,baseRefName`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -122,6 +123,21 @@ Result:
 ]
 ```
 
+### Branch publication
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125
+```
+
+Result:
+
+```text
+To https://github.com/OpenAGIs/BigClaw.git
+   3ce6f501..04397d00  BIG-GO-125 -> BIG-GO-125
+```
+
 Public compare page:
 
 ```text
@@ -138,6 +154,7 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
 
 - Branch: `BIG-GO-125`
 - Published commits:
+  - `04397d00` (`BIG-GO-125: sweep residual live shadow python tooling`)
   - `ddfc4eb9` (`BIG-GO-125 sync latest published head`)
   - `f90388b0` (`BIG-GO-125 refresh published commit metadata`)
   - `6d2cc025` (`BIG-GO-125 sync workpad blocker`)
@@ -149,7 +166,7 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
   - `4b6a6183` (`BIG-GO-125 refresh workpad`)
   - `aedbb76a` (`BIG-GO-125 remove residual python tooling guidance`)
 - Push target: `origin/BIG-GO-125`
-- Final tip: `tracked in git history after BIG-GO-125 final metadata sync`
+- Final tip: `04397d00` (`BIG-GO-125: sweep residual live shadow python tooling`)
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Residual Risk
