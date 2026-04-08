@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+var pythonAssetExtensions = map[string]struct{}{
+	".ipynb": {},
+	".py":    {},
+	".pyi":   {},
+	".pyw":   {},
+}
+
 func TestBIGGO1174RepositoryHasNoPythonFiles(t *testing.T) {
 	rootRepo := filepath.Clean(filepath.Join(repoRoot(t), ".."))
 
@@ -48,7 +55,7 @@ func collectPythonFiles(t *testing.T, root string) []string {
 		if d.IsDir() {
 			return nil
 		}
-		if filepath.Ext(path) != ".py" {
+		if _, ok := pythonAssetExtensions[filepath.Ext(path)]; !ok {
 			return nil
 		}
 		relative, relErr := filepath.Rel(root, path)

@@ -1,0 +1,65 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-159",
+    "title": "Residual auxiliary Python sweep L",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-159",
+    "latest_commit": "pending push",
+    "push_target": "origin/BIG-GO-159"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-159-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-159-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_159_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_python_assets": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    },
+    "overlooked_auxiliary_dirs": {
+      ".github": [],
+      ".symphony": [],
+      "docs/reports": [],
+      "reports": [],
+      "bigclaw-go/docs/reports": [],
+      "bigclaw-go/docs/reports/live-shadow-runs": [],
+      "bigclaw-go/docs/reports/live-validation-runs": []
+    }
+  },
+  "retained_native_evidence_paths": [
+    ".github/workflows/ci.yml",
+    ".symphony/workpad.md",
+    "docs/reports/bootstrap-cache-validation.md",
+    "reports/BIG-FOUNDATION-validation.md",
+    "bigclaw-go/docs/reports/live-shadow-index.md",
+    "bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json",
+    "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-159 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyi' -o -name '*.pyw' -o -name '*.ipynb' \\) -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/.symphony /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/bigclaw-go/docs/reports/live-validation-runs -type f \\( -name '*.py' -o -name '*.pyi' -o -name '*.pyw' -o -name '*.ipynb' \\) 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-159/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO159(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|OverlookedAuxiliaryDirectoriesStayPythonFree|NativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_python_asset_inventory": "none",
+      "overlooked_auxiliary_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.185s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python asset count was already zero in this workspace before BIG-GO-159 changes."
+  },
+  "notes": [
+    "This lane closes a regression blind spot by treating `.py`, `.pyi`, `.pyw`, and `.ipynb` files as Python assets during filesystem sweeps.",
+    "The branch baseline was already Python-free, so this lane hardens detection and refreshes validation evidence rather than removing in-branch Python assets."
+  ]
+}
