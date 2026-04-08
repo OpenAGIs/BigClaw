@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-125",
-    "latest_commit": "f90388b0",
+    "latest_commit": "tracked in git history after BIG-GO-125 final metadata sync",
     "push_target": "origin/BIG-GO-125",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
   },

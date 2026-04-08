@@ -127,6 +127,7 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
 
 - Branch: `BIG-GO-125`
 - Published commits:
+  - `ddfc4eb9` (`BIG-GO-125 sync latest published head`)
   - `f90388b0` (`BIG-GO-125 refresh published commit metadata`)
   - `6d2cc025` (`BIG-GO-125 sync workpad blocker`)
   - `2b7adcae` (`BIG-GO-125 add compare handoff link`)
@@ -137,6 +138,7 @@ Reachable without auth; shows the BIG-GO-125 compare stack against main and can 
   - `4b6a6183` (`BIG-GO-125 refresh workpad`)
   - `aedbb76a` (`BIG-GO-125 remove residual python tooling guidance`)
 - Push target: `origin/BIG-GO-125`
+- Final tip: `tracked in git history after BIG-GO-125 final metadata sync`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Residual Risk
