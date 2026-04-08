@@ -44,7 +44,7 @@
     "results": {
       "repository_py_inventory": "none",
       "src_bigclaw_sweep_g_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.184s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.165s",
       "migration_package": "?   \tbigclaw-go/internal/migration\t[no test files]"
     }
   }
