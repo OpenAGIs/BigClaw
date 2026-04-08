@@ -1,0 +1,62 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1583",
+    "title": "Strict bucket lane 1583: tests/*.py bucket A",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-1583",
+    "baseline_commit": "cf4219c9",
+    "latest_commit": "PENDING",
+    "push_target": "origin/BIG-GO-1583",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1583?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1583-tests-bucket-a-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1583_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1583-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "tests_bucket_a_py_files_before": 0,
+    "tests_bucket_a_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "tests_bucket_a": []
+  },
+  "retired_paths": [
+    "tests/conftest.py",
+    "tests/test_audit_events.py",
+    "tests/test_connectors.py",
+    "tests/test_console_ia.py",
+    "tests/test_control_center.py",
+    "tests/test_cost_control.py"
+  ],
+  "replacement_paths": [
+    "bigclaw-go/internal/regression/regression.go",
+    "bigclaw-go/internal/regression/regression_test.go",
+    "bigclaw-go/internal/observability/audit_test.go",
+    "bigclaw-go/internal/intake/connector_test.go",
+    "bigclaw-go/internal/consoleia/consoleia_test.go",
+    "bigclaw-go/internal/control/controller.go",
+    "bigclaw-go/internal/control/controller_test.go",
+    "bigclaw-go/internal/costcontrol/controller.go",
+    "bigclaw-go/internal/costcontrol/controller_test.go",
+    "bigclaw-go/internal/api/server.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find tests -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1583(RepositoryHasNoPythonFiles|RootTestsDirectoryStaysAbsent|BucketATestPathsStayAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesBucketASweep)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "focused_bucket_a_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t4.631s"
+    }
+  }
+}
