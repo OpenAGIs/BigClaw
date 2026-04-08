@@ -83,7 +83,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-143/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	3.141s
+ok  	bigclaw-go/internal/regression	0.196s
 ```
 
 ## Git
@@ -91,7 +91,9 @@ ok  	bigclaw-go/internal/regression	3.141s
 - Branch: `main`
 - Baseline HEAD before lane commit: `cf4219c9`
 - Push target: `origin/main`
-- Published lane commit: `pending`
+- Rebased remote main before publish: `97a3fb0a`
+- Published lane commit: `ee2b8a5d` (`BIG-GO-143: add residual python sweep guard`)
+- Final metadata commit: `pending`
 
 ## Residual Risk
 
