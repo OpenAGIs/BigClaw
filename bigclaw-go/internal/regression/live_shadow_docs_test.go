@@ -14,6 +14,10 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 		{
 			path: "docs/migration-shadow.md",
 			substrings: []string{
+				"go run ./cmd/bigclawctl automation migration shadow-compare",
+				"go run ./cmd/bigclawctl automation migration shadow-matrix",
+				"go run ./cmd/bigclawctl automation migration live-shadow-scorecard",
+				"go run ./cmd/bigclawctl automation migration export-live-shadow-bundle",
 				"GET /debug/status",
 				"live_shadow_mirror_scorecard",
 				"GET /v2/control-center",
@@ -55,6 +59,18 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 		for _, needle := range tc.substrings {
 			if !strings.Contains(contents, needle) {
 				t.Fatalf("%s missing substring %q", tc.path, needle)
+			}
+		}
+		if tc.path == "docs/migration-shadow.md" {
+			for _, needle := range []string{
+				"python3 scripts/migration/shadow_compare.py",
+				"python3 scripts/migration/shadow_matrix.py",
+				"python3 scripts/migration/live_shadow_scorecard.py",
+				"python3 scripts/migration/export_live_shadow_bundle",
+			} {
+				if strings.Contains(contents, needle) {
+					t.Fatalf("%s should not reference retired Python migration helper %q", tc.path, needle)
+				}
 			}
 		}
 	}
