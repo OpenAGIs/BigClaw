@@ -2,6 +2,8 @@
   "issue": "BIG-GO-151",
   "title": "Residual src/bigclaw Python sweep L",
   "branch": "BIG-GO-151",
-  "status": "validated",
-  "summary": "Added issue-scoped regression and validation evidence for the already-zero src/bigclaw tranche-L Python surface."
+  "status": "pushed",
+  "summary": "Added issue-scoped regression and validation evidence for the already-zero src/bigclaw tranche-L Python surface.",
+  "commit": "2591329d079cb977d5a6985777d8ed0e2277f146",
+  "remote": "origin/BIG-GO-151"
 }

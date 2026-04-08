@@ -66,7 +66,8 @@ Result: `ok  	bigclaw-go/internal/regression	4.838s`
 ## GitHub
 
 - Branch: `BIG-GO-151`
-- Head reference: pending commit
+- Commit: `2591329d079cb977d5a6985777d8ed0e2277f146`
+- Head reference: `origin/BIG-GO-151`
 - Push target: `origin/BIG-GO-151`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-151?expand=1`
 - PR: not created in this lane
