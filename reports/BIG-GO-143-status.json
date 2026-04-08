@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "4fff9526",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -56,6 +56,7 @@
     "Baseline HEAD before lane changes was `cf4219c9`.",
     "Rebased onto `origin/main` at `97a3fb0a` before publishing.",
     "Published lane commit `ee2b8a5d` (`BIG-GO-143: add residual python sweep guard`) to `origin/main`.",
-    "Final metadata sync commit is pending."
+    "Published metadata refresh commit `4fff9526` (`BIG-GO-143: refresh landed metadata`) to `origin/main`.",
+    "Local and remote agree at pushed HEAD `4fff9526`."
   ]
 }
