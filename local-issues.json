@@ -7754,6 +7754,11 @@
           "author": "codex",
           "body": "Completed the BIG-GO-135 residual tooling Python sweep lane.\n\nWhat changed:\n- updated `bigclaw-go/internal/regression/root_script_residual_sweep_test.go` so the retired root Python build helpers `setup.py` and `pyproject.toml` must stay absent alongside the already-retired root Python script shims.\n- refreshed `README.md` to state that the repository root no longer carries Python build metadata.\n- replaced the stale carried-over `.symphony/workpad.md` with an issue-specific plan, acceptance criteria, and exact validation log.\n\nValidation:\n- `git ls-files 'scripts/*.py' 'scripts/ops/*.py' 'setup.py' 'pyproject.toml' | sort` -> no output\n- `find . -path './.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sed 's#^./##' | sort` -> no output\n- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'` -> `ok  \\tbigclaw-go/internal/regression\\t0.190s`\n\nCommit SHA:\n- `bddb50e`\n\nBranch:\n- `BIG-GO-135`",
           "created_at": "2026-04-08T17:18:33Z"
+        },
+        {
+          "author": "codex",
+          "body": "GitHub closeout note: branch `BIG-GO-135` is pushed and the public compare URL is `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-135?expand=1`, but unattended PR creation/inspection remains blocked in this workspace because `gh auth status` reports no login and both `GITHUB_TOKEN` and `GH_TOKEN` are unset.",
+          "created_at": "2026-04-08T17:41:30Z"
         }
       ],
       "created_at": "2026-04-08T17:18:33Z",
@@ -7766,7 +7771,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Residual tooling Python sweep I",
-      "updated_at": "2026-04-08T17:18:33Z"
+      "updated_at": "2026-04-08T17:41:30Z"
     }
   ]
 }
