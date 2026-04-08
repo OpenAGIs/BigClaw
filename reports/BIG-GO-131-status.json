@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-131",
-    "latest_commit": "pending",
+    "latest_commit": "recorded in final closeout after push",
     "push_target": "origin/BIG-GO-131"
   },
   "artifacts": {
@@ -84,6 +84,7 @@
   "notes": [
     "This lane consolidates a broad retired src/bigclaw control-center and reporting tranche into one issue-specific regression guard.",
     "The branch baseline was already Python-free, so acceptance is satisfied by concrete Go/native replacement evidence rather than a lower in-branch .py count.",
-    "Baseline HEAD before lane changes was `5d8f48cc`."
+    "Baseline HEAD before lane changes was `5d8f48cc`.",
+    "Exact pushed commit metadata is reported in the final unattended closeout to avoid self-referential status drift."
   ]
 }

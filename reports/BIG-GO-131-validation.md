@@ -87,8 +87,8 @@ ok  	bigclaw-go/internal/regression	3.213s
 
 - Branch: `BIG-GO-131`
 - Baseline HEAD before lane commit: `5d8f48cc`
-- Lane commit details: `pending`
-- Final pushed lane commit: `pending`
+- Lane commit details: `See branch history for BIG-GO-131 issue-local commits.`
+- Final pushed lane commit: `Recorded in final closeout after push.`
 - Push target: `origin/BIG-GO-131`
 
 ## Residual Risk
