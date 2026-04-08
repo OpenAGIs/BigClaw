@@ -2,12 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-1583",
     "title": "Strict bucket lane 1583: tests/*.py bucket A",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-1583",
     "baseline_commit": "cf4219c9",
-    "latest_commit": "PENDING",
+    "latest_commit": "c7e51500",
     "push_target": "origin/BIG-GO-1583",
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1583?expand=1"
   },
@@ -58,5 +58,8 @@
       "focused_bucket_a_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t4.631s"
     }
+  },
+  "publication": {
+    "pr_creation_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-1583"
   }
 }
