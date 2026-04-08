@@ -48,8 +48,8 @@ Notes:
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
 - `bash scripts/ops/bigclawctl refill ...` is the supported refill entrypoint. The legacy
-  root workspace Python helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
-- GitHub sync is no longer exposed through a Python wrapper; use
+  root workspace helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
+- GitHub sync is no longer exposed through a legacy wrapper; use
   `bash scripts/ops/bigclawctl github-sync ...`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
@@ -132,7 +132,7 @@ Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-ma
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; retired root
-Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
+ops wrappers should stay deleted and GitHub sync is Go/shell-only via
 `scripts/ops/bigclawctl`.
 
 Active runtime development belongs in `bigclaw-go/internal/*`; use

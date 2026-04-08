@@ -15,6 +15,7 @@
     "workpad": ".symphony/workpad.md",
     "lane_report": "bigclaw-go/docs/reports/big-go-125-tooling-python-sweep.md",
     "touched_docs": [
+      "README.md",
       "docs/symphony-repo-bootstrap-template.md",
       "docs/parallel-refill-queue.md",
       "docs/go-cli-script-migration-plan.md",
@@ -83,6 +84,8 @@
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestLegacyMainlineCompatibilityManifestStaysAligned|TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'retired the refill Python wrapper|retired the refill wrapper|retired benchmark Python helpers|retired benchmark script helpers|retired migration Python helpers|retired migration script helpers|root Python workspace shims|root workspace shims' docs/go-cli-script-migration-plan.md",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweepDocs'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'workspace Python helpers|root workspace helpers|Python wrapper|legacy wrapper|Python ops wrappers|ops wrappers should stay deleted' README.md",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'",
       "public compare page: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
     ],
     "results": {
@@ -108,6 +111,8 @@
       "go_cli_migration_regression_tests": "ok   bigclaw-go/internal/regression\t0.179s",
       "root_migration_plan_wording_scan": "only the normalized root migration-plan legacy-script wording matched at docs/go-cli-script-migration-plan.md:12, :55, :63, :64, :96, and :137",
       "root_migration_plan_regression_tests": "ok   bigclaw-go/internal/regression\t0.202s",
+      "readme_wrapper_wording_scan": "only the normalized README legacy-wrapper wording matched at README.md:51, :52, and :135",
+      "readme_wrapper_regression_tests": "ok   bigclaw-go/internal/regression\t0.192s",
       "public_compare_page": "reachable without auth; shows the BIG-GO-125 compare stack against main"
     }
   },
@@ -120,6 +125,7 @@
     "A fifth follow-up normalized the maintained legacy-mainline compatibility manifest so it uses generic legacy runtime wording instead of Python-specific mainline phrasing.",
     "A sixth follow-up tightened active Go CLI migration guidance so current-state replacement sections use generic legacy-script wording instead of unnecessary Python-specific phrasing.",
     "A seventh follow-up tightened the root Go CLI migration plan so current-state replacement bullets use generic legacy-script wording instead of unnecessary Python-specific phrasing.",
+    "An eighth follow-up tightened active README operator guidance so current-state wrapper bullets use generic legacy-wrapper wording instead of unnecessary Python-specific phrasing.",
     "BIG-GO-125 is not present in the local issue tracker store for this workspace, so closeout lives in git artifacts and the pushed branch state.",
     "The branch is pushed, but PR inspection or creation cannot be completed from this workspace because GitHub CLI authentication is unavailable.",
     "An unauthenticated public GitHub API query currently returns no PR for head branch BIG-GO-125."

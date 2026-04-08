@@ -65,6 +65,9 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		"Use this to verify the root dev smoke path:",
 		"bash scripts/ops/bigclawctl dev-smoke",
 		"bash scripts/dev_bootstrap.sh",
+		"root workspace helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`",
+		"GitHub sync is no longer exposed through a legacy wrapper; use",
+		"ops wrappers should stay deleted and GitHub sync is Go/shell-only via",
 	}
 	for _, needle := range requiredReadmeEntries {
 		if !strings.Contains(readme, needle) {
