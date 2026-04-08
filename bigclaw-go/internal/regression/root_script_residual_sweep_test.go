@@ -83,6 +83,29 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		t.Fatalf("README.md should not reference retired legacy-python compile-check guidance")
 	}
 
+	bootstrapTemplate := readRepoFile(t, repoRoot, "docs/symphony-repo-bootstrap-template.md")
+	requiredBootstrapEntries := []string{
+		"`scripts/ops/bigclawctl`",
+		"`src/<your_package>/workspace_bootstrap.*`",
+		"`src/<your_package>/workspace_bootstrap_cli.*`",
+		"`bash scripts/ops/bigclawctl workspace validate`",
+	}
+	for _, needle := range requiredBootstrapEntries {
+		if !strings.Contains(bootstrapTemplate, needle) {
+			t.Fatalf("docs/symphony-repo-bootstrap-template.md missing active bootstrap guidance %q", needle)
+		}
+	}
+	disallowedBootstrapEntries := []string{
+		"Python compatibility package path",
+		"workspace_bootstrap.py",
+		"workspace_bootstrap_cli.py",
+	}
+	for _, needle := range disallowedBootstrapEntries {
+		if strings.Contains(bootstrapTemplate, needle) {
+			t.Fatalf("docs/symphony-repo-bootstrap-template.md should not retain Python-specific bootstrap template wording %q", needle)
+		}
+	}
+
 	cutoverHandoff := readRepoFile(t, repoRoot, "docs/go-mainline-cutover-handoff.md")
 	requiredHandoffEntries := []string{
 		"Historical cutover validation also included legacy shim assertions at merge",

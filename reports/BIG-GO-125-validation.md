@@ -23,7 +23,8 @@ inline-Python smoke entrypoint. The final follow-up also normalizes a skipped
 Ray bundle so reviewer-facing docs do not point at Ray smoke report artifacts
 that were never produced. A second follow-up then swept adjacent checked-in Ray
 reviewer evidence that still embedded inline-Python entrypoints outside the
-main live-validation bundle.
+main live-validation bundle. A third follow-up then removed Python-specific
+bootstrap-template wording from the active Symphony workspace bootstrap guide.
 
 ## Active Replacement Paths
 
@@ -31,6 +32,7 @@ main live-validation bundle.
 - Repository hygiene: `make test`
 - Repository hygiene: `make build`
 - Historical cutover validation note: archival-only wording in `docs/go-mainline-cutover-handoff.md`
+- Bootstrap template guidance: `docs/symphony-repo-bootstrap-template.md`
 - Migration shadow compare: `go run ./cmd/bigclawctl automation migration shadow-compare`
 - Migration shadow matrix: `go run ./cmd/bigclawctl automation migration shadow-matrix`
 - Migration shadow scorecard: `go run ./cmd/bigclawctl automation migration live-shadow-scorecard`
@@ -66,6 +68,8 @@ main live-validation bundle.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'ray-live-smoke-report.json|executor disabled; no Ray smoke report was produced for this bundle' bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/README.md bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestRootScriptResidualSweepDocs|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i 'python -c|sh -c '\''echo (gpu via ray|required ray|ray driver snapshot)'\''' bigclaw-go/docs/reports/ray-live-jobs.json bigclaw-go/docs/reports/mixed-workload-matrix-report.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i '\bpython\b|workspace_bootstrap\.py|workspace_bootstrap_cli\.py' docs/symphony-repo-bootstrap-template.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -213,6 +217,35 @@ Observed result:
 
 ```text
 No python -c match remains. Only the shell-native ray driver snapshot, gpu via ray, and required ray strings matched in the checked-in reviewer artifacts.
+```
+
+### Bootstrap template scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n -i '\bpython\b|workspace_bootstrap\.py|workspace_bootstrap_cli\.py' docs/symphony-repo-bootstrap-template.md
+```
+
+Result:
+
+```text
+no matches
+exit code 1
+```
+
+### Bootstrap template regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs|TestLiveValidationSummaryStaysAligned|TestParallelValidationMatrixDocsStayAligned|TestLiveValidationIndexStaysAligned|TestLiveShadowRuntimeDocsStayAligned|TestLiveShadowBundleSurface'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.183s
 ```
 
 ### GitHub publication visibility
