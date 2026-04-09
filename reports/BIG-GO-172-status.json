@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "pending-followup",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -82,7 +82,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.189s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.193s"
     }
   },
   "blocker": {
