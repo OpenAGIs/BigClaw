@@ -89,4 +89,4 @@ the remaining test-heavy areas trips a focused regression guard.
   Result: no output; the remaining test-heavy replacement directories stayed
   Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO172(RepositoryHasNoPythonFiles|RemainingTestHeavyReplacementDirectoriesStayPythonFree|RepresentativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.193s`
+  Result: `ok  	bigclaw-go/internal/regression	0.190s`
