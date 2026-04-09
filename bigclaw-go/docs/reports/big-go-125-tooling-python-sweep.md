@@ -67,6 +67,8 @@ The active non-Python tooling surface for this lane is:
 - active migration-doc compatibility and risk guidance now uses generic
   legacy-script wording in current-state sections instead of unnecessary
   Python-specific phrasing
+- the last current-state migration baseline sentence now uses generic
+  legacy-script wording instead of unnecessary Python-free phrasing
 
 ## Validation Commands
 
@@ -93,6 +95,8 @@ The active non-Python tooling surface for this lane is:
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free operator surface|legacy-script-free operator surface|Python candidate paths|legacy candidate paths|Python helpers|legacy helpers|Python thread pool|script-side thread pool|from Python into Go|from the retired script layer into Go|frozen Python scheduler smoke path|frozen legacy scheduler smoke path' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free for these assets|legacy-script-free for these assets' bigclaw-go/docs/go-cli-script-migration.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
@@ -170,6 +174,12 @@ Result: only the normalized migration-doc legacy-script wording matched at `docs
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
 Result: `ok  	bigclaw-go/internal/regression	0.193s`
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free for these assets|legacy-script-free for these assets' bigclaw-go/docs/go-cli-script-migration.md`
+Result: only the normalized baseline wording matched at `bigclaw-go/docs/go-cli-script-migration.md:34`
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements'`
+Result: `ok  	bigclaw-go/internal/regression	0.152s`
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 Result: not logged into any GitHub hosts, exit code `1`

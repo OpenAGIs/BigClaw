@@ -78,6 +78,7 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 		"`bash scripts/ops/bigclawctl dev-smoke`",
 		"`bigclaw-go/scripts/e2e/` is now a legacy-script-free operator surface.",
 		"remaining legacy candidate paths",
+		"legacy-script-free for these assets",
 		"do not reintroduce legacy helpers under `bigclaw-go/scripts/e2e/`",
 		"Benchmark soak/matrix/capacity helpers and their retired script-side tests",
 		"E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates",

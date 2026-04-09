@@ -31,7 +31,7 @@ for the bundled live-validation workflow.
 
 `BIG-GO-1160` validates that the remaining legacy candidate paths in this lane
 stay retired and that operators keep using the Go-native replacements below.
-The current branch baseline is already Python-free for these assets, so the
+The current branch baseline is already legacy-script-free for these assets, so the
 regression surface focuses on keeping the deletion state sticky.
 
 | Retired sweep area | Supported replacement |

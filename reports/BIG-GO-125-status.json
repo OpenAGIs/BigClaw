@@ -90,6 +90,8 @@
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free operator surface|legacy-script-free operator surface|Python candidate paths|legacy candidate paths|Python helpers|legacy helpers|Python thread pool|script-side thread pool|from Python into Go|from the retired script layer into Go|frozen Python scheduler smoke path|frozen legacy scheduler smoke path' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md",
       "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free for these assets|legacy-script-free for these assets' bigclaw-go/docs/go-cli-script-migration.md",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements'",
       "public compare page: https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1"
     ],
     "results": {
@@ -121,6 +123,8 @@
       "migration_planning_regression_tests": "ok   bigclaw-go/internal/regression\t0.204s",
       "migration_doc_wording_scan": "only the normalized migration-doc legacy-script wording matched at docs/go-cli-script-migration-plan.md:76, :80, and bigclaw-go/docs/go-cli-script-migration.md:7, :32, :77, and :88",
       "migration_doc_regression_tests": "ok   bigclaw-go/internal/regression\t0.193s",
+      "migration_baseline_wording_scan": "only the normalized baseline wording matched at bigclaw-go/docs/go-cli-script-migration.md:34",
+      "migration_baseline_regression_tests": "ok   bigclaw-go/internal/regression\t0.152s",
       "public_compare_page": "reachable without auth; shows the BIG-GO-125 compare stack against main"
     }
   },
@@ -136,6 +140,7 @@
     "An eighth follow-up tightened active README operator guidance so current-state wrapper bullets use generic legacy-wrapper wording instead of unnecessary Python-specific phrasing.",
     "A ninth follow-up tightened active migration planning and PR-suggestion guidance so current-state planning lines use generic legacy-script wording instead of unnecessary Python-specific phrasing.",
     "A tenth follow-up tightened active migration-doc compatibility and risk guidance so current-state sections use generic legacy-script wording instead of unnecessary Python-specific phrasing.",
+    "An eleventh follow-up tightened the last current-state migration baseline sentence so it uses generic legacy-script wording instead of unnecessary Python-free phrasing.",
     "BIG-GO-125 is not present in the local issue tracker store for this workspace, so closeout lives in git artifacts and the pushed branch state.",
     "The branch is pushed, but PR inspection or creation cannot be completed from this workspace because GitHub CLI authentication is unavailable.",
     "An unauthenticated public GitHub API query currently returns no PR for head branch BIG-GO-125."
