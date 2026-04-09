@@ -49,3 +49,4 @@
 - `bigclaw-go/scripts/benchmark/run_matrix --help` -> passed under local Python 3.9 via shell wrapper
 - `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py bigclaw-go/scripts/e2e/external_store_validation.py` -> passed after adding postponed annotation evaluation
 - `python3 -m unittest bigclaw-go/scripts/benchmark/capacity_certification_test.py bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py bigclaw-go/scripts/e2e/export_validation_bundle_test.py bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py bigclaw-go/scripts/e2e/run_all_test.py` -> `Ran 16 tests in 2.864s` / `OK`
+- `bigclaw-go/docs/reports/broker-failover-fault-injection-validation-pack.md` follow-on placeholder updated from `scripts/e2e/broker_failover_validation.py` to `scripts/e2e/broker_failover_validation` so the remaining doc surface no longer suggests a Python-named future CLI path

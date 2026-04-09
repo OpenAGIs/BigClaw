@@ -119,7 +119,7 @@ Each scenario report should include at least:
 
 ## Live Validation Follow-On Path
 
-- add `scripts/e2e/broker_failover_validation.py` or equivalent once a broker-backed event log exists
+- add `scripts/e2e/broker_failover_validation` or equivalent once a broker-backed event log exists
 - write reports to `docs/reports/broker-failover-<backend>-report.json`
 - keep one markdown summary that rolls up the latest scenario outcomes across backends
 - link the live report from `docs/e2e-validation.md` beside the current SQLite and multi-node validation commands
