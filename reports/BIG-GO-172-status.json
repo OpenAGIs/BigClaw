@@ -1,0 +1,96 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-172",
+    "title": "Residual tests Python sweep Y",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-172-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_172_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-172-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "bigclaw-go/internal/api": [],
+      "bigclaw-go/internal/contract": [],
+      "bigclaw-go/internal/events": [],
+      "bigclaw-go/internal/githubsync": [],
+      "bigclaw-go/internal/governance": [],
+      "bigclaw-go/internal/observability": [],
+      "bigclaw-go/internal/orchestrator": [],
+      "bigclaw-go/internal/planning": [],
+      "bigclaw-go/internal/policy": [],
+      "bigclaw-go/internal/product": [],
+      "bigclaw-go/internal/queue": [],
+      "bigclaw-go/internal/repo": [],
+      "bigclaw-go/internal/workflow": []
+    }
+  },
+  "retired_python_tests": [
+    "tests/test_cross_process_coordination_surface.py",
+    "tests/test_event_bus.py",
+    "tests/test_execution_contract.py",
+    "tests/test_execution_flow.py",
+    "tests/test_github_sync.py",
+    "tests/test_governance.py",
+    "tests/test_memory.py",
+    "tests/test_models.py",
+    "tests/test_observability.py",
+    "tests/test_orchestration.py",
+    "tests/test_planning.py",
+    "tests/test_queue.py",
+    "tests/test_repo_gateway.py",
+    "tests/test_repo_governance.py",
+    "tests/test_repo_links.py",
+    "tests/test_repo_registry.py",
+    "tests/test_repo_rollout.py"
+  ],
+  "go_replacements": [
+    "reports/BIG-GO-948-validation.md",
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go",
+    "bigclaw-go/internal/api/coordination_surface.go",
+    "bigclaw-go/internal/events/bus_test.go",
+    "bigclaw-go/internal/contract/execution_test.go",
+    "bigclaw-go/internal/workflow/orchestration_test.go",
+    "bigclaw-go/internal/githubsync/sync_test.go",
+    "bigclaw-go/internal/governance/freeze_test.go",
+    "bigclaw-go/internal/policy/memory_test.go",
+    "bigclaw-go/internal/workflow/model_test.go",
+    "bigclaw-go/internal/observability/recorder_test.go",
+    "bigclaw-go/internal/orchestrator/loop_test.go",
+    "bigclaw-go/internal/planning/planning_test.go",
+    "bigclaw-go/internal/queue/sqlite_queue_test.go",
+    "bigclaw-go/internal/repo/gateway.go",
+    "bigclaw-go/internal/repo/governance.go",
+    "bigclaw-go/internal/repo/links.go",
+    "bigclaw-go/internal/repo/registry.go",
+    "bigclaw-go/internal/product/clawhost_rollout_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/internal/api bigclaw-go/internal/contract bigclaw-go/internal/events bigclaw-go/internal/githubsync bigclaw-go/internal/governance bigclaw-go/internal/observability bigclaw-go/internal/orchestrator bigclaw-go/internal/planning bigclaw-go/internal/policy bigclaw-go/internal/product bigclaw-go/internal/queue bigclaw-go/internal/repo bigclaw-go/internal/workflow -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO172(RepositoryHasNoPythonFiles|RemainingTestHeavyReplacementDirectoriesStayPythonFree|RepresentativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.189s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-172 changes."
+  },
+  "notes": [
+    "This lane records the remaining test-heavy Go replacement directories for retired Python test contracts as already Python-free.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files."
+  ]
+}
