@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}src"
+
+python3 - <<'PY'
+from bigclaw.deprecation import warn_legacy_runtime_surface
+from bigclaw.models import Task
+from bigclaw.scheduler import Scheduler
+
+warn_legacy_runtime_surface(
+    "scripts/dev-smoke",
+    "cd bigclaw-go && go test ./... && go run ./cmd/bigclawd",
+)
+task = Task(task_id="SMOKE-1", source="local", title="smoke", description="smoke test")
+scheduler = Scheduler()
+decision = scheduler.decide(task)
+assert decision.approved is True
+assert decision.medium in {"docker", "browser"}
+print("smoke_ok", decision.medium)
+PY

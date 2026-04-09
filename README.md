@@ -110,7 +110,7 @@ bash ../scripts/ops/bigclawctl github-sync status --json
 Use this only when validating a frozen migration-reference path:
 
 ```bash
-PYTHONPATH=src python3 scripts/dev_smoke.py
+bash scripts/dev-smoke
 ```
 
 ## Quality gates
@@ -131,7 +131,7 @@ bash scripts/dev_bootstrap.sh
 Legacy Python migration surface:
 
 ```bash
-ruff check src tests scripts
+ruff check src tests
 python -m pytest
 python -m build
 pre-commit run --all-files
