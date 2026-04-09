@@ -105,12 +105,12 @@ curl localhost:8080/healthz
 bash ../scripts/ops/bigclawctl github-sync status --json
 ```
 
-## Legacy Python smoke verify
+## Smoke verify
 
-Use this only when validating a frozen migration-reference path:
+Use the Go-first helper for a lightweight repository smoke pass:
 
 ```bash
-PYTHONPATH=src python3 scripts/dev_smoke.py
+bash scripts/dev-smoke
 ```
 
 ## Quality gates
