@@ -1,39 +1,27 @@
-# BIG-GO-176 Workpad
+# BIG-GO-187 Workpad
+
+Date: 2026-04-09
 
 ## Plan
 
-1. Confirm the current repository Python baseline and inspect the residual
-support-asset surfaces relevant to this lane: `bigclaw-go/examples`,
-`bigclaw-go/docs/reports/live-shadow-runs`,
-`bigclaw-go/docs/reports/live-validation-runs`, and `scripts/ops`.
-2. Add lane-specific regression coverage for `BIG-GO-176` that locks those
-support-asset directories at zero Python files while asserting that the
-retained non-Python example, fixture, demo, and helper assets still exist.
-3. Add the matching lane report plus `reports/BIG-GO-176-{validation,status}`
-artifacts, run targeted validation, record exact commands and results, then
-commit and push the scoped change set.
+1. Re-baseline active repo directories for residual legacy Python references and keep the issue scoped to live migration docs plus a focused regression/report lane.
+2. Reduce repeated `.py` path enumerations in the active cutover and CLI migration docs by collapsing them into compact grouped references while preserving the migration record and Go replacement pointers.
+3. Add `BIG-GO-187` regression and report artifacts that pin the reduced residual-reference surface and document the broad-sweep validation evidence.
+4. Run targeted validation, record exact commands and results, then commit and push the branch.
 
 ## Acceptance
 
-- `BIG-GO-176` has lane-specific regression coverage for residual support
-  assets.
-- The guard enforces that `bigclaw-go/examples`,
-  `bigclaw-go/docs/reports/live-shadow-runs`,
-  `bigclaw-go/docs/reports/live-validation-runs`, and `scripts/ops` remain
-  Python-free.
-- The lane report and `reports/BIG-GO-176-{validation,status}` artifacts
-  document the zero-Python support-asset inventory, the retained non-Python
-  support assets, and the exact validation commands/results.
-- The resulting change is committed and pushed to the remote branch.
+- `.symphony/workpad.md` contains the issue plan, acceptance criteria, and exact validation commands before any code edits land.
+- Active migration docs reduce legacy Python reference density without changing the documented Go ownership or operator replacement guidance.
+- `BIG-GO-187` artifacts document the sweep and a regression test fails if the compacted doc surface regresses back to the previous verbose legacy `.py` lists.
+- Targeted validation commands pass and their exact commands/results are captured in the issue validation artifact.
+- Changes stay scoped to this issue's documentation and regression/reporting surface.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/scripts/ops -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO176(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176 -path '*/.git' -prune -o -type f -name '*.py' -print | sort` produced no output.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/scripts/ops -type f -name '*.py' 2>/dev/null | sort` produced no output.
-- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO176(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 3.219s`.
+- `for f in docs/go-cli-script-migration-plan.md docs/go-mainline-cutover-issue-pack.md docs/go-mainline-cutover-handoff.md; do before=$(git show HEAD:"$f" | rg -o 'src/bigclaw/[^`[:space:]]+|scripts/[^`[:space:]]+\.py|bigclaw-go/scripts/[^`[:space:]]+\.py|python3|\.py' | wc -l | tr -d ' '); after=$(rg -o 'src/bigclaw/[^`[:space:]]+|scripts/[^`[:space:]]+\.py|bigclaw-go/scripts/[^`[:space:]]+\.py|python3|\.py' "$f" | wc -l | tr -d ' '); printf '%s %s %s\n' "$f" "$before" "$after"; done`
+- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `find docs bigclaw-go/internal bigclaw-go/cmd -type f -name '*.py' -print 2>/dev/null | sort`
+- `rg -n "python3|\\.py\\b|#!/usr/bin/env python|#!/usr/bin/python" docs bigclaw-go/internal bigclaw-go/cmd --glob '!bigclaw-go/internal/regression/**' --glob '!bigclaw-go/docs/reports/**' | head -n 200`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO187' -count=1`
+- `git status --short`

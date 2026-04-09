@@ -12,33 +12,13 @@ The implemented migration batches in this issue moved these entrypoints behind t
 retired the final root Python workspace shims.
 
 `BIG-GO-1160` extends that migration evidence by hardening the benchmark, e2e,
-migration, and root-script sweep candidate set that previously included:
+migration, and root-script sweep candidate set that previously covered these
+retired Python path families:
 
-- `bigclaw-go/scripts/benchmark/capacity_certification.py`
-- `bigclaw-go/scripts/benchmark/capacity_certification_test.py`
-- `bigclaw-go/scripts/benchmark/run_matrix.py`
-- `bigclaw-go/scripts/benchmark/soak_local.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
-- `scripts/create_issues.py`
-- `scripts/dev_smoke.py`
+- `bigclaw-go/scripts/benchmark/{capacity_certification,capacity_certification_test,run_matrix,soak_local}.py`
+- `bigclaw-go/scripts/e2e/{broker_failover_stub_matrix,broker_failover_stub_matrix_test,cross_process_coordination_surface,export_validation_bundle,export_validation_bundle_test,external_store_validation,mixed_workload_matrix,multi_node_shared_queue,multi_node_shared_queue_test,run_all_test,run_task_smoke,subscriber_takeover_fault_matrix,validation_bundle_continuation_policy_gate,validation_bundle_continuation_policy_gate_test,validation_bundle_continuation_scorecard}.py`
+- `bigclaw-go/scripts/migration/{export_live_shadow_bundle,live_shadow_scorecard,shadow_compare,shadow_matrix}.py`
+- `scripts/{create_issues,dev_smoke}.py`
 
 Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go

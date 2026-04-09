@@ -1,0 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-187",
+    "title": "Broad repo Python reduction sweep AA",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-187",
+    "latest_commit": "recorded in git history for BIG-GO-187 closeout",
+    "push_target": "origin/symphony/BIG-GO-187"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-187-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-187-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_187_zero_python_guard_test.go"
+  },
+  "reduction": {
+    "docs/go-cli-script-migration-plan.md": {
+      "before": 31,
+      "after": 10
+    },
+    "docs/go-mainline-cutover-issue-pack.md": {
+      "before": 83,
+      "after": 24
+    },
+    "docs/go-mainline-cutover-handoff.md": {
+      "before": 10,
+      "after": 3
+    }
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find docs bigclaw-go/internal bigclaw-go/cmd -type f -name '*.py' -print 2>/dev/null | sort",
+      "rg -n \"python3|\\.py\\b|#!/usr/bin/env python|#!/usr/bin/python\" docs bigclaw-go/internal bigclaw-go/cmd --glob '!bigclaw-go/internal/regression/**' --glob '!bigclaw-go/docs/reports/**' | head -n 200",
+      "cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO187' -count=1"
+    ],
+    "results": {
+      "repo_python_inventory": "none",
+      "scoped_python_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.192s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository already started physically Python-free, so BIG-GO-187 reduced residual legacy reference density in active docs instead of deleting in-branch .py assets."
+  }
+}

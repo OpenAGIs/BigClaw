@@ -94,10 +94,7 @@ current runnable work.
 ### BIG-GOM-301 Unified domain model and intake contract migration
 
 Python source:
-- `src/bigclaw/models.py`
-- `src/bigclaw/connectors.py`
-- `src/bigclaw/mapping.py`
-- `src/bigclaw/dsl.py`
+- `src/bigclaw/{models,connectors,mapping,dsl}.py`
 
 Go ownership:
 - `bigclaw-go/internal/domain/task.go`
@@ -129,10 +126,7 @@ Historical initial state:
 ### BIG-GOM-302 Risk, policy, and approval semantics migration
 
 Python source:
-- `src/bigclaw/risk.py`
-- `src/bigclaw/governance.py`
-- `src/bigclaw/execution_contract.py`
-- `src/bigclaw/audit_events.py`
+- `src/bigclaw/{risk,governance,execution_contract,audit_events}.py`
 
 Go ownership:
 - `bigclaw-go/internal/risk/risk.go`
@@ -163,11 +157,7 @@ Historical initial state:
 ### BIG-GOM-303 Workflow orchestration and scheduler loop migration
 
 Python source:
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- `src/bigclaw/{runtime,scheduler,orchestration,workflow,queue}.py`
 
 Go ownership:
 - `bigclaw-go/internal/scheduler/scheduler.go`
@@ -193,10 +183,7 @@ Historical initial state:
 ### BIG-GOM-304 Observability, reporting, and weekly operations surface migration
 
 Python source:
-- `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
-- `src/bigclaw/evaluation.py`
-- `src/bigclaw/operations.py`
+- `src/bigclaw/{observability,reports,evaluation,operations}.py`
 
 Go ownership:
 - `bigclaw-go/internal/observability/recorder.go`
@@ -221,11 +208,7 @@ Historical initial state:
 ### BIG-GOM-305 Control center, triage, and operations view migration
 
 Python source:
-- `src/bigclaw/repo_triage.py`
-- `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
-- `src/bigclaw/operations.py`
-- `src/bigclaw/saved_views.py`
+- `src/bigclaw/{repo_triage,run_detail,dashboard_run_contract,operations,saved_views}.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/server.go`
@@ -249,13 +232,7 @@ Historical initial state:
 ### BIG-GOM-306 Repo collaboration and lineage surface migration
 
 Python source:
-- `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_governance.py`
+- `src/bigclaw/{repo_links,repo_commits,repo_gateway,repo_plane,repo_board,repo_registry,repo_governance}.py`
 
 Go ownership:
 - `bigclaw-go/internal/api/v2.go`
@@ -284,11 +261,7 @@ Historical initial state:
 ### BIG-GOM-307 Workflow, bootstrap, and GitHub sync toolchain migration
 
 Python source:
-- `src/bigclaw/github_sync.py`
-- `src/bigclaw/workspace_bootstrap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `src/bigclaw/workspace_bootstrap_validation.py`
-- `src/bigclaw/parallel_refill.py`
+- `src/bigclaw/{github_sync,workspace_bootstrap,workspace_bootstrap_cli,workspace_bootstrap_validation,parallel_refill}.py`
 - `scripts/ops/bigclaw_github_sync.py`
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 
@@ -322,8 +295,7 @@ Historical initial state:
 ### BIG-GOM-308 Python deprecation and Go-only mainline switch
 
 Python source:
-- `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- `src/bigclaw/{service,__main__}.py`
 - any remaining active Python entrypoints not covered by earlier slices
 
 Go ownership:
@@ -391,9 +363,7 @@ tracker work.
 
 Python source:
 - `src/bigclaw/risk.py`
-- remaining active consumers of `src/bigclaw/governance.py`
-- remaining active consumers of `src/bigclaw/execution_contract.py`
-- remaining active consumers of `src/bigclaw/audit_events.py`
+- remaining active consumers of `src/bigclaw/{governance,execution_contract,audit_events}.py`
 
 Go ownership:
 - `bigclaw-go/internal/risk/risk.go`
@@ -407,11 +377,7 @@ Historical planned state:
 ### 2. Port the workflow, scheduler, runtime, and orchestration loop to Go
 
 Python source:
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/queue.py`
+- `src/bigclaw/{runtime,scheduler,orchestration,workflow,queue}.py`
 
 Go ownership:
 - `bigclaw-go/internal/worker/runtime.go`
@@ -426,13 +392,7 @@ Historical planned state:
 ### 3. Port observability, reports, and operations evidence surfaces to Go
 
 Python source:
-- `src/bigclaw/observability.py`
-- `src/bigclaw/reports.py`
-- `src/bigclaw/operations.py`
-- `src/bigclaw/evaluation.py`
-- `src/bigclaw/run_detail.py`
-- `src/bigclaw/dashboard_run_contract.py`
-- `src/bigclaw/planning.py`
+- `src/bigclaw/{observability,reports,operations,evaluation,run_detail,dashboard_run_contract,planning}.py`
 
 Go ownership:
 - `bigclaw-go/internal/observability/*`
@@ -448,17 +408,7 @@ Historical planned state:
 ### 4. Port repo collaboration and lineage surfaces to Go
 
 Python source:
-- `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_board.py`
-- `src/bigclaw/repo_commits.py`
-- `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_governance.py`
-- `src/bigclaw/repo_links.py`
-- `src/bigclaw/repo_plane.py`
-- `src/bigclaw/repo_registry.py`
-- `src/bigclaw/repo_triage.py`
-- `src/bigclaw/issue_archive.py`
-- `src/bigclaw/roadmap.py`
+- `src/bigclaw/{collaboration,repo_board,repo_commits,repo_gateway,repo_governance,repo_links,repo_plane,repo_registry,repo_triage,issue_archive,roadmap}.py`
 
 Go ownership:
 - `bigclaw-go/internal/flow/flow.go`
@@ -473,10 +423,7 @@ Historical planned state:
 ### 5. Port operator console and saved-view surfaces to Go
 
 Python source:
-- `src/bigclaw/console_ia.py`
-- `src/bigclaw/design_system.py`
-- `src/bigclaw/saved_views.py`
-- `src/bigclaw/ui_review.py`
+- `src/bigclaw/{console_ia,design_system,saved_views,ui_review}.py`
 - remaining operator-facing parts of `src/bigclaw/service.py`
 
 Go ownership:
@@ -491,13 +438,7 @@ Historical planned state:
 ### 6. Replace Python bootstrap and sync entrypoints with Go-only tooling
 
 Python source:
-- `src/bigclaw/github_sync.py`
-- `src/bigclaw/parallel_refill.py`
-- `src/bigclaw/workspace_bootstrap.py`
-- `src/bigclaw/workspace_bootstrap_cli.py`
-- `src/bigclaw/workspace_bootstrap_validation.py`
-- `src/bigclaw/service.py`
-- `src/bigclaw/__main__.py`
+- `src/bigclaw/{github_sync,parallel_refill,workspace_bootstrap,workspace_bootstrap_cli,workspace_bootstrap_validation,service,__main__}.py`
 
 Go ownership:
 - `bigclaw-go/cmd/bigclawctl`
