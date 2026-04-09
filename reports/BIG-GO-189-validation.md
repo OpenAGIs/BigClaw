@@ -90,7 +90,8 @@ ok  	bigclaw-go/internal/regression	4.056s
 
 - Branch: `main`
 - Baseline HEAD before lane changes: `fb155a68`
-- Push target: `origin/main`
+- Commit: `516b6520` (`BIG-GO-189: add auxiliary python sweep guard`)
+- Push target: `origin/BIG-GO-189`
 
 ## Residual Risk
 

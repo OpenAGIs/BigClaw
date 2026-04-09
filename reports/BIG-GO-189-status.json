@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "read the current pushed tip from `git rev-parse --short HEAD`",
-    "push_target": "origin/main"
+    "latest_commit": "516b6520",
+    "push_target": "origin/BIG-GO-189"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-189-validation.md",
