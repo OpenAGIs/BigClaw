@@ -57,6 +57,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state around examples, fixture bundles, demo evidence, and support helpers.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `4f4d46ad`."
+    "Baseline HEAD before lane changes was `4f4d46ad`.",
+    "No BIG-GO-186 record exists in local-issues.json or the Symphony local issue store, so any remaining active state is external to this workspace."
   ]
 }
