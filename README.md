@@ -64,7 +64,7 @@ Notes:
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
-## Python asset status
+## Legacy asset status
 
 The repository root no longer carries physical `.py` assets. Validate the
 Go-only posture with the root bootstrap helper:

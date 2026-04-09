@@ -69,6 +69,8 @@ The active non-Python tooling surface for this lane is:
   Python-specific phrasing
 - the last current-state migration baseline sentence now uses generic
   legacy-script wording instead of unnecessary Python-free phrasing
+- the last active README heading now uses generic legacy asset wording instead
+  of unnecessary Python-specific current-state labeling
 
 ## Validation Commands
 
@@ -97,6 +99,8 @@ The active non-Python tooling surface for this lane is:
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free for these assets|legacy-script-free for these assets' bigclaw-go/docs/go-cli-script-migration.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python asset status|Legacy asset status' README.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && curl -s 'https://api.github.com/repos/OpenAGIs/BigClaw/pulls?head=OpenAGIs:BIG-GO-125&state=all'`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
@@ -180,6 +184,12 @@ Result: only the normalized baseline wording matched at `bigclaw-go/docs/go-cli-
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements'`
 Result: `ok  	bigclaw-go/internal/regression	0.152s`
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python asset status|Legacy asset status' README.md`
+Result: only the normalized README heading matched at `README.md:67`
+
+Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'`
+Result: `ok  	bigclaw-go/internal/regression	0.201s`
 
 Command: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && gh auth status`
 Result: not logged into any GitHub hosts, exit code `1`

@@ -43,7 +43,10 @@ phrasing. A tenth follow-up then tightened active migration-doc compatibility
 and risk guidance so current-state sections use generic legacy-script wording
 instead of unnecessary Python-specific phrasing. An eleventh follow-up then
 tightened the last current-state migration baseline sentence so it uses
-generic legacy-script wording instead of unnecessary Python-free phrasing.
+generic legacy-script wording instead of unnecessary Python-free phrasing. A
+twelfth follow-up then tightened the last active README heading so it uses
+generic legacy asset wording instead of unnecessary Python-specific
+current-state labeling.
 
 ## Active Replacement Paths
 
@@ -110,6 +113,8 @@ generic legacy-script wording instead of unnecessary Python-free phrasing.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free for these assets|legacy-script-free for these assets' bigclaw-go/docs/go-cli-script-migration.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python asset status|Legacy asset status' README.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -579,6 +584,40 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	0.152s
+```
+
+### README heading wording scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python asset status|Legacy asset status' README.md
+```
+
+Result:
+
+```text
+67:## Legacy asset status
+```
+
+Observed result:
+
+```text
+Only the normalized README heading matched.
+```
+
+### README heading regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.201s
 ```
 
 ### GitHub publication visibility

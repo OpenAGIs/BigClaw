@@ -65,6 +65,7 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		"Use this to verify the root dev smoke path:",
 		"bash scripts/ops/bigclawctl dev-smoke",
 		"bash scripts/dev_bootstrap.sh",
+		"## Legacy asset status",
 		"root workspace helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`",
 		"GitHub sync is no longer exposed through a legacy wrapper; use",
 		"ops wrappers should stay deleted and GitHub sync is Go/shell-only via",
@@ -81,6 +82,9 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		if strings.Contains(readme, needle) {
 			t.Fatalf("README.md should not reference retired Python-adjacent tooling guidance %q", needle)
 		}
+	}
+	if strings.Contains(readme, "## Python asset status") {
+		t.Fatalf("README.md should not keep the retired Python-specific asset-status heading")
 	}
 	if strings.Contains(readme, "legacy-python compile-check") {
 		t.Fatalf("README.md should not reference retired legacy-python compile-check guidance")
