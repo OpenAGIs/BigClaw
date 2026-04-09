@@ -76,9 +76,13 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 		"`go run ./cmd/bigclawctl automation migration shadow-matrix ...`",
 		"`bash scripts/ops/bigclawctl create-issues ...`",
 		"`bash scripts/ops/bigclawctl dev-smoke`",
+		"`bigclaw-go/scripts/e2e/` is now a legacy-script-free operator surface.",
+		"remaining legacy candidate paths",
+		"do not reintroduce legacy helpers under `bigclaw-go/scripts/e2e/`",
 		"Benchmark soak/matrix/capacity helpers and their retired script-side tests",
 		"E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates",
 		"feat: migrate first legacy automation scripts to bigclawctl",
+		"old script-side thread pool",
 	}
 	for _, needle := range requiredGoDoc {
 		if !strings.Contains(goDoc, needle) {
@@ -91,6 +95,8 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 		"`bigclaw-go/scripts/migration/shadow_compare.py`",
 		"`scripts/create_issues.py`",
 		"`scripts/dev_smoke.py`",
+		"ports the canned v1 and v2-ops GitHub issue bootstrap plans from the retired script layer into Go",
+		"replaces the frozen legacy scheduler smoke path with a Go scheduler decision check",
 		"retired benchmark script helpers",
 		"retired migration script helpers",
 		"does not reintroduce legacy environment management at the repository root",

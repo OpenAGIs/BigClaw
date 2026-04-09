@@ -4,7 +4,7 @@ Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`
 
 ## Current Go-Only Entrypoints
 
-`bigclaw-go/scripts/e2e/` is now a Python-free operator surface. `BIG-GO-1053`
+`bigclaw-go/scripts/e2e/` is now a legacy-script-free operator surface. `BIG-GO-1053`
 completed the tranche-2 cleanup by keeping only Go-native
 `bigclawctl automation ...` subcommands plus the retained shell wrappers needed
 for the bundled live-validation workflow.
@@ -29,7 +29,7 @@ for the bundled live-validation workflow.
 
 ## BIG-GO-1160 Sweep Coverage
 
-`BIG-GO-1160` validates that the remaining Python candidate paths in this lane
+`BIG-GO-1160` validates that the remaining legacy candidate paths in this lane
 stay retired and that operators keep using the Go-native replacements below.
 The current branch baseline is already Python-free for these assets, so the
 regression surface focuses on keeping the deletion state sticky.
@@ -74,7 +74,7 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - Report serialization compatibility for JSON consumers that previously read the legacy script output
 ## Compatibility Layer Plan
 
-- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/e2e/`.
+- Keep new behavior in Go-native entrypoints and do not reintroduce legacy helpers under `bigclaw-go/scripts/e2e/`.
 - Preserve the retained shell wrappers only where they add operator convenience over direct `bigclawctl automation ...` invocation.
 - Continue the remaining non-e2e script migrations in follow-up batches without expanding the e2e compatibility layer again.
 
@@ -85,6 +85,6 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 
 ## Risks
 
-- `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old Python thread pool.
+- `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old script-side thread pool.
 - `run-task-smoke --autostart` and `soak-local --autostart` still rely on ephemeral port reservation before `bigclawd` binds, so local port races remain possible.
 - The shell wrappers in `scripts/e2e/` remain convenience layers; changes to flag defaults must stay aligned with the underlying Go subcommands.

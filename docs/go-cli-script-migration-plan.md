@@ -73,11 +73,11 @@ The remaining compatibility layer is intentionally thin:
 ### Added Go CLI commands
 
 - `create-issues`
-  - ports the canned v1 and v2-ops GitHub issue bootstrap plans from Python into Go
+  - ports the canned v1 and v2-ops GitHub issue bootstrap plans from the retired script layer into Go
   - keeps `GITHUB_TOKEN`/`BIGCLAW_PLAN` compatible defaults
   - supports `--json` for automation callers
 - `dev-smoke`
-  - replaces the frozen Python scheduler smoke path with a Go scheduler decision check
+  - replaces the frozen legacy scheduler smoke path with a Go scheduler decision check
   - preserves the `smoke_ok <executor>` human output for compatibility callers
 - `symphony`
   - centralizes repo-root workflow resolution, bootstrap env injection, and CLI discovery

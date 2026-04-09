@@ -39,7 +39,9 @@ current-state wrapper bullets use generic legacy-wrapper wording instead of
 unnecessary Python-specific phrasing. A ninth follow-up then tightened active
 migration planning and PR-suggestion guidance so current-state planning lines
 use generic legacy-script wording instead of unnecessary Python-specific
-phrasing.
+phrasing. A tenth follow-up then tightened active migration-doc compatibility
+and risk guidance so current-state sections use generic legacy-script wording
+instead of unnecessary Python-specific phrasing.
 
 ## Active Replacement Paths
 
@@ -101,6 +103,8 @@ phrasing.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'workspace Python helpers|root workspace helpers|Python wrapper|legacy wrapper|Python ops wrappers|ops wrappers should stay deleted' README.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python entrypoints as a primary path|legacy script entrypoints as a primary path|Python scripts are still the implementation mainline|legacy scripts are still the implementation mainline|Python environment management|legacy environment management|feat: migrate first Python automation scripts|feat: migrate first legacy automation scripts' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free operator surface|legacy-script-free operator surface|Python candidate paths|legacy candidate paths|Python helpers|legacy helpers|Python thread pool|script-side thread pool|from Python into Go|from the retired script layer into Go|frozen Python scheduler smoke path|frozen legacy scheduler smoke path' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
@@ -498,6 +502,45 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	0.204s
+```
+
+### Migration-doc compatibility wording scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python-free operator surface|legacy-script-free operator surface|Python candidate paths|legacy candidate paths|Python helpers|legacy helpers|Python thread pool|script-side thread pool|from Python into Go|from the retired script layer into Go|frozen Python scheduler smoke path|frozen legacy scheduler smoke path' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md
+```
+
+Result:
+
+```text
+docs/go-cli-script-migration-plan.md:76:  - ports the canned v1 and v2-ops GitHub issue bootstrap plans from the retired script layer into Go
+docs/go-cli-script-migration-plan.md:80:  - replaces the frozen legacy scheduler smoke path with a Go scheduler decision check
+bigclaw-go/docs/go-cli-script-migration.md:7:`bigclaw-go/scripts/e2e/` is now a legacy-script-free operator surface. `BIG-GO-1053`
+bigclaw-go/docs/go-cli-script-migration.md:32:`BIG-GO-1160` validates that the remaining legacy candidate paths in this lane
+bigclaw-go/docs/go-cli-script-migration.md:77:- Keep new behavior in Go-native entrypoints and do not reintroduce legacy helpers under `bigclaw-go/scripts/e2e/`.
+bigclaw-go/docs/go-cli-script-migration.md:88:- `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old script-side thread pool.
+```
+
+Observed result:
+
+```text
+Only the normalized migration-doc legacy-script wording matched.
+```
+
+### Migration-doc compatibility regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.193s
 ```
 
 ### GitHub publication visibility
