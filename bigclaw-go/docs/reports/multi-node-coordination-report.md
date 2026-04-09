@@ -3,7 +3,7 @@
 ## Scope
 
 - Run date: 2026-03-13
-- Command: `python3 scripts/e2e/multi_node_shared_queue.py --count 200 --submit-workers 8 --timeout-seconds 180 --report-path docs/reports/multi-node-shared-queue-report.json`
+- Command: `scripts/e2e/multi_node_shared_queue --count 200 --submit-workers 8 --timeout-seconds 180 --report-path docs/reports/multi-node-shared-queue-report.json`
 - Goal: produce a concrete two-node shared-queue proof for the current Go control plane.
 
 ## Result

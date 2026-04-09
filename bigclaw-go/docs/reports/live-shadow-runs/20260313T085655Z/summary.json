@@ -89,8 +89,8 @@
     }
   ],
   "closeout_commands": [
-    "cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty",
-    "cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle.py",
+    "cd bigclaw-go && scripts/migration/live_shadow_scorecard --pretty",
+    "cd bigclaw-go && scripts/migration/export_live_shadow_bundle",
     "cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned",
     "git push origin <branch> && git log -1 --stat"
   ]

@@ -33,7 +33,7 @@ class RunAllTest(unittest.TestCase):
 
     def install_stubs(self) -> None:
         self.write_file(
-            'scripts/e2e/run_task_smoke.py',
+            'scripts/e2e/run_task_smoke',
             """\
             #!/usr/bin/env python3
             import json
@@ -67,7 +67,7 @@ class RunAllTest(unittest.TestCase):
             """,
         )
         self.write_file(
-            'scripts/e2e/export_validation_bundle.py',
+            'scripts/e2e/export_validation_bundle',
             """\
             #!/usr/bin/env python3
             import json
@@ -93,7 +93,7 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_scorecard.py',
+            'scripts/e2e/validation_bundle_continuation_scorecard',
             """\
             #!/usr/bin/env python3
             import json
@@ -108,7 +108,7 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate',
             """\
             #!/usr/bin/env python3
             import json
@@ -164,7 +164,7 @@ class RunAllTest(unittest.TestCase):
     def test_run_all_defaults_to_hold_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate',
             """\
             #!/usr/bin/env python3
             import json
@@ -209,7 +209,7 @@ class RunAllTest(unittest.TestCase):
     def test_legacy_enforce_alias_still_maps_to_fail_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate',
             """\
             #!/usr/bin/env python3
             import json

@@ -630,12 +630,12 @@ def build_live_takeover_report(scenarios, shared_queue_report_path):
                 'internal/api/server.go',
             ],
             'shared_queue_evidence': [
-                'scripts/e2e/multi_node_shared_queue.py',
+                'scripts/e2e/multi_node_shared_queue',
                 shared_queue_report_path,
             ],
             'live_takeover_harness': [
                 'internal/api/server.go',
-                'scripts/e2e/multi_node_shared_queue.py',
+                'scripts/e2e/multi_node_shared_queue',
                 'docs/reports/live-multi-node-subscriber-takeover-report.json',
             ],
         },

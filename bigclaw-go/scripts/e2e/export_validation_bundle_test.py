@@ -2,11 +2,15 @@
 import importlib.util
 import tempfile
 import unittest
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().with_name('export_validation_bundle.py')
-SPEC = importlib.util.spec_from_file_location('export_validation_bundle', MODULE_PATH)
+MODULE_PATH = Path(__file__).resolve().with_name('export_validation_bundle')
+SPEC = importlib.util.spec_from_loader(
+    'export_validation_bundle',
+    SourceFileLoader('export_validation_bundle', str(MODULE_PATH)),
+)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f'Unable to load module from {MODULE_PATH}')
 MODULE = importlib.util.module_from_spec(SPEC)

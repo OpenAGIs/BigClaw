@@ -638,11 +638,11 @@ def build_report(now=None):
                 "docs/reports/event-bus-reliability-report.md",
             ],
             "shared_queue_evidence": [
-                "scripts/e2e/multi_node_shared_queue.py",
+                "scripts/e2e/multi_node_shared_queue",
                 "docs/reports/multi-node-shared-queue-report.json",
             ],
             "takeover_harness": [
-                "scripts/e2e/subscriber_takeover_fault_matrix.py",
+                "scripts/e2e/subscriber_takeover_fault_matrix",
                 "docs/reports/multi-subscriber-takeover-validation-report.json",
             ],
         },

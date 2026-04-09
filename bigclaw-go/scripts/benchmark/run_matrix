@@ -4,6 +4,7 @@ import json
 import pathlib
 import re
 import subprocess
+import sys
 
 
 def parse_benchmark_stdout(stdout):
@@ -30,7 +31,7 @@ def run_benchmarks(go_root):
 def run_soak(go_root, count, workers, timeout_seconds, report_path):
     subprocess.run(
         [
-            'python3', 'scripts/benchmark/soak_local.py',
+            sys.executable, 'scripts/benchmark/soak_local',
             '--autostart',
             '--count', str(count),
             '--workers', str(workers),

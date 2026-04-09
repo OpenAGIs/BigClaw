@@ -32,6 +32,6 @@ This digest consolidates the remaining cross-process coordination caveats for `O
 
 ## Lightweight Consistency Check
 
-- Keep this digest aligned with `docs/reports/event-bus-reliability-report.md`, `docs/reports/multi-node-coordination-report.md`, `docs/reports/cross-process-coordination-capability-surface.json`, and `scripts/e2e/cross_process_coordination_surface.py`.
+- Keep this digest aligned with `docs/reports/event-bus-reliability-report.md`, `docs/reports/multi-node-coordination-report.md`, `docs/reports/cross-process-coordination-capability-surface.json`, and `scripts/e2e/cross_process_coordination_surface`.
 - Repeat the contract-only `PartitionRoute` and `SubscriberOwnershipContract` wording anywhere distributed coordination is summarized.
 - When cross-process coordination becomes runtime-complete, update this digest, `docs/reports/review-readiness.md`, and `docs/reports/issue-coverage.md` together.

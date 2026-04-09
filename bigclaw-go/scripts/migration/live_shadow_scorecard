@@ -203,7 +203,7 @@ def build_report(
         'evidence_inputs': {
             'shadow_compare_report_path': shadow_compare_report_path,
             'shadow_matrix_report_path': shadow_matrix_report_path,
-            'generator_script': 'bigclaw-go/scripts/migration/live_shadow_scorecard.py',
+            'generator_script': 'bigclaw-go/scripts/migration/live_shadow_scorecard',
         },
         'summary': {
             'total_evidence_runs': len(parity_entries),

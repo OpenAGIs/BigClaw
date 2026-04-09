@@ -323,7 +323,7 @@ def build_report(
             'benchmark_report_path': repo_relative_path(repo_root, benchmark_report_path),
             'mixed_workload_report_path': repo_relative_path(repo_root, mixed_workload_report_path),
             'soak_report_paths': soak_inputs,
-            'generator_script': 'bigclaw-go/scripts/benchmark/capacity_certification.py',
+            'generator_script': 'bigclaw-go/scripts/benchmark/capacity_certification',
         },
         'summary': {
             'overall_status': 'pass' if not failed_lanes else 'fail',

@@ -4,11 +4,15 @@ import json
 import tempfile
 import unittest
 import unittest.mock
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().with_name('validation_bundle_continuation_policy_gate.py')
-SPEC = importlib.util.spec_from_file_location('validation_bundle_continuation_policy_gate', MODULE_PATH)
+MODULE_PATH = Path(__file__).resolve().with_name('validation_bundle_continuation_policy_gate')
+SPEC = importlib.util.spec_from_loader(
+    'validation_bundle_continuation_policy_gate',
+    SourceFileLoader('validation_bundle_continuation_policy_gate', str(MODULE_PATH)),
+)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f'Unable to load module from {MODULE_PATH}')
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -54,7 +58,7 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
         self.scorecard_path.write_text(json.dumps(payload), encoding='utf-8')
 
     def build_report(self) -> dict:
-        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate.py'
+        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate'
         fake_script_path.parent.mkdir(parents=True, exist_ok=True)
         fake_script_path.write_text('# test shim\n', encoding='utf-8')
         with unittest.mock.patch.object(MODULE, '__file__', str(fake_script_path)):
@@ -102,7 +106,7 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
     def test_build_report_supports_hold_mode_without_failing_generation(self) -> None:
         self.write_scorecard(recent_bundle_count=1)
 
-        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate.py'
+        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate'
         fake_script_path.parent.mkdir(parents=True, exist_ok=True)
         fake_script_path.write_text('# test shim\n', encoding='utf-8')
         with unittest.mock.patch.object(MODULE, '__file__', str(fake_script_path)):
@@ -119,7 +123,7 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
     def test_legacy_enforce_flag_maps_to_fail_mode(self) -> None:
         self.write_scorecard(recent_bundle_count=1)
 
-        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate.py'
+        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate'
         fake_script_path.parent.mkdir(parents=True, exist_ok=True)
         fake_script_path.write_text('# test shim\n', encoding='utf-8')
         with unittest.mock.patch.object(MODULE, '__file__', str(fake_script_path)):

@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import importlib.util
 import unittest
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().with_name('multi_node_shared_queue.py')
-SPEC = importlib.util.spec_from_file_location('multi_node_shared_queue', MODULE_PATH)
+MODULE_PATH = Path(__file__).resolve().with_name('multi_node_shared_queue')
+SPEC = importlib.util.spec_from_loader(
+    'multi_node_shared_queue',
+    SourceFileLoader('multi_node_shared_queue', str(MODULE_PATH)),
+)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f'Unable to load module from {MODULE_PATH}')
 MODULE = importlib.util.module_from_spec(SPEC)

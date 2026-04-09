@@ -197,7 +197,7 @@ def build_report(
             'bundle_root': bundle_root_path,
             'recent_run_summaries': recent_run_inputs,
             'shared_queue_report_path': shared_queue_report_path,
-            'generator_script': 'bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py',
+            'generator_script': 'bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard',
         },
         'summary': {
             'recent_bundle_count': len(recent_runs),

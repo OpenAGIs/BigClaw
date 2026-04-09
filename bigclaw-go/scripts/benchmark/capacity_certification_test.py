@@ -1,12 +1,16 @@
 import importlib.util
 import pathlib
 import unittest
+from importlib.machinery import SourceFileLoader
 
 
-SCRIPT_PATH = pathlib.Path(__file__).resolve().parent / 'capacity_certification.py'
+SCRIPT_PATH = pathlib.Path(__file__).resolve().parent / 'capacity_certification'
 
 
-spec = importlib.util.spec_from_file_location('capacity_certification', SCRIPT_PATH)
+spec = importlib.util.spec_from_loader(
+    'capacity_certification',
+    SourceFileLoader('capacity_certification', str(SCRIPT_PATH)),
+)
 capacity_certification = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(capacity_certification)
