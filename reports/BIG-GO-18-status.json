@@ -10,6 +10,7 @@
     "push_target": "origin/BIG-GO-18"
   },
   "artifacts": {
+    "closeout_index": "reports/BIG-GO-18-closeout.md",
     "validation_report": "reports/BIG-GO-18-validation.md",
     "workpad": ".symphony/workpad.md",
     "lane_report": "bigclaw-go/docs/reports/big-go-18-python-count-reduction-pass-c.md",
@@ -38,12 +39,14 @@
     "commands": [
       "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
       "find docs reports bigclaw-go/docs bigclaw-go/examples -type f -name '*.py' 2>/dev/null | sort",
-      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO18(RepositoryHasNoPythonFiles|HighImpactDocumentationDirectoriesStayPythonFree|RetainedNativeDocumentationAssetsRemainAvailable|LaneReportCapturesSweepState)$'"
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO18(RepositoryHasNoPythonFiles|HighImpactDocumentationDirectoriesStayPythonFree|RetainedNativeDocumentationAssetsRemainAvailable|LaneReportCapturesSweepState)$'",
+      "rg -n '\"identifier\": \"BIG-GO-18\"' local-issues.json"
     ],
     "results": {
       "repo_py_inventory": "no output",
       "high_impact_inventory": "no output",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.190s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.202s",
+      "local_tracker_lookup": "no output"
     }
   },
   "blocker": {
@@ -51,6 +54,7 @@
     "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-18 changes."
   },
   "notes": [
-    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage."
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "No BIG-GO-18 record exists in local-issues.json, so any remaining active issue state is external to this workspace."
   ]
 }
