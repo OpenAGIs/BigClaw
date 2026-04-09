@@ -87,14 +87,14 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-192/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.189s
+ok  	bigclaw-go/internal/regression	3.223s
 ```
 
 ## Git
 
 - Branch: `main`
-- Baseline HEAD before lane commit: `0e46f22b`
-- Landed lane commit: `737da1dc BIG-GO-192 add residual test python sweep guard`
+- Baseline HEAD before lane commit: `f1e924b9`
+- Landed lane commit: `14e59493 BIG-GO-192 add residual test python sweep guard`
 - Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-192'`
 - Push target: `origin/main`
 
