@@ -7,9 +7,9 @@
   "branch": {
     "name": "BIG-GO-154",
     "baseline_commit": "84692cf5f10232e33a2787d446990476c55cc4ba",
-    "latest_commit": "75d31d872305e3eb08ce214741e32d95f89878e1",
-    "push_target": "origin/BIG-GO-154",
-    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-154?expand=1"
+    "latest_commit": "cf79df5ab3a3c57d682dc43b862338ccffa67bb3",
+    "push_target": "deleted",
+    "compare_url": "merged; topic branch deleted after PR closeout"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -56,23 +56,15 @@
   "pull_request": {
     "number": 228,
     "url": "https://github.com/OpenAGIs/BigClaw/pull/228",
-    "state": "open",
+    "state": "closed",
+    "merged": true,
+    "merge_commit_sha": "258289000b6fec2adaf9795293309b40fdf27469",
+    "merged_at": "2026-04-08T23:33:13Z",
     "title": "BIG-GO-154: harden residual root script sweep",
     "draft": false,
-    "head_sha": "75d31d872305e3eb08ce214741e32d95f89878e1",
+    "head_sha": "cf79df5ab3a3c57d682dc43b862338ccffa67bb3",
     "base_sha": "e3109c6d72cd394fc10e8df4de474ec25a80eea4",
     "mergeable": true,
     "mergeable_state": "unstable"
-  },
-  "blockers": {
-    "ci": {
-      "check_name": "test",
-      "status": "failing on base",
-      "details": [
-        "GitHub Actions reports a failing `test` check for PR #228.",
-        "The same targeted failures reproduce on a clean `origin/main` worktree at `e3109c6d72cd394fc10e8df4de474ec25a80eea4`.",
-        "Failing tests on base: `TestBundleFollowUpIndexDocsStayAligned`, `TestLiveShadowRuntimeDocsStayAligned`, `TestRollbackDocsStayAligned`."
-      ]
-    }
   }
 }
