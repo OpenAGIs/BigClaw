@@ -105,8 +105,12 @@ ok  	bigclaw-go/internal/regression	0.187s
 ## Git
 
 - Branch: `BIG-GO-188`
-- Baseline source snapshot: GitHub `main` tarball as of 2026-04-09
+- Landed commit on branch: `fc1ff46f34284374570542537a0b60e33295082e`
+- Branch head summary:
+  `fc1ff46 BIG-GO-188: harden repo-root zero-python sweep`
 - Push target: `origin/BIG-GO-188`
+- Compare URL:
+  `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-188?expand=1`
 
 ## Residual Risk
 
