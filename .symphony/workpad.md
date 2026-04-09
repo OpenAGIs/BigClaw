@@ -1,39 +1,22 @@
-# BIG-GO-176 Workpad
+# BIG-GO-193 Workpad
 
 ## Plan
 
-1. Confirm the current repository Python baseline and inspect the residual
-support-asset surfaces relevant to this lane: `bigclaw-go/examples`,
-`bigclaw-go/docs/reports/live-shadow-runs`,
-`bigclaw-go/docs/reports/live-validation-runs`, and `scripts/ops`.
-2. Add lane-specific regression coverage for `BIG-GO-176` that locks those
-support-asset directories at zero Python files while asserting that the
-retained non-Python example, fixture, demo, and helper assets still exist.
-3. Add the matching lane report plus `reports/BIG-GO-176-{validation,status}`
-artifacts, run targeted validation, record exact commands and results, then
-commit and push the scoped change set.
+1. Inspect existing residual Python sweep patterns and identify the narrowest follow-up artifact set that matches this issue.
+2. Add a scoped `BIG-GO-193` regression guard in `bigclaw-go/internal/regression` to preserve the zero-Python residual-test baseline.
+3. Add lane documentation under `bigclaw-go/docs/reports` and `reports/` capturing scope, validation, and replacement evidence for this follow-up sweep.
+4. Run targeted validation commands, record exact commands and results in the report, then commit and push the issue branch.
 
 ## Acceptance
 
-- `BIG-GO-176` has lane-specific regression coverage for residual support
-  assets.
-- The guard enforces that `bigclaw-go/examples`,
-  `bigclaw-go/docs/reports/live-shadow-runs`,
-  `bigclaw-go/docs/reports/live-validation-runs`, and `scripts/ops` remain
-  Python-free.
-- The lane report and `reports/BIG-GO-176-{validation,status}` artifacts
-  document the zero-Python support-asset inventory, the retained non-Python
-  support assets, and the exact validation commands/results.
-- The resulting change is committed and pushed to the remote branch.
+- `BIG-GO-193` adds only issue-scoped residual-test Python sweep artifacts.
+- A new Go regression test protects the residual-test zero-Python baseline.
+- The lane report and status artifact document scope, replacement evidence, and exact validation commands/results.
+- Targeted tests pass from this workspace.
+- Changes are committed on branch `BIG-GO-193` and pushed to `origin/BIG-GO-193`.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/scripts/ops -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO176(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176 -path '*/.git' -prune -o -type f -name '*.py' -print | sort` produced no output.
-- 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/scripts/ops -type f -name '*.py' 2>/dev/null | sort` produced no output.
-- 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-176/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO176(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 3.219s`.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-193/repo && find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-193/repo && find tests bigclaw-go/internal/regression bigclaw-go/internal/migration bigclaw-go/docs/reports bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-193/repo/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO193(RepositoryHasNoPythonFiles|ResidualTestReplacementEvidenceExists|LaneReportCapturesSweepState)$'`

@@ -1,0 +1,37 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-193",
+    "title": "Residual tests Python sweep AD",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-193",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-193"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-193-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-193-residual-tests-python-sweep-ad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_193_zero_python_guard_test.go"
+  },
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find tests bigclaw-go/internal/regression bigclaw-go/internal/migration bigclaw-go/docs/reports bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO193(RepositoryHasNoPythonFiles|ResidualTestReplacementEvidenceExists|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_python_files": "no output",
+      "residual_test_dirs_python_files": "no output",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.211s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-193 changes."
+  },
+  "notes": [
+    "This lane records and hardens the residual-test Go replacement evidence chain rather than deleting fresh in-branch Python files."
+  ]
+}
