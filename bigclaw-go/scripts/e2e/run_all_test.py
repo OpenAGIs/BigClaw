@@ -79,7 +79,7 @@ class RunAllTest(unittest.TestCase):
             bundle_dir = root / args[args.index('--bundle-dir') + 1]
             bundle_dir.mkdir(parents=True, exist_ok=True)
             calls_path = root / 'calls.jsonl'
-            gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
+            gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
             payload = {
                 'gate_exists': gate_path.exists(),
                 'run_broker': args[args.index('--run-broker') + 1],
@@ -200,7 +200,7 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
+            (self.root / 'bigclaw-go' / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
                 encoding='utf-8'
             )
         )
@@ -246,7 +246,7 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
+            (self.root / 'bigclaw-go' / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
                 encoding='utf-8'
             )
         )

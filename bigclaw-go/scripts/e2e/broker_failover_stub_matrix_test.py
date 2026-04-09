@@ -5,7 +5,7 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().with_name('broker_failover_stub_matrix')
+MODULE_PATH = Path(__file__).resolve().with_name('broker_failover_stub_matrix.py')
 SPEC = importlib.util.spec_from_loader(
     'broker_failover_stub_matrix',
     SourceFileLoader('broker_failover_stub_matrix', str(MODULE_PATH)),

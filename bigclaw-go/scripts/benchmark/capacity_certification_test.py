@@ -4,7 +4,7 @@ import unittest
 from importlib.machinery import SourceFileLoader
 
 
-SCRIPT_PATH = pathlib.Path(__file__).resolve().parent / 'capacity_certification'
+SCRIPT_PATH = pathlib.Path(__file__).resolve().parent / 'capacity_certification.py'
 
 
 spec = importlib.util.spec_from_loader(

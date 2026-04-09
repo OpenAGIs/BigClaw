@@ -6,7 +6,7 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().with_name('export_validation_bundle')
+MODULE_PATH = Path(__file__).resolve().with_name('export_validation_bundle.py')
 SPEC = importlib.util.spec_from_loader(
     'export_validation_bundle',
     SourceFileLoader('export_validation_bundle', str(MODULE_PATH)),

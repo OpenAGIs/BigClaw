@@ -42,3 +42,10 @@
 - `bash -n bigclaw-go/scripts/e2e/run_all.sh bigclaw-go/scripts/e2e/kubernetes_smoke.sh bigclaw-go/scripts/e2e/ray_smoke.sh` -> passed
 - `go test ./internal/regression` (in `bigclaw-go`) -> `ok  	bigclaw-go/internal/regression	0.202s`
 - `python3 -m unittest bigclaw-go/scripts/benchmark/capacity_certification_test.py bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py bigclaw-go/scripts/e2e/export_validation_bundle_test.py bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py bigclaw-go/scripts/e2e/run_all_test.py` -> failed under system Python 3.9 because `bigclaw-go/scripts/e2e/export_validation_bundle` uses `Path | None` annotations that require Python 3.10+
+- Final compatibility sweep:
+- `find . -path './.git' -prune -o -type f -name '*.py' -perm -111 -print | sort` -> no executable `.py` files remain
+- `bigclaw-go/scripts/e2e/export_validation_bundle --help` -> passed under local Python 3.9 via shell wrapper
+- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate --help` -> passed under local Python 3.9 via shell wrapper
+- `bigclaw-go/scripts/benchmark/run_matrix --help` -> passed under local Python 3.9 via shell wrapper
+- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py bigclaw-go/scripts/e2e/external_store_validation.py` -> passed after adding postponed annotation evaluation
+- `python3 -m unittest bigclaw-go/scripts/benchmark/capacity_certification_test.py bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py bigclaw-go/scripts/e2e/export_validation_bundle_test.py bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py bigclaw-go/scripts/e2e/run_all_test.py` -> `Ran 16 tests in 2.864s` / `OK`

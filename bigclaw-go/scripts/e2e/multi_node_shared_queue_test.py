@@ -5,7 +5,7 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().with_name('multi_node_shared_queue')
+MODULE_PATH = Path(__file__).resolve().with_name('multi_node_shared_queue.py')
 SPEC = importlib.util.spec_from_loader(
     'multi_node_shared_queue',
     SourceFileLoader('multi_node_shared_queue', str(MODULE_PATH)),
