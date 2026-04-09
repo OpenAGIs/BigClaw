@@ -50,4 +50,5 @@
   && go test -count=1 ./internal/regression -run
   'TestBIGGO19(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
   returned `ok   bigclaw-go/internal/regression 0.195s`.
-- 2026-04-09: Final lane commit `5be8940b` was pushed to `origin/main`.
+- 2026-04-09: Metadata closeout commit was pushed to `origin/main`; final lane
+  head can be verified with `git log -1 --oneline`.
