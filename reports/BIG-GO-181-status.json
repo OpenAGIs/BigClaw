@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-181",
+    "title": "Residual src/bigclaw Python sweep O",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-181'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_181_zero_python_guard_test.go",
+    "lane_report": "bigclaw-go/docs/reports/big-go-181-python-asset-sweep.md",
+    "validation_report": "reports/BIG-GO-181-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_directories": {
+      "src/bigclaw": [],
+      "bigclaw-go/internal/governance": [],
+      "bigclaw-go/internal/domain": [],
+      "bigclaw-go/internal/observability": [],
+      "bigclaw-go/internal/product": [],
+      "bigclaw-go/internal/workflow": []
+    },
+    "retired_python_paths": [
+      "src/bigclaw/governance.py",
+      "src/bigclaw/models.py",
+      "src/bigclaw/observability.py",
+      "src/bigclaw/operations.py",
+      "src/bigclaw/orchestration.py"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/governance/freeze.go",
+    "bigclaw-go/internal/domain/task.go",
+    "bigclaw-go/internal/observability/recorder.go",
+    "bigclaw-go/internal/product/dashboard_run_contract.go",
+    "bigclaw-go/internal/workflow/orchestration.go",
+    "bigclaw-go/internal/regression/top_level_module_purge_tranche15_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw bigclaw-go/internal/governance bigclaw-go/internal/domain bigclaw-go/internal/observability bigclaw-go/internal/product bigclaw-go/internal/workflow -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO181(RepositoryHasNoPythonFiles|SrcBigclawTranche15StaysPythonFree|RetiredTranche15PythonPathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche15$'"
+    ],
+    "results": {
+      "repo_python_inventory": "no output",
+      "focused_python_inventory": "no output",
+      "regression_tests": "ok   bigclaw-go/internal/regression  0.177s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide Python inventory and the target src/bigclaw tranche-15 surface were already at zero on entry, so this lane hardens the state instead of reducing a nonzero count."
+  },
+  "notes": [
+    "This lane records the tranche-15 removal state for the retired governance, model, observability, operations, and orchestration Python modules.",
+    "The surviving Go replacement surface remains centered on the governance, domain, observability, product, and workflow packages plus the tranche-15 regression anchor."
+  ]
+}
