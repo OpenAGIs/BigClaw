@@ -1,0 +1,59 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-195",
+    "title": "Residual tooling Python sweep O",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-195",
+    "baseline_commit": "0e46f22b26d520f2669723ff41ed13e9b8ef251d",
+    "push_target": "origin/BIG-GO-195"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "validation_report": "reports/BIG-GO-195-validation.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-195-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_195_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_python_or_build_helper_files": [],
+    "tooling_dirs": {
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    },
+    "retired_root_build_helpers": [
+      "setup.py",
+      "pyproject.toml"
+    ]
+  },
+  "replacement_paths": [
+    "README.md",
+    "docs/go-cli-script-migration-plan.md",
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/internal/regression/root_script_residual_sweep_test.go",
+    "bigclaw-go/internal/regression/big_go_1160_script_migration_test.go",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_python_or_build_helper_inventory": "none",
+      "tooling_dir_python_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.493s"
+    }
+  },
+  "notes": [
+    "This lane hardens an already-zero-Python residual tooling baseline rather than deleting newly-discovered Python files from the branch.",
+    "The focused tooling surface for BIG-GO-195 is the repo-root shell helpers, bigclaw-go script wrappers, and the retired root build-helper manifests."
+  ]
+}
