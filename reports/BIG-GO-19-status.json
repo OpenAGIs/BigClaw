@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log -1 --oneline",
+    "latest_commit": "5be8940b BIG-GO-19 add zero-python sweep guard",
     "push_target": "origin/main"
   },
   "artifacts": {

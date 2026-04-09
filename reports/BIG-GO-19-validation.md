@@ -90,10 +90,10 @@ ok  	bigclaw-go/internal/regression	0.195s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `fb155a68`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-19'`
-- Final pushed lane commit: `git log -1 --oneline`
+- Lane commit details: `5be8940b BIG-GO-19 add zero-python sweep guard`
+- Final pushed lane commit: `5be8940b BIG-GO-19 add zero-python sweep guard`
 - Push target: `origin/main`
-- Remote verification: `git ls-remote --heads origin main`
+- Remote verification: `git ls-remote --heads origin main` -> `5be8940b5596c9143e47c6ecacfa8a95c31a1065 refs/heads/main`
 
 ## Residual Risk
 
