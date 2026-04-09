@@ -81,7 +81,7 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 ## Branch And PR Suggestion
 
 - Branch: `feat/BIG-GO-902-go-cli-script-migration`
-- PR title: `feat: migrate first Python automation scripts to bigclawctl`
+- PR title: `feat: migrate first legacy automation scripts to bigclawctl`
 
 ## Risks
 

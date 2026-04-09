@@ -100,13 +100,13 @@ operator docs and external automation references finish the direct cutover to
 ## Remaining Backlog
 
 - Continue shrinking `scripts/dev_bootstrap.sh` so it stays a validation-only shell helper and
-  does not reintroduce Python environment management at the repository root.
+  does not reintroduce legacy environment management at the repository root.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
 - Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
   first automation batch. The remaining backlog is tracked in
   `bigclaw-go/docs/go-cli-script-migration.md`.
-- Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
+- Update repo docs that still present legacy script entrypoints as a primary path instead of a shim path.
 
 ## Validation Commands
 
@@ -143,7 +143,7 @@ operator docs and external automation references finish the direct cutover to
   CLI discovery order and workflow binding must still prefer the repo-adjacent checkout before
   falling back to `PATH`.
 - Operator docs:
-  repo instructions must not imply that the Python scripts are still the implementation mainline.
+  repo instructions must not imply that the legacy scripts are still the implementation mainline.
 - GitHub sync cutover:
   `scripts/ops/bigclaw_github_sync.py` must stay deleted and hooks/workflow/CI should invoke
   `bash scripts/ops/bigclawctl github-sync ...` directly.

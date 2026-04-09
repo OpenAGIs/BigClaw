@@ -78,6 +78,7 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 		"`bash scripts/ops/bigclawctl dev-smoke`",
 		"Benchmark soak/matrix/capacity helpers and their retired script-side tests",
 		"E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates",
+		"feat: migrate first legacy automation scripts to bigclawctl",
 	}
 	for _, needle := range requiredGoDoc {
 		if !strings.Contains(goDoc, needle) {
@@ -92,6 +93,9 @@ func TestBIGGO1160MigrationDocsListGoReplacements(t *testing.T) {
 		"`scripts/dev_smoke.py`",
 		"retired benchmark script helpers",
 		"retired migration script helpers",
+		"does not reintroduce legacy environment management at the repository root",
+		"legacy script entrypoints as a primary path instead of a shim path",
+		"legacy scripts are still the implementation mainline",
 		"`bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`",
 	}
 	for _, needle := range requiredRootDoc {

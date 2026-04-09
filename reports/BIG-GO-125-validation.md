@@ -36,7 +36,10 @@ tightened the root Go CLI migration plan so current-state replacement bullets
 use generic legacy-script wording instead of unnecessary Python-specific
 phrasing. An eighth follow-up then tightened active README operator guidance so
 current-state wrapper bullets use generic legacy-wrapper wording instead of
-unnecessary Python-specific phrasing.
+unnecessary Python-specific phrasing. A ninth follow-up then tightened active
+migration planning and PR-suggestion guidance so current-state planning lines
+use generic legacy-script wording instead of unnecessary Python-specific
+phrasing.
 
 ## Active Replacement Paths
 
@@ -97,6 +100,8 @@ unnecessary Python-specific phrasing.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints|TestRootScriptResidualSweepDocs'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'workspace Python helpers|root workspace helpers|Python wrapper|legacy wrapper|Python ops wrappers|ops wrappers should stay deleted' README.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python entrypoints as a primary path|legacy script entrypoints as a primary path|Python scripts are still the implementation mainline|legacy scripts are still the implementation mainline|Python environment management|legacy environment management|feat: migrate first Python automation scripts|feat: migrate first legacy automation scripts' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-125?expand=1`
 
 ## Validation Results
@@ -456,6 +461,43 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	0.192s
+```
+
+### Migration planning wording scan
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python entrypoints as a primary path|legacy script entrypoints as a primary path|Python scripts are still the implementation mainline|legacy scripts are still the implementation mainline|Python environment management|legacy environment management|feat: migrate first Python automation scripts|feat: migrate first legacy automation scripts' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md
+```
+
+Result:
+
+```text
+docs/go-cli-script-migration-plan.md:103:  does not reintroduce legacy environment management at the repository root.
+docs/go-cli-script-migration-plan.md:109:- Update repo docs that still present legacy script entrypoints as a primary path instead of a shim path.
+docs/go-cli-script-migration-plan.md:146:  repo instructions must not imply that the legacy scripts are still the implementation mainline.
+bigclaw-go/docs/go-cli-script-migration.md:84:- PR title: `feat: migrate first legacy automation scripts to bigclawctl`
+```
+
+Observed result:
+
+```text
+Only the normalized migration-planning legacy-script wording matched.
+```
+
+### Migration planning regression guard
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.204s
 ```
 
 ### GitHub publication visibility

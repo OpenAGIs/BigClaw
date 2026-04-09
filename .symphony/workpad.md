@@ -52,8 +52,9 @@
 11. Tighten any remaining active Go CLI migration wording so current-state replacement sections use generic legacy-script language instead of unnecessary Python-specific phrasing.
 12. Tighten the root Go CLI migration plan so active replacement bullets use generic legacy-script wording instead of unnecessary Python-specific labels.
 13. Tighten active README wrapper guidance so current-state operator bullets use generic legacy-wrapper wording instead of unnecessary Python-specific labels.
-14. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance or misleading skipped-lane report links.
-15. Run targeted regression and grep validation, then commit and push the follow-up branch state.
+14. Tighten remaining active backlog and PR-suggestion wording in the migration planning docs so they use generic legacy-script wording instead of unnecessary Python-specific labels.
+15. Tighten regression coverage so these active docs and reviewer artifacts do not regress back to retired Python tooling guidance or misleading skipped-lane report links.
+16. Run targeted regression and grep validation, then commit and push the follow-up branch state.
 
 ## Acceptance
 - Active docs and checked-in reviewer indexes/summaries no longer direct developers to retired Python tooling for migration-shadow helpers or root hygiene.
@@ -66,6 +67,7 @@
 - Active Go CLI migration docs no longer use unnecessary Python-specific phrasing in current-state replacement sections when generic legacy-script wording is sufficient.
 - The root Go CLI migration plan no longer uses unnecessary Python-specific phrasing in current-state replacement bullets when generic legacy-script wording is sufficient.
 - Active README wrapper guidance no longer uses unnecessary Python-specific phrasing in current-state operator bullets when generic legacy-wrapper wording is sufficient.
+- Active migration planning/backlog guidance no longer uses unnecessary Python-specific phrasing in current-state planning lines when generic legacy-script wording is sufficient.
 - Active docs no longer present retired Python validation commands as current workflow guidance.
 - Regression coverage explicitly guards the touched active docs against reintroducing those references.
 - Validation records exact commands and exact results for the targeted regression tests and focused residual-reference searches.
@@ -85,6 +87,8 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'retired the refill Python wrapper|retired the refill wrapper|retired benchmark Python helpers|retired benchmark script helpers|retired migration Python helpers|retired migration script helpers|root Python workspace shims|root workspace shims' docs/go-cli-script-migration-plan.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'workspace Python helpers|root workspace helpers|Python wrapper|legacy wrapper|Python ops wrappers|ops wrappers should stay deleted' README.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestRootScriptResidualSweepDocs'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && rg -n 'Python entrypoints as a primary path|legacy script entrypoints as a primary path|Python scripts are still the implementation mainline|legacy scripts are still the implementation mainline|Python environment management|legacy environment management|feat: migrate first Python automation scripts|feat: migrate first legacy automation scripts' docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125/bigclaw-go && go test ./internal/regression -run 'TestBIGGO1160MigrationDocsListGoReplacements|TestRootOpsMigrationDocsListOnlyGoEntrypoints'`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-125 && git push origin BIG-GO-125`
 
 ## Final Blocker

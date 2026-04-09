@@ -34,6 +34,9 @@ func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 		"retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
 		"retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`",
 		"`bash scripts/ops/bigclawctl workspace validate --help`",
+		"does not reintroduce legacy environment management at the repository root",
+		"legacy script entrypoints as a primary path instead of a shim path",
+		"legacy scripts are still the implementation mainline",
 	}
 	for _, needle := range required {
 		if !strings.Contains(contents, needle) {
@@ -47,6 +50,8 @@ func TestRootOpsMigrationDocsListOnlyGoEntrypoints(t *testing.T) {
 		"- `scripts/ops/symphony_workspace_validate.py`",
 		"- `python3 scripts/ops/symphony_workspace_validate.py --help`",
 		"Python `scripts/ops/*_*.py` shims only translate legacy flags/defaults",
+		"Python entrypoints as a primary path instead of a shim path",
+		"Python scripts are still the implementation mainline",
 	}
 	for _, needle := range disallowed {
 		if strings.Contains(contents, needle) {
