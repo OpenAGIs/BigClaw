@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-254",
     "baseline_commit": "1858cdb1",
-    "latest_commit": "579e3eeb",
+    "latest_commit": "see git rev-parse BIG-GO-254",
     "push_target": "origin/BIG-GO-254"
   },
   "artifacts": {
@@ -47,6 +47,6 @@
     "The launcher preserves the existing --repo injection behavior for callers that omit it.",
     "The cache location is configurable with BIGCLAWCTL_BIN_DIR and otherwise defaults to ${XDG_CACHE_HOME:-$HOME/.cache}/bigclaw.",
     "Initial push attempts for origin/BIG-GO-254 hit transient LibreSSL SSL_ERROR_SYSCALL failures during HTTPS connection setup to github.com:443.",
-    "A retry with HTTP/1.1 completed successfully and published branch BIG-GO-254 at commit 579e3eeb."
+    "A retry with HTTP/1.1 completed successfully and published branch BIG-GO-254; use `git rev-parse BIG-GO-254` for the current tip."
   ]
 }
