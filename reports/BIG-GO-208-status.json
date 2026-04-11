@@ -1,0 +1,62 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-208",
+    "title": "Broad repo Python reduction sweep AF",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-208-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_208_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-208-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "reports": [],
+      "bigclaw-go/docs/reports": [],
+      "bigclaw-go/internal/regression": [],
+      "bigclaw-go/internal/migration": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "reports/BIG-GO-948-validation.md",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go",
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go",
+    "bigclaw-go/internal/regression/big_go_1577_zero_python_guard_test.go",
+    "bigclaw-go/internal/regression/big_go_192_zero_python_guard_test.go",
+    "bigclaw-go/docs/reports/big-go-13-legacy-test-contract-sweep-d.md",
+    "bigclaw-go/docs/reports/big-go-1365-legacy-test-contract-sweep-b.md",
+    "bigclaw-go/docs/reports/big-go-1577-python-asset-sweep.md",
+    "bigclaw-go/docs/reports/big-go-192-python-asset-sweep.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find reports bigclaw-go/docs/reports bigclaw-go/internal/regression bigclaw-go/internal/migration bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO208(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.230s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-208 changes."
+  },
+  "notes": [
+    "This lane records the already-empty broad residual reporting and migration surfaces and hardens them with issue-scoped regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens evidence and regression checks rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `a4503f62`."
+  ]
+}
