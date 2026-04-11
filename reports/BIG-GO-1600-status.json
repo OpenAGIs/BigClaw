@@ -1,0 +1,72 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1600",
+    "title": "Go-only sweep refill BIG-GO-1600",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1600-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1600-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1600_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    },
+    "assigned_assets": [
+      "src/bigclaw/dsl.py",
+      "src/bigclaw/observability.py",
+      "src/bigclaw/repo_governance.py",
+      "src/bigclaw/saved_views.py",
+      "tests/test_audit_events.py",
+      "tests/test_event_bus.py",
+      "tests/test_memory.py",
+      "tests/test_repo_board.py"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_1600_zero_python_guard_test.go",
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/workflow/definition_test.go",
+    "bigclaw-go/internal/observability/audit.go",
+    "bigclaw-go/internal/observability/recorder.go",
+    "bigclaw-go/internal/repo/governance.go",
+    "bigclaw-go/internal/product/saved_views.go",
+    "bigclaw-go/internal/observability/audit_test.go",
+    "bigclaw-go/internal/events/bus_test.go",
+    "bigclaw-go/internal/policy/memory_test.go",
+    "bigclaw-go/internal/repo/repo_surfaces_test.go",
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1600(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|AssignedTrancheAssetsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.194s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1600 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `119e74e1`."
+  ]
+}
