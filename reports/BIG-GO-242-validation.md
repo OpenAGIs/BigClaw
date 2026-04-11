@@ -95,9 +95,10 @@ ok  	bigclaw-go/internal/regression	4.449s
 - Branch: `main`
 - Baseline HEAD before lane commit: `8541637b`
 - Lane commit details: `a43a1f77 BIG-GO-242: add residual tests python sweep guard`
-- Final pushed lane commit: `a43a1f77 BIG-GO-242: add residual tests python sweep guard`
+- Metadata follow-up commit: `5e344a13 BIG-GO-242: record push metadata`
+- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-242'`
 - Push target: `origin/main`
-- Remote verification: `a43a1f776568b02fa49445948cb644f5de1cf10d refs/heads/main`
+- Remote verification at metadata refresh: `5e344a13`
 
 ## Residual Risk
 

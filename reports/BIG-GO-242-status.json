@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "a43a1f77 BIG-GO-242: add residual tests python sweep guard",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-242'",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -58,7 +58,8 @@
     "This lane records the remaining Python-heavy test directories as already Python-free and ties them to the existing Go-native replacement evidence.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `8541637b`.",
-    "Final pushed head is `a43a1f77 BIG-GO-242: add residual tests python sweep guard`, which matches `origin/main` at `a43a1f776568b02fa49445948cb644f5de1cf10d`.",
+    "Lane history includes `a43a1f77 BIG-GO-242: add residual tests python sweep guard` and `5e344a13 BIG-GO-242: record push metadata`.",
+    "Remote verification matched `origin/main` at `5e344a13` when the metadata refresh was recorded.",
     "The first push attempt was rejected after `origin/main` advanced; the lane was rebased onto the newer remote head before the successful push."
   ]
 }
