@@ -79,7 +79,8 @@ cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --h
 ### Risks / Deferred Follow-ups
 
 - `scripts/dev_bootstrap.sh` remains shell-owned and was not migrated in this slice
-- `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability remains required
+- `scripts/ops/bigclawctl` now uses a cached compiled launcher, so the first run
+  still requires a local Go toolchain and writable user cache directory
 - remaining `bigclaw-go/scripts/*` helpers beyond the first migrated batch are still deferred
 
 ## Open PR URL

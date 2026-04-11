@@ -344,8 +344,9 @@ Public GitHub verification on 2026-03-28:
 
 - `scripts/dev_bootstrap.sh` remains a shell-owned bootstrap path and was intentionally left out of
   this migration slice.
-- `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability and
-  startup latency remain operator dependencies.
+- `scripts/ops/bigclawctl` now uses a cached compiled launcher, so the first run
+  still depends on a local Go toolchain, a writable user cache directory, and
+  one-time build latency.
 - The remaining `bigclaw-go/scripts/*` backlog listed in `bigclaw-go/docs/go-cli-script-migration.md`
   is still deferred to later migration batches.
 - No in-repo blocker remains for BIG-GO-902. The remaining risk is only that GitHub's compare page
