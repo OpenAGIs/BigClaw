@@ -102,8 +102,8 @@ ok  	bigclaw-go/internal/regression	0.196s
 - Local branch: `main`
 - Pushed remote branch: `origin/BIG-GO-239`
 - Baseline HEAD before lane commit: `6acdc7c9`
-- Final pushed lane commit: `7e0878f6 BIG-GO-239: add residual auxiliary python sweep guard`
-- Remote verification: `7e0878f6aaf0ef5aa19a74130cc72837a16a3559 refs/heads/BIG-GO-239`
+- Final pushed lane commit: `a827c128 BIG-GO-239: add validation and status artifacts`
+- Remote verification: `a827c1287471a158e1ae13bdd8709f76dbdc1981 refs/heads/BIG-GO-239`
 
 ## Residual Risk
 

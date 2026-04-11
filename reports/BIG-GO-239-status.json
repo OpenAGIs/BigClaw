@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "7e0878f6 BIG-GO-239: add residual auxiliary python sweep guard",
+    "latest_commit": "a827c128 BIG-GO-239: add validation and status artifacts",
     "push_target": "origin/BIG-GO-239"
   },
   "artifacts": {
@@ -64,7 +64,7 @@
     "This lane documents an empty remaining Python and Python-adjacent auxiliary inventory and hardens the Go-only state around hidden control paths and nested evidence directories.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `6acdc7c9`.",
-    "Final pushed head is `7e0878f6 BIG-GO-239: add residual auxiliary python sweep guard`, published to `origin/BIG-GO-239` at `7e0878f6aaf0ef5aa19a74130cc72837a16a3559`.",
+    "Final pushed head is `a827c128 BIG-GO-239: add validation and status artifacts`, published to `origin/BIG-GO-239` at `a827c1287471a158e1ae13bdd8709f76dbdc1981`.",
     "Repeated push attempts to `origin/main` were rejected after the remote advanced, so the completed lane was pushed to its issue branch instead."
   ]
 }
