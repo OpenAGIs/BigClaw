@@ -31,6 +31,8 @@ documentation cleanup plus a lane-specific Go regression guard.
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-245 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `rg -n "scripts/create_issues\\.py|scripts/dev_smoke\\.py|scripts/ops/bigclaw_github_sync\\.py|scripts/ops/bigclaw_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_validate\\.py|Python-free operator surface|Python-side tests|## Python asset status" /Users/openagi/code/bigclaw-workspaces/BIG-GO-245/README.md /Users/openagi/code/bigclaw-workspaces/BIG-GO-245/docs/go-cli-script-migration-plan.md /Users/openagi/code/bigclaw-workspaces/BIG-GO-245/bigclaw-go/docs/go-cli-script-migration.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-245/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO245(RepositoryHasNoPythonFiles|ToolingDocsStayGoOnly|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-245/scripts/ops/bigclawctl github-sync status --json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-245 && git log -1 --stat`
 
 ## Validation Results
 
@@ -76,12 +78,61 @@ Result:
 ok  	bigclaw-go/internal/regression	0.198s
 ```
 
+### Branch sync audit
+
+Command:
+
+```bash
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-245/scripts/ops/bigclawctl github-sync status --json
+```
+
+Result:
+
+```json
+{
+  "ahead": 0,
+  "behind": 0,
+  "branch": "BIG-GO-245",
+  "detached": false,
+  "dirty": false,
+  "diverged": false,
+  "local_sha": "25f310ccf4b5682ed3a9257a07dff5836d63c267",
+  "pushed": true,
+  "relation_known": true,
+  "remote_exists": true,
+  "remote_sha": "25f310ccf4b5682ed3a9257a07dff5836d63c267",
+  "status": "ok",
+  "synced": true
+}
+```
+
+### Final commit stat
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-245 && git log -1 --stat
+```
+
+Result:
+
+```text
+commit 25f310ccf4b5682ed3a9257a07dff5836d63c267
+Author: Symphony Automation <automation@example.invalid>
+Date:   Sun Apr 12 03:29:48 2026 +0800
+
+    BIG-GO-245: close local tracker issue
+
+ local-issues.json | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+```
+
 ## Git
 
 - Branch: `BIG-GO-245`
 - Baseline HEAD before lane commit: `1858cdb1`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-245'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-245'`
+- Final pushed lane commit: `25f310ccf4b5682ed3a9257a07dff5836d63c267` (`BIG-GO-245: close local tracker issue`)
 - Push target: `origin/BIG-GO-245`
 
 ## Residual Risk
@@ -89,3 +140,6 @@ ok  	bigclaw-go/internal/regression	0.198s
 - The branch baseline was already physically Python-free, so this lane only
   reduces active checked-in Python-first tooling references in the touched docs
   and hardens that state with regression coverage.
+- `gh` is not authenticated in this workspace, so a live PR query/create step
+  could not be completed from the CLI even though branch sync to `origin/BIG-GO-245`
+  was verified.

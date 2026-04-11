@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-245",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-245'",
+    "latest_commit": "25f310ccf4b5682ed3a9257a07dff5836d63c267",
     "push_target": "origin/BIG-GO-245"
   },
   "artifacts": {
@@ -35,22 +35,26 @@
     "commands": [
       "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
       "rg -n \"scripts/create_issues\\.py|scripts/dev_smoke\\.py|scripts/ops/bigclaw_github_sync\\.py|scripts/ops/bigclaw_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_validate\\.py|Python-free operator surface|Python-side tests|## Python asset status\" README.md docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md",
-      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO245(RepositoryHasNoPythonFiles|ToolingDocsStayGoOnly|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO245(RepositoryHasNoPythonFiles|ToolingDocsStayGoOnly|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'",
+      "bash scripts/ops/bigclawctl github-sync status --json",
+      "git log -1 --stat"
     ],
     "results": {
       "repo_py_inventory": "none",
       "tooling_doc_residue_scan": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.198s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.198s",
+      "github_sync_status": "local SHA 25f310ccf4b5682ed3a9257a07dff5836d63c267 matches remote SHA 25f310ccf4b5682ed3a9257a07dff5836d63c267 with status ok and synced true",
+      "final_git_log_stat": "25f310ccf4b5682ed3a9257a07dff5836d63c267 BIG-GO-245: close local tracker issue"
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The recovered branch baseline was already physically Python-free before BIG-GO-245 changes."
+    "type": "external",
+    "summary": "The recovered branch baseline was already physically Python-free before BIG-GO-245 changes, and `gh` is not authenticated in this workspace so live PR inspection/creation could not be completed from the CLI."
   },
   "notes": [
     "The workspace initially contained only git metadata with an invalid HEAD ref and had to be recovered from origin/main before issue work could proceed.",
     "This lane removes active Python-first tooling references from the touched docs and adds issue-scoped regression coverage instead of deleting in-branch Python files.",
     "Baseline HEAD before lane changes was `1858cdb1`.",
-    "Lane history includes `1791fc2e BIG-GO-245: tighten residual tooling python sweep`."
+    "Lane history includes `1791fc2e BIG-GO-245: tighten residual tooling python sweep`, `78c29d6f BIG-GO-245: record lane metadata`, and `25f310cc BIG-GO-245: close local tracker issue`."
   ]
 }
