@@ -116,6 +116,7 @@ valid
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `a059fd09`
+- Lane commit details: `d169abde BIG-GO-253: add residual tests python sweep guard`
 - Push target: `origin/main`
 
 ## Residual Risk

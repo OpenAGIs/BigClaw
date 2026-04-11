@@ -2,11 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-253",
     "title": "Residual tests Python sweep AP",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending commit",
+    "lane_commits_command": "git log --oneline --grep 'BIG-GO-253'",
+    "latest_commit_command": "git rev-parse HEAD",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -87,6 +88,7 @@
   "notes": [
     "This lane records the retired root tests corpus as still absent and ties that absence to the current Go-native regression and report-fixture surface.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `a059fd09`."
+    "Baseline HEAD before lane changes was `a059fd09`.",
+    "Primary lane commit is `d169abde BIG-GO-253: add residual tests python sweep guard`."
   ]
 }
