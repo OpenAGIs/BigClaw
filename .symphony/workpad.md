@@ -1,45 +1,36 @@
-# BIG-GO-228 Workpad
+# BIG-GO-234 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide Python asset inventory and the core broad-sweep
-   residual directories relevant to this lane: `src/bigclaw`, `tests`,
-   `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-228` so this unattended run
-   records the current zero-Python baseline and the retained Go/native
-   replacement paths:
-   - `bigclaw-go/docs/reports/big-go-228-python-asset-sweep.md`
-   - `bigclaw-go/internal/regression/big_go_228_zero_python_guard_test.go`
-   - `reports/BIG-GO-228-validation.md`
-   - `reports/BIG-GO-228-status.json`
-3. Run the targeted validation commands, record exact commands and results, then
-   commit and push the scoped lane update to the remote branch.
+1. Reconfirm the live repository-wide Python inventory and the residual
+   scripts/wrappers/CLI-helper directories that belong to this lane.
+2. Add issue-scoped regression evidence for `BIG-GO-234`:
+   - `bigclaw-go/internal/regression/big_go_234_zero_python_guard_test.go`
+   - `bigclaw-go/docs/reports/big-go-234-python-asset-sweep.md`
+   - `reports/BIG-GO-234-validation.md`
+   - `reports/BIG-GO-234-status.json`
+3. Run the targeted inventory commands and the new regression test, then commit
+   and push the issue-scoped change set to `origin/main`.
 
 ## Acceptance
 
-- `.symphony/workpad.md` exists and is specific to `BIG-GO-228` before code
-  edits.
-- The repository-wide physical Python inventory and the broad residual
-  directories are explicitly recorded for this checkout.
-- `BIG-GO-228` adds a focused Go regression guard that locks the repository and
-  the broad residual directories to a zero-Python state.
-- The lane report and validation report record the retained Go/native
-  replacement paths plus the exact validation commands and observed results.
-- The final change set stays scoped to the lane workpad, regression guard, and
-  issue reporting artifacts, then lands as a commit pushed to `origin`.
+- `BIG-GO-234` records that the repository and the assigned
+  scripts/wrappers/CLI-helper surfaces remain Python-free in this checkout.
+- A Go regression guard covers the retained shell-wrapper inventory, the
+  Go-native CLI helper surfaces, and the lane report contents.
+- Validation artifacts capture the exact commands and results from this run.
+- The resulting changes are committed and pushed.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-228 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO228(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-234 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-234/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-234/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-234/bigclaw-go/cmd /Users/openagi/code/bigclaw-workspaces/BIG-GO-234/bigclaw-go/docs -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-234/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO234(RepositoryHasNoPythonFiles|ScriptAndCLIHelperSurfacesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
-- 2026-04-11: Initial inspection found no tracked physical `.py` files anywhere
-  in this checkout.
-- 2026-04-11: The broad residual directories `src/bigclaw`, `tests`, `scripts`,
-  and `bigclaw-go/scripts` were also already Python-free.
-- 2026-04-11: This lane therefore hardens the zero-Python baseline with
-  issue-scoped evidence and regression coverage rather than deleting in-branch
-  Python assets.
+- 2026-04-11: The workspace baseline is already at a repository-wide Python
+  file count of `0`.
+- 2026-04-11: This lane is therefore scoped to regression prevention and
+  evidence capture for the residual scripts, wrappers, and CLI helpers rather
+  than in-branch `.py` deletion.

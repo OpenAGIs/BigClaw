@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-234",
+    "title": "Residual scripts Python sweep S",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-234-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_234_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-234-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "scripts": [],
+      "bigclaw-go/scripts": [],
+      "bigclaw-go/cmd": [],
+      "bigclaw-go/docs": []
+    }
+  },
+  "go_replacements": [
+    "docs/go-cli-script-migration-plan.md",
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/docs/go-cli-script-migration.md",
+    "bigclaw-go/scripts/benchmark/run_suite.sh",
+    "bigclaw-go/scripts/e2e/run_all.sh",
+    "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+    "bigclaw-go/scripts/e2e/ray_smoke.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find scripts bigclaw-go/scripts bigclaw-go/cmd bigclaw-go/docs -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO234(RepositoryHasNoPythonFiles|ScriptAndCLIHelperSurfacesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.325s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-234 changes."
+  },
+  "notes": [
+    "This lane captures the residual scripts, wrappers, and CLI-helper surfaces as already Python-free and ties them to the retained Go-native replacement paths.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `7872e4fa`."
+  ]
+}
