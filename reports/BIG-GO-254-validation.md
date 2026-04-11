@@ -37,6 +37,7 @@ compiled-binary launcher.
 - `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-254 --json url,title,state,number`
+- Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-254`
 
 ## Validation Results
 
@@ -144,6 +145,20 @@ Known branch PR creation URL from push output:
 https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-254
 ```
 
+### Public compare page
+
+Source:
+
+```text
+https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-254
+```
+
+Observed result:
+
+```text
+GitHub renders the public compare page anonymously, showing base `main`, head `BIG-GO-254`, `7 commits`, and `8 files changed`.
+```
+
 ## Git
 
 - Branch: `BIG-GO-254`
@@ -157,3 +172,5 @@ https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-254
   the repository `.py` count.
 - GitHub PR creation/querying is blocked in this workspace because `gh` is not
   authenticated and no `GH_TOKEN`/`GITHUB_TOKEN` is present.
+- The branch is still publicly reviewable through the compare page even without
+  GitHub CLI authentication.
