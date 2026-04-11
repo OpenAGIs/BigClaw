@@ -64,6 +64,14 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `124`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_execution_flow.py tests/test_workflow.py tests/test_risk.py tests/test_runtime_matrix.py tests/test_orchestration.py tests/test_evaluation.py tests/test_planning.py tests/test_reports.py tests/test_observability.py tests/test_operations.py -q`
+  - Result: passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `123`
 
 ### Notes
 
@@ -76,5 +84,6 @@
 - Removed the standalone Go-report digest regression file `tests/test_followup_digests.py`; the underlying docs remain covered by Go-side regression tests under `bigclaw-go/internal/regression`.
 - Folded the queue control-center assertions into `tests/test_operations.py`, updated planning traceability, and removed the standalone file `tests/test_control_center.py`.
 - Repointed planning traceability to the Go-owned repo governance surface and removed the isolated Python mirror `src/bigclaw/repo_governance.py` plus `tests/test_repo_governance.py`.
-- Python file count changed from `138` to `124`.
+- Folded the direct scheduler decision assertions into `tests/test_runtime.py` and removed the standalone file `tests/test_scheduler.py`.
+- Python file count changed from `138` to `123`.
 - Residual risk: some docs and historical validation reports still mention deleted Python files and tests; this change intentionally leaves those history/documentation references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.

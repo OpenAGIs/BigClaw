@@ -95,3 +95,52 @@ def test_scheduler_pauses_execution_when_budget_cannot_cover_docker(tmp_path: Pa
     assert record.tool_results == []
     assert entry["audits"][-1]["action"] == "worker.lifecycle"
     assert entry["audits"][-1]["outcome"] == "paused"
+
+
+def test_scheduler_high_risk_requires_approval():
+    scheduler = Scheduler()
+    task = Task(task_id="sched-high", source="jira", title="prod op", description="", risk_level=RiskLevel.HIGH)
+
+    decision = scheduler.decide(task)
+
+    assert decision.medium == "vm"
+    assert decision.approved is False
+
+
+def test_scheduler_browser_task_routes_browser():
+    scheduler = Scheduler()
+    task = Task(task_id="sched-browser", source="github", title="ui test", description="", required_tools=["browser"])
+
+    decision = scheduler.decide(task)
+
+    assert decision.medium == "browser"
+    assert decision.approved is True
+
+
+def test_scheduler_over_budget_degrades_browser_task_to_docker():
+    scheduler = Scheduler()
+    task = Task(
+        task_id="sched-budget-browser",
+        source="github",
+        title="budgeted ui test",
+        description="",
+        required_tools=["browser"],
+        budget=15.0,
+    )
+
+    decision = scheduler.decide(task)
+
+    assert decision.medium == "docker"
+    assert decision.approved is True
+    assert "budget degraded browser route to docker" in decision.reason
+
+
+def test_scheduler_over_budget_pauses_task():
+    scheduler = Scheduler()
+    task = Task(task_id="sched-budget-pause", source="linear", title="tiny budget", description="", budget=5.0)
+
+    decision = scheduler.decide(task)
+
+    assert decision.medium == "none"
+    assert decision.approved is False
+    assert decision.reason == "paused: budget 5.0 below required docker budget 10.0"
