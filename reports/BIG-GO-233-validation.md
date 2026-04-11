@@ -45,6 +45,7 @@ regression guard and sweep report.
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-233 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/internal/migration /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/internal/regression /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO233(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/reports/BIG-GO-233-status.json >/dev/null`
 
 ## Validation Results
 
@@ -87,14 +88,30 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.205s
+ok  	bigclaw-go/internal/regression	3.215s
+```
+
+### Status artifact validation
+
+Command:
+
+```bash
+python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/reports/BIG-GO-233-status.json >/dev/null
+```
+
+Result:
+
+```text
+success
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane changes: `7872e4fa`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-233'`
+- Lane commits: `c538c28b BIG-GO-233 add residual test python sweep guard`, `66e07993 BIG-GO-233 finalize validation report`
+- Final pushed lane commit: `66e07993 BIG-GO-233 finalize validation report`
+- Push result: `git push origin HEAD:main` -> `6e558f7f..66e07993  HEAD -> main`
 - Push target: `origin/main`
 
 ## Residual Risk

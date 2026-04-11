@@ -1,0 +1,62 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-233",
+    "title": "Residual tests Python sweep AL",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "66e07993 BIG-GO-233 finalize validation report",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-233-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_233_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-233-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "tests": [],
+      "bigclaw-go/scripts": [],
+      "bigclaw-go/internal/migration": [],
+      "bigclaw-go/internal/regression": [],
+      "bigclaw-go/docs/reports": []
+    }
+  },
+  "go_replacements": [
+    "reports/BIG-GO-948-validation.md",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go",
+    "bigclaw-go/internal/regression/big_go_13_legacy_test_contract_sweep_d_test.go",
+    "bigclaw-go/internal/regression/big_go_1365_legacy_test_contract_sweep_b_test.go",
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go",
+    "bigclaw-go/internal/regression/big_go_1577_zero_python_guard_test.go",
+    "bigclaw-go/docs/reports/big-go-13-legacy-test-contract-sweep-d.md",
+    "bigclaw-go/docs/reports/big-go-1365-legacy-test-contract-sweep-b.md",
+    "bigclaw-go/docs/reports/big-go-1577-python-asset-sweep.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find tests bigclaw-go/scripts bigclaw-go/internal/migration bigclaw-go/internal/regression bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO233(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.215s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-233 changes."
+  },
+  "notes": [
+    "This lane records the remaining Python-heavy test directories as already Python-free and ties them to the existing Go-native replacement evidence.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `7872e4fa`."
+  ]
+}
