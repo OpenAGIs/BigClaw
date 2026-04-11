@@ -47,7 +47,7 @@
     "results": {
       "repository_py_inventory": "none",
       "focused_surface_py_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.178s"
     }
   },
   "notes": [
