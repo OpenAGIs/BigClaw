@@ -29,6 +29,7 @@ entrypoints already supported by this checkout.
 - `test ! -e /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/.pre-commit-config.yaml`
 - `rg -n "pre-commit|ruff" /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/README.md`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO205(ResidualPythonToolingConfigStaysAbsent|RootGoHelperSurfaceRemainsAvailable|LaneReportCapturesToolingSweep)$'`
+- `jq . /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/reports/BIG-GO-205-status.json`
 
 ## Validation Results
 
@@ -71,7 +72,21 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.169s
+ok  	bigclaw-go/internal/regression	3.211s
+```
+
+### Status metadata parse
+
+Command:
+
+```bash
+jq . /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/reports/BIG-GO-205-status.json
+```
+
+Result:
+
+```text
+ok
 ```
 
 ## Git
