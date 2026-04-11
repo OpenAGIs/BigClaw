@@ -7,8 +7,8 @@
   "branch": {
     "name": "main",
     "baseline_head": "36121df8",
-    "latest_commit": "pending",
-    "push_target": "origin/main"
+    "latest_commit": "90f9e670 BIG-GO-1591 add zero-python sweep guard",
+    "push_target": "origin/BIG-GO-1591"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1591-validation.md",
@@ -47,7 +47,7 @@
       "repo_py_inventory": "none",
       "source_and_test_dir_inventory": "none",
       "focus_asset_absence": "absent:src/bigclaw/__init__.py; absent:src/bigclaw/evaluation.py; absent:src/bigclaw/operations.py; absent:src/bigclaw/repo_links.py; absent:src/bigclaw/scheduler.py; absent:tests/test_connectors.py; absent:tests/test_execution_contract.py; absent:tests/test_models.py",
-      "regression_tests": "ok   bigclaw-go/internal/regression 0.193s"
+      "regression_tests": "ok   bigclaw-go/internal/regression 0.179s"
     }
   },
   "blocker": {
@@ -56,6 +56,7 @@
   },
   "notes": [
     "This lane documents that the issue's named Python focus assets are already absent in the checkout and locks that state with Go regression coverage.",
-    "Because the branch entered Python-free, the repo-visible change is regression evidence and validation rather than a live .py deletion batch."
+    "Because the branch entered Python-free, the repo-visible change is regression evidence and validation rather than a live .py deletion batch.",
+    "Direct pushes to origin/main lost the race with concurrent updates, so the final pushed remote branch is origin/BIG-GO-1591."
   ]
 }

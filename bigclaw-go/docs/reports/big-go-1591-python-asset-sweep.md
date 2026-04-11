@@ -47,4 +47,4 @@ The active Go-owned surface covering this slice remains:
 - `for path in src/bigclaw/__init__.py src/bigclaw/evaluation.py src/bigclaw/operations.py src/bigclaw/repo_links.py src/bigclaw/scheduler.py tests/test_connectors.py tests/test_execution_contract.py tests/test_models.py; do if test -e "$path"; then echo "present:$path"; else echo "absent:$path"; fi; done`
   Result: every named focus asset reported `absent:...`.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1591(RepositoryHasNoPythonFiles|FocusAssetsStayAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok   bigclaw-go/internal/regression 0.193s`
+  Result: `ok   bigclaw-go/internal/regression 0.179s`

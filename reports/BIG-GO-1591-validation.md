@@ -86,18 +86,21 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1591/bigclaw-go && go test -cou
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.193s
+ok  	bigclaw-go/internal/regression	0.179s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `36121df8`
-- Commit: pending
-- Push target: `origin/main`
+- Final lane commit after rebase: `90f9e670 BIG-GO-1591 add zero-python sweep guard`
+- Push target: `origin/BIG-GO-1591`
 
 ## Blocker
 
 - The repository entered this lane already Python-free, so `BIG-GO-1591` can
   only harden and document that baseline rather than reduce the physical
   `.py` count numerically inside this branch.
+- Direct pushes to `origin/main` were rejected twice because the shared branch
+  advanced during the lane; the final pushed remote target is the dedicated
+  issue branch `origin/BIG-GO-1591`.
