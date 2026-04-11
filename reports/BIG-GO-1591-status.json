@@ -1,0 +1,61 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1591",
+    "title": "Go-only sweep refill BIG-GO-1591",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "baseline_head": "36121df8",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1591-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1591-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1591_zero_python_guard_test.go"
+  },
+  "focus_assets": [
+    "src/bigclaw/__init__.py",
+    "src/bigclaw/evaluation.py",
+    "src/bigclaw/operations.py",
+    "src/bigclaw/repo_links.py",
+    "src/bigclaw/scheduler.py",
+    "tests/test_connectors.py",
+    "tests/test_execution_contract.py",
+    "tests/test_models.py"
+  ],
+  "native_replacements": [
+    "bigclaw-go/go.mod",
+    "bigclaw-go/internal/evaluation/evaluation.go",
+    "bigclaw-go/internal/repo/links.go",
+    "bigclaw-go/internal/scheduler/scheduler.go",
+    "bigclaw-go/internal/contract/execution.go",
+    "bigclaw-go/internal/intake/connector.go",
+    "bigclaw-go/internal/workflow/model.go",
+    "bigclaw-go/internal/reporting/reporting.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1591/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-1591/tests -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1591 && for path in src/bigclaw/__init__.py src/bigclaw/evaluation.py src/bigclaw/operations.py src/bigclaw/repo_links.py src/bigclaw/scheduler.py tests/test_connectors.py tests/test_execution_contract.py tests/test_models.py; do if test -e \"$path\"; then echo \"present:$path\"; else echo \"absent:$path\"; fi; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1591(RepositoryHasNoPythonFiles|FocusAssetsStayAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "source_and_test_dir_inventory": "none",
+      "focus_asset_absence": "absent:src/bigclaw/__init__.py; absent:src/bigclaw/evaluation.py; absent:src/bigclaw/operations.py; absent:src/bigclaw/repo_links.py; absent:src/bigclaw/scheduler.py; absent:tests/test_connectors.py; absent:tests/test_execution_contract.py; absent:tests/test_models.py",
+      "regression_tests": "ok   bigclaw-go/internal/regression 0.193s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1591 changes."
+  },
+  "notes": [
+    "This lane documents that the issue's named Python focus assets are already absent in the checkout and locks that state with Go regression coverage.",
+    "Because the branch entered Python-free, the repo-visible change is regression evidence and validation rather than a live .py deletion batch."
+  ]
+}
