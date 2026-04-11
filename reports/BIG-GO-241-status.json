@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-241'",
+    "latest_commit": "d913538baac198c80fffb9f3faae2728ee2934a8",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -53,6 +53,7 @@
   "notes": [
     "This lane records the broad residual src/bigclaw sweep surface as already Python-free and ties it to the current Go-native entrypoints.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `7872e4fa`."
+    "Baseline HEAD before lane changes was `7872e4fa`.",
+    "Remote verification confirmed `origin/main` at `d913538baac198c80fffb9f3faae2728ee2934a8`."
   ]
 }
