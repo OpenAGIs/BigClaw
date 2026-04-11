@@ -95,8 +95,8 @@ ok  	bigclaw-go/internal/regression	0.249s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `de074cf7`
-- Landed lane commit: pending
-- Final pushed lane commit: pending
+- Landed lane commit: `6815b128 BIG-GO-200 add command and report index python guard`
+- Final pushed lane commit: `d03eb5c1`
 - Push target: `origin/main`
 
 ## Residual Risk

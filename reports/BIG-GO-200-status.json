@@ -52,13 +52,10 @@
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.249s"
     }
   },
-  "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-200 changes."
-  },
   "notes": [
     "This lane records the Go-native command surface and top-level report-index surface as already Python-free.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `de074cf7`."
+    "Baseline HEAD before lane changes was `de074cf7`.",
+    "The lane was pushed to `origin/BIG-GO-200` during an earlier mainline race and then landed on `origin/main` at `d03eb5c1`."
   ]
 }
