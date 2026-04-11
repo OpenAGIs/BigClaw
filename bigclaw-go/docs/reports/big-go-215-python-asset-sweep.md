@@ -51,4 +51,4 @@ The Go-first tooling and compatibility entrypoints covering this sweep remain:
 - `find .github .githooks scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the tooling/build-helper/dev-utility directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO215(RepositoryHasNoPythonFiles|ToolingDirectoriesStayPythonFree|NativeToolingReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.145s`
+  Result: `ok  	bigclaw-go/internal/regression	0.199s`
