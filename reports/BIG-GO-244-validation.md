@@ -95,11 +95,13 @@ ok  	bigclaw-go/internal/regression	0.178s
 - Branch: `main`
 - Baseline HEAD before lane commit: `a059fd09`
 - Lane commits: `git log --oneline --grep 'BIG-GO-244'`
-- Final pushed lane commit: `git log --oneline --grep 'BIG-GO-244'`
+- Final pushed lane commit: `eaef9583` (`BIG-GO-244 record remote branch push target`)
 - Push target: `origin/BIG-GO-244`
-- Note: the original push attempt was rejected after `origin/main` advanced, so
-  the final regression command/result above reflects the post-rebase validation
-  run.
+- Push command: `git push origin HEAD:refs/heads/BIG-GO-244`
+- Push result: success; GitHub advertised `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-244`
+- Note: the original push attempts failed first because `origin/main` kept
+  advancing and later due to transient proxy/TLS transport failures; the final
+  regression command/result above reflects the post-rebase validation run.
 
 ## Residual Risk
 
