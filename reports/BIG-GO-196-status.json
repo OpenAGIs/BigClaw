@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-196",
-    "latest_commit": "9929ee66 BIG-GO-196 finalize lane metadata",
+    "latest_commit": "git rev-parse --short HEAD on BIG-GO-196",
     "push_target": "origin/BIG-GO-196"
   },
   "artifacts": {
@@ -61,6 +61,7 @@
     "Baseline HEAD before lane changes was `36121df8`.",
     "Implementation commit was `c1aa0212 BIG-GO-196 add support asset python sweep guard`.",
     "Metadata commit was `9929ee66 BIG-GO-196 finalize lane metadata`.",
+    "Pushed-tip sync commit should be read from `git log --oneline --grep 'BIG-GO-196 record pushed tip' -1`.",
     "The branch was pushed with `git push -u origin BIG-GO-196` and updated with `git push`."
   ]
 }
