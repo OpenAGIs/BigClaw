@@ -23,7 +23,7 @@ cutover set.
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestBIGGO19(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Completed scope
 
