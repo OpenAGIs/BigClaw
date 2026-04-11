@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-207",
-    "latest_commit": "capture the pushed tip with `git rev-parse --short HEAD` or `git log -1 --oneline`",
+    "latest_commit": "75a0eddce BIG-GO-207 finalize lane metadata",
     "push_target": "origin/BIG-GO-207"
   },
   "artifacts": {
