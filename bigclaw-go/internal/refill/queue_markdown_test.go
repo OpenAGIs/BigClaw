@@ -116,8 +116,8 @@ func TestParallelIssueQueueRenderMarkdownInfersRecentBatchesAndZeroTime(t *testi
 	if !strings.Contains(text, "`bash scripts/ops/bigclawctl symphony`") {
 		t.Fatalf("expected direct bigclawctl symphony command in markdown, got %s", text)
 	}
-	if !strings.Contains(text, "`bash scripts/ops/bigclaw-issue ...`") {
-		t.Fatalf("expected compatibility wrapper note in markdown, got %s", text)
+	if !strings.Contains(text, "`bash scripts/ops/bigclawctl ...`") {
+		t.Fatalf("expected canonical root helper note in markdown, got %s", text)
 	}
 	if !strings.Contains(text, "`BIG-PAR-416`") {
 		t.Fatalf("expected inferred standby slice in markdown, got %s", text)

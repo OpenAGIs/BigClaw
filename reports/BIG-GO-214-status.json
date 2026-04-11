@@ -1,0 +1,59 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-214",
+    "title": "Residual scripts Python sweep Q",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-214",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-214'",
+    "push_target": "origin/BIG-GO-214"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-214-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-214-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_214_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "retired_root_wrapper_aliases": {
+      "scripts/ops/bigclaw-issue": false,
+      "scripts/ops/bigclaw-panel": false,
+      "scripts/ops/bigclaw-symphony": false
+    }
+  },
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/internal/refill/queue_markdown.go",
+    "bigclaw-go/internal/refill/queue_markdown_test.go",
+    "bigclaw-go/internal/regression/big_go_214_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-214 -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-214/scripts/ops/bigclaw-issue /Users/openagi/code/bigclaw-workspaces/BIG-GO-214/scripts/ops/bigclaw-panel /Users/openagi/code/bigclaw-workspaces/BIG-GO-214/scripts/ops/bigclaw-symphony; do test ! -e \"$path\" || echo \"present: $path\"; done",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-214 && bash scripts/ops/bigclawctl issue --help",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-214/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO214(RepositoryHasNoPythonFiles|RetiredRootWrapperAliasesRemainAbsent|CanonicalRootEntrypointsRemainAvailable|LaneReportCapturesSweepState)$'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-214/bigclaw-go && go test -count=1 ./internal/refill"
+    ],
+    "results": {
+      "repo_py_inventory": "no output; repository-wide Python file count remained 0",
+      "retired_wrapper_aliases": "no output; all retired root wrapper aliases remained absent",
+      "canonical_issue_help": "usage: bigclawctl issue [flags] [args...]",
+      "regression_tests": "ok   bigclaw-go/internal/regression 0.158s",
+      "refill_tests": "ok   bigclaw-go/internal/refill 2.643s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-214 changes."
+  },
+  "notes": [
+    "This lane removes the residual root alias wrappers and keeps scripts/ops/bigclawctl as the single supported operator helper.",
+    "Historical reports still reference the retired wrapper aliases as preserved audit evidence; live docs and generators now point directly at scripts/ops/bigclawctl."
+  ]
+}

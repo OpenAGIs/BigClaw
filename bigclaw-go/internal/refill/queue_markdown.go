@@ -121,10 +121,8 @@ func (q *ParallelIssueQueue) RenderMarkdown(generatedAt time.Time) string {
 	out.WriteString("- Local dashboard/orchestrator:\n")
 	out.WriteString("  - `bash scripts/ops/bigclawctl symphony`\n")
 	out.WriteString("  - `bash scripts/ops/bigclawctl panel`\n")
-	out.WriteString("- Compatibility wrappers retained during cutover:\n")
-	out.WriteString("  - `bash scripts/ops/bigclaw-issue ...`\n")
-	out.WriteString("  - `bash scripts/ops/bigclaw-symphony`\n")
-	out.WriteString("  - `bash scripts/ops/bigclaw-panel`\n\n")
+	out.WriteString("- Canonical root operator helper:\n")
+	out.WriteString("  - `bash scripts/ops/bigclawctl ...`\n\n")
 
 	out.WriteString("## Policy\n\n")
 	out.WriteString(fmt.Sprintf("- Target: keep `2` issues in `%s` when issue capacity is available again.\n", activeStateName))

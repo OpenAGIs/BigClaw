@@ -47,9 +47,6 @@ The repo root stays Python-free. The only supported root helper wrappers are:
 
 - `scripts/dev_bootstrap.sh`
 - `scripts/ops/bigclawctl`
-- `scripts/ops/bigclaw-issue`
-- `scripts/ops/bigclaw-panel`
-- `scripts/ops/bigclaw-symphony`
 
 Everything else at the repo root or under `scripts/ops/` should resolve
 through `bash scripts/ops/bigclawctl ...` or remain deleted.
@@ -88,7 +85,7 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 ## Compatibility Layer Plan
 
 - Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/e2e/`.
-- Preserve the retained shell wrappers only where they add operator convenience over direct `bigclawctl automation ...` invocation.
+- Preserve only the retained shell wrappers that still add operator convenience over direct `bigclawctl automation ...` invocation.
 - Continue the remaining non-e2e script migrations in follow-up batches without expanding the e2e compatibility layer again.
 
 ## Branch And PR Suggestion
