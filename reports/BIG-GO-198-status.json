@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "f3a0ecb0 BIG-GO-198 add broad repo python sweep guard",
+    "latest_commit": "9396c287 BIG-GO-198 finalize lane status artifacts",
     "push_target": "origin/main"
   },
   "artifacts": {
