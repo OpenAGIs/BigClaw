@@ -4,13 +4,14 @@ from pathlib import Path
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import APPROVAL_RECORDED_EVENT, GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit
 from bigclaw.reports import PilotMetric, PilotScorecard
-from bigclaw.validation_policy import enforce_validation_report_policy
 from bigclaw.workflow import (
     AcceptanceGate,
     PilotImplementationResult,
     PilotKPI,
+    ValidationReportDecision,
     WorkflowEngine,
     WorkpadJournal,
+    enforce_validation_report_policy,
     render_pilot_implementation_report,
 )
 
