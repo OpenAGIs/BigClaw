@@ -1,0 +1,40 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-199",
+    "title": "Residual auxiliary Python sweep P",
+    "state": "in_progress"
+  },
+  "artifacts": {
+    "lane_report": "bigclaw-go/docs/reports/big-go-199-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_199_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-199-validation.md"
+  },
+  "scope": {
+    "audited_suffixes": [
+      ".py",
+      ".pyw",
+      ".pyi",
+      ".pyx",
+      ".pxd",
+      ".pxi",
+      ".ipynb"
+    ],
+    "hidden_nested_dirs": [
+      ".githooks",
+      ".github",
+      ".symphony",
+      "bigclaw-go/examples",
+      "bigclaw-go/docs/reports/live-validation-runs",
+      "reports"
+    ]
+  },
+  "validation": {
+    "repository_inventory": "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-199 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' -o -name '*.ipynb' \\) -print | sort => no output",
+    "hidden_nested_inventory": "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/.githooks /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/.symphony /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/reports -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' -o -name '*.ipynb' \\) 2>/dev/null | sort => no output",
+    "regression_tests": "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO199(RepositoryHasNoPythonFiles|HiddenAndNestedResidualDirectoriesStayPythonFree|HiddenAndNestedNativeAssetsRemainAvailable|LaneReportCapturesSweepState)$' => ok   bigclaw-go/internal/regression 0.237s"
+  },
+  "summary": [
+    "BIG-GO-199 hardens the shared Python sweep helper to catch overlooked Python-like suffixes.",
+    "The lane adds issue-scoped regression coverage and evidence for hidden and nested auxiliary directories."
+  ]
+}
