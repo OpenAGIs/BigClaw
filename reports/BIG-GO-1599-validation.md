@@ -95,8 +95,8 @@ ok  	bigclaw-go/internal/regression	0.193s
 
 - Branch: `BIG-GO-1599`
 - Baseline commit source: `origin/main` (`1eba935`)
-- Lane commit details: `pending`
-- Final pushed lane commit: `pending`
+- Lane commit details: `52618fe BIG-GO-1599 document zero-python tranche guard`
+- Final pushed lane commit: `push blocked; remote branch not created`
 - Push target: `origin/BIG-GO-1599`
 
 ## Workpad Archive
@@ -108,3 +108,6 @@ ok  	bigclaw-go/internal/regression	0.193s
 - The live branch baseline was already Python-free, so BIG-GO-1599 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count in this checkout.
+- Remote push remains blocked in this environment: repeated
+  `git push -u origin HEAD:refs/heads/BIG-GO-1599` attempts either failed with
+  `HTTP 408` or hung without creating `origin/BIG-GO-1599`.
