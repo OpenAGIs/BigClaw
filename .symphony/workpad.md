@@ -45,5 +45,6 @@
   - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/scripts/ops -type f -name '*.py' 2>/dev/null | sort` -> no output
   - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO256(RepositoryHasNoPythonFiles|SupportAssetSurfacesStayPythonFree|RetainedNativeSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'` -> `ok  	bigclaw-go/internal/regression	4.755s`
 - 2026-04-12: Stable remote verification for the completed branch is
-  `git ls-remote --heads origin big-go-256-land`, currently returning
-  `ae24fe22f457c5f938a6b7cdcf6b4d0d18962b30 refs/heads/big-go-256-land`.
+  `git ls-remote --heads origin big-go-256-land`.
+- 2026-04-12: Metadata-only follow-up commits after the functional lane change:
+  `d16a8f65`, `4bc7c2b9`, `c161a0a6`, `ae24fe22`, and `64439798`.

@@ -64,6 +64,8 @@
     "Lane history includes `d16a8f65 BIG-GO-256: record push metadata`.",
     "Lane history includes `4bc7c2b9 BIG-GO-256: finalize metadata`.",
     "Lane history includes `c161a0a6 BIG-GO-256: reconcile final head metadata`.",
+    "Lane history includes `ae24fe22 BIG-GO-256: stabilize branch metadata`.",
+    "Lane history includes `64439798 BIG-GO-256: finalize workpad record`.",
     "Use `git ls-remote --heads origin big-go-256-land` to read the current pushed head without creating a self-referential metadata loop."
   ]
 }
