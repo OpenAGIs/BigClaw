@@ -49,7 +49,7 @@
   },
   "blocker": {
     "type": "external",
-    "summary": "The recovered branch baseline was already physically Python-free before BIG-GO-245 changes, and `gh` is not authenticated in this workspace so live PR inspection/creation could not be completed from the CLI."
+    "summary": "The recovered branch baseline was already physically Python-free before BIG-GO-245 changes, `gh` is not authenticated in this workspace, and public GitHub inspection shows no existing PR for head branch `BIG-GO-245` while the compare/new-PR flow still requires sign-in."
   },
   "notes": [
     "The workspace initially contained only git metadata with an invalid HEAD ref and had to be recovered from origin/main before issue work could proceed.",

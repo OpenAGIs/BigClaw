@@ -30,6 +30,7 @@
 4. The recovered repository baseline already had a physical Python file count of `0`, so the scoped issue work tightened active tooling docs and added an issue-specific regression guard instead of deleting in-branch `.py` files.
 5. The repo-local tracker did not contain `BIG-GO-245`, so the issue had to be created in `local-issues.json`, marked `Done`, and annotated with the required closeout comment after implementation finished.
 6. `gh` is not authenticated in this workspace, so branch sync could be verified but live PR inspection/creation could not be completed from the CLI.
+7. Public GitHub inspection confirmed there is no existing PR for head branch `BIG-GO-245`, and the compare/new-PR flow requires sign-in to continue.
 
 ## Validation Results
 

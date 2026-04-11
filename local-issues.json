@@ -7800,6 +7800,11 @@
           "author": "codex",
           "body": "Post-closeout status refresh: branch BIG-GO-245 is clean and synced at 25f310ccf4b5682ed3a9257a07dff5836d63c267 after the local tracker closeout commit. Validation refresh: bash scripts/ops/bigclawctl github-sync status --json -> local SHA 25f310ccf4b5682ed3a9257a07dff5836d63c267 matches remote SHA 25f310ccf4b5682ed3a9257a07dff5836d63c267 with status ok and synced true; git log -1 --stat -> BIG-GO-245: close local tracker issue. External blocker: gh is not authenticated in this workspace, so live PR inspection/creation could not be completed from the CLI. PR URL: https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-245",
           "created_at": "2026-04-11T19:46:19Z"
+        },
+        {
+          "author": "codex",
+          "body": "External blocker refinement: public GitHub inspection confirms there is no existing PR for head branch BIG-GO-245, and the compare/new-PR flow requires authenticated GitHub access. Local/remote branch state remains clean and synced at 6f6c66bf4c217e3eb08ab4f0b1aa83901dc98a21.",
+          "created_at": "2026-04-11T20:04:07Z"
         }
       ],
       "created_at": "2026-04-11T19:22:59Z",
@@ -7815,7 +7820,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Residual tooling Python sweep T",
-      "updated_at": "2026-04-11T19:46:19Z"
+      "updated_at": "2026-04-11T20:04:07Z"
     }
   ]
 }

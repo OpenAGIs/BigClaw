@@ -143,3 +143,5 @@ Date:   Sun Apr 12 03:29:48 2026 +0800
 - `gh` is not authenticated in this workspace, so a live PR query/create step
   could not be completed from the CLI even though branch sync to `origin/BIG-GO-245`
   was verified.
+- Public GitHub inspection showed no existing PR for head branch `BIG-GO-245`,
+  and the compare/new-PR flow still requires authenticated GitHub access.
