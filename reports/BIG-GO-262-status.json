@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pre-commit baseline 1858cdb1",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-262'",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -57,6 +57,9 @@
   "notes": [
     "This lane records the remaining Python-heavy test directories as already Python-free and ties them to the existing Go-native replacement evidence.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `1858cdb1`."
+    "Baseline HEAD before lane changes was `1858cdb1`.",
+    "The first local issue commit was `03640a12 BIG-GO-262: add residual tests python sweep guard`.",
+    "After two remote-advance rebases, the first accepted pushed lane commit became `5e240dc5 BIG-GO-262: add residual tests python sweep guard`.",
+    "One intermediate push attempt failed with a transient GitHub TLS transport error before the successful retry."
   ]
 }

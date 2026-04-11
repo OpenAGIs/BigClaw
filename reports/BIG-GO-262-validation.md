@@ -94,11 +94,17 @@ ok  	bigclaw-go/internal/regression	0.187s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `1858cdb1`
-- Lane commit details: `pending`
-- Final pushed lane commit: `pending`
+- Lane commit details: `5e240dc5 BIG-GO-262: add residual tests python sweep guard`
+- Metadata follow-up commit: `see git log --oneline --grep 'BIG-GO-262'`
+- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-262'`
 - Push target: `origin/main`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-262 records and
   guards the Go-only state rather than removing in-branch Python files.
+- `origin/main` advanced twice before the successful push completed, so the
+  lane was rebased from `03640a12` to `5e240dc5` before the first accepted
+  remote update.
+- One push retry also failed with a transient GitHub TLS transport error before
+  the subsequent successful push.
