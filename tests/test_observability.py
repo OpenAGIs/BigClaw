@@ -11,12 +11,21 @@ from bigclaw.collaboration import (
     merge_collaboration_threads,
 )
 from bigclaw.models import Priority, Task
-from bigclaw.observability import GitSyncTelemetry, MANUAL_TAKEOVER_EVENT, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, TaskRun
+from bigclaw.observability import (
+    GitSyncTelemetry,
+    LineageEvidence,
+    MANUAL_TAKEOVER_EVENT,
+    ObservabilityLedger,
+    PullRequestFreshness,
+    RepoSyncAudit,
+    TaskRun,
+    approval_evidence_packet,
+    recommend_triage_action,
+)
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
 from bigclaw.repo_links import bind_run_commits
 from bigclaw.repo_board import RepoDiscussionBoard
 from bigclaw.repo_plane import RunCommitLink
-from bigclaw.repo_triage import LineageEvidence, approval_evidence_packet, recommend_triage_action
 
 
 def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):

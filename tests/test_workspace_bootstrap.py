@@ -11,12 +11,12 @@ from bigclaw.legacy_shim import (
     translate_workspace_validate_args,
 )
 from bigclaw.workspace_bootstrap import (
+    build_validation_report,
     bootstrap_workspace,
     cache_root_for_repo,
     cleanup_workspace,
     repo_cache_key,
 )
-from bigclaw.workspace_bootstrap_validation import build_validation_report
 
 
 def git(repo: Path, *args: str) -> str:
