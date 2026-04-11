@@ -85,7 +85,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.154s
+ok  	bigclaw-go/internal/regression	0.200s
 ```
 
 ### Status artifact JSON integrity
@@ -106,16 +106,16 @@ exit 0
 
 - Branch at start: `main`
 - Baseline commit before edits: `ef527393`
-- Issue implementation commit: `b73c1257`
-- Final metadata commit: `6dd9138c`
-- Validation refresh commit: `195a2188`
-- Push target: `origin/BIG-GO-225`
+- Issue implementation commit: `31859385`
+- Final metadata commit: `f51998ed`
+- Validation refresh commit: `3449ad10`
+- Push target: `origin/main`
 
 ## Residual Risk
 
 - The repository-wide physical `.py` count was already `0` at lane entry, so
   this issue hardens the migrated tooling posture instead of reducing a nonzero
   Python file count.
-- `origin/main` advanced during unattended landing, so the finalized lane was
-  pushed to the issue branch `origin/BIG-GO-225` instead of rebasing again to
-  chase a moving target.
+- `origin/BIG-GO-225` was created during an earlier non-fast-forward landing
+  attempt and remains available while the rebased branch is pushed to
+  `origin/main`.

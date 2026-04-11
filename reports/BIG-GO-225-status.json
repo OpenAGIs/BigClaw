@@ -7,10 +7,10 @@
   "branch": {
     "name": "main",
     "baseline_commit": "ef527393",
-    "implementation_commit": "b73c1257",
-    "final_metadata_commit": "6dd9138c",
-    "validation_refresh_commit": "195a2188",
-    "push_target": "origin/BIG-GO-225"
+    "implementation_commit": "31859385",
+    "final_metadata_commit": "f51998ed",
+    "validation_refresh_commit": "3449ad10",
+    "push_target": "origin/main"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -40,13 +40,13 @@
       "python_file_inventory": "none",
       "pre_commit_config": "absent",
       "diff_check": "exit 0",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.154s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.200s",
       "status_json": "exit 0"
     }
   },
   "notes": [
     "The repository already had no tracked .py files when this lane started.",
     "The scoped change removes residual Python-based root tooling rather than migrating application code.",
-    "The branch was pushed to origin/BIG-GO-225 because origin/main advanced repeatedly during unattended landing."
+    "The branch was previously pushed to origin/BIG-GO-225 during an earlier non-fast-forward landing attempt."
   ]
 }
