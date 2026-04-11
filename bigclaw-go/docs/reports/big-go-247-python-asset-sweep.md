@@ -41,7 +41,7 @@ The active Go/native replacement surface covering this sweep remains:
 - `find reports bigclaw-go/docs/reports bigclaw-go/internal/regression scripts -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the priority residual directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO247(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoNativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	4.206s`
+  Result: `ok  	bigclaw-go/internal/regression	0.191s`
 
 ## Residual Risk
 
