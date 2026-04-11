@@ -98,7 +98,9 @@ ok  	bigclaw-go/internal/regression	0.224s
 - Branch: `BIG-GO-257`
 - Baseline HEAD before lane commit: `62626d62`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-257'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-257'`
+- Final local lane commit: `17415ff08e741df61c0c40200f3ffb9c4c56b239`
+- Push attempt: `git push -u origin BIG-GO-257`
+- Push result: `fatal: unable to access 'https://github.com/OpenAGIs/BigClaw.git/': LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443`
 - Push target: `origin/BIG-GO-257`
 
 ## Residual Risk
@@ -106,3 +108,6 @@ ok  	bigclaw-go/internal/regression	0.224s
 - The live branch baseline was already Python-free, so BIG-GO-257 can only
   lock in and document the broad repo Go-only state rather than numerically
   lower the repository `.py` count.
+- Remote branch creation and SHA parity verification are blocked by the HTTPS
+  transport failure above, and this workspace has no working GitHub SSH key or
+  authenticated `gh` session to provide an alternate push path.
