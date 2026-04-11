@@ -102,7 +102,7 @@ from .issue_archive import (
     IssuePriorityArchivist,
     render_issue_priority_archive_report,
 )
-from .risk import RiskFactor, RiskScore, RiskScorer
+from .scheduler import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .planning import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap

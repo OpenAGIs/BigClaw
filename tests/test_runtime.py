@@ -8,9 +8,8 @@ from bigclaw import deprecation, orchestration, queue, runtime, scheduler, servi
 from bigclaw.memory import TaskMemoryStore
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger, TaskRun
-from bigclaw.risk import RiskScorer
 from bigclaw.runtime import ClawWorkerRuntime, CostController, SandboxRouter, ToolPolicy, ToolRuntime
-from bigclaw.scheduler import Scheduler, SchedulerDecision
+from bigclaw.scheduler import RiskScorer, Scheduler, SchedulerDecision
 from bigclaw.service import RepoGovernanceEnforcer, RepoGovernancePolicy, create_server
 
 
