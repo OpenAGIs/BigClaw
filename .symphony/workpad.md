@@ -37,4 +37,4 @@
 
 - 2026-04-11: The repository-wide and hidden/nested auxiliary inventories both returned no output for `.py`, `.pyw`, `.pyi`, `.pyx`, `.pxd`, `.pxi`, and `.ipynb`.
 - 2026-04-11: `go test -count=1 ./internal/regression -run 'TestBIGGO199(RepositoryHasNoPythonFiles|HiddenAndNestedResidualDirectoriesStayPythonFree|HiddenAndNestedNativeAssetsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 0.237s`.
-- 2026-04-11: Final metadata commit `d44cdf89` was pushed to `origin/big-go-199`.
+- 2026-04-11: Final pushed tip is on `origin/big-go-199`; read it with `git rev-parse --short origin/big-go-199`.

@@ -88,7 +88,7 @@ ok  	bigclaw-go/internal/regression	0.237s
 
 ## Git
 
-- Commit: `d44cdf89 BIG-GO-199 record pushed metadata`
+- Commit: current pushed tip on `origin/big-go-199`; read with `git rev-parse --short origin/big-go-199`
 - Push: `git -c http.version=HTTP/1.1 push -u origin big-go-199`
 
 ## Residual Risk
