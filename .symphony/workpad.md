@@ -1,43 +1,24 @@
-# BIG-GO-240 Workpad
+Issue: BIG-GO-259
 
-## Plan
+Plan:
+- Sweep the repository for residual Python artifacts, including hidden files, nested paths, shebang-based scripts, Python-specific config, and documentation references.
+- Remove any overlooked Python files or references that conflict with the issue scope while keeping changes limited to this cleanup task.
+- Run targeted validation to confirm no residual Python files remain and that the affected build/test paths still pass.
+- Commit the scoped changes and push the branch to the remote.
 
-1. Reconfirm the repository-wide Python asset inventory and the convergence
-   lane directories relevant to `BIG-GO-240`: `src/bigclaw`, `tests`,
-   `scripts`, and `bigclaw-go/scripts`.
-2. Add the issue-scoped convergence evidence bundle for `BIG-GO-240`:
-   - `bigclaw-go/internal/regression/big_go_240_zero_python_guard_test.go`
-   - `bigclaw-go/docs/reports/big-go-240-python-asset-sweep.md`
-   - `reports/BIG-GO-240-validation.md`
-   - `reports/BIG-GO-240-status.json`
-3. Run the targeted inventory checks and regression test, record the exact
-   command results, then commit and push the lane update to `origin/main`.
+Acceptance:
+- Hidden, nested, or overlooked Python files relevant to this issue are removed from the repository.
+- Residual Python-specific references introduced by those files are removed or updated if needed.
+- Validation commands and results are recorded exactly.
+- Changes remain scoped to BIG-GO-259.
 
-## Acceptance
+Validation:
+- `find . -type f \\( -name '*.py' -o -name '*.pyi' -o -name '*.pyw' -o -name '*.ipynb' \\)`
+- `rg -n "python|python3|\\.py\\b|#!/usr/bin/env python|#!/usr/bin/python" .`
+- Targeted repo checks/tests based on files changed.
 
-- `BIG-GO-240` documents the live repository Python inventory and the
-  convergence-lane residual directories with exact observed results.
-- The lane adds a Go regression guard that protects the repository-wide
-  zero-Python baseline, the priority residual directories, and the retained
-  Go/native replacement paths.
-- The validation artifacts explicitly capture the already-zero branch baseline
-  and the exact commands used to verify it.
-- The final change set is committed and pushed.
-
-## Validation
-
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-240 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO240(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-12: Initial inspection shows the checkout is already at a
-  repository-wide Python file count of `0`.
-- 2026-04-12: The convergence-lane directories `src/bigclaw`, `tests`,
-  `scripts`, and `bigclaw-go/scripts` are already Python-free in this
-  workspace.
-- 2026-04-12: This execution therefore focuses on issue-scoped regression
-  hardening and evidence capture rather than deleting in-branch `.py` files.
-- 2026-04-12: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO240(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  and observed `ok   bigclaw-go/internal/regression 0.177s`.
+Validation Results:
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-259 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \) -print | sort` -> no output
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/.githooks /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/.symphony /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/scripts/ops /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/bigclaw-go/docs/reports/broker-failover-stub-artifacts /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/bigclaw-go/docs/reports/live-validation-runs -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \) 2>/dev/null | sort` -> no output
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-259 -path '*/.git' -prune -o -type f -perm -u+x -print | while IFS= read -r f; do first=$(LC_ALL=C sed -n '1p' "$f" 2>/dev/null || true); case "$first" in '#!'*python*) printf '%s\n' "$f";; esac; done | sort` -> no output
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-259/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO259(RepositoryHasNoPythonLikeFiles|AuxiliaryResidualDirectoriesStayPythonFree|RetainedNativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'` -> `ok  	bigclaw-go/internal/regression	5.596s`
