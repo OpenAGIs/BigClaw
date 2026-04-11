@@ -7,7 +7,9 @@ from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.models import Priority, Task
 from bigclaw.observability import GitSyncTelemetry, MANUAL_TAKEOVER_EVENT, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, TaskRun
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
+from bigclaw.repo_board import RepoDiscussionBoard
 from bigclaw.repo_plane import RunCommitLink
+from bigclaw.repo_triage import LineageEvidence, approval_evidence_packet, recommend_triage_action
 
 
 def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
@@ -286,3 +288,56 @@ def test_task_run_audit_spec_event_requires_required_fields() -> None:
             run_id="run-spec",
             target_team="security",
         )
+
+
+def test_repo_board_create_reply_and_target_filtering():
+    board = RepoDiscussionBoard()
+    post = board.create_post(
+        channel="bigclaw-ope-164",
+        author="agent-a",
+        body="Need reviewer on commit lineage",
+        target_surface="run",
+        target_id="run-164",
+        metadata={"severity": "p1"},
+    )
+    reply = board.reply(parent_post_id=post.post_id, author="reviewer", body="I will review this now")
+
+    assert post.post_id == "post-1"
+    assert reply.parent_post_id == "post-1"
+
+    run_posts = board.list_posts(target_surface="run", target_id="run-164")
+    assert len(run_posts) == 2
+    assert run_posts[0].channel == "bigclaw-ope-164"
+
+    comment = run_posts[0].to_collaboration_comment()
+    assert comment.anchor == "run:run-164"
+    assert comment.body.startswith("Need reviewer")
+
+
+def test_lineage_aware_recommendations():
+    recommendation = recommend_triage_action(
+        status="needs-approval",
+        evidence=LineageEvidence(candidate_commit="abc", accepted_ancestor="0001", similar_failure_count=0),
+    )
+    assert recommendation.action == "approve"
+
+    recommendation = recommend_triage_action(
+        status="failed",
+        evidence=LineageEvidence(candidate_commit="abc", similar_failure_count=3),
+    )
+    assert recommendation.action == "replay"
+
+
+def test_approval_evidence_packet_includes_candidate_and_accepted_hash():
+    packet = approval_evidence_packet(
+        run_id="run-170",
+        links=[
+            {"role": "candidate", "commit_hash": "abc111"},
+            {"role": "accepted", "commit_hash": "def222"},
+        ],
+        lineage_summary="candidate descends from accepted baseline",
+    )
+
+    assert packet["accepted_commit_hash"] == "def222"
+    assert packet["candidate_commit_hash"] == "abc111"
+    assert "accepted baseline" in packet["lineage_summary"]

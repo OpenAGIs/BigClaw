@@ -1,6 +1,15 @@
-from bigclaw.connectors import SourceIssue
+from bigclaw.connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue
 from bigclaw.mapping import map_source_issue_to_task, map_priority
 from bigclaw.models import Priority
+
+
+def test_connectors_fetch_minimum_issue():
+    connectors = [GitHubConnector(), LinearConnector(), JiraConnector()]
+    for connector in connectors:
+        issues = connector.fetch_issues("OpenAGIs/BigClaw", ["Todo"])
+        assert len(issues) >= 1
+        assert issues[0].source == connector.name
+        assert issues[0].title
 
 
 def test_map_priority():

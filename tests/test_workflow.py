@@ -3,7 +3,9 @@ from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import APPROVAL_RECORDED_EVENT, GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit
+from bigclaw.pilot import PilotImplementationResult, PilotKPI, render_pilot_implementation_report
 from bigclaw.reports import PilotMetric, PilotScorecard
+from bigclaw.validation_policy import enforce_validation_report_policy
 from bigclaw.workflow import AcceptanceGate, WorkflowEngine, WorkpadJournal
 
 
@@ -308,3 +310,50 @@ def test_workflow_engine_writes_repo_sync_audit_report_and_records_failure_categ
     assert "repo.pr-freshness" in audit_actions
     assert entries[0]["artifacts"][0]["name"] == "repo-sync-audit"
     assert entries[0]["closeout"]["repo_sync_audit"]["sync"]["failure_category"] == "divergence"
+
+
+def test_big602_validation_policy_blocks_issue_close_without_required_reports():
+    decision = enforce_validation_report_policy(["task-run", "replay"])
+
+    assert decision.allowed_to_close is False
+    assert decision.status == "blocked"
+    assert "benchmark-suite" in decision.missing_reports
+
+
+def test_big602_validation_policy_allows_issue_close_when_reports_complete():
+    decision = enforce_validation_report_policy(["task-run", "replay", "benchmark-suite"])
+
+    assert decision.allowed_to_close is True
+    assert decision.status == "ready"
+
+
+def test_big701_pilot_ready_when_kpis_pass_and_no_incidents():
+    result = PilotImplementationResult(
+        customer="Design Partner A",
+        environment="production",
+        production_runs=12,
+        incidents=0,
+        kpis=[
+            PilotKPI(name="automation-coverage", target=80, actual=86),
+            PilotKPI(name="lead-time-hours", target=6, actual=5, higher_is_better=False),
+        ],
+    )
+
+    assert result.kpi_pass_rate == 100.0
+    assert result.ready is True
+
+
+def test_big701_render_pilot_report_contains_readiness_fields():
+    result = PilotImplementationResult(
+        customer="Design Partner B",
+        environment="staging",
+        production_runs=0,
+        incidents=1,
+        kpis=[PilotKPI(name="automation-coverage", target=80, actual=72)],
+    )
+
+    report = render_pilot_implementation_report(result)
+
+    assert "Pilot Implementation Report" in report
+    assert "Ready: False" in report
+    assert "KPI Pass Rate: 0.0%" in report
