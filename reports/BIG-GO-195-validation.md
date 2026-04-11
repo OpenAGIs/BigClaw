@@ -46,6 +46,7 @@ in-branch Python tooling.
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \) -print | sort`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/local-issues.json >/dev/null`
 
 ## Validation Results
 
@@ -90,6 +91,29 @@ Result:
 ```text
 ok  	bigclaw-go/internal/regression	0.493s
 ```
+
+### Tracker JSON shape
+
+Command:
+
+```bash
+python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/local-issues.json >/dev/null
+```
+
+Result:
+
+```text
+exit 0
+```
+
+## Validation Rerun
+
+Date: 2026-04-11
+
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \) -print | sort` -> `none`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` -> `none`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` -> `ok   bigclaw-go/internal/regression 0.198s`
+- `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/local-issues.json >/dev/null` -> `exit 0`
 
 ## Git
 

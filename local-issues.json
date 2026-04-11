@@ -7787,6 +7787,27 @@
       "state": "Done",
       "title": "Residual tooling Python sweep I",
       "updated_at": "2026-04-08T21:12:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Completed the BIG-GO-195 residual tooling Python sweep lane.\n\nWhat changed:\n- added `bigclaw-go/internal/regression/big_go_195_zero_python_guard_test.go` to keep the repository Python-free, keep `scripts` and `bigclaw-go/scripts` Python-free, and keep retired root build helpers absent.\n- added `bigclaw-go/docs/reports/big-go-195-python-asset-sweep.md` plus `reports/BIG-GO-195-status.json` and `reports/BIG-GO-195-validation.md` lane artifacts.\n- replaced the carried-over `.symphony/workpad.md` with an issue-specific plan, acceptance criteria, and validation log.\n\nValidation:\n- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sort` -> no output\n- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` -> no output\n- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` -> `ok   bigclaw-go/internal/regression 0.493s`\n\nCommit SHA:\n- `8f33d4ab`\n\nBranch:\n- `BIG-GO-195`",
+          "created_at": "2026-04-09T02:18:41Z"
+        }
+      ],
+      "created_at": "2026-04-09T02:18:41Z",
+      "description": "Reduce Python tooling, build helpers, and dev utilities still checked in.",
+      "id": "big-go-195",
+      "identifier": "BIG-GO-195",
+      "labels": [
+        "go-onlypython-removallegacy-normalized"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Residual tooling Python sweep O",
+      "updated_at": "2026-04-09T02:18:41Z"
     }
   ]
 }

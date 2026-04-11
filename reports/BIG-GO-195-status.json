@@ -44,12 +44,14 @@
     "commands": [
       "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \\) -print | sort",
       "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'",
+      "python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/local-issues.json >/dev/null"
     ],
     "results": {
       "repo_python_or_build_helper_inventory": "none",
       "tooling_dir_python_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.493s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.198s",
+      "local_issue_tracker_json": "exit 0"
     }
   },
   "notes": [

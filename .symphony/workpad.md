@@ -33,6 +33,7 @@
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \) -print | sort`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/local-issues.json >/dev/null`
 
 ## Execution Notes
 
@@ -43,3 +44,8 @@
 - 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \) -print | sort` produced no output.
 - 2026-04-09: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` produced no output.
 - 2026-04-09: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 0.493s`.
+- 2026-04-09: `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/local-issues.json >/dev/null` returned `exit 0` after adding the checked-in `BIG-GO-195` tracker entry in state `Done`.
+- 2026-04-11: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name 'setup.py' -o -name 'pyproject.toml' \) -print | sort` produced no output.
+- 2026-04-11: `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort` produced no output.
+- 2026-04-11: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO195(ToolingRepositoryHasNoPythonFiles|ResidualToolingDirectoriesStayPythonFree|RetiredBuildHelpersRemainAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 0.198s`.
+- 2026-04-11: `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-195/local-issues.json >/dev/null` returned `exit 0`.
