@@ -53,8 +53,8 @@
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-256 changes."
+    "type": "none",
+    "summary": "No remaining blocker. The repository-wide physical Python file count was already zero in this workspace before BIG-GO-256 changes, so the lane completed as regression hardening and evidence capture."
   },
   "notes": [
     "This lane records the remaining support assets as already Python-free and ties them to the retained native examples, report artifacts, and helper entrypoints.",
