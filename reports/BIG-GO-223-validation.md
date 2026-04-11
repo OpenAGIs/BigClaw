@@ -16,6 +16,10 @@ The checked-out workspace was already at a repository-wide Python file count of
 The delivered work hardens that zero-Python baseline with a lane-specific Go
 regression guard and sweep report.
 
+The required pre-code workpad for this lane was written to
+`.symphony/workpad.md`, but that file is a shared rolling workpad on `main`
+and later lane activity has since replaced its contents.
+
 ## Remaining Python Asset Inventory
 
 - Repository-wide physical `.py` files: `none`
@@ -87,7 +91,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-223/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.166s
+ok  	bigclaw-go/internal/regression	3.215s
 ```
 
 ## Git

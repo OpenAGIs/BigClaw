@@ -11,7 +11,10 @@
     "push_target": "origin/main"
   },
   "artifacts": {
-    "workpad": ".symphony/workpad.md",
+    "workpad": {
+      "path": ".symphony/workpad.md",
+      "note": "Required pre-code workpad was written here for BIG-GO-223, but this file is a shared rolling workpad on main and now contains a newer lane."
+    },
     "lane_report": "bigclaw-go/docs/reports/big-go-223-python-asset-sweep.md",
     "regression_guard": "bigclaw-go/internal/regression/big_go_223_zero_python_guard_test.go",
     "validation_report": "reports/BIG-GO-223-validation.md"
@@ -48,7 +51,7 @@
     "results": {
       "repo_py_inventory": "(no output)",
       "priority_dir_inventory": "(no output)",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.166s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.215s"
     }
   },
   "blocker": {
