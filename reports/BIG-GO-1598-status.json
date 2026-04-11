@@ -1,0 +1,59 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1598",
+    "title": "Go-only sweep refill BIG-GO-1598",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1598'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1598-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1598-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1598_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "assigned_focus_paths": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/product/dashboard_run_contract.go",
+    "bigclaw-go/internal/product/dashboard_run_contract_test.go",
+    "bigclaw-go/internal/queue/memory_queue.go",
+    "bigclaw-go/internal/triage/repo.go",
+    "bigclaw-go/internal/api/server.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/planning/planning.go",
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/api/live_shadow_surface.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find src/bigclaw tests -type f -name '*.py' 2>/dev/null | sort",
+      "for path in src/bigclaw/dashboard_run_contract.py src/bigclaw/memory.py src/bigclaw/repo_commits.py src/bigclaw/run_detail.py src/bigclaw/workspace_bootstrap_validation.py tests/test_dsl.py tests/test_live_shadow_scorecard.py tests/test_planning.py; do test ! -e \"$path\" || echo \"present: $path\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1598(RepositoryHasNoPythonFiles|AssignedFocusPathsRemainAbsent|GoOwnedReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "assigned_focus_paths": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t6.176s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1598 changes."
+  },
+  "notes": [
+    "This lane documents the already-empty assigned Python asset slice and hardens the Go-only state with regression coverage.",
+    "Baseline HEAD before lane changes was `36121df8`."
+  ]
+}
