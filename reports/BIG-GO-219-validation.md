@@ -91,8 +91,9 @@ ok  	bigclaw-go/internal/regression	0.203s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `0d52d7ec`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-219'`
-- Final pushed lane commit: see `git log -1 --oneline`
+- Remote `main` advanced to `9e66da7d` before the first push attempt, so the
+  lane commit was rebased once during closeout.
+- Final pushed lane commit: `30d2edeb` (`BIG-GO-219: add overlooked auxiliary python sweep guard`)
 - Push target: `origin/main`
 
 ## Residual Risk
