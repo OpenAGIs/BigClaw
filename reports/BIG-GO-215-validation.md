@@ -74,8 +74,8 @@ ok  	bigclaw-go/internal/regression	0.199s
 
 ## Git
 
-- Commit: `b179efede9d2bbd5433618f203fe2cdabb070ca2`
-- Push: `git push origin HEAD:refs/heads/main` -> `4176ed6b..b179efed`
+- Commit history: preserved in git as `BIG-GO-215`-prefixed commits for this lane.
+- Push: `git push origin HEAD:refs/heads/main` succeeded for the landed lane updates.
 
 ## Residual Risk
 
