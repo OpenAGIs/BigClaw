@@ -60,7 +60,7 @@ The active Go/native replacement surface covering this tranche is:
 - `for path in src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/audit_events.py src/bigclaw/collaboration.py src/bigclaw/console_ia.py src/bigclaw/design_system.py src/bigclaw/evaluation.py src/bigclaw/run_detail.py src/bigclaw/runtime.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done`
   Result: each assigned tranche-17 path reported `absent`.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.198s`
+  Result: `ok  	bigclaw-go/internal/regression	0.204s`
 
 ## Residual Risk
 

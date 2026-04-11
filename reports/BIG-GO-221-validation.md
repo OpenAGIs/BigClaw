@@ -65,7 +65,7 @@ find /Users/openagi/code/bigclaw-workspaces/BIG-GO-221 -path '*/.git' -prune -o 
 Result:
 
 ```text
-none
+no output
 ```
 
 ### Assigned tranche-17 path inventory
@@ -101,14 +101,15 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.198s
+ok  	bigclaw-go/internal/regression	0.204s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `ef527393`
-- Final pushed lane commit: `9e66da7d BIG-GO-221: harden src bigclaw tranche 17 sweep`
+- Latest local `BIG-GO-221` commit before the final push:
+  `git log --oneline --grep 'BIG-GO-221' -1`
 - Push target: `origin/main`
 - Remote verification after later mainline advances: `30d2edeb81bec759c57f86f962de095b268fecb5 refs/heads/main`
 

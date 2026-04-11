@@ -1,45 +1,34 @@
-# BIG-GO-228 Workpad
+# BIG-GO-221 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide Python asset inventory and the core broad-sweep
-   residual directories relevant to this lane: `src/bigclaw`, `tests`,
-   `scripts`, and `bigclaw-go/scripts`.
-2. Add the lane-scoped artifacts for `BIG-GO-228` so this unattended run
-   records the current zero-Python baseline and the retained Go/native
-   replacement paths:
-   - `bigclaw-go/docs/reports/big-go-228-python-asset-sweep.md`
-   - `bigclaw-go/internal/regression/big_go_228_zero_python_guard_test.go`
-   - `reports/BIG-GO-228-validation.md`
-   - `reports/BIG-GO-228-status.json`
-3. Run the targeted validation commands, record exact commands and results, then
-   commit and push the scoped lane update to the remote branch.
+1. Verify the current `BIG-GO-221` artifacts and lane metadata against the
+   checked-out repository state.
+2. Re-run the issue-targeted validation commands for the residual
+   `src/bigclaw` tranche-17 Python sweep and capture the exact outcomes.
+3. Reconcile any stale metadata introduced by later lane activity, then commit
+   and push the final `BIG-GO-221` branch tip to `origin/main`.
 
 ## Acceptance
 
-- `.symphony/workpad.md` exists and is specific to `BIG-GO-228` before code
-  edits.
-- The repository-wide physical Python inventory and the broad residual
-  directories are explicitly recorded for this checkout.
-- `BIG-GO-228` adds a focused Go regression guard that locks the repository and
-  the broad residual directories to a zero-Python state.
-- The lane report and validation report record the retained Go/native
-  replacement paths plus the exact validation commands and observed results.
-- The final change set stays scoped to the lane workpad, regression guard, and
-  issue reporting artifacts, then lands as a commit pushed to `origin`.
+- The active workpad, reports, and status metadata all reference
+  `BIG-GO-221` and the assigned residual `src/bigclaw` tranche-17 sweep.
+- The documented retired Python paths under `src/bigclaw` remain absent and
+  the repository-wide physical Python file inventory remains zero.
+- The targeted regression guard for `BIG-GO-221` passes in the current
+  checkout, and the exact commands plus results are recorded.
+- The final lane tip is committed and pushed.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-228 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-228/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO228(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-221 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__init__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__main__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/audit_events.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/collaboration.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/console_ia.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/design_system.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/evaluation.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/run_detail.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'`
 
 ## Execution Notes
 
-- 2026-04-11: Initial inspection found no tracked physical `.py` files anywhere
-  in this checkout.
-- 2026-04-11: The broad residual directories `src/bigclaw`, `tests`, `scripts`,
-  and `bigclaw-go/scripts` were also already Python-free.
-- 2026-04-11: This lane therefore hardens the zero-Python baseline with
-  issue-scoped evidence and regression coverage rather than deleting in-branch
-  Python assets.
+- 2026-04-11: The lane-specific sweep artifacts already exist in this checkout;
+  this continuation focuses on validating the current state and reconciling
+  stale metadata.
+- 2026-04-11: Repository-wide physical Python file count remains `0`, so the
+  lane continues to document and guard an already-clean baseline.

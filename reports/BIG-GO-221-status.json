@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "9e66da7d BIG-GO-221: harden src bigclaw tranche 17 sweep",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-221' -1",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -50,9 +50,9 @@
       "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'"
     ],
     "results": {
-      "repo_py_inventory": "none",
+      "repo_py_inventory": "no output",
       "assigned_path_inventory": "absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__init__.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__main__.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/audit_events.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/collaboration.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/console_ia.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/design_system.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/evaluation.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/run_detail.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.198s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.204s"
     }
   },
   "blocker": {
@@ -63,6 +63,6 @@
     "This lane documents the tranche-17 retired src/bigclaw module surface and hardens its Go-only state.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `ef527393`.",
-    "The final pushed lane commit was `9e66da7d BIG-GO-221: harden src bigclaw tranche 17 sweep`."
+    "Use `git log --oneline --grep 'BIG-GO-221' -1` to resolve the latest lane commit at push time."
   ]
 }
