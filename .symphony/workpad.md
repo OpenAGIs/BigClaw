@@ -24,3 +24,4 @@
 - 2026-04-12: `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-254 --json url,title,state,number` failed with exit code `4` because `gh` is unauthenticated in this workspace.
 - 2026-04-12: The push output exposed the deterministic PR creation URL `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-254`; this was recorded in the issue artifacts because PR API access is blocked locally.
 - 2026-04-12: The public compare page `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-254` is accessible anonymously and shows `7 commits` and `8 files changed`, which confirms the pushed branch is reviewable even though PR creation still requires GitHub auth.
+- 2026-04-12: Symphony's local tracker store does not contain a `BIG-GO-254` entry in active or done states, so there is no repo-local issue record left to transition from this workspace.

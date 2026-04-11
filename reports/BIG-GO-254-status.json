@@ -42,12 +42,13 @@
       "pr_query": "gh exited with code 4 requesting `gh auth login` or `GH_TOKEN`.",
       "pr_creation_url": "https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-254",
       "public_compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-254",
-      "public_compare_summary": "Anonymous GitHub compare page rendered base main vs head BIG-GO-254 with 7 commits and 8 files changed."
+      "public_compare_summary": "Anonymous GitHub compare page rendered base main vs head BIG-GO-254 with 7 commits and 8 files changed.",
+      "local_tracker_check": "local_issue_list(states=[\"Todo\",\"In Progress\",\"Blocked\"]) did not return a BIG-GO-254 record."
     }
   },
   "blocker": {
     "type": "github-auth",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-254 changes. Branch push is complete and synced, but GitHub PR creation/querying is blocked because `gh` is not authenticated and no API token is present in the workspace."
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-254 changes. Branch push is complete and synced, but GitHub PR creation/querying is blocked because `gh` is not authenticated and no API token is present in the workspace. Symphony's local tracker store also has no BIG-GO-254 record to transition."
   },
   "notes": [
     "This lane replaces the residual repo-root bigclawctl go-run wrapper with a cached compiled launcher.",
@@ -57,6 +58,7 @@
     "A retry with HTTP/1.1 completed successfully and published branch BIG-GO-254; use `git rev-parse BIG-GO-254` for the current tip.",
     "GitHub CLI is installed but unauthenticated in this workspace (`gh pr list` returned exit code 4 asking for `gh auth login` or `GH_TOKEN`).",
     "The successful branch push returned the PR creation URL https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-254.",
-    "The public compare page https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-254 is accessible anonymously and shows the branch is reviewable against main."
+    "The public compare page https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-254 is accessible anonymously and shows the branch is reviewable against main.",
+    "Symphony's local tracker store does not contain a BIG-GO-254 record, so no additional local issue-state closeout is available from this workspace."
   ]
 }

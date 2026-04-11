@@ -38,6 +38,7 @@ compiled-binary launcher.
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-254 --json url,title,state,number`
 - Public compare page: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-254`
+- Symphony local tracker active-state check: `local_issue_list(states=[\"Todo\",\"In Progress\",\"Blocked\"])`
 
 ## Validation Results
 
@@ -159,6 +160,20 @@ Observed result:
 GitHub renders the public compare page anonymously, showing base `main`, head `BIG-GO-254`, `7 commits`, and `8 files changed`.
 ```
 
+### Symphony local tracker check
+
+Command:
+
+```text
+local_issue_list(states=["Todo","In Progress","Blocked"])
+```
+
+Result:
+
+```text
+No `BIG-GO-254` record exists in the local tracker store, so there is no repo-local issue state left to update from this workspace.
+```
+
 ## Git
 
 - Branch: `BIG-GO-254`
@@ -174,3 +189,5 @@ GitHub renders the public compare page anonymously, showing base `main`, head `B
   authenticated and no `GH_TOKEN`/`GITHUB_TOKEN` is present.
 - The branch is still publicly reviewable through the compare page even without
   GitHub CLI authentication.
+- Symphony's local tracker store does not have a `BIG-GO-254` entry, so there
+  is no additional local issue-state transition available.
