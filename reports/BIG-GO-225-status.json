@@ -2,12 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-225",
     "title": "Residual tooling Python sweep R",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
     "baseline_commit": "ef527393",
-    "final_commit": "PENDING",
+    "implementation_commit": "98aa8405",
     "push_target": "origin/main"
   },
   "artifacts": {

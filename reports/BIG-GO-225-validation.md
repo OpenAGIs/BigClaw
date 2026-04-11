@@ -106,7 +106,7 @@ exit 0
 
 - Branch at start: `main`
 - Baseline commit before edits: `ef527393`
-- Final landing commit: `PENDING`
+- Issue implementation commit: `98aa8405`
 - Push target: `origin/main`
 
 ## Residual Risk
