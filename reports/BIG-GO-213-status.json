@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-213",
-    "latest_commit": "be344e9",
+    "latest_commit": "20703f4",
     "push_target": "origin/BIG-GO-213"
   },
   "artifacts": {
