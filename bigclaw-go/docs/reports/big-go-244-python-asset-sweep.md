@@ -53,4 +53,4 @@ deleting in-branch `.py` assets.
 - `find scripts scripts/ops bigclaw-go/scripts bigclaw-go/cmd -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the residual script, wrapper, and CLI-helper surface remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO244(RepositoryHasNoPythonFiles|ResidualScriptAndCLIHelperSurfacesStayPythonFree|SupportedWrapperAndCLIPathsRemainAvailable|WrapperInventoryMatchesContract|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.207s`
+  Result: `ok  	bigclaw-go/internal/regression	0.187s`

@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "baseline_commit": "a059fd098901ebf40e23a4c100ffdb15f78017dc",
-    "latest_commit": "pending",
+    "latest_commit": "tracked in git history after BIG-GO-244 final sync",
     "push_target": "origin/main",
     "compare_url": ""
   },
@@ -47,11 +47,12 @@
     "results": {
       "repository_py_inventory": "none",
       "focused_surface_py_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.207s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
     }
   },
   "notes": [
     "The live branch baseline was already Python-free before BIG-GO-244 changes.",
-    "This lane records the supported shell-wrapper and Go-CLI helper contract instead of deleting in-branch Python files."
+    "This lane records the supported shell-wrapper and Go-CLI helper contract instead of deleting in-branch Python files.",
+    "The first push attempt was rejected because origin/main advanced; the lane was rebased and revalidated before final push."
   ]
 }

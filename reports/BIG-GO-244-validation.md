@@ -87,7 +87,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-244/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.207s
+ok  	bigclaw-go/internal/regression	0.187s
 ```
 
 ## Git
@@ -97,6 +97,9 @@ ok  	bigclaw-go/internal/regression	0.207s
 - Lane commits: `git log --oneline --grep 'BIG-GO-244'`
 - Final pushed lane commit: `git log --oneline --grep 'BIG-GO-244'`
 - Push target: `origin/main`
+- Note: the original push attempt was rejected after `origin/main` advanced, so
+  the final regression command/result above reflects the post-rebase validation
+  run.
 
 ## Residual Risk
 
