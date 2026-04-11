@@ -97,7 +97,9 @@ ok  	bigclaw-go/internal/regression	0.203s
   (`BIG-GO-219: add overlooked auxiliary python sweep guard`)
 - Metadata sync commit: `5cc45726`
   (`BIG-GO-219: finalize validation metadata`)
-- Final pushed tip: `5cc45726`
+- Pushed tip sync commit: `b12a01f2`
+  (`BIG-GO-219: record pushed tip`)
+- Final pushed tip: `b12a01f2`
 - Push target: `origin/main`
 
 ## Residual Risk
