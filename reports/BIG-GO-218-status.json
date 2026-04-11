@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-218",
-    "latest_commit": "pending",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-218'",
     "push_target": "origin/BIG-GO-218"
   },
   "artifacts": {
