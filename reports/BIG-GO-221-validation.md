@@ -108,9 +108,11 @@ ok  	bigclaw-go/internal/regression	0.166s
 
 - Branch: `main`
 - Baseline HEAD before refresh commit: `6acdc7c9`
-- Latest landed `BIG-GO-221` commit: `af83e6ce BIG-GO-221: record mainline push blocker`
+- Latest landed `BIG-GO-221` commit: resolve with
+  `git log --oneline --grep 'BIG-GO-221' -1`
 - Push target: `origin/main`
-- Remote verification after push: `af83e6cebcdcc5c8064b960632e557a57d5a69eb refs/heads/main`
+- Remote verification after push: resolve with
+  `git ls-remote --heads origin main`
 
 ## Residual Risk
 

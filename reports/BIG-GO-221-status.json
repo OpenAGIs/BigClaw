@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "af83e6ce BIG-GO-221: record mainline push blocker",
+    "latest_commit": "resolve with `git log --oneline --grep 'BIG-GO-221' -1`",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -60,6 +60,6 @@
     "This lane documents the tranche-17 retired src/bigclaw module surface and hardens its Go-only state.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before the 2026-04-12 landing refresh was `6acdc7c9`.",
-    "The lane ultimately landed on `origin/main` at `af83e6cebcdcc5c8064b960632e557a57d5a69eb`."
+    "The lane ultimately landed on `origin/main`; resolve the current remote tip with `git ls-remote --heads origin main`."
   ]
 }
