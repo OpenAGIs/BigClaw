@@ -1,0 +1,65 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-236",
+    "title": "Residual support assets Python sweep S",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-236'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-236-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-236-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_236_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "support_asset_dirs": {
+      "bigclaw-go/examples": [],
+      "bigclaw-go/docs/reports/broker-failover-stub-artifacts": [],
+      "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts": [],
+      "bigclaw-go/docs/reports/live-shadow-runs": [],
+      "bigclaw-go/docs/reports/live-validation-runs": [],
+      "scripts/ops": []
+    }
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/regression/big_go_236_zero_python_guard_test.go",
+    "bigclaw-go/examples/shadow-task.json",
+    "bigclaw-go/examples/shadow-task-budget.json",
+    "bigclaw-go/examples/shadow-task-validation.json",
+    "bigclaw-go/examples/shadow-corpus-manifest.json",
+    "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/replay-capture.json",
+    "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts/contention-then-takeover-live/node-a-audit.jsonl",
+    "bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/shadow-matrix-report.json",
+    "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/examples bigclaw-go/docs/reports/broker-failover-stub-artifacts bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts bigclaw-go/docs/reports/live-shadow-runs bigclaw-go/docs/reports/live-validation-runs scripts/ops -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO236(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "support_asset_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.149s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-236 changes."
+  },
+  "notes": [
+    "This lane documents an empty remaining Python asset inventory and hardens the Go-only state around examples, fixture bundles, demos, and support helpers.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `7872e4fa`."
+  ]
+}
