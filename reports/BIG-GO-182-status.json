@@ -1,0 +1,83 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-182",
+    "title": "Residual tests Python sweep AA",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-182'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-182-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_182_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-182-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "tests": [],
+      "bigclaw-go/internal/api": [],
+      "bigclaw-go/internal/contract": [],
+      "bigclaw-go/internal/planning": [],
+      "bigclaw-go/internal/queue": [],
+      "bigclaw-go/internal/repo": [],
+      "bigclaw-go/internal/collaboration": [],
+      "bigclaw-go/internal/product": [],
+      "bigclaw-go/internal/triage": [],
+      "bigclaw-go/internal/workflow": []
+    },
+    "retired_python_test_paths": [
+      "tests/conftest.py",
+      "tests/test_cross_process_coordination_surface.py",
+      "tests/test_execution_contract.py",
+      "tests/test_orchestration.py",
+      "tests/test_planning.py",
+      "tests/test_queue.py",
+      "tests/test_repo_board.py",
+      "tests/test_repo_collaboration.py",
+      "tests/test_repo_gateway.py",
+      "tests/test_repo_governance.py",
+      "tests/test_repo_links.py",
+      "tests/test_repo_registry.py",
+      "tests/test_repo_rollout.py",
+      "tests/test_repo_triage.py"
+    ]
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go",
+    "bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go",
+    "bigclaw-go/internal/api/coordination_surface.go",
+    "bigclaw-go/internal/contract/execution_test.go",
+    "bigclaw-go/internal/workflow/orchestration_test.go",
+    "bigclaw-go/internal/planning/planning_test.go",
+    "bigclaw-go/internal/queue/sqlite_queue_test.go",
+    "bigclaw-go/internal/repo/repo_surfaces_test.go",
+    "bigclaw-go/internal/collaboration/thread_test.go",
+    "bigclaw-go/internal/product/clawhost_rollout_test.go",
+    "bigclaw-go/internal/triage/repo_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find tests bigclaw-go/internal/api bigclaw-go/internal/contract bigclaw-go/internal/planning bigclaw-go/internal/queue bigclaw-go/internal/repo bigclaw-go/internal/collaboration bigclaw-go/internal/product bigclaw-go/internal/triage bigclaw-go/internal/workflow -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO182(RepositoryHasNoPythonFiles|ResidualTestDirectoriesStayPythonFree|RetiredPythonTestTreeRemainsAbsent|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.213s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-182 changes."
+  },
+  "notes": [
+    "This lane records the absent root tests tree together with the Go-heavy replacement test directories that inherited those contracts.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `36121df8`."
+  ]
+}
