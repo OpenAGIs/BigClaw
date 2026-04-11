@@ -40,6 +40,14 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `130`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_repo_governance.py tests/test_planning.py tests/test_execution_flow.py tests/test_workflow.py tests/test_reports.py tests/test_observability.py tests/test_control_center.py tests/test_followup_digests.py tests/test_operations.py -q`
+  - Result: passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `128`
 
 ### Notes
 
@@ -48,5 +56,6 @@
 - Removed the isolated Python refill and repo-registry surfaces plus their dedicated tests: `src/bigclaw/parallel_refill.py`, `src/bigclaw/repo_registry.py`, `tests/test_parallel_refill.py`, `tests/test_repo_registry.py`.
 - Removed the self-contained Python UI review surface plus its dedicated test and stale package/planner references: `src/bigclaw/ui_review.py`, `tests/test_ui_review.py`, related exports in `src/bigclaw/__init__.py`, and stale links in `src/bigclaw/planning.py`.
 - Migrated the audit event constants/spec metadata into `src/bigclaw/observability.py`, updated Python consumers to import from that shared surface, folded key audit assertions into existing runtime tests, and removed `src/bigclaw/audit_events.py` plus `tests/test_audit_events.py`.
-- Python file count changed from `138` to `130`.
+- Inlined the remaining permission-matrix primitives into `src/bigclaw/repo_governance.py`, updated package/planning references, and removed the orphaned Python execution-contract surface plus its dedicated test: `src/bigclaw/execution_contract.py`, `tests/test_execution_contract.py`.
+- Python file count changed from `138` to `128`.
 - Residual risk: some docs and historical validation reports still mention deleted Python files and tests; this change intentionally leaves those history/documentation references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.

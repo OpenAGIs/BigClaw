@@ -412,7 +412,7 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="approval-contract",
-                        target="src/bigclaw/execution_contract.py",
+                        target="src/bigclaw/repo_governance.py",
                         capability="ops-control",
                         note="approval permission and API role coverage contract",
                     ),

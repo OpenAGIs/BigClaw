@@ -3,7 +3,53 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from .execution_contract import ExecutionPermission, ExecutionPermissionMatrix, ExecutionRole
+
+@dataclass(frozen=True)
+class ExecutionPermission:
+    name: str
+    resource: str
+    actions: List[str] = field(default_factory=list)
+    scopes: List[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ExecutionRole:
+    name: str
+    personas: List[str] = field(default_factory=list)
+    granted_permissions: List[str] = field(default_factory=list)
+    scope_bindings: List[str] = field(default_factory=list)
+    escalation_target: str = ""
+
+
+@dataclass
+class PermissionCheckResult:
+    allowed: bool
+    granted_permissions: List[str] = field(default_factory=list)
+    missing_permissions: List[str] = field(default_factory=list)
+
+
+class ExecutionPermissionMatrix:
+    def __init__(self, permissions: List[ExecutionPermission], roles: List[ExecutionRole] | None = None) -> None:
+        self.permissions = {permission.name: permission for permission in permissions}
+        self.roles = {role.name: role for role in roles or []}
+
+    def evaluate(self, required_permissions: List[str], granted_permissions: List[str]) -> PermissionCheckResult:
+        granted_set = {permission for permission in granted_permissions if permission in self.permissions}
+        missing = [permission for permission in required_permissions if permission not in granted_set]
+        return PermissionCheckResult(
+            allowed=not missing,
+            granted_permissions=sorted(granted_set),
+            missing_permissions=missing,
+        )
+
+    def evaluate_roles(self, required_permissions: List[str], actor_roles: List[str]) -> PermissionCheckResult:
+        granted_permissions = {
+            permission
+            for role_name in actor_roles
+            for permission in self.roles.get(role_name, ExecutionRole(name=role_name)).granted_permissions
+            if permission in self.permissions
+        }
+        return self.evaluate(required_permissions=required_permissions, granted_permissions=sorted(granted_permissions))
 
 
 REPO_ACTION_PERMISSIONS = [

@@ -442,7 +442,7 @@ def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
         "src/bigclaw/operations.py",
         "tests/test_control_center.py",
         "tests/test_operations.py",
-        "src/bigclaw/execution_contract.py",
+        "src/bigclaw/repo_governance.py",
         "src/bigclaw/workflow.py",
         "tests/test_workflow.py",
         "tests/test_execution_flow.py",
