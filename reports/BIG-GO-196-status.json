@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-196",
     "title": "Residual support assets Python sweep O",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "BIG-GO-196",
-    "latest_commit": "pending",
+    "latest_commit": "use git rev-parse --short HEAD on BIG-GO-196",
     "push_target": "origin/BIG-GO-196"
   },
   "artifacts": {
@@ -58,6 +58,8 @@
   "notes": [
     "This lane records the support-asset surfaces as already Python-free and ties them to retained Go/native reports, examples, and helper entrypoints.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `36121df8`."
+    "Baseline HEAD before lane changes was `36121df8`.",
+    "Implementation commit was `c1aa0212 BIG-GO-196 add support asset python sweep guard`.",
+    "The branch was pushed with `git push -u origin BIG-GO-196`."
   ]
 }

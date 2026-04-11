@@ -97,9 +97,10 @@ ok  	bigclaw-go/internal/regression	0.164s
 
 - Branch: `BIG-GO-196`
 - Baseline HEAD before lane commit: `36121df8`
-- Lane commit details: pending
-- Final pushed lane commit: pending
+- Lane commit: `c1aa0212 BIG-GO-196 add support asset python sweep guard`
+- Final pushed lane commit: use `git rev-parse --short HEAD` on `BIG-GO-196`
 - Push target: `origin/BIG-GO-196`
+- Remote branch tracking: `git push -u origin BIG-GO-196`
 
 ## Residual Risk
 
