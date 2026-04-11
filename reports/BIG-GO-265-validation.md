@@ -69,6 +69,4 @@ ok  	bigclaw-go/internal/regression	1.720s
 ## Git
 
 - Branch: `BIG-GO-265`
-- Commit: `57c5366112bdf218c0bb44edd6f5e4d249f3247a` (`BIG-GO-265: record validation git closeout`)
 - Push target: `origin/BIG-GO-265`
-- Remote verification: `git rev-parse HEAD && git rev-parse origin/BIG-GO-265` -> both resolved to `57c5366112bdf218c0bb44edd6f5e4d249f3247a`
