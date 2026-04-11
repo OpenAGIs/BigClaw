@@ -113,7 +113,8 @@ bash scripts/dev_bootstrap.sh
 Repository hygiene:
 
 ```bash
-pre-commit run --all-files
+git diff --check
+bash scripts/ops/bigclawctl github-sync --help >/dev/null
 ```
 
 ## Quick verify

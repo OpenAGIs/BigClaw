@@ -1,3 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-205",
+    "title": "Residual tooling Python sweep P",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "git log --oneline --grep 'BIG-GO-205'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-205-validation.md",
+    "workpad": "reports/BIG-GO-205-workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-205-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_205_zero_python_guard_test.go"
+  },
+  "tooling_surface": {
+    "deleted": [
+      ".pre-commit-config.yaml"
+    ],
+    "retained": [
+      "Makefile",
+      "scripts/dev_bootstrap.sh",
+      "scripts/ops/bigclawctl",
+      "bigclaw-go/cmd/bigclawctl/main.go"
+    ]
+  },
+  "validation": {
+    "commands": [
+      "test ! -e .pre-commit-config.yaml",
+      "rg -n \"pre-commit|ruff\" README.md",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO205(ResidualPythonToolingConfigStaysAbsent|RootGoHelperSurfaceRemainsAvailable|LaneReportCapturesToolingSweep)$'"
+    ],
+    "results": {
+      "tooling_config_absent": "exit 0",
+      "readme_tooling_references": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.169s"
+    }
+  },
+  "notes": [
+    "This lane is scoped to the residual repo-root Python tooling configuration and README hygiene guidance only.",
+    "Baseline HEAD before lane changes was `465d7628`."
+  ]
+}
+*** Add File: /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/reports/BIG-GO-205-workpad.md
 # BIG-GO-205 Workpad
 
 ## Plan
