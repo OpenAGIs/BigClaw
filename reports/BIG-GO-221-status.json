@@ -1,0 +1,67 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-221",
+    "title": "Residual src/bigclaw Python sweep S",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log -1 --oneline",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-221-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-221-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_221_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "assigned_src_bigclaw_paths": [
+      "src/bigclaw/__init__.py",
+      "src/bigclaw/__main__.py",
+      "src/bigclaw/audit_events.py",
+      "src/bigclaw/collaboration.py",
+      "src/bigclaw/console_ia.py",
+      "src/bigclaw/design_system.py",
+      "src/bigclaw/evaluation.py",
+      "src/bigclaw/run_detail.py",
+      "src/bigclaw/runtime.py"
+    ]
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/regression/big_go_221_zero_python_guard_test.go",
+    "bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/internal/observability/audit.go",
+    "bigclaw-go/internal/observability/audit_spec.go",
+    "bigclaw-go/internal/collaboration/thread.go",
+    "bigclaw-go/internal/consoleia/consoleia.go",
+    "bigclaw-go/internal/designsystem/designsystem.go",
+    "bigclaw-go/internal/evaluation/evaluation.go",
+    "bigclaw-go/internal/observability/task_run.go",
+    "bigclaw-go/internal/worker/runtime.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "for path in src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/audit_events.py src/bigclaw/collaboration.py src/bigclaw/console_ia.py src/bigclaw/design_system.py src/bigclaw/evaluation.py src/bigclaw/run_detail.py src/bigclaw/runtime.py; do test ! -e \"$path\" && printf 'absent %s\\n' \"$path\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "assigned_path_inventory": "absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__init__.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__main__.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/audit_events.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/collaboration.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/console_ia.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/design_system.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/evaluation.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/run_detail.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.198s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-221 changes."
+  },
+  "notes": [
+    "This lane documents the tranche-17 retired src/bigclaw module surface and hardens its Go-only state.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `ef527393`."
+  ]
+}
