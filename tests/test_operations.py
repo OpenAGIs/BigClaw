@@ -8,7 +8,7 @@ from bigclaw.evaluation import (
     ReplayOutcome,
     ReplayRecord,
 )
-from bigclaw.models import Task
+from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import TaskRun
 from bigclaw.operations import (
     DashboardBuilder,
@@ -17,6 +17,7 @@ from bigclaw.operations import (
     DashboardWidgetSpec,
     OperationsAnalytics,
     build_repo_collaboration_metrics,
+    render_queue_control_center,
     render_operations_metric_spec,
     render_dashboard_builder_report,
     VersionedArtifact,
@@ -29,6 +30,7 @@ from bigclaw.operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
+from bigclaw.queue import PersistentTaskQueue
 from bigclaw.reports import SharedViewContext, SharedViewFilter
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
 
@@ -246,6 +248,76 @@ def test_build_repo_collaboration_metrics() -> None:
     assert metrics["accepted_commit_rate"] == 50.0
     assert metrics["discussion_density"] == 2.0
     assert metrics["accepted_lineage_depth_avg"] == 3.0
+
+
+def test_queue_control_center_summarizes_queue_and_execution_media(tmp_path: Path) -> None:
+    queue = PersistentTaskQueue(str(tmp_path / "queue.json"))
+    queue.enqueue(
+        Task(task_id="BIG-802-1", source="linear", title="top", description="", priority=Priority.P0, risk_level=RiskLevel.HIGH)
+    )
+    queue.enqueue(
+        Task(task_id="BIG-802-2", source="linear", title="mid", description="", priority=Priority.P1, risk_level=RiskLevel.MEDIUM)
+    )
+    queue.enqueue(
+        Task(task_id="BIG-802-3", source="linear", title="low", description="", priority=Priority.P2, risk_level=RiskLevel.LOW)
+    )
+
+    center = OperationsAnalytics().build_queue_control_center(
+        queue,
+        runs=[
+            {"task_id": "BIG-802-1", "status": "needs-approval", "medium": "vm"},
+            {"task_id": "BIG-802-2", "status": "approved", "medium": "browser"},
+            {"task_id": "BIG-802-4", "status": "approved", "medium": "docker"},
+        ],
+    )
+
+    report = render_queue_control_center(center)
+
+    assert center.queue_depth == 3
+    assert center.queued_by_priority == {"P0": 1, "P1": 1, "P2": 1}
+    assert center.queued_by_risk == {"low": 1, "medium": 1, "high": 1}
+    assert center.execution_media == {"vm": 1, "browser": 1, "docker": 1}
+    assert center.waiting_approval_runs == 1
+    assert center.blocked_tasks == ["BIG-802-1"]
+    assert center.queued_tasks == ["BIG-802-1", "BIG-802-2", "BIG-802-3"]
+    assert [action.action_id for action in center.actions["BIG-802-1"]] == [
+        "drill-down",
+        "export",
+        "add-note",
+        "escalate",
+        "retry",
+        "pause",
+        "reassign",
+        "audit",
+    ]
+    assert center.actions["BIG-802-1"][3].enabled is True
+    assert center.actions["BIG-802-1"][4].enabled is True
+    assert center.actions["BIG-802-1"][5].enabled is False
+    assert "# Queue Control Center" in report
+    assert "- Waiting Approval Runs: 1" in report
+    assert "- BIG-802-1" in report
+    assert "BIG-802-1: Drill Down [drill-down]" in report
+    assert "Escalate [escalate] state=enabled" in report
+    assert "Pause [pause] state=disabled target=BIG-802-1 reason=approval-blocked tasks should be escalated instead of paused" in report
+
+
+def test_queue_control_center_renders_shared_view_empty_state(tmp_path: Path) -> None:
+    queue = PersistentTaskQueue(str(tmp_path / "queue.json"))
+    center = OperationsAnalytics().build_queue_control_center(queue, runs=[])
+
+    report = render_queue_control_center(
+        center,
+        view=SharedViewContext(
+            filters=[SharedViewFilter(label="Team", value="operations")],
+            result_count=0,
+            empty_message="No queued work for the selected team.",
+        ),
+    )
+
+    assert "## View State" in report
+    assert "- State: empty" in report
+    assert "- Summary: No queued work for the selected team." in report
+    assert "- Team: operations" in report
 
 
 def test_render_and_bundle_operations_metric_spec(tmp_path: Path) -> None:
