@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-249",
     "title": "Residual auxiliary Python sweep U",
-    "state": "In Progress"
+    "state": "Completed"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pre-commit baseline 1729022a",
+    "latest_commit": "verified implementation a4b6ebab3c0f7d2fd2c384917c026a7370234895",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -43,7 +43,7 @@
     "results": {
       "repo_inventory": "none",
       "auxiliary_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.394s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.163s"
     }
   },
   "blocker": {
@@ -53,6 +53,7 @@
   "notes": [
     "This lane records hidden and nested auxiliary directories as already Python-free and ties them to retained non-Python evidence paths.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `1729022a`."
+    "Baseline HEAD before lane changes was `1729022a`.",
+    "Implementation was verified at `a4b6ebab3c0f7d2fd2c384917c026a7370234895` on 2026-04-12."
   ]
 }

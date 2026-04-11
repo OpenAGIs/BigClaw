@@ -39,3 +39,11 @@
 - 2026-04-12: `BIG-GO-248` therefore needs to harden the zero-Python baseline
   with issue-scoped regression and reporting artifacts instead of removing
   in-branch `.py` files.
+- 2026-04-12: Verified the issue implementation already exists at commit
+  `a4b6ebab3c0f7d2fd2c384917c026a7370234895`
+  (`BIG-GO-249: add auxiliary python sweep guard`) on `origin/main`.
+- 2026-04-12: Re-ran the lane validation commands from this workspace. Both
+  Python inventory scans returned no output, and `go test -count=1
+  ./internal/regression -run
+  'TestBIGGO249(RepositoryHasNoPythonFiles|HiddenNestedAuxiliaryDirectoriesStayPythonFree|NativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'`
+  passed in `0.163s`.

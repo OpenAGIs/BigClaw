@@ -85,15 +85,15 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-249/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	1.394s
+ok  	bigclaw-go/internal/regression	0.163s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `1729022a`
-- Lane commit details: `pending`
-- Final pushed lane commit: `pending`
+- Lane commit details: `a4b6ebab3c0f7d2fd2c384917c026a7370234895` (`BIG-GO-249: add auxiliary python sweep guard`)
+- Final pushed lane commit before metadata sync: `a4b6ebab3c0f7d2fd2c384917c026a7370234895`
 - Push target: `origin/main`
 
 ## Residual Risk
