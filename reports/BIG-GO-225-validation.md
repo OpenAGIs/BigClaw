@@ -85,7 +85,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.204s
+ok  	bigclaw-go/internal/regression	0.154s
 ```
 
 ### Status artifact JSON integrity
@@ -106,8 +106,9 @@ exit 0
 
 - Branch at start: `main`
 - Baseline commit before edits: `ef527393`
-- Issue implementation commit: `e2a3eff2`
-- Final metadata commit: `5151937d`
+- Issue implementation commit: `b73c1257`
+- Final metadata commit: `6dd9138c`
+- Validation refresh commit: `195a2188`
 - Push target: `origin/main`
 
 ## Residual Risk

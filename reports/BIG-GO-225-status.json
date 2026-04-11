@@ -7,8 +7,9 @@
   "branch": {
     "name": "main",
     "baseline_commit": "ef527393",
-    "implementation_commit": "e2a3eff2",
-    "final_metadata_commit": "5151937d",
+    "implementation_commit": "b73c1257",
+    "final_metadata_commit": "6dd9138c",
+    "validation_refresh_commit": "195a2188",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -39,7 +40,7 @@
       "python_file_inventory": "none",
       "pre_commit_config": "absent",
       "diff_check": "exit 0",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.204s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.154s",
       "status_json": "exit 0"
     }
   },
