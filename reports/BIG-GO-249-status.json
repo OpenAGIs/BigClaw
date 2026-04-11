@@ -43,7 +43,7 @@
     "results": {
       "repo_inventory": "none",
       "auxiliary_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.213s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.186s"
     }
   },
   "blocker": {
@@ -54,7 +54,6 @@
     "This lane records hidden and nested auxiliary directories as already Python-free and ties them to retained non-Python evidence paths.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `1729022a`.",
-    "Implementation was verified at `a4b6ebab3c0f7d2fd2c384917c026a7370234895` on 2026-04-12.",
-    "Latest metadata synchronization before tracker closeout was `5a8ead54bdd657398b842478d5a47849eeb6f31c`."
+    "Implementation was verified at `a4b6ebab3c0f7d2fd2c384917c026a7370234895` on 2026-04-12."
   ]
 }

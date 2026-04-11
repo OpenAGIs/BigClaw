@@ -42,7 +42,7 @@ The non-Python evidence surface validated by this lane remains:
 - `find .githooks .github .symphony docs/reports bigclaw-go/docs/reports/live-shadow-runs bigclaw-go/docs/reports/live-validation-runs -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \) 2>/dev/null | sort`
   Result: no output; the hidden and nested auxiliary directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO249(RepositoryHasNoPythonFiles|HiddenNestedAuxiliaryDirectoriesStayPythonFree|NativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	3.213s`
+  Result: `ok  	bigclaw-go/internal/regression	0.186s`
 
 ## Residual Risk
 

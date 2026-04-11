@@ -50,4 +50,4 @@
   Python inventory scans returned no output, and `go test -count=1
   ./internal/regression -run
   'TestBIGGO249(RepositoryHasNoPythonFiles|HiddenNestedAuxiliaryDirectoriesStayPythonFree|NativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  passed in `3.213s`.
+  passed in `0.186s`.
