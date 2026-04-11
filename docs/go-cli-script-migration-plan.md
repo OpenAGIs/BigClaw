@@ -8,37 +8,17 @@ helper surface limited to a small shell-only inventory.
 
 ## This Slice
 
-The implemented migration batches in this issue moved these entrypoints behind the Go CLI and
-retired the final root Python workspace shims.
+The implemented migration batches in this issue moved the repo-root and
+automation helper entrypoints behind the Go CLI and retired the final root
+workspace shims.
 
 `BIG-GO-1160` extends that migration evidence by hardening the benchmark, e2e,
-migration, and root-script sweep candidate set that previously included:
+migration, and root-script sweep candidate set that previously covered:
 
-- `bigclaw-go/scripts/benchmark/capacity_certification.py`
-- `bigclaw-go/scripts/benchmark/capacity_certification_test.py`
-- `bigclaw-go/scripts/benchmark/run_matrix.py`
-- `bigclaw-go/scripts/benchmark/soak_local.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
-- `bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py`
-- `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
-- `bigclaw-go/scripts/e2e/export_validation_bundle_test.py`
-- `bigclaw-go/scripts/e2e/external_store_validation.py`
-- `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py`
-- `bigclaw-go/scripts/e2e/run_all_test.py`
-- `bigclaw-go/scripts/e2e/run_task_smoke.py`
-- `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
-- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/shadow_compare.py`
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
-- `scripts/create_issues.py`
-- `scripts/dev_smoke.py`
+- benchmark helper wrappers and their helper-side tests
+- e2e helper wrappers, bundle exporters, and validation surfaces
+- migration shadow comparison/export helpers
+- root create-issues and dev-smoke helper wrappers
 
 Those paths are already absent in the current branch baseline, so this lane
 keeps the scope on preventing reintroduction and pinning the supported Go
@@ -46,22 +26,22 @@ operator replacements.
 
 ### Repo-root entrypoints
 
-- retired `scripts/create_issues.py`; use `bigclawctl create-issues`
+- retired root issue bootstrap helper; use `bigclawctl create-issues`
 - root dev smoke path is Go-only: use `bigclawctl dev-smoke`
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
-- retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
-- retired the refill Python wrapper; use `bigclawctl refill`
-- retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
-- retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
-- retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`
+- retired GitHub sync helper; use `bigclawctl github-sync`
+- retired refill helper wrapper; use `bigclawctl refill`
+- retired workspace bootstrap helper; use `bash scripts/ops/bigclawctl workspace bootstrap`
+- retired shared-workspace bootstrap helper; use `bash scripts/ops/bigclawctl workspace bootstrap`
+- retired workspace validation helper; use `bash scripts/ops/bigclawctl workspace validate`
 
 ### `bigclaw-go/scripts/*` first automation batch
 
 - `bigclaw-go/scripts/e2e/` operator entrypoints now dispatch through `bigclawctl automation e2e ...`
-- retired benchmark Python helpers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
-- retired migration Python helpers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
+- retired benchmark helper wrappers -> `bigclawctl automation benchmark soak-local|run-matrix|capacity-certification`
+- retired migration helper wrappers -> `bigclawctl automation migration shadow-compare|shadow-matrix|live-shadow-scorecard|export-live-shadow-bundle`
 
 The remaining compatibility layer is intentionally thin:
 
@@ -73,11 +53,11 @@ The remaining compatibility layer is intentionally thin:
 ### Added Go CLI commands
 
 - `create-issues`
-  - ports the canned v1 and v2-ops GitHub issue bootstrap plans from Python into Go
+  - ports the canned v1 and v2-ops GitHub issue bootstrap plans into Go
   - keeps `GITHUB_TOKEN`/`BIGCLAW_PLAN` compatible defaults
   - supports `--json` for automation callers
 - `dev-smoke`
-  - replaces the frozen Python scheduler smoke path with a Go scheduler decision check
+  - replaces the frozen legacy scheduler smoke path with a Go scheduler decision check
   - preserves the `smoke_ok <executor>` human output for compatibility callers
 - `symphony`
   - centralizes repo-root workflow resolution, bootstrap env injection, and CLI discovery
@@ -93,7 +73,7 @@ The remaining compatibility layer is intentionally thin:
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
 
-The root Python workspace shims are now removed. The remaining repo-root shell
+The root workspace shims are now removed. The remaining repo-root shell
 helpers are intentionally limited to:
 
 - `scripts/dev_bootstrap.sh`
@@ -108,7 +88,7 @@ should point directly at `bash scripts/ops/bigclawctl ...`.
 ## Remaining Backlog
 
 - Continue shrinking `scripts/dev_bootstrap.sh` so it stays a validation-only shell helper and
-  does not reintroduce Python environment management at the repository root.
+  does not reintroduce repo-root environment management outside the Go-and-shell workflow.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
 - Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
@@ -142,7 +122,7 @@ should point directly at `bash scripts/ops/bigclawctl ...`.
 - Local tracker shortcuts:
   `issue state/comment` positional shortcuts must still map onto the same local-issues behaviors.
 - Root compatibility retirement:
-  repo operators must stop invoking removed root Python workspace shims and switch to
+  repo operators must stop invoking removed root workspace shims and switch to
   `bash scripts/ops/bigclawctl ...` entrypoints.
 - BigClaw automation helpers:
   `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
@@ -151,10 +131,10 @@ should point directly at `bash scripts/ops/bigclawctl ...`.
   CLI discovery order and workflow binding must still prefer the repo-adjacent checkout before
   falling back to `PATH`.
 - Operator docs:
-  repo instructions must not imply that the Python scripts are still the implementation mainline.
+  repo instructions must not imply that retired helper wrappers are still the implementation mainline.
 - GitHub sync cutover:
-  `scripts/ops/bigclaw_github_sync.py` must stay deleted and hooks/workflow/CI should invoke
-  `bash scripts/ops/bigclawctl github-sync ...` directly.
+  the retired GitHub sync helper must stay deleted and hooks/workflow/CI should
+  invoke `bash scripts/ops/bigclawctl github-sync ...` directly.
 
 ## Branch and PR Suggestion
 

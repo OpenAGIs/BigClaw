@@ -48,9 +48,8 @@ Notes:
 - `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
 - `bash scripts/ops/bigclawctl refill ...` is the supported refill entrypoint. The legacy
-  root workspace Python helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
-- GitHub sync is no longer exposed through a Python wrapper; use
-  `bash scripts/ops/bigclawctl github-sync ...`.
+  root workspace wrappers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
+- GitHub sync is exposed through `bash scripts/ops/bigclawctl github-sync ...`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...`,
@@ -66,10 +65,10 @@ Notes:
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
-## Python asset status
+## Root helper status
 
-The repository root no longer carries physical `.py` assets or Python build
-metadata. Validate the Go-only posture with the root bootstrap helper:
+The repository root now keeps a small Go-and-shell helper surface only.
+Validate that posture with the root bootstrap helper:
 
 ```bash
 bash scripts/dev_bootstrap.sh
@@ -136,7 +135,7 @@ the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the supported
 root helper inventory is limited to `scripts/dev_bootstrap.sh`,
 `scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`,
 `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel`; retired root
-Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
+ops wrappers should stay deleted and GitHub sync is Go/shell-only via
 `scripts/ops/bigclawctl`.
 
 Active runtime development belongs in `bigclaw-go/internal/*`; use

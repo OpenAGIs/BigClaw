@@ -1,0 +1,55 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-245",
+    "title": "Residual tooling Python sweep T",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-245",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-245"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-245-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_245_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-245-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_docs": {
+      "README.md": [],
+      "docs/go-cli-script-migration-plan.md": [],
+      "bigclaw-go/docs/go-cli-script-migration.md": []
+    }
+  },
+  "go_replacements": [
+    "README.md",
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/docs/go-cli-script-migration.md",
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    "bigclaw-go/cmd/bigclawctl/main.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "rg -n \"scripts/create_issues\\.py|scripts/dev_smoke\\.py|scripts/ops/bigclaw_github_sync\\.py|scripts/ops/bigclaw_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_bootstrap\\.py|scripts/ops/symphony_workspace_validate\\.py|Python-free operator surface|Python-side tests|## Python asset status\" README.md docs/go-cli-script-migration-plan.md bigclaw-go/docs/go-cli-script-migration.md",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO245(RepositoryHasNoPythonFiles|ToolingDocsStayGoOnly|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "tooling_doc_residue_scan": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.198s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The recovered branch baseline was already physically Python-free before BIG-GO-245 changes."
+  },
+  "notes": [
+    "The workspace initially contained only git metadata with an invalid HEAD ref and had to be recovered from origin/main before issue work could proceed.",
+    "This lane removes active Python-first tooling references from the touched docs and adds issue-scoped regression coverage instead of deleting in-branch Python files.",
+    "Baseline HEAD before lane changes was `1858cdb1`."
+  ]
+}

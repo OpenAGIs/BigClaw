@@ -4,7 +4,7 @@ Issues: `BIG-GO-902`, `BIG-GO-1053`, `BIG-GO-1160`
 
 ## Current Go-Only Entrypoints
 
-`bigclaw-go/scripts/e2e/` is now a Python-free operator surface. `BIG-GO-1053`
+`bigclaw-go/scripts/e2e/` is now a Go-only operator surface. `BIG-GO-1053`
 completed the tranche-2 cleanup by keeping only Go-native
 `bigclawctl automation ...` subcommands plus the retained shell wrappers needed
 for the bundled live-validation workflow.
@@ -29,21 +29,21 @@ for the bundled live-validation workflow.
 
 ## BIG-GO-1160 Sweep Coverage
 
-`BIG-GO-1160` validates that the remaining Python candidate paths in this lane
+`BIG-GO-1160` validates that the remaining legacy candidate paths in this lane
 stay retired and that operators keep using the Go-native replacements below.
-The current branch baseline is already Python-free for these assets, so the
+The current branch baseline is already Go-only for these assets, so the
 regression surface focuses on keeping the deletion state sticky.
 
 | Retired sweep area | Supported replacement |
 | --- | --- |
-| Benchmark soak/matrix/capacity helpers and their Python-side tests | `go run ./cmd/bigclawctl automation benchmark soak-local ...`, `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, `go run ./cmd/bigclawctl automation benchmark capacity-certification ...`, `go test ./cmd/bigclawctl -run TestAutomationBenchmarkCapacityCertificationBuildsReport` |
+| Benchmark soak/matrix/capacity helpers and their helper-side tests | `go run ./cmd/bigclawctl automation benchmark soak-local ...`, `go run ./cmd/bigclawctl automation benchmark run-matrix ...`, `go run ./cmd/bigclawctl automation benchmark capacity-certification ...`, `go test ./cmd/bigclawctl -run TestAutomationBenchmarkCapacityCertificationBuildsReport` |
 | E2E broker failover, coordination, bundle export, external-store, workload, shared-queue, smoke, takeover, and continuation sweep candidates | `go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...`, `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...`, `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...`, `go run ./cmd/bigclawctl automation e2e external-store-validation ...`, `go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...`, `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...`, `./scripts/e2e/run_all.sh`, `go run ./cmd/bigclawctl automation e2e run-task-smoke ...`, `go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...`, `go run ./cmd/bigclawctl automation e2e continuation-policy-gate ...`, `go run ./cmd/bigclawctl automation e2e continuation-scorecard ...` |
 | Migration shadow compare/matrix/scorecard/export helpers | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...`, `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...`, `go run ./cmd/bigclawctl automation migration shadow-compare ...`, `go run ./cmd/bigclawctl automation migration shadow-matrix ...` |
 | Root create-issues and dev-smoke helpers | `bash scripts/ops/bigclawctl create-issues ...`, `bash scripts/ops/bigclawctl dev-smoke` |
 
 ## Current Repo-Root Helper Inventory
 
-The repo root stays Python-free. The only supported root helper wrappers are:
+The repo root stays Go-and-shell only. The only supported root helper wrappers are:
 
 - `scripts/dev_bootstrap.sh`
 - `scripts/ops/bigclawctl`
@@ -87,7 +87,7 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 - Report serialization compatibility for JSON consumers that previously read the Python script output
 ## Compatibility Layer Plan
 
-- Keep new behavior in Go-native entrypoints and do not reintroduce Python helpers under `bigclaw-go/scripts/e2e/`.
+- Keep new behavior in Go-native entrypoints and do not reintroduce retired helper wrappers under `bigclaw-go/scripts/e2e/`.
 - Preserve the retained shell wrappers only where they add operator convenience over direct `bigclawctl automation ...` invocation.
 - Continue the remaining non-e2e script migrations in follow-up batches without expanding the e2e compatibility layer again.
 
@@ -98,6 +98,6 @@ go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 
 ## Risks
 
-- `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old Python thread pool.
+- `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old legacy thread pool.
 - `run-task-smoke --autostart` and `soak-local --autostart` still rely on ephemeral port reservation before `bigclawd` binds, so local port races remain possible.
 - The shell wrappers in `scripts/e2e/` remain convenience layers; changes to flag defaults must stay aligned with the underlying Go subcommands.
