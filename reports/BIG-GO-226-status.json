@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-226",
-    "latest_commit": "see git log -1 --oneline",
+    "latest_commit": "a111d84c BIG-GO-226 harden residual support assets sweep",
     "push_target": "origin/BIG-GO-226"
   },
   "artifacts": {
@@ -66,6 +66,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state around examples, fixture bundles, summary artifacts, demo artifacts, and helper entrypoints.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `d50a1d12`."
+    "Baseline HEAD before lane changes was `d50a1d12`.",
+    "Final pushed lane commit was `a111d84c BIG-GO-226 harden residual support assets sweep`."
   ]
 }

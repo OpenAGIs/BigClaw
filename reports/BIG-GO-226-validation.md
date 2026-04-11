@@ -108,7 +108,8 @@ ok  	bigclaw-go/internal/regression	2.134s
 
 - Branch: `BIG-GO-226`
 - Baseline HEAD before lane commit: `d50a1d12`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-226'`
+- Lane commit details: `a111d84c BIG-GO-226 harden residual support assets sweep`
+- Final pushed lane commit: `a111d84c BIG-GO-226 harden residual support assets sweep`
 - Push target: `origin/BIG-GO-226`
 
 ## Residual Risk
