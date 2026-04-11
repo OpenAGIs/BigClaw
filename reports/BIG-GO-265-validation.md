@@ -65,3 +65,10 @@ ok  	bigclaw-go/internal/regression	1.720s
 ## Workpad Archive
 
 - Lane workpad snapshot: `.symphony/workpad.md`
+
+## Git
+
+- Branch: `BIG-GO-265`
+- Commit: `d77edc2eeafd4592d21c4235a4474e8a6bdf3520` (`BIG-GO-265: harden residual tooling python sweep`)
+- Push target: `origin/BIG-GO-265`
+- Remote verification: `git rev-parse HEAD && git rev-parse origin/BIG-GO-265` -> both resolved to `d77edc2eeafd4592d21c4235a4474e8a6bdf3520`
