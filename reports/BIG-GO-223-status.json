@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "metadata_reconciled_through": "c096e3883f19dfed3b5311c91e9215b2087e1c1c",
+    "lane_commits_command": "git log --oneline --grep 'BIG-GO-223'",
     "latest_commit_command": "git rev-parse HEAD",
     "push_target": "origin/main"
   },
@@ -48,7 +48,7 @@
     "results": {
       "repo_py_inventory": "(no output)",
       "priority_dir_inventory": "(no output)",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.179s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.166s"
     }
   },
   "blocker": {

@@ -87,14 +87,14 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-223/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.179s
+ok  	bigclaw-go/internal/regression	0.166s
 ```
 
 ## Git
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `4176ed6b`
-- Metadata reconciled through pushed commit: `c096e3883f19dfed3b5311c91e9215b2087e1c1c` (`c096e388`)
+- Lane commits lookup: `git log --oneline --grep 'BIG-GO-223'`
 - Current branch tip: `git rev-parse HEAD`
 - Push target: `origin/main`
 
