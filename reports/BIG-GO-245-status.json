@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-245",
-    "latest_commit": "pending",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-245'",
     "push_target": "origin/BIG-GO-245"
   },
   "artifacts": {
@@ -50,6 +50,7 @@
   "notes": [
     "The workspace initially contained only git metadata with an invalid HEAD ref and had to be recovered from origin/main before issue work could proceed.",
     "This lane removes active Python-first tooling references from the touched docs and adds issue-scoped regression coverage instead of deleting in-branch Python files.",
-    "Baseline HEAD before lane changes was `1858cdb1`."
+    "Baseline HEAD before lane changes was `1858cdb1`.",
+    "Lane history includes `1791fc2e BIG-GO-245: tighten residual tooling python sweep`."
   ]
 }
