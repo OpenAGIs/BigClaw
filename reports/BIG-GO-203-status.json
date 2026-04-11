@@ -1,0 +1,73 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-203",
+    "title": "Residual tests Python sweep AF",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-203'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-203-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_203_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-203-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "gap_slice_dirs": {
+      "tests": [],
+      "bigclaw-go/internal/costcontrol": [],
+      "bigclaw-go/internal/events": [],
+      "bigclaw-go/internal/executor": [],
+      "bigclaw-go/internal/githubsync": [],
+      "bigclaw-go/internal/governance": [],
+      "bigclaw-go/internal/intake": [],
+      "bigclaw-go/internal/issuearchive": [],
+      "bigclaw-go/internal/observability": [],
+      "bigclaw-go/internal/pilot": [],
+      "bigclaw-go/internal/policy": [],
+      "bigclaw-go/internal/workflow": []
+    }
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go",
+    "bigclaw-go/internal/costcontrol/controller_test.go",
+    "bigclaw-go/internal/events/bus_test.go",
+    "bigclaw-go/internal/executor/kubernetes_test.go",
+    "bigclaw-go/internal/executor/ray_test.go",
+    "bigclaw-go/internal/githubsync/sync_test.go",
+    "bigclaw-go/internal/governance/freeze_test.go",
+    "bigclaw-go/internal/issuearchive/archive_test.go",
+    "bigclaw-go/internal/intake/mapping_test.go",
+    "bigclaw-go/internal/policy/memory_test.go",
+    "bigclaw-go/internal/workflow/model_test.go",
+    "bigclaw-go/internal/observability/recorder_test.go",
+    "bigclaw-go/internal/pilot/report_test.go",
+    "bigclaw-go/internal/pilot/rollout_test.go",
+    "reports/BIG-GO-948-validation.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find tests bigclaw-go/internal/costcontrol bigclaw-go/internal/events bigclaw-go/internal/executor bigclaw-go/internal/githubsync bigclaw-go/internal/governance bigclaw-go/internal/intake bigclaw-go/internal/issuearchive bigclaw-go/internal/observability bigclaw-go/internal/pilot bigclaw-go/internal/policy bigclaw-go/internal/workflow -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO203(RepositoryHasNoPythonFiles|ResidualPythonTestGapSliceStaysAbsent|GapSliceReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "gap_slice_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.211s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-203 changes."
+  },
+  "notes": [
+    "This lane closes the residual retired-test gap left after the earlier residual sweeps by pinning the remaining 11 retired Python tests to their Go-owned replacement surfaces.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `de074cf7`."
+  ]
+}
