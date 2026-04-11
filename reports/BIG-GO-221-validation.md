@@ -108,9 +108,9 @@ ok  	bigclaw-go/internal/regression	0.198s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `ef527393`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-221'`
-- Final pushed lane commit: see `git log -1 --oneline`
+- Final pushed lane commit: `9e66da7d BIG-GO-221: harden src bigclaw tranche 17 sweep`
 - Push target: `origin/main`
+- Remote verification after later mainline advances: `30d2edeb81bec759c57f86f962de095b268fecb5 refs/heads/main`
 
 ## Residual Risk
 
