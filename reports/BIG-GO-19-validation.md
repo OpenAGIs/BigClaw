@@ -92,9 +92,9 @@ ok  	bigclaw-go/internal/regression	0.198s
 - Baseline HEAD before refresh commit: `60cff87d`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-19'`
 - Evidence refresh commit: `3614d6d4 BIG-GO-19: refresh zero-python evidence`
-- Final pushed lane commit: `see git log --oneline --grep 'BIG-GO-19' -n 1`
+- Final pushed lane commit: `775c471e BIG-GO-19: finalize refresh metadata`
 - Push target: `origin/main`
-- Remote verification: `git ls-remote --heads origin main`
+- Remote verification: `git ls-remote --heads origin main` -> `775c471e263db464e73a7dd3de29fe3b99618972	refs/heads/main`
 
 ## Residual Risk
 
