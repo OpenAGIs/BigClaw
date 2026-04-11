@@ -84,7 +84,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-219/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.203s
+ok  	bigclaw-go/internal/regression	0.201s
 ```
 
 ## Git
@@ -93,13 +93,22 @@ ok  	bigclaw-go/internal/regression	0.203s
 - Baseline HEAD before lane commit: `0d52d7ec`
 - Remote `main` advanced to `9e66da7d` before the first push attempt, so the
   lane commit was rebased once during closeout.
+- Remote `main` later advanced again to `7872e4fa`, so the final metadata sync
+  commit was rebased a second time before the closing push.
+- Remote `main` continued advancing during closeout after `7872e4fa`, so the
+  two closing BIG-GO-219 commits were rebased repeatedly until the push
+  succeeded.
 - Rebased implementation commit: `30d2edeb`
   (`BIG-GO-219: add overlooked auxiliary python sweep guard`)
 - Metadata sync commit: `5cc45726`
   (`BIG-GO-219: finalize validation metadata`)
 - Pushed tip sync commit: `b12a01f2`
   (`BIG-GO-219: record pushed tip`)
-- Final pushed tip: `b12a01f2`
+- Final sync commit after third rebase: `d72b4440`
+  (`BIG-GO-219: sync final pushed tip`)
+- Final validation metadata refresh commit: current `HEAD` at closeout after
+  `BIG-GO-219: refresh final validation tip metadata`
+- Final pushed tip: current `HEAD` at successful closeout push
 - Push target: `origin/main`
 
 ## Residual Risk
