@@ -101,13 +101,15 @@ ok  	bigclaw-go/internal/regression	0.149s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `7872e4fa`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-236'`
-- Final pushed lane commit: `git log -1 --oneline`
+- Lane commit details: `98676441 BIG-GO-236: add residual support asset python sweep guard`
+- Final pushed lane commit: `98676441 BIG-GO-236: add residual support asset python sweep guard`
 - Push target: `origin/main`
-- Remote verification: `git ls-remote --heads origin main`
+- Remote verification: `98676441b233b92b3c677183f0df55a5498b141d refs/heads/main`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-236 can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count.
+- `origin/main` advanced twice during the first push attempts, so the lane was
+  rebased onto the moving remote before the final successful push.

@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-236'",
+    "latest_commit": "98676441 BIG-GO-236: add residual support asset python sweep guard",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -60,6 +60,8 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state around examples, fixture bundles, demos, and support helpers.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `7872e4fa`."
+    "Baseline HEAD before lane changes was `7872e4fa`.",
+    "Final pushed head is `98676441 BIG-GO-236: add residual support asset python sweep guard`, which matches `origin/main` at `98676441b233b92b3c677183f0df55a5498b141d`.",
+    "Two initial push attempts were rejected after `origin/main` advanced; the lane was rebased onto the moving remote before the final successful push."
   ]
 }
