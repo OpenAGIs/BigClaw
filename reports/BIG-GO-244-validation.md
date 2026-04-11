@@ -96,7 +96,7 @@ ok  	bigclaw-go/internal/regression	0.178s
 - Baseline HEAD before lane commit: `a059fd09`
 - Lane commits: `git log --oneline --grep 'BIG-GO-244'`
 - Final pushed lane commit: `git log --oneline --grep 'BIG-GO-244'`
-- Push target: `origin/main`
+- Push target: `origin/BIG-GO-244`
 - Note: the original push attempt was rejected after `origin/main` advanced, so
   the final regression command/result above reflects the post-rebase validation
   run.

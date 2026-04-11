@@ -8,7 +8,7 @@
     "name": "main",
     "baseline_commit": "a059fd098901ebf40e23a4c100ffdb15f78017dc",
     "latest_commit": "tracked in git history after BIG-GO-244 final sync",
-    "push_target": "origin/main",
+    "push_target": "origin/BIG-GO-244",
     "compare_url": ""
   },
   "artifacts": {
