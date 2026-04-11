@@ -1,0 +1,54 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-251",
+    "title": "Residual src/bigclaw Python sweep V",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log -1 --oneline",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-251-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-251-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_251_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "assigned_src_bigclaw_paths": [
+      "src/bigclaw/dsl.py"
+    ]
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/regression/big_go_251_zero_python_guard_test.go",
+    "bigclaw-go/internal/regression/top_level_module_purge_tranche12_test.go",
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/workflow/definition_test.go",
+    "bigclaw-go/internal/workflow/engine.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "for path in src/bigclaw/dsl.py; do test ! -e \"$path\" && printf 'absent %s\\n' \"$path\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO251(RepositoryHasNoPythonFiles|SrcBigclawTranche12PathRemainsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche12$'",
+      "python3 -m json.tool reports/BIG-GO-251-status.json"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "assigned_path_inventory": "absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-251/src/bigclaw/dsl.py",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.425s",
+      "status_json": "success"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-251 changes."
+  },
+  "notes": [
+    "This lane documents the tranche-12 retired src/bigclaw module surface and hardens its Go-only state.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `e7e18ff0`."
+  ]
+}

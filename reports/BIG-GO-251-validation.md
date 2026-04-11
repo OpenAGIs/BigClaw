@@ -30,12 +30,14 @@ and lane-specific validation evidence.
 - Workflow definition replacement: `bigclaw-go/internal/workflow/definition.go`
 - Workflow definition regression coverage: `bigclaw-go/internal/workflow/definition_test.go`
 - Workflow engine replacement: `bigclaw-go/internal/workflow/engine.go`
+- Status artifact: `reports/BIG-GO-251-status.json`
 
 ## Validation Commands
 
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-251 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
 - `for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-251/src/bigclaw/dsl.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-251/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO251(RepositoryHasNoPythonFiles|SrcBigclawTranche12PathRemainsAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche12$'`
+- `python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-251/reports/BIG-GO-251-status.json`
 
 ## Validation Results
 
@@ -79,6 +81,20 @@ Result:
 
 ```text
 ok  	bigclaw-go/internal/regression	1.425s
+```
+
+### Status artifact shape
+
+Command:
+
+```bash
+python3 -m json.tool /Users/openagi/code/bigclaw-workspaces/BIG-GO-251/reports/BIG-GO-251-status.json
+```
+
+Result:
+
+```text
+success
 ```
 
 ## Git
