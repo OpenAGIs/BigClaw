@@ -11,8 +11,8 @@ Copy these files into the target repository:
 - `scripts/ops/bigclawctl`
 
 The template is now fully Go-first. Repositories should wire Symphony directly
-to `scripts/ops/bigclawctl` instead of carrying Python compatibility shims for
-workspace bootstrap or validation.
+to `scripts/ops/bigclawctl` instead of carrying extra compatibility wrappers
+for workspace bootstrap or validation.
 
 ## Workflow hook template
 
