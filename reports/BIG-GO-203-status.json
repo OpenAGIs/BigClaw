@@ -5,9 +5,9 @@
     "state": "Done"
   },
   "branch": {
-    "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-203'",
-    "push_target": "origin/main"
+    "name": "BIG-GO-203",
+    "latest_commit": "29ab2a00 BIG-GO-203: harden residual test python gap slice",
+    "push_target": "origin/BIG-GO-203"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -68,6 +68,7 @@
   "notes": [
     "This lane closes the residual retired-test gap left after the earlier residual sweeps by pinning the remaining 11 retired Python tests to their Go-owned replacement surfaces.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `de074cf7`."
+    "Baseline HEAD before lane changes was `de074cf7`.",
+    "The lane was pushed to `origin/BIG-GO-203` after repeated non-fast-forward races on shared `origin/main`."
   ]
 }

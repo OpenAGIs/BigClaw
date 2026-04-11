@@ -25,7 +25,7 @@
 - `bigclaw-go/docs/reports/big-go-203-python-asset-sweep.md`,
   `reports/BIG-GO-203-validation.md`, and `reports/BIG-GO-203-status.json`
   capture the exact residual inventory, validation commands, and outcomes.
-- The resulting change is committed and pushed to `origin/main`.
+- The resulting change is committed and pushed to `origin/BIG-GO-203`.
 
 ## Validation
 
