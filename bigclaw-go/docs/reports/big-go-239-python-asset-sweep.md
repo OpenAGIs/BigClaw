@@ -46,4 +46,4 @@ direct Python-file deletion batch.
 - `find .github .githooks .symphony docs/reports bigclaw-go/docs/adr bigclaw-go/docs/reports/broker-failover-stub-artifacts bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts bigclaw-go/docs/reports/live-shadow-runs bigclaw-go/docs/reports/live-validation-runs reports -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' -o -name '*.pyc' -o -name '.python-version' \) 2>/dev/null | sort`
   Result: no output; audited hidden, nested, and overlooked auxiliary directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO239(RepositoryHasNoPythonFiles|HiddenNestedAndOverlookedAuxiliaryDirectoriesStayPythonFree|RetainedNativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.183s`
+  Result: `ok  	bigclaw-go/internal/regression	0.196s`
