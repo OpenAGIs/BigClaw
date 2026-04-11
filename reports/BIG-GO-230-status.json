@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-230",
     "title": "Convergence sweep toward <=1 Python file R",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-230'",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -58,6 +58,8 @@
   },
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the practical Go-only state with regression coverage.",
-    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files."
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "Landed lane commit: `8cd42d49 BIG-GO-230 add practical go-only sweep guard`.",
+    "Baseline HEAD before lane changes was `7872e4fa`."
   ]
 }
