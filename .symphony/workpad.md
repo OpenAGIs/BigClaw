@@ -1,37 +1,40 @@
-# BIG-GO-232 Workpad
+# BIG-GO-231 Workpad
 
 ## Plan
 
-1. Confirm the repository-wide Python asset inventory and verify that the
-   residual Python-heavy test sweep surface remains Python-free in this
+1. Confirm the current repository-wide Python inventory and verify that the
+   assigned `src/bigclaw` tranche-14 module slice is already absent in this
    checkout.
-2. Add the lane-scoped regression guard and evidence bundle for `BIG-GO-232`:
-   - `bigclaw-go/internal/regression/big_go_232_zero_python_guard_test.go`
-   - `bigclaw-go/docs/reports/big-go-232-python-asset-sweep.md`
-   - `reports/BIG-GO-232-validation.md`
-   - `reports/BIG-GO-232-status.json`
-3. Run the targeted inventory checks and regression tests, then commit and
-   push the issue-scoped changes to a dedicated remote branch for this lane.
+2. Add the lane-scoped evidence bundle for `BIG-GO-231` so this unattended run
+   records the zero-Python baseline and the active Go/native replacement paths:
+   - `bigclaw-go/internal/regression/big_go_231_zero_python_guard_test.go`
+   - `bigclaw-go/docs/reports/big-go-231-python-asset-sweep.md`
+   - `reports/BIG-GO-231-validation.md`
+   - `reports/BIG-GO-231-status.json`
+3. Run the targeted inventory checks and regression test, then commit and push
+   the issue-scoped changes to `origin/main`.
 
 ## Acceptance
 
-- The assigned residual tests sweep is verified Python-free in the live
-  checkout with `BIG-GO-232`-scoped evidence.
-- `BIG-GO-232` adds a Go regression guard covering the repository-wide
-  zero-Python baseline, the remaining priority test directories, and the
-  retained Go/native replacement surface.
-- The sweep report and validation report record the exact commands and
-  observed results for this workspace.
+- The assigned `src/bigclaw` tranche-14 slice is verified absent in the live
+  checkout, with repo-visible evidence tied to `BIG-GO-231`.
+- `BIG-GO-231` adds a Go regression guard covering the repository-wide
+  zero-Python baseline, the retired tranche-14 Python paths, and the retained
+  Go/native replacement surface.
+- The lane report and validation report record the exact validation commands,
+  observed results, and the already-zero baseline caveat.
 - The resulting change set is committed and pushed.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-232 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-232/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-232/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-232/bigclaw-go/internal/migration /Users/openagi/code/bigclaw-workspaces/BIG-GO-232/bigclaw-go/internal/regression /Users/openagi/code/bigclaw-workspaces/BIG-GO-232/bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-232/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO232(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-231 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-231/src/bigclaw/planning.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-231/src/bigclaw/queue.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-231/src/bigclaw/reports.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-231/src/bigclaw/risk.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-231/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO231(RepositoryHasNoPythonFiles|SrcBigclawTranche14PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche14$'`
 
 ## Execution Notes
 
-- 2026-04-11: This workspace starts with a clean git state on `main`.
-- 2026-04-11: The lane is expected to harden an already-zero Python baseline
-  if the residual test directories remain Python-free.
+- 2026-04-12: Initial inspection shows the checkout is already at a
+  repository-wide Python file count of `0`, and the `src/` tree is already
+  absent.
+- 2026-04-12: `BIG-GO-231` therefore hardens the zero-Python baseline for the
+  retired tranche-14 `src/bigclaw` slice instead of deleting live `.py` files.
