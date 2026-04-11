@@ -96,7 +96,7 @@ ok  	bigclaw-go/internal/regression	3.325s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `d52aa9a3`
-- Final pushed lane commit: `aeef6e7a`
+- Final pushed lane commit: `see git log --oneline --grep 'BIG-GO-234'`
 - Push target: `origin/BIG-GO-234`
 
 The lane commit was rebased once onto updated `origin/main` after the remote
