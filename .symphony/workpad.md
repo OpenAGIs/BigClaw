@@ -11,7 +11,7 @@
    - `reports/BIG-GO-232-validation.md`
    - `reports/BIG-GO-232-status.json`
 3. Run the targeted inventory checks and regression tests, then commit and
-   push the issue-scoped changes to `origin/main`.
+   push the issue-scoped changes to a dedicated remote branch for this lane.
 
 ## Acceptance
 

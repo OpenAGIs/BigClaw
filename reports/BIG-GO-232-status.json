@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "see git log --oneline --grep 'BIG-GO-232'",
-    "push_target": "origin/main"
+    "push_target": "origin/BIG-GO-232"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
