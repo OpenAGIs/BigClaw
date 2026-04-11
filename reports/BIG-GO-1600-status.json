@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-1600",
     "title": "Go-only sweep refill BIG-GO-1600",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "a4503f62 BIG-GO-1600 add zero-python tranche guard",
     "push_target": "origin/main"
   },
   "artifacts": {

@@ -102,8 +102,8 @@ ok  	bigclaw-go/internal/regression	0.194s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `119e74e1`
-- Landed lane commit: `pending`
-- Final pushed lane commit: `pending`
+- Landed lane commit: `a4503f62 BIG-GO-1600 add zero-python tranche guard`
+- Final pushed lane commit: `a4503f62 BIG-GO-1600 add zero-python tranche guard`
 - Push target: `origin/main`
 
 ## Residual Risk
