@@ -23,11 +23,21 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `134`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && python3 -m pytest tests/test_control_center.py tests/test_followup_digests.py tests/test_operations.py -q`
+  - Result: passed
+  - Output: `25 passed in 0.10s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `132`
 
 ### Notes
 
 - Initial focus from issue: `src/bigclaw/audit_events.py`, `src/bigclaw/execution_contract.py`, `src/bigclaw/parallel_refill.py`, `src/bigclaw/repo_registry.py`, `src/bigclaw/ui_review.py`, `tests/test_control_center.py`, `tests/test_followup_digests.py`, `tests/test_operations.py`, plus nearby Python assets if they form a cleaner removable slice.
 - Constraint: keep changes scoped to this refill issue and avoid unrelated tracker/documentation churn.
 - Removed the isolated Python refill and repo-registry surfaces plus their dedicated tests: `src/bigclaw/parallel_refill.py`, `src/bigclaw/repo_registry.py`, `tests/test_parallel_refill.py`, `tests/test_repo_registry.py`.
-- Python file count changed from `138` to `134`.
-- Residual risk: some docs and historical validation reports still mention the deleted Python files and tests; this change intentionally leaves those references untouched because the issue prioritized physical Python asset removal over documentation cleanup.
+- Removed the self-contained Python UI review surface plus its dedicated test and stale package/planner references: `src/bigclaw/ui_review.py`, `tests/test_ui_review.py`, related exports in `src/bigclaw/__init__.py`, and stale links in `src/bigclaw/planning.py`.
+- Python file count changed from `138` to `132`.
+- Residual risk: some docs and historical validation reports still mention deleted Python files and tests; this change intentionally leaves those history/documentation references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.
