@@ -1,43 +1,33 @@
-# BIG-GO-240 Workpad
+# BIG-GO-235 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide Python asset inventory and the convergence
-   lane directories relevant to `BIG-GO-240`: `src/bigclaw`, `tests`,
-   `scripts`, and `bigclaw-go/scripts`.
-2. Add the issue-scoped convergence evidence bundle for `BIG-GO-240`:
-   - `bigclaw-go/internal/regression/big_go_240_zero_python_guard_test.go`
-   - `bigclaw-go/docs/reports/big-go-240-python-asset-sweep.md`
-   - `reports/BIG-GO-240-validation.md`
-   - `reports/BIG-GO-240-status.json`
-3. Run the targeted inventory checks and regression test, record the exact
-   command results, then commit and push the lane update to `origin/main`.
+1. Remove stale Python-first tooling guidance from the active bootstrap and
+   cutover docs while preserving the historical migration context.
+2. Add a lane-specific regression guard that locks the audited docs to Go-only
+   tooling guidance and records the scoped sweep evidence.
+3. Run the targeted repository and regression validations, then commit and push
+   the `BIG-GO-235` branch tip.
 
 ## Acceptance
 
-- `BIG-GO-240` documents the live repository Python inventory and the
-  convergence-lane residual directories with exact observed results.
-- The lane adds a Go regression guard that protects the repository-wide
-  zero-Python baseline, the priority residual directories, and the retained
-  Go/native replacement paths.
-- The validation artifacts explicitly capture the already-zero branch baseline
-  and the exact commands used to verify it.
-- The final change set is committed and pushed.
+- `.symphony/workpad.md` reflects `BIG-GO-235` and this tooling-doc sweep.
+- `docs/symphony-repo-bootstrap-template.md` and
+  `docs/go-mainline-cutover-handoff.md` stop prescribing Python bootstrap or
+  validation commands for the live Go-only workflow.
+- A new `BIG-GO-235` regression guard passes and keeps the scoped docs aligned
+  with the Go-only tooling posture.
+- Exact validation commands and results are recorded, and the final lane tip is
+  committed and pushed to the remote branch.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-240 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO240(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-235 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO235(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ToolingDocsStayGoOnly)$'`
 
 ## Execution Notes
 
-- 2026-04-12: Initial inspection shows the checkout is already at a
-  repository-wide Python file count of `0`.
-- 2026-04-12: The convergence-lane directories `src/bigclaw`, `tests`,
-  `scripts`, and `bigclaw-go/scripts` are already Python-free in this
-  workspace.
-- 2026-04-12: This execution therefore focuses on issue-scoped regression
-  hardening and evidence capture rather than deleting in-branch `.py` files.
-- 2026-04-12: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO240(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  and observed `ok   bigclaw-go/internal/regression 0.177s`.
+- 2026-04-12: Repository-wide physical Python file count is already `0`; this
+  lane is focused on removing residual Python tooling guidance from active docs
+  and locking the Go-only baseline with regression coverage.

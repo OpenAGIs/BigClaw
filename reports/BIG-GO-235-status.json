@@ -1,0 +1,42 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-235",
+    "title": "Residual tooling Python sweep S",
+    "state": "Done"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-235-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_235_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "changes": [
+    "docs/symphony-repo-bootstrap-template.md now documents a Go-first bootstrap surface without Python compatibility package paths.",
+    "docs/go-mainline-cutover-handoff.md now records zero-Python validation evidence instead of a legacy Python shim assertion command.",
+    "bigclaw-go/internal/regression/big_go_235_zero_python_guard_test.go locks the scoped tooling docs to Go-only guidance."
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-235 -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-235/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO235(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ToolingDocsStayGoOnly)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "",
+      "priority_dir_inventory": "",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.180s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-235 changes."
+  }
+}
