@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-207",
-    "latest_commit": "pending commit; capture with git log -1 --oneline after staging",
+    "latest_commit": "capture the pushed tip with `git rev-parse --short HEAD` or `git log -1 --oneline`",
     "push_target": "origin/BIG-GO-207"
   },
   "artifacts": {
@@ -68,6 +68,7 @@
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state with regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `5be8940b5` on 2026-04-11.",
+    "Primary lane commit: `e358b2d3b BIG-GO-207 add zero-python broad sweep guard`.",
     "Final lane history is recorded in `git log --oneline --grep 'BIG-GO-207'`.",
     "Remote branch verification should match the pushed tip via `git rev-parse --short HEAD` and `git ls-remote --heads origin BIG-GO-207`."
   ]
