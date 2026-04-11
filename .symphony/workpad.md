@@ -1,41 +1,43 @@
-# BIG-GO-205 Workpad
+# BIG-GO-226 Workpad
 
 ## Plan
 
-1. Audit the residual repo-root tooling surfaces that still reference Python-based
-   developer helpers and confirm the live checkout baseline.
-2. Remove the checked-in Python tooling config from the root helper surface and
-   update the documented repository hygiene path to use Go/shell-native commands
-   already supported by this repo.
-3. Add lane-scoped regression evidence for the deleted tooling config and the
-   retained Go-only helper entrypoints:
-   - `bigclaw-go/internal/regression/big_go_205_zero_python_guard_test.go`
-   - `bigclaw-go/docs/reports/big-go-205-python-asset-sweep.md`
-   - `reports/BIG-GO-205-validation.md`
-   - `reports/BIG-GO-205-status.json`
-4. Run the targeted validation commands, archive this workpad, then commit and
-   push the issue-scoped change set to `origin/main`.
+1. Restore a usable checkout in this workspace and confirm the `BIG-GO-226`
+   baseline before making issue-scoped changes.
+2. Audit the residual support-asset surfaces tied to this lane:
+   - `bigclaw-go/examples`
+   - `bigclaw-go/docs/reports/live-shadow-runs`
+   - `bigclaw-go/docs/reports/live-validation-runs`
+   - `bigclaw-go/docs/reports/broker-failover-stub-artifacts`
+   - `bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts`
+   - `scripts/ops`
+3. Add lane-specific regression evidence for the retained non-Python support
+   assets:
+   - `bigclaw-go/internal/regression/big_go_226_zero_python_guard_test.go`
+   - `bigclaw-go/docs/reports/big-go-226-python-asset-sweep.md`
+   - `reports/BIG-GO-226-validation.md`
+   - `reports/BIG-GO-226-status.json`
+4. Run the targeted validation commands, record exact results, then commit and
+   push branch `BIG-GO-226`.
 
 ## Acceptance
 
-- `.pre-commit-config.yaml` is no longer present in the repository root.
-- `README.md` no longer directs operators to use `pre-commit`; the repository
-  hygiene guidance points at retained Go/shell-native verification commands.
-- `BIG-GO-205` adds regression coverage and lane reports that verify the Python
-  tooling config stays absent while the retained root helper surface remains
-  available.
-- The exact validation commands and observed results are recorded in the lane
-  artifacts, and the final change set is committed and pushed.
+- The assigned residual support-asset directories remain physically Python-free.
+- The retained support assets and helper entrypoints covered by this lane are
+  explicitly pinned by regression coverage and lane documentation.
+- Validation is recorded with exact commands and observed results.
+- Changes stay scoped to `BIG-GO-226` and are committed and pushed.
 
 ## Validation
 
-- `test ! -e /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/.pre-commit-config.yaml`
-- `rg -n "pre-commit|ruff" /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/README.md`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-205/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO205(ResidualPythonToolingConfigStaysAbsent|RootGoHelperSurfaceRemainsAvailable|LaneReportCapturesToolingSweep)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-226 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-226/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-226/bigclaw-go/docs/reports/live-shadow-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-226/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-226/bigclaw-go/docs/reports/broker-failover-stub-artifacts /Users/openagi/code/bigclaw-workspaces/BIG-GO-226/bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts /Users/openagi/code/bigclaw-workspaces/BIG-GO-226/scripts/ops -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-226/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO226(RepositoryHasNoPythonFiles|SupportAssetDirectoriesStayPythonFree|RetainedSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
-- 2026-04-11: Initial inspection found no tracked `.py` files in the repo, but
-  the root `.pre-commit-config.yaml` still referenced Python-based developer
-  tooling and `README.md` still documented `pre-commit run --all-files` as the
-  repository hygiene path.
+- Baseline source tree was copied from a healthy local `main` checkout because
+  the provided workspace `.git` metadata pointed at `refs/heads/.invalid`.
+- Repository-wide physical Python file count was already `0` at lane entry, so
+  this issue lands as regression-and-evidence hardening rather than a live
+  `.py` deletion batch.
