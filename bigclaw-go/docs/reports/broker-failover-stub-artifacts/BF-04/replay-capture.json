@@ -1,0 +1,10 @@
+[
+  {
+    "durable_sequence": 3,
+    "event_id": "bf04-event-03",
+    "trace_id": "trace-bf04",
+    "delivery_phase": "replay",
+    "source_node": "broker-b",
+    "duplicate": false
+  }
+]

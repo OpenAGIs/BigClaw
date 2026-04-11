@@ -1,0 +1,58 @@
+[
+  {
+    "durable_sequence": 1,
+    "event_id": "bf06-event-01",
+    "trace_id": "trace-bf06",
+    "delivery_phase": "replay",
+    "source_node": "broker-a",
+    "duplicate": false
+  },
+  {
+    "durable_sequence": 2,
+    "event_id": "bf06-event-02",
+    "trace_id": "trace-bf06",
+    "delivery_phase": "replay",
+    "source_node": "broker-a",
+    "duplicate": false
+  },
+  {
+    "durable_sequence": 3,
+    "event_id": "bf06-event-03",
+    "trace_id": "trace-bf06",
+    "delivery_phase": "replay",
+    "source_node": "broker-a",
+    "duplicate": false
+  },
+  {
+    "durable_sequence": 4,
+    "event_id": "bf06-event-04",
+    "trace_id": "trace-bf06",
+    "delivery_phase": "replay",
+    "source_node": "broker-b",
+    "duplicate": false
+  },
+  {
+    "durable_sequence": 5,
+    "event_id": "bf06-event-05",
+    "trace_id": "trace-bf06",
+    "delivery_phase": "replay",
+    "source_node": "broker-b",
+    "duplicate": false
+  },
+  {
+    "durable_sequence": 4,
+    "event_id": "bf06-event-04",
+    "trace_id": "trace-bf06",
+    "delivery_phase": "replay",
+    "source_node": "broker-b",
+    "duplicate": false
+  },
+  {
+    "durable_sequence": 5,
+    "event_id": "bf06-event-05",
+    "trace_id": "trace-bf06",
+    "delivery_phase": "replay",
+    "source_node": "broker-b",
+    "duplicate": false
+  }
+]

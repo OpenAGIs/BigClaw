@@ -1,0 +1,175 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"bigclaw-go/internal/refill"
+)
+
+func captureStdout(t *testing.T, fn func() error) ([]byte, error) {
+	t.Helper()
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+	runErr := fn()
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	return output, runErr
+}
+
+func TestRunDevSmokeJSONOutput(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		return runDevSmoke([]string{"--json"})
+	})
+	if err != nil {
+		t.Fatalf("run dev-smoke: %v", err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(output, &payload); err != nil {
+		t.Fatalf("decode output: %v (%s)", err, string(output))
+	}
+	if payload["status"] != "ok" {
+		t.Fatalf("expected ok status, got %+v", payload)
+	}
+	if payload["accepted"] != true {
+		t.Fatalf("expected accepted=true, got %+v", payload)
+	}
+}
+
+func TestRunCreateIssuesCreatesOnlyMissing(t *testing.T) {
+	requestCount := 0
+	createdPayloads := []map[string]any{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestCount++
+		switch {
+		case r.Method == http.MethodGet && strings.Contains(r.URL.Path, "/issues"):
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{"title": "[EPIC] BIG-EPIC-1 任务接入与连接器"},
+			})
+		case r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/issues"):
+			var payload map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Fatalf("decode request: %v", err)
+			}
+			createdPayloads = append(createdPayloads, payload)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"number": len(createdPayloads),
+				"title":  payload["title"],
+			})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.String())
+		}
+	}))
+	defer server.Close()
+
+	output, err := captureStdout(t, func() error {
+		return runCreateIssues([]string{
+			"--plan", "v2-ops",
+			"--owner", "OpenAGIs",
+			"--repo-name", "BigClaw",
+			"--api-base", server.URL,
+			"--token", "test-token",
+			"--json",
+		})
+	})
+	if err != nil {
+		t.Fatalf("run create-issues: %v", err)
+	}
+	if requestCount < 2 {
+		t.Fatalf("expected list + create requests, got %d", requestCount)
+	}
+	if len(createdPayloads) != len(createIssuePlans["v2-ops"]) {
+		t.Fatalf("expected %d created issues, got %d", len(createIssuePlans["v2-ops"]), len(createdPayloads))
+	}
+	if labels, ok := createdPayloads[0]["labels"].([]any); !ok || len(labels) != 3 {
+		t.Fatalf("expected v2 labels in create payload, got %+v", createdPayloads[0])
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(output, &payload); err != nil {
+		t.Fatalf("decode output: %v (%s)", err, string(output))
+	}
+	if payload["created_count"] != float64(len(createIssuePlans["v2-ops"])) {
+		t.Fatalf("unexpected created_count payload: %+v", payload)
+	}
+}
+
+func TestRunIssueRoutesStateShortcutToLocalIssues(t *testing.T) {
+	repoRoot := t.TempDir()
+	if err := os.WriteFile(filepath.Join(repoRoot, "workflow.md"), []byte("# workflow\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	storePath := filepath.Join(repoRoot, "local-issues.json")
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	if _, err := store.CreateIssue(refill.LocalIssueCreateParams{
+		Identifier: "BIG-GO-902",
+		Title:      "script migration",
+		State:      "Todo",
+	}); err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(repoRoot); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(originalWD) }()
+
+	output, err := captureStdout(t, func() error {
+		return runIssue([]string{"state", "BIG-GO-902", "In Progress", "--json"})
+	})
+	if err != nil {
+		t.Fatalf("run issue state: %v", err)
+	}
+	if !bytes.Contains(output, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected updated state in output, got %s", string(output))
+	}
+}
+
+func TestRunPanelUsesSymphonyFromPATH(t *testing.T) {
+	repoRoot := t.TempDir()
+	if err := os.WriteFile(filepath.Join(repoRoot, "workflow.md"), []byte("# workflow\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	binDir := filepath.Join(t.TempDir(), "bin")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	logPath := filepath.Join(t.TempDir(), "symphony.log")
+	scriptPath := filepath.Join(binDir, "symphony")
+	script := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" > \"" + logPath + "\"\n"
+	if err := os.WriteFile(scriptPath, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	if err := runPanel([]string{"--repo", repoRoot, "status"}); err != nil {
+		t.Fatalf("run panel: %v", err)
+	}
+	logBody, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("read log: %v", err)
+	}
+	if !strings.Contains(string(logBody), "panel --workflow "+filepath.Join(repoRoot, "workflow.md")+" status") {
+		t.Fatalf("unexpected symphony invocation: %s", string(logBody))
+	}
+}

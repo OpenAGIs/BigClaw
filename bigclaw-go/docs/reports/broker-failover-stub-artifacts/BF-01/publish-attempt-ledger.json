@@ -1,0 +1,47 @@
+[
+  {
+    "timestamp": "2026-03-17T12:00:00Z",
+    "event_id": "bf01-event-01",
+    "trace_id": "trace-bf01",
+    "attempt": 1,
+    "source_node": "producer-a",
+    "client_outcome": "committed",
+    "durable_sequence": 1
+  },
+  {
+    "timestamp": "2026-03-17T12:00:01Z",
+    "event_id": "bf01-event-02",
+    "trace_id": "trace-bf01",
+    "attempt": 1,
+    "source_node": "producer-a",
+    "client_outcome": "committed",
+    "durable_sequence": 2
+  },
+  {
+    "timestamp": "2026-03-17T12:00:02Z",
+    "event_id": "bf01-event-03",
+    "trace_id": "trace-bf01",
+    "attempt": 1,
+    "source_node": "producer-a",
+    "client_outcome": "committed",
+    "durable_sequence": 3
+  },
+  {
+    "timestamp": "2026-03-17T12:00:03Z",
+    "event_id": "bf01-event-04",
+    "trace_id": "trace-bf01",
+    "attempt": 1,
+    "source_node": "producer-a",
+    "client_outcome": "committed",
+    "durable_sequence": 4
+  },
+  {
+    "timestamp": "2026-03-17T12:00:04Z",
+    "event_id": "bf01-event-05",
+    "trace_id": "trace-bf01",
+    "attempt": 1,
+    "source_node": "producer-a",
+    "client_outcome": "committed",
+    "durable_sequence": 5
+  }
+]
