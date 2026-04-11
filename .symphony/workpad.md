@@ -38,3 +38,12 @@
 - 2026-04-12: `BIG-GO-256` therefore hardens the zero-Python baseline for
   examples, report/demo fixture bundles, and support helpers instead of
   deleting in-branch `.py` files.
+- 2026-04-12: Added the issue-scoped regression guard, lane report, validation
+  report, and status artifact; committed and pushed on `big-go-256-land`.
+- 2026-04-12: Validation results recorded for this lane:
+  - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-256 -path '*/.git' -prune -o -name '*.py' -type f -print | sort` -> no output
+  - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/scripts/ops -type f -name '*.py' 2>/dev/null | sort` -> no output
+  - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-256/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO256(RepositoryHasNoPythonFiles|SupportAssetSurfacesStayPythonFree|RetainedNativeSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'` -> `ok  	bigclaw-go/internal/regression	4.755s`
+- 2026-04-12: Stable remote verification for the completed branch is
+  `git ls-remote --heads origin big-go-256-land`, currently returning
+  `ae24fe22f457c5f938a6b7cdcf6b4d0d18962b30 refs/heads/big-go-256-land`.
