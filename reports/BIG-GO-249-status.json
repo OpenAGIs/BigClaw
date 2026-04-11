@@ -1,0 +1,58 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-249",
+    "title": "Residual auxiliary Python sweep U",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pre-commit baseline 1729022a",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-249-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_249_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-249-validation.md"
+  },
+  "inventory": {
+    "repo_python_like_files": [],
+    "auxiliary_dirs": {
+      ".githooks": [],
+      ".github": [],
+      ".symphony": [],
+      "docs/reports": [],
+      "bigclaw-go/docs/reports/live-shadow-runs": [],
+      "bigclaw-go/docs/reports/live-validation-runs": []
+    }
+  },
+  "native_evidence": [
+    ".githooks/post-commit",
+    ".github/workflows/ci.yml",
+    ".symphony/workpad.md",
+    "docs/reports/bootstrap-cache-validation.md",
+    "bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json",
+    "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) -print | sort",
+      "find .githooks .github .symphony docs/reports bigclaw-go/docs/reports/live-shadow-runs bigclaw-go/docs/reports/live-validation-runs -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO249(RepositoryHasNoPythonFiles|HiddenNestedAuxiliaryDirectoriesStayPythonFree|NativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_inventory": "none",
+      "auxiliary_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t1.394s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python-like file count was already zero in this workspace before BIG-GO-249 changes."
+  },
+  "notes": [
+    "This lane records hidden and nested auxiliary directories as already Python-free and ties them to retained non-Python evidence paths.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `1729022a`."
+  ]
+}
