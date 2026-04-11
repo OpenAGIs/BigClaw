@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-212",
-    "latest_commit": "85d3e388 BIG-GO-212 record lane commit metadata",
+    "latest_commit": "0a369be1 BIG-GO-212 record final pushed commit",
     "push_target": "origin/BIG-GO-212"
   },
   "artifacts": {
@@ -64,6 +64,7 @@
     "The branch baseline is already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `465d7628`.",
     "Landed lane commit: `d6c5e41f BIG-GO-212 add residual test python sweep guard`.",
-    "Final pushed lane head before metadata sync was `85d3e388 BIG-GO-212 record lane commit metadata`."
+    "Intermediate metadata-sync commit: `85d3e388 BIG-GO-212 record lane commit metadata`.",
+    "Final pushed lane commit: `0a369be1 BIG-GO-212 record final pushed commit`."
   ]
 }
