@@ -89,6 +89,7 @@
     "This lane records the retired root tests corpus as still absent and ties that absence to the current Go-native regression and report-fixture surface.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `a059fd09`.",
-    "Primary lane commit is `d169abde BIG-GO-253: add residual tests python sweep guard`."
+    "Primary lane commit is `26dd5806 BIG-GO-253: add residual tests python sweep guard`.",
+    "`origin/main` advanced before the first push completed, so the lane was rebased onto the newer remote head before the final push."
   ]
 }

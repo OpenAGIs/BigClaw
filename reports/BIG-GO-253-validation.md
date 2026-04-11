@@ -116,10 +116,12 @@ valid
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `a059fd09`
-- Lane commit details: `d169abde BIG-GO-253: add residual tests python sweep guard`
+- Lane commit details: `26dd5806 BIG-GO-253: add residual tests python sweep guard`
 - Push target: `origin/main`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-253 records and
   guards the Go-only state rather than removing in-branch Python files.
+- `origin/main` advanced before the first push completed, so the lane was
+  rebased onto the newer remote head before the final push.
