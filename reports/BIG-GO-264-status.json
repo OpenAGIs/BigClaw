@@ -1,0 +1,48 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-264",
+    "title": "Residual scripts Python sweep V",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "big-go-264",
+    "latest_commit": "",
+    "push_target": "origin/big-go-264"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-264-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-264-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_264_zero_python_guard_test.go"
+  },
+  "tooling_surface": {
+    "deleted": [],
+    "retained": [
+      "bigclaw-go/cmd/bigclawctl/automation_e2e_mixed_workload_command.go",
+      "bigclaw-go/cmd/bigclawctl/automation_e2e_mixed_workload_command_test.go",
+      "bigclaw-go/internal/regression/big_go_264_zero_python_guard_test.go"
+    ]
+  },
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-264 -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-264/bigclaw-go/cmd /Users/openagi/code/bigclaw-workspaces/BIG-GO-264/bigclaw-go/internal/regression -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-264/bigclaw-go && go test -count=1 ./cmd/bigclawctl -run 'TestAutomationMixedWorkloadMatrixBuildsReport|TestDefaultMixedWorkloadTasksUseNoPythonEntrypoints'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-264/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO264(MixedWorkloadHelperAvoidsPythonEntrypoints|LaneReportCapturesMixedWorkloadHelperSweep)$'"
+    ],
+    "results": {
+      "repository_python_sweep": "no output",
+      "helper_surface_python_sweep": "no output",
+      "command_tests": "ok  \tbigclaw-go/cmd/bigclawctl\t0.351s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.177s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-264 changes."
+  },
+  "notes": [
+    "This lane is scoped to residual Python command defaults in the mixed-workload CLI helper.",
+    "Targeted validation completed successfully before commit and push."
+  ]
+}

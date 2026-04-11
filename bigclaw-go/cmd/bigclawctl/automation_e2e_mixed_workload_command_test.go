@@ -97,3 +97,11 @@ func TestAutomationMixedWorkloadMatrixBuildsReport(t *testing.T) {
 		t.Fatalf("unexpected report body: %s", string(body))
 	}
 }
+
+func TestDefaultMixedWorkloadTasksUseNoPythonEntrypoints(t *testing.T) {
+	for _, spec := range defaultMixedWorkloadTasks(1234) {
+		if strings.Contains(spec.Task.Entrypoint, "python") {
+			t.Fatalf("expected mixed workload default entrypoint to avoid python helper residue: %+v", spec)
+		}
+	}
+}
