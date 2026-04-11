@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-256-land",
-    "latest_commit": "4bc7c2b9",
+    "latest_commit": "see git ls-remote --heads origin big-go-256-land",
     "push_target": "origin/big-go-256-land"
   },
   "artifacts": {
@@ -63,6 +63,7 @@
     "Lane history includes `3b2093a2 BIG-GO-256: add support asset python sweep guard`.",
     "Lane history includes `d16a8f65 BIG-GO-256: record push metadata`.",
     "Lane history includes `4bc7c2b9 BIG-GO-256: finalize metadata`.",
-    "Final pushed head matched `origin/big-go-256-land` at `4bc7c2b9`."
+    "Lane history includes `c161a0a6 BIG-GO-256: reconcile final head metadata`.",
+    "Use `git ls-remote --heads origin big-go-256-land` to read the current pushed head without creating a self-referential metadata loop."
   ]
 }
