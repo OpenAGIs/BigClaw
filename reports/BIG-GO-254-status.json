@@ -1,0 +1,50 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-254",
+    "title": "Residual scripts Python sweep U",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-254",
+    "baseline_commit": "1858cdb1",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-254"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-254-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_254_residual_wrapper_sweep_test.go",
+    "validation_report": "reports/BIG-GO-254-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "README.md",
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/internal/regression/big_go_254_residual_wrapper_sweep_test.go",
+    "bigclaw-go/docs/reports/big-go-254-python-asset-sweep.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "bash scripts/ops/bigclawctl --help",
+      "cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "launcher_help": "exit 0; root usage printed",
+      "targeted_tests": "ok  \tbigclaw-go/cmd/bigclawctl\t0.518s\nok  \tbigclaw-go/internal/regression\t0.195s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-254 changes."
+  },
+  "notes": [
+    "This lane replaces the residual repo-root bigclawctl go-run wrapper with a cached compiled launcher.",
+    "The launcher preserves the existing --repo injection behavior for callers that omit it.",
+    "The cache location is configurable with BIGCLAWCTL_BIN_DIR and otherwise defaults to ${XDG_CACHE_HOME:-$HOME/.cache}/bigclaw."
+  ]
+}

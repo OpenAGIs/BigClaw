@@ -1,0 +1,106 @@
+# BIG-GO-254 Validation
+
+Date: 2026-04-12
+
+## Scope
+
+Issue: `BIG-GO-254`
+
+Title: `Residual scripts Python sweep U`
+
+This lane replaced the remaining repo-root `bigclawctl` shell launcher path
+that still behaved as a migration-era wrapper and recorded the repository's
+already-zero Python baseline.
+
+The checked-out workspace started with a repository-wide Python file count of
+`0`, so there was no physical `.py` asset left to delete or replace in-branch.
+The delivered work hardens that zero-Python baseline by moving
+`scripts/ops/bigclawctl` off the `go run` wrapper path and onto a cached
+compiled-binary launcher.
+
+## Remaining Python Asset Inventory
+
+- Repository-wide physical `.py` files: `none`
+
+## Replacement Paths
+
+- Cached launcher: `scripts/ops/bigclawctl`
+- Root operator guide: `README.md`
+- Migration plan: `docs/go-cli-script-migration-plan.md`
+- Issue lane report: `bigclaw-go/docs/reports/big-go-254-python-asset-sweep.md`
+- Issue regression guard: `bigclaw-go/internal/regression/big_go_254_residual_wrapper_sweep_test.go`
+
+## Validation Commands
+
+- `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `bash scripts/ops/bigclawctl --help`
+- `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'`
+
+## Validation Results
+
+### Repository Python inventory
+
+Command:
+
+```bash
+find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort
+```
+
+Result:
+
+```text
+none
+```
+
+### Cached launcher help
+
+Command:
+
+```bash
+bash scripts/ops/bigclawctl --help
+```
+
+Result:
+
+```text
+usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel> ...
+
+commands:
+  github-sync     install/sync/status hooks and branch sync state
+  workspace       bootstrap/cleanup/validate workspaces using the shared mirror
+  automation      run migrated e2e/benchmark/migration automation entrypoints
+  refill          promote issues to maintain target in-progress count
+  local-issues    manage the repo-native issue store in local-issues.json
+  create-issues   seed the GitHub repo with the canned issue plans
+  dev-smoke       run the Go control-plane smoke decision check
+  symphony        launch Symphony against this repo workflow
+  issue           open local tracker flows or proxy symphony issue
+  panel           proxy symphony panel against this repo workflow
+```
+
+### Targeted regression and CLI tests
+
+Command:
+
+```bash
+cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/cmd/bigclawctl	0.518s
+ok  	bigclaw-go/internal/regression	0.195s
+```
+
+## Git
+
+- Branch: `BIG-GO-254`
+- Baseline HEAD before lane commit: `1858cdb1`
+- Push target: `origin/BIG-GO-254`
+
+## Residual Risk
+
+- The live branch baseline was already Python-free, so BIG-GO-254 could only
+  harden and document the compiled launcher path rather than numerically lower
+  the repository `.py` count.

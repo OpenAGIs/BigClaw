@@ -65,7 +65,7 @@ operator replacements.
 
 The remaining compatibility layer is intentionally thin:
 
-- Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
+- Bash ops aliases only proxy into the cached compiled launcher at `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
 
 ## First-Batch Change List
@@ -109,8 +109,8 @@ should point directly at `bash scripts/ops/bigclawctl ...`.
 
 - Continue shrinking `scripts/dev_bootstrap.sh` so it stays a validation-only shell helper and
   does not reintroduce Python environment management at the repository root.
-- Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
-  path for production/operator use.
+- Keep `scripts/ops/bigclawctl` on the cached compiled-binary path and do not
+  regress it back to `go run`.
 - Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
   first automation batch. The remaining backlog is tracked in
   `bigclaw-go/docs/go-cli-script-migration.md`.
@@ -169,8 +169,8 @@ should point directly at `bash scripts/ops/bigclawctl ...`.
 
 - `create-issues` still relies on a static in-repo issue plan map. If the canonical issue list
   changes frequently, the next step should move plan data into versioned JSON/YAML fixtures.
-- `scripts/ops/bigclawctl` still uses `go run`, so first-run latency and local Go toolchain
-  availability remain operator dependencies.
+- `scripts/ops/bigclawctl` now caches a compiled binary, but the first run
+  still depends on a local Go toolchain and a writable user cache directory.
 - `run-task-smoke --autostart` and `soak-local --autostart` still depend on ephemeral port
   reservation before `bigclawd` binds, so local port races remain possible.
 - `symphony`/`issue`/`panel` are now implemented in Go but still depend on an external Symphony

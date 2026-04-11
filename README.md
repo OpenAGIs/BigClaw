@@ -62,7 +62,9 @@ Notes:
 - The only remaining repo-root shell aliases are `scripts/dev_bootstrap.sh`,
   `scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`,
   `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel`.
-  The preferred operator path is `scripts/ops/bigclawctl`.
+  The preferred operator path is `scripts/ops/bigclawctl`, which now caches a
+  compiled `bigclawctl` launcher under the user cache directory instead of
+  shelling into `go run`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
@@ -137,7 +139,7 @@ root helper inventory is limited to `scripts/dev_bootstrap.sh`,
 `scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`,
 `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel`; retired root
 Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
-`scripts/ops/bigclawctl`.
+`scripts/ops/bigclawctl`, which builds and reuses a cached `bigclawctl` binary.
 
 Active runtime development belongs in `bigclaw-go/internal/*`; use
 `go run ./bigclaw-go/cmd/bigclawd` for the local server path.

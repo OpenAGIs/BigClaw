@@ -4,8 +4,31 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/../.." && pwd)
 invocation_dir=$(pwd)
+go_root="$repo_root/bigclaw-go"
+cache_root="${BIGCLAWCTL_BIN_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/bigclaw}"
+bin_path="$cache_root/bigclawctl"
 
-cd "$repo_root/bigclaw-go"
+needs_build=0
+if [[ ! -x "$bin_path" ]]; then
+  needs_build=1
+elif [[ "$go_root/go.mod" -nt "$bin_path" || "$go_root/go.sum" -nt "$bin_path" ]]; then
+  needs_build=1
+elif find "$go_root/cmd" "$go_root/internal" -type f -name '*.go' -newer "$bin_path" -print -quit | grep -q .; then
+  needs_build=1
+fi
+
+if [[ "$needs_build" -eq 1 ]]; then
+  mkdir -p "$cache_root"
+  tmp_bin="$cache_root/.bigclawctl.$$"
+  trap 'rm -f "$tmp_bin"' EXIT
+  (
+    cd "$go_root"
+    GOWORK=off go build -o "$tmp_bin" ./cmd/bigclawctl
+  )
+  mv "$tmp_bin" "$bin_path"
+  chmod +x "$bin_path"
+  trap - EXIT
+fi
 
 needs_repo=true
 out_args=()
@@ -53,7 +76,7 @@ for arg in "$@"; do
 done
 
 if [ "$needs_repo" = true ]; then
-  exec go run ./cmd/bigclawctl "${out_args[@]}" --repo "$repo_root"
+  exec "$bin_path" "${out_args[@]}" --repo "$repo_root"
 fi
 
-exec go run ./cmd/bigclawctl "${out_args[@]}"
+exec "$bin_path" "${out_args[@]}"
