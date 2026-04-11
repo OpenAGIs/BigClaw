@@ -100,7 +100,7 @@ ok  	bigclaw-go/internal/regression	3.230s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `a4503f62`
-- Landed lane commit: `pending`
+- Landed lane commit: `6cfc0d82`
 - Final pushed lane commit: `pending`
 - Push target: `origin/main`
 

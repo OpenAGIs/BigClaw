@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-208",
     "title": "Broad repo Python reduction sweep AF",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "6cfc0d82",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -57,6 +57,7 @@
   "notes": [
     "This lane records the already-empty broad residual reporting and migration surfaces and hardens them with issue-scoped regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens evidence and regression checks rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `a4503f62`."
+    "Baseline HEAD before lane changes was `a4503f62`.",
+    "Landed lane commit was `6cfc0d82 BIG-GO-208: add broad zero-python sweep guard`."
   ]
 }
