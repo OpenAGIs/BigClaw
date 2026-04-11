@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-221' -1",
+    "latest_commit": "resolve with `git log --oneline --grep 'BIG-GO-221' -1` after landing commit",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -51,8 +51,8 @@
     ],
     "results": {
       "repo_py_inventory": "no output",
-      "assigned_path_inventory": "absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__init__.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__main__.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/audit_events.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/collaboration.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/console_ia.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/design_system.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/evaluation.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/run_detail.py\nabsent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.204s"
+      "assigned_path_inventory": "absent src/bigclaw/__init__.py\nabsent src/bigclaw/__main__.py\nabsent src/bigclaw/audit_events.py\nabsent src/bigclaw/collaboration.py\nabsent src/bigclaw/console_ia.py\nabsent src/bigclaw/design_system.py\nabsent src/bigclaw/evaluation.py\nabsent src/bigclaw/run_detail.py\nabsent src/bigclaw/runtime.py",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.166s"
     }
   },
   "blocker": {
@@ -62,7 +62,7 @@
   "notes": [
     "This lane documents the tranche-17 retired src/bigclaw module surface and hardens its Go-only state.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `ef527393`.",
-    "Use `git log --oneline --grep 'BIG-GO-221' -1` to resolve the latest lane commit at push time."
+    "Baseline HEAD before the 2026-04-12 landing refresh was `e7e18ff0`.",
+    "The landing commit hash should be resolved with `git log --oneline --grep 'BIG-GO-221' -1` after push."
   ]
 }

@@ -1,6 +1,6 @@
 # BIG-GO-221 Validation
 
-Date: 2026-04-11
+Date: 2026-04-12
 
 ## Scope
 
@@ -48,9 +48,9 @@ and lane-specific validation evidence.
 
 ## Validation Commands
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-221 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__init__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__main__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/audit_events.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/collaboration.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/console_ia.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/design_system.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/evaluation.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/run_detail.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'`
+- `find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `for path in src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/audit_events.py src/bigclaw/collaboration.py src/bigclaw/console_ia.py src/bigclaw/design_system.py src/bigclaw/evaluation.py src/bigclaw/run_detail.py src/bigclaw/runtime.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'`
 
 ## Validation Results
 
@@ -59,7 +59,7 @@ and lane-specific validation evidence.
 Command:
 
 ```bash
-find /Users/openagi/code/bigclaw-workspaces/BIG-GO-221 -path '*/.git' -prune -o -name '*.py' -type f -print | sort
+find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort
 ```
 
 Result:
@@ -73,21 +73,21 @@ no output
 Command:
 
 ```bash
-for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__init__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__main__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/audit_events.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/collaboration.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/console_ia.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/design_system.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/evaluation.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/run_detail.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done
+for path in src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/audit_events.py src/bigclaw/collaboration.py src/bigclaw/console_ia.py src/bigclaw/design_system.py src/bigclaw/evaluation.py src/bigclaw/run_detail.py src/bigclaw/runtime.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done
 ```
 
 Result:
 
 ```text
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__init__.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/__main__.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/audit_events.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/collaboration.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/console_ia.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/design_system.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/evaluation.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/run_detail.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py
+absent src/bigclaw/__init__.py
+absent src/bigclaw/__main__.py
+absent src/bigclaw/audit_events.py
+absent src/bigclaw/collaboration.py
+absent src/bigclaw/console_ia.py
+absent src/bigclaw/design_system.py
+absent src/bigclaw/evaluation.py
+absent src/bigclaw/run_detail.py
+absent src/bigclaw/runtime.py
 ```
 
 ### Targeted regression guard
@@ -95,26 +95,26 @@ absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/src/bigclaw/runtime.py
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-221/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'
+cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO221(RepositoryHasNoPythonFiles|SrcBigclawTranche17PathsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche17$'
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.204s
+ok  	bigclaw-go/internal/regression	0.166s
 ```
 
 ## Git
 
 - Branch: `main`
-- Baseline HEAD before lane commit: `ef527393`
+- Baseline HEAD before refresh commit: `e7e18ff0`
 - Latest local `BIG-GO-221` commit before the final push:
   `git log --oneline --grep 'BIG-GO-221' -1`
 - Push target: `origin/main`
-- Remote verification after later mainline advances: `30d2edeb81bec759c57f86f962de095b268fecb5 refs/heads/main`
+- Remote verification after push: pending landing commit
 
 ## Residual Risk
 
-- The live branch baseline was already Python-free, so BIG-GO-221 can only
+- The live branch baseline was already Python-free, so `BIG-GO-221` can only
   lock in and document the Go-only state rather than numerically lower the
   repository `.py` count in this checkout.
