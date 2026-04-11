@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1595",
+    "title": "Go-only sweep refill BIG-GO-1595",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-1595",
+    "baseline_commit": "775c471",
+    "latest_commit": "HEAD",
+    "push_target": "origin/BIG-GO-1595",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-1595?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1595_zero_python_guard_test.go",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1595-python-asset-sweep.md",
+    "validation_report": "reports/BIG-GO-1595-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "assigned_slice_py_files_before": 0,
+    "assigned_slice_py_files_after": 0
+  },
+  "retired_python_paths": [
+    "src/bigclaw/connectors.py",
+    "src/bigclaw/governance.py",
+    "src/bigclaw/planning.py",
+    "src/bigclaw/reports.py",
+    "src/bigclaw/workflow.py",
+    "tests/test_cross_process_coordination_surface.py",
+    "tests/test_governance.py",
+    "tests/test_parallel_refill.py"
+  ],
+  "replacement_paths": [
+    "docs/go-domain-intake-parity-matrix.md",
+    "bigclaw-go/internal/intake/connector.go",
+    "bigclaw-go/internal/governance/freeze.go",
+    "bigclaw-go/internal/planning/planning.go",
+    "bigclaw-go/internal/reporting/reporting.go",
+    "bigclaw-go/internal/workflow/orchestration.go",
+    "bigclaw-go/internal/api/coordination_surface.go",
+    "bigclaw-go/internal/refill/queue.go",
+    "bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json",
+    "bigclaw-go/docs/reports/parallel-validation-matrix.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find src/bigclaw tests -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1595(RepositoryHasNoPythonFiles|AssignedPythonSourceAndTestsRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "no output",
+      "assigned_slice_py_inventory": "no output",
+      "regression_tests": "ok   bigclaw-go/internal/regression\t0.187s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The assigned Python assets were already absent and the repository-wide Python inventory was already zero at branch entry, so this lane hardens the migrated state instead of reducing a nonzero file count."
+  }
+}
