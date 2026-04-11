@@ -2,7 +2,7 @@
   "issue": {
     "identifier": "BIG-GO-256",
     "title": "Residual support assets Python sweep U",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "big-go-256-land",
@@ -59,6 +59,8 @@
   "notes": [
     "This lane records the remaining support assets as already Python-free and ties them to the retained native examples, report artifacts, and helper entrypoints.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `4200cd79`."
+    "Baseline HEAD before lane changes was `4200cd79`.",
+    "Lane history includes `3b2093a2 BIG-GO-256: add support asset python sweep guard`.",
+    "Remote verification after the first push matched `origin/big-go-256-land` at `3b2093a2`."
   ]
 }
