@@ -1,0 +1,73 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-252",
+    "title": "Residual tests Python sweep AO",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "BIG-GO-252",
+    "baseline_commit": "6acdc7c9",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-252",
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-252?expand=1"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-252-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_252_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-252-validation.md"
+  },
+  "counts": {
+    "repository_py_files_before": 0,
+    "repository_py_files_after": 0,
+    "focused_residual_test_sweep_py_files_before": 0,
+    "focused_residual_test_sweep_py_files_after": 0
+  },
+  "deleted_file_ledger": {
+    "lane": [],
+    "focused_residual_test_sweep": []
+  },
+  "residual_scan": {
+    "tests": [],
+    "bigclaw-go/scripts": [],
+    "bigclaw-go/internal/migration": [],
+    "bigclaw-go/internal/regression": [],
+    "bigclaw-go/docs/reports": []
+  },
+  "replacement_paths": [
+    "reports/BIG-GO-948-validation.md",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go",
+    "bigclaw-go/internal/regression/big_go_13_legacy_test_contract_sweep_d_test.go",
+    "bigclaw-go/internal/regression/big_go_1365_legacy_test_contract_sweep_b_test.go",
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go",
+    "bigclaw-go/internal/regression/big_go_1577_zero_python_guard_test.go",
+    "bigclaw-go/docs/reports/big-go-13-legacy-test-contract-sweep-d.md",
+    "bigclaw-go/docs/reports/big-go-1365-legacy-test-contract-sweep-b.md",
+    "bigclaw-go/docs/reports/big-go-1577-python-asset-sweep.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find tests bigclaw-go/scripts bigclaw-go/internal/migration bigclaw-go/internal/regression bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO252(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "focused_residual_test_sweep_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t6.131s"
+    }
+  },
+  "pull_request": {
+    "number": null,
+    "url": null,
+    "state": null,
+    "title": null,
+    "draft": null,
+    "mergeable": null,
+    "mergeable_state": null,
+    "head_sha": null,
+    "base_sha": null
+  }
+}

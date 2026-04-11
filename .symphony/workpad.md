@@ -1,43 +1,46 @@
-# BIG-GO-240 Workpad
+# BIG-GO-252 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide Python asset inventory and the convergence
-   lane directories relevant to `BIG-GO-240`: `src/bigclaw`, `tests`,
-   `scripts`, and `bigclaw-go/scripts`.
-2. Add the issue-scoped convergence evidence bundle for `BIG-GO-240`:
-   - `bigclaw-go/internal/regression/big_go_240_zero_python_guard_test.go`
-   - `bigclaw-go/docs/reports/big-go-240-python-asset-sweep.md`
-   - `reports/BIG-GO-240-validation.md`
-   - `reports/BIG-GO-240-status.json`
-3. Run the targeted inventory checks and regression test, record the exact
-   command results, then commit and push the lane update to `origin/main`.
+1. Reconfirm the repository-wide Python inventory and the residual
+   Python-heavy test sweep directories relevant to `BIG-GO-252`: `tests`,
+   `bigclaw-go/scripts`, `bigclaw-go/internal/migration`,
+   `bigclaw-go/internal/regression`, and `bigclaw-go/docs/reports`.
+2. Add the issue-scoped regression and evidence bundle for `BIG-GO-252`:
+   - `bigclaw-go/internal/regression/big_go_252_zero_python_guard_test.go`
+   - `bigclaw-go/docs/reports/big-go-252-python-asset-sweep.md`
+   - `reports/BIG-GO-252-validation.md`
+   - `reports/BIG-GO-252-status.json`
+3. Run the targeted inventory checks and focused regression guard, then record
+   the exact commands and results in the issue artifacts before committing and
+   pushing the branch.
 
 ## Acceptance
 
-- `BIG-GO-240` documents the live repository Python inventory and the
-  convergence-lane residual directories with exact observed results.
-- The lane adds a Go regression guard that protects the repository-wide
-  zero-Python baseline, the priority residual directories, and the retained
-  Go/native replacement paths.
-- The validation artifacts explicitly capture the already-zero branch baseline
-  and the exact commands used to verify it.
-- The final change set is committed and pushed.
+- `BIG-GO-252` records the live repository-wide Python inventory and the
+  assigned residual Python-heavy test directories with exact observed results.
+- The lane adds a Go regression guard that preserves the zero-Python baseline
+  across `tests`, `bigclaw-go/scripts`, `bigclaw-go/internal/migration`,
+  `bigclaw-go/internal/regression`, and `bigclaw-go/docs/reports`.
+- The report and validation artifacts explicitly name the retained Go/native
+  replacement paths that cover the retired Python-heavy test surface.
+- The exact validation commands and results are captured, and the final change
+  set is committed and pushed to `origin/BIG-GO-252`.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-240 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-240/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO240(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-252 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-252/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-252/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-252/bigclaw-go/internal/migration /Users/openagi/code/bigclaw-workspaces/BIG-GO-252/bigclaw-go/internal/regression /Users/openagi/code/bigclaw-workspaces/BIG-GO-252/bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-252/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO252(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
 
 ## Execution Notes
 
 - 2026-04-12: Initial inspection shows the checkout is already at a
   repository-wide Python file count of `0`.
-- 2026-04-12: The convergence-lane directories `src/bigclaw`, `tests`,
-  `scripts`, and `bigclaw-go/scripts` are already Python-free in this
-  workspace.
+- 2026-04-12: The assigned residual Python-heavy test sweep directories are
+  already Python-free in this workspace, with the root `tests` directory
+  absent.
 - 2026-04-12: This execution therefore focuses on issue-scoped regression
   hardening and evidence capture rather than deleting in-branch `.py` files.
-- 2026-04-12: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO240(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  and observed `ok   bigclaw-go/internal/regression 0.177s`.
+- 2026-04-12: Re-ran `go test -count=1 ./internal/regression -run 'TestBIGGO252(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+  and observed `ok   bigclaw-go/internal/regression 6.131s`.
