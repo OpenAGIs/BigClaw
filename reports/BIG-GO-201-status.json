@@ -1,0 +1,60 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-201",
+    "title": "Residual src/bigclaw Python sweep Q",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-201",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-201'",
+    "push_target": "origin/BIG-GO-201"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-201-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_201_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-201-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "src/bigclaw": []
+    },
+    "absent_dirs": [
+      "src/bigclaw"
+    ]
+  },
+  "go_replacements": [
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/scripts/e2e/run_all.sh"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find src/bigclaw -type f -name '*.py' 2>/dev/null | sort",
+      "if test ! -d src/bigclaw; then echo absent; else echo present; fi",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO201(RepositoryHasNoPythonFiles|SrcBigclawTreeStaysAbsentAndPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "src_bigclaw_inventory": "none",
+      "src_bigclaw_absence": "absent",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.195s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero and src/bigclaw was already absent in this workspace before BIG-GO-201 changes."
+  },
+  "notes": [
+    "This lane documents the retired src/bigclaw tree as absent and hardens the Go-only state with regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `36121df8`."
+  ]
+}
