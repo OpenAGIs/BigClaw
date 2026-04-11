@@ -115,6 +115,7 @@ Repository hygiene:
 ```bash
 git diff --check
 bash scripts/ops/bigclawctl github-sync --help >/dev/null
+find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort
 ```
 
 ## Quick verify

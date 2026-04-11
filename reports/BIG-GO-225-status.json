@@ -1,0 +1,49 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-225",
+    "title": "Residual tooling Python sweep R",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "baseline_commit": "ef527393",
+    "final_commit": "PENDING",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "validation_report": "reports/BIG-GO-225-validation.md",
+    "root_docs": "README.md",
+    "regression_guard": "bigclaw-go/internal/regression/root_script_residual_sweep_test.go"
+  },
+  "changes": {
+    "deleted": [
+      ".pre-commit-config.yaml"
+    ],
+    "updated": [
+      "README.md",
+      "bigclaw-go/internal/regression/root_script_residual_sweep_test.go",
+      ".symphony/workpad.md"
+    ]
+  },
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-225 -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "test ! -e /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/.pre-commit-config.yaml && echo absent",
+      "git diff --check",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'",
+      "jq empty /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/reports/BIG-GO-225-status.json"
+    ],
+    "results": {
+      "python_file_inventory": "none",
+      "pre_commit_config": "absent",
+      "diff_check": "exit 0",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.178s",
+      "status_json": "exit 0"
+    }
+  },
+  "notes": [
+    "The repository already had no tracked .py files when this lane started.",
+    "The scoped change removes residual Python-based root tooling rather than migrating application code."
+  ]
+}

@@ -1,21 +1,36 @@
+# BIG-GO-225 Workpad
+
 ## Plan
 
-1. Inspect the existing residual-test Python sweep lanes and reuse the established Go regression/report pattern for `BIG-GO-233`.
-2. Add issue-scoped `BIG-GO-233` regression coverage and a matching sweep report that records the current zero-Python inventory plus the existing Go/native replacement surfaces.
-3. Run targeted inventory and regression commands, capture exact results, and write the issue validation report.
-4. Commit the scoped changes and push the branch to the configured remote.
+1. Confirm the repository has no checked-in `.py` files and identify the
+   residual Python-based tooling/configuration still present in root developer
+   workflows.
+2. Remove or replace only the remaining Python tooling surfaces assigned to
+   `BIG-GO-225`, keeping the change scoped to root build helpers and dev
+   utility guidance.
+3. Add or tighten regression coverage so the retired Python tooling does not
+   reappear in the root toolchain or documentation.
+4. Run targeted validation commands, record exact commands and outcomes, then
+   commit and push the issue-scoped change set.
 
 ## Acceptance
 
-- `.symphony/workpad.md` exists and records plan, acceptance, and validation.
-- `BIG-GO-233` has a scoped Go regression guard under `bigclaw-go/internal/regression`.
-- `BIG-GO-233` has a scoped sweep report under `bigclaw-go/docs/reports`.
-- A validation report records the exact commands and results for the targeted checks.
-- Changes remain limited to issue-scoped regression/report/documentation artifacts.
-- The branch is committed and pushed.
+- The repository remains physically Python-free.
+- Root developer tooling no longer depends on Python-based `pre-commit` / Ruff
+  configuration for standard repo hygiene.
+- README and regression coverage both reflect the Go-native replacement
+  workflow.
+- Validation evidence for `BIG-GO-225` records the exact commands run and
+  their results.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-233 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/internal/migration /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/internal/regression /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go/docs/reports -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-233/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO233(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-225 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
+- `test ! -e /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/.pre-commit-config.yaml`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/bigclaw-go && go test -count=1 ./internal/regression -run 'TestRootScriptResidualSweep|TestRootScriptResidualSweepDocs'`
+
+## Execution Notes
+
+- 2026-04-11: Initial inspection shows no tracked `.py` files in this checkout.
+- 2026-04-11: The remaining issue scope is residual Python-based root tooling
+  metadata and docs, centered on `.pre-commit-config.yaml` and README guidance.

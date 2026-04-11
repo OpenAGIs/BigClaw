@@ -28,6 +28,7 @@ func TestRootScriptResidualSweep(t *testing.T) {
 	deletedPythonBuildHelpers := []string{
 		"setup.py",
 		"pyproject.toml",
+		".pre-commit-config.yaml",
 	}
 	for _, relativePath := range deletedPythonBuildHelpers {
 		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
@@ -77,6 +78,8 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		"Use this to verify the root dev smoke path:",
 		"bash scripts/ops/bigclawctl dev-smoke",
 		"bash scripts/dev_bootstrap.sh",
+		"git diff --check",
+		"find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
 	}
 	for _, needle := range requiredReadmeEntries {
 		if !strings.Contains(readme, needle) {
@@ -85,5 +88,8 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 	}
 	if strings.Contains(readme, "legacy-python compile-check") {
 		t.Fatalf("README.md should not reference retired legacy-python compile-check guidance")
+	}
+	if strings.Contains(readme, "pre-commit run --all-files") {
+		t.Fatalf("README.md should not reference retired pre-commit hygiene guidance")
 	}
 }
