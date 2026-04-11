@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "ef527393a7e30b1159d3a83101dce9d3f8b03933",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1597'",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -62,7 +62,6 @@
   },
   "notes": [
     "This lane documents the already-empty assigned Python asset slice and hardens the Go-only state with regression coverage.",
-    "Baseline HEAD before lane changes was `465d7628`.",
-    "Remote verification: `git ls-remote --heads origin main` matched `ef527393a7e30b1159d3a83101dce9d3f8b03933 refs/heads/main`."
+    "Baseline HEAD before lane changes was `465d7628`."
   ]
 }

@@ -71,9 +71,7 @@ ok  	bigclaw-go/internal/regression	0.177s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `465d7628`
-- Final pushed lane commit: `ef527393a7e30b1159d3a83101dce9d3f8b03933`
 - Push target: `origin/main`
-- Remote verification: `git ls-remote --heads origin main` -> `ef527393a7e30b1159d3a83101dce9d3f8b03933 refs/heads/main`
 
 ## Residual Risk
 
