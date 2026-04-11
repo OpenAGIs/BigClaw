@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
-from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit
+from bigclaw.observability import APPROVAL_RECORDED_EVENT, GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit
 from bigclaw.reports import PilotMetric, PilotScorecard
 from bigclaw.workflow import AcceptanceGate, WorkflowEngine, WorkpadJournal
 
@@ -102,6 +102,9 @@ def test_workflow_engine_keeps_high_risk_task_pending_manual_approval(tmp_path: 
     assert result.execution.run.status == "needs-approval"
     assert result.acceptance.passed is False
     assert result.acceptance.status == "needs-approval"
+    audits = {entry["action"]: entry for entry in ledger.load()[0]["audits"]}
+    assert APPROVAL_RECORDED_EVENT not in audits
+    assert audits["execution.manual_takeover"]["details"]["target_team"] == "security"
 
 
 def test_workflow_engine_writes_pilot_scorecard_and_accepts_positive_roi(tmp_path: Path):

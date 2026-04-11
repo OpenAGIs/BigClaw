@@ -106,14 +106,14 @@ from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
-from .audit_events import (
+from .observability import (
     APPROVAL_RECORDED_EVENT,
+    AuditEventSpec,
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
     MANUAL_TAKEOVER_EVENT,
     P0_AUDIT_EVENT_SPECS,
     SCHEDULER_DECISION_EVENT,
-    AuditEventSpec,
     get_audit_event_spec,
     missing_required_fields,
 )

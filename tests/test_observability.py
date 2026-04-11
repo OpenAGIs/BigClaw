@@ -1,9 +1,11 @@
 import hashlib
 from pathlib import Path
 
+import pytest
+
 from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.models import Priority, Task
-from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, TaskRun
+from bigclaw.observability import GitSyncTelemetry, MANUAL_TAKEOVER_EVENT, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, TaskRun
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
 from bigclaw.repo_plane import RunCommitLink
 
@@ -266,3 +268,21 @@ def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):
     assert collaboration is not None
     assert collaboration.mention_count == 1
     assert collaboration.comments[0].body == "Need @eng confirmation on the retry plan."
+
+
+def test_task_run_audit_spec_event_requires_required_fields() -> None:
+    run = TaskRun.from_task(
+        Task(task_id="BIG-spec", source="linear", title="Validate audit fields", description=""),
+        run_id="run-spec",
+        medium="docker",
+    )
+
+    with pytest.raises(ValueError, match="missing required fields"):
+        run.audit_spec_event(
+            MANUAL_TAKEOVER_EVENT,
+            "scheduler",
+            "pending",
+            task_id="BIG-spec",
+            run_id="run-spec",
+            target_team="security",
+        )

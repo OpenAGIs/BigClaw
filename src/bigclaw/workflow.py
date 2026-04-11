@@ -6,10 +6,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from .deprecation import LEGACY_RUNTIME_GUIDANCE
-from .audit_events import APPROVAL_RECORDED_EVENT
 from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
-from .observability import ObservabilityLedger, RepoSyncAudit, utc_now
+from .observability import APPROVAL_RECORDED_EVENT, ObservabilityLedger, RepoSyncAudit, utc_now
 from .orchestration import render_orchestration_plan
 from .reports import (
     build_orchestration_canvas,
