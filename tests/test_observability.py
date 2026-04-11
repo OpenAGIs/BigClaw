@@ -6,6 +6,7 @@ import pytest
 from bigclaw.collaboration import (
     CollaborationComment,
     DecisionNote,
+    RepoDiscussionBoard,
     build_collaboration_thread,
     build_collaboration_thread_from_audits,
     merge_collaboration_threads,
@@ -24,7 +25,6 @@ from bigclaw.observability import (
 )
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
 from bigclaw.repo_links import bind_run_commits
-from bigclaw.repo_board import RepoDiscussionBoard
 from bigclaw.repo_plane import RunCommitLink
 
 
