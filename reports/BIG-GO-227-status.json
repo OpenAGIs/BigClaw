@@ -1,0 +1,14 @@
+{
+  "identifier": "BIG-GO-227",
+  "title": "Broad repo Python reduction sweep AI",
+  "status": "done",
+  "summary": "Consolidated standard zero-Python regression files into one catalog-driven suite and retained only the specialized guard files.",
+  "consolidated_case_count": 186,
+  "prior_standard_file_count": 191,
+  "retained_specialized_files": 5,
+  "artifacts": [
+    "docs/reports/big-go-227-zero-python-guard-consolidation.md",
+    "bigclaw-go/internal/regression/big_go_227_zero_python_guard_catalog_test.go",
+    "reports/BIG-GO-227-validation.md"
+  ]
+}
