@@ -21,7 +21,7 @@
 - The lane report and validation report capture the exact validation commands,
   results, and residual risk that this checkout cannot reduce a zero baseline
   further numerically.
-- The resulting change set is committed and pushed to `origin/main`.
+- The resulting change set is committed and pushed to `origin/big-go-1592`.
 
 ## Validation
 

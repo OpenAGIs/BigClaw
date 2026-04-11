@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "see git log --oneline --grep 'BIG-GO-1592'",
-    "push_target": "origin/main"
+    "push_target": "origin/big-go-1592"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-1592-validation.md",
