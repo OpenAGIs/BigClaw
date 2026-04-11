@@ -88,8 +88,8 @@ ok  	bigclaw-go/internal/regression	0.237s
 
 ## Git
 
-- Commit: pending
-- Push: pending
+- Commit: `6c0a395d BIG-GO-199 harden auxiliary python sweep`
+- Push: `git -c http.version=HTTP/1.1 push -u origin big-go-199`
 
 ## Residual Risk
 

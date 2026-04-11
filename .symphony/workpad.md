@@ -32,3 +32,9 @@
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-199 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' -o -name '*.ipynb' \) -print | sort`
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/.githooks /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/.symphony /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/bigclaw-go/examples /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/bigclaw-go/docs/reports/live-validation-runs /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/reports -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' -o -name '*.ipynb' \) 2>/dev/null | sort`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-199/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO199(RepositoryHasNoPythonFiles|HiddenAndNestedResidualDirectoriesStayPythonFree|HiddenAndNestedNativeAssetsRemainAvailable|LaneReportCapturesSweepState)$'`
+
+## Execution Notes
+
+- 2026-04-11: The repository-wide and hidden/nested auxiliary inventories both returned no output for `.py`, `.pyw`, `.pyi`, `.pyx`, `.pxd`, `.pxi`, and `.ipynb`.
+- 2026-04-11: `go test -count=1 ./internal/regression -run 'TestBIGGO199(RepositoryHasNoPythonFiles|HiddenAndNestedResidualDirectoriesStayPythonFree|HiddenAndNestedNativeAssetsRemainAvailable|LaneReportCapturesSweepState)$'` returned `ok   bigclaw-go/internal/regression 0.237s`.
+- 2026-04-11: Implementation commit `6c0a395d` was pushed to `origin/big-go-199`.
