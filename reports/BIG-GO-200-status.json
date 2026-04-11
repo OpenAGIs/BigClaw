@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-200",
+    "title": "Convergence sweep toward <=1 Python file O",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-200'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-200-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_200_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-200-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "bigclaw-go/cmd": [],
+      "scripts/ops": [],
+      "bigclaw-go/docs/reports": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_200_zero_python_guard_test.go",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "bigclaw-go/docs/reports/issue-coverage.md",
+    "bigclaw-go/docs/reports/parallel-follow-up-index.md",
+    "bigclaw-go/docs/reports/parallel-validation-matrix.md",
+    "bigclaw-go/docs/reports/review-readiness.md",
+    "bigclaw-go/docs/reports/linear-project-sync-summary.md",
+    "bigclaw-go/docs/reports/epic-closure-readiness-report.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find bigclaw-go/cmd scripts/ops bigclaw-go/docs/reports -maxdepth 2 -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO200(RepositoryHasNoPythonFiles|CommandAndReportIndexSurfacesStayPythonFree|GoNativeEntryPointsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-200 changes."
+  },
+  "notes": [
+    "This lane records the Go-native command surface and top-level report-index surface as already Python-free.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `de074cf7`."
+  ]
+}
