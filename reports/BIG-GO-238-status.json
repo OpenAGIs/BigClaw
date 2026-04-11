@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-238",
-    "latest_commit": "a2a65d32205ef629d8a31bf3bdf77c206f12bd73",
+    "latest_commit": "see git rev-parse HEAD",
     "push_target": "origin/BIG-GO-238"
   },
   "artifacts": {
@@ -57,6 +57,6 @@
     "This lane documents an already Python-free checkout and hardens the active Go/shell operator surface with regression coverage.",
     "The branch baseline was already Python-free, so this lane refreshes evidence instead of removing in-branch Python files.",
     "Baseline HEAD before lane changes was `7872e4fa`.",
-    "Remote verification matched local HEAD: `a2a65d32205ef629d8a31bf3bdf77c206f12bd73` on `origin/BIG-GO-238`."
+    "Remote verification matched local HEAD on `origin/BIG-GO-238`; see `git rev-parse HEAD` and `git ls-remote --heads origin BIG-GO-238`."
   ]
 }
