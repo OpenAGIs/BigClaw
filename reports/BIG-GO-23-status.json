@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-23",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-23'",
+    "latest_commit": "fd018d2 BIG-GO-23: formalize legacy test sweep batch C",
     "push_target": "origin/BIG-GO-23"
   },
   "artifacts": {
