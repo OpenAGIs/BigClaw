@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-254",
     "baseline_commit": "1858cdb1",
-    "latest_commit": "pending",
+    "latest_commit": "9bd85a00",
     "push_target": "origin/BIG-GO-254"
   },
   "artifacts": {
