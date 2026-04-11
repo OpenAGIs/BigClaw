@@ -113,6 +113,18 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `105`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593/bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl`
+  - Result: passed
+  - Output: `ok  	bigclaw-go/internal/legacyshim	0.121s`; `ok  	bigclaw-go/cmd/bigclawctl	0.323s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_workspace_bootstrap.py tests/test_validation_bundle_continuation_scorecard.py -q`
+  - Result: passed
+  - Output: `47 passed in 3.64s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && bash scripts/ops/bigclawctl legacy-python compile-check --json`
+  - Result: passed
+  - Output: `{"files":["/Users/openagi/code/bigclaw-workspaces/BIG-GO-1593/src/bigclaw/service.py","/Users/openagi/code/bigclaw-workspaces/BIG-GO-1593/src/bigclaw/legacy_shim.py"],"python":"python3","repo":"/Users/openagi/code/bigclaw-workspaces/BIG-GO-1593","status":"ok"}`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `103`
 
 ### Notes
 
@@ -131,5 +143,6 @@
 - Folded the connectors, validation-policy, pilot, cost-control, roadmap, repo-board, and repo-triage checks into active suites and removed the standalone files `tests/test_connectors.py`, `tests/test_validation_policy.py`, `tests/test_pilot.py`, `tests/test_cost_control.py`, `tests/test_roadmap.py`, `tests/test_repo_board.py`, and `tests/test_repo_triage.py`.
 - Folded the repo-links, repo-collaboration, and repo-rollout checks into active observability/planning suites and removed the standalone files `tests/test_repo_links.py`, `tests/test_repo_collaboration.py`, and `tests/test_repo_rollout.py`.
 - Folded the isolated memory, legacy-shim, cross-process coordination surface, and subscriber takeover harness coverage into active runtime/bootstrap/validation suites and removed the standalone files `tests/test_memory.py`, `tests/test_legacy_shim.py`, `tests/test_cross_process_coordination_surface.py`, and `tests/test_subscriber_takeover_harness.py`.
-- Python file count changed from `138` to `105`.
-- Residual risk: some docs and historical validation reports still mention deleted Python files and tests; this change intentionally leaves those history/documentation references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.
+- Removed the final Python CLI compatibility wrappers `src/bigclaw/__main__.py` and `src/bigclaw/workspace_bootstrap_cli.py`, updated the Go-owned frozen shim list under `bigclaw-go/internal/legacyshim`, and adjusted README wording so the remaining Python compatibility surface is explicit.
+- Python file count changed from `138` to `103`.
+- Residual risk: some docs and historical validation reports still mention deleted Python files and tests, and `python -m bigclaw` is now intentionally absent rather than deprecated; this slice leaves those historical references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.

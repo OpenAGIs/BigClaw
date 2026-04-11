@@ -12,7 +12,6 @@ func TestFrozenCompileCheckFilesUsesFrozenShimList(t *testing.T) {
 	got := FrozenCompileCheckFiles(repoRoot)
 	want := []string{
 		filepath.Join(repoRoot, "src/bigclaw/service.py"),
-		filepath.Join(repoRoot, "src/bigclaw/__main__.py"),
 		filepath.Join(repoRoot, "src/bigclaw/legacy_shim.py"),
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -39,7 +38,6 @@ func TestCompileCheckRunsPyCompileAgainstFrozenShimList(t *testing.T) {
 		"-m",
 		"py_compile",
 		filepath.Join(repoRoot, "src/bigclaw/service.py"),
-		filepath.Join(repoRoot, "src/bigclaw/__main__.py"),
 		filepath.Join(repoRoot, "src/bigclaw/legacy_shim.py"),
 	}
 	if !reflect.DeepEqual(gotArgs, wantArgs) {

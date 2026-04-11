@@ -157,7 +157,7 @@ bootstrap wrappers remain only as compatibility shims during migration.
 The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
 `src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
-for the active local server path. Active runtime development belongs in
+migration-only reference use. The remaining Python service compatibility surface
+is `src/bigclaw/service.py`; use `go run ./bigclaw-go/cmd/bigclawd` for the
+active local server path. Active runtime development belongs in
 `bigclaw-go/internal/*`.
