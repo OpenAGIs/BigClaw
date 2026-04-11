@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-198",
     "title": "Broad repo Python reduction sweep AD",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "f3a0ecb0 BIG-GO-198 add broad repo python sweep guard",
     "push_target": "origin/main"
   },
   "artifacts": {
