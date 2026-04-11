@@ -3,11 +3,10 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
-from .repo_links import bind_run_commits
 from .repo_plane import RunCommitLink
 
 SCHEDULER_DECISION_EVENT = "execution.scheduler_decision"
@@ -15,6 +14,7 @@ MANUAL_TAKEOVER_EVENT = "execution.manual_takeover"
 APPROVAL_RECORDED_EVENT = "execution.approval_recorded"
 BUDGET_OVERRIDE_EVENT = "execution.budget_override"
 FLOW_HANDOFF_EVENT = "execution.flow_handoff"
+VALID_RUN_COMMIT_ROLES = {"source", "candidate", "closeout", "accepted"}
 
 
 @dataclass(frozen=True)
@@ -120,6 +120,36 @@ def approval_evidence_packet(*, run_id: str, links: List[Dict[str, str]], lineag
         "lineage_summary": lineage_summary,
         "links": links,
     }
+
+
+@dataclass
+class RunCommitBinding:
+    links: List[RunCommitLink]
+
+    @property
+    def accepted_commit_hash(self) -> str:
+        for link in self.links:
+            if link.role == "accepted":
+                return link.commit_hash
+        return ""
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "links": [link.to_dict() for link in self.links],
+            "accepted_commit_hash": self.accepted_commit_hash,
+        }
+
+
+def validate_run_commit_roles(links: Iterable[RunCommitLink]) -> None:
+    invalid = [link.role for link in links if link.role not in VALID_RUN_COMMIT_ROLES]
+    if invalid:
+        invalid_text = ", ".join(sorted(set(invalid)))
+        raise ValueError(f"unsupported run commit roles: {invalid_text}")
+
+
+def bind_run_commits(links: List[RunCommitLink]) -> RunCommitBinding:
+    validate_run_commit_roles(links)
+    return RunCommitBinding(links=list(links))
 
 
 def get_audit_event_spec(event_type: str) -> Optional[AuditEventSpec]:

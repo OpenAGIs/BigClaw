@@ -137,6 +137,12 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `99`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_observability.py tests/test_workspace_bootstrap.py tests/test_validation_bundle_continuation_scorecard.py`
+  - Result: passed
+  - Output: `60 passed in 3.76s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `98`
 
 ### Notes
 
@@ -158,5 +164,6 @@
 - Removed the final Python CLI compatibility wrappers `src/bigclaw/__main__.py` and `src/bigclaw/workspace_bootstrap_cli.py`, updated the Go-owned frozen shim list under `bigclaw-go/internal/legacyshim`, and adjusted README wording so the remaining Python compatibility surface is explicit.
 - Folded the workspace bootstrap validation helpers into `src/bigclaw/workspace_bootstrap.py`, folded the lightweight repo-triage helpers into `src/bigclaw/observability.py`, updated the consuming tests, and removed `src/bigclaw/workspace_bootstrap_validation.py` plus `src/bigclaw/repo_triage.py`.
 - Folded the lightweight repo discussion board helpers into `src/bigclaw/collaboration.py`, folded the budget controller into `src/bigclaw/runtime.py`, updated the consuming tests, and removed `src/bigclaw/repo_board.py` plus `src/bigclaw/cost_control.py`.
-- Python file count changed from `138` to `99`.
+- Folded the run-commit binding helper into `src/bigclaw/observability.py`, updated the consuming tests, and removed the standalone `src/bigclaw/repo_links.py` mirror.
+- Python file count changed from `138` to `98`.
 - Residual risk: some docs and historical validation reports still mention deleted Python files and tests, and the removed helper module names may still appear in historical branch notes; this slice leaves those history references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.

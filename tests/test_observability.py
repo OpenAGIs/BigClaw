@@ -19,12 +19,13 @@ from bigclaw.observability import (
     ObservabilityLedger,
     PullRequestFreshness,
     RepoSyncAudit,
+    RunCommitBinding,
     TaskRun,
     approval_evidence_packet,
+    bind_run_commits,
     recommend_triage_action,
 )
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
-from bigclaw.repo_links import bind_run_commits
 from bigclaw.repo_plane import RunCommitLink
 
 
