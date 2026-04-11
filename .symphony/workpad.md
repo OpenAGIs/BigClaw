@@ -35,4 +35,4 @@
   live Python file inventory appears during validation.
 - Validation completed on 2026-04-11 with zero repository `.py` files and a
   passing targeted regression run.
-- Final pushed lane head on `origin/main` is `acdc4c72`.
+- Final pushed lane head is tracked via `git log -1 --oneline` after push.

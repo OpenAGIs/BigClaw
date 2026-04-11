@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "acdc4c72 BIG-GO-198 sync final pushed commit metadata",
+    "latest_commit": "see git log -1 --oneline",
     "push_target": "origin/main"
   },
   "artifacts": {
