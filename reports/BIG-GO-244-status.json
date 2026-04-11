@@ -1,0 +1,57 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-244",
+    "title": "Residual scripts Python sweep T",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "baseline_commit": "a059fd098901ebf40e23a4c100ffdb15f78017dc",
+    "latest_commit": "pending",
+    "push_target": "origin/main",
+    "compare_url": ""
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-244-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_244_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-244-validation.md"
+  },
+  "counts": {
+    "repository_py_files": 0,
+    "scripts_py_files": 0,
+    "scripts_ops_py_files": 0,
+    "bigclaw_go_scripts_py_files": 0,
+    "bigclaw_go_cmd_py_files": 0
+  },
+  "replacement_paths": [
+    "scripts/dev_bootstrap.sh",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony",
+    "docs/local-tracker-automation.md",
+    "docs/go-cli-script-migration-plan.md",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/cmd/bigclawctl/migration_commands.go",
+    "bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go",
+    "bigclaw-go/cmd/bigclawd/main.go"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-244 -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-244/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-244/scripts/ops /Users/openagi/code/bigclaw-workspaces/BIG-GO-244/bigclaw-go/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-244/bigclaw-go/cmd -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-244/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO244(RepositoryHasNoPythonFiles|ResidualScriptAndCLIHelperSurfacesStayPythonFree|SupportedWrapperAndCLIPathsRemainAvailable|WrapperInventoryMatchesContract|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repository_py_inventory": "none",
+      "focused_surface_py_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.207s"
+    }
+  },
+  "notes": [
+    "The live branch baseline was already Python-free before BIG-GO-244 changes.",
+    "This lane records the supported shell-wrapper and Go-CLI helper contract instead of deleting in-branch Python files."
+  ]
+}
