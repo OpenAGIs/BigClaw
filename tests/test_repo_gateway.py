@@ -1,5 +1,7 @@
-from bigclaw.repo_commits import CommitDiff, CommitLineage, RepoCommit
-from bigclaw.repo_gateway import (
+from bigclaw.repo_commits import (
+    CommitDiff,
+    CommitLineage,
+    RepoCommit,
     normalize_commit,
     normalize_diff,
     normalize_gateway_error,
