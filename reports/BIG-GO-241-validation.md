@@ -90,8 +90,8 @@ ok  	bigclaw-go/internal/regression	0.191s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `7872e4fa`
-- Final pushed lane commit: `ccec7ce1 BIG-GO-241 finalize pushed lane metadata`
-- Remote verification: `git ls-remote --heads origin main` -> `ccec7ce17a3ec7c0f042b4a09a17342516923db6 refs/heads/main`
+- Final local lane commits pending push: `d7e2653f BIG-GO-241 finalize pushed lane metadata`, `2f8c997b BIG-GO-241 reconcile final lane metadata after rebase`
+- Last remote verification before final reconciliation: `git ls-remote --heads origin main` -> `1858cdb125b80cd2124e1e0f068a92fb665a7ff0 refs/heads/main`
 - Push target: `origin/main`
 
 ## Residual Risk
