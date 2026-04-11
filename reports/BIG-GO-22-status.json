@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-22",
-    "latest_commit": "",
+    "latest_commit": "0c45dfc9cf578ed3170f035ff516878b94a92195",
     "push_target": "origin/BIG-GO-22"
   },
   "artifacts": {
