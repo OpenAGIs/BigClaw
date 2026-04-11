@@ -98,7 +98,8 @@ ok  	bigclaw-go/internal/regression	0.164s
 - Branch: `BIG-GO-196`
 - Baseline HEAD before lane commit: `36121df8`
 - Lane commit: `c1aa0212 BIG-GO-196 add support asset python sweep guard`
-- Final pushed lane commit: use `git rev-parse --short HEAD` on `BIG-GO-196`
+- Metadata commit: `9929ee66 BIG-GO-196 finalize lane metadata`
+- Final pushed lane commit: `9929ee66 BIG-GO-196 finalize lane metadata`
 - Push target: `origin/BIG-GO-196`
 - Remote branch tracking: `git push -u origin BIG-GO-196`
 
