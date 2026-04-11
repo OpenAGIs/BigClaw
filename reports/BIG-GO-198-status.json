@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "9396c287 BIG-GO-198 finalize lane status artifacts",
+    "latest_commit": "acdc4c72 BIG-GO-198 sync final pushed commit metadata",
     "push_target": "origin/main"
   },
   "artifacts": {
