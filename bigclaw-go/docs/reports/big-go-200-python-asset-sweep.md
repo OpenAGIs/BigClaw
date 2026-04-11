@@ -58,4 +58,4 @@ surface that already existed in the branch baseline.
 - `find bigclaw-go/cmd scripts/ops bigclaw-go/docs/reports -maxdepth 2 -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the command and report-index surfaces remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO200(RepositoryHasNoPythonFiles|CommandAndReportIndexSurfacesStayPythonFree|GoNativeEntryPointsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.187s`
+  Result: `ok  	bigclaw-go/internal/regression	0.249s`
