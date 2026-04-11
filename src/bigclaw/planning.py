@@ -406,9 +406,9 @@ def build_v3_candidate_backlog() -> CandidateBacklog:
                     ),
                     EvidenceLink(
                         label="approval-contract",
-                        target="src/bigclaw/repo_governance.py",
+                        target="bigclaw-go/internal/repo/governance.go",
                         capability="ops-control",
-                        note="approval permission and API role coverage contract",
+                        note="Go-owned repo permission and audit-field contract",
                     ),
                     EvidenceLink(
                         label="approval-workflow",

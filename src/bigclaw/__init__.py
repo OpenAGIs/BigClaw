@@ -143,14 +143,6 @@ from .runtime import (
     ToolRuntime,
     WorkerExecutionResult,
 )
-from .repo_governance import (
-    ExecutionPermission,
-    ExecutionPermissionMatrix,
-    ExecutionRole,
-    PermissionCheckResult,
-    RepoPermissionContract,
-    missing_repo_audit_fields,
-)
 from .dashboard_run_contract import (
     DashboardRunContract,
     DashboardRunContractAudit,
@@ -424,12 +416,6 @@ __all__ = [
     "ToolPolicy",
     "ToolRuntime",
     "WorkerExecutionResult",
-    "ExecutionPermission",
-    "ExecutionPermissionMatrix",
-    "ExecutionRole",
-    "PermissionCheckResult",
-    "RepoPermissionContract",
-    "missing_repo_audit_fields",
     "SchemaField",
     "SurfaceSchema",
     "DashboardRunContract",
