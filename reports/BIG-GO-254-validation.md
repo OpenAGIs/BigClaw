@@ -35,6 +35,7 @@ compiled-binary launcher.
 - `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
 - `bash scripts/ops/bigclawctl --help`
 - `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'`
+- `bash scripts/ops/bigclawctl github-sync status --json`
 
 ## Validation Results
 
@@ -93,6 +94,34 @@ ok  	bigclaw-go/cmd/bigclawctl	0.518s
 ok  	bigclaw-go/internal/regression	0.195s
 ```
 
+### Branch sync status
+
+Command:
+
+```bash
+bash scripts/ops/bigclawctl github-sync status --json
+```
+
+Result:
+
+```json
+{
+  "ahead": 0,
+  "behind": 0,
+  "branch": "BIG-GO-254",
+  "detached": false,
+  "dirty": false,
+  "diverged": false,
+  "local_sha": "ad6b67758bb03808724b8df3f0f4bfdeb4a7b137",
+  "pushed": true,
+  "relation_known": true,
+  "remote_exists": true,
+  "remote_sha": "ad6b67758bb03808724b8df3f0f4bfdeb4a7b137",
+  "status": "ok",
+  "synced": true
+}
+```
+
 ## Git
 
 - Branch: `BIG-GO-254`
@@ -104,3 +133,5 @@ ok  	bigclaw-go/internal/regression	0.195s
 - The live branch baseline was already Python-free, so BIG-GO-254 could only
   harden and document the compiled launcher path rather than numerically lower
   the repository `.py` count.
+- GitHub PR creation/querying is blocked in this workspace because `gh` is not
+  authenticated and no `GH_TOKEN`/`GITHUB_TOKEN` is present.

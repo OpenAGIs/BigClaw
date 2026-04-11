@@ -30,23 +30,26 @@
     "commands": [
       "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
       "bash scripts/ops/bigclawctl --help",
-      "cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'"
+      "cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'",
+      "bash scripts/ops/bigclawctl github-sync status --json"
     ],
     "results": {
       "repo_py_inventory": "none",
       "launcher_help": "exit 0; root usage printed",
-      "targeted_tests": "ok  \tbigclaw-go/cmd/bigclawctl\t0.518s\nok  \tbigclaw-go/internal/regression\t0.195s"
+      "targeted_tests": "ok  \tbigclaw-go/cmd/bigclawctl\t0.518s\nok  \tbigclaw-go/internal/regression\t0.195s",
+      "github_sync_status": "{\n  \"ahead\": 0,\n  \"behind\": 0,\n  \"branch\": \"BIG-GO-254\",\n  \"detached\": false,\n  \"dirty\": false,\n  \"diverged\": false,\n  \"local_sha\": \"ad6b67758bb03808724b8df3f0f4bfdeb4a7b137\",\n  \"pushed\": true,\n  \"relation_known\": true,\n  \"remote_exists\": true,\n  \"remote_sha\": \"ad6b67758bb03808724b8df3f0f4bfdeb4a7b137\",\n  \"status\": \"ok\",\n  \"synced\": true\n}"
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-254 changes."
+    "type": "github-auth",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-254 changes. Branch push is complete and synced, but GitHub PR creation/querying is blocked because `gh` is not authenticated and no API token is present in the workspace."
   },
   "notes": [
     "This lane replaces the residual repo-root bigclawctl go-run wrapper with a cached compiled launcher.",
     "The launcher preserves the existing --repo injection behavior for callers that omit it.",
     "The cache location is configurable with BIGCLAWCTL_BIN_DIR and otherwise defaults to ${XDG_CACHE_HOME:-$HOME/.cache}/bigclaw.",
     "Initial push attempts for origin/BIG-GO-254 hit transient LibreSSL SSL_ERROR_SYSCALL failures during HTTPS connection setup to github.com:443.",
-    "A retry with HTTP/1.1 completed successfully and published branch BIG-GO-254; use `git rev-parse BIG-GO-254` for the current tip."
+    "A retry with HTTP/1.1 completed successfully and published branch BIG-GO-254; use `git rev-parse BIG-GO-254` for the current tip.",
+    "GitHub CLI is installed but unauthenticated in this workspace (`gh pr list` returned exit code 4 asking for `gh auth login` or `GH_TOKEN`)."
   ]
 }
