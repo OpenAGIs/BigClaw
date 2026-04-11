@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-212",
-    "latest_commit": "pending",
+    "latest_commit": "d6c5e41f BIG-GO-212 add residual test python sweep guard",
     "push_target": "origin/BIG-GO-212"
   },
   "artifacts": {
@@ -61,6 +61,8 @@
   },
   "notes": [
     "This lane records the remaining uncovered residual test-replacement directories as already Python-free and ties them to the existing Go-native replacement evidence.",
-    "The branch baseline is already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files."
+    "The branch baseline is already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `465d7628`.",
+    "Landed lane commit: `d6c5e41f BIG-GO-212 add residual test python sweep guard`."
   ]
 }
