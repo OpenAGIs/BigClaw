@@ -101,8 +101,7 @@ ok  	bigclaw-go/internal/regression	0.224s
 - Final local lane commit: see `git log -1 --oneline`
 - Prior implementation commit: `17415ff08e741df61c0c40200f3ffb9c4c56b239`
 - Successful push command: `git -c http.version=HTTP/1.1 push -u origin BIG-GO-257`
-- Final local SHA: `d8e2531f183620d104734c7ca39a922a61eb51e7`
-- Final remote SHA: `d8e2531f183620d104734c7ca39a922a61eb51e7`
+- Final SHA parity: see `bash scripts/ops/bigclawctl github-sync status --json --repo /Users/openagi/code/bigclaw-workspaces/BIG-GO-257`
 - Remote parity check: `bash scripts/ops/bigclawctl github-sync status --json --repo /Users/openagi/code/bigclaw-workspaces/BIG-GO-257` -> `"synced": true`
 - Push target: `origin/BIG-GO-257`
 - PR URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-257`

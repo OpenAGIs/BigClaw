@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-257",
-    "latest_commit": "d8e2531f183620d104734c7ca39a922a61eb51e7",
+    "latest_commit": "see git log -1 --oneline",
     "push_target": "origin/BIG-GO-257"
   },
   "artifacts": {
@@ -54,7 +54,7 @@
       "priority_dir_inventory": "none",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.224s",
       "push": "branch created on origin via HTTP/1.1 push",
-      "remote_sync": "synced=true local_sha=d8e2531f183620d104734c7ca39a922a61eb51e7 remote_sha=d8e2531f183620d104734c7ca39a922a61eb51e7"
+      "remote_sync": "see `bash scripts/ops/bigclawctl github-sync status --json --repo /Users/openagi/code/bigclaw-workspaces/BIG-GO-257` for current synced local/remote SHAs"
     }
   },
   "notes": [
@@ -62,7 +62,7 @@
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `62626d62`.",
     "Implementation commit is `17415ff08e741df61c0c40200f3ffb9c4c56b239`.",
-    "Latest local and remote branch tip is `d8e2531f183620d104734c7ca39a922a61eb51e7`.",
+    "Latest local and remote branch tip is tracked via `git log -1 --oneline` plus the sync-status command recorded above.",
     "A plain HTTPS push previously hit `LibreSSL SSL_connect: SSL_ERROR_SYSCALL`; retrying with `http.version=HTTP/1.1` succeeded and restored sync.",
     "PR creation URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-257`."
   ]
