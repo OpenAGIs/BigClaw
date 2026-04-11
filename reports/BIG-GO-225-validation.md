@@ -1,6 +1,6 @@
 # BIG-GO-225 Validation
 
-Date: 2026-04-11
+Date: 2026-04-12
 
 ## Scope
 
@@ -13,6 +13,9 @@ This lane removes the last root developer-tooling dependency on Python-based
 zero-`.py` baseline, so the delivered change is a narrow tooling retirement:
 delete `.pre-commit-config.yaml`, replace README hygiene guidance with
 repo-native checks, and harden the existing root residual regression.
+
+This unattended refresh revalidated the already-landed implementation from the
+current checkout and updated only the issue evidence artifacts.
 
 ## Delivered Changes
 
@@ -43,7 +46,7 @@ find /Users/openagi/code/bigclaw-workspaces/BIG-GO-225 -path '*/.git' -prune -o 
 Result:
 
 ```text
-none
+no output
 ```
 
 ### Retired root tooling config
@@ -85,7 +88,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-225/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.200s
+ok  	bigclaw-go/internal/regression	0.185s
 ```
 
 ### Status artifact JSON integrity
@@ -110,6 +113,7 @@ exit 0
 - Final metadata commit: `f51998ed`
 - Validation refresh commit: `3449ad10`
 - Mainline landing refresh commit: `fb274854`
+- Current checkout before this evidence refresh: `83272a61`
 - Push target: `origin/BIG-GO-225`
 
 ## Residual Risk
