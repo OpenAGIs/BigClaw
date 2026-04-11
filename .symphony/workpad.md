@@ -104,6 +104,15 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `109`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_workspace_bootstrap.py tests/test_validation_bundle_continuation_scorecard.py`
+  - Result: passed
+  - Output: `47 passed in 3.81s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `105`
 
 ### Notes
 
@@ -121,5 +130,6 @@
 - Folded the deprecation, risk, and runtime-matrix checks into `tests/test_runtime.py` and removed the standalone files `tests/test_deprecation.py`, `tests/test_risk.py`, and `tests/test_runtime_matrix.py`.
 - Folded the connectors, validation-policy, pilot, cost-control, roadmap, repo-board, and repo-triage checks into active suites and removed the standalone files `tests/test_connectors.py`, `tests/test_validation_policy.py`, `tests/test_pilot.py`, `tests/test_cost_control.py`, `tests/test_roadmap.py`, `tests/test_repo_board.py`, and `tests/test_repo_triage.py`.
 - Folded the repo-links, repo-collaboration, and repo-rollout checks into active observability/planning suites and removed the standalone files `tests/test_repo_links.py`, `tests/test_repo_collaboration.py`, and `tests/test_repo_rollout.py`.
-- Python file count changed from `138` to `109`.
+- Folded the isolated memory, legacy-shim, cross-process coordination surface, and subscriber takeover harness coverage into active runtime/bootstrap/validation suites and removed the standalone files `tests/test_memory.py`, `tests/test_legacy_shim.py`, `tests/test_cross_process_coordination_surface.py`, and `tests/test_subscriber_takeover_harness.py`.
+- Python file count changed from `138` to `105`.
 - Residual risk: some docs and historical validation reports still mention deleted Python files and tests; this change intentionally leaves those history/documentation references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.

@@ -1,6 +1,15 @@
 import subprocess
 from pathlib import Path
 
+from bigclaw.legacy_shim import (
+    LEGACY_PYTHON_WRAPPER_NOTICE,
+    append_missing_flag,
+    build_github_sync_args,
+    build_refill_args,
+    build_workspace_bootstrap_args,
+    build_workspace_validate_args,
+    translate_workspace_validate_args,
+)
 from bigclaw.workspace_bootstrap import (
     bootstrap_workspace,
     cache_root_for_repo,
@@ -52,6 +61,19 @@ def init_remote_with_main(tmp_path: Path) -> Path:
     return remote
 
 
+def test_append_missing_flag_preserves_existing_values() -> None:
+    assert append_missing_flag(
+        ["--repo-url", "ssh://example/repo.git"],
+        "--repo-url",
+        "git@github.com:OpenAGIs/BigClaw.git",
+    ) == ["--repo-url", "ssh://example/repo.git"]
+    assert append_missing_flag(
+        ["--cache-key=openagis-bigclaw"],
+        "--cache-key",
+        "other",
+    ) == ["--cache-key=openagis-bigclaw"]
+
+
 def test_repo_cache_key_derives_from_repo_locator() -> None:
     assert repo_cache_key("git@github.com:OpenAGIs/BigClaw.git") == "github.com-openagis-bigclaw"
     assert repo_cache_key("https://github.com/OpenAGIs/BigClaw.git") == "github.com-openagis-bigclaw"
@@ -65,6 +87,65 @@ def test_cache_root_for_repo_uses_repo_specific_directory(tmp_path: Path) -> Non
     )
 
     assert cache_root == tmp_path / "repos" / "github.com-openagis-bigclaw"
+
+
+def test_workspace_bootstrap_wrapper_injects_go_defaults() -> None:
+    argv = build_workspace_bootstrap_args(Path("/repo"), ["--workspace", "/tmp/ws"])
+    assert argv[:4] == ["bash", "/repo/scripts/ops/bigclawctl", "workspace", "bootstrap"]
+    assert "--repo-url" in argv
+    assert "git@github.com:OpenAGIs/BigClaw.git" in argv
+    assert "--cache-key" in argv
+    assert "openagis-bigclaw" in argv
+
+
+def test_workspace_validate_wrapper_translates_legacy_flags() -> None:
+    translated = translate_workspace_validate_args(
+        [
+            "--repo-url",
+            "git@github.com:OpenAGIs/BigClaw.git",
+            "--workspace-root",
+            "/tmp/ws",
+            "--issues",
+            "BIG-1",
+            "BIG-2",
+            "--report-file",
+            "/tmp/report.md",
+            "--no-cleanup",
+            "--json",
+        ]
+    )
+    assert translated == [
+        "--repo-url",
+        "git@github.com:OpenAGIs/BigClaw.git",
+        "--workspace-root",
+        "/tmp/ws",
+        "--issues",
+        "BIG-1,BIG-2",
+        "--report",
+        "/tmp/report.md",
+        "--cleanup=false",
+        "--json",
+    ]
+    argv = build_workspace_validate_args(Path("/repo"), ["--issues", "BIG-1", "BIG-2"])
+    assert argv[:4] == ["bash", "/repo/scripts/ops/bigclawctl", "workspace", "validate"]
+    assert argv[4:] == ["--issues", "BIG-1,BIG-2"]
+
+
+def test_github_sync_and_refill_wrappers_target_go_shim() -> None:
+    assert build_github_sync_args(Path("/repo"), ["status", "--json"]) == [
+        "bash",
+        "/repo/scripts/ops/bigclawctl",
+        "github-sync",
+        "status",
+        "--json",
+    ]
+    assert build_refill_args(Path("/repo"), ["--apply"]) == [
+        "bash",
+        "/repo/scripts/ops/bigclawctl",
+        "refill",
+        "--apply",
+    ]
+    assert "compatibility shim during migration" in LEGACY_PYTHON_WRAPPER_NOTICE
 
 
 def test_bootstrap_workspace_creates_shared_worktree_from_local_seed(tmp_path: Path) -> None:
