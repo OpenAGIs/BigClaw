@@ -1,0 +1,51 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-218",
+    "title": "Broad repo Python reduction sweep AH",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-218",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-218"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-218-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-218-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_218_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_218_zero_python_guard_test.go",
+    "scripts/ops/bigclawctl",
+    "scripts/dev_bootstrap.sh",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "docs/symphony-repo-bootstrap-template.md",
+    "docs/go-mainline-cutover-handoff.md"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "rg -n \"workspace_bootstrap\\\\.py|workspace_bootstrap_cli\\\\.py|PYTHONPATH=src python3\" docs/symphony-repo-bootstrap-template.md docs/go-mainline-cutover-handoff.md",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO218(RepositoryHasNoPythonFiles|ActiveBootstrapDocsStayGoOnly|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "active_doc_python_scan": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.187s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-218 changes."
+  },
+  "notes": [
+    "This lane reduces stale active documentation references to Python-era workspace bootstrap and cutover flows.",
+    "The branch baseline was already Python-free, so this lane strengthens the Go-only posture with documentation cleanup and regression coverage.",
+    "Baseline HEAD before lane changes was `6c6e5e377`."
+  ]
+}

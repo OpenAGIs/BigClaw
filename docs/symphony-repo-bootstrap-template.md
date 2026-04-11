@@ -9,10 +9,12 @@ issue.
 Copy these files into the target repository:
 
 - `scripts/ops/bigclawctl`
-- `src/<your_package>/workspace_bootstrap.py`
-- `src/<your_package>/workspace_bootstrap_cli.py`
+- a repo-native bootstrap implementation behind `bigclawctl workspace bootstrap`
+- a repo-native cleanup and validation implementation behind
+  `bigclawctl workspace cleanup` and `bigclawctl workspace validate`
 
-The shell entrypoint is generic; only the Python compatibility package path is repo-specific while a repo is still mid-migration.
+The shell entrypoint is generic; the repo-specific piece is the Go/native
+implementation that backs the `bigclawctl workspace ...` subcommands.
 
 ## Workflow hook template
 
@@ -61,8 +63,9 @@ the cache or reused it.
 
 ## Validation workflow
 
-Use `bash scripts/ops/bigclawctl workspace validate` plus a 3-issue sample to confirm a repo warms one
-mirror/seed cache and then suppresses repeated remote clones for later workspaces.
+Use `bash scripts/ops/bigclawctl workspace validate` plus a 3-issue sample to
+confirm a repo warms one mirror/seed cache and then suppresses repeated remote
+clones for later workspaces.
 
 ## BigClaw example
 
