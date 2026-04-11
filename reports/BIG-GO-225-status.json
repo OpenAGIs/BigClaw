@@ -10,7 +10,8 @@
     "implementation_commit": "31859385",
     "final_metadata_commit": "f51998ed",
     "validation_refresh_commit": "3449ad10",
-    "push_target": "origin/main"
+    "mainline_landing_refresh_commit": "fb274854",
+    "push_target": "origin/BIG-GO-225"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -47,6 +48,7 @@
   "notes": [
     "The repository already had no tracked .py files when this lane started.",
     "The scoped change removes residual Python-based root tooling rather than migrating application code.",
-    "The branch was previously pushed to origin/BIG-GO-225 during an earlier non-fast-forward landing attempt."
+    "The branch was previously pushed to origin/BIG-GO-225 during an earlier non-fast-forward landing attempt.",
+    "Repeated non-fast-forward rejections from origin/main left the final rebased lane blocked on mainline churn, so the refreshed tip is published on origin/BIG-GO-225."
   ]
 }

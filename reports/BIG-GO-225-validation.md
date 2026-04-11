@@ -109,13 +109,14 @@ exit 0
 - Issue implementation commit: `31859385`
 - Final metadata commit: `f51998ed`
 - Validation refresh commit: `3449ad10`
-- Push target: `origin/main`
+- Mainline landing refresh commit: `fb274854`
+- Push target: `origin/BIG-GO-225`
 
 ## Residual Risk
 
 - The repository-wide physical `.py` count was already `0` at lane entry, so
   this issue hardens the migrated tooling posture instead of reducing a nonzero
   Python file count.
-- `origin/BIG-GO-225` was created during an earlier non-fast-forward landing
-  attempt and remains available while the rebased branch is pushed to
-  `origin/main`.
+- `origin/main` advanced again during the final landing attempt, so the latest
+  rebased lane tip remains published on `origin/BIG-GO-225` instead of
+  mainline.
