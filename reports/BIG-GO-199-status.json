@@ -8,7 +8,7 @@
     "lane_report": "bigclaw-go/docs/reports/big-go-199-python-asset-sweep.md",
     "regression_guard": "bigclaw-go/internal/regression/big_go_199_zero_python_guard_test.go",
     "validation_report": "reports/BIG-GO-199-validation.md",
-    "latest_commit": "6c0a395d BIG-GO-199 harden auxiliary python sweep",
+    "latest_commit": "d44cdf89 BIG-GO-199 record pushed metadata",
     "remote_branch": "origin/big-go-199"
   },
   "scope": {
