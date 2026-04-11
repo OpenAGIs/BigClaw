@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "3070b316",
+    "latest_commit": "f295a372",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -58,6 +58,7 @@
     "This lane records the remaining Python-heavy test directories as already Python-free and ties them to the existing Go-native replacement evidence.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `de074cf7`.",
-    "Rebasing over updated `origin/main` rewrote the lane commit to `3070b316` before the final push."
+    "Rebasing over updated `origin/main` rewrote the initial lane commit to `3070b316` before the final push.",
+    "Final pushed lane head is `f295a372`."
   ]
 }
