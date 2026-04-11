@@ -89,7 +89,12 @@ ok  	bigclaw-go/internal/regression	6.131s
 
 - Branch: `BIG-GO-252`
 - Baseline HEAD before lane commit: `6acdc7c9`
-- Latest pushed HEAD before PR creation: pending
+- Latest pushed HEAD before PR creation: `26caefef`
 - Push target: `origin/BIG-GO-252`
 - Compare URL: `https://github.com/OpenAGIs/BigClaw/compare/main...BIG-GO-252?expand=1`
-- PR: pending
+- PR seed URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-252`
+
+## GitHub
+
+- Branch push: `git push -u origin BIG-GO-252` succeeded and created `origin/BIG-GO-252`.
+- PR status: not created from this workspace because `gh` is not authenticated.
