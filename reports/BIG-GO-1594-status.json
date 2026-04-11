@@ -1,0 +1,58 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1594",
+    "title": "Go-only sweep refill BIG-GO-1594",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "eba9011c",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1594-go-only-sweep-refill.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1594_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-1594-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "assigned_focus_paths": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/collaboration/thread.go",
+    "bigclaw-go/internal/githubsync/sync.go",
+    "bigclaw-go/internal/pilot/report.go",
+    "bigclaw-go/internal/repo/triage.go",
+    "bigclaw-go/internal/policy/validation.go",
+    "bigclaw-go/internal/costcontrol/controller_test.go",
+    "bigclaw-go/internal/githubsync/sync_test.go",
+    "bigclaw-go/internal/workflow/orchestration_test.go",
+    "scripts/ops/bigclawctl"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "for path in src/bigclaw/collaboration.py src/bigclaw/github_sync.py src/bigclaw/pilot.py src/bigclaw/repo_triage.py src/bigclaw/validation_policy.py tests/test_cost_control.py tests/test_github_sync.py tests/test_orchestration.py; do test ! -e \"$path\" && printf 'absent %s\\n' \"$path\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1594(RepositoryHasNoPythonFiles|AssignedPythonAssetsStayAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "assigned_focus_paths": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.222s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1594 changes."
+  },
+  "notes": [
+    "This lane documents the already-empty assigned Python asset slice and hardens the Go-only state with regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens evidence and regression checks rather than removing in-branch Python files.",
+    "Final pushed commit after rebase was `eba9011c`."
+  ]
+}
