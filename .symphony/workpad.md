@@ -167,6 +167,15 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `95`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_workflow.py tests/test_repo_gateway.py tests/test_planning.py tests/test_reports.py tests/test_evaluation.py tests/test_observability.py tests/test_runtime.py tests/test_workspace_bootstrap.py tests/test_validation_bundle_continuation_scorecard.py`
+  - Result: passed
+  - Output: `133 passed in 3.79s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `94`
 
 ### Notes
 
@@ -192,5 +201,6 @@
 - Folded the run-detail renderer dataclasses and helpers into `src/bigclaw/reports.py`, repointed `src/bigclaw/evaluation.py` to the active reporting surface, and removed the standalone `src/bigclaw/run_detail.py` mirror.
 - Folded the execution-pack roadmap types and builder into `src/bigclaw/planning.py`, updated `src/bigclaw/__init__.py` to import them from the active planning surface, and removed the standalone `src/bigclaw/roadmap.py` mirror.
 - Folded the repo gateway protocol, normalization helpers, and audit payload helper into `src/bigclaw/repo_commits.py`, updated the consuming tests, and removed the standalone `src/bigclaw/repo_gateway.py` mirror.
-- Python file count changed from `138` to `95`.
+- Folded the pilot KPI/result/report helper into `src/bigclaw/workflow.py`, updated the consuming tests, and removed the standalone `src/bigclaw/pilot.py` mirror.
+- Python file count changed from `138` to `94`.
 - Residual risk: some docs and historical validation reports still mention deleted Python files and tests, and the removed helper module names may still appear in historical branch notes; this slice leaves those history references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.

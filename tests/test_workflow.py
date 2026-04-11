@@ -3,10 +3,16 @@ from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import APPROVAL_RECORDED_EVENT, GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit
-from bigclaw.pilot import PilotImplementationResult, PilotKPI, render_pilot_implementation_report
 from bigclaw.reports import PilotMetric, PilotScorecard
 from bigclaw.validation_policy import enforce_validation_report_policy
-from bigclaw.workflow import AcceptanceGate, WorkflowEngine, WorkpadJournal
+from bigclaw.workflow import (
+    AcceptanceGate,
+    PilotImplementationResult,
+    PilotKPI,
+    WorkflowEngine,
+    WorkpadJournal,
+    render_pilot_implementation_report,
+)
 
 
 def test_workpad_journal_can_replay_and_reload(tmp_path: Path):
