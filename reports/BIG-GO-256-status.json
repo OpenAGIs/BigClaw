@@ -60,13 +60,8 @@
     "This lane records the remaining support assets as already Python-free and ties them to the retained native examples, report artifacts, and helper entrypoints.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `4200cd79`.",
-    "Lane history includes `3b2093a2 BIG-GO-256: add support asset python sweep guard`.",
-    "Lane history includes `d16a8f65 BIG-GO-256: record push metadata`.",
-    "Lane history includes `4bc7c2b9 BIG-GO-256: finalize metadata`.",
-    "Lane history includes `c161a0a6 BIG-GO-256: reconcile final head metadata`.",
-    "Lane history includes `ae24fe22 BIG-GO-256: stabilize branch metadata`.",
-    "Lane history includes `64439798 BIG-GO-256: finalize workpad record`.",
-    "Lane history includes `905359fc BIG-GO-256: stabilize issue artifacts`.",
+    "The functional lane change landed in `3b2093a2 BIG-GO-256: add support asset python sweep guard`.",
+    "Later metadata-only follow-up commits stabilized the issue-local records; use `git log --oneline --grep 'BIG-GO-256'` for the complete branch-local history.",
     "Use `git ls-remote --heads origin big-go-256-land` to read the current pushed head without creating a self-referential metadata loop."
   ]
 }
