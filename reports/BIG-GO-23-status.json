@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-23",
+    "title": "Sweep tests Python residuals batch C",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-23",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-23'",
+    "push_target": "origin/BIG-GO-23"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-23-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-23-legacy-test-contract-sweep-c.md",
+    "replacement_registry": "bigclaw-go/internal/migration/legacy_test_contract_sweep_c.go",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_23_legacy_test_contract_sweep_c_test.go"
+  },
+  "inventory": {
+    "repo_py_files": []
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_c.go",
+    "bigclaw-go/internal/regression/big_go_23_legacy_test_contract_sweep_c_test.go",
+    "bigclaw-go/docs/reports/big-go-23-legacy-test-contract-sweep-c.md",
+    "bigclaw-go/internal/issuearchive/archive.go",
+    "bigclaw-go/internal/issuearchive/archive_test.go",
+    "bigclaw-go/internal/pilot/report.go",
+    "bigclaw-go/internal/pilot/report_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "for path in tests/test_issue_archive.py tests/test_pilot.py bigclaw-go/internal/issuearchive/archive.go bigclaw-go/internal/issuearchive/archive_test.go bigclaw-go/internal/pilot/report.go bigclaw-go/internal/pilot/report_test.go bigclaw-go/docs/reports/big-go-1596-go-only-sweep-refill.md bigclaw-go/docs/reports/big-go-1597-python-asset-sweep.md reports/BIG-GO-948-validation.md; do if test -e \"$path\"; then printf 'present %s\\n' \"$path\"; else printf 'absent %s\\n' \"$path\"; fi; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO23LegacyTestContractSweepC(ManifestMatchesDeferredLegacyTests|ReplacementPathsExist|LaneReportCapturesReplacementState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "batch_c_path_inventory": "absent tests/test_issue_archive.py\nabsent tests/test_pilot.py\npresent bigclaw-go/internal/issuearchive/archive.go\npresent bigclaw-go/internal/issuearchive/archive_test.go\npresent bigclaw-go/internal/pilot/report.go\npresent bigclaw-go/internal/pilot/report_test.go\npresent bigclaw-go/docs/reports/big-go-1596-go-only-sweep-refill.md\npresent bigclaw-go/docs/reports/big-go-1597-python-asset-sweep.md\npresent reports/BIG-GO-948-validation.md",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.169s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-23 changes."
+  },
+  "notes": [
+    "This lane formalizes the remaining completed deferred BIG-GO-948 legacy test-contract slice: tests/test_issue_archive.py and tests/test_pilot.py.",
+    "The branch baseline is already Python-free, so this lane strengthens replacement evidence and regression coverage rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `3848fd47`."
+  ]
+}
