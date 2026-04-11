@@ -3,10 +3,17 @@ from pathlib import Path
 
 import pytest
 
-from bigclaw.collaboration import build_collaboration_thread_from_audits
+from bigclaw.collaboration import (
+    CollaborationComment,
+    DecisionNote,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
+    merge_collaboration_threads,
+)
 from bigclaw.models import Priority, Task
 from bigclaw.observability import GitSyncTelemetry, MANUAL_TAKEOVER_EVENT, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, TaskRun
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
+from bigclaw.repo_links import bind_run_commits
 from bigclaw.repo_board import RepoDiscussionBoard
 from bigclaw.repo_plane import RunCommitLink
 from bigclaw.repo_triage import LineageEvidence, approval_evidence_packet, recommend_triage_action
@@ -290,6 +297,32 @@ def test_task_run_audit_spec_event_requires_required_fields() -> None:
         )
 
 
+def test_run_closeout_supports_commit_roles_and_accepted_hash():
+    task = Task(task_id="OPE-143", source="linear", title="run links", description="")
+    run = TaskRun.from_task(task, run_id="run-143", medium="docker")
+
+    links = [
+        RunCommitLink(run_id=run.run_id, commit_hash="aaa111", role="source", repo_space_id="space-1"),
+        RunCommitLink(run_id=run.run_id, commit_hash="bbb222", role="candidate", repo_space_id="space-1"),
+        RunCommitLink(run_id=run.run_id, commit_hash="ccc333", role="accepted", repo_space_id="space-1"),
+    ]
+
+    binding = bind_run_commits(links)
+    assert binding.accepted_commit_hash == "ccc333"
+
+    run.record_closeout(
+        validation_evidence=["pytest tests/test_observability.py"],
+        git_push_succeeded=True,
+        git_log_stat_output="commit ccc333",
+        run_commit_links=links,
+    )
+
+    assert run.closeout.accepted_commit_hash == "ccc333"
+    restored = TaskRun.from_dict(run.to_dict())
+    assert restored.closeout.accepted_commit_hash == "ccc333"
+    assert restored.closeout.run_commit_links[1].role == "candidate"
+
+
 def test_repo_board_create_reply_and_target_filtering():
     board = RepoDiscussionBoard()
     post = board.create_post(
@@ -341,3 +374,34 @@ def test_approval_evidence_packet_includes_candidate_and_accepted_hash():
     assert packet["accepted_commit_hash"] == "def222"
     assert packet["candidate_commit_hash"] == "abc111"
     assert "accepted baseline" in packet["lineage_summary"]
+
+
+def test_merge_collaboration_threads_combines_native_and_repo_surfaces():
+    native = build_collaboration_thread(
+        "run",
+        "run-165",
+        comments=[CollaborationComment(comment_id="c1", author="ops", body="native note", created_at="2026-03-12T10:00:00Z")],
+        decisions=[DecisionNote(decision_id="d1", author="lead", outcome="approved", summary="native decision", recorded_at="2026-03-12T10:05:00Z")],
+    )
+
+    board = RepoDiscussionBoard()
+    repo_post = board.create_post(
+        channel="bigclaw-ope-165",
+        author="repo-agent",
+        body="repo board context",
+        target_surface="run",
+        target_id="run-165",
+    )
+    repo_thread = build_collaboration_thread(
+        "repo-board",
+        "run-165",
+        comments=[repo_post.to_collaboration_comment()],
+    )
+
+    merged = merge_collaboration_threads(target_id="run-165", native_thread=native, repo_thread=repo_thread)
+
+    assert merged is not None
+    assert merged.surface == "merged"
+    assert len(merged.comments) == 2
+    assert len(merged.decisions) == 1
+    assert merged.comments[1].body == "repo board context"

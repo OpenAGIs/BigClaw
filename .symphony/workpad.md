@@ -96,6 +96,14 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `112`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_mapping.py tests/test_runtime.py tests/test_workflow.py tests/test_planning.py tests/test_observability.py tests/test_execution_flow.py tests/test_orchestration.py tests/test_evaluation.py tests/test_reports.py tests/test_operations.py -q`
+  - Result: passed
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `109`
 
 ### Notes
 
@@ -112,5 +120,6 @@
 - Folded the legacy service scaffolding checks into `tests/test_runtime.py` and removed the standalone file `tests/test_service.py`.
 - Folded the deprecation, risk, and runtime-matrix checks into `tests/test_runtime.py` and removed the standalone files `tests/test_deprecation.py`, `tests/test_risk.py`, and `tests/test_runtime_matrix.py`.
 - Folded the connectors, validation-policy, pilot, cost-control, roadmap, repo-board, and repo-triage checks into active suites and removed the standalone files `tests/test_connectors.py`, `tests/test_validation_policy.py`, `tests/test_pilot.py`, `tests/test_cost_control.py`, `tests/test_roadmap.py`, `tests/test_repo_board.py`, and `tests/test_repo_triage.py`.
-- Python file count changed from `138` to `112`.
+- Folded the repo-links, repo-collaboration, and repo-rollout checks into active observability/planning suites and removed the standalone files `tests/test_repo_links.py`, `tests/test_repo_collaboration.py`, and `tests/test_repo_rollout.py`.
+- Python file count changed from `138` to `109`.
 - Residual risk: some docs and historical validation reports still mention deleted Python files and tests; this change intentionally leaves those history/documentation references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.
