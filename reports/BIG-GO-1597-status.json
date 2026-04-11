@@ -1,0 +1,67 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1597",
+    "title": "Go-only sweep refill BIG-GO-1597",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1597'",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1597-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1597-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1597_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "assigned_focus_paths": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "tests": [],
+      "scripts/ops": [],
+      "bigclaw-go/scripts": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/costcontrol/controller.go",
+    "bigclaw-go/internal/costcontrol/controller_test.go",
+    "bigclaw-go/internal/intake/mapping.go",
+    "bigclaw-go/internal/intake/mapping_test.go",
+    "bigclaw-go/internal/repo/board.go",
+    "bigclaw-go/internal/regression/roadmap_contract_test.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/bootstrap/bootstrap_test.go",
+    "bigclaw-go/internal/designsystem/designsystem.go",
+    "bigclaw-go/internal/designsystem/designsystem_test.go",
+    "bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go",
+    "bigclaw-go/internal/pilot/report.go",
+    "bigclaw-go/internal/pilot/report_test.go",
+    "bigclaw-go/internal/repo/triage.go",
+    "scripts/ops/bigclawctl",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_bundle_commands.go",
+    "bigclaw-go/cmd/bigclawctl/automation_e2e_bundle_commands_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "for path in src/bigclaw/cost_control.py src/bigclaw/mapping.py src/bigclaw/repo_board.py src/bigclaw/roadmap.py src/bigclaw/workspace_bootstrap_cli.py tests/test_design_system.py tests/test_live_shadow_bundle.py tests/test_pilot.py tests/test_repo_triage.py tests/test_subscriber_takeover_harness.py scripts/ops/symphony_workspace_bootstrap.py bigclaw-go/scripts/e2e/export_validation_bundle_test.py bigclaw-go/scripts/migration/export_live_shadow_bundle.py; do test ! -e \"$path\" || echo \"present: $path\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1597(RepositoryHasNoPythonFiles|AssignedFocusPathsRemainAbsent|GoOwnedReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "assigned_focus_paths": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.177s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1597 changes."
+  },
+  "notes": [
+    "This lane documents the already-empty assigned Python asset slice and hardens the Go-only state with regression coverage.",
+    "Baseline HEAD before lane changes was `465d7628`."
+  ]
+}
