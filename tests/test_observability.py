@@ -19,6 +19,7 @@ from bigclaw.observability import (
     ObservabilityLedger,
     PullRequestFreshness,
     RepoSyncAudit,
+    RunCommitLink,
     RunCommitBinding,
     TaskRun,
     approval_evidence_packet,
@@ -26,7 +27,6 @@ from bigclaw.observability import (
     recommend_triage_action,
 )
 from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
-from bigclaw.repo_plane import RunCommitLink
 
 
 def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
