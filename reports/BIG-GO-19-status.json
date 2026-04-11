@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending refresh commit",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-19' -n 1",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -54,6 +54,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and refreshes the Go-only evidence for repository-wide Python count reduction pass D.",
     "The branch baseline was already Python-free, so this lane refreshes regression coverage evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before refresh changes was `60cff87d`."
+    "Baseline HEAD before refresh changes was `60cff87d`.",
+    "Evidence refresh commit was `3614d6d4 BIG-GO-19: refresh zero-python evidence`."
   ]
 }

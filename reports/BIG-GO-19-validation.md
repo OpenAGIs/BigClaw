@@ -91,7 +91,8 @@ ok  	bigclaw-go/internal/regression	0.198s
 - Branch: `main`
 - Baseline HEAD before refresh commit: `60cff87d`
 - Lane commit details: `git log --oneline --grep 'BIG-GO-19'`
-- Final pushed lane commit: pending push
+- Evidence refresh commit: `3614d6d4 BIG-GO-19: refresh zero-python evidence`
+- Final pushed lane commit: `see git log --oneline --grep 'BIG-GO-19' -n 1`
 - Push target: `origin/main`
 - Remote verification: `git ls-remote --heads origin main`
 
