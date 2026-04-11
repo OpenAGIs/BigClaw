@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-223'",
+    "latest_commit": "7872e4fa8df7ff35c86a4d07ff3d151b65c20e02",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -45,9 +45,9 @@
       "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO223(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
     ],
     "results": {
-      "repo_py_inventory": "none",
-      "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.225s"
+      "repo_py_inventory": "(no output)",
+      "priority_dir_inventory": "(no output)",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.195s"
     }
   },
   "blocker": {
