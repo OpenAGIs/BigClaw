@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-248",
     "title": "Broad repo Python reduction sweep AN",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending git commit",
+    "latest_commit": "pending final metadata commit",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -48,7 +48,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.185s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.177s",
       "status_json": "valid"
     }
   },
@@ -59,6 +59,7 @@
   "notes": [
     "This lane documents an empty remaining Python asset inventory and hardens the Go-only state across repo documentation, evidence, and migration surfaces.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `1729022a`."
+    "Baseline HEAD before lane changes was `1729022a`.",
+    "The first push attempt was rejected after `origin/main` advanced to `a4b6ebab`; the lane was rebased and the `.symphony/workpad.md` conflict was resolved in favor of the `BIG-GO-248` issue workpad."
   ]
 }

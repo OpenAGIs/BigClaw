@@ -88,7 +88,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-248/bigclaw-go && go test -coun
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.185s
+ok  	bigclaw-go/internal/regression	0.177s
 ```
 
 ### Status artifact
@@ -109,7 +109,7 @@ valid
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `1729022a`
-- Final pushed lane commit: `pending git commit`
+- Final pushed lane commit: `pending final metadata commit`
 - Push target: `origin/main`
 
 ## Residual Risk
