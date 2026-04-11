@@ -93,9 +93,12 @@ ok
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `465d7628`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-205'`
-- Final pushed lane commit: `git log --oneline --grep 'BIG-GO-205'`
+- Lane commits:
+  - `4ca517c628934ed26f4dee1cdbd140264b53bae8` `BIG-GO-205 remove residual Python tooling config`
+  - `6c6e5e3777f7b5efbbabbe767a61f4abc56db0db` `BIG-GO-205 repair lane status metadata`
+- Final pushed lane commit: `6c6e5e3777f7b5efbbabbe767a61f4abc56db0db`
 - Push target: `origin/main`
+- Remote verification: `git rev-parse HEAD && git rev-parse origin/main` both resolved to `6c6e5e3777f7b5efbbabbe767a61f4abc56db0db`
 
 ## Workpad Archive
 

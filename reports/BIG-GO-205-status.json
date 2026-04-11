@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "git log --oneline --grep 'BIG-GO-205'",
+    "latest_commit": "6c6e5e3777f7b5efbbabbe767a61f4abc56db0db",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -46,6 +46,7 @@
   },
   "notes": [
     "This lane is scoped to the residual repo-root Python tooling configuration and README hygiene guidance only.",
-    "Baseline HEAD before lane changes was `465d7628`."
+    "Baseline HEAD before lane changes was `465d7628`.",
+    "Final pushed lane commit was `6c6e5e3777f7b5efbbabbe767a61f4abc56db0db` on `origin/main`."
   ]
 }
