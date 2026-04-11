@@ -1,0 +1,66 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-212",
+    "title": "Residual tests Python sweep AG",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "BIG-GO-212",
+    "latest_commit": "pending",
+    "push_target": "origin/BIG-GO-212"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-212-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_212_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-212-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "bigclaw-go/internal/billing": [],
+      "bigclaw-go/internal/config": [],
+      "bigclaw-go/internal/executor": [],
+      "bigclaw-go/internal/flow": [],
+      "bigclaw-go/internal/prd": [],
+      "bigclaw-go/internal/reporting": [],
+      "bigclaw-go/internal/reportstudio": [],
+      "bigclaw-go/internal/service": []
+    }
+  },
+  "go_replacements": [
+    "reports/BIG-GO-948-validation.md",
+    "bigclaw-go/internal/billing/billing_test.go",
+    "bigclaw-go/internal/billing/statement_test.go",
+    "bigclaw-go/internal/config/config_test.go",
+    "bigclaw-go/internal/executor/executor.go",
+    "bigclaw-go/internal/executor/kubernetes_test.go",
+    "bigclaw-go/internal/executor/ray_test.go",
+    "bigclaw-go/internal/flow/flow.go",
+    "bigclaw-go/internal/prd/intake.go",
+    "bigclaw-go/internal/reporting/reporting_test.go",
+    "bigclaw-go/internal/reportstudio/reportstudio_test.go",
+    "bigclaw-go/internal/service/server.go",
+    "bigclaw-go/internal/service/server_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort",
+      "find bigclaw-go/internal/billing bigclaw-go/internal/config bigclaw-go/internal/executor bigclaw-go/internal/flow bigclaw-go/internal/prd bigclaw-go/internal/reporting bigclaw-go/internal/reportstudio bigclaw-go/internal/service -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO212(RepositoryHasNoPythonFiles|ResidualTestReplacementDirectoriesStayPythonFree|RepresentativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.203s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-212 changes."
+  },
+  "notes": [
+    "This lane records the remaining uncovered residual test-replacement directories as already Python-free and ties them to the existing Go-native replacement evidence.",
+    "The branch baseline is already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files."
+  ]
+}
