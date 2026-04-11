@@ -1,40 +1,21 @@
-# BIG-GO-211 Workpad
+# BIG-GO-224 Workpad
 
 ## Plan
 
-1. Confirm the current repository-wide Python asset inventory and verify that
-   the `src/bigclaw` residual sweep surface is already Python-free in this
-   checkout.
-2. Add the lane-scoped evidence bundle for `BIG-GO-211` so this unattended
-   run records the zero-Python baseline and the active Go/native replacement
-   paths:
-   - `bigclaw-go/internal/regression/big_go_211_zero_python_guard_test.go`
-   - `bigclaw-go/docs/reports/big-go-211-python-asset-sweep.md`
-   - `reports/BIG-GO-211-validation.md`
-   - `reports/BIG-GO-211-status.json`
-3. Run the targeted inventory checks and regression test, then commit and push
-   the issue-scoped changes to `origin/main`.
+1. Inspect the remaining repo-root and `bigclaw-go/scripts` helper inventory to confirm the residual sweep scope.
+2. Add a focused `BIG-GO-224` regression guard covering the residual helper inventory, zero-Python state, and lane report content.
+3. Write the lane report documenting supported replacements, exact inventory, and validation evidence.
+4. Run targeted validation commands, capture exact commands/results, then commit and push the issue branch.
 
 ## Acceptance
 
-- The assigned residual `src/bigclaw` Python sweep is verified Python-free in
-  the live checkout, with repo-visible evidence tied to `BIG-GO-211`.
-- `BIG-GO-211` adds a Go regression guard covering the repository-wide
-  zero-Python baseline, the priority residual directories, and the retained
-  Go/native replacement surface.
-- The lane report and validation report record the exact validation commands,
-  observed results, and the already-zero baseline caveat.
-- The resulting change set is committed and pushed.
+- `scripts` and `bigclaw-go/scripts` remain limited to the intended shell or Go helpers for this lane.
+- No `.py` files exist under `scripts` or `bigclaw-go/scripts`.
+- `BIG-GO-224` has a lane report recording residual script sweep state, supported helper inventory, and exact validation commands.
+- Targeted regression coverage passes for the new guard.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-211 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-211/src/bigclaw /Users/openagi/code/bigclaw-workspaces/BIG-GO-211/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-211/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-211/bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-211/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO211(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Execution Notes
-
-- 2026-04-11: Initial inspection shows the checkout is already at a
-  repository-wide Python file count of `0`.
-- 2026-04-11: `BIG-GO-211` therefore hardens the zero-Python baseline for the
-  residual `src/bigclaw` sweep instead of deleting in-branch `.py` files.
+- `find scripts bigclaw-go/scripts -type f | sort`
+- `find scripts bigclaw-go/scripts -type f -name '*.py' | sort`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO224'`
