@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "baseline_head": "36121df8",
-    "latest_commit": "3d8043c8 BIG-GO-1596 add go-only sweep refill guard",
+    "latest_commit": "7a74bd20 BIG-GO-1596 finalize validation metadata",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -55,8 +55,8 @@
     }
   },
   "git": {
-    "final_pushed_commit": "3d8043c8 BIG-GO-1596 add go-only sweep refill guard",
-    "remote_verification": "3d8043c85939ecd6cdb58bd1adf3bec7dcec6253 refs/heads/main"
+    "final_pushed_commit": "7a74bd20 BIG-GO-1596 finalize validation metadata",
+    "remote_verification": "7a74bd20139c62933d78e7338826ce6e25f1ad93 refs/heads/main"
   },
   "blocker": {
     "type": "baseline",
