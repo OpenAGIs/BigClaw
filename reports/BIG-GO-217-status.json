@@ -1,0 +1,62 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-217",
+    "title": "Broad repo Python reduction sweep AG",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "4176ed6b",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-217-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_217_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-217-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "reports": [],
+      "bigclaw-go/docs": [],
+      "bigclaw-go/docs/reports": [],
+      "bigclaw-go/internal": [],
+      "bigclaw-go/internal/regression": []
+    }
+  },
+  "go_replacements": [
+    "reports/BIG-GO-208-validation.md",
+    "bigclaw-go/docs/migration.md",
+    "bigclaw-go/docs/go-cli-script-migration.md",
+    "bigclaw-go/docs/reports/big-go-208-python-asset-sweep.md",
+    "bigclaw-go/docs/reports/big-go-1577-python-asset-sweep.md",
+    "bigclaw-go/internal/repo/plane.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go",
+    "bigclaw-go/internal/regression/python_test_tranche17_removal_test.go"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-217 -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-217/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-217/bigclaw-go/docs /Users/openagi/code/bigclaw-workspaces/BIG-GO-217/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-217/bigclaw-go/internal /Users/openagi/code/bigclaw-workspaces/BIG-GO-217/bigclaw-go/internal/regression -type f -name '*.py' 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-217/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO217(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.256s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-217 changes."
+  },
+  "notes": [
+    "This lane records the already-empty highest-density residual broad-repo surfaces and hardens them with issue-scoped regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens evidence and regression checks rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `4176ed6b`.",
+    "Final lane commit and push metadata will be written after commit."
+  ]
+}
