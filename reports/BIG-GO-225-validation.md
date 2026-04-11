@@ -109,10 +109,13 @@ exit 0
 - Issue implementation commit: `b73c1257`
 - Final metadata commit: `6dd9138c`
 - Validation refresh commit: `195a2188`
-- Push target: `origin/main`
+- Push target: `origin/BIG-GO-225`
 
 ## Residual Risk
 
 - The repository-wide physical `.py` count was already `0` at lane entry, so
   this issue hardens the migrated tooling posture instead of reducing a nonzero
   Python file count.
+- `origin/main` advanced during unattended landing, so the finalized lane was
+  pushed to the issue branch `origin/BIG-GO-225` instead of rebasing again to
+  chase a moving target.

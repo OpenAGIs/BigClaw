@@ -10,7 +10,7 @@
     "implementation_commit": "b73c1257",
     "final_metadata_commit": "6dd9138c",
     "validation_refresh_commit": "195a2188",
-    "push_target": "origin/main"
+    "push_target": "origin/BIG-GO-225"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -46,6 +46,7 @@
   },
   "notes": [
     "The repository already had no tracked .py files when this lane started.",
-    "The scoped change removes residual Python-based root tooling rather than migrating application code."
+    "The scoped change removes residual Python-based root tooling rather than migrating application code.",
+    "The branch was pushed to origin/BIG-GO-225 because origin/main advanced repeatedly during unattended landing."
   ]
 }
