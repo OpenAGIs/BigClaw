@@ -96,11 +96,13 @@ ok  	bigclaw-go/internal/regression	3.325s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `d52aa9a3`
-- Final pushed lane commit: `71b195af`
-- Push target: `origin/main`
+- Final pushed lane commit: `27401ade`
+- Push target: `origin/BIG-GO-234`
 
 The lane commit was rebased once onto updated `origin/main` after the remote
-advanced during execution.
+advanced during execution. A follow-up push to `origin/main` raced another
+remote update, so the final lane delivery was redirected to the dedicated
+remote branch `BIG-GO-234`.
 
 ## Residual Risk
 

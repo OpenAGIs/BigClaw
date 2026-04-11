@@ -6,8 +6,8 @@
   },
   "branch": {
     "name": "main",
-    "latest_commit": "71b195af",
-    "push_target": "origin/main"
+    "latest_commit": "27401ade",
+    "push_target": "origin/BIG-GO-234"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -60,6 +60,7 @@
     "This lane captures the residual scripts, wrappers, and CLI-helper surfaces as already Python-free and ties them to the retained Go-native replacement paths.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `d52aa9a3`.",
-    "The lane commit was rebased once onto updated origin/main before the final push."
+    "The lane commit was rebased once onto updated origin/main before the final push.",
+    "origin/main advanced again during delivery, so the final pushed branch target is origin/BIG-GO-234."
   ]
 }
