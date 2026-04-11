@@ -107,7 +107,7 @@ ok  	bigclaw-go/internal/regression	3.211s
 - Branch: `BIG-GO-203`
 - Baseline HEAD before lane commit: `de074cf7`
 - Lane commit details: `29ab2a00 BIG-GO-203: harden residual test python gap slice`
-- Final pushed lane commit: `29ab2a00 BIG-GO-203: harden residual test python gap slice`
+- Final pushed lane commit: `e4caaf2e BIG-GO-203: record pushed branch metadata`
 - Push target: `origin/BIG-GO-203`
 
 ## Residual Risk

@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-203",
-    "latest_commit": "29ab2a00 BIG-GO-203: harden residual test python gap slice",
+    "latest_commit": "e4caaf2e BIG-GO-203: record pushed branch metadata",
     "push_target": "origin/BIG-GO-203"
   },
   "artifacts": {
