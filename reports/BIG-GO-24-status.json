@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "BIG-GO-24",
-    "latest_commit": "pending",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-24'",
     "push_target": "origin/BIG-GO-24"
   },
   "artifacts": {
@@ -64,6 +64,7 @@
   "notes": [
     "This lane refreshes issue-scoped evidence for the batch-D residual test replacements already implemented by BIG-GO-13.",
     "The branch baseline is already Python-free, so this lane strengthens regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `7872e4fa`."
+    "Baseline HEAD before lane changes was `7872e4fa`.",
+    "Evidence commit `7f9cc6b2 BIG-GO-24: refresh batch D residual sweep evidence` was pushed to `origin/BIG-GO-24`."
   ]
 }

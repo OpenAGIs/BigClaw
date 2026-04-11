@@ -99,8 +99,10 @@ ok  	bigclaw-go/internal/regression	0.188s
 
 - Branch: `BIG-GO-24`
 - Baseline HEAD before lane commit: `7872e4fa`
-- Final pushed lane commit: pending
+- Evidence commit: `7f9cc6b2 BIG-GO-24: refresh batch D residual sweep evidence`
+- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-24'`
 - Push target: `origin/BIG-GO-24`
+- PR URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-24`
 
 ## Residual Risk
 
