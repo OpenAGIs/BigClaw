@@ -7,7 +7,8 @@
   "branch": {
     "name": "main",
     "latest_commit": "resolve with `git log --oneline --grep 'BIG-GO-221' -1` after landing commit",
-    "push_target": "origin/main"
+    "push_target": "origin/main",
+    "fallback_remote_branch": "origin/BIG-GO-221"
   },
   "artifacts": {
     "validation_report": "reports/BIG-GO-221-validation.md",
@@ -56,13 +57,13 @@
     }
   },
   "blocker": {
-    "type": "baseline",
-    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-221 changes."
+    "type": "push-race",
+    "summary": "Concurrent updates kept advancing origin/main between fetch/rebase and push, preventing a clean fast-forward landing during this unattended run."
   },
   "notes": [
     "This lane documents the tranche-17 retired src/bigclaw module surface and hardens its Go-only state.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before the 2026-04-12 landing refresh was `e7e18ff0`.",
-    "The landing commit hash should be resolved with `git log --oneline --grep 'BIG-GO-221' -1` after push."
+    "Baseline HEAD before the 2026-04-12 landing refresh was `6acdc7c9`.",
+    "The latest clean landing commit was preserved on `origin/BIG-GO-221` when repeated fast-forward races blocked direct push to `origin/main`."
   ]
 }

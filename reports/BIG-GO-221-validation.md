@@ -107,11 +107,17 @@ ok  	bigclaw-go/internal/regression	0.166s
 ## Git
 
 - Branch: `main`
-- Baseline HEAD before refresh commit: `e7e18ff0`
+- Baseline HEAD before refresh commit: `6acdc7c9`
 - Latest local `BIG-GO-221` commit before the final push:
   `git log --oneline --grep 'BIG-GO-221' -1`
 - Push target: `origin/main`
-- Remote verification after push: pending landing commit
+- Remote verification after push fallback: `origin/BIG-GO-221`
+
+Mainline push attempts were retried from clean rebases onto moving
+`origin/main`, but the remote branch advanced again between each fetch/rebase
+and the subsequent push. The refreshed lane tip was therefore preserved on the
+dedicated remote branch `origin/BIG-GO-221` while direct mainline landing
+remains blocked by concurrent fast-forward churn.
 
 ## Residual Risk
 
