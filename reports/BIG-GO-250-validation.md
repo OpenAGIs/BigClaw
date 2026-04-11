@@ -90,8 +90,8 @@ ok  	bigclaw-go/internal/regression	0.186s
 
 - Branch: `BIG-GO-250`
 - Baseline HEAD before lane commit: `6acdc7c9`
-- Lane commit details: `git log --oneline --grep 'BIG-GO-250'`
-- Final pushed lane commit: see `git log --oneline --grep 'BIG-GO-250'`
+- Lane commit details: `b31d94a1 BIG-GO-250 zero-python convergence sweep`
+- Final pushed lane commit: `git log -1 --oneline`
 - Push target: `origin/BIG-GO-250`
 
 ## Residual Risk
