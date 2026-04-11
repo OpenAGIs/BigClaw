@@ -22,7 +22,7 @@ from .models import (
 )
 from .queue import PersistentTaskQueue
 from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+from .mapping import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
     CommandAction,

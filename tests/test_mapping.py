@@ -1,5 +1,4 @@
-from bigclaw.connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue
-from bigclaw.mapping import map_source_issue_to_task, map_priority
+from bigclaw.mapping import GitHubConnector, JiraConnector, LinearConnector, SourceIssue, map_priority, map_source_issue_to_task
 from bigclaw.models import Priority
 
 
