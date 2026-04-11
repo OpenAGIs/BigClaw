@@ -7,7 +7,7 @@
   "branch": {
     "name": "BIG-GO-254",
     "baseline_commit": "1858cdb1",
-    "latest_commit": "9bd85a00",
+    "latest_commit": "061851b7",
     "push_target": "origin/BIG-GO-254"
   },
   "artifacts": {
@@ -45,6 +45,7 @@
   "notes": [
     "This lane replaces the residual repo-root bigclawctl go-run wrapper with a cached compiled launcher.",
     "The launcher preserves the existing --repo injection behavior for callers that omit it.",
-    "The cache location is configurable with BIGCLAWCTL_BIN_DIR and otherwise defaults to ${XDG_CACHE_HOME:-$HOME/.cache}/bigclaw."
+    "The cache location is configurable with BIGCLAWCTL_BIN_DIR and otherwise defaults to ${XDG_CACHE_HOME:-$HOME/.cache}/bigclaw.",
+    "Push attempts for origin/BIG-GO-254 failed twice with LibreSSL SSL_ERROR_SYSCALL during HTTPS connection setup to github.com:443."
   ]
 }
