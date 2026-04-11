@@ -6,6 +6,10 @@ Issue `BIG-GO-19` continues the repository-wide Python count reduction sweeps
 with explicit focus on the residual directories `src/bigclaw`, `tests`,
 `scripts`, and `bigclaw-go/scripts`.
 
+This refresh revalidates the existing zero-Python baseline in the current
+workspace rather than deleting in-branch Python assets, because the checked-out
+tree already starts with no physical `.py` files.
+
 ## Remaining Python Inventory
 
 Repository-wide Python file count: `0`.
@@ -18,8 +22,7 @@ Repository-wide Python file count: `0`.
 Explicit remaining Python asset list: none.
 
 This pass therefore lands as regression-prevention evidence rather than an
-in-branch Python deletion batch, because the checkout already started
-Python-free.
+in-branch Python deletion batch.
 
 ## Go Or Native Replacement Paths
 
@@ -41,4 +44,4 @@ The active Go/native helper surface covering this pass remains:
 - `find src/bigclaw tests scripts bigclaw-go/scripts -type f -name '*.py' 2>/dev/null | sort`
   Result: no output; the priority residual directories remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO19(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.195s`
+  Result: `ok  	bigclaw-go/internal/regression	0.198s`

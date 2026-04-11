@@ -49,7 +49,7 @@ func TestBIGGO19ReplacementPathsRemainAvailable(t *testing.T) {
 	}
 
 	for _, relativePath := range replacementPaths {
-		if _, err := os.Stat(filepath.Join(rootRepo, relativePath)); err != nil {
+		if _, err := os.Stat(filepath.Join(rootRepo, filepath.FromSlash(relativePath))); err != nil {
 			t.Fatalf("expected Go/native replacement path to exist: %s (%v)", relativePath, err)
 		}
 	}
