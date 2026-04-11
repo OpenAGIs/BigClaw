@@ -1,0 +1,66 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1596",
+    "title": "Go-only sweep refill BIG-GO-1596",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "baseline_head": "36121df8",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1596-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1596-go-only-sweep-refill.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1596_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "assigned_python_assets": {
+      "src/bigclaw/console_ia.py": "absent",
+      "src/bigclaw/issue_archive.py": "absent",
+      "src/bigclaw/queue.py": "absent",
+      "src/bigclaw/risk.py": "absent",
+      "src/bigclaw/workspace_bootstrap.py": "absent",
+      "tests/test_dashboard_run_contract.py": "absent",
+      "tests/test_issue_archive.py": "absent",
+      "tests/test_parallel_validation_bundle.py": "absent"
+    }
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/regression/big_go_1596_zero_python_guard_test.go",
+    "bigclaw-go/internal/consoleia/consoleia.go",
+    "bigclaw-go/internal/consoleia/consoleia_test.go",
+    "bigclaw-go/internal/issuearchive/archive.go",
+    "bigclaw-go/internal/issuearchive/archive_test.go",
+    "bigclaw-go/internal/queue/queue.go",
+    "bigclaw-go/internal/risk/risk.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/product/dashboard_run_contract_test.go",
+    "bigclaw-go/internal/regression/parallel_validation_matrix_docs_test.go",
+    "scripts/ops/bigclawctl"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "for path in src/bigclaw/console_ia.py src/bigclaw/issue_archive.py src/bigclaw/queue.py src/bigclaw/risk.py src/bigclaw/workspace_bootstrap.py tests/test_dashboard_run_contract.py tests/test_issue_archive.py tests/test_parallel_validation_bundle.py; do test ! -e \"$path\" && printf 'absent %s\\n' \"$path\"; done",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1596(RepositoryHasNoPythonFiles|AssignedPythonAssetsStayAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "assigned_asset_absence": "absent src/bigclaw/console_ia.py\nabsent src/bigclaw/issue_archive.py\nabsent src/bigclaw/queue.py\nabsent src/bigclaw/risk.py\nabsent src/bigclaw/workspace_bootstrap.py\nabsent tests/test_dashboard_run_contract.py\nabsent tests/test_issue_archive.py\nabsent tests/test_parallel_validation_bundle.py",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.247s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1596 changes."
+  },
+  "notes": [
+    "This lane adds issue-scoped regression evidence for the stale Python assets named in BIG-GO-1596.",
+    "The branch baseline was already Python-free, so the repo-visible change is the new guard and documentation rather than an in-branch Python deletion.",
+    "The Go-owned replacements listed here remain present in the checkout and cover the named Python surfaces."
+  ]
+}
