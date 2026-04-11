@@ -95,8 +95,8 @@ ok  	bigclaw-go/internal/regression	3.184s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `7872e4fa`
-- Landed lane commit: `61a95c1d BIG-GO-230 add practical go-only sweep guard`
-- Final pushed lane commit: `8ead88a6 BIG-GO-230 finalize validation metadata`
+- Lane commits: `git log --oneline --grep 'BIG-GO-230'`
+- Final pushed lane commit: `git log --oneline --grep 'BIG-GO-230'`
 - Push target: `origin/main`
 
 ## Residual Risk
