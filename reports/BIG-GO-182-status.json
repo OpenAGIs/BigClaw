@@ -7,7 +7,7 @@
   "branch": {
     "name": "main",
     "latest_commit": "see git log --oneline --grep 'BIG-GO-182'",
-    "push_target": "origin/main"
+    "push_target": "origin/BIG-GO-182"
   },
   "artifacts": {
     "workpad": ".symphony/workpad.md",
@@ -78,6 +78,7 @@
   "notes": [
     "This lane records the absent root tests tree together with the Go-heavy replacement test directories that inherited those contracts.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `36121df8`."
+    "Baseline HEAD before lane changes was `36121df8`.",
+    "Origin main advanced twice during closeout, so the final remote handoff uses the issue branch `origin/BIG-GO-182`."
   ]
 }
