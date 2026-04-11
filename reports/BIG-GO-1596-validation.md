@@ -100,9 +100,10 @@ ok  	bigclaw-go/internal/regression	0.247s
 
 - Branch: `main`
 - Baseline HEAD before lane commit: `36121df8`
-- Lane commit details: pending
-- Final pushed lane commit: pending
+- Lane commit details: `3d8043c8 BIG-GO-1596 add go-only sweep refill guard`
+- Final pushed lane commit: `3d8043c8 BIG-GO-1596 add go-only sweep refill guard`
 - Push target: `origin/main`
+- Remote verification: `git ls-remote --heads origin main` -> `3d8043c85939ecd6cdb58bd1adf3bec7dcec6253 refs/heads/main`
 
 ## Residual Risk
 

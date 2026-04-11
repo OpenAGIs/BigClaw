@@ -2,12 +2,12 @@
   "issue": {
     "identifier": "BIG-GO-1596",
     "title": "Go-only sweep refill BIG-GO-1596",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
     "baseline_head": "36121df8",
-    "latest_commit": "pending",
+    "latest_commit": "3d8043c8 BIG-GO-1596 add go-only sweep refill guard",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -53,6 +53,10 @@
       "assigned_asset_absence": "absent src/bigclaw/console_ia.py\nabsent src/bigclaw/issue_archive.py\nabsent src/bigclaw/queue.py\nabsent src/bigclaw/risk.py\nabsent src/bigclaw/workspace_bootstrap.py\nabsent tests/test_dashboard_run_contract.py\nabsent tests/test_issue_archive.py\nabsent tests/test_parallel_validation_bundle.py",
       "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.247s"
     }
+  },
+  "git": {
+    "final_pushed_commit": "3d8043c8 BIG-GO-1596 add go-only sweep refill guard",
+    "remote_verification": "3d8043c85939ecd6cdb58bd1adf3bec7dcec6253 refs/heads/main"
   },
   "blocker": {
     "type": "baseline",
