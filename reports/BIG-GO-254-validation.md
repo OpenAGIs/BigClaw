@@ -36,6 +36,7 @@ compiled-binary launcher.
 - `bash scripts/ops/bigclawctl --help`
 - `cd bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/regression -run 'Test(BIGGO254|RootScriptResidualSweep|RunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens|RunGitHubSyncHelpPrintsUsageAndExitsZero)'`
 - `bash scripts/ops/bigclawctl github-sync status --json`
+- `gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-254 --json url,title,state,number`
 
 ## Validation Results
 
@@ -120,6 +121,27 @@ Result:
   "status": "ok",
   "synced": true
 }
+```
+
+### PR query attempt
+
+Command:
+
+```bash
+gh pr list --repo OpenAGIs/BigClaw --head BIG-GO-254 --json url,title,state,number
+```
+
+Result:
+
+```text
+To get started with GitHub CLI, please run:  gh auth login
+Alternatively, populate the GH_TOKEN environment variable with a GitHub API authentication token.
+```
+
+Known branch PR creation URL from push output:
+
+```text
+https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-254
 ```
 
 ## Git
