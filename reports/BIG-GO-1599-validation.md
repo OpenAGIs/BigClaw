@@ -96,7 +96,7 @@ ok  	bigclaw-go/internal/regression	0.193s
 - Branch: `BIG-GO-1599`
 - Baseline commit source: `origin/main` (`1eba935`)
 - Lane commit details: `52618fe BIG-GO-1599 document zero-python tranche guard`
-- Final pushed lane commit: `ee74608 BIG-GO-1599 record push blocker`
+- Final pushed lane commit: `d42175b BIG-GO-1599 finalize push status`
 - Push target: `origin/BIG-GO-1599`
 
 ## Workpad Archive
