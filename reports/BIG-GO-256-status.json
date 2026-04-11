@@ -1,0 +1,64 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-256",
+    "title": "Residual support assets Python sweep U",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "big-go-256-land",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-256'",
+    "push_target": "origin/big-go-256-land"
+  },
+  "artifacts": {
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-256-python-asset-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_256_zero_python_guard_test.go",
+    "validation_report": "reports/BIG-GO-256-validation.md"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "support_surfaces": {
+      "bigclaw-go/examples": [],
+      "bigclaw-go/docs/reports": [],
+      "scripts/ops": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/internal/regression/big_go_256_zero_python_guard_test.go",
+    "bigclaw-go/docs/reports/big-go-256-python-asset-sweep.md",
+    "bigclaw-go/examples/shadow-task.json",
+    "bigclaw-go/examples/shadow-corpus-manifest.json",
+    "bigclaw-go/docs/reports/broker-failover-stub-report.json",
+    "bigclaw-go/docs/reports/live-shadow-index.json",
+    "bigclaw-go/docs/reports/live-validation-summary.json",
+    "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/replay-capture.json",
+    "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-artifacts/contention-then-takeover-live/node-a-audit.jsonl",
+    "bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/shadow-matrix-report.json",
+    "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
+    "scripts/ops/bigclawctl",
+    "scripts/ops/bigclaw-issue",
+    "scripts/ops/bigclaw-panel",
+    "scripts/ops/bigclaw-symphony"
+  ],
+  "validation": {
+    "commands": [
+      "find . -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find bigclaw-go/examples bigclaw-go/docs/reports scripts/ops -type f -name '*.py' 2>/dev/null | sort",
+      "cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO256(RepositoryHasNoPythonFiles|SupportAssetSurfacesStayPythonFree|RetainedNativeSupportAssetsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "support_surface_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t4.755s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-256 changes."
+  },
+  "notes": [
+    "This lane records the remaining support assets as already Python-free and ties them to the retained native examples, report artifacts, and helper entrypoints.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `4200cd79`."
+  ]
+}
