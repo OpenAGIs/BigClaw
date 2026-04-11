@@ -95,9 +95,12 @@ ok  	bigclaw-go/internal/regression	3.325s
 ## Git
 
 - Branch: `main`
-- Baseline HEAD before lane commit: `7872e4fa`
-- Final pushed lane commit: `pending`
+- Baseline HEAD before lane commit: `d52aa9a3`
+- Final pushed lane commit: `71b195af`
 - Push target: `origin/main`
+
+The lane commit was rebased once onto updated `origin/main` after the remote
+advanced during execution.
 
 ## Residual Risk
 

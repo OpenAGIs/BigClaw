@@ -2,11 +2,11 @@
   "issue": {
     "identifier": "BIG-GO-234",
     "title": "Residual scripts Python sweep S",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "main",
-    "latest_commit": "pending",
+    "latest_commit": "71b195af",
     "push_target": "origin/main"
   },
   "artifacts": {
@@ -59,6 +59,7 @@
   "notes": [
     "This lane captures the residual scripts, wrappers, and CLI-helper surfaces as already Python-free and ties them to the retained Go-native replacement paths.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `7872e4fa`."
+    "Baseline HEAD before lane changes was `d52aa9a3`.",
+    "The lane commit was rebased once onto updated origin/main before the final push."
   ]
 }
