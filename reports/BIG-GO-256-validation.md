@@ -97,8 +97,8 @@ ok  	bigclaw-go/internal/regression	4.755s
 - Branch: `big-go-256-land`
 - Baseline HEAD before lane commit: `4200cd79`
 - Lane commit details: `3b2093a2 BIG-GO-256: add support asset python sweep guard`
-- Metadata follow-up commit: see `git log --oneline --grep 'BIG-GO-256'`
-- Remote verification after first push: `3b2093a2`
+- Metadata follow-up commit: `d16a8f65 BIG-GO-256: record push metadata`
+- Final pushed head: `d16a8f65`
 - Push target: `origin/big-go-256-land`
 
 ## Residual Risk

@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "big-go-256-land",
-    "latest_commit": "see git log --oneline --grep 'BIG-GO-256'",
+    "latest_commit": "d16a8f65",
     "push_target": "origin/big-go-256-land"
   },
   "artifacts": {
@@ -61,6 +61,7 @@
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `4200cd79`.",
     "Lane history includes `3b2093a2 BIG-GO-256: add support asset python sweep guard`.",
-    "Remote verification after the first push matched `origin/big-go-256-land` at `3b2093a2`."
+    "Lane history includes `d16a8f65 BIG-GO-256: record push metadata`.",
+    "Final pushed head matched `origin/big-go-256-land` at `d16a8f65`."
   ]
 }
