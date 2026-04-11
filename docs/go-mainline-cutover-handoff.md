@@ -23,7 +23,8 @@ cutover set.
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- `find . -path '*/.git' -prune -o \( -name '*.py' -o -name '*.pyw' \) -type f -print | sort`
+- `bash scripts/ops/bigclawctl workspace validate --help`
 
 ## Completed scope
 
@@ -39,7 +40,8 @@ cutover set.
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
 - The default mainline posture is Go-first, and this worktree no longer carries
-  tracked Python source files or Python entrypoint shims.
+  tracked Python source files, Python entrypoint shims, or Python-based
+  workspace bootstrap helpers.
 
 ## Remaining non-blocking caveats
 

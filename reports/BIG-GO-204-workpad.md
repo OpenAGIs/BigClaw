@@ -7,7 +7,8 @@
    `bigclaw-go/scripts/` for legacy Python references.
 2. Replace or remove any residual Python-oriented wrapper behavior,
    documentation, or CLI text that still points operators at retired Python
-   scripts, while keeping changes scoped to currently active helper surfaces.
+   script entrypoints, while keeping changes scoped to currently active helper
+   surfaces.
 3. Run targeted validation for the touched scripts and any affected Go tests,
    record the exact commands and results, then commit and push the branch.
 
@@ -32,9 +33,9 @@
 
 - Branch baseline inspection starts from the current `main` checkout in this
   workspace.
-- This issue is expected to focus on residual wrappers and helper surfaces, not
-  on deleting in-repo Python source files, because the repository baseline is
-  already physically Python-free.
+- This issue focuses on residual wrappers and helper surfaces, not on deleting
+  in-repo Python source files, because the repository baseline is already
+  physically Python-free.
 - Validation completed on 2026-04-11 with zero repository `.py` and `.pyw`
   files, no active `scripts/**` or `bigclaw-go/scripts/**` Python references,
   and a passing targeted regression run.

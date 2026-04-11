@@ -9,10 +9,12 @@ issue.
 Copy these files into the target repository:
 
 - `scripts/ops/bigclawctl`
-- `src/<your_package>/workspace_bootstrap.py`
-- `src/<your_package>/workspace_bootstrap_cli.py`
+- workflow file that invokes `bash scripts/ops/bigclawctl workspace bootstrap`
+  and `bash scripts/ops/bigclawctl workspace cleanup`
 
-The shell entrypoint is generic; only the Python compatibility package path is repo-specific while a repo is still mid-migration.
+The shell entrypoint is generic. Repos adopting this template should keep the
+bootstrap surface Go or shell native rather than reintroducing Python
+compatibility shims.
 
 ## Workflow hook template
 
