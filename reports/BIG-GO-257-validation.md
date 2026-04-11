@@ -100,15 +100,15 @@ ok  	bigclaw-go/internal/regression	0.224s
 - Lane commit details: `git log --oneline --grep 'BIG-GO-257'`
 - Final local lane commit: see `git log -1 --oneline`
 - Prior implementation commit: `17415ff08e741df61c0c40200f3ffb9c4c56b239`
-- Push attempt: `git push -u origin BIG-GO-257`
-- Push result: `fatal: unable to access 'https://github.com/OpenAGIs/BigClaw.git/': LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443`
+- Successful push command: `git -c http.version=HTTP/1.1 push -u origin BIG-GO-257`
+- Final local SHA: `d8e2531f183620d104734c7ca39a922a61eb51e7`
+- Final remote SHA: `d8e2531f183620d104734c7ca39a922a61eb51e7`
+- Remote parity check: `bash scripts/ops/bigclawctl github-sync status --json --repo /Users/openagi/code/bigclaw-workspaces/BIG-GO-257` -> `"synced": true`
 - Push target: `origin/BIG-GO-257`
+- PR URL: `https://github.com/OpenAGIs/BigClaw/pull/new/BIG-GO-257`
 
 ## Residual Risk
 
 - The live branch baseline was already Python-free, so BIG-GO-257 can only
   lock in and document the broad repo Go-only state rather than numerically
   lower the repository `.py` count.
-- Remote branch creation and SHA parity verification are blocked by the HTTPS
-  transport failure above, and this workspace has no working GitHub SSH key or
-  authenticated `gh` session to provide an alternate push path.
