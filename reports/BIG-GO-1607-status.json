@@ -1,0 +1,65 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1607",
+    "title": "Lane refill: purge Python docs generators and migration utilities",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "big-go-1607",
+    "lane_commits_command": "git log --oneline --grep 'BIG-GO-1607'",
+    "latest_commit_command": "git rev-parse HEAD",
+    "push_target": "origin/big-go-1607"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1607-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1607-go-first-maintenance-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1607_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "priority_dirs": {
+      "docs": [],
+      "reports": [],
+      "bigclaw-go/docs/reports": [],
+      "bigclaw-go/internal/migration": [],
+      "bigclaw-go/internal/planning": []
+    }
+  },
+  "go_replacements": [
+    "docs/issue-plan.md",
+    "docs/local-tracker-automation.md",
+    "bigclaw-go/internal/planning/planning.go",
+    "bigclaw-go/internal/planning/planning_test.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go",
+    "bigclaw-go/internal/migration/legacy_test_contract_sweep_x.go",
+    "bigclaw-go/docs/reports/parallel-follow-up-index.md",
+    "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
+    "bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json",
+    "bigclaw-go/docs/reports/live-shadow-mirror-scorecard.json"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1607 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1607/docs /Users/openagi/code/bigclaw-workspaces/BIG-GO-1607/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-1607/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-1607/bigclaw-go/internal/migration /Users/openagi/code/bigclaw-workspaces/BIG-GO-1607/bigclaw-go/internal/planning -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) 2>/dev/null | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1607/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1607(RepositoryHasNoPythonFiles|GoFirstMaintenanceSurfacesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "priority_dir_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.229s",
+      "status_json": "valid"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1607 changes."
+  },
+  "notes": [
+    "This lane records the Go-first maintenance path for planning, migration contract ledgers, and checked-in report artifacts.",
+    "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
+    "Baseline HEAD before lane changes was `503e0d4e`.",
+    "Primary lane commit: pending."
+  ]
+}
