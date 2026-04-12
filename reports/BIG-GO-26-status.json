@@ -1,0 +1,24 @@
+{
+  "identifier": "BIG-GO-26",
+  "title": "Sweep support tooling and fixtures Python residuals",
+  "state": "done",
+  "branch": "origin/BIG-GO-26",
+  "commits": [
+    {
+      "sha": "3e87a8a0714f9fdc1174cdc7ad961edf6463ddf5",
+      "subject": "BIG-GO-26: sweep support tooling python residuals"
+    },
+    {
+      "sha": "113793ae64ef3cb947204b2dfd46e0e95d3a054e",
+      "subject": "BIG-GO-26: add validation closeout"
+    }
+  ],
+  "artifacts": [
+    ".symphony/workpad.md",
+    "reports/BIG-GO-26-validation.md"
+  ],
+  "notes": [
+    "Repo-local local-issues.json does not contain a BIG-GO-26 tracker record, so no local state transition was possible in this workspace.",
+    "Issue implementation and validation artifacts were pushed to origin/BIG-GO-26."
+  ]
+}
