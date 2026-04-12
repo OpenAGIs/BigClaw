@@ -2,4 +2,78 @@
 set -euo pipefail
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-exec bash "$script_dir/bigclawctl" issue "$@"
+repo_root=$(cd -- "$script_dir/../.." && pwd)
+workflow="$repo_root/workflow.md"
+local_issues="$repo_root/local-issues.json"
+
+if [ "$#" -gt 0 ]; then
+  case "$1" in
+    list|create|state|comment)
+      args=("$@")
+      case "$1" in
+        state)
+          has_issue=0
+          has_state=0
+          for arg in "${args[@]}"; do
+            case "$arg" in
+              --issue|--issue=*)
+                has_issue=1
+                ;;
+              --state|--state=*)
+                has_state=1
+                ;;
+            esac
+          done
+          if [ "$has_issue" -eq 0 ] && [ "$#" -ge 3 ]; then
+            args=("$1" --issue "$2" --state "$3" "${@:4}")
+          fi
+          ;;
+        comment)
+          has_issue=0
+          has_body=0
+          for arg in "${args[@]}"; do
+            case "$arg" in
+              --issue|--issue=*)
+                has_issue=1
+                ;;
+              --body|--body=*|--body-file|--body-file=*)
+                has_body=1
+                ;;
+            esac
+          done
+          if [ "$has_issue" -eq 0 ] && [ "$has_body" -eq 0 ] && [ "$#" -ge 3 ]; then
+            args=("$1" --issue "$2" --body "$3" "${@:4}")
+          fi
+          ;;
+      esac
+      has_local_issues=0
+      for arg in "${args[@]}"; do
+        case "$arg" in
+          --local-issues|--local-issues=*)
+            has_local_issues=1
+            ;;
+        esac
+      done
+      if [ "$has_local_issues" -eq 0 ]; then
+        args+=(--local-issues "$local_issues")
+      fi
+      subcommand="${args[0]}"
+      if [ "$subcommand" = "state" ]; then
+        subcommand="set-state"
+        args=("${subcommand}" "${args[@]:1}")
+      fi
+      exec bash "$repo_root/scripts/ops/bigclawctl" local-issues "${args[@]}"
+      ;;
+  esac
+fi
+
+if [ -x "$repo_root/../elixir/bin/symphony" ]; then
+  exec "$repo_root/../elixir/bin/symphony" issue --workflow "$workflow" "$@"
+fi
+
+if command -v symphony >/dev/null 2>&1; then
+  exec symphony issue --workflow "$workflow" "$@"
+fi
+
+echo "symphony CLI not found. Install Symphony or run from a checkout that contains ../elixir/bin/symphony." >&2
+exit 1

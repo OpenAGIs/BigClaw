@@ -3,7 +3,8 @@
 BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 `bigclaw-go` is the current implementation mainline for new development. The
-repository root now exposes Go-only build and operator entrypoints.
+root Python package is retained only for staged migration and legacy surfaces
+that have not been cut over yet.
 
 ## What is included
 
@@ -14,17 +15,31 @@ repository root now exposes Go-only build and operator entrypoints.
   - `docs/*`: Go control-plane validation and migration evidence
 - `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
+- `src/bigclaw`: legacy Python foundation modules pending staged migration to Go
+  - engineering operations analytics for dashboards, triage, regressions, and weekly reports
+  - `BIG-1606` Policy/Prompt Version Center with workflow/prompt/policy history, diffs, rollback targets, and bundle rendering
+  - unified task model
+  - persistent priority queue
+  - risk/tool based scheduler
+  - worker runtime with sandbox profiles and auditable tool gateway
+  - workflow DSL plus workflow engine with workpad journal, orchestration artifacts/canvas, entitlement-aware policy, and acceptance gate
+  - observability ledger with logs/trace/artifact/audit capture
+  - queue-to-scheduler execution recording with audit reports
+  - auto triage center for failed, pending-approval, and replay-needed runs, with inbox suggestions, similarity evidence, and reviewer feedback tracking
+  - benchmark runner with replay, weighted scoring, and version comparison
+  - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
+  - narrative report studio with section composing plus markdown, HTML, and plain-text export
+  - v2 design-system token/component inventory with release-readiness audit reporting
+- `tests/`: unit tests
 
-## Root Go quick start (recommended)
+## Go mainline quick start (recommended)
 
 ```bash
-cd BigClaw
-make test
-make build
-make run
+cd BigClaw/bigclaw-go
+go test ./...
+go run ./cmd/bigclawd
 curl localhost:8080/healthz
-bash scripts/ops/bigclawctl github-sync status --json
-bash scripts/ops/bigclawctl dev-smoke
+bash ../scripts/ops/bigclawctl github-sync status --json
 ```
 
 ## Local orchestration quick start
@@ -34,62 +49,65 @@ Use these entrypoints to keep the remaining Go-mainline migration slices moving 
 Linear issue capacity:
 
 ```bash
-bash scripts/ops/bigclawctl issue list
+bash scripts/ops/bigclaw-issue list
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
-bash scripts/ops/bigclawctl symphony
-bash scripts/ops/bigclawctl panel
+bash scripts/ops/bigclaw-symphony
+bash scripts/ops/bigclaw-panel
 ```
 
 Notes:
 
-- `bash scripts/ops/bigclawctl symphony` starts Symphony against [`workflow.md`](./workflow.md) and
+- `bash scripts/ops/bigclaw-symphony` starts Symphony against [`workflow.md`](./workflow.md) and
   serves the local issue dashboard at `http://127.0.0.1:4000/`.
-- `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
-- `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
+- `bash scripts/ops/bigclaw-panel` prints the configured dashboard URL for the current workflow.
+- `bash scripts/ops/bigclaw-issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
-- `bash scripts/ops/bigclawctl refill ...` is the supported refill entrypoint. The legacy
-  root workspace Python helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
-- GitHub sync is no longer exposed through a Python wrapper; use
-  `bash scripts/ops/bigclawctl github-sync ...`.
-- `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
-  `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
-  `go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...`,
-  `go run ./bigclaw-go/cmd/bigclawctl automation benchmark capacity-certification ...`,
-  and `go run ./bigclaw-go/cmd/bigclawctl automation migration shadow-compare ...`
-  are the supported automation entrypoints. `bigclaw-go/scripts/benchmark/` is
-  now Go-only and keeps `run_suite.sh` as the retained wrapper; the migration matrix lives in
-  [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
-- The only remaining repo-root shell aliases are `scripts/dev_bootstrap.sh`,
-  `scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`,
-  `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel`.
-  The preferred operator path is `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
-## Python asset status
+## Legacy Python quick start (migration-only)
 
-The repository root no longer carries physical `.py` assets or Python build
-metadata. Validate the Go-only posture with the root bootstrap helper:
+> Do not use this path for new mainline development. Use it only when migrating
+> a required legacy surface to Go or validating an existing Python-only path.
 
-```bash
-bash scripts/dev_bootstrap.sh
-```
-
-That helper runs the Go `bigclawctl dev-smoke` replacement first and then
-`cd bigclaw-go && go test ./internal/bootstrap`.
-## Go smoke verify
+> Do not use system Python directly for editable install. Use a virtualenv.
 
 ```bash
 cd BigClaw
-make test
-make run &
-curl localhost:8080/healthz
-bash scripts/ops/bigclawctl github-sync status --json
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+pip install -e .[dev]
+python -m pytest
 ```
 
-## Go Dev Smoke Verify
+Or use the legacy bootstrap helper:
 
-Use this to verify the root dev smoke path:
+```bash
+BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
+```
+
+## Legacy Python local test (without editable install)
+
+If your environment has restrictive system-packages permissions, run tests with `PYTHONPATH`:
+
+```bash
+PYTHONPATH=src python3 -m pytest
+```
+
+## Go smoke verify
+
+```bash
+cd BigClaw/bigclaw-go
+go test ./...
+go run ./cmd/bigclawd &
+curl localhost:8080/healthz
+bash ../scripts/ops/bigclawctl github-sync status --json
+```
+
+## Dev smoke verify
+
+Use the Go-owned smoke helper for the retained migration-reference check:
 
 ```bash
 bash scripts/ops/bigclawctl dev-smoke
@@ -100,8 +118,8 @@ bash scripts/ops/bigclawctl dev-smoke
 Go mainline:
 
 ```bash
-make test
-make build
+cd BigClaw/bigclaw-go
+go test ./...
 ```
 
 Go-first bootstrap helper:
@@ -110,11 +128,13 @@ Go-first bootstrap helper:
 bash scripts/dev_bootstrap.sh
 ```
 
-Repository hygiene:
+Legacy Python migration surface:
 
 ```bash
-git diff --check
-bash scripts/ops/bigclawctl github-sync --help >/dev/null
+ruff check src tests scripts
+python -m pytest
+python -m build
+pre-commit run --all-files
 ```
 
 ## Quick verify
@@ -131,13 +151,13 @@ Repository: https://github.com/OpenAGIs/BigClaw
 
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
-The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
-the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the supported
-root helper inventory is limited to `scripts/dev_bootstrap.sh`,
-`scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`,
-`scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel`; retired root
-Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
-`scripts/ops/bigclawctl`.
+The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
+bootstrap wrappers remain only as compatibility shims during migration.
 
-Active runtime development belongs in `bigclaw-go/internal/*`; use
-`go run ./bigclaw-go/cmd/bigclawd` for the local server path.
+The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
+`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
+`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
+migration-only reference use. The legacy `python -m bigclaw serve` /
+`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
+for the active local server path. Active runtime development belongs in
+`bigclaw-go/internal/*`.
