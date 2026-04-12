@@ -1,0 +1,84 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1610",
+    "title": "Lane refill: repo-wide final Python asset sweep and delete plan",
+    "branch": "BIG-GO-1610",
+    "baseline_head_before_lane_commit": "10b9154b0224d41063c1fa5efebfe843b46da8a8",
+    "final_pushed_lane_commit": null,
+    "final_pushed_lane_commit_note": "Recorded from the pushed branch tip after the final amend; reported in the final lane handoff."
+  },
+  "summary": {
+    "repository_python_like_file_count": 0,
+    "remaining_tracked_py_files": [],
+    "delete_plan_outcome": "No tracked Python residue remains, so no in-branch delete step is still pending.",
+    "blockers": [
+      "None in tracked files; the repository had already reached zero tracked Python files before BIG-GO-1610 branch edits began."
+    ]
+  },
+  "focus_directories": {
+    ".githooks": 0,
+    ".github": 0,
+    ".symphony": 0,
+    "docs": 0,
+    "reports": 0,
+    "scripts": 0,
+    "scripts/ops": 0,
+    "bigclaw-go/docs/reports": 0,
+    "bigclaw-go/internal/regression": 0,
+    "bigclaw-go/scripts": 0
+  },
+  "historical_residual_paths_already_retired": [
+    "src/bigclaw/cost_control.py",
+    "src/bigclaw/mapping.py",
+    "src/bigclaw/repo_board.py",
+    "src/bigclaw/roadmap.py",
+    "src/bigclaw/workspace_bootstrap_cli.py",
+    "tests/test_design_system.py",
+    "tests/test_live_shadow_bundle.py",
+    "tests/test_pilot.py",
+    "tests/test_repo_triage.py",
+    "tests/test_subscriber_takeover_harness.py",
+    "scripts/ops/symphony_workspace_bootstrap.py",
+    "bigclaw-go/scripts/e2e/export_validation_bundle_test.py",
+    "bigclaw-go/scripts/migration/export_live_shadow_bundle.py"
+  ],
+  "go_or_native_replacement_paths": [
+    "scripts/ops/bigclawctl",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/intake/mapping.go",
+    "bigclaw-go/internal/repo/board.go",
+    "bigclaw-go/internal/repo/triage.go",
+    "bigclaw-go/internal/workflow/definition.go",
+    "bigclaw-go/internal/product/dashboard_run_contract.go",
+    "bigclaw-go/internal/product/saved_views.go",
+    "bigclaw-go/internal/queue/queue.go",
+    "bigclaw-go/internal/queue/memory_queue.go",
+    "bigclaw-go/internal/api/server.go",
+    "bigclaw-go/cmd/bigclawctl/automation_commands.go",
+    "bigclaw-go/docs/reports/big-go-1577-python-asset-sweep.md",
+    "bigclaw-go/docs/reports/big-go-1610-python-asset-sweep.md",
+    "bigclaw-go/internal/regression/big_go_1610_zero_python_guard_test.go"
+  ],
+  "validation": {
+    "repository_inventory_command": "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) -print | sort",
+    "repository_inventory_result": {
+      "exit_code": 0,
+      "stdout": ""
+    },
+    "focus_directories_command": "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/.githooks /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/.github /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/.symphony /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/docs /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/scripts /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/scripts/ops /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/bigclaw-go/internal/regression /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/bigclaw-go/scripts -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) 2>/dev/null | sort",
+    "focus_directories_result": {
+      "exit_code": 0,
+      "stdout": ""
+    },
+    "regression_command": "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1610(RepositoryHasNoPythonFiles|FinalSweepFocusDirectoriesStayPythonFree|HistoricalResidualPathsRemainAbsent|GoNativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'",
+    "regression_result": {
+      "exit_code": 0,
+      "stdout": "Initial run:\n--- FAIL: TestBIGGO1610LaneReportCapturesSweepState (0.00s)\n    big_go_1610_zero_python_guard_test.go:136: lane report missing substring \"No tracked Python residue remains, so no in-branch delete step is still pending.\"\nFAIL\nFAIL    bigclaw-go/internal/regression    0.208s\nFAIL\n\nRerun after report normalization:\nok  \tbigclaw-go/internal/regression\t0.334s"
+    },
+    "status_command": "jq '.' /Users/openagi/code/bigclaw-workspaces/BIG-GO-1610/reports/BIG-GO-1610-status.json >/dev/null",
+    "status_result": {
+      "exit_code": 0,
+      "stdout": ""
+    }
+  }
+}
