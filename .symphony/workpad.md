@@ -1,36 +1,27 @@
-# BIG-GO-1613 Workpad
+# BIG-GO-1604 Workpad
 
 ## Plan
 
-1. Reconfirm the repository-wide Python inventory and the targeted script
-   buckets called out by this lane:
-   - `bigclaw-go/scripts/benchmark`
-   - `bigclaw-go/scripts/e2e`
-   - `bigclaw-go/scripts/migration`
-2. Add issue-scoped regression coverage and lane evidence that keeps the
-   deleted Python runners retired while pointing at the active Go or shell
-   replacement surfaces.
-3. Run the targeted inventory and regression commands, capture the exact
-   commands and results, then commit and push the lane closeout.
+1. Inspect the existing `BIG-GO-1604` regression guard, lane report, and status artifact against the current repository baseline.
+2. Keep the lane scoped to the remaining Python test and harness residue named by the issue: retired `tests/*.py`, `tests/conftest.py`, and the retired workspace bootstrap scripts.
+3. Refresh only the issue-specific Go regression/report/status evidence needed to preserve the already-zero Python-file baseline.
+4. Run the targeted inventory and regression validation commands and capture exact commands plus results.
+5. Commit and push the lane changes to the remote branch.
 
 ## Acceptance
 
-- The repository remains at a physical Python file count of `0`.
-- `bigclaw-go/scripts/benchmark` and `bigclaw-go/scripts/e2e` stay Python-free,
-  and `bigclaw-go/scripts/migration` stays absent as a retired runner bucket.
-- A `BIG-GO-1613` regression guard proves the deleted benchmark, e2e, and
-  migration Python runners remain absent and that the current Go-native
-  replacement surfaces still exist.
-- Lane reports record the exact validation commands and exact observed results.
+- `.symphony/workpad.md` exists before any code edits.
+- `BIG-GO-1604` remains scoped to the retired root Python tests and harness/bootstrap residue.
+- Go regression coverage proves:
+  - the repository remains free of Python files;
+  - the assigned retired Python paths remain absent;
+  - the cited Go/native replacement paths still exist;
+  - the lane report documents the sweep and validation commands.
+- Validation artifacts record the exact commands that were run and their results.
+- Changes are committed and pushed.
 
 ## Validation
 
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1613 -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1613/bigclaw-go/scripts/benchmark /Users/openagi/code/bigclaw-workspaces/BIG-GO-1613/bigclaw-go/scripts/e2e /Users/openagi/code/bigclaw-workspaces/BIG-GO-1613/bigclaw-go/scripts/migration -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1613/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1613(RepositoryHasNoPythonFiles|RemainingScriptBucketsStayPythonFree|RetiredPythonRunnersRemainAbsent|ReplacementSurfacesRemainAvailable|LaneReportCapturesSweepState)$'`
-
-## Notes
-
-- 2026-04-12: This workspace already has a repository-wide Python file count of
-  `0`, so BIG-GO-1613 closes by hardening and documenting the zero-Python
-  script-runner baseline instead of deleting in-branch `.py` files.
+- `find . -path '*/.git' -prune -o -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \) -print | sort`
+- `for path in tests tests/conftest.py tests/test_connectors.py tests/test_console_ia.py tests/test_execution_contract.py tests/test_execution_flow.py tests/test_followup_digests.py tests/test_governance.py tests/test_models.py tests/test_observability.py tests/test_reports.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1604(RepositoryHasNoPythonFiles|AssignedPythonTestAndHarnessResidueRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
