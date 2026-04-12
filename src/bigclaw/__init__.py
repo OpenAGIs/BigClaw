@@ -103,7 +103,6 @@ from .issue_archive import (
     render_issue_priority_archive_report,
 )
 from .scheduler import RiskFactor, RiskScore, RiskScorer
-from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .planning import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .observability import (
@@ -214,6 +213,7 @@ from .reports import (
     write_report_studio_bundle,
 )
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
+from .workflow import WorkflowDefinition, WorkflowStep
 from .operations import (
     DashboardBuilder,
     DashboardBuilderAudit,

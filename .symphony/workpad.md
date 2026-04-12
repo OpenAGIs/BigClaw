@@ -221,6 +221,24 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
   - Result: passed
   - Output: `89`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_observability.py tests/test_runtime.py tests/test_mapping.py tests/test_workflow.py tests/test_repo_gateway.py tests/test_planning.py tests/test_reports.py tests/test_evaluation.py tests/test_workspace_bootstrap.py tests/test_validation_bundle_continuation_scorecard.py`
+  - Result: passed
+  - Output: `140 passed in 3.76s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `88`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -m pytest tests/test_dsl.py tests/test_workflow.py tests/test_runtime.py tests/test_observability.py -q`
+  - Result: passed
+  - Output: `54 passed in 0.85s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && PYTHONPATH=src python3 -c "import bigclaw; print('ok')"`
+  - Result: passed
+  - Output: `ok`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1593 && rg --files | rg '\.py$' | wc -l`
+  - Result: passed
+  - Output: `88`
 
 ### Notes
 
@@ -252,5 +270,6 @@
 - Folded the risk scorer types and logic into `src/bigclaw/scheduler.py`, updated `src/bigclaw/__init__.py` and the consuming runtime tests, and removed the standalone `src/bigclaw/risk.py` mirror.
 - Folded the task memory store and pattern model into `src/bigclaw/runtime.py`, updated the consuming runtime tests, and removed the standalone `src/bigclaw/memory.py` mirror.
 - Folded the repo-space, repo-agent, and run-commit-link dataclasses into `src/bigclaw/observability.py`, updated the consuming observability tests, and removed the standalone `src/bigclaw/repo_plane.py` mirror.
-- Python file count changed from `138` to `89`.
+- Folded the workflow DSL step/definition types into `src/bigclaw/workflow.py`, updated `src/bigclaw/__init__.py` and the consuming DSL tests, and removed the standalone `src/bigclaw/dsl.py` mirror.
+- Python file count changed from `138` to `88`.
 - Residual risk: some docs and historical validation reports still mention deleted Python files and tests, and the removed helper module names may still appear in historical branch notes; this slice leaves those history references untouched because the issue prioritized physical Python asset removal over tracker cosmetics.

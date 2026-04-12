@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from bigclaw.dsl import WorkflowDefinition
 from bigclaw.models import RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger
-from bigclaw.workflow import WorkflowEngine
+from bigclaw.workflow import WorkflowDefinition, WorkflowEngine
 
 
 def test_workflow_definition_parses_and_renders_templates():
