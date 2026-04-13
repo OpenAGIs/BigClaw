@@ -41,4 +41,4 @@
 - 2026-04-12: Validation commands completed with empty inventory output for
   both scans, and `go test -count=1 ./internal/regression -run
   'TestBIGGO1607(RepositoryHasNoPythonFiles|GoFirstMaintenanceSurfacesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  passed in `3.229s`.
+  passed in `0.195s`.

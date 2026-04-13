@@ -2,7 +2,7 @@
   "issue": {
     "identifier": "BIG-GO-1607",
     "title": "Lane refill: purge Python docs generators and migration utilities",
-    "state": "In Progress"
+    "state": "Done"
   },
   "branch": {
     "name": "big-go-1607",
@@ -48,7 +48,7 @@
     "results": {
       "repo_py_inventory": "none",
       "priority_dir_inventory": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.229s",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.195s",
       "status_json": "valid"
     }
   },
@@ -60,6 +60,6 @@
     "This lane records the Go-first maintenance path for planning, migration contract ledgers, and checked-in report artifacts.",
     "The branch baseline was already Python-free, so this lane strengthens issue-scoped regression coverage and validation evidence rather than removing in-branch Python files.",
     "Baseline HEAD before lane changes was `503e0d4e`.",
-    "Primary lane commit: pending."
+    "Primary lane commit: pending final lane commit."
   ]
 }

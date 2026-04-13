@@ -52,6 +52,6 @@ added guardrail and issue evidence that preserve that state.
 - `find docs reports bigclaw-go/docs/reports bigclaw-go/internal/migration bigclaw-go/internal/planning -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \) 2>/dev/null | sort`
   Result: no output; the Go-first maintenance surfaces remained Python-free.
 - `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1607(RepositoryHasNoPythonFiles|GoFirstMaintenanceSurfacesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  Result: `ok  	bigclaw-go/internal/regression	3.229s`
+  Result: `ok  	bigclaw-go/internal/regression	0.195s`
 
 Residual risk: this checkout already started with zero physical Python files, so BIG-GO-1607 hardens the Go-first maintenance baseline rather than lowering the numeric file count further.
