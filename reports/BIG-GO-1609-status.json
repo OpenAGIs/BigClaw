@@ -1,0 +1,58 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1609",
+    "title": "Lane refill: collapse residual Python package bootstrap/import glue",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "symphony/BIG-GO-1609",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1609'",
+    "push_target": "origin/symphony/BIG-GO-1609"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1609-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1609-package-bootstrap-glue-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1609_package_bootstrap_glue_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "assigned_package_bootstrap_glue_paths": [],
+    "priority_dirs": {
+      "src/bigclaw": [],
+      "scripts": [],
+      "bigclaw-go": []
+    }
+  },
+  "go_replacements": [
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "bigclaw-go/cmd/bigclawctl/legacy_shim_help_test.go",
+    "bigclaw-go/internal/bootstrap/bootstrap.go",
+    "bigclaw-go/internal/bootstrap/bootstrap_test.go",
+    "bigclaw-go/internal/api/broker_bootstrap_surface.go",
+    "bigclaw-go/internal/api/broker_bootstrap_surface_test.go",
+    "bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json",
+    "scripts/ops/bigclawctl"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) -print | sort",
+      "for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/__init__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/__main__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/legacy_shim.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/workspace_bootstrap_cli.py; do test ! -e \"$path\" || echo \"present: $path\"; done",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1609(RepositoryHasNoPythonFiles|PackageBootstrapGluePathsRemainAbsent|GoNativeBootstrapSurfacesRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche7$|TestTopLevelModulePurgeTranche17$'"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "assigned_package_bootstrap_glue_paths": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.208s"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1609 changes."
+  },
+  "notes": [
+    "This lane documents the already-empty package bootstrap glue slice and hardens the Go-only state with regression coverage.",
+    "Baseline HEAD before lane changes was `503e0d4e`."
+  ]
+}
