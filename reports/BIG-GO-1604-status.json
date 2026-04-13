@@ -57,8 +57,8 @@
     ],
     "results": {
       "repo_py_inventory": "none",
-      "assigned_residue_absence": "absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/conftest.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_connectors.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_console_ia.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_execution_contract.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_execution_flow.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_followup_digests.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_governance.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_models.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_observability.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_reports.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/scripts/ops/bigclaw_workspace_bootstrap.py; absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/scripts/ops/symphony_workspace_bootstrap.py",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.198s"
+      "assigned_residue_absence": "absent tests; absent tests/conftest.py; absent tests/test_connectors.py; absent tests/test_console_ia.py; absent tests/test_execution_contract.py; absent tests/test_execution_flow.py; absent tests/test_followup_digests.py; absent tests/test_governance.py; absent tests/test_models.py; absent tests/test_observability.py; absent tests/test_reports.py; absent scripts/ops/bigclaw_workspace_bootstrap.py; absent scripts/ops/symphony_workspace_bootstrap.py",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t3.215s"
     }
   },
   "blocker": {
@@ -68,6 +68,6 @@
   "notes": [
     "This lane documents the final retired root tests slice and bootstrap/harness residue as already absent and hardens that state with Go regression coverage.",
     "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
-    "Baseline HEAD before lane changes was `503e0d4e`."
+    "Baseline HEAD before lane changes was `75ad8ad6`."
   ]
 }

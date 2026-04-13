@@ -1,6 +1,6 @@
 # BIG-GO-1604 Validation
 
-Date: 2026-04-12
+Date: 2026-04-13
 
 ## Scope
 
@@ -14,14 +14,15 @@ Go regression coverage plus repo-visible validation evidence.
 
 ## Delivered
 
-- Replaced `.symphony/workpad.md` with the `BIG-GO-1604` plan, acceptance, and
-  exact validation targets.
-- Added `bigclaw-go/internal/regression/big_go_1604_zero_python_guard_test.go`
-  to lock the repository-wide zero-Python state, the assigned retired test and
-  harness paths, and the retained Go/native replacement surfaces.
-- Added `bigclaw-go/docs/reports/big-go-1604-python-test-harness-refill.md` to
-  capture the refill scope and validation evidence.
-- Added `reports/BIG-GO-1604-status.json` for lane status tracking.
+- Refreshed `.symphony/workpad.md` so the issue plan, acceptance criteria, and
+  validation targets match the current refill scope.
+- Confirmed `bigclaw-go/internal/regression/big_go_1604_zero_python_guard_test.go`
+  still locks the repository-wide zero-Python state, the assigned retired test
+  and harness paths, and the retained Go/native replacement surfaces.
+- Refreshed `reports/BIG-GO-1604-status.json` against the current validation
+  run.
+- Re-ran the issue-scoped inventory and regression commands and recorded their
+  exact results below.
 
 ## Validation
 
@@ -30,13 +31,12 @@ Go regression coverage plus repo-visible validation evidence.
 Command:
 
 ```bash
-find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \) -print | sort
+find . -path '*/.git' -prune -o -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \) -print | sort
 ```
 
 Result:
 
 ```text
-none
 ```
 
 ### Assigned residue absence check
@@ -44,25 +44,25 @@ none
 Command:
 
 ```bash
-for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/conftest.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_connectors.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_console_ia.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_execution_contract.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_execution_flow.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_followup_digests.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_governance.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_models.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_observability.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_reports.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/scripts/ops/bigclaw_workspace_bootstrap.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/scripts/ops/symphony_workspace_bootstrap.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done
+for path in tests tests/conftest.py tests/test_connectors.py tests/test_console_ia.py tests/test_execution_contract.py tests/test_execution_flow.py tests/test_followup_digests.py tests/test_governance.py tests/test_models.py tests/test_observability.py tests/test_reports.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py; do test ! -e "$path" && printf 'absent %s\n' "$path"; done
 ```
 
 Result:
 
 ```text
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/conftest.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_connectors.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_console_ia.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_execution_contract.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_execution_flow.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_followup_digests.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_governance.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_models.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_observability.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/tests/test_reports.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/scripts/ops/bigclaw_workspace_bootstrap.py
-absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/scripts/ops/symphony_workspace_bootstrap.py
+absent tests
+absent tests/conftest.py
+absent tests/test_connectors.py
+absent tests/test_console_ia.py
+absent tests/test_execution_contract.py
+absent tests/test_execution_flow.py
+absent tests/test_followup_digests.py
+absent tests/test_governance.py
+absent tests/test_models.py
+absent tests/test_observability.py
+absent tests/test_reports.py
+absent scripts/ops/bigclaw_workspace_bootstrap.py
+absent scripts/ops/symphony_workspace_bootstrap.py
 ```
 
 ### Targeted regression coverage
@@ -70,19 +70,19 @@ absent /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/scripts/ops/symphony_w
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1604/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1604(RepositoryHasNoPythonFiles|AssignedPythonTestAndHarnessResidueRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1604(RepositoryHasNoPythonFiles|AssignedPythonTestAndHarnessResidueRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.198s
+ok  	bigclaw-go/internal/regression	3.215s
 ```
 
 ## Git
 
 - Branch: `main`
-- Baseline HEAD before lane commit: `503e0d4e`
+- Baseline HEAD before lane commit: `75ad8ad6`
 - Push target: `origin/main`
 
 ## Residual Risk
