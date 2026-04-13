@@ -1,0 +1,59 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1602",
+    "title": "Lane refill: remove src/bigclaw residual Python package surface",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "big-go-1602",
+    "latest_commit": "see git log --oneline --grep 'BIG-GO-1602'",
+    "push_target": "origin/big-go-1602"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1602-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1602-python-package-sweep.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1602_zero_python_guard_test.go"
+  },
+  "inventory": {
+    "repo_py_files": [],
+    "src_bigclaw_package_files": [],
+    "retired_paths": [
+      "src/bigclaw/__init__.py",
+      "src/bigclaw/__main__.py"
+    ]
+  },
+  "native_replacements": [
+    "bigclaw-go/internal/regression/big_go_1602_zero_python_guard_test.go",
+    "bigclaw-go/internal/regression/top_level_module_purge_tranche17_test.go",
+    "bigclaw-go/internal/regression/big_go_221_zero_python_guard_test.go",
+    "bigclaw-go/cmd/bigclawctl/main.go",
+    "bigclaw-go/cmd/bigclawd/main.go",
+    "scripts/ops/bigclawctl"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1602 -path '*/.git' -prune -o -name '*.py' -type f -print | sort",
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1602 -path '*/.git' -prune -o \\( -path '/Users/openagi/code/bigclaw-workspaces/BIG-GO-1602/src/bigclaw' -o -path '/Users/openagi/code/bigclaw-workspaces/BIG-GO-1602/src/bigclaw/*' \\) -type f -print | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1602 && rg -n --case-sensitive '(?m)\\b(?:import|from)\\s+bigclaw(?:$|[.[:space:]])' -P -S . --glob '!*.md' --glob '!*.json'",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1602/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1602(TargetedBigclawPackageSurfaceAbsent|NoResidualBigclawPythonImportShims|NativeEntryPointsRemainAvailable|LaneReportCapturesPackageSweepState)$'",
+      "jq '.' /Users/openagi/code/bigclaw-workspaces/BIG-GO-1602/reports/BIG-GO-1602-status.json >/dev/null"
+    ],
+    "results": {
+      "repo_py_inventory": "none",
+      "src_bigclaw_inventory": "none",
+      "residual_import_inventory": "none",
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.263s",
+      "status_json_parse": "ok"
+    }
+  },
+  "blocker": {
+    "type": "baseline",
+    "summary": "The repository-wide physical Python file count was already zero in this workspace before BIG-GO-1602 changes."
+  },
+  "notes": [
+    "This lane documents the already-removed src/bigclaw package-root compatibility surface and hardens the Go-only state with regression coverage.",
+    "The branch baseline was already Python-free, so this lane strengthens regression coverage and refreshes validation evidence rather than removing in-branch Python files.",
+    "The checkout started in detached HEAD state at `94f64da0` before the BIG-GO-1602 branch commit."
+  ]
+}
