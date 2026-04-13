@@ -59,10 +59,9 @@ Notes:
   are the supported automation entrypoints. `bigclaw-go/scripts/benchmark/` is
   now Go-only and keeps `run_suite.sh` as the retained wrapper; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
-- The only remaining repo-root shell aliases are `scripts/dev_bootstrap.sh`,
-  `scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`,
-  `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel`.
-  The preferred operator path is `scripts/ops/bigclawctl`.
+- The only remaining repo-root shell helpers are `scripts/dev_bootstrap.sh`
+  and `scripts/ops/bigclawctl`. All supported operator flows now call
+  `bash scripts/ops/bigclawctl <subcommand>` directly.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
@@ -133,11 +132,9 @@ Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-ma
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The root Go-only build entrypoints are `make test`, `make build`, and `make run`;
 the Go-first operator entrypoint is `scripts/ops/bigclawctl`; the supported
-root helper inventory is limited to `scripts/dev_bootstrap.sh`,
-`scripts/ops/bigclawctl`, `scripts/ops/bigclaw-issue`,
-`scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel`; retired root
-Python ops wrappers should stay deleted and GitHub sync is Go/shell-only via
-`scripts/ops/bigclawctl`.
+root helper inventory is limited to `scripts/dev_bootstrap.sh` and
+`scripts/ops/bigclawctl`; retired root Python ops wrappers should stay deleted
+and GitHub sync is Go/shell-only via `scripts/ops/bigclawctl`.
 
 Active runtime development belongs in `bigclaw-go/internal/*`; use
 `go run ./bigclaw-go/cmd/bigclawd` for the local server path.

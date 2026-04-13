@@ -49,6 +49,17 @@ func TestRootScriptResidualSweep(t *testing.T) {
 			t.Fatalf("expected Go replacement or compatibility path to exist: %s (%v)", relativePath, err)
 		}
 	}
+
+	removedAliasWrappers := []string{
+		"scripts/ops/bigclaw-issue",
+		"scripts/ops/bigclaw-panel",
+		"scripts/ops/bigclaw-symphony",
+	}
+	for _, relativePath := range removedAliasWrappers {
+		if _, err := os.Stat(filepath.Join(repoRoot, relativePath)); !os.IsNotExist(err) {
+			t.Fatalf("expected direct bigclawctl subcommand path to replace alias wrapper: %s", relativePath)
+		}
+	}
 }
 
 func TestRootScriptResidualSweepDocs(t *testing.T) {
@@ -58,6 +69,9 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 	requiredPlanEntries := []string{
 		"retired `scripts/create_issues.py`; use `bigclawctl create-issues`",
 		"root dev smoke path is Go-only: use `bigclawctl dev-smoke`",
+		"direct operator path: `bash scripts/ops/bigclawctl symphony`",
+		"direct operator path: `bash scripts/ops/bigclawctl issue`",
+		"direct operator path: `bash scripts/ops/bigclawctl panel`",
 		"retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`",
 		"retired the refill Python wrapper; use `bigclawctl refill`",
 		"retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`",
@@ -77,10 +91,20 @@ func TestRootScriptResidualSweepDocs(t *testing.T) {
 		"Use this to verify the root dev smoke path:",
 		"bash scripts/ops/bigclawctl dev-smoke",
 		"bash scripts/dev_bootstrap.sh",
+		"All supported operator flows now call",
 	}
 	for _, needle := range requiredReadmeEntries {
 		if !strings.Contains(readme, needle) {
 			t.Fatalf("README.md missing active root script replacement guidance %q", needle)
+		}
+	}
+	for _, retiredAlias := range []string{
+		"scripts/ops/bigclaw-issue",
+		"scripts/ops/bigclaw-panel",
+		"scripts/ops/bigclaw-symphony",
+	} {
+		if strings.Contains(readme, retiredAlias) {
+			t.Fatalf("README.md should not reference retired alias wrapper %q", retiredAlias)
 		}
 	}
 	if strings.Contains(readme, "legacy-python compile-check") {

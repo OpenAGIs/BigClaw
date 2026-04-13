@@ -48,9 +48,9 @@ operator replacements.
 
 - retired `scripts/create_issues.py`; use `bigclawctl create-issues`
 - root dev smoke path is Go-only: use `bigclawctl dev-smoke`
-- `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
-- `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
-- `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
+- direct operator path: `bash scripts/ops/bigclawctl symphony`
+- direct operator path: `bash scripts/ops/bigclawctl issue`
+- direct operator path: `bash scripts/ops/bigclawctl panel`
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
 - retired the refill Python wrapper; use `bigclawctl refill`
 - retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
@@ -87,20 +87,11 @@ The remaining compatibility layer is intentionally thin:
 - `panel`
   - proxies `symphony panel --workflow workflow.md`
 
-### Compatibility shims kept in place
-
-- `scripts/ops/bigclaw-symphony`
-- `scripts/ops/bigclaw-issue`
-- `scripts/ops/bigclaw-panel`
-
 The root Python workspace shims are now removed. The remaining repo-root shell
 helpers are intentionally limited to:
 
 - `scripts/dev_bootstrap.sh`
 - `scripts/ops/bigclawctl`
-- `scripts/ops/bigclaw-issue`
-- `scripts/ops/bigclaw-panel`
-- `scripts/ops/bigclaw-symphony`
 
 All other root or `scripts/ops` wrappers should stay retired, and operator docs
 should point directly at `bash scripts/ops/bigclawctl ...`.
