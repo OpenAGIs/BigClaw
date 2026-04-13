@@ -32,10 +32,13 @@ Explicit remaining Python asset list: none.
 - `bigclaw-go/internal/regression/python_test_tranche17_removal_test.go`
 - `bigclaw-go/internal/regression/root_script_residual_sweep_test.go`
 - `bigclaw-go/internal/regression/e2e_entrypoint_migration_test.go`
-- `bigclaw-go/internal/migration/legacy_model_runtime_modules.go`
+- `bigclaw-go/internal/regression/big_go_1606_runtime_workflow_mainline_test.go`
+- `bigclaw-go/internal/service/server.go`
+- `bigclaw-go/internal/scheduler/scheduler.go`
 - `bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go`
 - `bigclaw-go/internal/migration/legacy_test_contract_sweep_d.go`
 - `bigclaw-go/docs/reports/review-readiness.md`
+- `bigclaw-go/docs/reports/big-go-1606-runtime-workflow-mainline-cutover.md`
 - `bigclaw-go/docs/reports/big-go-152-python-asset-sweep.md`
 - `bigclaw-go/docs/reports/big-go-157-python-asset-sweep.md`
 - `bigclaw-go/docs/reports/big-go-162-python-asset-sweep.md`

@@ -31,7 +31,9 @@ The active Go/native replacement evidence for this broad residual sweep is:
 - `docs/go-cli-script-migration-plan.md`
 - `docs/local-tracker-automation.md`
 - `scripts/ops/bigclawctl`
-- `bigclaw-go/internal/migration/legacy_model_runtime_modules.go`
+- `bigclaw-go/internal/regression/big_go_1606_runtime_workflow_mainline_test.go`
+- `bigclaw-go/internal/worker/runtime.go`
+- `bigclaw-go/internal/workflow/engine.go`
 - `bigclaw-go/internal/migration/legacy_test_contract_sweep_b.go`
 - `bigclaw-go/internal/regression/big_go_230_zero_python_guard_test.go`
 - `bigclaw-go/internal/regression/big_go_237_zero_python_guard_test.go`

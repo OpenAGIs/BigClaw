@@ -1,0 +1,44 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-1606",
+    "title": "Lane refill: remove Python workflow/runtime compatibility modules",
+    "state": "In Progress"
+  },
+  "branch": {
+    "name": "main",
+    "latest_commit": "pending",
+    "push_target": "origin/main"
+  },
+  "artifacts": {
+    "validation_report": "reports/BIG-GO-1606-validation.md",
+    "workpad": ".symphony/workpad.md",
+    "lane_report": "bigclaw-go/docs/reports/big-go-1606-runtime-workflow-mainline-cutover.md",
+    "regression_guard": "bigclaw-go/internal/regression/big_go_1606_runtime_workflow_mainline_test.go"
+  },
+  "deleted_compatibility_artifacts": [
+    "bigclaw-go/internal/migration/legacy_model_runtime_modules.go",
+    "bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json"
+  ],
+  "go_mainline_entrypaths": [
+    "bigclaw-go/internal/worker/runtime.go",
+    "bigclaw-go/internal/worker/runtime_runonce.go",
+    "bigclaw-go/internal/service/server.go",
+    "bigclaw-go/internal/scheduler/scheduler.go",
+    "bigclaw-go/internal/workflow/engine.go",
+    "bigclaw-go/internal/workflow/orchestration.go",
+    "bigclaw-go/cmd/bigclawd/main.go"
+  ],
+  "validation": {
+    "commands": [
+      "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1606 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' \\) -print | sort",
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1606/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1606(RepositoryHasNoPythonFiles|DeletedCompatibilityArtifactsStayAbsent|GoMainlineEntryPathsExist|LaneReportCapturesMainlineCutover)$|TestBIGGO167(RepositoryHasNoPythonFiles|ReferenceDenseGoOwnedDirectoriesStayPythonFree|NativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestBIGGO248(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'"
+    ],
+    "results": {
+      "repo_py_inventory": "produced no output",
+      "regression_tests": "ok   \tbigclaw-go/internal/regression\t3.260s"
+    }
+  },
+  "notes": [
+    "This lane deletes dead compatibility artifacts instead of lowering the physical Python file count, because the branch baseline is already Python-free."
+  ]
+}
