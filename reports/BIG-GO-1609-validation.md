@@ -1,6 +1,6 @@
 # BIG-GO-1609 Validation
 
-Date: 2026-04-13
+Date: 2026-04-16
 
 ## Scope
 
@@ -18,7 +18,8 @@ coverage plus repo-visible validation evidence.
   exact validation targets.
 - Added `bigclaw-go/internal/regression/big_go_1609_package_bootstrap_glue_test.go`
   to lock the repository-wide zero-Python state, the assigned package
-  bootstrap glue paths, and the retained Go-native replacement surfaces.
+  bootstrap glue paths, the retained Go-native replacement surfaces, and the
+  Go-first compatibility manifest posture.
 - Added `bigclaw-go/docs/reports/big-go-1609-package-bootstrap-glue-sweep.md`
   to capture the sweep scope and validation evidence.
 - Added `reports/BIG-GO-1609-status.json` for lane status tracking.
@@ -58,13 +59,13 @@ none
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1609(RepositoryHasNoPythonFiles|PackageBootstrapGluePathsRemainAbsent|GoNativeBootstrapSurfacesRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche7$|TestTopLevelModulePurgeTranche17$'
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1609(RepositoryHasNoPythonFiles|PackageBootstrapGluePathsRemainAbsent|GoNativeBootstrapSurfacesRemainAvailable|CompatibilityManifestOmitsRetiredPackageBootstrapGlue|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche7$|TestTopLevelModulePurgeTranche17$'
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	0.208s
+ok  	bigclaw-go/internal/regression	0.212s
 ```
 
 ## Git

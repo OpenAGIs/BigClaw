@@ -45,14 +45,17 @@ include:
 - `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
 - `scripts/ops/bigclawctl`
 
+Compatibility manifest remains Go-first and does not mention the retired
+package bootstrap glue paths or module keys.
+
 ## Validation Commands And Results
 
 - `find . -path '*/.git' -prune -o -type f -name '*.py' -print | sort`
   Result: no output; repository-wide Python file count remained `0`.
 - `for path in src/bigclaw/__init__.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py src/bigclaw/workspace_bootstrap_cli.py; do test ! -e "$path" || echo "present: $path"; done`
   Result: no output; every assigned package bootstrap glue path remained absent.
-- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1609(RepositoryHasNoPythonFiles|PackageBootstrapGluePathsRemainAbsent|GoNativeBootstrapSurfacesRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche7$|TestTopLevelModulePurgeTranche17$'`
-  Result: `ok  	bigclaw-go/internal/regression	0.208s`
+- `cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1609(RepositoryHasNoPythonFiles|PackageBootstrapGluePathsRemainAbsent|GoNativeBootstrapSurfacesRemainAvailable|CompatibilityManifestOmitsRetiredPackageBootstrapGlue|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche7$|TestTopLevelModulePurgeTranche17$'`
+  Result: `ok  	bigclaw-go/internal/regression	0.212s`
 
 Residual risk: the repository-wide physical Python file count is already `0` in
 this workspace, so `BIG-GO-1609` can only harden the zero-Python package

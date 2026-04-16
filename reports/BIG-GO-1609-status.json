@@ -39,12 +39,12 @@
     "commands": [
       "find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609 -path '*/.git' -prune -o -type f \\( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' -o -name '*.ipynb' \\) -print | sort",
       "for path in /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/__init__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/__main__.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/legacy_shim.py /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/src/bigclaw/workspace_bootstrap_cli.py; do test ! -e \"$path\" || echo \"present: $path\"; done",
-      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1609(RepositoryHasNoPythonFiles|PackageBootstrapGluePathsRemainAbsent|GoNativeBootstrapSurfacesRemainAvailable|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche7$|TestTopLevelModulePurgeTranche17$'"
+      "cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1609/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1609(RepositoryHasNoPythonFiles|PackageBootstrapGluePathsRemainAbsent|GoNativeBootstrapSurfacesRemainAvailable|CompatibilityManifestOmitsRetiredPackageBootstrapGlue|LaneReportCapturesSweepState)$|TestTopLevelModulePurgeTranche7$|TestTopLevelModulePurgeTranche17$'"
     ],
     "results": {
       "repo_py_inventory": "none",
       "assigned_package_bootstrap_glue_paths": "none",
-      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.208s"
+      "regression_tests": "ok  \tbigclaw-go/internal/regression\t0.212s"
     }
   },
   "blocker": {
