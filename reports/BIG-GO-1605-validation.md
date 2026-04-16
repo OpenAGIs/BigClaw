@@ -81,7 +81,7 @@ in-branch Python assets.
 
 ## Git
 
-- Commit: `f36fb24da0397798fb580801cebee17c5262dbdd`
+- Commit: `8cf36616668e3a7157ae83455fe576241db6c8ca`
 - Branch: `BIG-GO-1605`
 - Push: `git push origin BIG-GO-1605` succeeded and created `origin/BIG-GO-1605`
 
