@@ -53,6 +53,7 @@ operator replacements.
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
 - retired `scripts/ops/bigclaw_github_sync.py`; use `bigclawctl github-sync`
 - retired the refill Python wrapper; use `bigclawctl refill`
+- retired weekly operations reporting wrappers; use `bigclawctl reporting weekly`
 - retired `scripts/ops/bigclaw_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_bootstrap.py`; use `bash scripts/ops/bigclawctl workspace bootstrap`
 - retired `scripts/ops/symphony_workspace_validate.py`; use `bash scripts/ops/bigclawctl workspace validate`
@@ -86,6 +87,9 @@ The remaining compatibility layer is intentionally thin:
   - falls back to `symphony issue --workflow workflow.md` for the remaining surface
 - `panel`
   - proxies `symphony panel --workflow workflow.md`
+- `reporting`
+  - renders weekly operations bundles from checked-in or exported task/event JSON
+  - aligns the operator CLI with the runtime weekly report APIs under `/v2/reports/weekly`
 
 ### Compatibility shims kept in place
 
@@ -122,6 +126,7 @@ should point directly at `bash scripts/ops/bigclawctl ...`.
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `bash scripts/ops/bigclawctl github-sync status --json`
 - `bash scripts/ops/bigclawctl refill --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl reporting weekly --help`
 - `bash scripts/ops/bigclawctl workspace validate --help`
 - `bash scripts/dev_bootstrap.sh`
 - `bash scripts/ops/bigclawctl issue --help`

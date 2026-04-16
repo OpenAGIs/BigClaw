@@ -51,6 +51,9 @@ Notes:
   root workspace Python helpers are retired; use `bash scripts/ops/bigclawctl workspace ...`.
 - GitHub sync is no longer exposed through a Python wrapper; use
   `bash scripts/ops/bigclawctl github-sync ...`.
+- Weekly operations reporting is Go-native: use
+  `go run ./bigclaw-go/cmd/bigclawctl reporting weekly --tasks <tasks.json> --output-dir <dir> --week-start <YYYY-MM-DD> --week-end <YYYY-MM-DD> --json`
+  or the runtime APIs `GET /v2/reports/weekly` and `GET /v2/reports/weekly/export`.
 - `go run ./bigclaw-go/cmd/bigclawctl automation e2e run-task-smoke ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark soak-local ...`,
   `go run ./bigclaw-go/cmd/bigclawctl automation benchmark run-matrix ...`,

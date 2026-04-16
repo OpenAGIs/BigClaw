@@ -1,49 +1,21 @@
-# BIG-GO-248 Workpad
+# BIG-GO-1605
 
 ## Plan
-
-1. Confirm the repository-wide Python inventory and inspect adjacent zero-Python
-   sweep tickets to identify the expected `BIG-GO-248` artifact pattern and
-   evidence scope.
-2. Add the issue-scoped `BIG-GO-248` evidence bundle for this broad repo Python
-   reduction sweep:
-   - `bigclaw-go/internal/regression/big_go_248_zero_python_guard_test.go`
-   - `bigclaw-go/docs/reports/big-go-248-python-asset-sweep.md`
-   - `reports/BIG-GO-248-validation.md`
-   - `reports/BIG-GO-248-status.json`
-3. Run the targeted repository inventory checks and the `BIG-GO-248`
-   regression validation, then commit and push the resulting branch state.
+1. Confirm which reporting and observability Python-owned surfaces are already absent and which Go replacements now own them.
+2. Finish the Go weekly-reporting CLI surface in `bigclaw-go/cmd/bigclawctl` and add focused tests around input loading, rendering, and emitted metadata.
+3. Publish issue-scoped refill evidence for the retired reporting/observability Python paths and update the active migration docs to point at the Go API/CLI replacements.
+4. Run targeted sweeps and Go tests, capture exact commands/results in the issue report, then commit and push the branch.
 
 ## Acceptance
-
-- `BIG-GO-248` records a repo-visible, issue-scoped proof that the checkout
-  remains free of tracked `.py` files.
-- The new regression guard verifies the repository-wide zero-Python baseline,
-  the selected priority residual directories for this sweep, the retained
-  replacement paths, and the `BIG-GO-248` lane report.
-- The validation and status artifacts capture the exact commands and observed
-  results for this issue, including the already-zero baseline caveat.
-- The final branch state is committed and pushed to `origin`.
+- `bigclawctl reporting weekly` is available from the root CLI and can render weekly operations artifacts from task/event JSON using Go-owned reporting code.
+- Reporting and observability migration docs describe the current Go surfaces, including the CLI/API paths that replace the retired Python-owned weekly reporting flow.
+- BIG-GO-1605 adds issue-scoped regression coverage that guards the retired reporting/observability Python assets and the replacement Go paths.
+- Validation artifacts record the exact repository sweep and targeted test commands with their observed results.
+- The branch is committed and pushed to `origin/BIG-GO-1605`.
 
 ## Validation
-
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-248 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
-- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-248/docs /Users/openagi/code/bigclaw-workspaces/BIG-GO-248/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-248/bigclaw-go/docs/reports /Users/openagi/code/bigclaw-workspaces/BIG-GO-248/bigclaw-go/internal/migration -type f -name '*.py' 2>/dev/null | sort`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-248/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO248(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-- `jq '.' /Users/openagi/code/bigclaw-workspaces/BIG-GO-248/reports/BIG-GO-248-status.json >/dev/null`
-
-## Execution Notes
-
-- 2026-04-12: Initial inspection shows the checkout is already at a
-  repository-wide Python file count of `0`.
-- 2026-04-12: `BIG-GO-248` therefore needs to harden the zero-Python baseline
-  with issue-scoped regression and reporting artifacts instead of removing
-  in-branch `.py` files.
-- 2026-04-12: Verified the issue implementation already exists at commit
-  `a4b6ebab3c0f7d2fd2c384917c026a7370234895`
-  (`BIG-GO-249: add auxiliary python sweep guard`) on `origin/main`.
-- 2026-04-12: Re-ran the lane validation commands from this workspace. Both
-  Python inventory scans returned no output, and `go test -count=1
-  ./internal/regression -run
-  'TestBIGGO249(RepositoryHasNoPythonFiles|HiddenNestedAuxiliaryDirectoriesStayPythonFree|NativeEvidencePathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  passed in `5.940s`.
+- `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1605 -path '*/.git' -prune -o -name '*.py' -type f -print | sort`
+- `for path in src/bigclaw/observability.py src/bigclaw/reports.py src/bigclaw/evaluation.py src/bigclaw/operations.py tests/test_observability.py tests/test_operations.py; do test ! -e "/Users/openagi/code/bigclaw-workspaces/BIG-GO-1605/$path" && printf 'absent %s\n' "$path"; done`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1605/bigclaw-go && go test -count=1 ./cmd/bigclawctl ./internal/reporting ./internal/api`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1605/bigclaw-go && go test -count=1 ./internal/regression -run TestBIGGO1605`
+- Record the exact command lines and pass/fail results in `reports/BIG-GO-1605-validation.md`.

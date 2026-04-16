@@ -115,6 +115,8 @@ func run(args []string) int {
 		err = runWorkspace(args[1:])
 	case "automation":
 		err = runAutomation(args[1:])
+	case "reporting":
+		err = runReporting(args[1:])
 	case "refill":
 		err = runRefill(args[1:])
 	case "local-issues":
@@ -1378,12 +1380,13 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|reporting|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
 	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate workspaces using the shared mirror")
 	fmt.Fprintln(w, "  automation      run migrated e2e/benchmark/migration automation entrypoints")
+	fmt.Fprintln(w, "  reporting       render Go-native reporting bundles from task/event JSON")
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
 	fmt.Fprintln(w, "  create-issues   seed the GitHub repo with the canned issue plans")

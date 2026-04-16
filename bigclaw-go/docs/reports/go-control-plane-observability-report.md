@@ -12,6 +12,9 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 - Trace summary listing via `GET /debug/traces`
 - Trace detail timeline via `GET /debug/traces/{trace_id}`
 - Worker lifecycle snapshot via `GET /debug/status`
+- Weekly operations summary and metric-spec output via `GET /v2/reports/weekly`
+- Weekly markdown export via `GET /v2/reports/weekly/export`
+- Repo-native weekly bundle generation via `bigclawctl reporting weekly`
 - Distributed trace export bundle summary via `GET /v2/reports/distributed` and `GET /v2/reports/distributed/export`
 - Audit persistence via `internal/observability/JSONLAuditSink`
 
@@ -20,6 +23,7 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 - Task and trace timelines are queryable from the recorder.
 - Recent traces can be summarized with first/last timestamps, duration, event counts, and task ids.
 - Debug status exposes the current worker snapshot and aggregate counters.
+- Weekly reporting can now be rendered from the same Go-owned reporting surface through both runtime APIs and the `bigclawctl reporting weekly` operator command.
 - Distributed diagnostics exports now package recent trace summaries, reviewer navigation links, validation-artifact references, and explicit backend limitations into one repo-native reviewer bundle.
 - Metrics surface keeps `trace_count` JSON visibility and now exposes scrape-friendly queue, event, executor, worker-pool, and control-plane gauges.
 - Audit sink writes JSONL event records for later inspection.
@@ -31,6 +35,8 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 - `internal/observability/audit.go`
 - `internal/observability/audit_test.go`
 - `internal/api/server.go`
+- `internal/api/expansion.go`
+- `cmd/bigclawctl/reporting_commands.go`
 - `internal/api/distributed.go`
 - `internal/api/metrics.go`
 - `internal/api/server_test.go`
