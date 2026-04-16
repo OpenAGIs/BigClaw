@@ -1,6 +1,6 @@
 # BIG-GO-1604 Validation
 
-Date: 2026-04-13
+Date: 2026-04-16
 
 ## Scope
 
@@ -9,16 +9,20 @@ Issue: `BIG-GO-1604`
 Title: `Lane refill: eliminate remaining Python test files and harness residue`
 
 This lane verifies that the final root `tests` residue and bootstrap/harness
-paths are already removed from the live checkout and hardens that state with
-Go regression coverage plus repo-visible validation evidence.
+paths are already removed from the live checkout, removes the standalone
+tranche-14 regression residue file, and hardens that state with Go regression
+coverage plus repo-visible validation evidence.
 
 ## Delivered
 
 - Refreshed `.symphony/workpad.md` so the issue plan, acceptance criteria, and
   validation targets match the current refill scope.
+- Removed `bigclaw-go/internal/regression/python_test_tranche14_removal_test.go`
+  because it was no longer referenced by any active guard or lane artifact.
 - Confirmed `bigclaw-go/internal/regression/big_go_1604_zero_python_guard_test.go`
   still locks the repository-wide zero-Python state, the assigned retired test
-  and harness paths, and the retained Go/native replacement surfaces.
+  and harness paths, the removed standalone regression residue, and the
+  retained Go/native replacement surfaces.
 - Refreshed `reports/BIG-GO-1604-status.json` against the current validation
   run.
 - Re-ran the issue-scoped inventory and regression commands and recorded their
@@ -65,28 +69,44 @@ absent scripts/ops/bigclaw_workspace_bootstrap.py
 absent scripts/ops/symphony_workspace_bootstrap.py
 ```
 
-### Targeted regression coverage
+### Removed standalone regression residue
 
 Command:
 
 ```bash
-cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1604(RepositoryHasNoPythonFiles|AssignedPythonTestAndHarnessResidueRemainAbsent|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+test ! -e bigclaw-go/internal/regression/python_test_tranche14_removal_test.go && printf 'absent %s\n' bigclaw-go/internal/regression/python_test_tranche14_removal_test.go
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/internal/regression	3.215s
+absent bigclaw-go/internal/regression/python_test_tranche14_removal_test.go
+```
+
+### Targeted regression coverage
+
+Command:
+
+```bash
+cd bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1604(RepositoryHasNoPythonFiles|AssignedPythonTestAndHarnessResidueRemainAbsent|StandalonePythonRegressionResidueIsRemoved|GoReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/regression	0.205s
 ```
 
 ## Git
 
-- Branch: `main`
-- Baseline HEAD before lane commit: `75ad8ad6`
-- Push target: `origin/main`
+- Branch: `symphony/BIG-GO-1604`
+- Baseline HEAD before lane commit: `23addc82`
+- Push target: `origin/symphony/BIG-GO-1604`
 
 ## Residual Risk
 
 - The repository-wide physical Python file count is already `0` in this
   workspace, so `BIG-GO-1604` cannot reduce the count further numerically; this
   lane hardens the zero-Python baseline and records the assigned slice state.
+- The remaining `python_*`-named Go regression files stay in place because
+  multiple active zero-Python guards still depend on them.
