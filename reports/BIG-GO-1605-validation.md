@@ -81,7 +81,9 @@ in-branch Python assets.
 
 ## Git
 
-Pending final commit and push.
+- Commit: `f36fb24da0397798fb580801cebee17c5262dbdd`
+- Branch: `BIG-GO-1605`
+- Push: `git push origin BIG-GO-1605` succeeded and created `origin/BIG-GO-1605`
 
 ## Residual Risk
 
