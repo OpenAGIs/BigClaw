@@ -2,25 +2,31 @@
 
 ## Plan
 
-1. Confirm the retired compatibility registry/manifest remain deleted and that
-   the lane still points at direct Go-owned runtime, workflow, service, and
-   scheduler entrypaths only.
-2. Refresh the lane-owned closeout artifacts for the unattended run:
+1. Reconfirm that the last Python compatibility registry/manifest stay deleted
+   and that the remaining runtime, workflow, scheduler, service, and daemon
+   surfaces resolve directly to Go-owned paths.
+2. Refresh the lane-owned unattended-closeout artifacts for the current run:
    `.symphony/workpad.md`, `reports/BIG-GO-1606-validation.md`, and
    `reports/BIG-GO-1606-status.json`.
-3. Run the focused Python-free inventory and regression commands, record the
-   exact observed results, then commit and push the lane branch.
+3. Execute the focused Python inventory and regression coverage commands,
+   record the exact commands and observed results, then commit and push only
+   the issue-scoped artifact changes.
 
 ## Acceptance
 
-- The retired compatibility registry/manifest stay absent from the repo.
-- Regression coverage proves the repository remains Python-free and that the
-  live Go-owned runtime/workflow/service/scheduler entrypaths exist directly
-  without the deleted compatibility layer.
-- Lane-specific artifacts capture the deleted surfaces, active Go replacements,
-  exact validation commands, and exact observed results for this branch.
-- The lane is committed on `symphony/BIG-GO-1606` and pushed to
-  `origin/symphony/BIG-GO-1606`.
+- `bigclaw-go/internal/migration/legacy_model_runtime_modules.go` remains
+  absent.
+- `bigclaw-go/docs/reports/legacy-mainline-compatibility-manifest.json`
+  remains absent.
+- `bigclaw-go/internal/regression/big_go_1606_runtime_workflow_mainline_test.go`
+  still proves the repo is Python-free and that the direct Go-owned runtime,
+  workflow, service, scheduler, and daemon entrypaths exist.
+- `reports/BIG-GO-1606-validation.md` and `reports/BIG-GO-1606-status.json`
+  capture the current run's exact validation commands and exact observed
+  results.
+- The unattended closeout lands as a new commit on `symphony/BIG-GO-1606` and
+  is pushed to `origin/symphony/BIG-GO-1606` without staging unrelated
+  worktree changes.
 
 ## Validation
 

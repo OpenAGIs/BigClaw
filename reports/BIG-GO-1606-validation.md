@@ -1,6 +1,6 @@
 # BIG-GO-1606 Validation
 
-Date: 2026-04-15
+Date: 2026-04-16
 
 ## Scope
 
@@ -29,4 +29,4 @@ entrypoints, even though the checkout is already physically Python-free.
 - `find /Users/openagi/code/bigclaw-workspaces/BIG-GO-1606 -path '*/.git' -prune -o -type f \( -name '*.py' -o -name '*.pyw' -o -name '*.pyi' \) -print | sort`
   produced no output.
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-1606/bigclaw-go && go test -count=1 ./internal/regression -run 'TestBIGGO1606(RepositoryHasNoPythonFiles|DeletedCompatibilityArtifactsStayAbsent|GoMainlineEntryPathsExist|LaneReportCapturesMainlineCutover)$|TestBIGGO167(RepositoryHasNoPythonFiles|ReferenceDenseGoOwnedDirectoriesStayPythonFree|NativeReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$|TestBIGGO248(RepositoryHasNoPythonFiles|PriorityResidualDirectoriesStayPythonFree|ReplacementPathsRemainAvailable|LaneReportCapturesSweepState)$'`
-  returned `ok  	bigclaw-go/internal/regression	0.226s`.
+  returned `ok  	bigclaw-go/internal/regression	0.231s`.
